@@ -11,12 +11,15 @@ import { BALANCE, type UnitClass } from "./balance.ts";
 import { makeRng, type Rng } from "./rng.ts";
 import type { Army, Placement } from "./simulate.ts";
 
-const ROW_ORDER = [1, 0, 2]; // fill the centre row first, it looks deliberate
-
-/** Tiles a role wants, best first. Melee hold the front, ranged the back. */
+/**
+ * Tiles a role wants, best first, in the spirit of TFT positioning: melee
+ * hold the front row centred so they engage immediately, ranged carry from
+ * the back corners, where enemies can reach them from the fewest directions.
+ */
 function tilePreference(melee: boolean): { col: number; row: number }[] {
-  const cols = melee ? [3, 2, 1, 0] : [0, 1, 2, 3];
-  return cols.flatMap((col) => ROW_ORDER.map((row) => ({ col, row })));
+  const rows = melee ? [2, 1, 0] : [0, 1, 2];
+  const cols = melee ? [2, 1, 3, 0, 4] : [0, 4, 1, 3, 2];
+  return rows.flatMap((row) => cols.map((col) => ({ col, row })));
 }
 
 function buy(budget: number, rng: Rng): UnitClass[] {

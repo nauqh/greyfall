@@ -3,11 +3,12 @@
  * an event log out. No I/O, no clock, no globals, so the browser runs it for
  * previews now and the server runs it for official results in Phase 2.
  *
- * Geometry: the two 4x3 boards join into one 8x3 grid. Side A keeps its own
- * columns, side B is mirrored, so each side has col 3 as its front line and
- * the two front lines face each other across the middle. Distances are
- * Chebyshev (a diagonal costs the same as a step), so range 1 means any of the
- * 8 neighbouring tiles.
+ * Geometry: a plain square grid. Each side owns a 5x3 half; both halves stack
+ * into one 5x6 board. Side A fills the bottom half (battle rows 5,4,3 back to
+ * front), side B the top (rows 0,1,2), so both front rows (own row 2) are
+ * adjacent across the middle line. Distance is Chebyshev over the eight
+ * neighbours, so a diagonal step costs the same as a straight one and range 1
+ * means any touching cell.
  */
 
 import {
@@ -21,7 +22,7 @@ import { makeRng } from "./rng.ts";
 
 export type Side = "a" | "b";
 
-/** A unit on its own 4x3 board. col 0 is the back line, col 3 the front. */
+/** A unit on its own 5x3 half. Row 0 is the back line, row 2 the front. */
 export interface Placement {
   class: UnitClass;
   col: number;
@@ -64,11 +65,38 @@ interface SimUnit extends UnitSnapshot {
   nextAt: number;
 }
 
-/** Where one side's own column sits on the shared 8x3 battle grid. */
+/**
+ * Where a side's own cell sits on the shared 5x6 battle grid. The two halves
+ * are point reflections of each other through the board centre, so side A
+ * keeps its columns and mirrors its rows (bottom half), while side B keeps its
+ * rows and mirrors its columns (top half). Both front rows (own row 2) face
+ * the middle. Chebyshev distance is invariant under that reflection, which is
+ * what lets a mirror match stay an exact draw.
+ */
+export function battleRow(side: Side, row: number): number {
+  return side === "a" ? BALANCE.board.battleRows - 1 - row : row;
+}
+
 export function battleCol(side: Side, col: number): number {
   return side === "a" ? col : BALANCE.board.battleCols - 1 - col;
 }
 
+/** The eight neighbours of a square cell: orthogonal and diagonal alike. */
+export function neighbors(col: number, row: number): { col: number; row: number }[] {
+  const out: { col: number; row: number }[] = [];
+  for (let dr = -1; dr <= 1; dr++) {
+    for (let dc = -1; dc <= 1; dc++) {
+      if (dc !== 0 || dr !== 0) out.push({ col: col + dc, row: row + dr });
+    }
+  }
+  return out;
+}
+
+/**
+ * Chebyshev distance: the number of king moves between two cells, so a
+ * diagonal costs the same as a straight step and every one of the eight
+ * neighbours is exactly range 1.
+ */
 export function chebyshev(
   a: { col: number; row: number },
   b: { col: number; row: number },
@@ -120,7 +148,7 @@ function build(army: Army, side: Side): SimUnit[] {
       maxHp: stats.hp,
       hp: stats.hp,
       col: battleCol(side, p.col),
-      row: p.row,
+      row: battleRow(side, p.row),
       nextAt: 0,
     };
   });
@@ -159,6 +187,8 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
   const alive = (u: SimUnit) => u.hp > 0;
   const clamp = (u: SimUnit) => Math.max(0, Math.min(u.maxHp, u.hp));
   const tileKey = (u: { col: number; row: number }) => `${u.col},${u.row}`;
+  const onBoard = (p: { col: number; row: number }) =>
+    p.col >= 0 && p.col < BALANCE.board.battleCols && p.row >= 0 && p.row < BALANCE.board.battleRows;
 
   let ticks = 0;
   let reason: BattleResult["reason"] = "timeout";
@@ -184,9 +214,10 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
       const healer = stats.heal > 0;
 
       // A healer looks for the most wounded ally, itself included; everyone
-      // else looks for the nearest enemy. Ties break by how far ahead the
-      // target is, then by row, then by index - all read the same from either
-      // side of the grid, so a mirror match is never decided by a tie-break.
+      // else looks for the nearest enemy. Every key component is preserved by
+      // the board's point reflection - distance, row and column offsets, and
+      // the index order, which reads the same from either half - so a mirror
+      // match is never decided by a tie-break.
       let targetIdx = -1;
       let targetKey: number[] = [];
       let targetDist = 0;
@@ -199,8 +230,8 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
         const pos = startPos[j]!;
         const dist = chebyshev(unit, pos);
         const key = healer
-          ? [hpAtStart[j]!, dist, pos.row, j]
-          : [dist, Math.abs(pos.col - unit.col), pos.row, j];
+          ? [hpAtStart[j]!, dist, Math.abs(pos.row - unit.row), Math.abs(pos.col - unit.col), j]
+          : [dist, Math.abs(pos.row - unit.row), Math.abs(pos.col - unit.col), j];
         if (targetIdx === -1 || ranksBetter(key, targetKey)) {
           targetIdx = j;
           targetKey = key;
@@ -245,15 +276,22 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
         continue;
       }
 
-      // Out of reach: one step toward the target. Diagonal first, then either
-      // axis, so a unit slides around a blocked tile instead of stalling.
-      const dc = Math.sign(targetPos.col - unit.col);
-      const dr = Math.sign(targetPos.row - unit.row);
-      const steps = [
-        { col: unit.col + dc, row: unit.row + dr },
-        { col: unit.col + dc, row: unit.row },
-        { col: unit.col, row: unit.row + dr },
-      ].filter((s) => (s.col !== unit.col || s.row !== unit.row) && !occupied.has(tileKey(s)));
+      // Out of reach: one step toward the target, over the eight neighbours,
+      // ranked by how much closer each one lands. The final tie-break is
+      // flipped by side: under the board's point reflection (col, row) maps to
+      // (cols-1-col, rows-1-row), so (col+row, col) of a step maps to a
+      // constant minus itself. Side A taking the smallest and side B the
+      // largest therefore makes both armies curve around blockers as mirror
+      // images, instead of both leaning the same way.
+      const flip = unit.side === "a" ? 1 : -1;
+      const steps = neighbors(unit.col, unit.row)
+        .filter((s) => onBoard(s) && !occupied.has(tileKey(s)))
+        .sort(
+          (p, q) =>
+            chebyshev(p, targetPos) - chebyshev(q, targetPos) ||
+            flip * (p.col + p.row) - flip * (q.col + q.row) ||
+            flip * p.col - flip * q.col,
+        );
       if (steps.length > 0) intents.push({ i, steps });
     }
 

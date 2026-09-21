@@ -22,7 +22,7 @@ export interface UnitStats {
   hp: number;
   /** Damage per attack. */
   damage: number;
-  /** Reach in tiles, Chebyshev. 1 is melee (any of the 8 neighbours). */
+  /** Reach in cells, Chebyshev. 1 is melee: any of the eight neighbours. */
   range: number;
   /** Healing per action. Only the Monk heals. */
   heal: number;
@@ -33,13 +33,18 @@ export const BALANCE = {
   budget: 20,
 
   board: {
-    /** Each side arranges on its own 4x3 board. */
-    cols: 4,
+    /**
+     * Each side arranges on its own 5x3 half of a plain square grid.
+     * The halves stack into one 5x6 battle grid: side B's row r sits at r and
+     * side A's at 5 - r, so the player's army is the bottom half, the enemy's
+     * the top, and the two front rows meet in the middle.
+     */
+    cols: 5,
     rows: 3,
-    /** The two boards join into one 8x3 grid: side B's col c sits at 7 - c. */
-    battleCols: 8,
-    /** 4 x 3 = 12 tiles, so 12 units. */
-    maxUnits: 12,
+    battleCols: 5,
+    battleRows: 6,
+    /** 5 x 3 = 15 cells, army cap set by budget, hard cap 8 units. */
+    maxUnits: 8,
   },
 
   /** Simulation ticks per second. */

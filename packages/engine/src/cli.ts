@@ -30,7 +30,7 @@ function roster(army: Army): string {
   return [...counts].map(([cls, n]) => `${n}x ${cls}`).join(", ");
 }
 
-/** The shared 8x3 grid as both sides start on it. */
+/** The shared 5x6 grid as both sides start on it, side A at the bottom. */
 function board(result: BattleResult): string {
   const cells = new Map<string, string>();
   for (const u of result.units) cells.set(`${u.col},${u.row}`, `${u.side}-${GLYPH[u.class]}`);
@@ -38,7 +38,7 @@ function board(result: BattleResult): string {
   const header =
     "     " +
     Array.from({ length: BALANCE.board.battleCols }, (_, c) => `c${c}`.padEnd(6)).join("");
-  const rows = Array.from({ length: BALANCE.board.rows }, (_, row) => {
+  const rows = Array.from({ length: BALANCE.board.battleRows }, (_, row) => {
     const line = Array.from({ length: BALANCE.board.battleCols }, (_, col) =>
       (cells.get(`${col},${row}`) ?? ".").padEnd(6),
     ).join("");

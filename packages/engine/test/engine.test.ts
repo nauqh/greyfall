@@ -6,11 +6,13 @@ import {
   MAX_TICKS,
   armyCost,
   battleCol,
+  battleRow,
   chebyshev,
   damageAgainst,
   generateArmy,
   hashSeed,
   makeRng,
+  neighbors,
   simulate,
   validateArmy,
   type Army,
@@ -121,17 +123,50 @@ describe("rng", () => {
 });
 
 describe("geometry", () => {
-  it("mirrors side B onto the shared 8x3 grid", () => {
-    expect(battleCol("a", 0)).toBe(0);
-    expect(battleCol("a", 3)).toBe(3);
-    expect(battleCol("b", 3)).toBe(4); // both front lines meet in the middle
-    expect(battleCol("b", 0)).toBe(7);
+  it("mirrors side B onto the shared 5x6 grid, bottom half vs top half", () => {
+    expect(battleRow("a", 0)).toBe(5);
+    expect(battleRow("a", 2)).toBe(3); // front line faces the middle
+    expect(battleRow("b", 2)).toBe(2); // the two front rows are adjacent
+    expect(battleRow("b", 0)).toBe(0);
+    expect(battleCol("a", 1)).toBe(1);
+    expect(battleCol("b", 1)).toBe(3);
+    expect(battleCol("b", 2)).toBe(2); // the centre column maps to itself
   });
 
-  it("measures distance with Chebyshev, so diagonals cost one step", () => {
-    expect(chebyshev({ col: 3, row: 0 }, { col: 4, row: 1 })).toBe(1);
-    expect(chebyshev({ col: 3, row: 1 }, { col: 6, row: 0 })).toBe(3); // archer reach
-    expect(chebyshev({ col: 3, row: 1 }, { col: 7, row: 1 })).toBe(4); // out of reach
+  it("measures Chebyshev distance, so a diagonal costs one step", () => {
+    // The two front rows, same column: touching.
+    expect(chebyshev({ col: 2, row: 3 }, { col: 2, row: 2 })).toBe(1);
+    // Diagonals cost the same as straight steps.
+    expect(chebyshev({ col: 2, row: 3 }, { col: 3, row: 2 })).toBe(1);
+    expect(chebyshev({ col: 0, row: 1 }, { col: 1, row: 2 })).toBe(1);
+    // A back-row Archer is exactly its 3 cells from the enemy front line.
+    expect(chebyshev({ col: 2, row: 5 }, { col: 2, row: 2 })).toBe(3);
+    expect(chebyshev({ col: 2, row: 3 }, { col: 4, row: 0 })).toBe(3);
+    // Opposite back rows are the full length of the board apart.
+    expect(chebyshev({ col: 2, row: 5 }, { col: 2, row: 0 })).toBe(5);
+  });
+
+  it("gives every cell eight neighbours, all one step away", () => {
+    for (const row of [0, 1, 2, 3, 4, 5]) {
+      const ns = neighbors(2, row);
+      expect(ns).toHaveLength(8);
+      expect(new Set(ns.map((n) => `${n.col},${n.row}`)).size).toBe(8);
+      for (const n of ns) expect(chebyshev({ col: 2, row }, n)).toBe(1);
+    }
+  });
+
+  it("is symmetric, zero on itself, and never negative", () => {
+    fc.assert(
+      fc.property(
+        fc.record({ col: fc.integer({ min: 0, max: 4 }), row: fc.integer({ min: 0, max: 5 }) }),
+        fc.record({ col: fc.integer({ min: 0, max: 4 }), row: fc.integer({ min: 0, max: 5 }) }),
+        (a, b) => {
+          expect(chebyshev(a, b)).toBe(chebyshev(b, a));
+          expect(chebyshev(a, a)).toBe(0);
+          expect(chebyshev(a, b)).toBeGreaterThanOrEqual(0);
+        },
+      ),
+    );
   });
 });
 
@@ -155,8 +190,8 @@ describe("validateArmy", () => {
     ).toMatch(/taken/);
   });
 
-  it("rejects tiles off the 4x3 board", () => {
-    expect(validateArmy([{ class: "warrior", col: 4, row: 0 }]).join()).toMatch(/col 4/);
+  it("rejects cells off the 5x3 half", () => {
+    expect(validateArmy([{ class: "warrior", col: 5, row: 0 }]).join()).toMatch(/col 5/);
     expect(validateArmy([{ class: "warrior", col: 0, row: 3 }]).join()).toMatch(/row 3/);
   });
 
@@ -215,11 +250,11 @@ describe("generateArmy", () => {
 
       const frontOfRanged = Math.max(
         0,
-        ...army.filter((u) => BALANCE.units[u.class].range > 1).map((u) => u.col),
+        ...army.filter((u) => BALANCE.units[u.class].range > 1).map((u) => u.row),
       );
       const backOfMelee = Math.min(
-        BALANCE.board.cols,
-        ...army.filter((u) => BALANCE.units[u.class].range <= 1).map((u) => u.col),
+        BALANCE.board.rows,
+        ...army.filter((u) => BALANCE.units[u.class].range <= 1).map((u) => u.row),
       );
       expect(backOfMelee).toBeGreaterThanOrEqual(frontOfRanged);
     }
@@ -230,7 +265,7 @@ describe("simulate", () => {
   const warriorAt = (col: number, row: number): Army => [{ class: "warrior", col, row }];
 
   it("trades evenly in a mirror match: nobody gets a free first strike", () => {
-    const result = simulate(warriorAt(3, 1), warriorAt(3, 1), 1);
+    const result = simulate(warriorAt(2, 2), warriorAt(2, 2), 1);
     expect(result.winner).toBe("draw");
     expect(result.reason).toBe("wipe");
     expect(result.hpRemaining).toEqual({ a: 0, b: 0 });
@@ -241,7 +276,7 @@ describe("simulate", () => {
   });
 
   it("gives the counter its edge: a Warrior beats an Archer in melee", () => {
-    const result = simulate(warriorAt(3, 1), [{ class: "archer", col: 3, row: 1 }], 1);
+    const result = simulate(warriorAt(2, 2), [{ class: "archer", col: 2, row: 2 }], 1);
     expect(result.winner).toBe("a");
     expect(result.survivors).toEqual({ a: 1, b: 0 });
     // 18 a hit thanks to the counter, so 4 hits for the Archer's 60 hp.
@@ -250,16 +285,16 @@ describe("simulate", () => {
   });
 
   it("lets a back-line Archer open fire before a melee unit closes", () => {
-    // Archer on its back column, Warrior on its front: 7 tiles apart, so the
+    // Archer on its own back row, Warrior on the enemy front: out of reach, so the
     // Archer gets shots off while the Warrior walks in.
-    const result = simulate([{ class: "archer", col: 0, row: 1 }], warriorAt(3, 1), 1);
+    const result = simulate([{ class: "archer", col: 0, row: 1 }], warriorAt(3, 2), 1);
     const firstHit = result.events.find((e) => e.type === "hit");
     expect(firstHit?.unit).toBe("a0");
     expect(result.events.some((e) => e.type === "move" && e.unit === "b0")).toBe(true);
   });
 
   it("two front lines start adjacent, so neither side walks first", () => {
-    const result = simulate(warriorAt(3, 1), warriorAt(3, 1), 1);
+    const result = simulate(warriorAt(2, 2), warriorAt(2, 2), 1);
     expect(result.events.some((e) => e.type === "move")).toBe(false);
   });
 

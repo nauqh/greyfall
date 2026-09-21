@@ -13,7 +13,9 @@ export { hashSeed, makeRng, type Rng } from "./rng.ts";
 export {
   armyCost,
   battleCol,
+  battleRow,
   chebyshev,
+  neighbors,
   simulate,
   validateArmy,
   type Army,
