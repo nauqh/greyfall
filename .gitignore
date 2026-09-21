@@ -8,3 +8,9 @@ dist/
 
 # Tiny Swords pack forbids redistribution - keep it out of the repo
 tiny-swords/
+
+# Local settings and anything secret. .env.example is the documented template
+# and is meant to be committed; nothing else here is.
+.env
+.env.*
+!.env.example

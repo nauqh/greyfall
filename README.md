@@ -25,48 +25,44 @@ pnpm install
 The game draws entirely on [Tiny Swords](https://pixelfrog-assets.itch.io/tiny-swords)
 by Pixel Frog. The license allows commercial use and modification but **forbids
 redistribution**, so the files are not in this repository and never should be.
-Every machine fetches them for itself, into `apps/web/public/tiny-swords`:
+Each machine points at its own copy.
 
-```bash
-# you already have the pack unzipped somewhere
-TINY_SWORDS_PATH=/path/to/unzipped/pack pnpm assets
+Download and unzip the pack, then copy `.env.example` to `.env` and set one
+line:
 
-# or pull a zip, which is what a build host does
-TINY_SWORDS_URL=https://your-bucket/tiny-swords.zip pnpm assets
+```
+TINY_SWORDS_PATH=/absolute/path/to/unzipped/tiny-swords
 ```
 
-`pnpm assets` is idempotent and runs automatically before `dev` and `build`. If
-the pack is already in place it does nothing. If no source is configured it
-prints these instructions and carries on, so `pnpm dev` still starts; you just
-get an unpainted game. Add `--require` to make it fail instead, which is what a
-deploy should do rather than shipping a blank board:
+That is the whole setup. `pnpm assets` reads it and links the pack into
+`apps/web/public/tiny-swords`; it runs automatically before `dev` and `build`,
+does nothing if the pack is already there, and a variable exported in the shell
+beats the one in the file. `.env` is gitignored, `.env.example` is the template.
 
-```bash
-pnpm assets --require
+If the pack is missing the script says so and carries on, so `pnpm dev` still
+starts. You get the draft screen without art and a blank blue battle board,
+with 404s for `/tiny-swords/...` in the console. That is the symptom to
+recognise. `pnpm assets --require` fails instead of warning, which is what a
+deploy wants.
+
+### When you deploy
+
+Set `TINY_SWORDS_URL` to a zip instead, in the host's own environment
+variables. The script downloads and unpacks it into `apps/web/public/`, which
+Next then serves as static files, so nothing else changes:
+
+```
+TINY_SWORDS_URL=https://your-bucket/tiny-swords.zip
 ```
 
-`.gitignore` excludes anything named `tiny-swords/` at any depth, so neither a
-link nor a copy can be committed by accident.
+Two things to know when you get there. Keep the object private and sign a
+short-lived URL at deploy time (`aws s3 presign`, or the equivalent) rather
+than leaving a public link, since a public pack zip is the redistribution the
+license forbids. And because signed URLs expire, that one has to be generated
+by the deploy, not written into a file.
 
-If the pack is missing, the draft screen still works but loses all its art, and
-the battle screen is a blank blue rectangle with a browser console full of 404s
-for `/tiny-swords/...`. That is the symptom to recognise.
-
-### Where the assets live in production
-
-The pack is not baked into the image or the repo. A deploy fetches it at build
-time from somewhere private that you control (an S3 or R2 bucket, a release
-asset, anything that can hand back a zip over HTTPS), so the redistribution
-terms are never breached by a public artifact:
-
-```bash
-TINY_SWORDS_URL=https://your-bucket/tiny-swords.zip pnpm assets --require
-pnpm --filter @greyfall/web build
-```
-
-The files land in `apps/web/public/`, which Next serves as ordinary static
-files, so nothing else changes. CI itself needs no pack: the build never reads
-the art, because every reference to it is a runtime URL.
+CI needs none of this: the build never reads the art, because every reference
+to it is a runtime URL.
 
 ### Serving from somewhere other than the root
 

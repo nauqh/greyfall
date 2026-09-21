@@ -34,6 +34,17 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DEST = join(ROOT, "apps", "web", "public", "tiny-swords");
+
+// Read .env at the repo root if there is one, so the settings below can be
+// written down once instead of exported every time. Next loads .env for the
+// app itself; this is a plain node process and gets none of that for free.
+// loadEnvFile does not overwrite variables already in the environment, so an
+// export still wins, which is what a deploy relies on.
+try {
+  process.loadEnvFile(join(ROOT, ".env"));
+} catch {
+  // No .env, or it is unreadable. Shell variables still apply.
+}
 /** A folder counts as the pack if it has this inside it. */
 const MARKER = "Units";
 const REQUIRED = process.argv.includes("--require");
