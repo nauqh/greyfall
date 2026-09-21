@@ -17,7 +17,7 @@
 
 import type { UnitClass } from "@greyfall/engine";
 
-import { PACK } from "./art";
+import { packUrl } from "./art";
 
 export const FRAME_RATE = 10;
 
@@ -102,7 +102,7 @@ export const HEAL_EFFECT = { frame: 192, frames: 11 } as const;
  * art as the battle without importing anything that pulls in Phaser.
  */
 export function sheetUrl(side: Side, cls: UnitClass, anim: AnimName = "idle"): string {
-  return `${PACK}Units/${SIDE_DIR[side]}/${POSES[cls][resolveAnim(cls, anim)]!.file}`;
+  return packUrl(`Units/${SIDE_DIR[side]}/${POSES[cls][resolveAnim(cls, anim)]!.file}`);
 }
 
 export function unitKey(side: Side, cls: UnitClass, anim: AnimName): string {
@@ -133,17 +133,17 @@ export function anchorFor(cls: UnitClass, anim: AnimName): { x: number; y: numbe
 
 export function loadUnits(scene: Phaser.Scene): void {
   for (const side of ["a", "b"] as const) {
-    const dir = `${PACK}Units/${SIDE_DIR[side]}/`;
+    const dir = `Units/${SIDE_DIR[side]}/`;
     for (const cls of Object.keys(POSES) as UnitClass[]) {
       const size = BODY[cls].frame;
       for (const anim of Object.keys(POSES[cls]) as AnimName[]) {
-        scene.load.spritesheet(unitKey(side, cls, anim), dir + POSES[cls][anim]!.file, {
+        scene.load.spritesheet(unitKey(side, cls, anim), packUrl(dir + POSES[cls][anim]!.file), {
           frameWidth: size,
           frameHeight: size,
         });
       }
     }
-    scene.load.spritesheet(healKey(side), `${dir}Monk/Heal_Effect.png`, {
+    scene.load.spritesheet(healKey(side), packUrl(`${dir}Monk/Heal_Effect.png`), {
       frameWidth: HEAL_EFFECT.frame,
       frameHeight: HEAL_EFFECT.frame,
     });

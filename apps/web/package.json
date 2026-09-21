@@ -4,10 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node ../../scripts/fetch-assets.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prebuild": "node ../../scripts/fetch-assets.mjs"
   },
   "dependencies": {
     "@greyfall/engine": "workspace:*",

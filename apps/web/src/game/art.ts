@@ -16,10 +16,15 @@
 //     middle of a much larger frame, so the ground anchor has to come from
 //     the art, not from the frame centre.
 //
-// public/tiny-swords is a link to the pack checkout, so these are the pack's
-// own paths. The pack forbids redistribution, which is why it is not in git.
+// The paths below are the pack's own. What sits in front of them is one
+// setting: public/tiny-swords is where scripts/fetch-assets.mjs puts the pack,
+// and NEXT_PUBLIC_ASSET_BASE overrides the prefix for hosts that serve the app
+// from somewhere other than the root. Discord serves Activities behind a
+// /.proxy/ prefix, so that is the single knob to turn when the game moves
+// inside Discord. Everything that asks for a file goes through packUrl, CSS
+// included, so there is no second place to remember.
 
-export const PACK = "tiny-swords/";
+const ASSET_BASE = (process.env.NEXT_PUBLIC_ASSET_BASE ?? "/tiny-swords").replace(/\/+$/, "");
 
 /**
  * A nine-slice spread over a sheet with gaps between the pieces.
@@ -172,5 +177,5 @@ export const AVATARS = { file: "UI Elements/UI Elements/Human Avatars/Avatars_",
 export const ICONS = { file: "UI Elements/UI Elements/Icons/Icon_", count: 12 } as const;
 
 export function packUrl(path: string): string {
-  return PACK + path;
+  return `${ASSET_BASE}/${path}`;
 }

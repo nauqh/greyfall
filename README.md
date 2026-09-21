@@ -25,41 +25,69 @@ pnpm install
 The game draws entirely on [Tiny Swords](https://pixelfrog-assets.itch.io/tiny-swords)
 by Pixel Frog. The license allows commercial use and modification but **forbids
 redistribution**, so the files are not in this repository and never should be.
-You have to supply them yourself:
+Every machine fetches them for itself, into `apps/web/public/tiny-swords`:
 
-1. Download the pack from itch.io and unzip it somewhere. The result should be a
-   folder containing `Units/`, `Terrain/`, `UI Elements/`, `Buildings/` and
-   `Particle FX/`.
-2. Make it reachable at `apps/web/public/tiny-swords`, either as a link or a
-   plain copy:
+```bash
+# you already have the pack unzipped somewhere
+TINY_SWORDS_PATH=/path/to/unzipped/pack pnpm assets
 
-   ```bash
-   # git bash / macOS / Linux
-   ln -s /absolute/path/to/tiny-swords apps/web/public/tiny-swords
-   ```
+# or pull a zip, which is what a build host does
+TINY_SWORDS_URL=https://your-bucket/tiny-swords.zip pnpm assets
+```
 
-   ```powershell
-   # PowerShell, from the repo root
-   New-Item -ItemType SymbolicLink -Path apps\web\public\tiny-swords `
-            -Target C:\absolute\path\to\tiny-swords
-   ```
+`pnpm assets` is idempotent and runs automatically before `dev` and `build`. If
+the pack is already in place it does nothing. If no source is configured it
+prints these instructions and carries on, so `pnpm dev` still starts; you just
+get an unpainted game. Add `--require` to make it fail instead, which is what a
+deploy should do rather than shipping a blank board:
 
-   Copying the folder to that path works just as well if symlinks are awkward on
-   your machine. `.gitignore` excludes anything named `tiny-swords/` at any
-   depth, so neither a link nor a copy can be committed by accident.
+```bash
+pnpm assets --require
+```
+
+`.gitignore` excludes anything named `tiny-swords/` at any depth, so neither a
+link nor a copy can be committed by accident.
 
 If the pack is missing, the draft screen still works but loses all its art, and
 the battle screen is a blank blue rectangle with a browser console full of 404s
 for `/tiny-swords/...`. That is the symptom to recognise.
 
+### Where the assets live in production
+
+The pack is not baked into the image or the repo. A deploy fetches it at build
+time from somewhere private that you control (an S3 or R2 bucket, a release
+asset, anything that can hand back a zip over HTTPS), so the redistribution
+terms are never breached by a public artifact:
+
+```bash
+TINY_SWORDS_URL=https://your-bucket/tiny-swords.zip pnpm assets --require
+pnpm --filter @greyfall/web build
+```
+
+The files land in `apps/web/public/`, which Next serves as ordinary static
+files, so nothing else changes. CI itself needs no pack: the build never reads
+the art, because every reference to it is a runtime URL.
+
+### Serving from somewhere other than the root
+
+Everything that asks for a pack file goes through `packUrl`, whose prefix is
+`NEXT_PUBLIC_ASSET_BASE` (default `/tiny-swords`). A host that serves the app
+under a path sets that one variable. This is what a Discord Activity will need,
+since Discord proxies Activity requests behind a `/.proxy/` prefix:
+
+```bash
+NEXT_PUBLIC_ASSET_BASE=/.proxy/tiny-swords
+```
+
 ## Running
 
 ```bash
-pnpm --filter @greyfall/web dev   # the game; Next prints the port it took
+pnpm dev                          # the game; Next prints the port it took
 pnpm test                         # engine unit and property tests
 pnpm typecheck                    # both packages
 pnpm battle                       # print one battle in the terminal
 pnpm battle -- --seed 7 --moves   # a chosen seed, movement included
+pnpm assets                       # put the art pack in place
 ```
 
 The CLI needs no art, so it is the quickest way to check the engine works

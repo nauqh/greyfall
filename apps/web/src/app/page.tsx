@@ -82,6 +82,16 @@ function usePackSkin(): boolean {
         root.style.setProperty(`--${name}`, `url("${skins[i]!.url}")`);
         root.style.setProperty(`--${name}-slice`, skins[i]!.slice);
       }
+      // CSS cannot read an env var, and url() will not concatenate with a
+      // custom property, so the three pack images the stylesheet needs are
+      // handed over whole. That keeps packUrl the only place a base lives.
+      for (const [name, file] of [
+        ["pack-water", "Terrain/Tileset/Water Background color.png"],
+        ["pack-coin", "Terrain/Resources/Gold/Gold Resource/Gold_Resource.png"],
+        ["pack-grass", "grass_tile.png"],
+      ] as const) {
+        root.style.setProperty(`--${name}`, `url("${packUrl(file)}")`);
+      }
       setReady(true);
     })();
     return () => {

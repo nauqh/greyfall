@@ -38,7 +38,7 @@ body {
   font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
   /* The pack's water, tiled, so the page sits in the same sea as the arena. */
   background-color: #12324a;
-  background-image: url("/tiny-swords/Terrain/Tileset/Water Background color.png");
+  background-image: var(--pack-water);
   background-repeat: repeat;
   background-size: 64px 64px;
   image-rendering: pixelated;
@@ -100,7 +100,7 @@ h1.banner {
   height: 28px;
   vertical-align: -8px;
   /* The gold nugget sits at roughly (50,46) in the resource sheet. */
-  background-image: url("/tiny-swords/Terrain/Resources/Gold/Gold Resource/Gold_Resource.png");
+  background-image: var(--pack-coin);
   background-position: -50px -46px;
   background-repeat: no-repeat;
 }
@@ -262,7 +262,7 @@ h1.banner {
 .tile {
   position: absolute;
   inset: 0;
-  background-image: url("/tiny-swords/grass_tile.png");
+  background-image: var(--pack-grass);
   background-size: 84px 84px;
   background-position: center;
   border: 2px solid rgba(18, 12, 6, 0.5);
