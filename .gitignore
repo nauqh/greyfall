@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.next/
+*.tsbuildinfo
+
+# Agent session state: live, not history
+.agents/status/
+
+# Tiny Swords pack forbids redistribution - keep it out of the repo
+tiny-swords/
