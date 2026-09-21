@@ -1,0 +1,370 @@
+/* The draft screen, dressed in the same Tiny Swords art as the battle.
+ *
+ * The pack's panels and buttons are nine-slices, so they are applied with
+ * border-image: the decorated corners keep their pixel size while the edges
+ * and middle stretch to whatever the element needs. The sheets ship with gaps
+ * between the pieces, which border-image cannot read, so page.tsx composes
+ * them to contiguous data URLs first and hands them over as --paper,
+ * --woodTable and friends.
+ *
+ * Everything pixel is `image-rendering: pixelated`; anything else turns the
+ * art to mush. */
+
+:root {
+  color-scheme: dark;
+  --ink: #f4e4c1;
+  --ink-dim: #b6a489;
+  --ink-dark: #4a3a28;
+  --gold: #e8c06a;
+  --bad: #e0776b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+img,
+.coin,
+.tile,
+.portrait,
+.pawnart {
+  image-rendering: pixelated;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  /* The pack's water, tiled, so the page sits in the same sea as the arena. */
+  background-color: #12324a;
+  background-image: url("/tiny-swords/Terrain/Tileset/Water Background color.png");
+  background-repeat: repeat;
+  background-size: 64px 64px;
+  image-rendering: pixelated;
+}
+
+/* --- battle ------------------------------------------------------------- */
+
+.stage {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+/* Phaser is set to FIT, so it fills this box. The exact ratio is written on
+   the element by BattleView from the scene's own GAME_W/GAME_H; the value
+   here is only a pre-hydration fallback. max-height keeps a tall board inside
+   the viewport instead of pushing the page into a scroll. */
+.canvas {
+  width: 100%;
+  max-width: 1180px;
+  aspect-ratio: 960 / 830;
+  max-height: calc(100vh - 28px);
+}
+
+.canvas canvas {
+  display: block;
+}
+
+/* --- draft -------------------------------------------------------------- */
+
+.draft {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 28px 20px 64px;
+  text-align: center;
+}
+
+h1.banner {
+  margin: 0;
+  font-size: clamp(34px, 7vw, 58px);
+  letter-spacing: 0.22em;
+  color: var(--gold);
+  text-shadow:
+    0 3px 0 #4a2f12,
+    0 6px 14px rgba(0, 0, 0, 0.55);
+}
+
+.tagline {
+  margin: 6px 0 26px;
+  color: var(--ink);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.coin {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  vertical-align: -8px;
+  /* The gold nugget sits at roughly (50,46) in the resource sheet. */
+  background-image: url("/tiny-swords/Terrain/Resources/Gold/Gold Resource/Gold_Resource.png");
+  background-position: -50px -46px;
+  background-repeat: no-repeat;
+}
+
+/* --- roster ------------------------------------------------------------- */
+
+.roster {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 22px;
+}
+
+.card {
+  width: 182px;
+  min-height: 218px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 30px 26px 34px;
+  border: 0;
+  background: none;
+  color: var(--ink-dark);
+  font: inherit;
+  cursor: pointer;
+  transition: transform 90ms ease-out;
+}
+
+.skinned .card {
+  /* corners 64px in the composed sheet; keep them 1:1 so nothing blurs */
+  border-image: var(--paper) 64 fill / 64px stretch;
+}
+
+/* SpecialPaper is a dark slate panel with gold filigree, so the selected
+   card flips its text from ink-on-parchment to light-on-slate. */
+.skinned .card.selected {
+  border-image: var(--specialPaper) 64 fill / 64px stretch;
+  color: var(--ink);
+}
+
+.skinned .card.selected .blurb,
+.skinned .card.selected .stats {
+  color: #a8b4c4;
+}
+
+.skinned .card.selected .cost {
+  color: var(--gold);
+}
+
+.card:hover {
+  transform: translateY(-3px);
+}
+
+.card.selected {
+  transform: translateY(-3px);
+}
+
+.card.broke {
+  filter: grayscale(0.7) brightness(0.8);
+}
+
+.portrait {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 2px;
+  /* 256px portraits, shown at a clean quarter scale */
+  background-size: 64px 64px;
+  background-repeat: no-repeat;
+}
+
+.card .name {
+  font-size: 15px;
+  font-weight: bold;
+  letter-spacing: 0.06em;
+}
+
+.card .blurb {
+  font-size: 10px;
+  line-height: 1.3;
+  color: #6b5740;
+}
+
+.card .stats {
+  font-size: 10px;
+  color: #6b5740;
+}
+
+.card .cost {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 4px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #7a4f14;
+}
+
+.card .cost .coin {
+  width: 22px;
+  height: 22px;
+  vertical-align: -6px;
+  background-position: -52px -48px;
+}
+
+/* --- purse and board ---------------------------------------------------- */
+
+.purse {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.purse strong {
+  color: var(--gold);
+  font-size: 19px;
+}
+
+.purse .hint {
+  width: 100%;
+  font-size: 11px;
+  color: var(--ink-dim);
+}
+
+/* A plain square grid: five columns by three rows, no stagger. */
+.board {
+  display: inline-block;
+  padding: 20px 22px 24px;
+  margin-bottom: 8px;
+  background: rgba(10, 26, 36, 0.34);
+  border-radius: 12px;
+  box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.35);
+}
+
+.boardRow {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.boardRow + .boardRow {
+  margin-top: 4px;
+}
+
+.cell {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  cursor: pointer;
+}
+
+/* The grass cell itself. The pack's grass tile is 96px; drawn at 84 it keeps
+   its texture without a fractional scale showing seams. */
+.tile {
+  position: absolute;
+  inset: 0;
+  background-image: url("/tiny-swords/grass_tile.png");
+  background-size: 84px 84px;
+  background-position: center;
+  border: 2px solid rgba(18, 12, 6, 0.5);
+  filter: brightness(0.94);
+  transition: filter 90ms ease-out;
+}
+
+.cell:hover .tile {
+  filter: brightness(1.14);
+}
+
+/* The unit standing on the cell: frame 0 of the same idle sheet the battle
+   animates, at half scale, stood on its ground anchor. The wrapper is a
+   zero-size point at the cell centre, so `left/top` can be the anchor offset
+   straight from the sheet metrics. */
+.pawnwrap {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.pawnart {
+  position: absolute;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  transform: scale(0.5);
+  transform-origin: 0 0;
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.45));
+}
+
+/* --- actions ------------------------------------------------------------ */
+
+.error {
+  margin: 6px 0;
+  color: var(--bad);
+  font-size: 13px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.btn {
+  width: 208px;
+  height: 104px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 17px;
+  letter-spacing: 0.06em;
+  text-shadow: 0 2px 0 #2a1f16;
+  cursor: pointer;
+  transition: transform 80ms ease-out;
+}
+
+.skinned .btn.blue {
+  border-image: var(--blueButton) 64 fill / 52px 64px stretch;
+}
+
+.skinned .btn.red {
+  border-image: var(--redButton) 64 fill / 52px 64px stretch;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(2px);
+}
+
+.btn:disabled {
+  filter: grayscale(0.8) brightness(0.65);
+  cursor: default;
+}
+
+/* Until the nine-slices finish composing, keep the controls legible. */
+.draft:not(.skinned) .card,
+.draft:not(.skinned) .btn {
+  background: rgba(38, 43, 54, 0.9);
+  border: 1px solid #3a4152;
+  border-radius: 6px;
+  color: var(--ink);
+}
+
+@media (max-width: 560px) {
+  .cell {
+    width: 60px;
+    height: 60px;
+  }
+  .tile {
+    background-size: 60px 60px;
+  }
+  .board {
+    padding: 12px;
+  }
+}
