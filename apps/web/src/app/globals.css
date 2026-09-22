@@ -17,6 +17,19 @@ body {
   font-family: "Gochi Hand", "Comic Sans MS", cursive;
   /* Flat teal sea, as in the reference. */
   background-color: #47aba9;
+  /* The kit's arrow and hand, cropped to their art and hotspot-pinned. */
+  cursor: url("/cursor.png") 0 0, default;
+}
+
+button:not(:disabled),
+[role="button"],
+a {
+  cursor: url("/cursor-pointer.png") 4 0, pointer;
+}
+
+input,
+textarea {
+  cursor: text;
 }
 
 .stage {
@@ -149,7 +162,6 @@ body {
   background: none;
   border: 22px solid transparent;
   border-image: url("/tiny-swords/ui/blueButton.png") 64 fill / 22px stretch;
-  cursor: pointer;
   transition: transform 80ms ease-out;
 }
 
@@ -189,7 +201,6 @@ body {
   font: inherit;
   font-size: 15px;
   text-decoration: underline;
-  cursor: pointer;
   opacity: 0.85;
 }
 

@@ -133,6 +133,9 @@ export function ribbon(
     .setScale(scale);
 }
 
+/** The pack's hand cursor, cropped to the art, fingertip hotspot at (4, 0). */
+export const HAND = 'url("/cursor-pointer.png") 4 0, pointer';
+
 /** Shared by every label, so the UI reads as one thing. */
 export const FONT: Phaser.Types.GameObjects.Text.TextStyle = {
   fontFamily: '"Gochi Hand", cursive',
@@ -182,13 +185,13 @@ export function button(
   // Hover and press both show the pressed sheet, sunk 2px.
   const press = (on: boolean): void => {
     scene.tweens.killTweensOf(box);
-    scene.tweens.add({ targets: box, y: y + (on ? 2 : 0), duration: 120, ease: "Sine.easeInOut" });
+    scene.tweens.add({ targets: box, y: y + (on ? 2 : 0), duration: 140, ease: "Sine.easeInOut" });
     face.setVisible(!on);
     pressed.setVisible(on);
     text_.setY(on ? 2 : -1);
   };
 
-  box.setInteractive({ useHandCursor: true })
+  box.setInteractive({ cursor: HAND })
     .on("pointerover", () => press(true))
     .on("pointerout", () => press(false))
     .on("pointerup", () => {

@@ -16,6 +16,7 @@ import {
   BALANCE,
   UNIT_CLASSES,
   armyCost,
+  battleCol,
   validateArmy,
   type BattleEvent,
   type BattleResult,
@@ -37,6 +38,7 @@ import {
   loadUnits,
   makeAnims,
   playPose,
+  unitKey,
 } from "./sprites";
 import {
   DEPTH,
@@ -50,7 +52,7 @@ import {
   scatterDecor,
   type Rect,
 } from "./terrain";
-import { PackBar, button, label, loadPanels, panel, ribbon } from "./ui";
+import { HAND, PackBar, button, label, loadPanels, panel, ribbon } from "./ui";
 
 const COLS = BALANCE.board.battleCols;
 const ROWS = BALANCE.board.battleRows;
@@ -135,10 +137,36 @@ interface UnitView {
   shownHp: number;
 }
 
+/** What the scene needs from a room it does not itself own. */
+export interface DuelStatus {
+  msRemaining: number | null;
+  youLocked: boolean;
+  theyLocked: boolean;
+  opponent: string | null;
+  /** Set once the server has resolved; the scene plays it back. */
+  battle: BattleResult | null;
+}
+
+export interface DuelHooks {
+  /** Every board change, so the deadline always has something to resolve. */
+  onArmyChange: (army: Placement[]) => void;
+  onLock: () => void;
+  /** Read every frame while drafting; no events, no imperative handle. */
+  status: () => DuelStatus;
+}
+
 export interface BattleLauncher {
   /** Null while drafting: the scene collects the army, then calls onDraft. */
   result: BattleResult | null;
   seed: number | string;
+  /**
+   * Which side of the board is the player's. Solo is always side A; in a duel
+   * the room decides, and seat B sees the board mirrored so that the half it
+   * drafted on is still the half on the left.
+   */
+  mySide?: Side;
+  /** Present only in a duel: the server owns the army and the result. */
+  duel?: DuelHooks;
   onDraft: (army: Placement[], seed: number | string) => BattleResult;
   /**
    * Both hand back what the next round needs, rather than tearing the page's
@@ -157,7 +185,7 @@ export class BattleScene extends Phaser.Scene {
   private units = new Map<string, UnitView>();
   private drafting = false;
   private draftArmy: Placement[] = [];
-  private picked: UnitClass = "warrior";
+  private picked: UnitClass | null = null;
   private draftBox!: Phaser.GameObjects.Container;
   private cellZone!: Phaser.GameObjects.Zone;
   private goldText!: Phaser.GameObjects.Text;
@@ -175,6 +203,12 @@ export class BattleScene extends Phaser.Scene {
   /** Held until the count finishes. */
   private started = false;
   private speed = 1;
+  private mySide: Side = "a";
+  /** Seat B's view of the board is flipped, so drafting and battle agree. */
+  private mirrored = false;
+  private duel: DuelHooks | null = null;
+  private lockBtn: Phaser.GameObjects.Container | null = null;
+  private duelText: Phaser.GameObjects.Text | null = null;
   private bars: Record<Side, PackBar | null> = { a: null, b: null };
   private counts: Record<Side, Phaser.GameObjects.Text | null> = { a: null, b: null };
   private clockText: Phaser.GameObjects.Text | null = null;
@@ -190,6 +224,11 @@ export class BattleScene extends Phaser.Scene {
     if (this.launcher) this.rounds += 1;
     this.launcher = data;
     this.result = data.result;
+    this.mySide = data.mySide ?? "a";
+    this.mirrored = this.mySide === "b";
+    this.duel = data.duel ?? null;
+    this.lockBtn = null;
+    this.duelText = null;
     this.units = new Map();
     this.queue = [];
     this.simTime = 0;
@@ -199,7 +238,7 @@ export class BattleScene extends Phaser.Scene {
     this.speed = 1;
     this.drafting = false;
     this.draftArmy = [];
-    this.picked = "warrior";
+    this.picked = null;
     this.cards = new Map();
     this.placed = new Map();
     this.clockText = null;
@@ -340,8 +379,26 @@ export class BattleScene extends Phaser.Scene {
 
     // 104 is under the sheet's own 64px corners, so the frame squashes a
     // little rather than stretching. Any shorter and it reads as a strip.
-    const start = button(this, 900, 624, 190, 104, "Start", "blue", () => this.startFromDraft());
-    this.draftBox.add(start);
+    // Solo starts the fight itself. A duel hands the army over and waits for
+    // the server, which starts it the moment both seats are locked - the
+    // deadline is a floor under a stalling opponent, never something two
+    // ready players sit through.
+    this.lockBtn = this.duel
+      ? button(this, 900, 624, 190, 104, "Lock in", "blue", () => this.duel!.onLock())
+      : button(this, 900, 624, 190, 104, "Start", "blue", () => this.startFromDraft());
+    this.draftBox.add(this.lockBtn);
+
+    if (this.duel) {
+      this.duelText = label(this, 900, 512, "", {
+        fontSize: "15px",
+        color: "#7a4f14",
+        strokeThickness: 0,
+        align: "center",
+      });
+      this.draftBox.add(this.duelText);
+      how.setY(548);
+      this.refreshDuel();
+    }
 
     // In from the right, the way it went out. Only on a second round: the
     // first draft is what the screen opens on, and sliding that in would just
@@ -351,16 +408,21 @@ export class BattleScene extends Phaser.Scene {
       this.tweens.add({ targets: this.draftBox, x: 0, duration: 420, ease: "Sine.easeOut" });
     }
 
-    // Own half only: the enemy half sits under the panel.
+    // Own half only, and it is always the left half of the screen: the enemy
+    // half sits under the panel whichever side of the engine you hold.
     const zx = ORIGIN_X - TILE / 2;
     const zy = ORIGIN_Y - TILE / 2;
     this.cellZone = this.add
       .zone(zx + (COLS / 2) * (TILE / 2), zy + BOARD_H / 2, (COLS / 2) * TILE, BOARD_H)
       .setInteractive()
       .on("pointerdown", (p: Phaser.Input.Pointer) => {
-        const col = Math.floor((p.worldX - zx) / TILE);
+        const screenCol = Math.floor((p.worldX - zx) / TILE);
         const row = Math.floor((p.worldY - zy) / TILE);
-        if (col >= 0 && col < COLS / 2 && row >= 0 && row < ROWS) this.toggleCell(col, row);
+        if (screenCol < 0 || screenCol >= COLS / 2 || row < 0 || row >= ROWS) return;
+        // Screen column to battle column to your own half's column. For side
+        // A that is the identity; for side B it is the flip, twice.
+        const battle = this.mirrored ? COLS - 1 - screenCol : screenCol;
+        this.toggleCell(this.myCol(battle), row);
       });
 
     this.refreshDraft();
@@ -426,7 +488,7 @@ export class BattleScene extends Phaser.Scene {
     box.setSize(236, 188);
     const card: DraftCard = { box, cy, paper, special, name, ink: texts, cost };
     box
-      .setInteractive({ useHandCursor: true })
+      .setInteractive({ cursor: HAND })
       .on("pointerup", () => {
         this.picked = cls;
         this.refreshDraft();
@@ -435,6 +497,42 @@ export class BattleScene extends Phaser.Scene {
       .on("pointerout", () => this.refreshDraft());
     this.cards.set(cls, card);
     return box;
+  }
+
+  /**
+   * The duel's own half of the draft screen, read straight off the room every
+   * frame. No events and no handle into the scene: the poll owns the truth
+   * and this just renders whatever it last said.
+   */
+  private refreshDuel(): void {
+    const duel = this.duel;
+    if (!duel || !this.duelText) return;
+    const st = duel.status();
+
+    // The result arriving is the signal to play it. Restarting with it in
+    // hand runs the same playback path a solo battle does.
+    if (st.battle) {
+      this.duel = null;
+      this.restart({ result: st.battle });
+      return;
+    }
+
+    const them = st.opponent ?? "your opponent";
+    const clock = st.msRemaining === null ? "" : `${Math.ceil(st.msRemaining / 1000)}s left`;
+    this.duelText.setText(
+      st.youLocked
+        ? `Locked in. Waiting for ${them}.\n${clock}`
+        : st.theyLocked
+          ? `${them} is locked in.\n${clock}`
+          : clock,
+    );
+
+    // Locked means locked: the army on the server is the one that fights.
+    if (st.youLocked && this.lockBtn?.input?.enabled) {
+      this.lockBtn.disableInteractive();
+      this.lockBtn.setAlpha(0.55);
+      this.cellZone.disableInteractive();
+    }
   }
 
   /** The old CSS translateY transition, as a tween. */
@@ -457,16 +555,18 @@ export class BattleScene extends Phaser.Scene {
       this.placed.delete(key);
       this.draftArmy = this.draftArmy.filter((p) => !(p.col === col && p.row === row));
     } else {
+      if (this.picked === null) return;
       const next: Placement[] = [...this.draftArmy, { class: this.picked, col, row }];
       if (armyCost(next) > BALANCE.budget || next.length > BALANCE.board.maxUnits) return;
       this.draftArmy = next;
-      const { x, y } = this.spriteXY(col, row);
+      const { x, y } = this.spriteXY(this.myCol(col), row);
       const shadow = addShadow(this, x, y, this.picked === "lancer" ? 0.8 : 0.62);
-      const sprite = this.add.sprite(x, y, animKey("a", this.picked, "idle"));
-      playPose(sprite, "a", this.picked, "idle");
+      const sprite = this.add.sprite(x, y, unitKey(this.mySide, this.picked, "idle"));
+      playPose(sprite, this.mySide, this.picked, "idle", this.mirrored);
       sprite.setDepth(DEPTH.unit + y);
       this.placed.set(key, { sprite, shadow });
     }
+    this.duel?.onArmyChange(this.draftArmy);
     this.refreshDraft();
   }
 
@@ -580,6 +680,10 @@ export class BattleScene extends Phaser.Scene {
     }
     for (const bar of [this.bars.a, this.bars.b]) bar?.tick(delta);
 
+    if (this.drafting) {
+      this.refreshDuel();
+      return;
+    }
     if (!this.started || this.finished) return;
     this.simTime += delta * this.speed;
     const tick = Math.floor(this.simTime / TICK_MS);
@@ -598,8 +702,15 @@ export class BattleScene extends Phaser.Scene {
   // --- board ---------------------------------------------------------------
 
   /** The true cell centre. Events carry battle-grid coordinates directly. */
+  /** Takes a battle column, 0 on the far left of the shared 10-wide board. */
   private tileXY(col: number, row: number): { x: number; y: number } {
-    return { x: ORIGIN_X + col * TILE, y: ORIGIN_Y + row * TILE };
+    const c = this.mirrored ? COLS - 1 - col : col;
+    return { x: ORIGIN_X + c * TILE, y: ORIGIN_Y + row * TILE };
+  }
+
+  /** Your own half's column, in the shared board's coordinates. */
+  private myCol(col: number): number {
+    return battleCol(this.mySide, col);
   }
 
   /** Where a sprite actually renders: the cell centre, nudged down to balance its height. */
@@ -615,8 +726,9 @@ export class BattleScene extends Phaser.Scene {
     for (let row = 0; row < ROWS; row++) {
       for (let col = 0; col < COLS; col++) {
         const { x, y } = this.tileXY(col, row);
-        // Shade the left half, so you can see which is yours.
-        const mine = col < COLS / 2;
+        // Shade your own half. It always draws on the left, because the board
+        // is mirrored for whoever holds side B.
+        const mine = (this.mySide === "a") === col < COLS / 2;
         g.fillStyle(mine ? 0x2f4f2a : 0x4a3327, mine ? 0.16 : 0.13);
         g.fillRect(x - w / 2, y - w / 2, w, w);
         g.lineStyle(1.5, 0x1f2a18, 0.32);
@@ -637,8 +749,8 @@ export class BattleScene extends Phaser.Scene {
     for (const snap of this.result!.units) {
       const { x, y } = this.spriteXY(snap.col, snap.row);
       const shadow = addShadow(this, x, y, snap.class === "lancer" ? 0.8 : 0.62);
-      const sprite = this.add.sprite(x, y, animKey(snap.side, snap.class, "idle"));
-      playPose(sprite, snap.side, snap.class, "idle");
+      const sprite = this.add.sprite(x, y, unitKey(snap.side, snap.class, "idle"));
+      playPose(sprite, snap.side, snap.class, "idle", this.mirrored);
       sprite.setDepth(DEPTH.unit + y);
 
       const pip = this.add.graphics().setDepth(DEPTH.unit + y + 1);
@@ -654,7 +766,7 @@ export class BattleScene extends Phaser.Scene {
 
       // Attacks are one-shots; back to idle when they finish.
       sprite.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
-        if (view.alive) playPose(sprite, snap.side, snap.class, "idle");
+        if (view.alive) playPose(sprite, snap.side, snap.class, "idle", this.mirrored);
       });
       this.units.set(snap.id, view);
     }
@@ -670,7 +782,7 @@ export class BattleScene extends Phaser.Scene {
     const x = view.sprite.x - w / 2;
     const y = view.sprite.y - BODY_HEIGHT[view.snap.class] - 12;
     const frac = Math.max(0, view.shownHp / view.snap.maxHp);
-    const mine = view.snap.side === "a";
+    const mine = view.snap.side === this.mySide;
     view.pip.clear();
     view.pip.fillStyle(0x1a1208, 0.85).fillRect(x - 1, y - 1, w + 2, h + 2);
     view.pip
@@ -713,29 +825,32 @@ export class BattleScene extends Phaser.Scene {
       return [...counts].map(([c, n]) => `${n} ${CLASS_NAME[c]}`).join("  ");
     };
 
-    // Each side hugs its own board edge: enemy to the right, player to the
-    // left, count label trailing outward from the bar.
+    // Yours along the bottom, theirs along the top, count label trailing
+    // outward from the bar. Which engine side that is depends on the seat.
     const BAR_W = 650;
+    const mine = this.mySide;
+    const foe: Side = mine === "a" ? "b" : "a";
+    const foeName = this.duel?.status().opponent ?? "THE GREY HOST";
 
     const topY = 58;
     const foeX = ISLAND.x1 - BAR_W / 2;
     ribbon(this, foeX, topY, BAR_W, 0.8).setDepth(DEPTH.hud);
-    label(this, foeX, topY - 2, `THE GREY HOST   ${roster("b")}`, {
+    label(this, foeX, topY - 2, `${foeName.toUpperCase()}   ${roster(foe)}`, {
       fontSize: "17px",
     }).setDepth(DEPTH.hud + 2);
-    this.bars.b = new PackBar(this, foeX, topY + 44, BAR_W, 0.75, 0xd9544a, DEPTH.hud + 1);
-    this.counts.b = label(this, ISLAND.x1 - BAR_W - 16, topY + 44, "", { fontSize: "13px" })
+    this.bars[foe] = new PackBar(this, foeX, topY + 44, BAR_W, 0.75, 0xd9544a, DEPTH.hud + 1);
+    this.counts[foe] = label(this, ISLAND.x1 - BAR_W - 16, topY + 44, "", { fontSize: "13px" })
       .setOrigin(1, 0.5)
       .setDepth(DEPTH.hud + 2);
 
     const bottomY = 606;
     const myX = ISLAND.x0 + BAR_W / 2;
     ribbon(this, myX, bottomY - 34, BAR_W, 0.8).setDepth(DEPTH.hud);
-    label(this, myX, bottomY - 36, `YOUR WARBAND   ${roster("a")}`, {
+    label(this, myX, bottomY - 36, `YOUR WARBAND   ${roster(mine)}`, {
       fontSize: "17px",
     }).setDepth(DEPTH.hud + 2);
-    this.bars.a = new PackBar(this, myX, bottomY + 14, BAR_W, 0.75, 0x86d15e, DEPTH.hud + 1);
-    this.counts.a = label(this, ISLAND.x0 + BAR_W + 16, bottomY + 14, "", { fontSize: "13px" })
+    this.bars[mine] = new PackBar(this, myX, bottomY + 14, BAR_W, 0.75, 0x86d15e, DEPTH.hud + 1);
+    this.counts[mine] = label(this, ISLAND.x0 + BAR_W + 16, bottomY + 14, "", { fontSize: "13px" })
       .setOrigin(0, 0.5)
       .setDepth(DEPTH.hud + 2);
 
@@ -744,7 +859,7 @@ export class BattleScene extends Phaser.Scene {
       .image(GAME_W - 70, bottomY, "smallButton")
       .setScale(0.8)
       .setDepth(DEPTH.hud + 1)
-      .setInteractive({ useHandCursor: true });
+      .setInteractive({ cursor: HAND });
     const speedText = label(this, GAME_W - 70, bottomY - 4, "1x", { fontSize: "17px" }).setDepth(
       DEPTH.hud + 2,
     );
@@ -805,7 +920,7 @@ export class BattleScene extends Phaser.Scene {
       ease: "Sine.easeInOut",
       onUpdate: () => view.sprite.setDepth(DEPTH.unit + view.sprite.y),
       onComplete: () => {
-        if (view.alive) playPose(view.sprite, view.snap.side, view.snap.class, "idle");
+        if (view.alive) playPose(view.sprite, view.snap.side, view.snap.class, "idle", this.mirrored);
       },
     });
   }
@@ -873,7 +988,7 @@ export class BattleScene extends Phaser.Scene {
     });
     // One soft nudge; a 45ms double-shake read as jitter.
     const home = target.sprite.x;
-    const away = target.sprite.x + (target.snap.side === "a" ? -5 : 5);
+    const away = target.sprite.x + (target.snap.side === this.mySide ? -5 : 5);
     this.tweens.add({
       targets: target.sprite,
       x: away,
@@ -915,7 +1030,7 @@ export class BattleScene extends Phaser.Scene {
     // Grey, drift up, fade, dust puff: the PRD death beat.
     view.sprite.clearTint();
     view.sprite.setTint(0x6f6f6f);
-    playPose(view.sprite, view.snap.side, view.snap.class, "idle");
+    playPose(view.sprite, view.snap.side, view.snap.class, "idle", this.mirrored);
     this.tweens.add({
       targets: [view.sprite, view.shadow],
       y: `-=26`,
@@ -964,18 +1079,24 @@ export class BattleScene extends Phaser.Scene {
       { fontSize: "14px", color: "#5a4632", strokeThickness: 0 },
     ).setDepth(DEPTH.hud + 12);
 
-    const again = button(this, GAME_W / 2 - 100, GAME_H / 2 + 88, 208, 136, "Rematch", "blue", () =>
-      this.restart(this.launcher.onRematch()),
-    )
-      .setScale(0.85)
-      .setDepth(DEPTH.hud + 12);
-    const fresh = button(this, GAME_W / 2 + 100, GAME_H / 2 + 88, 208, 136, "New army", "red", () =>
-      this.restart({ ...this.launcher.onNewArmy(), result: null }),
-    )
-      .setScale(0.85)
-      .setDepth(DEPTH.hud + 12);
+    // A duel's rematch belongs to the room, not to this client, so the page
+    // offers it instead and these two are left off.
+    const buttons = this.duel
+      ? []
+      : [
+          button(this, GAME_W / 2 - 100, GAME_H / 2 + 88, 208, 136, "Rematch", "blue", () =>
+            this.restart(this.launcher.onRematch()),
+          )
+            .setScale(0.85)
+            .setDepth(DEPTH.hud + 12),
+          button(this, GAME_W / 2 + 100, GAME_H / 2 + 88, 208, 136, "New army", "red", () =>
+            this.restart({ ...this.launcher.onNewArmy(), result: null }),
+          )
+            .setScale(0.85)
+            .setDepth(DEPTH.hud + 12),
+        ];
 
-    for (const o of [veil, card, title, detail, again, fresh]) {
+    for (const o of [veil, card, title, detail, ...buttons]) {
       o.setAlpha(0);
       this.tweens.add({ targets: o, alpha: 1, duration: 260 });
     }
