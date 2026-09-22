@@ -194,3 +194,7 @@ A task is done when:
 - your status file is deleted, and the user got the summary of what landed.
 
 If a check failed, say so and show the output. If you skipped one, say that too.
+
+## Commenting
+
+Default to writing no comments. Never write multi-paragraph docstrings or multi-line comment blocks, one short line max. Only comment non-obvious "why" decisions, never self-evident "what".
