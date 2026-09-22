@@ -63,10 +63,27 @@ stay reproducible and a rollback is one variable. Leave the bucket private.
 
 ### When you deploy
 
-Set `TINY_SWORDS_S3` plus AWS credentials in the host's environment variables
-(`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`). The `prebuild`
-hook runs before `next build`, so the pack is in `public/` by the time Next
-copies it into the output, and is then served as ordinary static files.
+Set `TINY_SWORDS_S3` plus AWS credentials in the host's environment variables,
+since a build container has no `~/.aws`:
+
+```
+TINY_SWORDS_S3=s3://greyfall-assets/tiny-swords/tiny-swords-v1.zip
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+AWS_REGION=ap-southeast-1
+```
+
+`AWS_REGION` is not strictly required - tested with no `~/.aws` and no region
+set, the SDK still fetched the object, falling back to a default region and
+letting S3 redirect. Set it anyway: it saves a round trip and does not lean on
+behaviour worth depending on.
+
+Give the deploy its own IAM user scoped to `s3:GetObject` on that one key.
+Build environment variables are readable by anyone with project access.
+
+The `prebuild` hook runs before `next build`, so the pack is in `public/` by
+the time Next copies it into the output, and is then served as static files.
+On Vercel, set the project's Root Directory to `apps/web`.
 
 CI needs none of this: the build never reads the art, because every reference
 to it is a runtime URL.
