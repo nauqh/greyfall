@@ -1,8 +1,10 @@
 // Battle playback. The engine decided everything; this only replays its log.
 //
-// The board runs UP the screen, 5 columns by 6 rows of square cells, your
-// army on the near half. Units keep the pack's native pixel scale and the
-// canvas is scaled up by Phaser FIT, so the art never resamples.
+// The board runs LEFT to RIGHT, 10 columns by 3 rows of square cells, your
+// army on the left. This matches the art: only the Lancer has a vertical
+// attack pose, so every class needs to fight sideways to look right. Units
+// keep the pack's native pixel scale and the canvas is scaled up by Phaser
+// FIT, so the art never resamples.
 //
 // Playback waits for a 3-2-1 count, so both armies can be read first.
 
@@ -17,16 +19,7 @@ import {
 import * as Phaser from "phaser";
 
 import { FX, packUrl } from "./art";
-import {
-  BODY,
-  BODY_HEIGHT,
-  animKey,
-  healKey,
-  loadUnits,
-  makeAnims,
-  playPose,
-  resolveAnim,
-} from "./sprites";
+import { BODY, BODY_HEIGHT, animKey, healKey, loadUnits, makeAnims, playPose } from "./sprites";
 import {
   DEPTH,
   addShadow,
@@ -47,24 +40,29 @@ const ROWS = BALANCE.board.battleRows;
 /** A 192px unit frame carries an ~80px body, so 84 fills a cell. */
 const TILE = 84;
 
-export const GAME_W = 960;
-export const GAME_H = 830;
+export const GAME_W = 1200;
+export const GAME_H = 720;
 
-/**
- * Whole 64px terrain tiles. The side margins hold the scenery, so they stay
- * wide enough for a tree. The vertical placement is set by the far army plate:
- * a row 0 unit carries its pip ~100px above its cell centre, so the board has
- * to start low enough to clear it.
- */
-const ISLAND: Rect = { x0: 128, y0: 168, x1: 832, y1: 744 };
+/** Whole 64px terrain tiles. The margins hold the scenery and clear the HUD plates. */
+const ISLAND: Rect = { x0: 90, y0: 178, x1: 1110, y1: 510 };
 
 const BOARD_W = COLS * TILE;
 const BOARD_H = ROWS * TILE;
-/** Centre of cell (0, 0). */
+/** Centre of cell (0, 0), the true grid position - drawGrid and movement use this. */
 const ORIGIN_X = (GAME_W - BOARD_W) / 2 + TILE / 2;
 const ORIGIN_Y = ISLAND.y0 + (ISLAND.y1 - ISLAND.y0 - BOARD_H) / 2 + TILE / 2;
-/** Where the two front rows meet. */
-const MID_Y = ORIGIN_Y + (ROWS / 2 - 0.5) * TILE;
+/** Where the two front columns meet - the clash point, and the countdown's home. */
+const MID_X = ORIGIN_X + (COLS / 2 - 0.5) * TILE;
+const MID_Y = ORIGIN_Y + ((ROWS - 1) / 2) * TILE;
+
+/**
+ * A unit's body is taller than a cell (up to 89px against an 84px tile), so
+ * feet-at-centre leaves it looming entirely above the tile with nothing
+ * below. Nudging the sprite (not the cell, which stays at the true grid
+ * position) down by this much balances it without pushing the feet below
+ * the tile.
+ */
+const SPRITE_NUDGE = 18;
 
 const TICK_MS = 1000 / BALANCE.tickRate;
 /**
@@ -196,7 +194,7 @@ export class BattleScene extends Phaser.Scene {
 
     const beat = (): void => {
       const last = i === steps.length - 1;
-      const tag = label(this, GAME_W / 2, MID_Y, steps[i]!, {
+      const tag = label(this, MID_X, MID_Y, steps[i]!, {
         fontSize: last ? "62px" : "92px",
         color: last ? "#f4cf6b" : "#fdf6e6",
         stroke: "#1b1208",
@@ -262,9 +260,15 @@ export class BattleScene extends Phaser.Scene {
 
   // --- board ---------------------------------------------------------------
 
-  /** Events already carry battle-grid coordinates, so no side mapping here. */
+  /** The true cell centre. Events carry battle-grid coordinates directly. */
   private tileXY(col: number, row: number): { x: number; y: number } {
     return { x: ORIGIN_X + col * TILE, y: ORIGIN_Y + row * TILE };
+  }
+
+  /** Where a sprite actually renders: the cell centre, nudged down to balance its height. */
+  private spriteXY(col: number, row: number): { x: number; y: number } {
+    const { x, y } = this.tileXY(col, row);
+    return { x, y: y + SPRITE_NUDGE };
   }
 
   private drawGrid(): void {
@@ -274,29 +278,27 @@ export class BattleScene extends Phaser.Scene {
     for (let row = 0; row < ROWS; row++) {
       for (let col = 0; col < COLS; col++) {
         const { x, y } = this.tileXY(col, row);
-        // Shade the near half, so you can see which is yours.
-        const mine = row >= ROWS / 2;
+        // Shade the left half, so you can see which is yours.
+        const mine = col < COLS / 2;
         g.fillStyle(mine ? 0x2f4f2a : 0x4a3327, mine ? 0.16 : 0.13);
         g.fillRect(x - w / 2, y - w / 2, w, w);
         g.lineStyle(1.5, 0x1f2a18, 0.32);
         g.strokeRect(x - w / 2, y - w / 2, w, w);
       }
     }
-    // Where the two front rows meet.
+    // Where the two front columns meet.
     g.lineStyle(2, 0xe0b64f, 0.24);
     g.beginPath();
-    g.moveTo(ISLAND.x0 + 24, MID_Y);
-    g.lineTo(ISLAND.x1 - 24, MID_Y);
+    g.moveTo(MID_X, ISLAND.y0 + 24);
+    g.lineTo(MID_X, ISLAND.y1 - 24);
     g.strokePath();
   }
 
   // --- views ---------------------------------------------------------------
 
   private spawnArmies(): void {
-    // Far rows first, so nearer units overlap them.
-    const order = [...this.launcher.result.units].sort((a, b) => a.row - b.row);
-    for (const snap of order) {
-      const { x, y } = this.tileXY(snap.col, snap.row);
+    for (const snap of this.launcher.result.units) {
+      const { x, y } = this.spriteXY(snap.col, snap.row);
       const shadow = addShadow(this, x, y, snap.class === "lancer" ? 0.8 : 0.62);
       const sprite = this.add.sprite(x, y, animKey(snap.side, snap.class, "idle"));
       playPose(sprite, snap.side, snap.class, "idle");
@@ -375,36 +377,46 @@ export class BattleScene extends Phaser.Scene {
     };
 
     // Far side, on the water above the island.
-    panel(this, "paper", GAME_W / 2, 62, 620, 76).setDepth(DEPTH.hud);
-    label(this, GAME_W / 2, 42, `THE GREY HOST   ${roster("b")}`, {
+    const topY = 58;
+    panel(this, "paper", GAME_W / 2, topY, 900, 76).setDepth(DEPTH.hud);
+    label(this, GAME_W / 2, topY - 20, `THE GREY HOST   ${roster("b")}`, {
       fontSize: "13px",
       color: "#5a4632",
       strokeThickness: 0,
     }).setDepth(DEPTH.hud + 2);
-    this.bars.b = new PackBar(this, GAME_W / 2 - 34, 76, 400, 1.5, 0xd9544a, DEPTH.hud + 1);
-    this.counts.b = label(this, GAME_W / 2 + 208, 76, "", {
+    this.bars.b = new PackBar(this, GAME_W / 2 - 80, topY + 14, 650, 1.5, 0xd9544a, DEPTH.hud + 1);
+    this.counts.b = label(this, GAME_W / 2 + 340, topY + 14, "", {
       fontSize: "13px",
       color: "#5a4632",
       strokeThickness: 0,
     }).setDepth(DEPTH.hud + 2);
 
     // Near side, on a wood table below the island.
-    panel(this, "woodTable", GAME_W / 2, 756, 660, 132).setDepth(DEPTH.hud);
-    label(this, GAME_W / 2, 726, `YOUR WARBAND   ${roster("a")}`, {
+    const bottomY = 606;
+    panel(this, "woodTable", GAME_W / 2, bottomY, 900, 132).setDepth(DEPTH.hud);
+    label(this, GAME_W / 2, bottomY - 34, `YOUR WARBAND   ${roster("a")}`, {
       fontSize: "14px",
     }).setDepth(DEPTH.hud + 2);
-    this.bars.a = new PackBar(this, GAME_W / 2 - 34, 756, 400, 1.5, 0x86d15e, DEPTH.hud + 1);
-    this.counts.a = label(this, GAME_W / 2 + 208, 756, "", { fontSize: "13px" }).setDepth(
+    this.bars.a = new PackBar(
+      this,
+      GAME_W / 2 - 80,
+      bottomY + 14,
+      650,
+      1.5,
+      0x86d15e,
+      DEPTH.hud + 1,
+    );
+    this.counts.a = label(this, GAME_W / 2 + 340, bottomY + 14, "", { fontSize: "13px" }).setDepth(
       DEPTH.hud + 2,
     );
 
     // The kit small square button is a single image, not a nine-slice.
     const speedBtn = this.add
-      .image(GAME_W - 88, 752, "smallButton")
+      .image(GAME_W - 70, bottomY, "smallButton")
       .setScale(0.8)
       .setDepth(DEPTH.hud + 1)
       .setInteractive({ useHandCursor: true });
-    const speedText = label(this, GAME_W - 88, 748, "1x", { fontSize: "17px" }).setDepth(
+    const speedText = label(this, GAME_W - 70, bottomY - 4, "1x", { fontSize: "17px" }).setDepth(
       DEPTH.hud + 2,
     );
     speedBtn.on("pointerup", () => {
@@ -447,7 +459,7 @@ export class BattleScene extends Phaser.Scene {
   private onMove(ev: Extract<BattleEvent, { type: "move" }>): void {
     const view = this.view(ev.unit);
     if (!view.alive) return;
-    const { x, y } = this.tileXY(ev.col, ev.row);
+    const { x, y } = this.spriteXY(ev.col, ev.row);
     playPose(view.sprite, view.snap.side, view.snap.class, "run");
     if (Math.abs(x - view.sprite.x) > 0.5) view.sprite.setFlipX(x < view.sprite.x);
     this.tweens.add({
@@ -464,24 +476,14 @@ export class BattleScene extends Phaser.Scene {
     });
   }
 
-  /**
-   * The Lancer is the only class with vertical thrusts, which a vertical board
-   * mostly wants; a sideways target still gets the level thrust.
-   */
   private onAttack(ev: Extract<BattleEvent, { type: "attack" }>): void {
     const attacker = this.view(ev.unit);
     const target = this.view(ev.target);
     if (!attacker.alive || !target.alive) return;
 
     const dx = target.sprite.x - attacker.sprite.x;
-    const dy = target.sprite.y - attacker.sprite.y;
-    const vertical = Math.abs(dy) > Math.abs(dx) * 0.8;
-    const pose = vertical ? (dy < 0 ? "attackUp" : "attackDown") : "attack";
-
-    if (Math.abs(dx) > 0.5 && resolveAnim(attacker.snap.class, pose) === "attack") {
-      attacker.sprite.setFlipX(dx < 0);
-    }
-    playPose(attacker.sprite, attacker.snap.side, attacker.snap.class, pose);
+    if (Math.abs(dx) > 0.5) attacker.sprite.setFlipX(dx < 0);
+    playPose(attacker.sprite, attacker.snap.side, attacker.snap.class, "attack");
 
     if (attacker.snap.class === "archer") {
       // The shoot sheet ends at the release, so the scene flies the arrow.

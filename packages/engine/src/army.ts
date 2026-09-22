@@ -7,11 +7,11 @@ import { BALANCE, type UnitClass } from "./balance.ts";
 import { makeRng, type Rng } from "./rng.ts";
 import type { Army, Placement } from "./simulate.ts";
 
-/** Cells a role wants, best first: melee front and centre, ranged back corners. */
+/** Cells a role wants, best first: melee front and centre lane, ranged held back. */
 function tilePreference(melee: boolean): { col: number; row: number }[] {
-  const rows = melee ? [2, 1, 0] : [0, 1, 2];
-  const cols = melee ? [2, 1, 3, 0, 4] : [0, 4, 1, 3, 2];
-  return rows.flatMap((row) => cols.map((col) => ({ col, row })));
+  const cols = melee ? [4, 3, 2, 1, 0] : [0, 1, 2, 3, 4];
+  const rows = [1, 0, 2];
+  return cols.flatMap((col) => rows.map((row) => ({ col, row })));
 }
 
 function buy(budget: number, rng: Rng): UnitClass[] {

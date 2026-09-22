@@ -123,43 +123,43 @@ describe("rng", () => {
 });
 
 describe("geometry", () => {
-  it("mirrors side B onto the shared 5x6 grid, bottom half vs top half", () => {
-    expect(battleRow("a", 0)).toBe(5);
-    expect(battleRow("a", 2)).toBe(3); // front line faces the middle
-    expect(battleRow("b", 2)).toBe(2); // the two front rows are adjacent
+  it("keeps row as a lane and mirrors column, side A left, side B right", () => {
+    expect(battleRow("a", 0)).toBe(0);
+    expect(battleRow("a", 2)).toBe(2);
     expect(battleRow("b", 0)).toBe(0);
-    expect(battleCol("a", 1)).toBe(1);
-    expect(battleCol("b", 1)).toBe(3);
-    expect(battleCol("b", 2)).toBe(2); // the centre column maps to itself
+    expect(battleRow("b", 2)).toBe(2);
+    expect(battleCol("a", 0)).toBe(0);
+    expect(battleCol("a", 4)).toBe(4); // A's front
+    expect(battleCol("b", 4)).toBe(5); // B's front, adjacent to A's
+    expect(battleCol("b", 0)).toBe(9); // B's back
   });
 
   it("measures Chebyshev distance, so a diagonal costs one step", () => {
-    // The two front rows, same column: touching.
-    expect(chebyshev({ col: 2, row: 3 }, { col: 2, row: 2 })).toBe(1);
+    // The two front columns, same row: touching.
+    expect(chebyshev({ col: 4, row: 1 }, { col: 5, row: 1 })).toBe(1);
     // Diagonals cost the same as straight steps.
-    expect(chebyshev({ col: 2, row: 3 }, { col: 3, row: 2 })).toBe(1);
-    expect(chebyshev({ col: 0, row: 1 }, { col: 1, row: 2 })).toBe(1);
-    // A back-row Archer is exactly its 3 cells from the enemy front line.
-    expect(chebyshev({ col: 2, row: 5 }, { col: 2, row: 2 })).toBe(3);
-    expect(chebyshev({ col: 2, row: 3 }, { col: 4, row: 0 })).toBe(3);
-    // Opposite back rows are the full length of the board apart.
-    expect(chebyshev({ col: 2, row: 5 }, { col: 2, row: 0 })).toBe(5);
+    expect(chebyshev({ col: 4, row: 0 }, { col: 5, row: 1 })).toBe(1);
+    expect(chebyshev({ col: 1, row: 0 }, { col: 2, row: 1 })).toBe(1);
+    // A back-column unit is 5 cells from the enemy front line.
+    expect(chebyshev({ col: 0, row: 1 }, { col: 5, row: 1 })).toBe(5);
+    // Opposite back columns are the full width of the board apart.
+    expect(chebyshev({ col: 0, row: 1 }, { col: 9, row: 1 })).toBe(9);
   });
 
   it("gives every cell eight neighbours, all one step away", () => {
-    for (const row of [0, 1, 2, 3, 4, 5]) {
-      const ns = neighbors(2, row);
+    for (const row of [0, 1, 2]) {
+      const ns = neighbors(4, row);
       expect(ns).toHaveLength(8);
       expect(new Set(ns.map((n) => `${n.col},${n.row}`)).size).toBe(8);
-      for (const n of ns) expect(chebyshev({ col: 2, row }, n)).toBe(1);
+      for (const n of ns) expect(chebyshev({ col: 4, row }, n)).toBe(1);
     }
   });
 
   it("is symmetric, zero on itself, and never negative", () => {
     fc.assert(
       fc.property(
-        fc.record({ col: fc.integer({ min: 0, max: 4 }), row: fc.integer({ min: 0, max: 5 }) }),
-        fc.record({ col: fc.integer({ min: 0, max: 4 }), row: fc.integer({ min: 0, max: 5 }) }),
+        fc.record({ col: fc.integer({ min: 0, max: 9 }), row: fc.integer({ min: 0, max: 2 }) }),
+        fc.record({ col: fc.integer({ min: 0, max: 9 }), row: fc.integer({ min: 0, max: 2 }) }),
         (a, b) => {
           expect(chebyshev(a, b)).toBe(chebyshev(b, a));
           expect(chebyshev(a, a)).toBe(0);
@@ -250,11 +250,11 @@ describe("generateArmy", () => {
 
       const frontOfRanged = Math.max(
         0,
-        ...army.filter((u) => BALANCE.units[u.class].range > 1).map((u) => u.row),
+        ...army.filter((u) => BALANCE.units[u.class].range > 1).map((u) => u.col),
       );
       const backOfMelee = Math.min(
-        BALANCE.board.rows,
-        ...army.filter((u) => BALANCE.units[u.class].range <= 1).map((u) => u.row),
+        BALANCE.board.cols,
+        ...army.filter((u) => BALANCE.units[u.class].range <= 1).map((u) => u.col),
       );
       expect(backOfMelee).toBeGreaterThanOrEqual(frontOfRanged);
     }
@@ -265,7 +265,7 @@ describe("simulate", () => {
   const warriorAt = (col: number, row: number): Army => [{ class: "warrior", col, row }];
 
   it("trades evenly in a mirror match: nobody gets a free first strike", () => {
-    const result = simulate(warriorAt(2, 2), warriorAt(2, 2), 1);
+    const result = simulate(warriorAt(4, 1), warriorAt(4, 1), 1);
     expect(result.winner).toBe("draw");
     expect(result.reason).toBe("wipe");
     expect(result.hpRemaining).toEqual({ a: 0, b: 0 });
@@ -276,7 +276,7 @@ describe("simulate", () => {
   });
 
   it("gives the counter its edge: a Warrior beats an Archer in melee", () => {
-    const result = simulate(warriorAt(2, 2), [{ class: "archer", col: 2, row: 2 }], 1);
+    const result = simulate(warriorAt(4, 1), [{ class: "archer", col: 4, row: 1 }], 1);
     expect(result.winner).toBe("a");
     expect(result.survivors).toEqual({ a: 1, b: 0 });
     // 18 a hit thanks to the counter, so 4 hits for the Archer's 60 hp.
@@ -284,17 +284,17 @@ describe("simulate", () => {
     expect(result.hpRemaining.a).toBe(100 - 4 * 10);
   });
 
-  it("lets a back-line Archer open fire before a melee unit closes", () => {
-    // Archer on its own back row, Warrior on the enemy front: out of reach, so the
-    // Archer gets shots off while the Warrior walks in.
-    const result = simulate([{ class: "archer", col: 0, row: 1 }], warriorAt(3, 2), 1);
+  it("lets a back-column Archer open fire before a melee unit closes", () => {
+    // Archer on its own back column, Warrior on the enemy front: out of reach,
+    // so the Archer gets shots off while the Warrior walks in.
+    const result = simulate([{ class: "archer", col: 0, row: 1 }], warriorAt(4, 1), 1);
     const firstHit = result.events.find((e) => e.type === "hit");
     expect(firstHit?.unit).toBe("a0");
     expect(result.events.some((e) => e.type === "move" && e.unit === "b0")).toBe(true);
   });
 
   it("two front lines start adjacent, so neither side walks first", () => {
-    const result = simulate(warriorAt(2, 2), warriorAt(2, 2), 1);
+    const result = simulate(warriorAt(4, 1), warriorAt(4, 1), 1);
     expect(result.events.some((e) => e.type === "move")).toBe(false);
   });
 

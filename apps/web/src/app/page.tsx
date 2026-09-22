@@ -181,10 +181,9 @@ export default function Page() {
         </span>
       </div>
 
-      {/* Front row at the top, facing the enemy: own row r is battle row 5 - r. */}
+      {/* Front column on the right, facing the enemy: own col c is battle col c. */}
       <div className="board">
-        {Array.from({ length: BALANCE.board.rows }, (_, d) => {
-          const row = BALANCE.board.rows - 1 - d; // front row first
+        {Array.from({ length: BALANCE.board.rows }, (_, row) => {
           return (
             <div key={row} className="boardRow">
               {Array.from({ length: BALANCE.board.cols }, (_, col) => {

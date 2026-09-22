@@ -30,11 +30,11 @@ export const BALANCE = {
   budget: 20,
 
   board: {
-    /** Two 5x3 halves stacked into one 5x6 grid; side A is the bottom half. */
+    /** Two 5x3 halves side by side in one 10x3 grid; side A is the left half. */
     cols: 5,
     rows: 3,
-    battleCols: 5,
-    battleRows: 6,
+    battleCols: 10,
+    battleRows: 3,
     maxUnits: 8,
   },
 

@@ -2,9 +2,11 @@
  * The battle simulation. Pure: armies and a seed in, a result and an event log
  * out. No I/O, no clock, no globals, so it runs unchanged on the server.
  *
- * A 5x6 square grid of two 5x3 halves. Side A holds the bottom rows (5,4,3
- * back to front), side B the top, so both front rows meet in the middle.
- * Distance is Chebyshev over the eight neighbours.
+ * A 10x3 square grid of two 5x3 halves. Side A holds the left columns (4,3,2
+ * back to front), side B the right, so both front columns meet in the middle.
+ * Row is a lane and means the same thing for both sides; only column, the
+ * forward axis, flips between them. Distance is Chebyshev over the eight
+ * neighbours.
  */
 
 import {
@@ -61,15 +63,12 @@ interface SimUnit extends UnitSnapshot {
   nextAt: number;
 }
 
-/**
- * Own cell to shared-grid cell. The halves are point reflections through the
- * board centre; Chebyshev is invariant under that, which is what keeps a
- * mirror match an exact draw.
- */
-export function battleRow(side: Side, row: number): number {
-  return side === "a" ? BALANCE.board.battleRows - 1 - row : row;
+/** Row is a lane: the same meaning for both sides, no reflection. */
+export function battleRow(_side: Side, row: number): number {
+  return row;
 }
 
+/** Column is the forward axis: side A keeps its own, side B mirrors. */
 export function battleCol(side: Side, col: number): number {
   return side === "a" ? col : BALANCE.board.battleCols - 1 - col;
 }
@@ -196,8 +195,8 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
       const healer = stats.heal > 0;
 
       // Healers take the most wounded ally, itself included; everyone else the
-      // nearest enemy. Every key component survives the point reflection, so a
-      // mirror match is never decided by a tie-break.
+      // nearest enemy. Every key component survives the left-right mirror, so
+      // a mirror match is never decided by a tie-break.
       let targetIdx = -1;
       let targetKey: number[] = [];
       let targetDist = 0;
@@ -255,17 +254,17 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
         continue;
       }
 
-      // One step toward the target, nearest first. The tie-break flips by side
-      // because the reflection maps (col+row, col) to a constant minus itself,
-      // so both armies curve around blockers as mirror images.
+      // One step toward the target, nearest first. Column is the axis that
+      // flips between sides, so its tie-break flips too, curving both armies
+      // around blockers as mirror images; row is a lane and needs no flip.
       const flip = unit.side === "a" ? 1 : -1;
       const steps = neighbors(unit.col, unit.row)
         .filter((s) => onBoard(s) && !occupied.has(tileKey(s)))
         .sort(
           (p, q) =>
             chebyshev(p, targetPos) - chebyshev(q, targetPos) ||
-            flip * (p.col + p.row) - flip * (q.col + q.row) ||
-            flip * p.col - flip * q.col,
+            flip * p.col - flip * q.col ||
+            p.row - q.row,
         );
       if (steps.length > 0) intents.push({ i, steps });
     }
