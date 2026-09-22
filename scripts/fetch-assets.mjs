@@ -39,7 +39,10 @@ try {
 
 /** A folder counts as the pack if it has this inside it. */
 const MARKER = "Units";
-const REQUIRED = process.argv.includes("--require");
+// A real deploy must not quietly ship a game with no art, so being
+// unconfigured is fatal there. A failed fetch already exits non-zero; this
+// covers forgetting TINY_SWORDS_S3 altogether. Other hosts pass --require.
+const REQUIRED = process.argv.includes("--require") || !!process.env.VERCEL;
 
 const say = (msg) => console.log(`[assets] ${msg}`);
 
@@ -90,13 +93,16 @@ async function fromS3(uri) {
 
   // Otherwise a placeholder pasted from the docs fails as "Invalid character
   // in header content", which names nothing useful.
+  // Empty is fine, and normal while setting up: the SDK skips it and falls
+  // back to ~/.aws. A filled-in placeholder is not, and fails as "Invalid
+  // character in header content", which names nothing useful.
   for (const name of ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]) {
     const value = process.env[name];
-    if (value !== undefined && !/^[\x21-\x7e]+$/.test(value)) {
+    if (value && !/^[\x21-\x7e]+$/.test(value)) {
       throw new Error(
-        `${name} is empty or has characters that cannot be sent in a request. ` +
-          "Check .env for a placeholder that was never filled in, or remove the " +
-          "line entirely to fall back on ~/.aws.",
+        `${name} has characters that cannot be sent in a request. Check .env ` +
+          "for a placeholder that was never replaced; leave it empty or drop " +
+          "the line to fall back on ~/.aws.",
       );
     }
   }

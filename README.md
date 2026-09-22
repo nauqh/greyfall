@@ -79,10 +79,12 @@ with `Invalid character in header content`, which says nothing about the
 cause. Leaving the variables unset falls back on `~/.aws`, which is what you
 want locally.
 
-`AWS_REGION` is not strictly required - tested with no `~/.aws` and no region
-set, the SDK still fetched the object, falling back to a default region and
-letting S3 redirect. Set it anyway: it saves a round trip and does not lean on
-behaviour worth depending on.
+All three are needed, region included: with no region resolvable the SDK
+fails with `Region is missing` before it reaches S3.
+
+On Vercel, being unconfigured is fatal rather than quiet - `pnpm assets`
+treats a missing `TINY_SWORDS_S3` as an error when `VERCEL` is set, so a
+forgotten variable stops the build instead of deploying a game with no art.
 
 Give the deploy its own IAM user scoped to `s3:GetObject` on that one key.
 Build environment variables are readable by anyone with project access.
