@@ -40,7 +40,7 @@ const BLURB: Record<UnitClass, string> = {
 };
 
 /** A portrait per class, from the pack's 25 avatars. */
-const PORTRAIT: Record<UnitClass, number> = { warrior: 2, lancer: 7, archer: 12, monk: 20, pawn: 1 };
+const PORTRAIT: Record<UnitClass, number> = { warrior: 1, lancer: 2, archer: 3, monk: 4, pawn: 1 };
 
 interface Battle {
   result: BattleResult;
