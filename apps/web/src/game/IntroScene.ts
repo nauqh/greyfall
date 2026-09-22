@@ -102,7 +102,7 @@ export class IntroScene extends Phaser.Scene {
     loadTerrain(this);
     loadUnits(this);
     loadBuildings(this, VILLAGE);
-    loadPanels(this, ["paper", "blueButton", "blueButtonDown"]);
+    loadPanels(this, ["paper", "blueButton", "blueButtonDown", "redButton", "redButtonDown"]);
   }
 
   create(): void {

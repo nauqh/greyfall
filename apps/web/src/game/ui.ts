@@ -40,6 +40,12 @@ function compose(scene: Phaser.Scene, name: PanelName): Slice {
   const h = spec.rowH[0] + spec.rowH[1] + spec.rowH[2];
 
   if (!scene.textures.exists(key)) {
+    // Without this the missing sheet resolves to Phaser's __MISSING texture
+    // and gets nine-sliced into a small green-and-black square, which is a
+    // long way from looking like a forgotten preload.
+    if (!scene.textures.exists(sheetKey(name))) {
+      throw new Error(`panel "${name}" was never loaded: add it to loadPanels in preload`);
+    }
     const src = scene.textures.get(sheetKey(name)).getSourceImage() as HTMLImageElement;
     const tex = scene.textures.createCanvas(key, w, h)!;
     tex.context.imageSmoothingEnabled = false;
