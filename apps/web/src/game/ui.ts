@@ -83,10 +83,10 @@ export function panel(
 
 /** Shared by every label, so the UI reads as one thing. */
 export const FONT: Phaser.Types.GameObjects.Text.TextStyle = {
-  fontFamily: "ui-monospace, Consolas, monospace",
+  fontFamily: '"Gochi Hand", cursive',
   fontSize: "15px",
-  color: "#f4e4c1",
-  stroke: "#2a1f16",
+  color: "#f5f2e4",
+  stroke: "#2e3a4e",
   strokeThickness: 3,
 };
 

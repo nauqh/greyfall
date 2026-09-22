@@ -197,7 +197,7 @@ export class BattleScene extends Phaser.Scene {
       const tag = label(this, MID_X, MID_Y, steps[i]!, {
         fontSize: last ? "62px" : "92px",
         color: last ? "#f4cf6b" : "#fdf6e6",
-        stroke: "#1b1208",
+        stroke: "#1c2634",
         strokeThickness: 10,
       })
         .setDepth(DEPTH.hud + 21)
@@ -507,10 +507,10 @@ export class BattleScene extends Phaser.Scene {
     const top = view.sprite.y - BODY_HEIGHT[view.snap.class] - 20;
     const tag = this.add
       .text(view.sprite.x, top, text, {
-        fontFamily: "ui-monospace, Consolas, monospace",
+        fontFamily: '"Gochi Hand", cursive',
         fontSize: "17px",
         color,
-        stroke: "#1a1208",
+        stroke: "#1c2634",
         strokeThickness: 4,
       })
       .setOrigin(0.5)
@@ -654,7 +654,7 @@ export function startBattle(
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent,
-    backgroundColor: "#12324a",
+    backgroundColor: "#4ba398",
     pixelArt: true,
     roundPixels: true,
     scale: {

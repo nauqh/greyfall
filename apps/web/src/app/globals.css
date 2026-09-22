@@ -8,11 +8,11 @@
 
 :root {
   color-scheme: dark;
-  --ink: #f4e4c1;
-  --ink-dim: #b6a489;
+  --ink: #f5f2e4;
+  --ink-dim: #d9d5c3;
   --ink-dark: #4a3a28;
   --gold: #e8c06a;
-  --bad: #e0776b;
+  --bad: #ff9d94;
 }
 
 * {
@@ -31,13 +31,9 @@ body {
   margin: 0;
   min-height: 100vh;
   color: var(--ink);
-  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-  /* The pack's water, tiled, so the page sits in the same sea as the arena. */
-  background-color: #12324a;
-  background-image: var(--pack-water);
-  background-repeat: repeat;
-  background-size: 64px 64px;
-  image-rendering: pixelated;
+  font-family: "Gochi Hand", "Comic Sans MS", cursive;
+  /* Flat teal sea, as in the reference. */
+  background-color: #4ba398;
 }
 
 /* --- battle ------------------------------------------------------------- */
@@ -66,24 +62,44 @@ body {
 /* --- draft -------------------------------------------------------------- */
 
 .draft {
-  max-width: 1000px;
+  max-width: 1240px;
   margin: 0 auto;
-  padding: 28px 20px 64px;
+  padding: 20px 20px 32px;
   text-align: center;
+}
+
+/* 16:9: cards on the left, board on the right, all one row, centered. */
+.draftLayout {
+  display: flex;
+  gap: 28px;
+  justify-content: center;
+  align-items: center;
+}
+
+.draftLeft {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.draftRight {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 h1.banner {
   margin: 0;
   font-size: clamp(34px, 7vw, 58px);
-  letter-spacing: 0.22em;
-  color: var(--gold);
+  letter-spacing: 0.04em;
+  color: var(--ink);
   text-shadow:
-    0 3px 0 #4a2f12,
-    0 6px 14px rgba(0, 0, 0, 0.55);
+    0 3px 0 #2e3a4e,
+    0 6px 14px rgba(0, 0, 0, 0.45);
 }
 
 .tagline {
-  margin: 6px 0 26px;
+  margin: 6px 0 22px;
   color: var(--ink);
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
 }
@@ -101,22 +117,22 @@ h1.banner {
 
 /* --- roster ------------------------------------------------------------- */
 
+/* 2x2 grid, sitting beside the board. */
 .roster {
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-bottom: 22px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .card {
-  width: 182px;
-  min-height: 218px;
+  width: 168px;
+  min-height: 200px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 30px 26px 34px;
+  padding: 26px 20px 30px;
   border: 0;
   background: none;
   color: var(--ink-dark);
@@ -203,13 +219,16 @@ h1.banner {
 /* --- purse and board ---------------------------------------------------- */
 
 .purse {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 14px;
+  /* Block, not flex: the hint's width:100% flex item created a cyclic width
+     that inflated the whole left column past the roster's 348px. */
+  display: block;
+  text-align: center;
+  margin-bottom: 8px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.purse .coin {
+  margin-right: 6px;
 }
 
 .purse strong {
@@ -218,7 +237,9 @@ h1.banner {
 }
 
 .purse .hint {
-  width: 100%;
+  display: block;
+  max-width: 340px;
+  margin-inline: auto;
   font-size: 11px;
   color: var(--ink-dim);
 }
@@ -228,7 +249,7 @@ h1.banner {
   display: inline-block;
   padding: 20px 22px 24px;
   margin-bottom: 8px;
-  background: rgba(10, 26, 36, 0.34);
+  background: rgba(16, 52, 48, 0.4);
   border-radius: 12px;
   box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.35);
 }
@@ -312,7 +333,7 @@ h1.banner {
   font: inherit;
   font-size: 17px;
   letter-spacing: 0.06em;
-  text-shadow: 0 2px 0 #2a1f16;
+  text-shadow: 0 2px 0 #2e3a4e;
   cursor: pointer;
   transition: transform 80ms ease-out;
 }
@@ -357,5 +378,13 @@ h1.banner {
   }
   .board {
     padding: 12px;
+  }
+}
+
+/* Narrow screens: back to cards-above-board, as it was. */
+@media (max-width: 980px) {
+  .draftLayout {
+    flex-direction: column;
+    gap: 12px;
   }
 }
