@@ -77,11 +77,6 @@ const SIDE_DIR: Record<Side, string> = { a: "Blue Units", b: "Red Units" };
 /** The Monk's heal burst, played on the unit being healed. */
 export const HEAL_EFFECT = { frame: 192, frames: 11 } as const;
 
-/** Exported so the draft screen shows the same art without pulling in Phaser. */
-export function sheetUrl(side: Side, cls: UnitClass, anim: AnimName = "idle"): string {
-  return packUrl(`Units/${SIDE_DIR[side]}/${POSES[cls][anim]}`);
-}
-
 export function unitKey(side: Side, cls: UnitClass, anim: AnimName): string {
   return `${cls}_${side}_${anim}`;
 }
@@ -154,5 +149,8 @@ export function playPose(
 ): void {
   const body = BODY[cls];
   sprite.setOrigin(body.anchorX / body.frame, body.anchorY / body.frame);
+  // The art faces right in both colors; side b holds the right half. Run and
+  // attack keep the directional flip their callers set.
+  if (anim === "idle") sprite.setFlipX(side === "b");
   sprite.play(animKey(side, cls, anim), true);
 }

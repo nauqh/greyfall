@@ -52,21 +52,42 @@ export const PANELS = {
 export type PanelName = keyof typeof PANELS;
 
 /**
- * Three-piece frame plus a separate fill. Natural height 19px, minimum width
- * two 64px caps - too wide for a per-unit pip, so only army totals use it.
+ * Three-piece frame plus a separate fill. The BigBar: symmetric 24px caps,
+ * 51px tall, a real channel with a 24px fill. The SmallBar's caps are
+ * lopsided (15px ornate left, sliver right) and its fill is a 3px thread;
+ * it stays unused.
  */
 export const BAR = {
-  base: "UI Elements/UI Elements/Bars/SmallBar_Base.png",
-  fill: "UI Elements/UI Elements/Bars/SmallBar_Fill.png",
+  base: "UI Elements/UI Elements/Bars/BigBar_Base.png",
+  fill: "UI Elements/UI Elements/Bars/BigBar_Fill.png",
   capW: 64,
   midX: 128,
   rightX: 256,
+  /** Ink width of each end cap inside its 64px piece. */
+  capInk: 24,
   /** Rows the frame art occupies inside the 64px sheet. */
-  artY: 22,
-  artH: 19,
-  /** The fill is a 3px strip inside the frame's channel. */
-  fillY: 30,
-  fillH: 3,
+  artY: 9,
+  artH: 51,
+  /** The fill strip inside the frame's channel. */
+  fillY: 20,
+  fillH: 24,
+  /** Inset from the frame's ink edge to the channel; the fill spans between
+      these, not between the caps. */
+  chanX: 8,
+} as const;
+
+/**
+ * Slate title ribbon. SmallRibbons holds five colors in 64px rows, two end
+ * styles each; this is the forked slate row. Same three 64px pieces as every
+ * other sheet: left end, solid middle, right end.
+ */
+export const RIBBON = {
+  file: "UI Elements/UI Elements/Ribbons/SmallRibbons.png",
+  rowY: 512,
+  h: 64,
+  midX: 128,
+  rightX: 256,
+  w: 64,
 } as const;
 
 /** Tileset is 9x6 tiles of 64px; column 4 is blank. Grass slice: cols 0-2, rows 0-2. */
@@ -136,6 +157,14 @@ export const CLOUDS = { file: "Terrain/Decorations/Clouds/Clouds_0", count: 8 } 
 export const FX = {
   dust: { file: "Particle FX/Dust_01.png", frame: 64, frames: 8 },
   explosion: { file: "Particle FX/Explosion_01.png", frame: 192, frames: 8 },
+} as const;
+
+/** The gold nugget sits at roughly (50,46) in the 128px resource sheet. */
+export const GOLD = {
+  file: "Terrain/Resources/Gold/Gold Resource/Gold_Resource.png",
+  x: 50,
+  y: 46,
+  size: 28,
 } as const;
 
 /** 25 portraits, 256px each. */

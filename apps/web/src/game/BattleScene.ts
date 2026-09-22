@@ -1,5 +1,9 @@
 // Battle playback. The engine decided everything; this only replays its log.
 //
+// The scene opens in draft mode when the launcher carries no result: a panel
+// over the enemy half holds the roster cards, clicks place units on the left
+// half, and Start slides the panel away to reveal the enemy army.
+//
 // The board runs LEFT to RIGHT, 10 columns by 3 rows of square cells, your
 // army on the left. This matches the art: only the Lancer has a vertical
 // attack pose, so every class needs to fight sideways to look right. Units
@@ -10,15 +14,19 @@
 
 import {
   BALANCE,
+  UNIT_CLASSES,
+  armyCost,
+  validateArmy,
   type BattleEvent,
   type BattleResult,
+  type Placement,
   type Side,
   type UnitClass,
   type UnitSnapshot,
 } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
-import { FX, packUrl } from "./art";
+import { AVATARS, FX, GOLD, packUrl } from "./art";
 import {
   BODY,
   BODY_HEIGHT,
@@ -41,7 +49,7 @@ import {
   scatterDecor,
   type Rect,
 } from "./terrain";
-import { PackBar, button, label, loadPanels, panel } from "./ui";
+import { PackBar, button, label, loadPanels, panel, ribbon } from "./ui";
 
 const COLS = BALANCE.board.battleCols;
 const ROWS = BALANCE.board.battleRows;
@@ -51,6 +59,12 @@ const TILE = 84;
 
 export const GAME_W = 1200;
 export const GAME_H = 720;
+
+// Phaser 3.90 has no HiDPI support: the canvas backing store is the game
+// size, and the browser bilinear-upscales it to physical pixels, which is
+// what smears thin glyphs. Render at devicePixelRatio instead and zoom the
+// camera to match, so the canvas only ever gets downscaled.
+const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
 
 /** Whole 64px terrain tiles. The margins hold the scenery and clear the HUD plates. */
 const ISLAND: Rect = { x0: 90, y0: 178, x1: 1110, y1: 510 };
@@ -79,6 +93,30 @@ const CLASS_NAME: Record<UnitClass, string> = {
   monk: "Monk",
 };
 
+const ROSTER = UNIT_CLASSES.filter((c) => c !== "pawn");
+/** A portrait per class, from the pack's 25 avatars. */
+const PORTRAIT: Record<UnitClass, number> = { warrior: 1, lancer: 2, archer: 3, monk: 4, pawn: 1 };
+
+const BLURB: Record<UnitClass, string> = {
+  pawn: "Digs. Dies.",
+  warrior: "Cuts down archers.",
+  lancer: "Holds. Breaks warriors.",
+  archer: "Reaches three cells.",
+  monk: "Mends the worst hurt.",
+};
+
+/** Dark ink on paper, light ink on the selected card's slate. */
+interface DraftCard {
+  box: Phaser.GameObjects.Container;
+  cy: number;
+  paper: Phaser.GameObjects.NineSlice;
+  special: Phaser.GameObjects.NineSlice;
+  name: Phaser.GameObjects.Text;
+  blurb: Phaser.GameObjects.Text;
+  stats: Phaser.GameObjects.Text;
+  cost: Phaser.GameObjects.Text;
+}
+
 interface UnitView {
   snap: UnitSnapshot;
   sprite: Phaser.GameObjects.Sprite;
@@ -91,15 +129,31 @@ interface UnitView {
 }
 
 export interface BattleLauncher {
-  result: BattleResult;
+  /** Null while drafting: the scene collects the army, then calls onDraft. */
+  result: BattleResult | null;
   seed: number | string;
+  onDraft: (army: Placement[], seed: number | string) => BattleResult;
   onRematch: () => void;
   onNewArmy: () => void;
 }
 
 export class BattleScene extends Phaser.Scene {
   private launcher!: BattleLauncher;
+  private result: BattleResult | null = null;
   private units = new Map<string, UnitView>();
+  private drafting = false;
+  private draftArmy: Placement[] = [];
+  private picked: UnitClass = "warrior";
+  private draftBox!: Phaser.GameObjects.Container;
+  private cellZone!: Phaser.GameObjects.Zone;
+  private goldText!: Phaser.GameObjects.Text;
+  private goldCoin!: Phaser.GameObjects.Image;
+  private hintText!: Phaser.GameObjects.Text;
+  private cards = new Map<UnitClass, DraftCard>();
+  private placed = new Map<
+    string,
+    { sprite: Phaser.GameObjects.Sprite; shadow: Phaser.GameObjects.Image }
+  >();
   private queue: BattleEvent[] = [];
   private simTime = 0;
   private nextEvent = 0;
@@ -116,6 +170,7 @@ export class BattleScene extends Phaser.Scene {
 
   init(data: BattleLauncher): void {
     this.launcher = data;
+    this.result = data.result;
     this.units = new Map();
     this.queue = [];
     this.simTime = 0;
@@ -123,6 +178,11 @@ export class BattleScene extends Phaser.Scene {
     this.finished = false;
     this.started = false;
     this.speed = 1;
+    this.drafting = false;
+    this.draftArmy = [];
+    this.picked = "warrior";
+    this.cards = new Map();
+    this.placed = new Map();
   }
 
   preload(): void {
@@ -131,7 +191,6 @@ export class BattleScene extends Phaser.Scene {
     loadPanels(this, [
       "paper",
       "specialPaper",
-      "woodTable",
       "blueButton",
       "blueButtonDown",
       "redButton",
@@ -149,9 +208,19 @@ export class BattleScene extends Phaser.Scene {
       frameWidth: FX.dust.frame,
       frameHeight: FX.dust.frame,
     });
+    for (const cls of ROSTER) {
+      this.load.image(
+        `avatar_${cls}`,
+        packUrl(`${AVATARS.file}${String(PORTRAIT[cls]).padStart(2, "0")}.png`),
+      );
+    }
+    this.load.image("coin_src", packUrl(GOLD.file));
   }
 
   create(): void {
+    // The canvas is DPR times the world; the camera bridges the two. Zoom
+    // recentres on the camera's own middle, so point it back at the world's.
+    this.cameras.main.setZoom(DPR).centerOn(GAME_W / 2, GAME_H / 2);
     prepareTerrain(this);
     makeAnims(this);
     this.anims.create({
@@ -176,10 +245,200 @@ export class BattleScene extends Phaser.Scene {
     this.drawGrid();
     driftClouds(this, { w: GAME_W, h: GAME_H }, this.launcher.seed);
 
+    if (this.result) {
+      this.beginBattle();
+    } else {
+      this.buildDraft();
+    }
+  }
+
+  /** Armies placed, HUD up, event log queued, count down. */
+  private beginBattle(): void {
     this.spawnArmies();
     this.buildHud();
-    this.queue = [...this.launcher.result.events].sort((x, y) => x.t - y.t);
+    this.queue = [...this.result!.events].sort((x, y) => x.t - y.t);
     this.runIntro();
+  }
+
+  // --- draft ---------------------------------------------------------------
+
+  /** Roster cards on a panel over the enemy half; clicks place on the left. */
+  private buildDraft(): void {
+    this.drafting = true;
+    // Above the HUD too, so the slide-out sweeps across the plates.
+    this.draftBox = this.add.container(0, 0).setDepth(DEPTH.hud + 5);
+
+    const panel_ = panel(this, "paper", 900, 360, 576, 688);
+    const band = ribbon(this, 900, 58, 380);
+    const title = label(this, 900, 54, "DRAFT YOUR WARBAND", { fontSize: "20px" });
+    this.goldText = label(this, 900, 112, "", {
+      fontSize: "15px",
+      color: "#7a4f14",
+      strokeThickness: 0,
+    });
+    this.goldCoin = this.add
+      .image(0, 112, "coin_src")
+      .setCrop(GOLD.x, GOLD.y, GOLD.size, GOLD.size)
+      .setScale(0.8);
+    this.hintText = label(this, 900, 556, "", {
+      fontSize: "12px",
+      color: "#8c3a30",
+      strokeThickness: 0,
+    });
+    this.draftBox.add([panel_, band, title, this.goldText, this.goldCoin, this.hintText]);
+
+    for (const [i, cls] of ROSTER.entries()) {
+      const cx = 900 + (i % 2 === 0 ? -92 : 92);
+      const cy = i < 2 ? 216 : 428;
+      this.draftBox.add(this.buildCard(cls, cx, cy));
+    }
+
+    const start = button(this, 900, 632, 200, 130, "Start", "blue", () => this.startFromDraft());
+    this.draftBox.add(start);
+
+    // Own half only: the enemy half sits under the panel.
+    const zx = ORIGIN_X - TILE / 2;
+    const zy = ORIGIN_Y - TILE / 2;
+    this.cellZone = this.add
+      .zone(zx + (COLS / 2) * (TILE / 2), zy + BOARD_H / 2, (COLS / 2) * TILE, BOARD_H)
+      .setInteractive()
+      .on("pointerdown", (p: Phaser.Input.Pointer) => {
+        const col = Math.floor((p.worldX - zx) / TILE);
+        const row = Math.floor((p.worldY - zy) / TILE);
+        if (col >= 0 && col < COLS / 2 && row >= 0 && row < ROWS) this.toggleCell(col, row);
+      });
+
+    this.refreshDraft();
+  }
+
+  /** The old DOM card, ported: paper, portrait on top, slate when picked. */
+  private buildCard(cls: UnitClass, cx: number, cy: number): Phaser.GameObjects.Container {
+    const stats = BALANCE.units[cls];
+    const ink = { strokeThickness: 0 };
+    const paper = panel(this, "paper", 0, 0, 168, 200);
+    const special = panel(this, "specialPaper", 0, 0, 168, 200).setVisible(false);
+    const portrait = this.add.image(0, -42, `avatar_${cls}`).setScale(0.4);
+    const name = label(this, 0, 20, CLASS_NAME[cls], {
+      fontSize: "15px",
+      color: "#4a3a28",
+      ...ink,
+    });
+    const blurb = label(this, 0, 40, BLURB[cls], {
+      fontSize: "10px",
+      color: "#6b5740",
+      ...ink,
+    });
+    const statLine = label(this, 0, 58, `${stats.hp} hp · ${stats.damage} dmg · range ${stats.range}`, {
+      fontSize: "10px",
+      color: "#6b5740",
+      ...ink,
+    });
+    const coin = this.add
+      .image(-22, 80, "coin_src")
+      .setCrop(GOLD.x, GOLD.y, GOLD.size, GOLD.size)
+      .setScale(0.8);
+    const cost = label(this, -6, 80, `${stats.cost}`, {
+      fontSize: "15px",
+      color: "#7a4f14",
+      ...ink,
+    }).setOrigin(0, 0.5);
+
+    const box = this.add.container(cx, cy, [paper, special, portrait, name, blurb, statLine, coin, cost]);
+    box.setSize(168, 200);
+    const card: DraftCard = { box, cy, paper, special, name, blurb, stats: statLine, cost };
+    box
+      .setInteractive({ useHandCursor: true })
+      .on("pointerup", () => {
+        this.picked = cls;
+        this.refreshDraft();
+      })
+      .on("pointerover", () => this.liftCard(card, true))
+      .on("pointerout", () => this.refreshDraft());
+    this.cards.set(cls, card);
+    return box;
+  }
+
+  /** The old CSS translateY transition, as a tween. */
+  private liftCard(card: DraftCard, up: boolean): void {
+    this.tweens.killTweensOf(card.box);
+    this.tweens.add({
+      targets: card.box,
+      y: card.cy - (up ? 4 : 0),
+      duration: 140,
+      ease: "Sine.easeInOut",
+    });
+  }
+
+  private toggleCell(col: number, row: number): void {
+    const key = `${col},${row}`;
+    const existing = this.placed.get(key);
+    if (existing) {
+      existing.sprite.destroy();
+      existing.shadow.destroy();
+      this.placed.delete(key);
+      this.draftArmy = this.draftArmy.filter((p) => !(p.col === col && p.row === row));
+    } else {
+      const next: Placement[] = [...this.draftArmy, { class: this.picked, col, row }];
+      if (armyCost(next) > BALANCE.budget || next.length > BALANCE.board.maxUnits) return;
+      this.draftArmy = next;
+      const { x, y } = this.spriteXY(col, row);
+      const shadow = addShadow(this, x, y, this.picked === "lancer" ? 0.8 : 0.62);
+      const sprite = this.add.sprite(x, y, animKey("a", this.picked, "idle"));
+      playPose(sprite, "a", this.picked, "idle");
+      sprite.setDepth(DEPTH.unit + y);
+      this.placed.set(key, { sprite, shadow });
+    }
+    this.refreshDraft();
+  }
+
+  private refreshDraft(): void {
+    const gold = BALANCE.budget - armyCost(this.draftArmy);
+    this.goldText.setText(
+      `${gold} gold left    ${this.draftArmy.length}/${BALANCE.board.maxUnits} units`,
+    );
+    this.goldCoin.setX(900 - this.goldText.width / 2 - 16);
+    const errors = validateArmy(this.draftArmy);
+    this.hintText.setText(errors[0] ?? "click a cell on your half to place, again to take back");
+    for (const [cls, card] of this.cards) {
+      const picked = cls === this.picked;
+      card.paper.setVisible(!picked);
+      card.special.setVisible(picked);
+      card.name.setColor(picked ? "#f5f2e4" : "#4a3a28");
+      card.blurb.setColor(picked ? "#a8b4c4" : "#6b5740");
+      card.stats.setColor(picked ? "#a8b4c4" : "#6b5740");
+      card.cost.setColor(picked ? "#e8c06a" : "#7a4f14");
+      card.box.setAlpha(BALANCE.units[cls].cost <= gold ? 1 : 0.5);
+      this.liftCard(card, picked);
+    }
+  }
+
+  /** Panel slides off right, revealing the enemy army it hid. */
+  private startFromDraft(): void {
+    if (validateArmy(this.draftArmy).length > 0) return;
+    this.drafting = false;
+    this.result = this.launcher.onDraft(this.draftArmy, this.launcher.seed);
+
+    for (const { sprite, shadow } of this.placed.values()) {
+      sprite.destroy();
+      shadow.destroy();
+    }
+    this.placed.clear();
+    this.cellZone.destroy();
+
+    this.spawnArmies();
+    this.buildHud();
+    this.queue = [...this.result.events].sort((x, y) => x.t - y.t);
+
+    this.tweens.add({
+      targets: this.draftBox,
+      x: GAME_W,
+      duration: 520,
+      ease: "Sine.easeIn",
+      onComplete: () => {
+        this.draftBox.destroy();
+        this.runIntro();
+      },
+    });
   }
 
   /** Both armies are already placed, so the count is all that is needed. */
@@ -297,7 +556,7 @@ export class BattleScene extends Phaser.Scene {
   // --- views ---------------------------------------------------------------
 
   private spawnArmies(): void {
-    for (const snap of this.launcher.result.units) {
+    for (const snap of this.result!.units) {
       const { x, y } = this.spriteXY(snap.col, snap.row);
       const shadow = addShadow(this, x, y, snap.class === "lancer" ? 0.8 : 0.62);
       const sprite = this.add.sprite(x, y, animKey(snap.side, snap.class, "idle"));
@@ -376,39 +635,31 @@ export class BattleScene extends Phaser.Scene {
       return [...counts].map(([c, n]) => `${n} ${CLASS_NAME[c]}`).join("  ");
     };
 
-    // Far side, on the water above the island.
-    const topY = 58;
-    panel(this, "paper", GAME_W / 2, topY, 900, 76).setDepth(DEPTH.hud);
-    label(this, GAME_W / 2, topY - 20, `THE GREY HOST   ${roster("b")}`, {
-      fontSize: "13px",
-      color: "#5a4632",
-      strokeThickness: 0,
-    }).setDepth(DEPTH.hud + 2);
-    this.bars.b = new PackBar(this, GAME_W / 2 - 80, topY + 14, 650, 1.5, 0xd9544a, DEPTH.hud + 1);
-    this.counts.b = label(this, GAME_W / 2 + 340, topY + 14, "", {
-      fontSize: "13px",
-      color: "#5a4632",
-      strokeThickness: 0,
-    }).setDepth(DEPTH.hud + 2);
+    // Each side hugs its own board edge: enemy to the right, player to the
+    // left, count label trailing outward from the bar.
+    const BAR_W = 650;
 
-    // Near side, on a wood table below the island.
-    const bottomY = 606;
-    panel(this, "woodTable", GAME_W / 2, bottomY, 900, 132).setDepth(DEPTH.hud);
-    label(this, GAME_W / 2, bottomY - 34, `YOUR WARBAND   ${roster("a")}`, {
-      fontSize: "14px",
+    const topY = 58;
+    const foeX = ISLAND.x1 - BAR_W / 2;
+    ribbon(this, foeX, topY, BAR_W, 0.8).setDepth(DEPTH.hud);
+    label(this, foeX, topY - 2, `THE GREY HOST   ${roster("b")}`, {
+      fontSize: "17px",
     }).setDepth(DEPTH.hud + 2);
-    this.bars.a = new PackBar(
-      this,
-      GAME_W / 2 - 80,
-      bottomY + 14,
-      650,
-      1.5,
-      0x86d15e,
-      DEPTH.hud + 1,
-    );
-    this.counts.a = label(this, GAME_W / 2 + 340, bottomY + 14, "", { fontSize: "13px" }).setDepth(
-      DEPTH.hud + 2,
-    );
+    this.bars.b = new PackBar(this, foeX, topY + 44, BAR_W, 0.75, 0xd9544a, DEPTH.hud + 1);
+    this.counts.b = label(this, ISLAND.x1 - BAR_W - 16, topY + 44, "", { fontSize: "13px" })
+      .setOrigin(1, 0.5)
+      .setDepth(DEPTH.hud + 2);
+
+    const bottomY = 606;
+    const myX = ISLAND.x0 + BAR_W / 2;
+    ribbon(this, myX, bottomY - 34, BAR_W, 0.8).setDepth(DEPTH.hud);
+    label(this, myX, bottomY - 36, `YOUR WARBAND   ${roster("a")}`, {
+      fontSize: "17px",
+    }).setDepth(DEPTH.hud + 2);
+    this.bars.a = new PackBar(this, myX, bottomY + 14, BAR_W, 0.75, 0x86d15e, DEPTH.hud + 1);
+    this.counts.a = label(this, ISLAND.x0 + BAR_W + 16, bottomY + 14, "", { fontSize: "13px" })
+      .setOrigin(0, 0.5)
+      .setDepth(DEPTH.hud + 2);
 
     // The kit small square button is a single image, not a nine-slice.
     const speedBtn = this.add
@@ -599,7 +850,7 @@ export class BattleScene extends Phaser.Scene {
   // --- result --------------------------------------------------------------
 
   private showResult(): void {
-    const { result } = this.launcher;
+    const result = this.result!;
     const headline =
       result.winner === "a"
         ? "THE LINE HELD"
@@ -651,21 +902,36 @@ export function startBattle(
   parent: HTMLElement,
   launcher: BattleLauncher,
 ): { destroy: () => void } {
-  const game = new Phaser.Game({
-    type: Phaser.AUTO,
-    parent,
-    backgroundColor: "#4ba398",
-    pixelArt: true,
-    roundPixels: true,
-    scale: {
-      mode: Phaser.Scale.FIT,
-      autoCenter: Phaser.Scale.CENTER_BOTH,
-      width: GAME_W,
-      height: GAME_H,
+  let game: Phaser.Game | null = null;
+  let cancelled = false;
+  // Phaser bakes each Text into a canvas when it is created; before the
+  // webfont arrives that bake is the fallback font forever.
+  void document.fonts
+    .load('16px "Gochi Hand"')
+    .catch(() => {})
+    .then(() => {
+      if (cancelled) return;
+      game = new Phaser.Game({
+        type: Phaser.AUTO,
+        parent,
+        backgroundColor: "#4ba398",
+        pixelArt: true,
+        roundPixels: true,
+        scale: {
+          mode: Phaser.Scale.FIT,
+          autoCenter: Phaser.Scale.CENTER_BOTH,
+          width: Math.round(GAME_W * DPR),
+          height: Math.round(GAME_H * DPR),
+        },
+      });
+      game.events.once(Phaser.Core.Events.READY, () => {
+        game!.scene.add("battle", BattleScene, true, launcher);
+      });
+    });
+  return {
+    destroy: () => {
+      cancelled = true;
+      game?.destroy(true);
     },
-  });
-  game.events.once(Phaser.Core.Events.READY, () => {
-    game.scene.add("battle", BattleScene, true, launcher);
-  });
-  return { destroy: () => game.destroy(true) };
+  };
 }

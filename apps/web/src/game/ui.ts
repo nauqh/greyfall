@@ -5,7 +5,7 @@
 
 import * as Phaser from "phaser";
 
-import { BAR, PANELS, packUrl, type PanelName, type SliceSheet } from "./art";
+import { BAR, PANELS, RIBBON, packUrl, type PanelName, type SliceSheet } from "./art";
 
 /** Key a sheet loads under, before composing. */
 export function sheetKey(name: PanelName): string {
@@ -21,6 +21,7 @@ export function loadPanels(scene: Phaser.Scene, names: readonly PanelName[]): vo
   for (const name of names) scene.load.image(sheetKey(name), packUrl(PANELS[name].file));
   scene.load.image("bar_base_src", packUrl(BAR.base));
   scene.load.image("bar_fill_src", packUrl(BAR.fill));
+  scene.load.image("ribbon_src", packUrl(RIBBON.file));
 }
 
 interface Slice {
@@ -81,6 +82,51 @@ export function panel(
     .setOrigin(0.5);
 }
 
+/** Slate title ribbon. The middle stretches; the forked ends never do. */
+export function ribbon(
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+  w: number,
+  scale = 1,
+): Phaser.GameObjects.NineSlice {
+  if (!scene.textures.exists("ribbon")) {
+    const src = scene.textures.get("ribbon_src").getSourceImage() as HTMLImageElement;
+    const tex = scene.textures.createCanvas("ribbon", RIBBON.w * 3, RIBBON.h)!;
+    const ctx = tex.context;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(src, 0, RIBBON.rowY, RIBBON.w, RIBBON.h, 0, 0, RIBBON.w, RIBBON.h);
+    ctx.drawImage(src, RIBBON.midX, RIBBON.rowY, RIBBON.w, RIBBON.h, RIBBON.w, 0, RIBBON.w, RIBBON.h);
+    ctx.drawImage(
+      src,
+      RIBBON.rightX,
+      RIBBON.rowY,
+      RIBBON.w,
+      RIBBON.h,
+      RIBBON.w * 2,
+      0,
+      RIBBON.w,
+      RIBBON.h,
+    );
+    tex.refresh();
+  }
+  return scene.add
+    .nineslice(
+      x,
+      y,
+      "ribbon",
+      undefined,
+      Math.max(RIBBON.w * 2, Math.round(w / scale)),
+      RIBBON.h,
+      RIBBON.w,
+      RIBBON.w,
+      0,
+      0,
+    )
+    .setOrigin(0.5)
+    .setScale(scale);
+}
+
 /** Shared by every label, so the UI reads as one thing. */
 export const FONT: Phaser.Types.GameObjects.Text.TextStyle = {
   fontFamily: '"Gochi Hand", cursive',
@@ -97,10 +143,14 @@ export function label(
   text: string,
   over: Phaser.Types.GameObjects.Text.TextStyle = {},
 ): Phaser.GameObjects.Text {
-  return scene.add
+  const t = scene.add
     .text(x, y, text, { ...FONT, ...over })
     .setOrigin(0.5)
     .setResolution(2);
+  // pixelArt forces NEAREST on every texture, which shimmers text at the
+  // canvas's fractional FIT scale; glyphs want linear.
+  t.texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
+  return t;
 }
 
 /** The pressed sheet is a second nine-slice swapped in on pointer down. */
@@ -122,19 +172,30 @@ export function button(
 
   const box = scene.add.container(x, y, [face, pressed, text_]);
   box.setSize(w, h);
+
+  // Hover lifts 2px, press sinks 2px, as the old DOM buttons did.
+  const lift = (dy: number): void => {
+    scene.tweens.killTweensOf(box);
+    scene.tweens.add({ targets: box, y: y + dy, duration: 120, ease: "Sine.easeInOut" });
+  };
+
   box.setInteractive({ useHandCursor: true })
+    .on("pointerover", () => lift(-2))
     .on("pointerdown", () => {
+      lift(2);
       face.setVisible(false);
       pressed.setVisible(true);
       text_.setY(2);
     })
     .on("pointerup", () => {
+      lift(-2);
       face.setVisible(true);
       pressed.setVisible(false);
       text_.setY(-1);
       onClick();
     })
     .on("pointerout", () => {
+      lift(0);
       face.setVisible(true);
       pressed.setVisible(false);
       text_.setY(-1);
@@ -143,9 +204,9 @@ export function button(
 }
 
 /**
- * The army totals bar. Its caps are 64px wide but only 15px is art, so the
- * pieces are cropped to their ink first or every bar carries 49px of
- * transparent lead-in.
+ * The army totals bar. Its caps are 64px pieces but only capInk is art, so
+ * the pieces are cropped to their ink first or every bar carries transparent
+ * lead-in.
  */
 export class PackBar {
   private fill: Phaser.GameObjects.Image;
@@ -163,7 +224,7 @@ export class PackBar {
     tint: number,
     depth: number,
   ) {
-    const capInk = 15;
+    const capInk = BAR.capInk;
 
     if (!scene.textures.exists("bar_base")) {
       const src = scene.textures.get("bar_base_src").getSourceImage() as HTMLImageElement;
@@ -211,8 +272,9 @@ export class PackBar {
       .setScale(scale)
       .setDepth(depth);
 
-    // The fill sits where its own sheet puts it, (fillY - artY) rows down.
-    this.innerW = width - capInk * 2 * scale;
+    // The fill spans channel edge to channel edge, which reaches well into
+    // the caps; insetting by cap width leaves dead wood at both ends.
+    this.innerW = width - BAR.chanX * 2 * scale;
     const top = y - (BAR.artH / 2) * scale;
     this.fill = scene.add
       .image(x - this.innerW / 2, top + (BAR.fillY - BAR.artY) * scale, "bar_fill")
@@ -251,47 +313,4 @@ export class PackBar {
     this.fill.setVisible(this.shown > 0.0005);
     this.fill.setDisplaySize(Math.max(1, this.innerW * this.shown), BAR.fillH * this.scale);
   }
-}
-
-/**
- * Same packing as `compose` but without Phaser, so the DOM draft screen can
- * use the art as a CSS border-image with no derived files on disk.
- */
-export async function nineSliceDataUrl(
-  name: PanelName,
-): Promise<{ url: string; slice: string }> {
-  const spec = PANELS[name];
-  const img = new Image();
-  img.src = packUrl(spec.file);
-  await img.decode();
-
-  const w = spec.colW[0] + spec.colW[1] + spec.colW[2];
-  const h = spec.rowH[0] + spec.rowH[1] + spec.rowH[2];
-  const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext("2d")!;
-  ctx.imageSmoothingEnabled = false;
-  let dy = 0;
-  for (let r = 0; r < 3; r++) {
-    let dx = 0;
-    for (let c = 0; c < 3; c++) {
-      ctx.drawImage(
-        img,
-        spec.colX[c]!,
-        spec.rowY[r]!,
-        spec.colW[c]!,
-        spec.rowH[r]!,
-        dx,
-        dy,
-        spec.colW[c]!,
-        spec.rowH[r]!,
-      );
-      dx += spec.colW[c]!;
-    }
-    dy += spec.rowH[r]!;
-  }
-  // border-image-slice wants top right bottom left.
-  const slice = `${spec.rowH[0]} ${spec.colW[2]} ${spec.rowH[2]} ${spec.colW[0]}`;
-  return { url: canvas.toDataURL("image/png"), slice };
 }

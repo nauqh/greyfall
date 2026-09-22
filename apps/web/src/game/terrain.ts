@@ -90,12 +90,10 @@ export function prepareTerrain(scene: Phaser.Scene): void {
   }
 }
 
+// Plain world object, not scroll-fixed: the camera carries a zoom and a
+// matching scroll, and opting out of the scroll alone lands it off-canvas.
 export function buildWater(scene: Phaser.Scene, w: number, h: number): void {
-  scene.add
-    .tileSprite(0, 0, w, h, "water")
-    .setOrigin(0)
-    .setDepth(DEPTH.water)
-    .setScrollFactor(0);
+  scene.add.tileSprite(0, 0, w, h, "water").setOrigin(0).setDepth(DEPTH.water);
 }
 
 /** Snapped to whole 64px tiles. Returns the rect actually covered. */
