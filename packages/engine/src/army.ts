@@ -1,21 +1,13 @@
 /**
- * The AI opponent. Given the same budget as the player, buys an army and
- * arranges it on its 4x3 board.
- *
- * The goal is a believable opponent, not an optimal one: weighted picks give
- * variety between seeds, and a fixed role template keeps the tanks in front of
- * the archers so the prototype never looks untuned.
+ * The AI opponent: believable, not optimal. Weighted picks give variety
+ * between seeds; a role template keeps tanks in front of archers.
  */
 
 import { BALANCE, type UnitClass } from "./balance.ts";
 import { makeRng, type Rng } from "./rng.ts";
 import type { Army, Placement } from "./simulate.ts";
 
-/**
- * Tiles a role wants, best first, in the spirit of TFT positioning: melee
- * hold the front row centred so they engage immediately, ranged carry from
- * the back corners, where enemies can reach them from the fewest directions.
- */
+/** Cells a role wants, best first: melee front and centre, ranged back corners. */
 function tilePreference(melee: boolean): { col: number; row: number }[] {
   const rows = melee ? [2, 1, 0] : [0, 1, 2];
   const cols = melee ? [2, 1, 3, 0, 4] : [0, 4, 1, 3, 2];
@@ -41,10 +33,7 @@ function buy(budget: number, rng: Rng): UnitClass[] {
   return picked;
 }
 
-/**
- * Buy and place an army within `budget` gold. The same seed always gives the
- * same army, so a replay only needs to store the seed.
- */
+/** Same seed always gives the same army, so a replay need only store the seed. */
 export function generateArmy(
   budget: number = BALANCE.budget,
   seed: number | string = 0,
@@ -52,8 +41,7 @@ export function generateArmy(
   const rng = makeRng(seed);
   const picked = buy(budget, rng);
 
-  // Heaviest units to the front of their group, so a Lancer takes the very
-  // front tile ahead of a Warrior.
+  // Heaviest first, so a Lancer takes the front cell ahead of a Warrior.
   picked.sort((a, b) => BALANCE.units[b].hp - BALANCE.units[a].hp);
 
   const taken = new Set<string>();

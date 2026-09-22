@@ -1,14 +1,10 @@
 /**
- * The battle simulation. A pure function: armies and a seed in, a result and
- * an event log out. No I/O, no clock, no globals, so the browser runs it for
- * previews now and the server runs it for official results in Phase 2.
+ * The battle simulation. Pure: armies and a seed in, a result and an event log
+ * out. No I/O, no clock, no globals, so it runs unchanged on the server.
  *
- * Geometry: a plain square grid. Each side owns a 5x3 half; both halves stack
- * into one 5x6 board. Side A fills the bottom half (battle rows 5,4,3 back to
- * front), side B the top (rows 0,1,2), so both front rows (own row 2) are
- * adjacent across the middle line. Distance is Chebyshev over the eight
- * neighbours, so a diagonal step costs the same as a straight one and range 1
- * means any touching cell.
+ * A 5x6 square grid of two 5x3 halves. Side A holds the bottom rows (5,4,3
+ * back to front), side B the top, so both front rows meet in the middle.
+ * Distance is Chebyshev over the eight neighbours.
  */
 
 import {
@@ -66,12 +62,9 @@ interface SimUnit extends UnitSnapshot {
 }
 
 /**
- * Where a side's own cell sits on the shared 5x6 battle grid. The two halves
- * are point reflections of each other through the board centre, so side A
- * keeps its columns and mirrors its rows (bottom half), while side B keeps its
- * rows and mirrors its columns (top half). Both front rows (own row 2) face
- * the middle. Chebyshev distance is invariant under that reflection, which is
- * what lets a mirror match stay an exact draw.
+ * Own cell to shared-grid cell. The halves are point reflections through the
+ * board centre; Chebyshev is invariant under that, which is what keeps a
+ * mirror match an exact draw.
  */
 export function battleRow(side: Side, row: number): number {
   return side === "a" ? BALANCE.board.battleRows - 1 - row : row;
@@ -92,11 +85,7 @@ export function neighbors(col: number, row: number): { col: number; row: number 
   return out;
 }
 
-/**
- * Chebyshev distance: the number of king moves between two cells, so a
- * diagonal costs the same as a straight step and every one of the eight
- * neighbours is exactly range 1.
- */
+/** King moves: a diagonal costs the same as a straight step. */
 export function chebyshev(
   a: { col: number; row: number },
   b: { col: number; row: number },
@@ -108,11 +97,7 @@ export function armyCost(army: Army): number {
   return army.reduce((sum, p) => sum + BALANCE.units[p.class].cost, 0);
 }
 
-/**
- * Trust boundary: armies arrive from a client, and in Phase 2 from the
- * database, so check them before they reach the simulation loop. Returns the
- * problems found; an empty array means the army is legal.
- */
+/** Trust boundary: armies arrive from a client. Empty result means legal. */
 export function validateArmy(army: Army, budget: number = BALANCE.budget): string[] {
   const errors: string[] = [];
   const { cols, rows, maxUnits } = BALANCE.board;
@@ -168,9 +153,8 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
     if (errors.length > 0) throw new Error(`army ${side} is invalid: ${errors.join("; ")}`);
   }
 
-  // Phase 1 has no covenants, so nothing in the battle rolls dice: no dodge,
-  // no burn procs. The seed is threaded through anyway so that adding those in
-  // Phase 2 does not change this signature or the call sites.
+  // No covenants yet, so nothing rolls dice. The seed is threaded through so
+  // Phase 2 dodge and burn need no signature change.
   void makeRng(seed);
 
   const units = [...build(armyA, "a"), ...build(armyB, "b")];
@@ -196,10 +180,8 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
   for (let t = 0; t < MAX_TICKS; t++) {
     ticks = t + 1;
 
-    // Every decision in a tick reads the state as it was at the start of that
-    // tick: HP, who is alive, and where everyone stands. So two units that
-    // kill each other on the same tick both connect, and no unit gets a free
-    // first strike or a free step just for being earlier in the array.
+    // Every decision in a tick reads the tick's starting state, so units that
+    // kill each other both connect and array order grants no free first strike.
     const hpAtStart = units.map((u) => u.hp);
     const aliveAtStart = units.map(alive);
     const startPos = units.map((u) => ({ col: u.col, row: u.row }));
@@ -213,11 +195,9 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
       const stats = BALANCE.units[unit.class];
       const healer = stats.heal > 0;
 
-      // A healer looks for the most wounded ally, itself included; everyone
-      // else looks for the nearest enemy. Every key component is preserved by
-      // the board's point reflection - distance, row and column offsets, and
-      // the index order, which reads the same from either half - so a mirror
-      // match is never decided by a tie-break.
+      // Healers take the most wounded ally, itself included; everyone else the
+      // nearest enemy. Every key component survives the point reflection, so a
+      // mirror match is never decided by a tie-break.
       let targetIdx = -1;
       let targetKey: number[] = [];
       let targetDist = 0;
@@ -246,9 +226,8 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
 
       if (targetDist <= stats.range) {
         unit.nextAt = t + TICKS_PER_ACTION;
-        // Damage and healing accumulate unclamped and are squared up at the
-        // end of the tick. Clamping each one as it lands would make the total
-        // depend on whether the hit or the heal was processed first.
+        // Unclamped until the tick ends: clamping as each lands would make the
+        // total depend on whether the hit or the heal came first.
         if (healer) {
           const amount = Math.min(stats.heal, target.maxHp - hpAtStart[targetIdx]!);
           target.hp += amount;
@@ -276,13 +255,9 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
         continue;
       }
 
-      // Out of reach: one step toward the target, over the eight neighbours,
-      // ranked by how much closer each one lands. The final tie-break is
-      // flipped by side: under the board's point reflection (col, row) maps to
-      // (cols-1-col, rows-1-row), so (col+row, col) of a step maps to a
-      // constant minus itself. Side A taking the smallest and side B the
-      // largest therefore makes both armies curve around blockers as mirror
-      // images, instead of both leaning the same way.
+      // One step toward the target, nearest first. The tie-break flips by side
+      // because the reflection maps (col+row, col) to a constant minus itself,
+      // so both armies curve around blockers as mirror images.
       const flip = unit.side === "a" ? 1 : -1;
       const steps = neighbors(unit.col, unit.row)
         .filter((s) => onBoard(s) && !occupied.has(tileKey(s)))
@@ -295,13 +270,9 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
       if (steps.length > 0) intents.push({ i, steps });
     }
 
-    // Moves are granted simultaneously as well, in rounds: a tile more than
-    // one unit wants goes to nobody, and the units that missed out fall back
-    // to their next choice in the following round. Handing a contested tile
-    // to whoever came first in the array would quietly favour side A; denying
-    // it with no fallback livelocks two units that keep asking for the same
-    // tile every tick. Each round depends only on the claim counts, so the
-    // outcome does not depend on the order units are iterated in.
+    // Moves are granted in rounds: a contested cell goes to nobody and the
+    // losers fall back next round. First-come would favour side A; denying with
+    // no fallback livelocks two units wanting the same cell every tick.
     const granted = new Map<number, { col: number; row: number }>();
     const taken = new Set<string>();
     const contested = new Set<string>();
@@ -363,7 +334,7 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
     survivors[u.side] += 1;
   }
 
-  // A wipe and a timeout are decided the same way: whoever has more HP left.
+  // Wipe and timeout are decided the same way: whoever has more HP left.
   const winner: BattleResult["winner"] =
     hpRemaining.a === hpRemaining.b ? "draw" : hpRemaining.a > hpRemaining.b ? "a" : "b";
 

@@ -1,19 +1,11 @@
 "use client";
 
-// The Phase 1 battle prototype, all in the browser: pick an army within the
-// budget, place it on your own 5x3 half, watch the engine's event log play
-// back. Your army fights from the near half of the board, the AI's from the
-// far half, the way an autobattler reads.
+// The Phase 1 prototype, all in the browser: pick an army within the budget,
+// place it on your own 5x3 half, watch the engine event log play back.
 //
-// The draft screen is DOM rather than canvas because clicking cells and
-// dragging a roster around is what the DOM is good at, but it is dressed in
-// the same Tiny Swords art as the battle: the panels and buttons are the
-// pack's nine-slices, composed to contiguous images at runtime (see
-// ui.ts/nineSliceDataUrl - the pack ships them with gaps, which CSS
-// border-image cannot read), the cells are the pack's grass, and the units
-// standing on them are frame 0 of the same idle sheets the battle animates.
-//
-// Phaser loads client-side only, inside an effect, per the PRD.
+// The draft screen is DOM because clicking cells is what the DOM is good at,
+// dressed in the same art as the battle. Phaser loads client-side only, inside
+// an effect, per the PRD.
 
 import {
   BALANCE,
@@ -64,10 +56,7 @@ function newSeed(): number {
   return Math.floor(Math.random() * 2 ** 31);
 }
 
-/**
- * Compose the pack's gapped nine-slice sheets into data URLs and hand them to
- * CSS as custom properties. Done once, on mount.
- */
+/** Compose the gapped nine-slices into data URLs for CSS. Once, on mount. */
 function usePackSkin(): boolean {
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -82,9 +71,8 @@ function usePackSkin(): boolean {
         root.style.setProperty(`--${name}`, `url("${skins[i]!.url}")`);
         root.style.setProperty(`--${name}-slice`, skins[i]!.slice);
       }
-      // CSS cannot read an env var, and url() will not concatenate with a
-      // custom property, so the three pack images the stylesheet needs are
-      // handed over whole. That keeps packUrl the only place a base lives.
+      // CSS cannot read an env var and url() will not take a custom property,
+      // so these are handed over whole. packUrl stays the only base.
       for (const [name, file] of [
         ["pack-water", "Terrain/Tileset/Water Background color.png"],
         ["pack-coin", "Terrain/Resources/Gold/Gold Resource/Gold_Resource.png"],
@@ -193,8 +181,7 @@ export default function Page() {
         </span>
       </div>
 
-      {/* The player's own 5x3 half, front row at the top where it will face
-          the enemy: own row r sits on battle row 5 - r. */}
+      {/* Front row at the top, facing the enemy: own row r is battle row 5 - r. */}
       <div className="board">
         {Array.from({ length: BALANCE.board.rows }, (_, d) => {
           const row = BALANCE.board.rows - 1 - d; // front row first
@@ -271,16 +258,14 @@ function BattleView({
     let cancelled = false;
     let game: { destroy: () => void } | null = null;
 
-    // Phaser must never run on the server, so it is imported inside the
-    // effect: the PRD's "loaded with ssr: false" without a second bundle.
+    // Imported in the effect so Phaser never runs on the server.
     void import("../game/BattleScene").then(({ startBattle, GAME_W, GAME_H }) => {
       if (cancelled) return;
-      // The scene owns the board's proportions, so the holder takes its shape
-      // from there. Hardcoding it in CSS means Phaser's FIT letterboxes into a
-      // wrongly shaped box every time the layout changes.
+      // The scene owns the proportions. Hardcoding them in CSS letterboxes
+      // FIT into a wrongly shaped box every time the layout moves.
       el.style.aspectRatio = `${GAME_W} / ${GAME_H}`;
-      // Cap the width by what the viewport height allows at that ratio, or a
-      // short viewport clamps the height only and FIT letterboxes the sides.
+      // Cap width by what the viewport height allows, or a short viewport
+      // clamps height only and FIT letterboxes the sides.
       el.style.maxWidth = `min(1180px, calc((100vh - 28px) * ${GAME_W} / ${GAME_H}))`;
       game = startBattle(el, {
         result: battle.result,

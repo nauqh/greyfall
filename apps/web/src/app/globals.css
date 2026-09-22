@@ -1,14 +1,10 @@
-/* The draft screen, dressed in the same Tiny Swords art as the battle.
+/* The draft screen, on the same Tiny Swords art as the battle.
  *
- * The pack's panels and buttons are nine-slices, so they are applied with
- * border-image: the decorated corners keep their pixel size while the edges
- * and middle stretch to whatever the element needs. The sheets ship with gaps
- * between the pieces, which border-image cannot read, so page.tsx composes
- * them to contiguous data URLs first and hands them over as --paper,
- * --woodTable and friends.
+ * Panels and buttons are nine-slices applied with border-image. The sheets
+ * ship with gaps, which border-image cannot read, so page.tsx composes them
+ * to data URLs and hands them over as --paper, --woodTable and friends.
  *
- * Everything pixel is `image-rendering: pixelated`; anything else turns the
- * art to mush. */
+ * Everything pixel needs image-rendering: pixelated. */
 
 :root {
   color-scheme: dark;
@@ -54,10 +50,8 @@ body {
   padding: 12px;
 }
 
-/* Phaser is set to FIT, so it fills this box. The exact ratio is written on
-   the element by BattleView from the scene's own GAME_W/GAME_H; the value
-   here is only a pre-hydration fallback. max-height keeps a tall board inside
-   the viewport instead of pushing the page into a scroll. */
+/* BattleView writes the real ratio from the scene's GAME_W/GAME_H; this is
+   only a pre-hydration fallback. max-height keeps a tall board on screen. */
 .canvas {
   width: 100%;
   max-width: 1180px;
@@ -136,8 +130,7 @@ h1.banner {
   border-image: var(--paper) 64 fill / 64px stretch;
 }
 
-/* SpecialPaper is a dark slate panel with gold filigree, so the selected
-   card flips its text from ink-on-parchment to light-on-slate. */
+/* SpecialPaper is dark slate, so the selected card needs light text. */
 .skinned .card.selected {
   border-image: var(--specialPaper) 64 fill / 64px stretch;
   color: var(--ink);
@@ -230,7 +223,7 @@ h1.banner {
   color: var(--ink-dim);
 }
 
-/* A plain square grid: five columns by three rows, no stagger. */
+/* Five columns by three rows, no stagger. */
 .board {
   display: inline-block;
   padding: 20px 22px 24px;
@@ -257,8 +250,7 @@ h1.banner {
   cursor: pointer;
 }
 
-/* The grass cell itself. The pack's grass tile is 96px; drawn at 84 it keeps
-   its texture without a fractional scale showing seams. */
+/* The grass tile is 96px, drawn at 84. */
 .tile {
   position: absolute;
   inset: 0;
@@ -274,10 +266,9 @@ h1.banner {
   filter: brightness(1.14);
 }
 
-/* The unit standing on the cell: frame 0 of the same idle sheet the battle
-   animates, at half scale, stood on its ground anchor. The wrapper is a
-   zero-size point at the cell centre, so `left/top` can be the anchor offset
-   straight from the sheet metrics. */
+/* Frame 0 of the battle's idle sheet at half scale, stood on its ground
+   anchor. The wrapper is a zero-size point at the cell centre, so left/top
+   are the anchor offsets straight from the sheet metrics. */
 .pawnwrap {
   position: absolute;
   left: 50%;
@@ -347,7 +338,7 @@ h1.banner {
   cursor: default;
 }
 
-/* Until the nine-slices finish composing, keep the controls legible. */
+/* Until the nine-slices compose, keep the controls legible. */
 .draft:not(.skinned) .card,
 .draft:not(.skinned) .btn {
   background: rgba(38, 43, 54, 0.9);

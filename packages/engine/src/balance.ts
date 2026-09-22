@@ -1,9 +1,6 @@
 /**
- * Every tunable number in the game lives here. Nothing else in the engine
- * hard-codes a stat, so balancing is a single-file edit.
- *
- * Phase 1 uses only the battle half of this: no economy, supply, buildings,
- * upgrades or covenants yet.
+ * Every tunable number. Nothing else in the engine hard-codes a stat.
+ * Phase 1 uses only the battle half: no economy, buildings or covenants yet.
  */
 
 export type UnitClass = "pawn" | "warrior" | "lancer" | "archer" | "monk";
@@ -33,17 +30,11 @@ export const BALANCE = {
   budget: 20,
 
   board: {
-    /**
-     * Each side arranges on its own 5x3 half of a plain square grid.
-     * The halves stack into one 5x6 battle grid: side B's row r sits at r and
-     * side A's at 5 - r, so the player's army is the bottom half, the enemy's
-     * the top, and the two front rows meet in the middle.
-     */
+    /** Two 5x3 halves stacked into one 5x6 grid; side A is the bottom half. */
     cols: 5,
     rows: 3,
     battleCols: 5,
     battleRows: 6,
-    /** 5 x 3 = 15 cells, army cap set by budget, hard cap 8 units. */
     maxUnits: 8,
   },
 
@@ -52,10 +43,7 @@ export const BALANCE = {
   /** A battle is decided on total HP remaining if it runs this long. */
   timeoutSeconds: 45,
 
-  /**
-   * One action per second for every class: an attack, a heal, or a one-tile
-   * step. So the `damage` column below reads directly as damage per second.
-   */
+  /** One action a second for every class, so `damage` reads as damage per second. */
   actionSeconds: 1,
 
   /** Extra damage against the class you counter. */
@@ -76,10 +64,7 @@ export const BALANCE = {
     monk: { cost: 4, hp: 70, damage: 0, range: 2, heal: 12 },
   } as Record<UnitClass, UnitStats>,
 
-  /**
-   * What the AI opponent buys, as pick weights. The Pawn is a miner, not a
-   * board unit, so it is never bought for a generated army.
-   */
+  /** AI pick weights. The Pawn is a miner, never bought for a board army. */
   aiPickWeights: {
     warrior: 3,
     lancer: 3,

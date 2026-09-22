@@ -1,14 +1,9 @@
-// The arena the battle is fought on: a grass island in open water, the shape
-// the pack's terrain art is drawn for.
+// A grass island in open water, the shape the pack's terrain art is drawn for.
+// The island is a nine-slice of the tileset's grass, so it gets real edges
+// instead of a flat green rectangle.
 //
-// The island is built from the tileset's grass nine-slice (cols 0-2, rows 0-2
-// of 64px tiles - the only fully solid tile is the centre, (1,1)), so it gets
-// real edges and corners instead of a flat green rectangle. Animated foam
-// rings the shoreline, scenery fills the margins either side of the board,
-// and clouds drift over the lot.
-//
-// Scenery placement is driven by the engine's seeded RNG, so a given battle
-// seed always produces the same island. A replay looks like its own battle.
+// Scenery is placed with the engine's seeded RNG, so a battle seed always
+// produces the same island and a replay looks like its own battle.
 
 import { makeRng, type Rng } from "@greyfall/engine";
 import * as Phaser from "phaser";
@@ -55,7 +50,7 @@ export function loadTerrain(scene: Phaser.Scene): void {
   }
 }
 
-/** Register the nine grass tiles and the animations scenery needs. */
+/** Register the nine grass tiles and the scenery animations. */
 export function prepareTerrain(scene: Phaser.Scene): void {
   const tex = scene.textures.get("tileset");
   for (let r = 0; r < 3; r++) {
@@ -103,11 +98,7 @@ export function buildWater(scene: Phaser.Scene, w: number, h: number): void {
     .setScrollFactor(0);
 }
 
-/**
- * Lay the grass island over `rect`, snapped out to whole 64px tiles so the
- * edge tiles are never cut mid-pixel. Returns the tile-aligned rect actually
- * covered, which is what the shoreline foam and the scenery margins use.
- */
+/** Snapped to whole 64px tiles. Returns the rect actually covered. */
 export function buildIsland(scene: Phaser.Scene, rect: Rect): Rect {
   const t = TERRAIN.tile;
   const x0 = Math.floor(rect.x0 / t) * t;
@@ -117,7 +108,7 @@ export function buildIsland(scene: Phaser.Scene, rect: Rect): Rect {
 
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      // First / middle / last picks the nine-slice cell.
+      // First / middle / last picks the slice cell.
       const sc = c === 0 ? 0 : c === cols - 1 ? 2 : 1;
       const sr = r === 0 ? 0 : r === rows - 1 ? 2 : 1;
       scene.add
@@ -129,7 +120,7 @@ export function buildIsland(scene: Phaser.Scene, rect: Rect): Rect {
   return { x0, y0, x1: x0 + cols * t, y1: y0 + rows * t };
 }
 
-/** Animated foam all the way round the shoreline, phase-offset per blob. */
+/** Foam round the shoreline, phase-offset per blob. */
 export function buildFoam(scene: Phaser.Scene, island: Rect): void {
   const step = TERRAIN.tile;
   const spots: { x: number; y: number }[] = [];
@@ -148,7 +139,7 @@ export function buildFoam(scene: Phaser.Scene, island: Rect): void {
       .setScale(0.85)
       .setAlpha(0.5);
     foam.play("foam_anim");
-    // Stagger the loop so the shoreline shimmers instead of pulsing as one.
+    // Staggered so the shoreline shimmers instead of pulsing as one.
     if (foam.anims.currentAnim) {
       foam.anims.setProgress(((i * 7) % TERRAIN.foamFrames) / TERRAIN.foamFrames);
     }
@@ -156,9 +147,8 @@ export function buildFoam(scene: Phaser.Scene, island: Rect): void {
 }
 
 /**
- * Scenery in the margins either side of the board, plus rocks out in the
- * water. Nothing is placed between the two armies, so the board itself stays
- * readable - the same reason TFT keeps its arena edges busy and its hexes bare.
+ * Margins either side of the board, plus rocks in the water. Nothing goes
+ * between the armies, so the board stays readable.
  */
 export function scatterDecor(
   scene: Phaser.Scene,
@@ -178,16 +168,15 @@ export function scatterDecor(
       .setScale(scale);
     if (d.frames > 1) {
       s.play(`${d.key}_anim`);
-      // Stagger the sway. Guarded: a sheet whose frame size does not divide
-      // its width loads with zero frames, and setProgress on a sprite with no
-      // running animation throws.
+      // Guarded: a sheet with zero frames leaves no current anim, and
+      // setProgress then throws.
       if (s.anims.currentAnim) s.anims.setProgress(rng.next());
     }
     if (rng.next() < 0.5) s.setFlipX(true);
     return s;
   };
 
-  // Left and right margins of the island, between its edge and the board.
+  // Between the island edge and the board.
   for (const side of [-1, 1] as const) {
     const near = side < 0 ? island.x0 : board.x1;
     const far = side < 0 ? board.x0 : island.x1;
@@ -204,7 +193,7 @@ export function scatterDecor(
     }
   }
 
-  // Rocks out in the water, clear of the island.
+  // Out in the water, clear of the island.
   for (let i = 0; i < 6; i++) {
     const left = rng.next() < 0.5;
     const x = left ? rng.next() * (island.x0 - 30) : island.x1 + 30 + rng.next() * (canvas.w - island.x1 - 30);
@@ -213,7 +202,7 @@ export function scatterDecor(
   }
 }
 
-/** Slow clouds behind the units, so the arena reads as a place with sky. */
+/** Slow clouds behind the units. */
 export function driftClouds(
   scene: Phaser.Scene,
   canvas: { w: number; h: number },
@@ -237,7 +226,7 @@ export function driftClouds(
   }
 }
 
-/** The pack's soft blob, anchored like a unit: a ready-made drop shadow. */
+/** The pack blob, anchored like a unit. */
 export function addShadow(scene: Phaser.Scene, x: number, y: number, scale: number): Phaser.GameObjects.Image {
   return scene.add
     .image(x, y, "shadow_src")

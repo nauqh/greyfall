@@ -1,19 +1,12 @@
-// The unit sheets and the crop contract for them.
+// Unit sheets: horizontal strips of equal frames, 10fps to match the pack.
 //
-// Every sheet is one horizontal strip of equal frames, so a sheet is cut by
-// dividing its width by the frame size; there is no other cropping step.
-// Animations run at 10fps, the rate the pack is drawn for.
+// Anchors are the ground contact point in native pixels, read off the art.
+// Within a class the feet land on the same row in every sheet, so one anchor
+// per class stops units hopping between animations. The Lancer vertical
+// thrusts are the exception and carry their own.
 //
-// Anchors are the ground contact point in native pixels from the frame's
-// top-left, read off the art. Within a class the feet land on the same row in
-// every sheet - warrior 136, archer 135, monk 133, lancer 197, pawn 134 - so
-// one anchor per class is enough and nobody hops between animations. The two
-// exceptions are the Lancer's vertical thrusts, which redraw the figure at a
-// different height in the frame and carry their own anchor.
-//
-// Now that the battle runs up the board instead of across it, the Lancer uses
-// the pack's Up and Down attack poses; it is the only class that ships them.
-// Everyone else has one attack pose and is simply flipped to face its target.
+// The Lancer is the only class shipping Up and Down attack poses, which is
+// what the vertical board needs. Everyone else is flipped to face its target.
 
 import type { UnitClass } from "@greyfall/engine";
 
@@ -41,9 +34,8 @@ export const BODY: Record<UnitClass, Body> = {
 };
 
 /**
- * Head height above the feet, for placing health pips and floating numbers.
- * The Lancer's measures to its head, not its raised lance tip 148px up, so
- * its pip sits with everyone else's instead of halfway up the shaft.
+ * Head height above the feet, for pips and floating numbers. The Lancer
+ * measures to its head, not its lance tip 148px up.
  */
 export const BODY_HEIGHT: Record<UnitClass, number> = {
   warrior: 89,
@@ -80,8 +72,7 @@ const POSES: Record<UnitClass, Partial<Record<AnimName, Pose>>> = {
     idle: { file: "Lancer/Lancer_Idle.png" },
     run: { file: "Lancer/Lancer_Run.png" },
     attack: { file: "Lancer/Lancer_Right_Attack.png" },
-    // The up thrust lifts the figure 9px; the down thrust redraws it lower
-    // and further right, with the lance hanging well below the feet.
+    // The up thrust lifts the figure 9px; the down thrust redraws it lower.
     attackUp: { file: "Lancer/Lancer_Up_Attack.png", anchorX: 150, anchorY: 190 },
     attackDown: { file: "Lancer/Lancer_Down_Attack.png", anchorX: 165, anchorY: 206 },
   },
@@ -97,10 +88,7 @@ const SIDE_DIR: Record<Side, string> = { a: "Blue Units", b: "Red Units" };
 /** The Monk's heal burst, played on the unit being healed. */
 export const HEAL_EFFECT = { frame: 192, frames: 11 } as const;
 
-/**
- * URL of one pose's sheet. Exported so the draft screen can show the same
- * art as the battle without importing anything that pulls in Phaser.
- */
+/** Exported so the draft screen shows the same art without pulling in Phaser. */
 export function sheetUrl(side: Side, cls: UnitClass, anim: AnimName = "idle"): string {
   return packUrl(`Units/${SIDE_DIR[side]}/${POSES[cls][resolveAnim(cls, anim)]!.file}`);
 }
@@ -117,7 +105,7 @@ export function healKey(side: Side): string {
   return `heal_${side}`;
 }
 
-/** Falls back to the one attack pose for classes with no vertical poses. */
+/** Falls back to the one attack pose where there are no vertical ones. */
 export function resolveAnim(cls: UnitClass, want: AnimName): AnimName {
   return POSES[cls][want] ? want : "attack";
 }
@@ -150,7 +138,7 @@ export function loadUnits(scene: Phaser.Scene): void {
   }
 }
 
-/** Register every animation both armies can play. Attacks play once. */
+/** Attacks play once; idle and run loop. */
 export function makeAnims(scene: Phaser.Scene): void {
   const frameCount = (key: string): number =>
     scene.textures.get(key).getFrameNames().filter((f) => f !== "__BASE").length;
@@ -182,7 +170,7 @@ export function makeAnims(scene: Phaser.Scene): void {
   }
 }
 
-/** Play `anim` and move the origin to that pose's own ground anchor. */
+/** Play `anim`, moving the origin to that pose ground anchor. */
 export function playPose(
   sprite: Phaser.GameObjects.Sprite,
   side: Side,

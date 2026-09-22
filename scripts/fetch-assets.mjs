@@ -1,27 +1,14 @@
 #!/usr/bin/env node
-// Puts the Tiny Swords pack where the web app expects it, without ever
-// committing it. The pack's license forbids redistribution, so the files live
-// in a private S3 object and every machine fetches them for itself.
+// Unpacks the Tiny Swords pack into apps/web/public from the private S3 object
+// named by TINY_SWORDS_S3. The pack's license forbids redistribution, so it is
+// never committed.
 //
-// The object is read with the AWS SDK rather than over a plain URL, because
-// neither URL shape S3 offers works here: a public object is a redistributable
-// copy of a pack whose license forbids exactly that, and a presigned URL
-// expires (7 days at most) so it cannot sit in a host's environment
-// variables. Signing each request keeps the object private and never stales.
+// The SDK rather than a URL: a public object would be a redistributable copy,
+// and a presigned URL expires within 7 days so it cannot live in a host's
+// environment. Credentials and region come from the standard AWS chain.
 //
-// Credentials and region come from the standard AWS chain, so this picks up
-// ~/.aws locally and AWS_* variables on a build host with no special casing.
-//
-// Point TINY_SWORDS_S3 at the object, in .env locally or in the host's
-// environment for a deploy:
-//
-//   TINY_SWORDS_S3=s3://greyfall-assets/tiny-swords/tiny-swords-v1.zip
-//
-// It does nothing when the pack is already unpacked, so it is safe to run
-// before every dev start, which is how it is wired. With nothing configured it
-// prints what to do and exits 0 so `pnpm dev` still starts, and you get an
-// unpainted game. Pass --require to fail instead, which is what a deploy wants
-// rather than shipping a blank board.
+// A no-op once unpacked, so it is safe before every dev start. Warns and exits
+// 0 when unconfigured; --require exits 1 instead, for a deploy.
 
 import { spawnSync } from "node:child_process";
 import {
@@ -42,15 +29,12 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DEST = join(ROOT, "apps", "web", "public", "tiny-swords");
 
-// Read .env at the repo root if there is one, so the setting can be written
-// down once instead of exported every time. Next loads .env for the app
-// itself; this is a plain node process and gets none of that for free.
-// loadEnvFile does not overwrite variables already in the environment, so an
-// export still wins, which is what a deploy relies on.
+// Next loads .env for the app; a plain node process does not get that free.
+// loadEnvFile leaves existing variables alone, so an export still wins.
 try {
   process.loadEnvFile(join(ROOT, ".env"));
 } catch {
-  // No .env, or it is unreadable. Shell variables still apply.
+  // No .env. Shell variables still apply.
 }
 
 /** A folder counts as the pack if it has this inside it. */
@@ -67,11 +51,7 @@ function isPack(dir) {
   }
 }
 
-/**
- * The pack may sit at the root of the zip or one level down, depending on
- * whether the folder or its contents were zipped. Both are worth accepting;
- * the alternative is a confusing failure the first time it gets re-zipped.
- */
+/** The pack may be at the zip root or one level down, depending on how it was zipped. */
 function findPack(dir) {
   if (isPack(dir)) return dir;
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -83,8 +63,7 @@ function findPack(dir) {
 }
 
 function extract(zip, into) {
-  // unzip is on most CI images and in git bash. The system tar on Windows is
-  // bsdtar, which reads zip; GNU tar does not, so the order matters here.
+  // Windows' system tar is bsdtar, which reads zip; GNU tar does not.
   const winTar = "C:\\Windows\\System32\\tar.exe";
   const tries = [
     ["unzip", ["-q", zip, "-d", into]],
@@ -109,10 +88,8 @@ async function fromS3(uri) {
     throw new Error("@aws-sdk/client-s3 is not installed; run pnpm install");
   }
 
-  // A placeholder pasted out of the docs is a real failure mode, and the error
-  // it causes points nowhere: the SDK builds an Authorization header from the
-  // value and Node rejects the request with "Invalid character in header
-  // content". Catch it here where the message can say what to do about it.
+  // Otherwise a placeholder pasted from the docs fails as "Invalid character
+  // in header content", which names nothing useful.
   for (const name of ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]) {
     const value = process.env[name];
     if (value !== undefined && !/^[\x21-\x7e]+$/.test(value)) {
@@ -146,9 +123,7 @@ async function fromS3(uri) {
   try {
     renameSync(pack, DEST);
   } catch (err) {
-    // The temp dir and the repo are often on different volumes (a different
-    // drive letter locally, a different mount on a build host), and rename
-    // cannot cross one. Copying always works.
+    // Temp and the repo are often on different volumes; rename cannot cross one.
     if (err.code !== "EXDEV") throw err;
     cpSync(pack, DEST, { recursive: true });
   }

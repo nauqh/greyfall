@@ -1,23 +1,18 @@
-// Turning the pack's UI kit into things that can actually be drawn.
-//
-// The kit's panels and buttons are nine-slices spread across a sheet with
-// empty bands between the pieces (see art.ts), and nothing - not Phaser's
-// NineSlice, not CSS border-image - can consume that directly. Both want one
-// contiguous image. So the first thing that happens to every panel is a
-// compose step that packs the nine pieces edge to edge; after that a panel is
-// an ordinary nine-slice that stretches to any size without smearing its
-// corners.
+// The kit ships nine-slices with empty bands between the pieces, which
+// neither Phaser NineSlice nor CSS border-image can read. Everything here
+// composes them edge to edge first; after that a panel is an ordinary
+// nine-slice that stretches without smearing its corners.
 
 import * as Phaser from "phaser";
 
 import { BAR, PANELS, packUrl, type PanelName, type SliceSheet } from "./art";
 
-/** Source key a sheet loads under, before it is composed. */
+/** Key a sheet loads under, before composing. */
 export function sheetKey(name: PanelName): string {
   return `sheet_${name}`;
 }
 
-/** Key the contiguous, composed nine-slice ends up under. */
+/** Key the composed nine-slice ends up under. */
 export function panelKey(name: PanelName): string {
   return `panel_${name}`;
 }
@@ -71,11 +66,7 @@ function compose(scene: Phaser.Scene, name: PanelName): Slice {
   return { key, left: spec.colW[0], right: spec.colW[2], top: spec.rowH[0], bottom: spec.rowH[2] };
 }
 
-/**
- * A pack panel at any size. `x, y` is the centre. The corners keep their
- * pixel size while the edges and middle stretch, which is the whole point of
- * composing first.
- */
+/** A panel at any size, centred on x, y. Corners keep their pixel size. */
 export function panel(
   scene: Phaser.Scene,
   name: PanelName,
@@ -90,7 +81,7 @@ export function panel(
     .setOrigin(0.5);
 }
 
-/** Pixel font settings shared by every label, so the UI reads as one thing. */
+/** Shared by every label, so the UI reads as one thing. */
 export const FONT: Phaser.Types.GameObjects.Text.TextStyle = {
   fontFamily: "ui-monospace, Consolas, monospace",
   fontSize: "15px",
@@ -112,10 +103,7 @@ export function label(
     .setResolution(2);
 }
 
-/**
- * A pack button. The pressed sheet is a second nine-slice swapped in on
- * pointer down, which is what the kit ships it for.
- */
+/** The pressed sheet is a second nine-slice swapped in on pointer down. */
 export function button(
   scene: Phaser.Scene,
   x: number,
@@ -155,12 +143,9 @@ export function button(
 }
 
 /**
- * The pack's progress bar, used for the two army totals.
- *
- * Its caps are 64px wide in the sheet but only 15px of that is art, so the
- * pieces are cropped to their ink before being composed - otherwise every
- * bar would carry 49px of transparent lead-in. The fill is a 3px strip that
- * rides in the frame's channel, eight rows down from the frame's top.
+ * The army totals bar. Its caps are 64px wide but only 15px is art, so the
+ * pieces are cropped to their ink first or every bar carries 49px of
+ * transparent lead-in.
  */
 export class PackBar {
   private fill: Phaser.GameObjects.Image;
@@ -186,7 +171,7 @@ export class PackBar {
       const tex = scene.textures.createCanvas("bar_base", w, BAR.artH)!;
       const ctx = tex.context;
       ctx.imageSmoothingEnabled = false;
-      // left cap ink, middle (stretchable), right cap ink
+      // left cap ink, stretchable middle, right cap ink
       ctx.drawImage(src, BAR.capW - capInk, BAR.artY, capInk, BAR.artH, 0, 0, capInk, BAR.artH);
       ctx.drawImage(src, BAR.midX, BAR.artY, BAR.capW, BAR.artH, capInk, 0, BAR.capW, BAR.artH);
       ctx.drawImage(
@@ -226,38 +211,37 @@ export class PackBar {
       .setScale(scale)
       .setDepth(depth);
 
-    // The channel runs between the caps; the fill sits where its own sheet
-    // puts it, (fillY - artY) rows below the frame's top edge.
+    // The fill sits where its own sheet puts it, (fillY - artY) rows down.
     this.innerW = width - capInk * 2 * scale;
     const top = y - (BAR.artH / 2) * scale;
     this.fill = scene.add
       .image(x - this.innerW / 2, top + (BAR.fillY - BAR.artY) * scale, "bar_fill")
       .setOrigin(0, 0)
-      // setTintFill, not setTint: the pack's fill strip is a dark maroon and
-      // an ordinary tint multiplies into it, turning green into mud.
+      // setTintFill, not setTint: the strip is dark maroon and a tint
+      // multiplies into it, turning green to mud.
       .setTintFill(tint)
       .setDepth(depth + 1);
     this.reset(1);
   }
 
-  /** Aim the bar. It slides there over the next few frames rather than jumping. */
+  /** Aim the bar; it slides there rather than jumping. */
   set(frac: number): void {
     this.target = Math.max(0, Math.min(1, frac));
   }
 
-  /** Snap without easing, for the initial draw. */
+  /** Snap, for the initial draw. */
   reset(frac: number): void {
     this.target = this.shown = Math.max(0, Math.min(1, frac));
     this.draw();
   }
 
-  /** Ease toward the target. Called from the scene's update. */
+  /** Called from the scene update. */
   tick(delta: number): void {
     if (Math.abs(this.target - this.shown) < 0.0005) {
       if (this.shown === this.target) return;
       this.shown = this.target;
     } else {
-      // Exponential approach: fast at first, settling over ~250ms.
+      // Fast at first, settling over ~250ms.
       this.shown += (this.target - this.shown) * Math.min(1, delta / 120);
     }
     this.draw();
@@ -270,10 +254,8 @@ export class PackBar {
 }
 
 /**
- * Compose a gapped nine-slice into a data URL, for the React chrome to use as
- * a CSS `border-image`. Same packing as `compose`, without Phaser: the draft
- * screen is plain DOM, and this keeps it on the same art as the canvas
- * without writing derived copies of the pack to disk.
+ * Same packing as `compose` but without Phaser, so the DOM draft screen can
+ * use the art as a CSS border-image with no derived files on disk.
  */
 export async function nineSliceDataUrl(
   name: PanelName,
@@ -309,7 +291,7 @@ export async function nineSliceDataUrl(
     }
     dy += spec.rowH[r]!;
   }
-  // border-image-slice wants the corner sizes, top right bottom left.
+  // border-image-slice wants top right bottom left.
   const slice = `${spec.rowH[0]} ${spec.colW[2]} ${spec.rowH[2]} ${spec.colW[0]}`;
   return { url: canvas.toDataURL("image/png"), slice };
 }

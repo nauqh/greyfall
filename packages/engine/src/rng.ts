@@ -1,8 +1,6 @@
 /**
- * Seeded random number generator. Deterministic and dependency-free, so the
- * browser, the CLI and (in Phase 2) the server all agree on a given seed.
- *
- * mulberry32: 32-bit state, fine for game rolls, not for anything secret.
+ * Seeded RNG, deterministic and dependency-free so every caller agrees on a
+ * seed. mulberry32: fine for game rolls, not for anything secret.
  */
 
 export interface Rng {
@@ -16,7 +14,7 @@ export interface Rng {
   weighted<T>(items: readonly { item: T; weight: number }[]): T;
 }
 
-/** FNV-1a, so a string seed like "rematch-3" is usable as-is. */
+/** FNV-1a, so a string seed like "rematch-3" works as-is. */
 export function hashSeed(seed: number | string): number {
   if (typeof seed === "number") return seed >>> 0;
   let h = 0x811c9dc5;
