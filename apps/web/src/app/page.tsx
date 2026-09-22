@@ -1,49 +1,19 @@
 "use client";
 
-// The Phase 1 prototype, all in the browser: pick an army within the budget,
-// place it on your own 5x3 half, watch the engine event log play back.
-//
-// The draft screen is DOM because clicking cells is what the DOM is good at,
-// dressed in the same art as the battle. Phaser loads client-side only, inside
-// an effect, per the PRD.
+// The Phase 1 prototype, all in the browser: the battle scene opens in draft
+// mode, the army is placed on the canvas, Start hands it to the engine, and
+// the event log plays back. Phaser loads client-side only, inside an effect,
+// per the PRD.
 
-import {
-  BALANCE,
-  UNIT_CLASSES,
-  armyCost,
-  generateArmy,
-  simulate,
-  validateArmy,
-} from "@greyfall/engine";
-import type { BattleResult, Placement, UnitClass } from "@greyfall/engine";
+import { BALANCE, generateArmy, simulate } from "@greyfall/engine";
+import type { BattleResult, Placement } from "@greyfall/engine";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { AVATARS, packUrl } from "../game/art";
-import { BODY, SPRITE_NUDGE, sheetUrl } from "../game/sprites";
-
-const ROSTER = UNIT_CLASSES.filter((c) => c !== "pawn");
-
-const LABELS: Record<UnitClass, string> = {
-  pawn: "Pawn",
-  warrior: "Warrior",
-  lancer: "Lancer",
-  archer: "Archer",
-  monk: "Monk",
-};
-
-const BLURB: Record<UnitClass, string> = {
-  pawn: "Digs. Dies.",
-  warrior: "Cuts down archers.",
-  lancer: "Holds. Breaks warriors.",
-  archer: "Reaches three cells.",
-  monk: "Mends the worst hurt.",
-};
-
-/** A portrait per class, from the pack's 25 avatars. */
-const PORTRAIT: Record<UnitClass, number> = { warrior: 1, lancer: 2, archer: 3, monk: 4, pawn: 1 };
+import { packUrl } from "../game/art";
 
 interface Battle {
-  result: BattleResult;
+  /** Null while the scene is drafting; set when Start is clicked. */
+  result: BattleResult | null;
   /** Both armies as placed, so a rematch can resimulate with a new seed. */
   player: Placement[];
   enemy: Placement[];
@@ -56,206 +26,92 @@ function newSeed(): number {
   return Math.floor(Math.random() * 2 ** 31);
 }
 
-/** Compose the gapped nine-slices into data URLs for CSS. Once, on mount. */
-function usePackSkin(): boolean {
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const { nineSliceDataUrl } = await import("../game/ui");
-      const names = ["paper", "specialPaper", "woodTable", "banner", "blueButton", "redButton"] as const;
-      const skins = await Promise.all(names.map((n) => nineSliceDataUrl(n)));
-      if (cancelled) return;
-      const root = document.documentElement;
-      for (const [i, name] of names.entries()) {
-        root.style.setProperty(`--${name}`, `url("${skins[i]!.url}")`);
-        root.style.setProperty(`--${name}-slice`, skins[i]!.slice);
-      }
-      // CSS cannot read an env var and url() will not take a custom property,
-      // so these are handed over whole. packUrl stays the only base.
-      for (const [name, file] of [
-        ["pack-water", "Terrain/Tileset/Water Background color.png"],
-        ["pack-coin", "Terrain/Resources/Gold/Gold Resource/Gold_Resource.png"],
-        ["pack-grass", "grass_tile.png"],
-      ] as const) {
-        root.style.setProperty(`--${name}`, `url("${packUrl(file)}")`);
-      }
-      setReady(true);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-  return ready;
-}
-
 export default function Page() {
-  const [army, setArmy] = useState<Placement[]>([]);
-  const [picked, setPicked] = useState<UnitClass>("warrior");
-  const [battle, setBattle] = useState<Battle | null>(null);
-  const skinned = usePackSkin();
+  const [started, setStarted] = useState(false);
+  const [battle, setBattle] = useState<Battle>({
+    result: null,
+    player: [],
+    enemy: [],
+    seed: newSeed(),
+    id: 0,
+  });
 
-  const gold = BALANCE.budget - armyCost(army);
-  const errors = validateArmy(army);
-
-  const place = useCallback(
-    (col: number, row: number) => {
-      setArmy((prev) => {
-        const existing = prev.find((p) => p.col === col && p.row === row);
-        if (existing) return prev.filter((p) => p !== existing);
-        const next = [...prev, { class: picked, col, row }];
-        return armyCost(next) > BALANCE.budget ? prev : next;
-      });
-    },
-    [picked],
-  );
-
-  function fight(): void {
-    const seed = newSeed();
+  // The scene calls this when Start is clicked and plays back what it returns.
+  const draft = useCallback((army: Placement[], seed: number): BattleResult => {
     const enemy = generateArmy(BALANCE.budget, seed);
-    setBattle({ result: simulate(army, enemy, seed), player: army, enemy, seed, id: 1 });
-  }
+    const result = simulate(army, enemy, seed);
+    setBattle((b) => ({ ...b, result, player: army, enemy }));
+    return result;
+  }, []);
 
   const rematch = useCallback(() => {
     setBattle((b) => {
-      if (!b) return b;
       const seed = newSeed();
       return { ...b, result: simulate(b.player, b.enemy, seed), seed, id: b.id + 1 };
     });
   }, []);
 
-  const newArmy = useCallback(() => setBattle(null), []);
+  const newArmy = useCallback(() => {
+    setBattle((b) => ({
+      ...b,
+      result: null,
+      player: [],
+      enemy: [],
+      seed: newSeed(),
+      id: b.id + 1,
+    }));
+  }, []);
 
-  if (battle) {
+  if (!started) {
     return (
-      <main className="stage">
-        <BattleView battle={battle} onRematch={rematch} onNewArmy={newArmy} />
+      <main className="intro">
+        <h1 className="banner">GREYFALL</h1>
+        <div className="introBody">
+          <div className="menu">
+            <p className="tagline">
+              The Greying has taken the land. Spend {BALANCE.budget} gold, hold the line.
+            </p>
+            <button className="btn" type="button" onClick={() => setStarted(true)}>
+              Begin
+            </button>
+          </div>
+          <div
+            className="pawnStage"
+            style={{ backgroundImage: `url("${packUrl("grass_tile.png")}")` }}
+          >
+            <div
+              className="pawnWork"
+              style={{
+                backgroundImage: `url("${packUrl("Units/Blue Units/Pawn/Pawn_Interact Pickaxe.png")}")`,
+              }}
+            />
+          </div>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className={`draft${skinned ? " skinned" : ""}`}>
-      <h1 className="banner">GREYFALL</h1>
-      <p className="tagline">
-        The Greying has taken the land. Spend {BALANCE.budget} gold, hold the line.
-      </p>
-
-      <div className="draftLayout">
-        <div className="draftLeft">
-      <div className="roster">
-        {ROSTER.map((cls) => {
-          const stats = BALANCE.units[cls];
-          const affordable = stats.cost <= gold;
-          return (
-            <button
-              key={cls}
-              type="button"
-              className={`card${picked === cls ? " selected" : ""}${affordable ? "" : " broke"}`}
-              onClick={() => setPicked(cls)}
-            >
-              <span
-                className="portrait"
-                style={{
-                  backgroundImage: `url("${packUrl(`${AVATARS.file}${String(PORTRAIT[cls]).padStart(2, "0")}.png`)}")`,
-                }}
-              />
-              <span className="name">{LABELS[cls]}</span>
-              <span className="blurb">{BLURB[cls]}</span>
-              <span className="stats">
-                {stats.hp} hp · {stats.damage} dmg
-              </span>
-              <span className="stats">range {stats.range}</span>
-              <span className="cost">
-                <i className="coin" />
-                {stats.cost}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-        <div className="purse">
-          <i className="coin" />
-          <strong>{gold}</strong> gold left · {army.length}/{BALANCE.board.maxUnits} units
-          <span className="hint">
-            click a cell to place {LABELS[picked]}, click it again to take it back
-          </span>
-        </div>
-        </div>
-
-        <div className="draftRight">
-        {/* Front column on the right, facing the enemy: own col c is battle col c. */}
-      <div className="board">
-        {Array.from({ length: BALANCE.board.rows }, (_, row) => {
-          return (
-            <div key={row} className="boardRow">
-              {Array.from({ length: BALANCE.board.cols }, (_, col) => {
-                const unit = army.find((p) => p.col === col && p.row === row);
-                return (
-                  <div
-                    key={`${col},${row}`}
-                    className="cell"
-                    onClick={() => place(col, row)}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={
-                      unit ? `${LABELS[unit.class]} at ${col},${row}` : `empty cell ${col},${row}`
-                    }
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") place(col, row);
-                    }}
-                  >
-                    <span className="tile" />
-                    {unit && (
-                      <span className="pawnwrap">
-                        <span
-                          className="pawnart"
-                          style={{
-                            width: BODY[unit.class].frame,
-                            height: BODY[unit.class].frame,
-                            left: BODY[unit.class].anchorX * -0.5,
-                            top: BODY[unit.class].anchorY * -0.5 + SPRITE_NUDGE,
-                            backgroundImage: `url("${sheetUrl("a", unit.class)}")`,
-                          }}
-                        />
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
-
-        {errors.length > 0 && <p className="error">{errors[0]}</p>}
-        <div className="actions">
-          <button className="btn blue" disabled={errors.length > 0} onClick={fight}>
-            To battle
-          </button>
-          <button className="btn red" disabled={army.length === 0} onClick={() => setArmy([])}>
-            Clear
-          </button>
-        </div>
-        </div>
-      </div>
+    <main className="stage">
+      <BattleView battle={battle} onDraft={draft} onRematch={rematch} onNewArmy={newArmy} />
     </main>
   );
 }
 
 function BattleView({
   battle,
+  onDraft,
   onRematch,
   onNewArmy,
 }: {
   battle: Battle;
+  onDraft: (army: Placement[], seed: number) => BattleResult;
   onRematch: () => void;
   onNewArmy: () => void;
 }) {
   const holder = useRef<HTMLDivElement>(null);
-  const handlers = useRef({ onRematch, onNewArmy });
-  handlers.current = { onRematch, onNewArmy };
+  const handlers = useRef({ onDraft, onRematch, onNewArmy });
+  handlers.current = { onDraft, onRematch, onNewArmy };
 
   useEffect(() => {
     const el = holder.current;
@@ -275,6 +131,7 @@ function BattleView({
       game = startBattle(el, {
         result: battle.result,
         seed: battle.seed,
+        onDraft: (army, seed) => handlers.current.onDraft(army, seed as number),
         onRematch: () => handlers.current.onRematch(),
         onNewArmy: () => handlers.current.onNewArmy(),
       });

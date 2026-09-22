@@ -1,29 +1,17 @@
-/* The draft screen, on the same Tiny Swords art as the battle.
- *
- * Panels and buttons are nine-slices applied with border-image. The sheets
- * ship with gaps, which border-image cannot read, so page.tsx composes them
- * to data URLs and hands them over as --paper, --woodTable and friends.
- *
- * Everything pixel needs image-rendering: pixelated. */
+/* The battle canvas page. Drafting lives inside the Phaser scene now, so all
+   that is left here is centring the board on the flat teal sea. */
 
 :root {
   color-scheme: dark;
   --ink: #f5f2e4;
   --ink-dim: #d9d5c3;
-  --ink-dark: #4a3a28;
-  --gold: #e8c06a;
-  --bad: #ff9d94;
 }
 
 * {
   box-sizing: border-box;
 }
 
-img,
-.coin,
-.tile,
-.portrait,
-.pawnart {
+img {
   image-rendering: pixelated;
 }
 
@@ -34,6 +22,110 @@ body {
   font-family: "Gochi Hand", "Comic Sans MS", cursive;
   /* Flat teal sea, as in the reference. */
   background-color: #4ba398;
+}
+
+/* --- intro -------------------------------------------------------------- */
+
+.intro {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+  text-align: center;
+}
+
+h1.banner {
+  margin: 0;
+  font-size: clamp(34px, 7vw, 58px);
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  text-shadow:
+    0 3px 0 #2e3a4e,
+    0 6px 14px rgba(0, 0, 0, 0.45);
+}
+
+.introBody {
+  display: flex;
+  align-items: center;
+  gap: 64px;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 240px;
+}
+
+.tagline {
+  margin: 0 0 14px;
+  max-width: 300px;
+  color: var(--ink);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+/* The mining Pawn, played with steps() straight off the 6-frame sheet. */
+.pawnStage {
+  width: 288px;
+  height: 288px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  background-size: 96px 96px;
+  image-rendering: pixelated;
+  border-radius: 8px;
+  box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.35);
+}
+
+.pawnWork {
+  width: 192px;
+  height: 192px;
+  image-rendering: pixelated;
+  transform: scale(1.5);
+  transform-origin: bottom center;
+  animation: pawnWork 0.6s steps(6) infinite;
+}
+
+@keyframes pawnWork {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: -1152px 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .introBody {
+    flex-direction: column;
+    gap: 24px;
+  }
+}
+
+.btn {
+  padding: 14px 44px;
+  border: 2px solid #2e3a4e;
+  border-radius: 6px;
+  background: #3d5a80;
+  color: var(--ink);
+  font: inherit;
+  font-size: 17px;
+  letter-spacing: 0.06em;
+  text-shadow: 0 2px 0 #2e3a4e;
+  cursor: pointer;
+  transition: transform 80ms ease-out;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+.btn:active {
+  transform: translateY(2px);
 }
 
 /* --- battle ------------------------------------------------------------- */
@@ -48,6 +140,7 @@ body {
 
 /* BattleView writes the real ratio from the scene's GAME_W/GAME_H; this is
    only a pre-hydration fallback. max-height keeps a tall board on screen. */
+
 .canvas {
   width: 100%;
   max-width: 1180px;
@@ -57,334 +150,4 @@ body {
 
 .canvas canvas {
   display: block;
-}
-
-/* --- draft -------------------------------------------------------------- */
-
-.draft {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 20px 20px 32px;
-  text-align: center;
-}
-
-/* 16:9: cards on the left, board on the right, all one row, centered. */
-.draftLayout {
-  display: flex;
-  gap: 28px;
-  justify-content: center;
-  align-items: center;
-}
-
-.draftLeft {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.draftRight {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-h1.banner {
-  margin: 0;
-  font-size: clamp(34px, 7vw, 58px);
-  letter-spacing: 0.04em;
-  color: var(--ink);
-  text-shadow:
-    0 3px 0 #2e3a4e,
-    0 6px 14px rgba(0, 0, 0, 0.45);
-}
-
-.tagline {
-  margin: 6px 0 22px;
-  color: var(--ink);
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
-}
-
-.coin {
-  display: inline-block;
-  width: 28px;
-  height: 28px;
-  vertical-align: -8px;
-  /* The gold nugget sits at roughly (50,46) in the resource sheet. */
-  background-image: var(--pack-coin);
-  background-position: -50px -46px;
-  background-repeat: no-repeat;
-}
-
-/* --- roster ------------------------------------------------------------- */
-
-/* 2x2 grid, sitting beside the board. */
-.roster {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.card {
-  width: 168px;
-  min-height: 200px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 26px 20px 30px;
-  border: 0;
-  background: none;
-  color: var(--ink-dark);
-  font: inherit;
-  cursor: pointer;
-  transition: transform 90ms ease-out;
-}
-
-.skinned .card {
-  /* corners 64px in the composed sheet; keep them 1:1 so nothing blurs */
-  border-image: var(--paper) 64 fill / 64px stretch;
-}
-
-/* SpecialPaper is dark slate, so the selected card needs light text. */
-.skinned .card.selected {
-  border-image: var(--specialPaper) 64 fill / 64px stretch;
-  color: var(--ink);
-}
-
-.skinned .card.selected .blurb,
-.skinned .card.selected .stats {
-  color: #a8b4c4;
-}
-
-.skinned .card.selected .cost {
-  color: var(--gold);
-}
-
-.card:hover {
-  transform: translateY(-3px);
-}
-
-.card.selected {
-  transform: translateY(-3px);
-}
-
-.card.broke {
-  filter: grayscale(0.7) brightness(0.8);
-}
-
-.portrait {
-  width: 64px;
-  height: 64px;
-  margin-bottom: 2px;
-  /* 256px portraits, shown at a clean quarter scale */
-  background-size: 64px 64px;
-  background-repeat: no-repeat;
-}
-
-.card .name {
-  font-size: 15px;
-  font-weight: bold;
-  letter-spacing: 0.06em;
-}
-
-.card .blurb {
-  font-size: 10px;
-  line-height: 1.3;
-  color: #6b5740;
-}
-
-.card .stats {
-  font-size: 10px;
-  color: #6b5740;
-}
-
-.card .cost {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  margin-top: 4px;
-  font-size: 16px;
-  font-weight: bold;
-  color: #7a4f14;
-}
-
-.card .cost .coin {
-  width: 22px;
-  height: 22px;
-  vertical-align: -6px;
-  background-position: -52px -48px;
-}
-
-/* --- purse and board ---------------------------------------------------- */
-
-.purse {
-  /* Block, not flex: the hint's width:100% flex item created a cyclic width
-     that inflated the whole left column past the roster's 348px. */
-  display: block;
-  text-align: center;
-  margin-bottom: 8px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
-}
-
-.purse .coin {
-  margin-right: 6px;
-}
-
-.purse strong {
-  color: var(--gold);
-  font-size: 19px;
-}
-
-.purse .hint {
-  display: block;
-  max-width: 340px;
-  margin-inline: auto;
-  font-size: 11px;
-  color: var(--ink-dim);
-}
-
-/* Five columns by three rows, no stagger. */
-.board {
-  display: inline-block;
-  padding: 20px 22px 24px;
-  margin-bottom: 8px;
-  background: rgba(16, 52, 48, 0.4);
-  border-radius: 12px;
-  box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.35);
-}
-
-.boardRow {
-  display: flex;
-  gap: 4px;
-  justify-content: center;
-}
-
-.boardRow + .boardRow {
-  margin-top: 4px;
-}
-
-.cell {
-  position: relative;
-  width: 84px;
-  height: 84px;
-  cursor: pointer;
-}
-
-/* The grass tile is 96px, drawn at 84. */
-.tile {
-  position: absolute;
-  inset: 0;
-  background-image: var(--pack-grass);
-  background-size: 84px 84px;
-  background-position: center;
-  border: 2px solid rgba(18, 12, 6, 0.5);
-  filter: brightness(0.94);
-  transition: filter 90ms ease-out;
-}
-
-.cell:hover .tile {
-  filter: brightness(1.14);
-}
-
-/* Frame 0 of the battle's idle sheet at half scale, stood on its ground
-   anchor plus SPRITE_NUDGE (page.tsx), matching the battle canvas so a body
-   taller than the cell doesn't loom entirely above it. */
-.pawnwrap {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-}
-
-.pawnart {
-  position: absolute;
-  background-repeat: no-repeat;
-  background-position: 0 0;
-  transform: scale(0.5);
-  transform-origin: 0 0;
-  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.45));
-}
-
-/* --- actions ------------------------------------------------------------ */
-
-.error {
-  margin: 6px 0;
-  color: var(--bad);
-  font-size: 13px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-}
-
-.actions {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-  margin-top: 12px;
-}
-
-.btn {
-  width: 208px;
-  height: 104px;
-  border: 0;
-  background: none;
-  color: var(--ink);
-  font: inherit;
-  font-size: 17px;
-  letter-spacing: 0.06em;
-  text-shadow: 0 2px 0 #2e3a4e;
-  cursor: pointer;
-  transition: transform 80ms ease-out;
-}
-
-.skinned .btn.blue {
-  border-image: var(--blueButton) 64 fill / 52px 64px stretch;
-}
-
-.skinned .btn.red {
-  border-image: var(--redButton) 64 fill / 52px 64px stretch;
-}
-
-.btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-}
-
-.btn:active:not(:disabled) {
-  transform: translateY(2px);
-}
-
-.btn:disabled {
-  filter: grayscale(0.8) brightness(0.65);
-  cursor: default;
-}
-
-/* Until the nine-slices compose, keep the controls legible. */
-.draft:not(.skinned) .card,
-.draft:not(.skinned) .btn {
-  background: rgba(38, 43, 54, 0.9);
-  border: 1px solid #3a4152;
-  border-radius: 6px;
-  color: var(--ink);
-}
-
-@media (max-width: 560px) {
-  .cell {
-    width: 60px;
-    height: 60px;
-  }
-  .tile {
-    background-size: 60px 60px;
-  }
-  .board {
-    padding: 12px;
-  }
-}
-
-/* Narrow screens: back to cards-above-board, as it was. */
-@media (max-width: 980px) {
-  .draftLayout {
-    flex-direction: column;
-    gap: 12px;
-  }
 }
