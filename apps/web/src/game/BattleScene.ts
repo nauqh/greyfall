@@ -26,7 +26,7 @@ import {
 } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
-import { AVATARS, FX, GOLD, packUrl } from "./art";
+import { AVATARS, FX, ICON, iconKey, iconUrl, packUrl } from "./art";
 import { GAME_H, GAME_W, fitCamera, startGame } from "./boot";
 import {
   BODY,
@@ -89,12 +89,13 @@ const ROSTER = UNIT_CLASSES.filter((c) => c !== "pawn");
 /** A portrait per class, from the pack's 25 avatars. */
 const PORTRAIT: Record<UnitClass, number> = { warrior: 1, lancer: 2, archer: 3, monk: 4, pawn: 1 };
 
+/** Each class's counter, named. BALANCE.counters is what makes them true. */
 const BLURB: Record<UnitClass, string> = {
   pawn: "Digs. Dies.",
-  warrior: "Cuts down archers.",
-  lancer: "Holds. Breaks warriors.",
-  archer: "Reaches three cells.",
-  monk: "Mends the worst hurt.",
+  warrior: "Beats Archers",
+  lancer: "Beats Warriors",
+  archer: "Beats Lancers",
+  monk: "Heals your wounded",
 };
 
 /** Dark ink on paper, light ink on the selected card's slate. */
@@ -104,8 +105,8 @@ interface DraftCard {
   paper: Phaser.GameObjects.NineSlice;
   special: Phaser.GameObjects.NineSlice;
   name: Phaser.GameObjects.Text;
-  blurb: Phaser.GameObjects.Text;
-  stats: Phaser.GameObjects.Text;
+  /** Everything that has to swap from dark ink on paper to light on slate. */
+  ink: Phaser.GameObjects.Text[];
   cost: Phaser.GameObjects.Text;
 }
 
@@ -140,7 +141,7 @@ export class BattleScene extends Phaser.Scene {
   private cellZone!: Phaser.GameObjects.Zone;
   private goldText!: Phaser.GameObjects.Text;
   private goldCoin!: Phaser.GameObjects.Image;
-  private hintText!: Phaser.GameObjects.Text;
+  private errorText!: Phaser.GameObjects.Text;
   private cards = new Map<UnitClass, DraftCard>();
   private placed = new Map<
     string,
@@ -208,7 +209,7 @@ export class BattleScene extends Phaser.Scene {
         packUrl(`${AVATARS.file}${String(PORTRAIT[cls]).padStart(2, "0")}.png`),
       );
     }
-    this.load.image("coin_src", packUrl(GOLD.file));
+    for (const n of Object.values(ICON)) this.load.image(iconKey(n), iconUrl(n));
   }
 
   create(): void {
@@ -254,38 +255,53 @@ export class BattleScene extends Phaser.Scene {
 
   // --- draft ---------------------------------------------------------------
 
-  /** Roster cards on a panel over the enemy half; clicks place on the left. */
+  /**
+   * Roster cards on a panel over the enemy half; clicks place on the left.
+   *
+   * The vertical budget is tight and worth writing down, because everything
+   * here is spaced off it: the panel runs y 16..704, the roster takes two rows
+   * of 188px cards, and the Start button cannot go under ~128px tall without
+   * its nine-slice collapsing into a strip.
+   */
   private buildDraft(): void {
     this.drafting = true;
     // Above the HUD too, so the slide-out sweeps across the plates.
     this.draftBox = this.add.container(0, 0).setDepth(DEPTH.hud + 5);
 
     const panel_ = panel(this, "paper", 900, 360, 576, 688);
-    const band = ribbon(this, 900, 58, 380);
-    const title = label(this, 900, 54, "DRAFT YOUR WARBAND", { fontSize: "20px" });
-    this.goldText = label(this, 900, 112, "", {
-      fontSize: "15px",
+    const band = ribbon(this, 900, 52, 380);
+    const title = label(this, 900, 48, "DRAFT YOUR WARBAND", { fontSize: "20px" });
+    this.goldText = label(this, 900, 98, "", {
+      fontSize: "17px",
       color: "#7a4f14",
       strokeThickness: 0,
     });
-    this.goldCoin = this.add
-      .image(0, 112, "coin_src")
-      .setCrop(GOLD.x, GOLD.y, GOLD.size, GOLD.size)
-      .setScale(0.8);
-    this.hintText = label(this, 900, 556, "", {
-      fontSize: "12px",
+    this.goldCoin = this.add.image(0, 98, iconKey(ICON.gold)).setScale(0.44);
+    // What is wrong with the army, and only that. It used to sit where the
+    // instructions are and replace them, so the one moment you most need
+    // telling what to do - an empty army, before anything is placed - was the
+    // one moment the screen would not tell you.
+    this.errorText = label(this, 900, 126, "", {
+      fontSize: "14px",
       color: "#8c3a30",
       strokeThickness: 0,
     });
-    this.draftBox.add([panel_, band, title, this.goldText, this.goldCoin, this.hintText]);
+    const how = label(
+      this,
+      900,
+      552,
+      "Pick a unit above, then click your half of the field to place it.\nClick one already placed to take it back.",
+      { fontSize: "14px", color: "#6b5740", strokeThickness: 0, align: "center" },
+    );
+    this.draftBox.add([panel_, band, title, this.goldText, this.goldCoin, this.errorText, how]);
 
     for (const [i, cls] of ROSTER.entries()) {
-      const cx = 900 + (i % 2 === 0 ? -92 : 92);
-      const cy = i < 2 ? 216 : 428;
+      const cx = 900 + (i % 2 === 0 ? -124 : 124);
+      const cy = i < 2 ? 232 : 432;
       this.draftBox.add(this.buildCard(cls, cx, cy));
     }
 
-    const start = button(this, 900, 632, 200, 130, "Start", "blue", () => this.startFromDraft());
+    const start = button(this, 900, 640, 190, 128, "Start", "blue", () => this.startFromDraft());
     this.draftBox.add(start);
 
     // Own half only: the enemy half sits under the panel.
@@ -303,41 +319,65 @@ export class BattleScene extends Phaser.Scene {
     this.refreshDraft();
   }
 
-  /** The old DOM card, ported: paper, portrait on top, slate when picked. */
+  /**
+   * One roster card, 236x188: portrait on the left, the price and the name
+   * beside it, the three numbers along the foot.
+   *
+   * Laid out across rather than stacked because the paper nine-slice keeps its
+   * 64px corners at any size. A card this short is nearly all frame top and
+   * bottom, and five stacked rows put the price and then the stats under the
+   * border, which is why neither could be read.
+   */
   private buildCard(cls: UnitClass, cx: number, cy: number): Phaser.GameObjects.Container {
     const stats = BALANCE.units[cls];
     const ink = { strokeThickness: 0 };
-    const paper = panel(this, "paper", 0, 0, 168, 200);
-    const special = panel(this, "specialPaper", 0, 0, 168, 200).setVisible(false);
-    const portrait = this.add.image(0, -42, `avatar_${cls}`).setScale(0.4);
-    const name = label(this, 0, 20, CLASS_NAME[cls], {
-      fontSize: "15px",
-      color: "#4a3a28",
-      ...ink,
-    });
-    const blurb = label(this, 0, 40, BLURB[cls], {
-      fontSize: "10px",
-      color: "#6b5740",
-      ...ink,
-    });
-    const statLine = label(this, 0, 58, `${stats.hp} hp · ${stats.damage} dmg · range ${stats.range}`, {
-      fontSize: "10px",
-      color: "#6b5740",
-      ...ink,
-    });
-    const coin = this.add
-      .image(-22, 80, "coin_src")
-      .setCrop(GOLD.x, GOLD.y, GOLD.size, GOLD.size)
-      .setScale(0.8);
-    const cost = label(this, -6, 80, `${stats.cost}`, {
-      fontSize: "15px",
+    const paper = panel(this, "paper", 0, 0, 236, 188);
+    const special = panel(this, "specialPaper", 0, 0, 236, 188).setVisible(false);
+
+    const portrait = this.add.image(-66, -12, `avatar_${cls}`).setScale(0.32);
+    const coin = this.add.image(26, -58, iconKey(ICON.gold)).setScale(0.46);
+    const cost = label(this, 46, -58, `${stats.cost}`, {
+      fontSize: "22px",
       color: "#7a4f14",
       ...ink,
     }).setOrigin(0, 0.5);
+    const name = label(this, 34, -12, CLASS_NAME[cls], {
+      fontSize: "19px",
+      color: "#4a3a28",
+      ...ink,
+    });
+    const blurb = label(this, 34, 12, BLURB[cls], { fontSize: "13px", color: "#6b5740", ...ink });
 
-    const box = this.add.container(cx, cy, [paper, special, portrait, name, blurb, statLine, coin, cost]);
-    box.setSize(168, 200);
-    const card: DraftCard = { box, cy, paper, special, name, blurb, stats: statLine, cost };
+    // Three numbers, each behind the pack icon that says what it is. The Monk
+    // deals no damage, so his middle pair is what he does instead.
+    const pairs: Phaser.GameObjects.GameObject[] = [];
+    const texts = [name, blurb];
+    const pair = (dx: number, icon: number, value: number): void => {
+      pairs.push(this.add.image(dx - 12, 48, iconKey(icon)).setScale(0.34));
+      const t = label(this, dx + 2, 48, `${value}`, {
+        fontSize: "15px",
+        color: "#4a3a28",
+        ...ink,
+      }).setOrigin(0, 0.5);
+      pairs.push(t);
+      texts.push(t);
+    };
+    pair(-60, ICON.hp, stats.hp);
+    pair(4, stats.heal > 0 ? ICON.heal : ICON.damage, stats.heal > 0 ? stats.heal : stats.damage);
+    pair(68, ICON.range, stats.range);
+
+    const box = this.add.container(cx, cy, [
+      paper,
+      special,
+      portrait,
+      coin,
+      cost,
+      name,
+      blurb,
+      ...pairs,
+    ]);
+    box.setSize(236, 188);
+    const card: DraftCard = { box, cy, paper, special, name, ink: texts, cost };
     box
       .setInteractive({ useHandCursor: true })
       .on("pointerup", () => {
@@ -388,16 +428,14 @@ export class BattleScene extends Phaser.Scene {
     this.goldText.setText(
       `${gold} gold left    ${this.draftArmy.length}/${BALANCE.board.maxUnits} units`,
     );
-    this.goldCoin.setX(900 - this.goldText.width / 2 - 16);
-    const errors = validateArmy(this.draftArmy);
-    this.hintText.setText(errors[0] ?? "click a cell on your half to place, again to take back");
+    this.goldCoin.setX(900 - this.goldText.width / 2 - 20);
+    this.errorText.setText(validateArmy(this.draftArmy)[0] ?? "");
     for (const [cls, card] of this.cards) {
       const picked = cls === this.picked;
       card.paper.setVisible(!picked);
       card.special.setVisible(picked);
       card.name.setColor(picked ? "#f5f2e4" : "#4a3a28");
-      card.blurb.setColor(picked ? "#a8b4c4" : "#6b5740");
-      card.stats.setColor(picked ? "#a8b4c4" : "#6b5740");
+      for (const t of card.ink) if (t !== card.name) t.setColor(picked ? "#a8b4c4" : "#6b5740");
       card.cost.setColor(picked ? "#e8c06a" : "#7a4f14");
       card.box.setAlpha(BALANCE.units[cls].cost <= gold ? 1 : 0.5);
       this.liftCard(card, picked);

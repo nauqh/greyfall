@@ -47,7 +47,6 @@ for (const b of Object.values(art.BUILDINGS))
   for (const dir of ["Blue Buildings", "Red Buildings"]) wanted.add(`Buildings/${dir}/${b.file}`);
 wanted.add(art.FX.dust.file);
 wanted.add(art.FX.explosion.file);
-wanted.add(art.GOLD.file);
 const seq = (prefix, count, pad) =>
   [...Array(count).keys()].forEach((i) =>
     wanted.add(`${prefix}${pad ? String(i + 1).padStart(2, "0") : i + 1}.png`),

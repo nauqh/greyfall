@@ -199,18 +199,26 @@ export const FX = {
   explosion: { file: "Particle FX/Explosion_01.png", frame: 192, frames: 8 },
 } as const;
 
-/** The gold nugget sits at roughly (50,46) in the 128px resource sheet. */
-export const GOLD = {
-  file: "Terrain/Resources/Gold/Gold Resource/Gold_Resource.png",
-  x: 50,
-  y: 46,
-  size: 28,
-} as const;
-
 /** 25 portraits, 256px each. */
 export const AVATARS = { file: "UI Elements/UI Elements/Human Avatars/Avatars_", count: 25 } as const;
 
 export const ICONS = { file: "UI Elements/UI Elements/Icons/Icon_", count: 12 } as const;
+
+/**
+ * Which of the pack's twelve icons stands for what, numbered as the files are.
+ * They label the draft's numbers, so a stat line is read rather than parsed:
+ * a shield, a pair of swords, a green arrow and a target ring, plus the coin
+ * the whole screen is spending.
+ */
+export const ICON = { gold: 3, damage: 5, hp: 6, heal: 7, range: 11 } as const;
+
+export function iconUrl(n: number): string {
+  return packUrl(`${ICONS.file}${String(n).padStart(2, "0")}.png`);
+}
+
+export function iconKey(n: number): string {
+  return `icon_${n}`;
+}
 
 export function packUrl(path: string): string {
   return `${ASSET_BASE}/${path}`;
