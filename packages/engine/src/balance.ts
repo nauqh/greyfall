@@ -58,13 +58,24 @@ export const BALANCE = {
 
   units: {
     pawn: { cost: 2, hp: 40, damage: 4, range: 1, heal: 0 },
-    warrior: { cost: 3, hp: 100, damage: 14, range: 1, heal: 0 },
-    lancer: { cost: 3, hp: 140, damage: 8, range: 1, heal: 0 },
+    warrior: { cost: 3, hp: 120, damage: 14, range: 1, heal: 0 },
+    lancer: { cost: 3, hp: 140, damage: 10, range: 1, heal: 0 },
     archer: { cost: 3, hp: 60, damage: 10, range: 3, heal: 0 },
-    monk: { cost: 4, hp: 70, damage: 0, range: 2, heal: 12 },
+    monk: { cost: 4, hp: 70, damage: 0, range: 2, heal: 8 },
   } as Record<UnitClass, UnitStats>,
 
-  /** AI pick weights. The Pawn is a miner, never bought for a board army. */
+  /**
+   * Openers the AI buys first when the budget allows, so it fields real comps
+   * instead of a random pile. Leftover gold rolls singles by aiPickWeights.
+   */
+  aiTemplates: [
+    { weight: 3, units: ["lancer", "lancer", "archer", "archer", "archer", "archer"] },
+    { weight: 3, units: ["warrior", "warrior", "warrior", "warrior", "archer", "archer"] },
+    { weight: 2, units: ["warrior", "warrior", "warrior", "monk", "archer"] },
+    { weight: 1, units: ["lancer", "lancer", "lancer", "warrior", "monk"] },
+  ] as { weight: number; units: UnitClass[] }[],
+
+  /** Weights for gold left after an opener. The Pawn is a miner, never bought. */
   aiPickWeights: {
     warrior: 3,
     lancer: 3,

@@ -54,19 +54,19 @@ const seedArb = fc.oneof(fc.integer({ min: 0, max: 2 ** 31 }), fc.string({ minLe
 
 describe("balance", () => {
   it("matches the PRD stat table", () => {
-    expect(BALANCE.units.warrior).toMatchObject({ cost: 3, hp: 100, damage: 14, range: 1 });
-    expect(BALANCE.units.lancer).toMatchObject({ cost: 3, hp: 140, damage: 8, range: 1 });
+    expect(BALANCE.units.warrior).toMatchObject({ cost: 3, hp: 120, damage: 14, range: 1 });
+    expect(BALANCE.units.lancer).toMatchObject({ cost: 3, hp: 140, damage: 10, range: 1 });
     expect(BALANCE.units.archer).toMatchObject({ cost: 3, hp: 60, damage: 10, range: 3 });
-    expect(BALANCE.units.monk).toMatchObject({ cost: 4, hp: 70, damage: 0, range: 2, heal: 12 });
+    expect(BALANCE.units.monk).toMatchObject({ cost: 4, hp: 70, damage: 0, range: 2, heal: 8 });
     expect(BALANCE.units.pawn).toMatchObject({ cost: 2, hp: 40, damage: 4, range: 1 });
   });
 
   it("applies the counter bonus only to the class it counters", () => {
     // Lancer beats Warrior, Warrior beats Archer, Archer beats Lancer.
-    expect(damageAgainst("lancer", "warrior")).toBe(10); // 8 * 1.25
+    expect(damageAgainst("lancer", "warrior")).toBe(13); // 10 * 1.25, rounded
     expect(damageAgainst("warrior", "archer")).toBe(18); // 14 * 1.25, rounded
     expect(damageAgainst("archer", "lancer")).toBe(13); // 10 * 1.25, rounded
-    expect(damageAgainst("lancer", "archer")).toBe(8);
+    expect(damageAgainst("lancer", "archer")).toBe(10);
     expect(damageAgainst("warrior", "lancer")).toBe(14);
     expect(damageAgainst("archer", "warrior")).toBe(10);
     expect(damageAgainst("monk", "warrior")).toBe(0);
@@ -269,10 +269,10 @@ describe("simulate", () => {
     expect(result.winner).toBe("draw");
     expect(result.reason).toBe("wipe");
     expect(result.hpRemaining).toEqual({ a: 0, b: 0 });
-    // 100 hp at 14 damage a second: both fall on the 8th exchange, which
-    // lands at t = 70, so the battle ends on tick 71.
-    expect(result.events.filter((e) => e.type === "hit" && e.unit === "a0")).toHaveLength(8);
-    expect(result.ticks).toBe(7 * BALANCE.tickRate + 1);
+    // 120 hp at 14 damage a second: both fall on the 9th exchange, which
+    // lands at t = 80, so the battle ends on tick 81.
+    expect(result.events.filter((e) => e.type === "hit" && e.unit === "a0")).toHaveLength(9);
+    expect(result.ticks).toBe(8 * BALANCE.tickRate + 1);
   });
 
   it("gives the counter its edge: a Warrior beats an Archer in melee", () => {
@@ -281,7 +281,7 @@ describe("simulate", () => {
     expect(result.survivors).toEqual({ a: 1, b: 0 });
     // 18 a hit thanks to the counter, so 4 hits for the Archer's 60 hp.
     expect(result.events.filter((e) => e.type === "hit" && e.unit === "a0")).toHaveLength(4);
-    expect(result.hpRemaining.a).toBe(100 - 4 * 10);
+    expect(result.hpRemaining.a).toBe(120 - 4 * 10);
   });
 
   it("lets a back-column Archer open fire before a melee unit closes", () => {

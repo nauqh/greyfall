@@ -103,10 +103,10 @@ Buildings unlock classes and upgrade them. Upgrades replace the merge mechanic o
 | Class | Cost (gold) | HP | Damage | Range (tiles) | Role |
 | --- | --- | --- | --- | --- | --- |
 | Pawn | 2 | 40 | 4 | 1 | Miner; weak filler if placed on the board |
-| Warrior | 3 | 100 | 14 | 1 | Melee damage |
-| Lancer | 3 | 140 | 8 | 1 | Front-line tank |
+| Warrior | 3 | 120 | 14 | 1 | Melee damage |
+| Lancer | 3 | 140 | 10 | 1 | Front-line tank |
 | Archer | 3 | 60 | 10 | 3 | Ranged damage |
-| Monk | 4 | 70 | 0 | 2 | Heals the lowest-HP ally for 12 |
+| Monk | 4 | 70 | 0 | 2 | Heals the lowest-HP ally for 8 |
 
 ### Counters
 
