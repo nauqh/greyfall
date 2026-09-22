@@ -1,7 +1,13 @@
 #!/usr/bin/env node
-// Unpacks the Tiny Swords pack into apps/web/public from the private S3 object
-// named by TINY_SWORDS_S3. The pack's license forbids redistribution, so it is
+// Unpacks the Tiny Swords pack into public/ from the private S3 object named
+// by TINY_SWORDS_S3. The pack's license forbids redistribution, so it is
 // never committed.
+//
+// Lives inside apps/web, not at the repo root, and reaches nothing outside
+// it: Vercel's Root Directory sandbox is documented to forbid `..` traversal
+// ("Your app will not be able to access files outside of that directory"),
+// which is what silently broke this when it lived at the repo root and the
+// build script said `node ../../scripts/fetch-assets.mjs`.
 //
 // The SDK rather than a URL: a public object would be a redistributable copy,
 // and a presigned URL expires within 7 days so it cannot live in a host's
@@ -26,13 +32,14 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const DEST = join(ROOT, "apps", "web", "public", "tiny-swords");
+const APP_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const DEST = join(APP_ROOT, "public", "tiny-swords");
 
-// Next loads .env for the app; a plain node process does not get that free.
-// loadEnvFile leaves existing variables alone, so an export still wins.
+// Next loads .env for the app from this same directory; a plain node process
+// does not get that free. loadEnvFile leaves existing variables alone, so an
+// export still wins.
 try {
-  process.loadEnvFile(join(ROOT, ".env"));
+  process.loadEnvFile(join(APP_ROOT, ".env"));
 } catch {
   // No .env. Shell variables still apply.
 }

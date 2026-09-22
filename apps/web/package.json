@@ -4,12 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "node ../../scripts/fetch-assets.mjs",
+    "predev": "node scripts/fetch-assets.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "prebuild": "node ../../scripts/fetch-assets.mjs"
+    "prebuild": "node scripts/fetch-assets.mjs",
+    "assets": "node scripts/fetch-assets.mjs"
   },
   "dependencies": {
     "@greyfall/engine": "workspace:*",
@@ -20,6 +21,7 @@
   },
   "devDependencies": {
     "@types/react": "^19.1.0",
-    "@types/react-dom": "^19.1.0"
+    "@types/react-dom": "^19.1.0",
+    "@aws-sdk/client-s3": "^3.1137.0"
   }
 }

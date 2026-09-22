@@ -27,7 +27,7 @@ by Pixel Frog. The license allows commercial use and modification but **forbids
 redistribution**, so the pack is not in this repository. It lives in a private
 S3 object and each machine fetches its own copy.
 
-Copy `.env.example` to `.env` and point it at the object:
+Copy `apps/web/.env.example` to `apps/web/.env` and point it at the object:
 
 ```
 TINY_SWORDS_S3=s3://greyfall-assets/tiny-swords/tiny-swords-v1.zip
@@ -44,6 +44,14 @@ offers is usable: a public object would be a redistributable copy of the pack,
 and a presigned URL expires after at most 7 days so it cannot live in a host's
 environment variables. Signing each request keeps the object private and never
 goes stale.
+
+The script lives at `apps/web/scripts/fetch-assets.mjs`, inside the app, not
+at the repo root. Vercel's Root Directory sandbox is documented to forbid
+reaching outside it with `..` ("Your app will not be able to access files
+outside of that directory"), which is exactly what a `node ../../scripts/...`
+build script does. That is a real failure mode, not a hypothetical one - it
+shipped a build with no art and no error in the log, because the script never
+ran at all. Nothing in the build now reaches outside `apps/web`.
 
 If the pack is missing the script says so and carries on, so `pnpm dev` still
 starts. You get the draft screen without art and a blank blue battle board,
@@ -64,7 +72,8 @@ stay reproducible and a rollback is one variable. Leave the bucket private.
 ### When you deploy
 
 Set `TINY_SWORDS_S3` plus AWS credentials in the host's environment variables,
-since a build container has no `~/.aws`:
+since a build container has no `~/.aws`. Set them in the platform - Vercel's
+Project Settings > Environment Variables - not in a file:
 
 | variable | value |
 | --- | --- |
@@ -73,11 +82,10 @@ since a build container has no `~/.aws`:
 | `AWS_SECRET_ACCESS_KEY` | its secret |
 | `AWS_REGION` | `ap-southeast-1` |
 
-Set them in the platform, not in `.env`. Do not paste a placeholder into
-`.env` as a reminder: the SDK would build a request header out of it and fail
-with `Invalid character in header content`, which says nothing about the
-cause. Leaving the variables unset falls back on `~/.aws`, which is what you
-want locally.
+Do not paste a placeholder into `.env` as a reminder: the SDK would build a
+request header out of it and fail with `Invalid character in header content`,
+which says nothing about the cause. Leaving the variables unset falls back on
+`~/.aws`, which is what you want locally.
 
 All three are needed, region included: with no region resolvable the SDK
 fails with `Region is missing` before it reaches S3.

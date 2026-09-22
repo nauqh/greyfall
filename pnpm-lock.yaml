@@ -8,9 +8,6 @@ importers:
 
   .:
     devDependencies:
-      '@aws-sdk/client-s3':
-        specifier: ^3.1137.0
-        version: 3.1137.0
       typescript:
         specifier: ^5.9.2
         version: 5.9.3
@@ -33,6 +30,9 @@ importers:
         specifier: ^19.1.0
         version: 19.3.0(react@19.3.0)
     devDependencies:
+      '@aws-sdk/client-s3':
+        specifier: ^3.1137.0
+        version: 3.1137.0
       '@types/react':
         specifier: ^19.1.0
         version: 19.3.0
