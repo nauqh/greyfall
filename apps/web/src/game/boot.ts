@@ -30,14 +30,12 @@ export function startGame(
 ): { destroy: () => void } {
   let game: Phaser.Game | null = null;
   let cancelled = false;
-  console.log("[boot] startGame", key);
   // Phaser bakes each Text into a canvas when it is created; before the
   // webfont arrives that bake is the fallback font forever.
   void document.fonts
     .load('16px "Gochi Hand"')
     .catch(() => {})
     .then(() => {
-      console.log("[boot] fonts ready", key, "cancelled:", cancelled);
       if (cancelled) return;
       game = new Phaser.Game({
         type: Phaser.AUTO,
@@ -52,16 +50,13 @@ export function startGame(
           height: Math.round(GAME_H * DPR),
         },
       });
-      console.log("[boot] game constructed", key);
       game.events.once(Phaser.Core.Events.READY, () => {
-        console.log("[boot] READY, adding scene", key);
         game!.canvas.style.cursor = 'url("/cursor.png") 0 0, default';
         game!.scene.add(key, Scene, true, data);
       });
     });
   return {
     destroy: () => {
-      console.log("[boot] destroy", key);
       cancelled = true;
       game?.destroy(true);
     },
