@@ -13,6 +13,7 @@ import {
   hashSeed,
   makeRng,
   neighbors,
+  pathSteps,
   simulate,
   validateArmy,
   type Army,
@@ -261,6 +262,64 @@ describe("generateArmy", () => {
   });
 });
 
+describe("pathSteps", () => {
+  const at = (cells: [number, number][]) => new Set(cells.map(([c, r]) => `${c},${r}`));
+
+  it("steps toward the target across an empty board", () => {
+    const steps = pathSteps({ col: 0, row: 1 }, { col: 5, row: 1 }, 1, at([]), 1);
+    expect(steps[0]).toEqual({ col: 1, row: 1 });
+  });
+
+  it("goes round a wall of its own instead of backwards", () => {
+    // Blocked dead ahead and diagonally up, the only lane is row 2. The
+    // greedy version took whichever neighbour was least bad, which here is
+    // the cell behind it.
+    const blocked = at([
+      [1, 0],
+      [1, 1],
+      [0, 0],
+    ]);
+    const steps = pathSteps({ col: 0, row: 1 }, { col: 5, row: 1 }, 1, blocked, 1);
+    expect(steps[0]).toEqual({ col: 1, row: 2 });
+  });
+
+  it("gives nothing when there is no route at all", () => {
+    // Walled off by a full column, on a board only three rows deep.
+    const blocked = at([
+      [1, 0],
+      [1, 1],
+      [1, 2],
+    ]);
+    expect(pathSteps({ col: 0, row: 1 }, { col: 5, row: 1 }, 1, blocked, 1)).toEqual([]);
+  });
+
+  it("stops as soon as it is in range rather than walking all the way in", () => {
+    const steps = pathSteps({ col: 0, row: 1 }, { col: 5, row: 1 }, 5, at([]), 1);
+    expect(steps).toEqual([]);
+  });
+
+  it("mirrors with the side, so a mirror match stays a reflection", () => {
+    const mirror = (c: { col: number; row: number }) => ({
+      col: BALANCE.board.battleCols - 1 - c.col,
+      row: c.row,
+    });
+    const blocked: [number, number][] = [
+      [1, 0],
+      [1, 1],
+      [0, 0],
+    ];
+    const a = pathSteps({ col: 0, row: 1 }, { col: 5, row: 1 }, 1, at(blocked), 1);
+    const b = pathSteps(
+      mirror({ col: 0, row: 1 }),
+      mirror({ col: 5, row: 1 }),
+      1,
+      at(blocked.map(([c, r]) => [BALANCE.board.battleCols - 1 - c, r]) as [number, number][]),
+      -1,
+    );
+    expect(b.map(mirror)).toEqual(a);
+  });
+});
+
 describe("simulate", () => {
   const warriorAt = (col: number, row: number): Army => [{ class: "warrior", col, row }];
 
@@ -314,6 +373,23 @@ describe("simulate", () => {
     const result = simulate([{ class: "archer", col: 0, row: 1 }], warriorAt(4, 1), 1);
     expect(result.events.some((e) => e.type === "move" && e.unit === "a0")).toBe(false);
     expect(result.events.some((e) => e.type === "hit" && e.unit === "a0")).toBe(true);
+  });
+
+  it("walks a unit round its own line rather than away from the enemy", () => {
+    // The Lancer is boxed in behind two Warriors and can only reach the enemy
+    // by going through the one free lane, row 2. Greedy stepping used to take
+    // whichever neighbour was least bad, which on a blocked board meant
+    // backwards.
+    const a: Army = [
+      { class: "warrior", col: 4, row: 0 },
+      { class: "warrior", col: 4, row: 1 },
+      { class: "lancer", col: 3, row: 1 },
+    ];
+    const b: Army = [{ class: "warrior", col: 4, row: 0 }];
+    const result = simulate(a, b, 1);
+    const path = result.events.filter((e) => e.type === "move" && e.unit === "a2");
+    expect(path.length).toBeGreaterThan(0);
+    expect(path.some((e) => e.type === "move" && e.row === 2)).toBe(true);
   });
 
   it("stalemate between two healers times out as a draw", () => {

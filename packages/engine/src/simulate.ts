@@ -139,11 +139,118 @@ function build(army: Army, side: Side): SimUnit[] {
 }
 
 /** Lexicographic compare of two target-ranking keys. Lower wins. */
-function ranksBetter(a: readonly number[], b: readonly number[]): boolean {
+function compareRanks(a: readonly number[], b: readonly number[]): number {
   for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) return a[i]! < b[i]!;
+    if (a[i] !== b[i]) return a[i]! - b[i]!;
   }
-  return false;
+  return 0;
+}
+
+/**
+ * Who gets a cell that more than one unit stepped for.
+ *
+ * Whichever side the cell's own column favours, and then the lowest index on
+ * that side. Column parity rather than a fixed side because mirroring a cell
+ * flips it - battleCols is even, so col and battleCols-1-col never share a
+ * parity - and that is what keeps a mirror match an exact reflection, and so a
+ * draw. Granting to the lowest index outright would hand every head-on contest
+ * to side A.
+ *
+ * Granting to nobody, which this used to do, deadlocks two lines facing each
+ * other across one free column: every cell either side could step into is
+ * contested, so none is ever given out and neither line ever closes. Greedy
+ * movement hid that, because a denied unit always had a backward cell to take
+ * instead.
+ */
+function pickClaim(idxs: readonly number[], units: SimUnit[], col: number): number {
+  const want: Side = col % 2 === 0 ? "a" : "b";
+  const preferred = idxs.filter((i) => units[i]!.side === want);
+  return Math.min(...(preferred.length > 0 ? preferred : idxs));
+}
+
+function onBoard(p: { col: number; row: number }): boolean {
+  const { battleCols, battleRows } = BALANCE.board;
+  return p.col >= 0 && p.col < battleCols && p.row >= 0 && p.row < battleRows;
+}
+
+/**
+ * Where to step to get within `range` of `target`, best first.
+ *
+ * A breadth-first flood over free cells, so a unit walled in by its own line
+ * walks round through another row. The old greedy version took whichever
+ * neighbour left it nearest and never checked that this was nearer than where
+ * it already stood, so a blocked unit stepped sideways or backwards and paid a
+ * full action for it - about a third of all movement on a crowded board.
+ *
+ * An empty result means there is no route at all. The caller then holds
+ * position, which costs nothing, and re-plans next tick against a board that
+ * has moved on.
+ *
+ * `flip` mirrors the tie-breaks with the side, exactly as the ranking keys do,
+ * so side B walks side A's route reflected and a mirror match stays a draw.
+ */
+export function pathSteps(
+  from: { col: number; row: number },
+  target: { col: number; row: number },
+  range: number,
+  occupied: ReadonlySet<string>,
+  flip: number,
+): { col: number; row: number }[] {
+  const key = (p: { col: number; row: number }) => `${p.col},${p.row}`;
+  const order = (a: { col: number; row: number }, b: { col: number; row: number }) =>
+    flip * (a.col - b.col) || a.row - b.row;
+  const free = (p: { col: number; row: number }) => onBoard(p) && !occupied.has(key(p));
+  const open = (p: { col: number; row: number }) =>
+    neighbors(p.col, p.row).filter(free).sort(order);
+
+  if (chebyshev(from, target) <= range) return [];
+
+  // Which of this unit's own neighbours each reached cell came in through.
+  // The first step is seeded nearest-the-target first, and every later cell
+  // inherits whichever seed reached it, so a unit crossing open ground holds
+  // its row instead of sliding to row 0 along an equally short route.
+  const toward = (a: { col: number; row: number }, b: { col: number; row: number }) =>
+    chebyshev(a, target) - chebyshev(b, target) ||
+    Math.abs(a.row - target.row) - Math.abs(b.row - target.row) ||
+    order(a, b);
+
+  const via = new Map<string, { col: number; row: number }>();
+  const seen = new Set<string>([key(from)]);
+  let frontier = open(from).sort(toward);
+  for (const s of frontier) {
+    via.set(key(s), s);
+    seen.add(key(s));
+  }
+
+  let best: { col: number; row: number } | undefined;
+  while (frontier.length > 0 && best === undefined) {
+    // Every cell in a layer is the same number of steps out, so which of them
+    // to aim for is settled by the same nearest-first order.
+    const goals = frontier.filter((c) => chebyshev(c, target) <= range).sort(toward);
+    if (goals.length > 0) {
+      best = via.get(key(goals[0]!));
+      break;
+    }
+    const next: { col: number; row: number }[] = [];
+    for (const c of frontier) {
+      for (const s of open(c)) {
+        if (seen.has(key(s))) continue;
+        seen.add(key(s));
+        via.set(key(s), via.get(key(c))!);
+        next.push(s);
+      }
+    }
+    frontier = next;
+  }
+  if (best === undefined) return [];
+
+  // The route's own first step, then any other free neighbour that is at least
+  // strictly closer. Those are only ever fallbacks: the claim rounds below
+  // hand a contested cell to nobody, and a unit with one option and no
+  // fallback would ask for the same cell every tick forever.
+  const here = chebyshev(from, target);
+  const rest = open(from).filter((s) => key(s) !== key(best) && chebyshev(s, target) < here);
+  return [best, ...rest];
 }
 
 export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): BattleResult {
@@ -170,8 +277,6 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
   const alive = (u: SimUnit) => u.hp > 0;
   const clamp = (u: SimUnit) => Math.max(0, Math.min(u.maxHp, u.hp));
   const tileKey = (u: { col: number; row: number }) => `${u.col},${u.row}`;
-  const onBoard = (p: { col: number; row: number }) =>
-    p.col >= 0 && p.col < BALANCE.board.battleCols && p.row >= 0 && p.row < BALANCE.board.battleRows;
 
   let ticks = 0;
   let reason: BattleResult["reason"] = "timeout";
@@ -194,12 +299,11 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
       const stats = BALANCE.units[unit.class];
       const healer = stats.heal > 0;
 
-      // Healers take the most wounded ally, itself included; everyone else the
-      // nearest enemy. Every key component survives the left-right mirror, so
-      // a mirror match is never decided by a tie-break.
-      let targetIdx = -1;
-      let targetKey: number[] = [];
-      let targetDist = 0;
+      // Healers rank allies by how hurt they are, itself included; everyone
+      // else ranks enemies by how near they are. Every key component survives
+      // the left-right mirror, so a mirror match is never decided by a
+      // tie-break.
+      const ranked: { j: number; dist: number; key: number[] }[] = [];
       for (let j = 0; j < units.length; j++) {
         const other = units[j]!;
         if (!aliveAtStart[j]) continue;
@@ -211,24 +315,25 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
         const key = healer
           ? [hpAtStart[j]!, dist, Math.abs(pos.row - unit.row), Math.abs(pos.col - unit.col), j]
           : [dist, Math.abs(pos.row - unit.row), Math.abs(pos.col - unit.col), j];
-        if (targetIdx === -1 || ranksBetter(key, targetKey)) {
-          targetIdx = j;
-          targetKey = key;
-          targetDist = dist;
-        }
+        ranked.push({ j, dist, key });
       }
+      ranked.sort((x, y) => compareRanks(x.key, y.key));
 
       // A healer with nobody to heal holds position and re-checks next tick.
-      if (targetIdx === -1) continue;
-      const target = units[targetIdx]!;
-      const targetPos = startPos[targetIdx]!;
+      if (ranked.length === 0) continue;
 
-      if (targetDist <= stats.range) {
+      // The best target that can be hit from where the unit already stands.
+      // For an attacker the ranking is by distance, so this is the nearest and
+      // nothing else could be in range; for a healer it is the worst hurt
+      // within reach, which is what the PRD asks of the Monk.
+      const hit = ranked.find((c) => c.dist <= stats.range);
+      if (hit) {
+        const target = units[hit.j]!;
         unit.nextAt = t + TICKS_PER_ACTION;
         // Unclamped until the tick ends: clamping as each lands would make the
         // total depend on whether the hit or the heal came first.
         if (healer) {
-          const amount = Math.min(stats.heal, target.maxHp - hpAtStart[targetIdx]!);
+          const amount = Math.min(stats.heal, target.maxHp - hpAtStart[hit.j]!);
           target.hp += amount;
           events.push({
             t,
@@ -254,47 +359,40 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
         continue;
       }
 
-      // One step toward the target, nearest first. Column is the axis that
-      // flips between sides, so its tie-break flips too, curving both armies
-      // around blockers as mirror images; row is a lane and needs no flip.
+      // Nothing in reach, so walk - to the best target there is actually a
+      // route to. Falling down the ranking is what stops a unit walled off
+      // from the nearest enemy standing and staring at one it cannot get to.
       const flip = unit.side === "a" ? 1 : -1;
-      const steps = neighbors(unit.col, unit.row)
-        .filter((s) => onBoard(s) && !occupied.has(tileKey(s)))
-        .sort(
-          (p, q) =>
-            chebyshev(p, targetPos) - chebyshev(q, targetPos) ||
-            flip * p.col - flip * q.col ||
-            p.row - q.row,
-        );
-      if (steps.length > 0) intents.push({ i, steps });
+      for (const cand of ranked) {
+        const steps = pathSteps(unit, startPos[cand.j]!, stats.range, occupied, flip);
+        if (steps.length > 0) {
+          intents.push({ i, steps });
+          break;
+        }
+      }
     }
 
-    // Moves are granted in rounds: a contested cell goes to nobody and the
-    // losers fall back next round. First-come would favour side A; denying with
-    // no fallback livelocks two units wanting the same cell every tick.
+    // Moves are granted in rounds: one unit takes each contested cell and the
+    // rest fall back to their next step next round.
     const granted = new Map<number, { col: number; row: number }>();
     const taken = new Set<string>();
-    const contested = new Set<string>();
     let pending = intents.filter((m) => alive(units[m.i]!));
 
     for (let round = 0; round < 3 && pending.length > 0; round++) {
       const claims = new Map<string, number[]>();
       for (const m of pending) {
-        const step = m.steps.find((s) => !taken.has(tileKey(s)) && !contested.has(tileKey(s)));
+        const step = m.steps.find((s) => !taken.has(tileKey(s)));
         if (step === undefined) continue; // out of options, stays put this tick
         const key = tileKey(step);
         claims.set(key, [...(claims.get(key) ?? []), m.i]);
       }
       const missed: typeof pending = [];
       for (const [key, idxs] of claims) {
-        if (idxs.length === 1) {
-          const [col, row] = key.split(",").map(Number) as [number, number];
-          granted.set(idxs[0]!, { col, row });
-          taken.add(key);
-        } else {
-          contested.add(key);
-          missed.push(...pending.filter((m) => idxs.includes(m.i)));
-        }
+        const [col, row] = key.split(",").map(Number) as [number, number];
+        const winner = pickClaim(idxs, units, col);
+        granted.set(winner, { col, row });
+        taken.add(key);
+        missed.push(...pending.filter((m) => m.i !== winner && idxs.includes(m.i)));
       }
       pending = missed;
     }

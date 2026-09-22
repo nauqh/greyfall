@@ -16,6 +16,7 @@ export {
   battleRow,
   chebyshev,
   neighbors,
+  pathSteps,
   simulate,
   validateArmy,
   type Army,
