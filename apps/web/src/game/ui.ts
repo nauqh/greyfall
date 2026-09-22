@@ -182,20 +182,28 @@ export function button(
   const box = scene.add.container(x, y, [face, pressed, text_]);
   box.setSize(w, h);
 
-  // Hover and press both show the pressed sheet, sunk 2px.
-  const press = (on: boolean): void => {
+  // Hover sinks 2px and darkens the regular sheet; the pressed sheet is
+  // click-only, its dark face is too harsh for a mere hover.
+  const sink = (on: boolean): void => {
     scene.tweens.killTweensOf(box);
     scene.tweens.add({ targets: box, y: y + (on ? 2 : 0), duration: 140, ease: "Sine.easeInOut" });
-    face.setVisible(!on);
-    pressed.setVisible(on);
-    text_.setY(on ? 2 : -1);
+    face.setTint(on ? 0xd9d9d9 : 0xffffff);
+  };
+  const sheet = (down: boolean): void => {
+    face.setVisible(!down);
+    pressed.setVisible(down);
+    text_.setY(down ? 2 : -1);
   };
 
   box.setInteractive({ cursor: HAND })
-    .on("pointerover", () => press(true))
-    .on("pointerout", () => press(false))
+    .on("pointerover", () => sink(true))
+    .on("pointerout", () => {
+      sink(false);
+      sheet(false);
+    })
+    .on("pointerdown", () => sheet(true))
     .on("pointerup", () => {
-      press(true);
+      sheet(false);
       onClick();
     });
   return box;

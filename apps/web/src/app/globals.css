@@ -162,24 +162,23 @@ textarea {
   background: none;
   border: 22px solid transparent;
   border-image: url("/tiny-swords/ui/blueButton.png") 64 fill / 22px stretch;
-  transition: transform 80ms ease-out;
+  transition: transform 140ms ease-out;
 }
 
 .btn.red {
   border-image-source: url("/tiny-swords/ui/redButton.png");
 }
 
-.btn:hover:not(:disabled),
-.btn:active:not(:disabled) {
+.btn:hover:not(:disabled) {
   transform: translateY(2px);
+  filter: brightness(0.9);
 }
 
-.btn:hover:not(:disabled),
 .btn:active:not(:disabled) {
+  transform: translateY(2px);
   border-image-source: url("/tiny-swords/ui/blueButtonDown.png");
 }
 
-.btn.red:hover:not(:disabled),
 .btn.red:active:not(:disabled) {
   border-image-source: url("/tiny-swords/ui/redButtonDown.png");
 }

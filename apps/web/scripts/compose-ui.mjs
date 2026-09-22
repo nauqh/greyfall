@@ -74,10 +74,35 @@ function ribbon() {
   return out;
 }
 
+/** First row from the top with opaque art. */
+function alphaTop(png) {
+  for (let y = 0; y < png.height; y++) {
+    for (let x = 0; x < png.width; x++) {
+      if (png.data[(y * png.width + x) * 4 + 3] > 10) return y;
+    }
+  }
+  return 0;
+}
+
+/** Shift every row up by n rows, clearing what vacates the bottom. */
+function shiftUp(png, n) {
+  const row = png.width * 4;
+  png.data.copy(png.data, 0, row * n, row * png.height);
+  png.data.fill(0, row * (png.height - n));
+}
+
 mkdirSync(OUT, { recursive: true });
 
 const made = [];
-for (const [name, spec] of Object.entries(art.PANELS)) made.push(write(name, nineSlice(spec)));
+for (const [name, spec] of Object.entries(art.PANELS)) {
+  const png = nineSlice(spec);
+  // The pressed sheets draw their art lower in the canvas than the regular
+  // ones, which would make the DOM border-image swap jump down on hover.
+  // Align the top rim to the regular sheet's so the swap is seamless.
+  const up = name.replace(/Down$/, "");
+  if (up !== name && art.PANELS[up]) shiftUp(png, alphaTop(png) - alphaTop(nineSlice(art.PANELS[up])));
+  made.push(write(name, png));
+}
 made.push(write("ribbon", ribbon()));
 
 // One icon per file already, but copied here so the CSS has one directory.
