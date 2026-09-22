@@ -914,7 +914,7 @@ export function startBattle(
       game = new Phaser.Game({
         type: Phaser.AUTO,
         parent,
-        backgroundColor: "#4ba398",
+        backgroundColor: "#47aba9",
         pixelArt: true,
         roundPixels: true,
         scale: {

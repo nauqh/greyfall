@@ -118,28 +118,23 @@ export function buildIsland(scene: Phaser.Scene, rect: Rect): Rect {
   return { x0, y0, x1: x0 + cols * t, y1: y0 + rows * t };
 }
 
-/** Foam round the shoreline, phase-offset per blob. */
+/** Foam hugging the shoreline: one blob per perimeter tile, under the island. */
 export function buildFoam(scene: Phaser.Scene, island: Rect): void {
-  const step = TERRAIN.tile;
-  const spots: { x: number; y: number }[] = [];
-  for (let x = island.x0; x <= island.x1; x += step) {
-    spots.push({ x, y: island.y0 });
-    spots.push({ x, y: island.y1 });
-  }
-  for (let y = island.y0 + step; y < island.y1; y += step) {
-    spots.push({ x: island.x0, y });
-    spots.push({ x: island.x1, y });
-  }
-  for (const [i, spot] of spots.entries()) {
-    const foam = scene.add
-      .sprite(spot.x, spot.y, "foam")
-      .setDepth(DEPTH.foam)
-      .setScale(0.85)
-      .setAlpha(0.5);
-    foam.play("foam_anim");
-    // Staggered so the shoreline shimmers instead of pulsing as one.
-    if (foam.anims.currentAnim) {
-      foam.anims.setProgress(((i * 7) % TERRAIN.foamFrames) / TERRAIN.foamFrames);
+  const t = TERRAIN.tile;
+  const cols = Math.round((island.x1 - island.x0) / t);
+  const rows = Math.round((island.y1 - island.y0) / t);
+  for (let c = 0; c < cols; c++) {
+    for (let r = 0; r < rows; r++) {
+      if (c > 0 && c < cols - 1 && r > 0 && r < rows - 1) continue;
+      // The blob is 84px of art in a 192px frame, so centred on a 64px shore
+      // tile it leaves a ~10px fringe past the grass and overlaps its
+      // neighbours. Opaque and in step is what makes that fringe read as one
+      // shoreline: part alpha bands where blobs overlap and staggered phases
+      // give every tile its own edge, which is the row of squares.
+      scene.add
+        .sprite(island.x0 + (c + 0.5) * t, island.y0 + (r + 0.5) * t, "foam")
+        .setDepth(DEPTH.foam)
+        .play("foam_anim");
     }
   }
 }
