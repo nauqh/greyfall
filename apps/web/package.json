@@ -10,7 +10,8 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "prebuild": "node scripts/fetch-assets.mjs",
-    "assets": "node scripts/fetch-assets.mjs"
+    "assets": "node scripts/fetch-assets.mjs",
+    "test:assets": "node scripts/test-assets.mjs"
   },
   "dependencies": {
     "@greyfall/engine": "workspace:*",

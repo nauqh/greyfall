@@ -5,6 +5,7 @@
   "scripts": {
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
+    "test:assets": "pnpm --filter @greyfall/web test:assets",
     "battle": "pnpm --filter @greyfall/engine battle",
     "assets": "pnpm --filter @greyfall/web run assets",
     "dev": "pnpm --filter @greyfall/web dev"
