@@ -56,7 +56,7 @@ describe("balance", () => {
   it("matches the PRD stat table", () => {
     expect(BALANCE.units.warrior).toMatchObject({ cost: 3, hp: 120, damage: 14, range: 1 });
     expect(BALANCE.units.lancer).toMatchObject({ cost: 3, hp: 140, damage: 10, range: 1 });
-    expect(BALANCE.units.archer).toMatchObject({ cost: 3, hp: 60, damage: 10, range: 3 });
+    expect(BALANCE.units.archer).toMatchObject({ cost: 3, hp: 60, damage: 10, range: 5 });
     expect(BALANCE.units.monk).toMatchObject({ cost: 4, hp: 70, damage: 0, range: 2, heal: 8 });
     expect(BALANCE.units.pawn).toMatchObject({ cost: 2, hp: 40, damage: 4, range: 1 });
   });
@@ -306,6 +306,14 @@ describe("simulate", () => {
     const result = simulate(a, generateArmy(20, 5), 3);
     const kinds = new Set(result.events.map((e) => e.type));
     for (const kind of ["move", "attack", "hit", "death"]) expect(kinds).toContain(kind);
+  });
+
+  it("keeps an Archer on its own back column out of the melee entirely", () => {
+    // Range 5 is the gap from the back column to the enemy front line, so the
+    // Archer fires from where it was placed and never takes a step.
+    const result = simulate([{ class: "archer", col: 0, row: 1 }], warriorAt(4, 1), 1);
+    expect(result.events.some((e) => e.type === "move" && e.unit === "a0")).toBe(false);
+    expect(result.events.some((e) => e.type === "hit" && e.unit === "a0")).toBe(true);
   });
 
   it("stalemate between two healers times out as a draw", () => {

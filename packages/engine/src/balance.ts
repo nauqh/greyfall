@@ -60,7 +60,11 @@ export const BALANCE = {
     pawn: { cost: 2, hp: 40, damage: 4, range: 1, heal: 0 },
     warrior: { cost: 3, hp: 120, damage: 14, range: 1, heal: 0 },
     lancer: { cost: 3, hp: 140, damage: 10, range: 1, heal: 0 },
-    archer: { cost: 3, hp: 60, damage: 10, range: 3, heal: 0 },
+    // 5 is the gap between the two back columns and the enemy front line on a
+    // 10-wide board, so an Archer left at the back never has to walk into the
+    // melee to fire. It still advances once that front line is gone and only
+    // the enemy's own back column is left.
+    archer: { cost: 3, hp: 60, damage: 10, range: 5, heal: 0 },
     monk: { cost: 4, hp: 70, damage: 0, range: 2, heal: 8 },
   } as Record<UnitClass, UnitStats>,
 
