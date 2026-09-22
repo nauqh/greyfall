@@ -26,11 +26,9 @@ jobs:
 
       - run: pnpm test
 
-      # The art pack is not in the repo and the build does not read it: every
-      # reference to it is a runtime URL under public/, so nothing here needs
-      # the files. Serving the app does. A deploy runs `pnpm assets --require`
-      # with TINY_SWORDS_URL set, which fails loudly rather than shipping a
-      # game with no graphics.
+      # No art pack here, and none needed: the build never reads it, because
+      # every reference is a runtime URL under public/. Serving the app is what
+      # needs the files, so a deploy sets TINY_SWORDS_S3 and AWS credentials
+      # and runs `pnpm assets --require`, which fails loudly rather than
+      # shipping a game with no graphics.
       - run: pnpm --filter @greyfall/web build
-        env:
-          TINY_SWORDS_URL: ${{ secrets.TINY_SWORDS_URL }}
