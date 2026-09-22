@@ -66,12 +66,18 @@ stay reproducible and a rollback is one variable. Leave the bucket private.
 Set `TINY_SWORDS_S3` plus AWS credentials in the host's environment variables,
 since a build container has no `~/.aws`:
 
-```
-TINY_SWORDS_S3=s3://greyfall-assets/tiny-swords/tiny-swords-v1.zip
-AWS_ACCESS_KEY_ID=...
-AWS_SECRET_ACCESS_KEY=...
-AWS_REGION=ap-southeast-1
-```
+| variable | value |
+| --- | --- |
+| `TINY_SWORDS_S3` | `s3://greyfall-assets/tiny-swords/tiny-swords-v1.zip` |
+| `AWS_ACCESS_KEY_ID` | the deploy user's key |
+| `AWS_SECRET_ACCESS_KEY` | its secret |
+| `AWS_REGION` | `ap-southeast-1` |
+
+Set them in the platform, not in `.env`. Do not paste a placeholder into
+`.env` as a reminder: the SDK would build a request header out of it and fail
+with `Invalid character in header content`, which says nothing about the
+cause. Leaving the variables unset falls back on `~/.aws`, which is what you
+want locally.
 
 `AWS_REGION` is not strictly required - tested with no `~/.aws` and no region
 set, the SDK still fetched the object, falling back to a default region and

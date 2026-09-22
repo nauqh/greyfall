@@ -109,6 +109,21 @@ async function fromS3(uri) {
     throw new Error("@aws-sdk/client-s3 is not installed; run pnpm install");
   }
 
+  // A placeholder pasted out of the docs is a real failure mode, and the error
+  // it causes points nowhere: the SDK builds an Authorization header from the
+  // value and Node rejects the request with "Invalid character in header
+  // content". Catch it here where the message can say what to do about it.
+  for (const name of ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]) {
+    const value = process.env[name];
+    if (value !== undefined && !/^[\x21-\x7e]+$/.test(value)) {
+      throw new Error(
+        `${name} is empty or has characters that cannot be sent in a request. ` +
+          "Check .env for a placeholder that was never filled in, or remove the " +
+          "line entirely to fall back on ~/.aws.",
+      );
+    }
+  }
+
   say(`fetching s3://${bucket}/${key}`);
   const client = new S3Client({});
   const res = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
