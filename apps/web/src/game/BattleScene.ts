@@ -77,6 +77,16 @@ const TICK_MS = 1000 / BALANCE.tickRate;
  */
 const STEP_MS = 880;
 
+/**
+ * Time left, m:ss. A battle that runs the clock out is decided on HP, so what
+ * matters to watch is how much of it is gone - counting up said nothing until
+ * you knew the limit, and the limit is nowhere on screen.
+ */
+function timeLeft(elapsedMs: number): string {
+  const left = Math.max(0, Math.ceil(BALANCE.timeoutSeconds - elapsedMs / 1000));
+  return `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+}
+
 const CLASS_NAME: Record<UnitClass, string> = {
   pawn: "Pawn",
   warrior: "Warrior",
@@ -542,10 +552,7 @@ export class BattleScene extends Phaser.Scene {
     if (!this.started || this.finished) return;
     this.simTime += delta * this.speed;
     const tick = Math.floor(this.simTime / TICK_MS);
-    if (this.clockText) {
-      const s = Math.min(Math.floor(this.simTime / 1000), BALANCE.timeoutSeconds);
-      this.clockText.setText(`${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`);
-    }
+    this.clockText?.setText(timeLeft(this.simTime));
     while (this.nextEvent < this.queue.length && this.queue[this.nextEvent]!.t <= tick) {
       this.play(this.queue[this.nextEvent]!);
       this.nextEvent += 1;
@@ -716,7 +723,9 @@ export class BattleScene extends Phaser.Scene {
     });
 
     // The battle clock hangs over the clash point, between the two plates.
-    this.clockText = label(this, MID_X, 24, "0:00", { fontSize: "22px" }).setDepth(DEPTH.hud + 2);
+    this.clockText = label(this, MID_X, 24, timeLeft(0), { fontSize: "22px" }).setDepth(
+      DEPTH.hud + 2,
+    );
 
     this.refreshHud();
   }
