@@ -27,6 +27,7 @@ import {
 import * as Phaser from "phaser";
 
 import { AVATARS, FX, GOLD, packUrl } from "./art";
+import { GAME_H, GAME_W, fitCamera, startGame } from "./boot";
 import {
   BODY,
   BODY_HEIGHT,
@@ -56,15 +57,6 @@ const ROWS = BALANCE.board.battleRows;
 
 /** A 192px unit frame carries an ~80px body, so 84 fills a cell. */
 const TILE = 84;
-
-export const GAME_W = 1200;
-export const GAME_H = 720;
-
-// Phaser 3.90 has no HiDPI support: the canvas backing store is the game
-// size, and the browser bilinear-upscales it to physical pixels, which is
-// what smears thin glyphs. Render at devicePixelRatio instead and zoom the
-// camera to match, so the canvas only ever gets downscaled.
-const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
 
 /** Whole 64px terrain tiles. The margins hold the scenery and clear the HUD plates. */
 const ISLAND: Rect = { x0: 90, y0: 178, x1: 1110, y1: 510 };
@@ -163,6 +155,7 @@ export class BattleScene extends Phaser.Scene {
   private speed = 1;
   private bars: Record<Side, PackBar | null> = { a: null, b: null };
   private counts: Record<Side, Phaser.GameObjects.Text | null> = { a: null, b: null };
+  private clockText: Phaser.GameObjects.Text | null = null;
 
   constructor() {
     super("battle");
@@ -183,6 +176,7 @@ export class BattleScene extends Phaser.Scene {
     this.picked = "warrior";
     this.cards = new Map();
     this.placed = new Map();
+    this.clockText = null;
   }
 
   preload(): void {
@@ -218,9 +212,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   create(): void {
-    // The canvas is DPR times the world; the camera bridges the two. Zoom
-    // recentres on the camera's own middle, so point it back at the world's.
-    this.cameras.main.setZoom(DPR).centerOn(GAME_W / 2, GAME_H / 2);
+    fitCamera(this);
     prepareTerrain(this);
     makeAnims(this);
     this.anims.create({
@@ -506,6 +498,10 @@ export class BattleScene extends Phaser.Scene {
     if (!this.started || this.finished) return;
     this.simTime += delta * this.speed;
     const tick = Math.floor(this.simTime / TICK_MS);
+    if (this.clockText) {
+      const s = Math.min(Math.floor(this.simTime / 1000), BALANCE.timeoutSeconds);
+      this.clockText.setText(`${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`);
+    }
     while (this.nextEvent < this.queue.length && this.queue[this.nextEvent]!.t <= tick) {
       this.play(this.queue[this.nextEvent]!);
       this.nextEvent += 1;
@@ -675,6 +671,9 @@ export class BattleScene extends Phaser.Scene {
       speedText.setText(`${this.speed}x`);
     });
 
+    // The battle clock hangs over the clash point, between the two plates.
+    this.clockText = label(this, MID_X, 24, "0:00", { fontSize: "22px" }).setDepth(DEPTH.hud + 2);
+
     this.refreshHud();
   }
 
@@ -810,7 +809,11 @@ export class BattleScene extends Phaser.Scene {
 
     // The pack heal burst plays on the unit being mended, not the Monk.
     const burst = this.add
-      .sprite(target.sprite.x, target.sprite.y - BODY_HEIGHT[target.snap.class] / 2, healKey(target.snap.side))
+      .sprite(
+        target.sprite.x,
+        target.sprite.y - BODY_HEIGHT[target.snap.class] / 2,
+        healKey(target.snap.side),
+      )
       .setDepth(DEPTH.fx);
     burst.play(`${healKey(target.snap.side)}_anim`);
     burst.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => burst.destroy());
@@ -861,9 +864,7 @@ export class BattleScene extends Phaser.Scene {
     const veil = this.add
       .rectangle(GAME_W / 2, GAME_H / 2, GAME_W, GAME_H, 0x0a0c10, 0.55)
       .setDepth(DEPTH.hud + 10);
-    const card = panel(this, "paper", GAME_W / 2, GAME_H / 2, 560, 360).setDepth(
-      DEPTH.hud + 11,
-    );
+    const card = panel(this, "paper", GAME_W / 2, GAME_H / 2, 560, 360).setDepth(DEPTH.hud + 11);
     const title = label(this, GAME_W / 2, GAME_H / 2 - 118, headline, {
       fontSize: "25px",
       color: result.winner === "a" ? "#6b4a12" : "#8c3a30",
@@ -897,41 +898,9 @@ export class BattleScene extends Phaser.Scene {
   }
 }
 
-/** FIT scaling fits the logical board to whatever the page gives it. */
 export function startBattle(
   parent: HTMLElement,
   launcher: BattleLauncher,
 ): { destroy: () => void } {
-  let game: Phaser.Game | null = null;
-  let cancelled = false;
-  // Phaser bakes each Text into a canvas when it is created; before the
-  // webfont arrives that bake is the fallback font forever.
-  void document.fonts
-    .load('16px "Gochi Hand"')
-    .catch(() => {})
-    .then(() => {
-      if (cancelled) return;
-      game = new Phaser.Game({
-        type: Phaser.AUTO,
-        parent,
-        backgroundColor: "#47aba9",
-        pixelArt: true,
-        roundPixels: true,
-        scale: {
-          mode: Phaser.Scale.FIT,
-          autoCenter: Phaser.Scale.CENTER_BOTH,
-          width: Math.round(GAME_W * DPR),
-          height: Math.round(GAME_H * DPR),
-        },
-      });
-      game.events.once(Phaser.Core.Events.READY, () => {
-        game!.scene.add("battle", BattleScene, true, launcher);
-      });
-    });
-  return {
-    destroy: () => {
-      cancelled = true;
-      game?.destroy(true);
-    },
-  };
+  return startGame(parent, "battle", BattleScene, launcher);
 }

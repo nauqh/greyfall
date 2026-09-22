@@ -152,7 +152,47 @@ export const DECOR = {
 
 export type DecorKind = keyof typeof DECOR;
 
-export const CLOUDS = { file: "Terrain/Decorations/Clouds/Clouds_0", count: 8 } as const;
+/**
+ * Buildings are single images, not sheets, and none of them is square, so they
+ * cannot go in DECOR. anchorY is the ground contact row - the bottom of the ink
+ * - and anchorX is the frame middle for every one of them.
+ *
+ * The frames carry a lot of padding past the walls, so a layout spaced off the
+ * frame width leaves gaps you could drive a cart through. The base widths,
+ * measured off the art: castle 256, tower 94, barracks 170, archery 177,
+ * house1 96, house2 103, house3 118, monastery 146.
+ */
+export interface BuildingSpec {
+  file: string;
+  w: number;
+  h: number;
+  anchorY: number;
+}
+
+export const BUILDINGS = {
+  castle: { file: "Castle.png", w: 320, h: 256, anchorY: 249 },
+  tower: { file: "Tower.png", w: 128, h: 256, anchorY: 230 },
+  barracks: { file: "Barracks.png", w: 192, h: 256, anchorY: 245 },
+  archery: { file: "Archery.png", w: 192, h: 256, anchorY: 240 },
+  house1: { file: "House1.png", w: 128, h: 192, anchorY: 173 },
+  house2: { file: "House2.png", w: 128, h: 192, anchorY: 178 },
+  house3: { file: "House3.png", w: 128, h: 192, anchorY: 172 },
+  monastery: { file: "Monastery.png", w: 192, h: 320, anchorY: 310 },
+} satisfies Record<string, BuildingSpec>;
+
+export type BuildingName = keyof typeof BUILDINGS;
+
+/** The pack ships a set per faction; the sides match the unit colors. */
+const BUILD_DIR = { a: "Blue Buildings", b: "Red Buildings" } as const;
+
+export function buildingUrl(side: keyof typeof BUILD_DIR, name: BuildingName): string {
+  return packUrl(`Buildings/${BUILD_DIR[side]}/${BUILDINGS[name].file}`);
+}
+
+export const CLOUDS = {
+  file: "Terrain/Decorations/Clouds/Clouds_0",
+  count: 8,
+} as const;
 
 export const FX = {
   dust: { file: "Particle FX/Dust_01.png", frame: 64, frames: 8 },

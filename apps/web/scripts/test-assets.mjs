@@ -17,6 +17,7 @@ const SOURCES = [
   "game/art.ts",
   "game/sprites.ts",
   "game/BattleScene.ts",
+  "game/IntroScene.ts",
   "game/terrain.ts",
   "game/ui.ts",
   "app/page.tsx",
@@ -41,6 +42,9 @@ wanted.add(art.TERRAIN.water);
 wanted.add(art.TERRAIN.foam);
 wanted.add(art.TERRAIN.shadow);
 for (const group of Object.values(art.DECOR)) for (const d of group) wanted.add(d.file);
+// Buildings name only their file; the faction directory is applied at load.
+for (const b of Object.values(art.BUILDINGS))
+  for (const dir of ["Blue Buildings", "Red Buildings"]) wanted.add(`Buildings/${dir}/${b.file}`);
 wanted.add(art.FX.dust.file);
 wanted.add(art.FX.explosion.file);
 wanted.add(art.GOLD.file);

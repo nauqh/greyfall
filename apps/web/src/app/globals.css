@@ -1,18 +1,13 @@
-/* The battle canvas page. Drafting lives inside the Phaser scene now, so all
-   that is left here is centring the board on the flat teal sea. */
+/* Both screens are Phaser canvases now - the title island and the battle -
+   so all that is left here is centring one on the flat teal sea. */
 
 :root {
   color-scheme: dark;
   --ink: #f5f2e4;
-  --ink-dim: #d9d5c3;
 }
 
 * {
   box-sizing: border-box;
-}
-
-img {
-  image-rendering: pixelated;
 }
 
 body {
@@ -24,112 +19,6 @@ body {
   background-color: #47aba9;
 }
 
-/* --- intro -------------------------------------------------------------- */
-
-.intro {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 20px;
-  text-align: center;
-}
-
-h1.banner {
-  margin: 0;
-  font-size: clamp(34px, 7vw, 58px);
-  letter-spacing: 0.04em;
-  color: var(--ink);
-  text-shadow:
-    0 3px 0 #2e3a4e,
-    0 6px 14px rgba(0, 0, 0, 0.45);
-}
-
-.introBody {
-  display: flex;
-  align-items: center;
-  gap: 64px;
-}
-
-.menu {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-width: 240px;
-}
-
-.tagline {
-  margin: 0 0 14px;
-  max-width: 300px;
-  color: var(--ink);
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
-}
-
-/* The mining Pawn, played with steps() straight off the 6-frame sheet. */
-.pawnStage {
-  width: 288px;
-  height: 288px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  overflow: hidden;
-  background-size: 96px 96px;
-  image-rendering: pixelated;
-  border-radius: 8px;
-  box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.35);
-}
-
-.pawnWork {
-  width: 192px;
-  height: 192px;
-  image-rendering: pixelated;
-  transform: scale(1.5);
-  transform-origin: bottom center;
-  animation: pawnWork 0.6s steps(6) infinite;
-}
-
-@keyframes pawnWork {
-  from {
-    background-position: 0 0;
-  }
-  to {
-    background-position: -1152px 0;
-  }
-}
-
-@media (max-width: 720px) {
-  .introBody {
-    flex-direction: column;
-    gap: 24px;
-  }
-}
-
-.btn {
-  padding: 14px 44px;
-  border: 2px solid #2e3a4e;
-  border-radius: 6px;
-  background: #3d5a80;
-  color: var(--ink);
-  font: inherit;
-  font-size: 17px;
-  letter-spacing: 0.06em;
-  text-shadow: 0 2px 0 #2e3a4e;
-  cursor: pointer;
-  transition: transform 80ms ease-out;
-}
-
-.btn:hover {
-  transform: translateY(-2px);
-}
-
-.btn:active {
-  transform: translateY(2px);
-}
-
-/* --- battle ------------------------------------------------------------- */
-
 .stage {
   min-height: 100vh;
   display: flex;
@@ -138,13 +27,13 @@ h1.banner {
   padding: 12px;
 }
 
-/* BattleView writes the real ratio from the scene's GAME_W/GAME_H; this is
-   only a pre-hydration fallback. max-height keeps a tall board on screen. */
+/* GameCanvas writes the real ratio from boot.ts's GAME_W/GAME_H; this is only
+   a pre-hydration fallback. max-height keeps a tall board on screen. */
 
 .canvas {
   width: 100%;
   max-width: 1180px;
-  aspect-ratio: 960 / 830;
+  aspect-ratio: 1200 / 720;
   max-height: calc(100vh - 28px);
 }
 

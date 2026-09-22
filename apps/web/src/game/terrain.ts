@@ -8,7 +8,16 @@
 import { makeRng, type Rng } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
-import { CLOUDS, DECOR, TERRAIN, packUrl, type DecorKind } from "./art";
+import {
+  BUILDINGS,
+  CLOUDS,
+  DECOR,
+  TERRAIN,
+  buildingUrl,
+  packUrl,
+  type BuildingName,
+  type DecorKind,
+} from "./art";
 
 export interface Rect {
   x0: number;
@@ -137,6 +146,43 @@ export function buildFoam(scene: Phaser.Scene, island: Rect): void {
         .play("foam_anim");
     }
   }
+}
+
+/** One building on the ground, at the point its base touches. */
+export interface Structure {
+  side: "a" | "b";
+  name: BuildingName;
+  x: number;
+  y: number;
+}
+
+function buildingKey(side: "a" | "b", name: BuildingName): string {
+  return `build_${side}_${name}`;
+}
+
+export function loadBuildings(scene: Phaser.Scene, all: readonly Structure[]): void {
+  // A village has two of the same house in it, and the loader warns on a
+  // repeated key.
+  const seen = new Set<string>();
+  for (const s of all) {
+    const key = buildingKey(s.side, s.name);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    scene.load.image(key, buildingUrl(s.side, s.name));
+  }
+}
+
+/** The pack bakes each building's shadow in, so this only stands it up. */
+export function addBuilding(scene: Phaser.Scene, s: Structure): Phaser.GameObjects.Image {
+  const spec = BUILDINGS[s.name];
+  return (
+    scene.add
+      .image(s.x, s.y, buildingKey(s.side, s.name))
+      .setOrigin(0.5, spec.anchorY / spec.h)
+      // The same y-sorted band as the props, so a tree in front of a house
+      // covers it and one behind it does not.
+      .setDepth(DEPTH.decorBehind + s.y / 1000)
+  );
 }
 
 /**
