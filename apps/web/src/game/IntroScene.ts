@@ -82,6 +82,7 @@ const CAST: readonly Extra[] = [
 
 export interface IntroLauncher {
   onBegin: () => void;
+  onDuel: () => void;
   /** The gold the draft will have, so the title screen can name it. */
   budget: number;
 }
@@ -152,32 +153,36 @@ export class IntroScene extends Phaser.Scene {
     this.time.delayedCall(Math.random() * 2400, leg);
   }
 
-  /** Title, blurb and the one thing to do, stacked on the water column. */
+  /** Title, blurb and the two ways in, stacked on the water column. */
   private buildMenu(): void {
-    ribbon(this, MENU_X, 150, 300, 0.95).setDepth(DEPTH.hud);
-    label(this, MENU_X, 148, "GREYFALL", { fontSize: "30px" }).setDepth(DEPTH.hud + 2);
+    ribbon(this, MENU_X, 130, 300, 0.95).setDepth(DEPTH.hud);
+    label(this, MENU_X, 128, "GREYFALL", { fontSize: "30px" }).setDepth(DEPTH.hud + 2);
 
-    panel(this, "paper", MENU_X, 320, 280, 190).setDepth(DEPTH.hud);
+    panel(this, "paper", MENU_X, 286, 280, 172).setDepth(DEPTH.hud);
     label(
       this,
       MENU_X,
-      310,
-      `The Greying has taken\nthe land.\n\nSpend ${this.launcher.budget} gold and\nhold the line.`,
-      {
-        fontSize: "17px",
-        color: "#4a3a28",
-        stroke: "",
-        strokeThickness: 0,
-        align: "center",
-      },
+      278,
+      `The Greying has taken
+the land.
+
+Spend ${this.launcher.budget} gold and
+hold the line.`,
+      { fontSize: "17px", color: "#4a3a28", stroke: "", strokeThickness: 0, align: "center" },
     ).setDepth(DEPTH.hud + 2);
 
-    button(this, MENU_X, 486, 218, 136, "Begin", "blue", () => this.launcher.onBegin()).setDepth(
+    button(this, MENU_X, 432, 218, 124, "Begin", "blue", () => this.launcher.onBegin()).setDepth(
+      DEPTH.hud + 3,
+    );
+    button(this, MENU_X, 566, 218, 124, "Duel", "red", () => this.launcher.onDuel()).setDepth(
       DEPTH.hud + 3,
     );
   }
 }
 
-export function startIntro(parent: HTMLElement, launcher: IntroLauncher): { destroy: () => void } {
+export function startIntro(
+  parent: HTMLElement,
+  launcher: IntroLauncher,
+): { destroy: () => void } {
   return startGame(parent, "intro", IntroScene, launcher);
 }

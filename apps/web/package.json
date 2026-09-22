@@ -4,26 +4,36 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "node scripts/fetch-assets.mjs",
+    "predev": "node scripts/fetch-assets.mjs && node scripts/compose-ui.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "prebuild": "node scripts/fetch-assets.mjs",
-    "assets": "node scripts/fetch-assets.mjs",
-    "test:assets": "node scripts/test-assets.mjs"
+    "prebuild": "node scripts/fetch-assets.mjs && node scripts/compose-ui.mjs",
+    "assets": "node scripts/fetch-assets.mjs && node scripts/compose-ui.mjs",
+    "test:assets": "node scripts/test-assets.mjs",
+    "db:push": "drizzle-kit push"
   },
   "dependencies": {
     "@greyfall/engine": "workspace:*",
+    "@neondatabase/serverless": "^1.1.0",
+    "@tanstack/react-query": "^5.103.2",
+    "@trpc/client": "^11.19.0",
+    "@trpc/react-query": "^11.19.0",
+    "@trpc/server": "^11.19.0",
+    "drizzle-orm": "^0.45.3",
     "next": "15.5.25",
     "phaser": "^3.90.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.1137.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
-    "adm-zip": "^0.6.1"
+    "adm-zip": "^0.6.1",
+    "drizzle-kit": "^0.31.11",
+    "pngjs": "^7.0.0"
   }
 }

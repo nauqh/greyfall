@@ -9,6 +9,11 @@ import { BALANCE, generateArmy, simulate } from "@greyfall/engine";
 import type { BattleResult, Placement } from "@greyfall/engine";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { Lobby } from "../pvp/Lobby";
+import { TrpcProvider } from "../pvp/Provider";
+import { Room } from "../pvp/Room";
+import type { RoomView } from "../server/room/view";
+
 interface Battle {
   /** Null while the scene is drafting; set when Start is clicked. */
   result: BattleResult | null;
@@ -22,8 +27,13 @@ function newSeed(): number {
   return Math.floor(Math.random() * 2 ** 31);
 }
 
+/** Which of the three screens the page is on. */
+type Mode = "intro" | "solo" | "duel";
+
 export default function Page() {
-  const [started, setStarted] = useState(false);
+  const [mode, setMode] = useState<Mode>("intro");
+  /** Set once a seat is held; the lobby shows until then. */
+  const [room, setRoom] = useState<RoomView | null>(null);
   const [battle, setBattle] = useState<Battle>({
     result: null,
     player: [],
@@ -63,7 +73,27 @@ export default function Page() {
     return { seed };
   }, []);
 
-  if (!started) {
+  if (mode === "duel") {
+    return (
+      <main className="stage">
+        <TrpcProvider>
+          {room ? (
+            <Room
+              initial={room}
+              onLeave={() => {
+                setRoom(null);
+                setMode("intro");
+              }}
+            />
+          ) : (
+            <Lobby onEnter={setRoom} onBack={() => setMode("intro")} />
+          )}
+        </TrpcProvider>
+      </main>
+    );
+  }
+
+  if (mode === "intro") {
     return (
       <main className="stage">
         <GameCanvas
@@ -74,7 +104,8 @@ export default function Page() {
             import("../game/IntroScene").then(({ startIntro }) =>
               startIntro(el, {
                 budget: BALANCE.budget,
-                onBegin: () => setStarted(true),
+                onBegin: () => setMode("solo"),
+                onDuel: () => setMode("duel"),
               }),
             )
           }
