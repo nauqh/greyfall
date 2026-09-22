@@ -30,7 +30,7 @@ S3 object and each machine fetches its own copy.
 Copy `apps/web/.env.example` to `apps/web/.env` and point it at the object:
 
 ```
-TINY_SWORDS_S3=s3://greyfall-assets/tiny-swords/tiny-swords-v1.zip
+TINY_SWORDS_S3=s3://greyfall-assets/tiny-swords/tiny-swords-v2.zip
 ```
 
 That is the whole setup. `pnpm assets` fetches and unpacks it into
@@ -77,7 +77,7 @@ Project Settings > Environment Variables - not in a file:
 
 | variable | value |
 | --- | --- |
-| `TINY_SWORDS_S3` | `s3://greyfall-assets/tiny-swords/tiny-swords-v1.zip` |
+| `TINY_SWORDS_S3` | `s3://greyfall-assets/tiny-swords/tiny-swords-v2.zip` |
 | `AWS_ACCESS_KEY_ID` | the deploy user's key |
 | `AWS_SECRET_ACCESS_KEY` | its secret |
 | `AWS_REGION` | `ap-southeast-1` |
