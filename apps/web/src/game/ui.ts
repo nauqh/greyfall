@@ -179,32 +179,21 @@ export function button(
   const box = scene.add.container(x, y, [face, pressed, text_]);
   box.setSize(w, h);
 
-  // Hover lifts 2px, press sinks 2px, as the old DOM buttons did.
-  const lift = (dy: number): void => {
+  // Hover and press both show the pressed sheet, sunk 2px.
+  const press = (on: boolean): void => {
     scene.tweens.killTweensOf(box);
-    scene.tweens.add({ targets: box, y: y + dy, duration: 120, ease: "Sine.easeInOut" });
+    scene.tweens.add({ targets: box, y: y + (on ? 2 : 0), duration: 120, ease: "Sine.easeInOut" });
+    face.setVisible(!on);
+    pressed.setVisible(on);
+    text_.setY(on ? 2 : -1);
   };
 
   box.setInteractive({ useHandCursor: true })
-    .on("pointerover", () => lift(-2))
-    .on("pointerdown", () => {
-      lift(2);
-      face.setVisible(false);
-      pressed.setVisible(true);
-      text_.setY(2);
-    })
+    .on("pointerover", () => press(true))
+    .on("pointerout", () => press(false))
     .on("pointerup", () => {
-      lift(-2);
-      face.setVisible(true);
-      pressed.setVisible(false);
-      text_.setY(-1);
+      press(true);
       onClick();
-    })
-    .on("pointerout", () => {
-      lift(0);
-      face.setVisible(true);
-      pressed.setVisible(false);
-      text_.setY(-1);
     });
   return box;
 }

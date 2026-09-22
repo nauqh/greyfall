@@ -157,15 +157,17 @@ body {
   border-image-source: url("/tiny-swords/ui/redButton.png");
 }
 
-.btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-}
-
+.btn:hover:not(:disabled),
 .btn:active:not(:disabled) {
   transform: translateY(2px);
+}
+
+.btn:hover:not(:disabled),
+.btn:active:not(:disabled) {
   border-image-source: url("/tiny-swords/ui/blueButtonDown.png");
 }
 
+.btn.red:hover:not(:disabled),
 .btn.red:active:not(:disabled) {
   border-image-source: url("/tiny-swords/ui/redButtonDown.png");
 }
@@ -244,4 +246,33 @@ body {
   height: 26px;
   vertical-align: -5px;
   image-rendering: pixelated;
+}
+
+/* The duel board, with the room's own controls sitting under it. */
+.roomStage {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px;
+}
+
+.resultBar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.outcome {
+  font-size: 20px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.resultBar .error {
+  color: #ffd2c8;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
 }
