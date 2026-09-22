@@ -1,22 +1,8 @@
 #!/usr/bin/env node
-// Unpacks the Tiny Swords pack into public/ from the private S3 object named
-// by TINY_SWORDS_S3. The pack's license forbids redistribution, so it is
-// never committed.
-//
-// Lives inside apps/web, not at the repo root, and reaches nothing outside
-// it: Vercel's Root Directory sandbox is documented to forbid `..` traversal
-// ("Your app will not be able to access files outside of that directory"),
-// which is what silently broke this when it lived at the repo root and the
-// build script said `node ../../scripts/fetch-assets.mjs`.
-//
-// The SDK rather than a URL: a public object would be a redistributable copy,
-// and a presigned URL expires within 7 days so it cannot live in a host's
-// environment. Credentials and region come from the standard AWS chain.
-//
-// A no-op once unpacked, so it is safe before every dev start. Warns and exits
-// 0 when unconfigured; --require exits 1 instead, for a deploy.
+// Fetches the Tiny Swords pack from S3 into public/; the license forbids committing it.
+// Lives inside apps/web: Vercel's Root Directory sandbox forbids `..` traversal.
+// Pure-JS unzip, not a shelled-out tool: the Vercel build image has neither a working unzip nor a zip-capable tar.
 
-import { spawnSync } from "node:child_process";
 import {
   cpSync,
   existsSync,
@@ -26,7 +12,6 @@ import {
   renameSync,
   rmSync,
   statSync,
-  writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -35,20 +20,13 @@ import { fileURLToPath } from "node:url";
 const APP_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DEST = join(APP_ROOT, "public", "tiny-swords");
 
-// Next loads .env for the app from this same directory; a plain node process
-// does not get that free. loadEnvFile leaves existing variables alone, so an
-// export still wins.
 try {
   process.loadEnvFile(join(APP_ROOT, ".env"));
 } catch {
-  // No .env. Shell variables still apply.
+  // No .env; shell variables still apply.
 }
 
-/** A folder counts as the pack if it has this inside it. */
 const MARKER = "Units";
-// A real deploy must not quietly ship a game with no art, so being
-// unconfigured is fatal there. A failed fetch already exits non-zero; this
-// covers forgetting TINY_SWORDS_S3 altogether. Other hosts pass --require.
 const REQUIRED = process.argv.includes("--require") || !!process.env.VERCEL;
 
 const say = (msg) => console.log(`[assets] ${msg}`);
@@ -61,7 +39,7 @@ function isPack(dir) {
   }
 }
 
-/** The pack may be at the zip root or one level down, depending on how it was zipped. */
+// The pack may be at the zip root or one level down, depending on how it was zipped.
 function findPack(dir) {
   if (isPack(dir)) return dir;
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -72,37 +50,15 @@ function findPack(dir) {
   return null;
 }
 
-function extract(zip, into) {
-  // Windows' system tar is bsdtar, which reads zip; GNU tar does not.
-  const winTar = "C:\\Windows\\System32\\tar.exe";
-  const tries = [
-    ["unzip", ["-q", zip, "-d", into]],
-    [process.platform === "win32" ? winTar : "tar", ["-xf", zip, "-C", into]],
-  ];
-  for (const [cmd, args] of tries) {
-    const run = spawnSync(cmd, args, { stdio: "ignore" });
-    if (!run.error && run.status === 0) return true;
-  }
-  return false;
-}
-
 async function fromS3(uri) {
   const parts = /^s3:\/\/([^/]+)\/(.+)$/.exec(uri);
   if (!parts) throw new Error(`TINY_SWORDS_S3 should look like s3://bucket/key, got: ${uri}`);
   const [, bucket, key] = parts;
 
-  let S3Client, GetObjectCommand;
-  try {
-    ({ S3Client, GetObjectCommand } = await import("@aws-sdk/client-s3"));
-  } catch {
-    throw new Error("@aws-sdk/client-s3 is not installed; run pnpm install");
-  }
+  const { S3Client, GetObjectCommand } = await import("@aws-sdk/client-s3");
+  const { default: AdmZip } = await import("adm-zip");
 
-  // Otherwise a placeholder pasted from the docs fails as "Invalid character
-  // in header content", which names nothing useful.
-  // Empty is fine, and normal while setting up: the SDK skips it and falls
-  // back to ~/.aws. A filled-in placeholder is not, and fails as "Invalid
-  // character in header content", which names nothing useful.
+  // Empty falls back to ~/.aws; a filled-in placeholder fails as "Invalid character in header content".
   for (const name of ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]) {
     const value = process.env[name];
     if (value && !/^[\x21-\x7e]+$/.test(value)) {
@@ -117,16 +73,12 @@ async function fromS3(uri) {
   say(`fetching s3://${bucket}/${key}`);
   const client = new S3Client({});
   const res = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+  const zip = Buffer.from(await res.Body.transformToByteArray());
 
   const work = mkdtempSync(join(tmpdir(), "greyfall-assets-"));
-  const zip = join(work, "pack.zip");
-  writeFileSync(zip, Buffer.from(await res.Body.transformToByteArray()));
-
   const out = join(work, "out");
   mkdirSync(out, { recursive: true });
-  if (!extract(zip, out)) {
-    throw new Error("no usable unzip tool found (tried unzip, then bsdtar)");
-  }
+  new AdmZip(zip).extractAllTo(out, true);
 
   const pack = findPack(out);
   if (!pack) throw new Error(`the archive has no ${MARKER}/ folder in it`);

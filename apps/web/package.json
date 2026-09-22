@@ -20,8 +20,9 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@aws-sdk/client-s3": "^3.1137.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
-    "@aws-sdk/client-s3": "^3.1137.0"
+    "adm-zip": "^0.6.1"
   }
 }
