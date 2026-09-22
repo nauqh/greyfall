@@ -141,6 +141,8 @@ export default function Page() {
         The Greying has taken the land. Spend {BALANCE.budget} gold, hold the line.
       </p>
 
+      <div className="draftLayout">
+        <div className="draftLeft">
       <div className="roster">
         {ROSTER.map((cls) => {
           const stats = BALANCE.units[cls];
@@ -173,15 +175,17 @@ export default function Page() {
         })}
       </div>
 
-      <div className="purse">
-        <i className="coin" />
-        <strong>{gold}</strong> gold left · {army.length}/{BALANCE.board.maxUnits} units
-        <span className="hint">
-          click a cell to place {LABELS[picked]}, click it again to take it back
-        </span>
-      </div>
+        <div className="purse">
+          <i className="coin" />
+          <strong>{gold}</strong> gold left · {army.length}/{BALANCE.board.maxUnits} units
+          <span className="hint">
+            click a cell to place {LABELS[picked]}, click it again to take it back
+          </span>
+        </div>
+        </div>
 
-      {/* Front column on the right, facing the enemy: own col c is battle col c. */}
+        <div className="draftRight">
+        {/* Front column on the right, facing the enemy: own col c is battle col c. */}
       <div className="board">
         {Array.from({ length: BALANCE.board.rows }, (_, row) => {
           return (
@@ -225,14 +229,16 @@ export default function Page() {
         })}
       </div>
 
-      {errors.length > 0 && <p className="error">{errors[0]}</p>}
-      <div className="actions">
-        <button className="btn blue" disabled={errors.length > 0} onClick={fight}>
-          To battle
-        </button>
-        <button className="btn red" disabled={army.length === 0} onClick={() => setArmy([])}>
-          Clear
-        </button>
+        {errors.length > 0 && <p className="error">{errors[0]}</p>}
+        <div className="actions">
+          <button className="btn blue" disabled={errors.length > 0} onClick={fight}>
+            To battle
+          </button>
+          <button className="btn red" disabled={army.length === 0} onClick={() => setArmy([])}>
+            Clear
+          </button>
+        </div>
+        </div>
       </div>
     </main>
   );
