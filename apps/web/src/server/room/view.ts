@@ -18,6 +18,7 @@ export interface SeatView {
 export interface RoomView {
   code: string;
   state: RoomState;
+  round: number;
   /** Which seat the caller holds, 0 or 1. */
   seat: 0 | 1;
   you: SeatView & { army: Placement[] };
@@ -41,6 +42,7 @@ export function viewFor(row: RoomRow, seat: 0 | 1): RoomView {
   return {
     code: row.code,
     state: row.state,
+    round: row.data.round,
     seat,
     you: { name: you.name, locked: you.locked, army: you.army },
     opponent: them ? { name: them.name, locked: them.locked, army: done ? them.army : null } : null,

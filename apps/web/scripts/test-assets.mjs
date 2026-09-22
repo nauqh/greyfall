@@ -59,7 +59,11 @@ seq(art.ICONS.file, art.ICONS.count, true);
 const LITERAL = /["']([^"'\\]+\.png)["']/g;
 for (const rel of SOURCES.slice(1)) {
   const text = readFileSync(join(SRC, rel), "utf8");
-  for (const [, path] of text.matchAll(LITERAL)) wanted.add(path);
+  for (const [, path] of text.matchAll(LITERAL)) {
+    // A leading slash means public/, not the pack: the cursors are ours and
+    // are committed, so they are not this script's business.
+    if (!path.startsWith("/")) wanted.add(path);
+  }
 }
 
 // Unit poses are written relative to `Units/<side>/`; both sides load them.

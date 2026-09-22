@@ -19,6 +19,9 @@ export interface Seat {
 export interface RoomData {
   /** Regenerated on creation and on every rematch, so neither player can aim it. */
   seed: number;
+  /** Bumped per rematch. The client keys its canvas on it, so a new round
+      builds a new game and a poll during one never disturbs it. */
+  round: number;
   /** Index 0 is side A, index 1 side B. A free seat is null. */
   seats: [Seat | null, Seat | null];
   /** Set once the room resolves; ~16KB of event log. */

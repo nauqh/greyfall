@@ -112,7 +112,10 @@ export function loadUnits(scene: Phaser.Scene): void {
  * restart, so every one of these is a no-op the second time round. */
 export function makeAnims(scene: Phaser.Scene): void {
   const frameCount = (key: string): number =>
-    scene.textures.get(key).getFrameNames().filter((f) => f !== "__BASE").length;
+    scene.textures
+      .get(key)
+      .getFrameNames()
+      .filter((f) => f !== "__BASE").length;
 
   for (const side of ["a", "b"] as const) {
     for (const cls of Object.keys(POSES) as UnitClass[]) {
@@ -149,11 +152,15 @@ export function playPose(
   side: Side,
   cls: UnitClass,
   anim: AnimName,
+  mirrored = false,
 ): void {
   const body = BODY[cls];
   sprite.setOrigin(body.anchorX / body.frame, body.anchorY / body.frame);
-  // The art faces right in both colors; side b holds the right half. Run and
-  // attack keep the directional flip their callers set.
-  if (anim === "idle") sprite.setFlipX(side === "b");
+  // The art faces right in both colors; side b holds the right half. On a
+  // mirrored board - seat B's own view of the duel - it holds the left half
+  // instead, so the flip goes the other way. Run and attack keep the
+  // directional flip their callers set from screen-space movement, which is
+  // already mirrored by the time they see it.
+  if (anim === "idle") sprite.setFlipX((side === "b") !== mirrored);
   sprite.play(animKey(side, cls, anim), true);
 }

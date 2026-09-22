@@ -153,6 +153,12 @@ export interface DuelHooks {
   onLock: () => void;
   /** Read every frame while drafting; no events, no imperative handle. */
   status: () => DuelStatus;
+  /**
+   * Playback is over and the result card is up. The page waits for this
+   * before saying who won: the server resolves the moment both seats lock,
+   * so the poll knows the winner long before the fight has been watched.
+   */
+  onPlayed: () => void;
 }
 
 export interface BattleLauncher {
@@ -1052,6 +1058,7 @@ export class BattleScene extends Phaser.Scene {
   // --- result --------------------------------------------------------------
 
   private showResult(): void {
+    this.duel?.onPlayed();
     const result = this.result!;
     const headline =
       result.winner === "a"

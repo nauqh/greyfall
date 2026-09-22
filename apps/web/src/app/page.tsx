@@ -7,8 +7,9 @@
 
 import { BALANCE, generateArmy, simulate } from "@greyfall/engine";
 import type { BattleResult, Placement } from "@greyfall/engine";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
+import { GameCanvas } from "../game/GameCanvas";
 import { Lobby } from "../pvp/Lobby";
 import { TrpcProvider } from "../pvp/Provider";
 import { Room } from "../pvp/Room";
@@ -134,43 +135,4 @@ export default function Page() {
       />
     </main>
   );
-}
-
-/** Holds one Phaser game at the scene's own ratio. */
-function GameCanvas({ start }: { start: (el: HTMLElement) => Promise<{ destroy: () => void }> }) {
-  const holder = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = holder.current;
-    if (!el) return;
-    let cancelled = false;
-    let game: { destroy: () => void } | null = null;
-
-    // Imported in the effect so Phaser never runs on the server.
-    void import("../game/boot")
-      .then(({ GAME_W, GAME_H }) => {
-        if (cancelled) return null;
-        // The scene owns the proportions. Hardcoding them in CSS letterboxes
-        // FIT into a wrongly shaped box every time the layout moves.
-        el.style.aspectRatio = `${GAME_W} / ${GAME_H}`;
-        // Cap width by what the viewport height allows, or a short viewport
-        // clamps height only and FIT letterboxes the sides.
-        el.style.maxWidth = `min(1180px, calc((100vh - 28px) * ${GAME_W} / ${GAME_H}))`;
-        return start(el);
-      })
-      .then((g) => {
-        if (!g) return;
-        if (cancelled) g.destroy();
-        else game = g;
-      });
-
-    return () => {
-      cancelled = true;
-      game?.destroy();
-    };
-    // Mounts once and stays: later rounds are the scene restarting itself.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return <div className="canvas" ref={holder} />;
 }
