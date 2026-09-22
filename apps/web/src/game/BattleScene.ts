@@ -140,8 +140,15 @@ export interface BattleLauncher {
   result: BattleResult | null;
   seed: number | string;
   onDraft: (army: Placement[], seed: number | string) => BattleResult;
-  onRematch: () => void;
-  onNewArmy: () => void;
+  /**
+   * Both hand back what the next round needs, rather than tearing the page's
+   * canvas down and putting a fresh one up. The scene restarts itself on the
+   * answer: a restart keeps every texture, sheet and animation the game has
+   * already loaded, so the board is clear and the draft is back in a frame or
+   * two instead of half a second.
+   */
+  onRematch: () => { result: BattleResult; seed: number | string };
+  onNewArmy: () => { seed: number | string };
 }
 
 export class BattleScene extends Phaser.Scene {
@@ -171,12 +178,16 @@ export class BattleScene extends Phaser.Scene {
   private bars: Record<Side, PackBar | null> = { a: null, b: null };
   private counts: Record<Side, Phaser.GameObjects.Text | null> = { a: null, b: null };
   private clockText: Phaser.GameObjects.Text | null = null;
+  /** Rounds played in this scene, so only a later draft slides in. */
+  private rounds = 0;
 
   constructor() {
     super("battle");
   }
 
   init(data: BattleLauncher): void {
+    // Survives the restart, unlike everything below it.
+    if (this.launcher) this.rounds += 1;
     this.launcher = data;
     this.result = data.result;
     this.units = new Map();
@@ -192,6 +203,16 @@ export class BattleScene extends Phaser.Scene {
     this.cards = new Map();
     this.placed = new Map();
     this.clockText = null;
+    // Field initialisers run once, at construction; a restart runs only this.
+    // A stale PackBar here would be ticked every frame with its art already
+    // destroyed along with the old scene's display list.
+    this.bars = { a: null, b: null };
+    this.counts = { a: null, b: null };
+  }
+
+  /** Re-enter the scene with a new round in hand. */
+  private restart(next: Partial<BattleLauncher>): void {
+    this.scene.restart({ ...this.launcher, ...next });
   }
 
   preload(): void {
@@ -230,13 +251,15 @@ export class BattleScene extends Phaser.Scene {
     fitCamera(this);
     prepareTerrain(this);
     makeAnims(this);
-    this.anims.create({
-      key: "dust_anim",
-      frames: this.anims.generateFrameNumbers("dust", { start: 0, end: FX.dust.frames - 1 }),
-      frameRate: 16,
-      repeat: 0,
-      hideOnComplete: true,
-    });
+    if (!this.anims.exists("dust_anim")) {
+      this.anims.create({
+        key: "dust_anim",
+        frames: this.anims.generateFrameNumbers("dust", { start: 0, end: FX.dust.frames - 1 }),
+        frameRate: 16,
+        repeat: 0,
+        hideOnComplete: true,
+      });
+    }
 
     const board: Rect = {
       x0: ORIGIN_X - TILE / 2,
@@ -319,6 +342,14 @@ export class BattleScene extends Phaser.Scene {
     // little rather than stretching. Any shorter and it reads as a strip.
     const start = button(this, 900, 624, 190, 104, "Start", "blue", () => this.startFromDraft());
     this.draftBox.add(start);
+
+    // In from the right, the way it went out. Only on a second round: the
+    // first draft is what the screen opens on, and sliding that in would just
+    // delay the game.
+    if (this.rounds > 0) {
+      this.draftBox.setX(GAME_W);
+      this.tweens.add({ targets: this.draftBox, x: 0, duration: 420, ease: "Sine.easeOut" });
+    }
 
     // Own half only: the enemy half sits under the panel.
     const zx = ORIGIN_X - TILE / 2;
@@ -934,12 +965,12 @@ export class BattleScene extends Phaser.Scene {
     ).setDepth(DEPTH.hud + 12);
 
     const again = button(this, GAME_W / 2 - 100, GAME_H / 2 + 88, 208, 136, "Rematch", "blue", () =>
-      this.launcher.onRematch(),
+      this.restart(this.launcher.onRematch()),
     )
       .setScale(0.85)
       .setDepth(DEPTH.hud + 12);
     const fresh = button(this, GAME_W / 2 + 100, GAME_H / 2 + 88, 208, 136, "New army", "red", () =>
-      this.launcher.onNewArmy(),
+      this.restart({ ...this.launcher.onNewArmy(), result: null }),
     )
       .setScale(0.85)
       .setDepth(DEPTH.hud + 12);

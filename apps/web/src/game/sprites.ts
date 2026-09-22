@@ -108,7 +108,8 @@ export function loadUnits(scene: Phaser.Scene): void {
   }
 }
 
-/** Attacks play once; idle and run loop. */
+/** Attacks play once; idle and run loop. Animations outlive a scene
+ * restart, so every one of these is a no-op the second time round. */
 export function makeAnims(scene: Phaser.Scene): void {
   const frameCount = (key: string): number =>
     scene.textures.get(key).getFrameNames().filter((f) => f !== "__BASE").length;
@@ -117,6 +118,7 @@ export function makeAnims(scene: Phaser.Scene): void {
     for (const cls of Object.keys(POSES) as UnitClass[]) {
       for (const anim of Object.keys(POSES[cls]) as AnimName[]) {
         const key = unitKey(side, cls, anim);
+        if (scene.anims.exists(animKey(side, cls, anim))) continue;
         const frames = frameCount(key);
         if (frames === 0) continue;
         scene.anims.create({
@@ -127,6 +129,7 @@ export function makeAnims(scene: Phaser.Scene): void {
         });
       }
     }
+    if (scene.anims.exists(`${healKey(side)}_anim`)) continue;
     scene.anims.create({
       key: `${healKey(side)}_anim`,
       frames: scene.anims.generateFrameNumbers(healKey(side), {

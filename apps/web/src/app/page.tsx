@@ -16,8 +16,6 @@ interface Battle {
   player: Placement[];
   enemy: Placement[];
   seed: number;
-  /** Bumped per battle so the Phaser game is rebuilt fresh for each one. */
-  id: number;
 }
 
 function newSeed(): number {
@@ -31,44 +29,47 @@ export default function Page() {
     player: [],
     enemy: [],
     seed: newSeed(),
-    id: 0,
   });
+
+  // Rematch runs inside a click handler and has to resimulate there and then,
+  // so the armies are kept in a ref too: reading them back out of state would
+  // give whatever the last render happened to see.
+  const armies = useRef<{ player: Placement[]; enemy: Placement[] }>({ player: [], enemy: [] });
 
   // The scene calls this when Start is clicked and plays back what it returns.
   const draft = useCallback((army: Placement[], seed: number): BattleResult => {
     const enemy = generateArmy(BALANCE.budget, seed);
     const result = simulate(army, enemy, seed);
-    setBattle((b) => ({ ...b, result, player: army, enemy }));
+    armies.current = { player: army, enemy };
+    setBattle({ result, player: army, enemy, seed });
     return result;
   }, []);
 
+  // Both of these hand the next round straight back to the scene, which
+  // restarts itself on it. Rebuilding the Phaser game instead cost a new WebGL
+  // context and a pass over the whole pack for what is only a cleared board.
   const rematch = useCallback(() => {
-    setBattle((b) => {
-      const seed = newSeed();
-      return {
-        ...b,
-        result: simulate(b.player, b.enemy, seed),
-        seed,
-        id: b.id + 1,
-      };
-    });
+    const seed = newSeed();
+    const { player, enemy } = armies.current;
+    const result = simulate(player, enemy, seed);
+    setBattle({ result, player, enemy, seed });
+    return { result, seed };
   }, []);
 
   const newArmy = useCallback(() => {
-    setBattle((b) => ({
-      ...b,
-      result: null,
-      player: [],
-      enemy: [],
-      seed: newSeed(),
-      id: b.id + 1,
-    }));
+    const seed = newSeed();
+    armies.current = { player: [], enemy: [] };
+    setBattle({ result: null, player: [], enemy: [], seed });
+    return { seed };
   }, []);
 
   if (!started) {
     return (
       <main className="stage">
         <GameCanvas
+          // Distinct from the battle's, or React reconciles the two as one
+          // component and the effect that builds the game never runs again.
+          key="intro"
           start={(el) =>
             import("../game/IntroScene").then(({ startIntro }) =>
               startIntro(el, {
@@ -85,9 +86,9 @@ export default function Page() {
   return (
     <main className="stage">
       <GameCanvas
-        // A new battle is a new game, so React unmounts this and the effect's
-        // cleanup destroys the old one.
-        key={battle.id}
+        // Constant across rounds: a rematch or a new army restarts the scene
+        // inside the game that is already up, rather than building another.
+        key="battle"
         start={(el) =>
           import("../game/BattleScene").then(({ startBattle }) =>
             startBattle(el, {
@@ -136,7 +137,7 @@ function GameCanvas({ start }: { start: (el: HTMLElement) => Promise<{ destroy: 
       cancelled = true;
       game?.destroy();
     };
-    // Mounts once; the key on the caller's side is what forces a new game.
+    // Mounts once and stays: later rounds are the scene restarting itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
