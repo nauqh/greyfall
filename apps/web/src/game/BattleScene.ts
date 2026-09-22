@@ -89,13 +89,17 @@ const ROSTER = UNIT_CLASSES.filter((c) => c !== "pawn");
 /** A portrait per class, from the pack's 25 avatars. */
 const PORTRAIT: Record<UnitClass, number> = { warrior: 1, lancer: 2, archer: 3, monk: 4, pawn: 1 };
 
-/** Each class's counter, named. BALANCE.counters is what makes them true. */
+/**
+ * Each class's counter, named. BALANCE.counters is what makes them true; the
+ * job here is only to say which class a card ruins, in the game's own voice
+ * rather than as a stat sheet.
+ */
 const BLURB: Record<UnitClass, string> = {
   pawn: "Digs. Dies.",
-  warrior: "Beats Archers",
-  lancer: "Beats Warriors",
-  archer: "Beats Lancers",
-  monk: "Heals your wounded",
+  warrior: "Fells archers.",
+  lancer: "Breaks warriors.",
+  archer: "Outreaches lancers.",
+  monk: "Mends what still lives.",
 };
 
 /** Dark ink on paper, light ink on the selected card's slate. */
@@ -301,7 +305,9 @@ export class BattleScene extends Phaser.Scene {
       this.draftBox.add(this.buildCard(cls, cx, cy));
     }
 
-    const start = button(this, 900, 640, 190, 128, "Start", "blue", () => this.startFromDraft());
+    // 104 is under the sheet's own 64px corners, so the frame squashes a
+    // little rather than stretching. Any shorter and it reads as a strip.
+    const start = button(this, 900, 624, 190, 104, "Start", "blue", () => this.startFromDraft());
     this.draftBox.add(start);
 
     // Own half only: the enemy half sits under the panel.
