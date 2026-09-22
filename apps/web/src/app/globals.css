@@ -267,8 +267,8 @@ h1.banner {
 }
 
 /* Frame 0 of the battle's idle sheet at half scale, stood on its ground
-   anchor. The wrapper is a zero-size point at the cell centre, so left/top
-   are the anchor offsets straight from the sheet metrics. */
+   anchor plus SPRITE_NUDGE (page.tsx), matching the battle canvas so a body
+   taller than the cell doesn't loom entirely above it. */
 .pawnwrap {
   position: absolute;
   left: 50%;

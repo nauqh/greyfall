@@ -36,6 +36,14 @@ export const BODY_HEIGHT: Record<UnitClass, number> = {
   pawn: 71,
 };
 
+/**
+ * A body is taller than an 84px cell (up to 89px), so feet-at-centre leaves
+ * it looming entirely above the tile with nothing below. Shared by the
+ * battle canvas and the draft screen's own CSS rendering, so both nudge the
+ * same amount rather than drifting apart.
+ */
+export const SPRITE_NUDGE = 18;
+
 const POSES: Record<UnitClass, Record<AnimName, string>> = {
   warrior: {
     idle: "Warrior/Warrior_Idle.png",

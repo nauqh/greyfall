@@ -19,7 +19,16 @@ import {
 import * as Phaser from "phaser";
 
 import { FX, packUrl } from "./art";
-import { BODY, BODY_HEIGHT, animKey, healKey, loadUnits, makeAnims, playPose } from "./sprites";
+import {
+  BODY,
+  BODY_HEIGHT,
+  SPRITE_NUDGE,
+  animKey,
+  healKey,
+  loadUnits,
+  makeAnims,
+  playPose,
+} from "./sprites";
 import {
   DEPTH,
   addShadow,
@@ -54,15 +63,6 @@ const ORIGIN_Y = ISLAND.y0 + (ISLAND.y1 - ISLAND.y0 - BOARD_H) / 2 + TILE / 2;
 /** Where the two front columns meet - the clash point, and the countdown's home. */
 const MID_X = ORIGIN_X + (COLS / 2 - 0.5) * TILE;
 const MID_Y = ORIGIN_Y + ((ROWS - 1) / 2) * TILE;
-
-/**
- * A unit's body is taller than a cell (up to 89px against an 84px tile), so
- * feet-at-centre leaves it looming entirely above the tile with nothing
- * below. Nudging the sprite (not the cell, which stays at the true grid
- * position) down by this much balances it without pushing the feet below
- * the tile.
- */
-const SPRITE_NUDGE = 18;
 
 const TICK_MS = 1000 / BALANCE.tickRate;
 /**

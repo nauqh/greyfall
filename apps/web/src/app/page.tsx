@@ -19,7 +19,7 @@ import type { BattleResult, Placement, UnitClass } from "@greyfall/engine";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AVATARS, packUrl } from "../game/art";
-import { BODY, sheetUrl } from "../game/sprites";
+import { BODY, SPRITE_NUDGE, sheetUrl } from "../game/sprites";
 
 const ROSTER = UNIT_CLASSES.filter((c) => c !== "pawn");
 
@@ -211,7 +211,7 @@ export default function Page() {
                             width: BODY[unit.class].frame,
                             height: BODY[unit.class].frame,
                             left: BODY[unit.class].anchorX * -0.5,
-                            top: BODY[unit.class].anchorY * -0.5,
+                            top: BODY[unit.class].anchorY * -0.5 + SPRITE_NUDGE,
                             backgroundImage: `url("${sheetUrl("a", unit.class)}")`,
                           }}
                         />
