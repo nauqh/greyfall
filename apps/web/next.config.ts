@@ -29,6 +29,13 @@ const config: NextConfig = {
           { key: "Cross-Origin-Resource-Policy", value: "cross-origin" },
         ],
       },
+      {
+        // The pack is content-stable per version, and the intro alone pulls
+        // ~68 files: without this every reload re-validates all of them
+        // before the scene can paint.
+        source: "/tiny-swords/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=86400" }],
+      },
     ];
   },
 };
