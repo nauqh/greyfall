@@ -955,7 +955,7 @@ export class BattleScene extends Phaser.Scene {
     const top = view.sprite.y - BODY_HEIGHT[view.snap.class] - 20;
     const tag = this.add
       .text(view.sprite.x, top, text, {
-        fontFamily: '"Gochi Hand", cursive',
+        fontFamily: '"Nunito", sans-serif',
         fontSize: "17px",
         color,
         stroke: "#1c2634",

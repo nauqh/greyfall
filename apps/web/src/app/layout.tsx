@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import "@fontsource/nunito/400.css";
+import "@fontsource/nunito/600.css";
+import "@fontsource/nunito/700.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -9,12 +12,15 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Gochi+Hand&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+      {/* boot.ts gates Phaser boot on this font, so it must race the JS
+          chunks, not wait for them. */}
+      <link
+        rel="preload"
+        href={"@fontsource/medievalsharp/files/medievalsharp-latin-400-normal.woff2"}
+        as="font"
+        type="font/woff2"
+        crossOrigin="anonymous"
+      />
       <body>{children}</body>
     </html>
   );

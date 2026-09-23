@@ -138,11 +138,12 @@ export const HAND = 'url("/cursor-pointer.png") 4 0, pointer';
 
 /** Shared by every label, so the UI reads as one thing. */
 export const FONT: Phaser.Types.GameObjects.Text.TextStyle = {
-  fontFamily: '"Gochi Hand", cursive',
+  fontFamily: '"Nunito", sans-serif',
   fontSize: "15px",
-  color: "#f5f2e4",
+  color: "#fdfaf0",
   stroke: "#2e3a4e",
   strokeThickness: 3,
+  fontStyle: "600",
 };
 
 export function label(
