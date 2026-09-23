@@ -48,6 +48,7 @@ const VILLAGE: readonly Structure[] = [
   // in. 192px wide at the base, so it sits just left of its old spot. 0.85
   // scale - the full-size art crowded the tower.
   { side: "b", name: "deadTree", x: 1040, y: 640},
+  { side: "b", name: "pirateTower", x: 1090, y: 400},
 ];
 
 /**
@@ -76,8 +77,9 @@ const CAST: readonly Extra[] = [
   // right over the castle toward the far shore.
   { side: "a", cls: "archer", x: 585, y: 150, pace: 0 },
   { side: "a", cls: "archer", x: 450, y: 125, pace: 0, face: "right" },
-  { side: "b", cls: "warrior", x: 870, y: 550, pace: 0 },
   { side: "b", cls: "warrior", x: 910, y: 600, pace: -60 },
+  { side: "b", cls: "archer", x: 1090, y: 330, pace: 0 },
+  { side: "b", cls: "monk", x: 890, y: 520, pace: 0 },
 ];
 
 export class IntroScene extends Phaser.Scene {
