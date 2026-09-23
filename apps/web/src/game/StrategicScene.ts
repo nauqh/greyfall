@@ -25,10 +25,10 @@ import {
 } from "./terrain";
 import { button, label, loadPanels, ribbon } from "./ui";
 
-/** Strategic cells, square 64px like the terrain art. 8 rows tall, 20
- *  columns long: the map runs 1280px against the 1200px world, so it is the
+/** Strategic cells, square 64px like the terrain art. 8 rows tall, 24
+ *  columns long: the map runs 1536px against the 1200px world, so it is the
  *  width that needs the pan. */
-export const STRAT_COLS = 20;
+export const STRAT_COLS = 24;
 export const STRAT_ROWS = 8;
 const CELL = 64;
 /** The grid as a rect, vertically centred. The 160px of water either end
@@ -52,8 +52,8 @@ const WORLD_W = STRAT.x1 + PAD;
  * land lanes - rows 0..1 above, 6..7 below - to cross left to right.
  */
 const LAKE = new Set<string>();
-for (let col = 5; col <= 14; col++) {
-  const t = (col - 5) / 9;
+for (let col = 7; col <= 16; col++) {
+  const t = (col - 7) / 9;
   const top = Math.max(2, 2 + Math.round(0.9 * Math.sin(t * Math.PI * 1.7) + 0.4 * Math.sin(col * 1.9)));
   const bot = Math.min(5, 5 - Math.round(0.9 * Math.sin(t * Math.PI * 1.3 + 1.6) + 0.4 * Math.sin(col * 1.4 + 2)));
   for (let row = top; row <= bot; row++) LAKE.add(`${col},${row}`);
@@ -185,8 +185,13 @@ export class StrategicScene extends Phaser.Scene {
       const { x, y } = this.cellXY(col, row);
       const foam = this.add.sprite(x, y, "foam").setDepth(foamZ).play("foam_anim");
       // The island's edge laps in step on purpose; a lake reads more natural
-      // out of rhythm, so every blob starts at its own frame.
-      if (foam.anims.currentAnim) foam.anims.setProgress(Math.random());
+      // out of rhythm, so every blob starts at its own frame and drifts at
+      // its own pace - the shared anim runs 8fps, this lands the blobs
+      // around 4-5fps without touching the island's shore.
+      if (foam.anims.currentAnim) {
+        foam.anims.setProgress(Math.random());
+        foam.anims.timeScale = 0.55 + Math.random() * 0.15;
+      }
       // Bury each blob's body under grass again - centre and all eight
       // neighbours, the blob overhangs every one - leaving only the fringe
       // over the water.
