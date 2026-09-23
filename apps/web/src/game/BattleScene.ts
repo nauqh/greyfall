@@ -183,6 +183,8 @@ export interface BattleLauncher {
    */
   onRematch: () => { result: BattleResult; seed: number | string };
   onNewArmy: () => { seed: number | string };
+  /** Leave the battle for the title screen; the page tears the canvas down. */
+  onMenu: () => void;
 }
 
 export class BattleScene extends Phaser.Scene {
@@ -216,7 +218,6 @@ export class BattleScene extends Phaser.Scene {
   private lockBtn: Phaser.GameObjects.Container | null = null;
   private duelText: Phaser.GameObjects.Text | null = null;
   private bars: Record<Side, PackBar | null> = { a: null, b: null };
-  private counts: Record<Side, Phaser.GameObjects.Text | null> = { a: null, b: null };
   private clockText: Phaser.GameObjects.Text | null = null;
   /** Rounds played in this scene, so only a later draft slides in. */
   private rounds = 0;
@@ -252,7 +253,6 @@ export class BattleScene extends Phaser.Scene {
     // A stale PackBar here would be ticked every frame with its art already
     // destroyed along with the old scene's display list.
     this.bars = { a: null, b: null };
-    this.counts = { a: null, b: null };
   }
 
   /** Re-enter the scene with a new round in hand. */
@@ -388,14 +388,12 @@ export class BattleScene extends Phaser.Scene {
     this.draftBox.add(this.lockBtn);
 
     if (this.duel) {
-      this.duelText = label(this, 900, 512, "", {
-        fontSize: "15px",
-        color: "#7a4f14",
-        strokeThickness: 0,
-        align: "center",
-      });
-      this.draftBox.add(this.duelText);
-      how.setY(548);
+      // The status takes over the instructions' slot (y 552, under the
+      // cards) instead of its own line: anything above the cards' bottom
+      // edge at y 526 is read through them, which is how the waiting
+      // message ended up printed across the roster.
+      this.duelText = how;
+      this.duelText.setColor("#7a4f14");
       this.refreshDuel();
     }
 
@@ -517,14 +515,21 @@ export class BattleScene extends Phaser.Scene {
     }
 
     const them = st.opponent ?? "your opponent";
-    const clock = st.msRemaining === null ? "" : `${Math.ceil(st.msRemaining / 1000)}s left`;
-    this.duelText.setText(
-      st.youLocked
-        ? `Locked in. Waiting for ${them}.\n${clock}`
-        : st.theyLocked
-          ? `${them} is locked in.\n${clock}`
-          : clock,
-    );
+    const clock = st.msRemaining === null ? "" : ` - ${Math.ceil(st.msRemaining / 1000)}s left`;
+    // One line, in the instructions slot: two lines would climb back into
+    // the cards above. The label doubles as the instructions, so until
+    // someone locks it keeps saying how to place - a countdown from full
+    // time would erase the one text a new player still needs. The last
+    // half-minute is the exception: that is the deadline bearing down.
+    if (st.youLocked || st.theyLocked) {
+      this.duelText.setText(
+        st.youLocked
+          ? `Locked in, waiting for ${them}${clock}`
+          : `${them} is locked in${clock}`,
+      );
+    } else if (st.msRemaining !== null && st.msRemaining <= 20_000) {
+      this.duelText.setText(`${Math.ceil(st.msRemaining / 1000)}s left`);
+    }
 
     // Locked means locked: the army on the server is the one that fights.
     if (st.youLocked && this.lockBtn?.input?.enabled) {
@@ -838,9 +843,6 @@ export class BattleScene extends Phaser.Scene {
       fontSize: "17px",
     }).setDepth(DEPTH.hud + 2);
     this.bars[foe] = new PackBar(this, foeX, topY + 44, BAR_W, 0.75, 0xd9544a, DEPTH.hud + 1);
-    this.counts[foe] = label(this, ISLAND.x1 - BAR_W - 16, topY + 44, "", { fontSize: "13px" })
-      .setOrigin(1, 0.5)
-      .setDepth(DEPTH.hud + 2);
 
     const bottomY = 606;
     const myX = ISLAND.x0 + BAR_W / 2;
@@ -849,9 +851,6 @@ export class BattleScene extends Phaser.Scene {
       fontSize: "17px",
     }).setDepth(DEPTH.hud + 2);
     this.bars[mine] = new PackBar(this, myX, bottomY + 14, BAR_W, 0.75, 0x86d15e, DEPTH.hud + 1);
-    this.counts[mine] = label(this, ISLAND.x0 + BAR_W + 16, bottomY + 14, "", { fontSize: "13px" })
-      .setOrigin(0, 0.5)
-      .setDepth(DEPTH.hud + 2);
 
     // The kit small square button is a single image, not a nine-slice.
     const speedBtn = this.add
@@ -878,7 +877,6 @@ export class BattleScene extends Phaser.Scene {
   private refreshHud(): void {
     for (const side of ["a", "b"] as const) {
       this.bars[side]?.set(this.sideHp(side) / Math.max(1, this.sideMax(side)));
-      this.counts[side]?.setText(`${this.sideAlive(side)} left`);
     }
   }
 
@@ -1053,50 +1051,64 @@ export class BattleScene extends Phaser.Scene {
   private showResult(): void {
     this.duel?.onPlayed();
     const result = this.result!;
-    const headline =
-      result.winner === "a"
-        ? "THE LINE HELD"
-        : result.winner === "b"
-          ? "THE GREY TAKES YOU"
-          : "NEITHER SIDE YIELDS";
+    const won = result.winner === "a";
+    const lost = result.winner === "b";
+    // Souls verdicts: short, flat, final.
+    const headline = won ? "GREAT ENEMY FELLED" : lost ? "YOU DIED" : "MUTUAL RUIN";
+    const cx = GAME_W / 2;
+    const cy = GAME_H / 2;
 
+    // The whole veil is the card: no sheet, just darkness and the words.
     const veil = this.add
-      .rectangle(GAME_W / 2, GAME_H / 2, GAME_W, GAME_H, 0x0a0c10, 0.55)
+      .rectangle(cx, cy, GAME_W, GAME_H, 0x050608, 0.82)
       .setDepth(DEPTH.hud + 10);
-    const card = panel(this, "paper", GAME_W / 2, GAME_H / 2, 560, 360).setDepth(DEPTH.hud + 11);
-    const title = label(this, GAME_W / 2, GAME_H / 2 - 118, headline, {
-      fontSize: "25px",
-      color: result.winner === "a" ? "#6b4a12" : "#8c3a30",
+    const title = label(this, cx, cy - 110, headline, {
+      fontSize: "44px",
+      color: won ? "#f4cf6b" : lost ? "#e0796a" : "#c9cdd4",
       strokeThickness: 0,
-    }).setDepth(DEPTH.hud + 12);
+    }).setDepth(DEPTH.hud + 11);
+
+    // The scoreline stays, but quiet: one line, not a ledger.
     const detail = label(
       this,
-      GAME_W / 2,
-      GAME_H / 2 - 56,
-      `${result.survivors.a} left against ${result.survivors.b}\n` +
-        `${result.hpRemaining.a} hp to ${result.hpRemaining.b}\n` +
-        `${(result.ticks / BALANCE.tickRate).toFixed(1)}s by ${result.reason}`,
-      { fontSize: "14px", color: "#5a4632", strokeThickness: 0 },
-    ).setDepth(DEPTH.hud + 12);
+      cx,
+      cy - 34,
+      `${result.survivors[this.mySide]} of yours left standing against ` +
+        `${result.survivors[result.winner === "a" ? "b" : "a"]} of theirs` +
+        ` - ${(result.ticks / BALANCE.tickRate).toFixed(1)}s`,
+      { fontSize: "15px", color: "#b9a887", strokeThickness: 0 },
+    ).setDepth(DEPTH.hud + 11);
+
+    // The menu link: a quiet text button, styled after the boss-fog exit.
+    const menu = label(this, cx, cy + 118, "Return to menu", {
+      fontSize: "15px",
+      color: "#b9a887",
+      strokeThickness: 0,
+    })
+      .setDepth(DEPTH.hud + 11)
+      .setInteractive({ cursor: HAND })
+      .on("pointerover", () => menu.setColor("#fdfaf0"))
+      .on("pointerout", () => menu.setColor("#b9a887"))
+      .on("pointerup", () => this.launcher.onMenu());
 
     // A duel's rematch belongs to the room, not to this client, so the page
-    // offers it instead and these two are left off.
+    // offers it instead and the menu is left off with them.
     const buttons = this.duel
-      ? []
+      ? [menu]
       : [
-          button(this, GAME_W / 2 - 100, GAME_H / 2 + 88, 208, 136, "Rematch", "blue", () =>
+          button(this, cx - 100, cy + 42, 208, 136, "Rematch", "blue", () =>
             this.restart(this.launcher.onRematch()),
           )
             .setScale(0.85)
-            .setDepth(DEPTH.hud + 12),
-          button(this, GAME_W / 2 + 100, GAME_H / 2 + 88, 208, 136, "New army", "red", () =>
+            .setDepth(DEPTH.hud + 11),
+          button(this, cx + 100, cy + 42, 208, 136, "New army", "red", () =>
             this.restart({ ...this.launcher.onNewArmy(), result: null }),
           )
             .setScale(0.85)
-            .setDepth(DEPTH.hud + 12),
+            .setDepth(DEPTH.hud + 11),
         ];
 
-    for (const o of [veil, card, title, detail, ...buttons]) {
+    for (const o of [veil, title, detail, menu, ...buttons]) {
       o.setAlpha(0);
       this.tweens.add({ targets: o, alpha: 1, duration: 260 });
     }

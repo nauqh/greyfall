@@ -109,6 +109,7 @@ export function Room({ initial, onLeave }: { initial: RoomView; onLeave: () => v
                 onNewArmy: () => {
                   throw new Error("a duel rematch belongs to the room");
                 },
+                onMenu: onLeave,
                 duel: {
                   onArmyChange: pushArmy,
                   onLock: () => lock.mutate({ code: live.current.code }),

@@ -129,6 +129,7 @@ export default function Page() {
               onDraft: (army, seed) => draft(army, seed as number),
               onRematch: rematch,
               onNewArmy: newArmy,
+              onMenu: () => setMode("intro"),
             }),
           )
         }
