@@ -39,15 +39,15 @@ const MENU_X = 192;
  * band, so the only rule here is that a base line further down the screen is
  * drawn later. Base widths are in art.ts; these x values are spaced off them.
  *
- * The tower is the Grey Host's, on the far shore: the intro says the Greying
- * has taken the land, and a red keep looking back across the island says it
- * before the tagline does.
+ * The far shore is the Grey Host's: the intro says the Greying has taken the
+ * land, and a monster keep looking back across the water says it before the
+ * tagline does - one goblin hut, alone on the far shore.
  */
 const VILLAGE: readonly Structure[] = [
   { side: "a", name: "house1", x: 470, y: 280 },
   { side: "a", name: "barracks", x: 880, y: 300 },
   { side: "a", name: "castle", x: 660, y: 330 },
-  { side: "b", name: "tower", x: 1100, y: 330 },
+  { side: "b", name: "goblinHut", x: 1100, y: 330 },
   { side: "a", name: "house3", x: 560, y: 404 },
 ];
 

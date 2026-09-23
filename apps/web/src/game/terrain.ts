@@ -16,6 +16,7 @@ import {
   buildingUrl,
   packUrl,
   type BuildingName,
+  type BuildingSpec,
   type DecorKind,
 } from "./art";
 
@@ -168,7 +169,15 @@ export function loadBuildings(scene: Phaser.Scene, all: readonly Structure[]): v
     const key = buildingKey(s.side, s.name);
     if (seen.has(key)) continue;
     seen.add(key);
-    scene.load.image(key, buildingUrl(s.side, s.name));
+    const spec = BUILDINGS[s.name] as BuildingSpec;
+    if (spec.frame) {
+      scene.load.spritesheet(key, buildingUrl(s.side, s.name), {
+        frameWidth: spec.frame,
+        frameHeight: spec.h,
+      });
+    } else {
+      scene.load.image(key, buildingUrl(s.side, s.name));
+    }
   }
 }
 
@@ -177,7 +186,7 @@ export function addBuilding(scene: Phaser.Scene, s: Structure): Phaser.GameObjec
   const spec = BUILDINGS[s.name];
   return (
     scene.add
-      .image(s.x, s.y, buildingKey(s.side, s.name))
+      .image(s.x, s.y, buildingKey(s.side, s.name), (BUILDINGS[s.name] as BuildingSpec).frame ? 0 : undefined)
       .setOrigin(0.5, spec.anchorY / spec.h)
       // The same y-sorted band as the props, so a tree in front of a house
       // covers it and one behind it does not.
