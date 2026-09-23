@@ -2,56 +2,60 @@
    so all that is left here is centring one on the flat teal sea. */
 
 :root {
-  color-scheme: dark;
-  --ink: #f5f2e4;
+	color-scheme: dark;
+	--ink: #f5f2e4;
 }
 
 * {
-  box-sizing: border-box;
+	box-sizing: border-box;
 }
 
 body {
-  margin: 0;
-  min-height: 100vh;
-  color: var(--ink);
-  font-family: "Gochi Hand", "Comic Sans MS", cursive;
-  /* Flat teal sea, as in the reference. */
-  background-color: #47aba9;
-  /* The kit's arrow and hand, cropped to their art and hotspot-pinned. */
-  cursor: url("/cursor.png") 0 0, default;
+	margin: 0;
+	min-height: 100vh;
+	color: var(--ink);
+	font-family: "Gochi Hand", "Comic Sans MS", cursive;
+	/* Flat teal sea, as in the reference. */
+	background-color: #47aba9;
+	/* The kit's arrow and hand, cropped to their art and hotspot-pinned. */
+	cursor:
+		url("/cursor.png") 0 0,
+		default;
 }
 
 button:not(:disabled),
 [role="button"],
 a {
-  cursor: url("/cursor-pointer.png") 4 0, pointer;
+	cursor:
+		url("/cursor-pointer.png") 4 0,
+		pointer;
 }
 
 input,
 textarea {
-  cursor: text;
+	cursor: text;
 }
 
 .stage {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
+	min-height: 100vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 12px;
 }
 
 /* GameCanvas writes the real ratio from boot.ts's GAME_W/GAME_H; this is only
    a pre-hydration fallback. max-height keeps a tall board on screen. */
 
 .canvas {
-  width: 100%;
-  max-width: 1180px;
-  aspect-ratio: 1200 / 720;
-  max-height: calc(100vh - 28px);
+	width: 100%;
+	max-width: 1180px;
+	aspect-ratio: 1200 / 720;
+	max-height: calc(100vh - 28px);
 }
 
 .canvas canvas {
-  display: block;
+	display: block;
 }
 
 /* --- duel lobby ---------------------------------------------------------
@@ -61,228 +65,219 @@ textarea {
    frames on disk, which is the shape border-image can actually read. */
 
 .lobby {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-  padding: 24px;
-  text-align: center;
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 18px;
+	padding: 24px;
+	text-align: center;
 }
 
 /* The slate ribbon: forked ends fixed, middle stretched. */
 .banner {
-  margin: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 300px;
-  min-height: 56px;
-  padding: 0 24px 4px;
-  font-size: clamp(24px, 4.5vw, 34px);
-  letter-spacing: 0.06em;
-  border: 44px solid transparent;
-  border-top-width: 0;
-  border-bottom-width: 0;
-  border-image: url("/tiny-swords/ui/ribbon.png") 0 64 fill / 0 44px stretch;
-  text-shadow: 0 2px 0 #1c2634;
+	margin: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 300px;
+	min-height: 56px;
+	padding: 0 24px 4px;
+	font-size: clamp(24px, 4.5vw, 34px);
+	letter-spacing: 0.06em;
+	border: 44px solid transparent;
+	border-top-width: 0;
+	border-bottom-width: 0;
+	border-image: url("/tiny-swords/ui/ribbon.png") 0 64 fill / 0 44px stretch;
+	text-shadow: 0 2px 0 #1c2634;
 }
 
 .tagline {
-  margin: 0;
-  max-width: 360px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.55);
+	margin: 0;
+	max-width: 360px;
+	text-shadow: 0 2px 4px rgba(0, 0, 0, 0.55);
 }
 
 /* Paper, as a nine-slice. The 64px corners never stretch. */
 .paper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  min-width: 300px;
-  padding: 4px 14px 10px;
-  color: #4a3a28;
-  border: 34px solid transparent;
-  border-image: url("/tiny-swords/ui/paper.png") 64 fill / 34px stretch;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 14px;
+	min-width: 300px;
+	padding: 4px 14px 10px;
+	color: #4a3a28;
+	border: 34px solid transparent;
+	border-image: url("/tiny-swords/ui/paper.png") 64 fill / 34px stretch;
 }
 
 .paper .fieldLabel,
 .paper .error {
-  text-shadow: none;
+	text-shadow: none;
 }
 
 .field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  text-align: left;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	text-align: left;
 }
 
 .fieldLabel {
-  font-size: 14px;
-  color: #6b5740;
+	font-size: 14px;
+	color: #6b5740;
 }
 
 .lobby input {
-  font: inherit;
-  font-size: 19px;
-  padding: 8px 12px;
-  width: 250px;
-  color: #3a2f1e;
-  background: rgba(255, 252, 240, 0.72);
-  border: 2px solid #b9a887;
-  border-radius: 4px;
-  outline-color: #7a4f14;
+	font: inherit;
+	font-size: 19px;
+	padding: 8px 12px;
+	width: 250px;
+	color: #3a2f1e;
+	background: rgba(255, 252, 240, 0.72);
+	border: 2px solid #b9a887;
+	border-radius: 4px;
+	outline-color: #7a4f14;
 }
 
 .codeInput {
-  width: 160px !important;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
+	width: 160px !important;
+	letter-spacing: 0.26em;
+	text-transform: uppercase;
 }
 
 .joinRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
 }
 
-/* The kit's own button, pressed sheet swapped in on :active. */
+/* The kit's own button; hover and press both sink it. */
 .btn {
-  min-width: 168px;
-  padding: 0 10px 4px;
-  color: var(--ink);
-  font: inherit;
-  font-size: 17px;
-  line-height: 20px;
-  letter-spacing: 0.05em;
-  text-shadow: 0 2px 0 #1c2634;
-  background: none;
-  border: 22px solid transparent;
-  border-image: url("/tiny-swords/ui/blueButton.png") 64 fill / 22px stretch;
-  transition: transform 140ms ease-out;
+	min-width: 168px;
+	padding: 0 10px 4px;
+	color: var(--ink);
+	font: inherit;
+	font-size: 17px;
+	line-height: 20px;
+	letter-spacing: 0.05em;
+	text-shadow: 0 2px 0 #1c2634;
+	background: none;
+	border: 22px solid transparent;
+	border-image: url("/tiny-swords/ui/blueButton.png") 64 fill / 22px stretch;
+	transition: transform 140ms ease-out;
 }
 
 .btn.red {
-  border-image-source: url("/tiny-swords/ui/redButton.png");
+	border-image-source: url("/tiny-swords/ui/redButton.png");
 }
 
-.btn:hover:not(:disabled) {
-  transform: translateY(2px);
-  filter: brightness(0.9);
-}
-
+.btn:hover:not(:disabled),
 .btn:active:not(:disabled) {
-  transform: translateY(2px);
-  border-image-source: url("/tiny-swords/ui/blueButtonDown.png");
-}
-
-.btn.red:active:not(:disabled) {
-  border-image-source: url("/tiny-swords/ui/redButtonDown.png");
+	transform: translateY(2px);
 }
 
 .btn:disabled {
-  opacity: 0.5;
-  cursor: default;
+	opacity: 0.5;
+	cursor: default;
 }
 
 .btn.small {
-  min-width: 96px;
-  font-size: 16px;
+	min-width: 96px;
+	font-size: 16px;
 }
 
 .linkBtn {
-  border: 0;
-  background: none;
-  color: var(--ink);
-  font: inherit;
-  font-size: 15px;
-  text-decoration: underline;
-  opacity: 0.85;
+	border: 0;
+	background: none;
+	color: var(--ink);
+	font: inherit;
+	font-size: 15px;
+	text-decoration: underline;
+	opacity: 0.85;
 }
 
 .error {
-  margin: 0;
-  color: #8c3a30;
+	margin: 0;
+	color: #8c3a30;
 }
 
 .seats {
-  display: flex;
-  gap: 14px;
+	display: flex;
+	gap: 14px;
 }
 
 /* The opponent sits on the kit's slate paper, so their ink is the light one;
    yours is the plain sheet and keeps the dark. */
 .seat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  min-width: 120px;
-  padding: 2px 10px 8px;
-  color: #f5f2e4;
-  border: 30px solid transparent;
-  border-image: url("/tiny-swords/ui/specialPaper.png") 64 fill / 30px stretch;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	min-width: 120px;
+	padding: 2px 10px 8px;
+	color: #f5f2e4;
+	border: 30px solid transparent;
+	border-image: url("/tiny-swords/ui/specialPaper.png") 64 fill / 30px stretch;
 }
 
 .seat.mine {
-  color: #4a3a28;
-  border-image-source: url("/tiny-swords/ui/paper.png");
+	color: #4a3a28;
+	border-image-source: url("/tiny-swords/ui/paper.png");
 }
 
 .seatLabel {
-  font-size: 13px;
-  opacity: 0.72;
+	font-size: 13px;
+	opacity: 0.72;
 }
 
 .seatName {
-  font-size: 20px;
+	font-size: 20px;
 }
 
 .seatLocked {
-  font-size: 13px;
-  color: #a9e88a;
+	font-size: 13px;
+	color: #a9e88a;
 }
 
 .seat.mine .seatLocked {
-  color: #2f6b2a;
+	color: #2f6b2a;
 }
 
 /* The gold coin beside the room code, straight off the kit's icon sheet. */
 .coin {
-  width: 26px;
-  height: 26px;
-  vertical-align: -5px;
-  image-rendering: pixelated;
+	width: 26px;
+	height: 26px;
+	vertical-align: -5px;
+	image-rendering: pixelated;
 }
 
 /* The duel board, with the room's own controls sitting under it. */
 .roomStage {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 12px;
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	padding: 12px;
 }
 
 .resultBar {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  justify-content: center;
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	flex-wrap: wrap;
+	justify-content: center;
 }
 
 .outcome {
-  font-size: 20px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+	font-size: 20px;
+	text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
 }
 
 .resultBar .error {
-  color: #ffd2c8;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+	color: #ffd2c8;
+	text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
 }

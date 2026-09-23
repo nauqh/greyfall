@@ -42,9 +42,7 @@ export const PANELS = {
   paper: sheet320("UI Elements/UI Elements/Papers/RegularPaper.png"),
   specialPaper: sheet320("UI Elements/UI Elements/Papers/SpecialPaper.png"),
   blueButton: sheet320("UI Elements/UI Elements/Buttons/BigBlueButton_Regular.png"),
-  blueButtonDown: sheet320("UI Elements/UI Elements/Buttons/BigBlueButton_Pressed.png"),
   redButton: sheet320("UI Elements/UI Elements/Buttons/BigRedButton_Regular.png"),
-  redButtonDown: sheet320("UI Elements/UI Elements/Buttons/BigRedButton_Pressed.png"),
   woodTable: sheet448("UI Elements/UI Elements/Wood Table/WoodTable.png"),
   banner: sheet448("UI Elements/UI Elements/Banners/Banner.png"),
 } satisfies Record<string, SliceSheet>;

@@ -162,7 +162,7 @@ export function label(
   return t;
 }
 
-/** The pressed sheet is a second nine-slice swapped in on pointer down. */
+/** Hover sinks 2px with no tint; press sinks a bit more. */
 export function button(
   scene: Phaser.Scene,
   x: number,
@@ -174,36 +174,25 @@ export function button(
   onClick: () => void,
 ): Phaser.GameObjects.Container {
   const up = tone === "blue" ? "blueButton" : "redButton";
-  const down = tone === "blue" ? "blueButtonDown" : "redButtonDown";
   const face = panel(scene, up, 0, 0, w, h);
-  const pressed = panel(scene, down, 0, 0, w, h).setVisible(false);
   const text_ = label(scene, 0, -1, text, { fontSize: "16px" });
 
-  const box = scene.add.container(x, y, [face, pressed, text_]);
+  const box = scene.add.container(x, y, [face, text_]);
   box.setSize(w, h);
 
-  // Hover sinks 2px and darkens the regular sheet; the pressed sheet is
-  // click-only, its dark face is too harsh for a mere hover.
-  const sink = (on: boolean): void => {
+  // Hover sinks 2px; press sinks a bit more. The down art reads as a dim,
+  // not a press, so it is unused.
+  const sink = (on: number): void => {
     scene.tweens.killTweensOf(box);
-    scene.tweens.add({ targets: box, y: y + (on ? 2 : 0), duration: 140, ease: "Sine.easeInOut" });
-    face.setTint(on ? 0xd9d9d9 : 0xffffff);
-  };
-  const sheet = (down: boolean): void => {
-    face.setVisible(!down);
-    pressed.setVisible(down);
-    text_.setY(down ? 2 : -1);
+    scene.tweens.add({ targets: box, y: y + on, duration: 140, ease: "Sine.easeInOut" });
   };
 
   box.setInteractive({ cursor: HAND })
-    .on("pointerover", () => sink(true))
-    .on("pointerout", () => {
-      sink(false);
-      sheet(false);
-    })
-    .on("pointerdown", () => sheet(true))
+    .on("pointerover", () => sink(2))
+    .on("pointerout", () => sink(0))
+    .on("pointerdown", () => sink(3))
     .on("pointerup", () => {
-      sheet(false);
+      sink(2);
       onClick();
     });
   return box;

@@ -263,14 +263,7 @@ export class BattleScene extends Phaser.Scene {
   preload(): void {
     loadTerrain(this);
     loadUnits(this);
-    loadPanels(this, [
-      "paper",
-      "specialPaper",
-      "blueButton",
-      "blueButtonDown",
-      "redButton",
-      "redButtonDown",
-    ]);
+    loadPanels(this, ["paper", "specialPaper", "blueButton", "redButton"]);
     this.load.image(
       "smallButton",
       packUrl("UI Elements/UI Elements/Buttons/SmallBlueSquareButton_Regular.png"),
