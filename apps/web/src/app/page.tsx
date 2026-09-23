@@ -129,7 +129,13 @@ export default function Page() {
               onDraft: (army, seed) => draft(army, seed as number),
               onRematch: rematch,
               onNewArmy: newArmy,
-              onMenu: () => setMode("intro"),
+              onMenu: () => {
+                // A stale result would make the next Begin replay the old
+                // battle; clear it so the scene opens in draft mode.
+                armies.current = { player: [], enemy: [] };
+                setBattle({ result: null, player: [], enemy: [], seed: newSeed() });
+                setMode("intro");
+              },
             }),
           )
         }

@@ -101,6 +101,24 @@ const ROSTER = UNIT_CLASSES.filter((c) => c !== "pawn");
 /** A portrait per class, from the pack's 25 avatars. */
 const PORTRAIT: Record<UnitClass, number> = { warrior: 1, lancer: 2, archer: 3, monk: 4, pawn: 1 };
 
+/** What side b's cards call each class: the monster standing in for it. */
+const MONSTER_NAME: Record<UnitClass, string> = {
+  warrior: "Skull",
+  lancer: "Spear Goblin",
+  archer: "Harpoon Shark",
+  monk: "Hex Shaman",
+  pawn: "Gnome",
+};
+
+/** The monster's own portrait file, 256x256 like the human ones. */
+const MONSTER_PORTRAIT: Record<UnitClass, string> = {
+  warrior: "Skull/Skull_Avatar.png",
+  lancer: "Spear Goblin/Spear Goblin_Avatar.png",
+  archer: "Harpoon Shark/Harpoon Shark_Avatar.png",
+  monk: "Hex Shaman/Hex Shaman_Avatar.png",
+  pawn: "Gnome/Gnome_Avatar.png",
+};
+
 /**
  * Each class's counter, named. BALANCE.counters is what makes them true; the
  * job here is only to say which class a card ruins, in the game's own voice
@@ -272,6 +290,7 @@ export class BattleScene extends Phaser.Scene {
       frameWidth: 64,
       frameHeight: 64,
     });
+    this.load.image("harpoon", packUrl("Enemy%20Pack/Harpoon%20Shark/Harpoon.png"));
     this.load.spritesheet("dust", packUrl(FX.dust.file), {
       frameWidth: FX.dust.frame,
       frameHeight: FX.dust.frame,
@@ -280,6 +299,10 @@ export class BattleScene extends Phaser.Scene {
       this.load.image(
         `avatar_${cls}`,
         packUrl(`${AVATARS.file}${String(PORTRAIT[cls]).padStart(2, "0")}.png`),
+      );
+      this.load.image(
+        `mavatar_${cls}`,
+        packUrl(`Enemy%20Pack/${MONSTER_PORTRAIT[cls].replace(/ /g, "%20")}`),
       );
     }
     for (const n of Object.values(ICON)) this.load.image(iconKey(n), iconUrl(n));
@@ -437,18 +460,20 @@ export class BattleScene extends Phaser.Scene {
   private buildCard(cls: UnitClass, cx: number, cy: number): Phaser.GameObjects.Container {
     const stats = BALANCE.units[cls];
     const ink = { strokeThickness: 0 };
+    // Seat B drafts monsters, so its cards wear the monster's face and name.
+    const monsters = this.mySide === "b";
     const paper = panel(this, "paper", 0, 0, 236, 188);
     const special = panel(this, "specialPaper", 0, 0, 236, 188).setVisible(false);
 
-    const portrait = this.add.image(-66, -12, `avatar_${cls}`).setScale(0.32);
+    const portrait = this.add.image(-66, -12, `${monsters ? "m" : ""}avatar_${cls}`).setScale(0.32);
     const coin = this.add.image(26, -58, iconKey(ICON.gold)).setScale(0.46);
     const cost = label(this, 46, -58, `${stats.cost}`, {
       fontSize: "22px",
       color: "#7a4f14",
       ...ink,
     }).setOrigin(0, 0.5);
-    const name = label(this, 34, -12, CLASS_NAME[cls], {
-      fontSize: "19px",
+    const name = label(this, 34, -12, monsters ? MONSTER_NAME[cls] : CLASS_NAME[cls], {
+      fontSize: monsters && cls === "lancer" ? "17px" : "19px",
       color: "#4a3a28",
       ...ink,
     });
@@ -565,9 +590,33 @@ export class BattleScene extends Phaser.Scene {
       this.draftArmy = next;
       const { x, y } = this.spriteXY(this.myCol(col), row);
       const shadow = addShadow(this, x, y, this.picked === "lancer" ? 0.8 : 0.62);
+      // Summon, not spawn: a dust cloud covering the troop first, the unit
+      // fading in inside it as the cloud breaks apart. The 64px puff reads
+      // at 3x to blanket a 192px frame; 0.8 alpha keeps it from looking
+      // like the death cloud's twin.
+      const dust = this.add
+        .sprite(x, y, "dust")
+        .setOrigin(0.5, 0.85)
+        .setDepth(DEPTH.unit + y + 1)
+        .setScale(3)
+        .setAlpha(0.8);
+      dust.play("dust_anim");
+      this.tweens.add({
+        targets: dust,
+        alpha: 0,
+        duration: (FX.dust.frames / 16) * 1000,
+      });
       const sprite = this.add.sprite(x, y, unitKey(this.mySide, this.picked, "idle"));
       playPose(sprite, this.mySide, this.picked, "idle", this.mirrored);
       sprite.setDepth(DEPTH.unit + y);
+      sprite.setAlpha(0);
+      this.tweens.add({
+        targets: sprite,
+        alpha: 1,
+        duration: 220,
+        delay: 80,
+        ease: "Sine.easeOut",
+      });
       this.placed.set(key, { sprite, shadow });
     }
     this.duel?.onArmyChange(this.draftArmy);
@@ -937,19 +986,24 @@ export class BattleScene extends Phaser.Scene {
     playPose(attacker.sprite, attacker.snap.side, attacker.snap.class, "attack");
 
     if (attacker.snap.class === "archer") {
-      // The shoot sheet ends at the release, so the scene flies the arrow.
+      // The Blue archer's shoot sheet ends at the release, so the scene flies
+      // the arrow; the shark's throw flies its own harpoon the same way.
       const from = { x: attacker.sprite.x, y: attacker.sprite.y - 46 };
       const to = { x: target.sprite.x, y: target.sprite.y - 40 };
-      const arrow = this.add
-        .sprite(from.x, from.y, "arrow")
-        .setDepth(DEPTH.fx)
-        .setRotation(Phaser.Math.Angle.Between(from.x, from.y, to.x, to.y));
+      const projectile = attacker.snap.side === "a"
+        ? this.add
+            .sprite(from.x, from.y, "arrow")
+            .setRotation(Phaser.Math.Angle.Between(from.x, from.y, to.x, to.y))
+        : this.add.image(from.x, from.y, "harpoon").setRotation(
+            Phaser.Math.Angle.Between(from.x, from.y, to.x, to.y) - Math.PI / 2,
+          );
+      projectile.setDepth(DEPTH.fx);
       this.tweens.add({
-        targets: arrow,
+        targets: projectile,
         x: to.x,
         y: to.y,
         duration: 240 / this.speed,
-        onComplete: () => arrow.destroy(),
+        onComplete: () => projectile.destroy(),
       });
     }
   }
@@ -983,43 +1037,61 @@ export class BattleScene extends Phaser.Scene {
     target.hp = ev.hpAfter;
     this.refreshHud();
 
+    // The impact waits for the attacker's thrust to land: attack and hit
+    // share a tick, so playing both at once hides the windup under the flash.
+    const delay = 280 / this.speed;
+
     // White flash plus a nudge, per the PRD.
-    target.sprite.setTintFill(0xffffff);
-    this.time.delayedCall(80 / this.speed, () => {
-      if (target.alive) target.sprite.clearTint();
+    this.time.delayedCall(delay, () => {
+      if (!target.alive) return;
+      target.sprite.setTintFill(0xffffff);
+      this.time.delayedCall(80 / this.speed, () => {
+        if (target.alive) target.sprite.clearTint();
+      });
+      // One soft nudge; a 45ms double-shake read as jitter.
+      const home = target.sprite.x;
+      const away = target.sprite.x + (target.snap.side === this.mySide ? -5 : 5);
+      this.tweens.add({
+        targets: target.sprite,
+        x: away,
+        duration: 90 / this.speed,
+        ease: "Sine.easeOut",
+        yoyo: true,
+        onComplete: () => target.sprite.setX(home),
+      });
+      this.floatText(target, `-${ev.damage}`, "#ff8f7a");
     });
-    // One soft nudge; a 45ms double-shake read as jitter.
-    const home = target.sprite.x;
-    const away = target.sprite.x + (target.snap.side === this.mySide ? -5 : 5);
-    this.tweens.add({
-      targets: target.sprite,
-      x: away,
-      duration: 90 / this.speed,
-      ease: "Sine.easeOut",
-      yoyo: true,
-      onComplete: () => target.sprite.setX(home),
-    });
-    this.floatText(target, `-${ev.damage}`, "#ff8f7a");
   }
 
   private onHeal(ev: Extract<BattleEvent, { type: "heal" }>): void {
     const target = this.view(ev.target);
     if (!target.alive) return;
+    const caster = this.view(ev.unit);
     target.hp = ev.hpAfter;
     this.refreshHud();
 
-    // The pack heal burst plays on the unit being mended, not the Monk.
-    const burst = this.add
-      .sprite(
-        target.sprite.x,
-        target.sprite.y - this.headHeight(target.snap.class, target.snap.side) / 2,
-        healKey(target.snap.side),
-      )
-      .setDepth(DEPTH.fx);
-    burst.play(`${healKey(target.snap.side)}_anim`);
-    burst.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => burst.destroy());
+    // The Monk casts; heal events skip onAttack, so pose the healer here.
+    if (caster.alive) {
+      const dx = target.sprite.x - caster.sprite.x;
+      if (Math.abs(dx) > 0.5) caster.sprite.setFlipX(dx < 0);
+      playPose(caster.sprite, caster.snap.side, caster.snap.class, "attack");
+    }
 
-    this.floatText(target, `+${ev.amount}`, "#a9e88a");
+    // The pack heal burst lands on the unit being mended, timed to the cast.
+    this.time.delayedCall(280 / this.speed, () => {
+      if (!target.alive) return;
+      const burst = this.add
+        .sprite(
+          target.sprite.x,
+          target.sprite.y - this.headHeight(target.snap.class, target.snap.side) / 2,
+          healKey(target.snap.side),
+        )
+        .setDepth(DEPTH.fx);
+      burst.play(`${healKey(target.snap.side)}_anim`);
+      burst.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => burst.destroy());
+
+      this.floatText(target, `+${ev.amount}`, "#a9e88a");
+    });
   }
 
   private onDeath(ev: Extract<BattleEvent, { type: "death" }>): void {

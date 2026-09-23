@@ -8,6 +8,9 @@ import { packUrl } from "./art";
 
 export const FRAME_RATE = 10;
 
+/** Attacks play at 2x the loop rate or the windup reads as nothing. */
+export const ATTACK_FRAME_RATE = 18;
+
 export type Side = "a" | "b";
 export type AnimName = "idle" | "run" | "attack";
 
@@ -27,18 +30,22 @@ export const BODY: Record<UnitClass, Body> = {
   pawn: { frame: 192, anchorX: 96, anchorY: 134 },
 };
 
-/** Frame size and ground anchor per class, for the Enemy Pack monsters. */
+/** Frame size and ground anchor per class, for the Enemy Pack monsters.
+ * Anchors are the ink centre of each idle sheet's first frame, measured off
+ * the art: the monsters sit off-centre in their frames (the shaman's staff
+ * pokes left, the skull is drawn right of frame centre). */
 export const MONSTER_BODY: Record<UnitClass, Body> = {
-  // Skull: ink rows 57..129 of 192; ground line at 129.
-  warrior: { frame: 192, anchorX: 74, anchorY: 129 },
-  // Slingshot Gnome: ink rows 72..136 of 192.
-  archer: { frame: 192, anchorX: 86, anchorY: 136 },
-  // Spear Goblin: 256px frames; ink rows 50..175 of 256.
-  lancer: { frame: 256, anchorX: 101, anchorY: 175 },
-  // Hex Shaman: ink rows 55..136 of 192.
-  monk: { frame: 192, anchorX: 87, anchorY: 136 },
-  // Gnome: ink rows 57..126 of 192.
-  pawn: { frame: 192, anchorX: 71, anchorY: 126 },
+  // Skull: ink cols 61..129, rows 57..129 of 192.
+  warrior: { frame: 192, anchorX: 95, anchorY: 129 },
+  // Harpoon Shark: ink cols 48..120, rows 57..135 of 192.
+  archer: { frame: 192, anchorX: 84, anchorY: 135 },
+  // Spear Goblin: 256px frames; the spear tip reaches row 50 but the head
+  // mass starts at 104 - the pip belongs over the skull, not the spearhead.
+  lancer: { frame: 256, anchorX: 126, anchorY: 175 },
+  // Hex Shaman: ink cols 44..139, rows 55..136 of 192.
+  monk: { frame: 192, anchorX: 92, anchorY: 136 },
+  // Gnome: ink cols 52..128, rows 57..126 of 192.
+  pawn: { frame: 192, anchorX: 90, anchorY: 126 },
 };
 
 /** Head height above the feet, for pips and floating numbers. */
@@ -53,9 +60,10 @@ export const BODY_HEIGHT: Record<UnitClass, number> = {
 /** Per-monster head heights, from the same ink measurements. */
 export const MONSTER_BODY_HEIGHT: Record<UnitClass, number> = {
   warrior: 72,
-  archer: 64,
+  archer: 78,
   monk: 81,
-  lancer: 125,
+  // Ground 175, skull top 104: the spear's extra 54px are not head.
+  lancer: 71,
   pawn: 69,
 };
 
@@ -105,9 +113,9 @@ const MONSTER_POSES: Record<UnitClass, Record<AnimName, string>> = {
     attack: "Skull/Skull_Attack.png",
   },
   archer: {
-    idle: "Slingshot Gnome/Slingshot Gnome_Idle.png",
-    run: "Slingshot Gnome/Slingshot Gnome_Run.png",
-    attack: "Slingshot Gnome/Slingshot Gnome_Shoot.png",
+    idle: "Harpoon Shark/Harpoon Shark_Idle.png",
+    run: "Harpoon Shark/Harpoon Shark_Run.png",
+    attack: "Harpoon Shark/Harpoon Shark_Throw.png",
   },
   monk: {
     idle: "Hex Shaman/Hex Shaman_Idle.png",
@@ -208,7 +216,9 @@ export function makeAnims(scene: Phaser.Scene): void {
         scene.anims.create({
           key: animKey(side, cls, anim),
           frames: scene.anims.generateFrameNumbers(key, { start: 0, end: frames - 1 }),
-          frameRate: FRAME_RATE,
+          // Attacks run faster than the loop poses: at 10fps a 7-frame
+          // thrust spends its visible frames while the eye is elsewhere.
+          frameRate: anim === "attack" ? ATTACK_FRAME_RATE : FRAME_RATE,
           repeat: anim === "attack" ? 0 : -1,
         });
       }
