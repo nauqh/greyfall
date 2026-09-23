@@ -30,6 +30,7 @@ import * as Phaser from "phaser";
 import { AVATARS, FX, ICON, iconKey, iconUrl, packUrl } from "./art";
 import { GAME_H, GAME_W, fitCamera, startGame } from "./boot";
 import {
+  ATTACK_FRAME_RATE,
   BODY_HEIGHT,
   MONSTER_BODY_HEIGHT,
   SPRITE_NUDGE,
@@ -79,6 +80,14 @@ const TICK_MS = 1000 / BALANCE.tickRate;
  */
 const STEP_MS = 880;
 
+/** The frame of each attack sheet where the weapon leaves the hand. The
+ * archer's bow and the Gnoll's arm are both fully back on frame 5; the
+ * projectile spawns then, not at frame 0. */
+const RELEASE_FRAME = { archer: 5 } as const;
+
+/** Airtime of a ranged projectile, release to impact. */
+const FLIGHT_MS = 320;
+
 /**
  * Time left, m:ss. A battle that runs the clock out is decided on HP, so what
  * matters to watch is how much of it is gone - counting up said nothing until
@@ -105,7 +114,7 @@ const PORTRAIT: Record<UnitClass, number> = { warrior: 1, lancer: 2, archer: 3, 
 const MONSTER_NAME: Record<UnitClass, string> = {
   warrior: "Skull",
   lancer: "Spear Goblin",
-  archer: "Harpoon Shark",
+  archer: "Gnoll",
   monk: "Hex Shaman",
   pawn: "Gnome",
 };
@@ -114,7 +123,7 @@ const MONSTER_NAME: Record<UnitClass, string> = {
 const MONSTER_PORTRAIT: Record<UnitClass, string> = {
   warrior: "Skull/Skull_Avatar.png",
   lancer: "Spear Goblin/Spear Goblin_Avatar.png",
-  archer: "Harpoon Shark/Harpoon Shark_Avatar.png",
+  archer: "Gnoll/Gnoll_Avatar.png",
   monk: "Hex Shaman/Hex Shaman_Avatar.png",
   pawn: "Gnome/Gnome_Avatar.png",
 };
@@ -153,6 +162,8 @@ interface UnitView {
   hp: number;
   /** What the pip shows; it slides toward `hp`. */
   shownHp: number;
+  /** The warrior's slashes alternate; this is which one plays next. */
+  slash: 1 | 2;
 }
 
 /** What the scene needs from a room it does not itself own. */
@@ -290,7 +301,10 @@ export class BattleScene extends Phaser.Scene {
       frameWidth: 64,
       frameHeight: 64,
     });
-    this.load.image("harpoon", packUrl("Enemy%20Pack/Harpoon%20Shark/Harpoon.png"));
+    this.load.spritesheet("bone", packUrl("Enemy%20Pack/Gnoll/Gnoll_Bone.png"), {
+      frameWidth: 64,
+      frameHeight: 64,
+    });
     this.load.spritesheet("dust", packUrl(FX.dust.file), {
       frameWidth: FX.dust.frame,
       frameHeight: FX.dust.frame,
@@ -319,6 +333,14 @@ export class BattleScene extends Phaser.Scene {
         frameRate: 16,
         repeat: 0,
         hideOnComplete: true,
+      });
+    }
+    if (!this.anims.exists("bone_anim")) {
+      this.anims.create({
+        key: "bone_anim",
+        frames: this.anims.generateFrameNumbers("bone", { start: 0, end: 3 }),
+        frameRate: 12,
+        repeat: -1,
       });
     }
 
@@ -815,6 +837,7 @@ export class BattleScene extends Phaser.Scene {
         alive: true,
         hp: snap.maxHp,
         shownHp: snap.maxHp,
+        slash: 1,
       };
 
       // Attacks are one-shots; back to idle when they finish.
@@ -983,35 +1006,83 @@ export class BattleScene extends Phaser.Scene {
 
     const dx = target.sprite.x - attacker.sprite.x;
     if (Math.abs(dx) > 0.5) attacker.sprite.setFlipX(dx < 0);
-    playPose(attacker.sprite, attacker.snap.side, attacker.snap.class, "attack");
+    // The warrior alternates the kit's two slashes instead of replaying one;
+    // every other class has a single attack sheet.
+    const anim =
+      attacker.snap.class === "warrior" && attacker.slash === 2 ? "attack2" : "attack";
+    attacker.slash = attacker.slash === 1 ? 2 : 1;
+    playPose(attacker.sprite, attacker.snap.side, attacker.snap.class, anim);
 
     if (attacker.snap.class === "archer") {
-      // The Blue archer's shoot sheet ends at the release, so the scene flies
-      // the arrow; the shark's throw flies its own harpoon the same way.
-      const from = { x: attacker.sprite.x, y: attacker.sprite.y - 46 };
-      const to = { x: target.sprite.x, y: target.sprite.y - 40 };
-      const projectile = attacker.snap.side === "a"
-        ? this.add
-            .sprite(from.x, from.y, "arrow")
-            .setRotation(Phaser.Math.Angle.Between(from.x, from.y, to.x, to.y))
-        : this.add.image(from.x, from.y, "harpoon").setRotation(
-            Phaser.Math.Angle.Between(from.x, from.y, to.x, to.y) - Math.PI / 2,
-          );
-      projectile.setDepth(DEPTH.fx);
-      this.tweens.add({
-        targets: projectile,
-        x: to.x,
-        y: to.y,
-        duration: 240 / this.speed,
-        onComplete: () => projectile.destroy(),
+      // The projectile waits for the anim's release frame - spawning it at
+      // frame 0 had the arrow leaving before the bow was drawn. The Gnoll
+      // releases its bone at the same beat in its own throw.
+      const release = (RELEASE_FRAME.archer / ATTACK_FRAME_RATE) * 1000;
+      this.time.delayedCall(release / this.speed, () => {
+        if (!attacker.alive || !target.alive) return;
+        this.flyProjectile(attacker, target);
       });
     }
   }
 
+  /** The archer's arrow, or the Gnoll's tumbling bone. The arrow arcs: a
+   * bowshot that flew dead flat reads as a laser line, so it rises by a
+   * third of the range over the chord and turns with its velocity. */
+  private flyProjectile(attacker: UnitView, target: UnitView): void {
+    const from = { x: attacker.sprite.x, y: attacker.sprite.y - 46 };
+    const to = { x: target.sprite.x, y: target.sprite.y - 40 };
+    const projectile =
+      attacker.snap.side === "a"
+        ? this.add.sprite(from.x, from.y, "arrow")
+        : this.add.sprite(from.x, from.y, "bone").play("bone_anim");
+    projectile.setDepth(DEPTH.fx);
+
+    if (attacker.snap.side !== "a") {
+      this.tweens.add({
+        targets: projectile,
+        x: to.x,
+        y: to.y,
+        duration: FLIGHT_MS / this.speed,
+        onComplete: () => projectile.destroy(),
+      });
+      return;
+    }
+
+    // Quadratic bezier: start, apex above the midpoint, target. The arrow's
+    // nose follows the curve's tangent so it points where it is going.
+    const apexY = Math.min(from.y, to.y) - Math.min(90, Math.abs(to.x - from.x) / 4);
+    const curve = (t: number): { x: number; y: number; angle: number } => {
+      const x = (1 - t) * (1 - t) * from.x + 2 * (1 - t) * t * ((from.x + to.x) / 2) + t * t * to.x;
+      const y = (1 - t) * (1 - t) * from.y + 2 * (1 - t) * t * apexY + t * t * to.y;
+      // The derivative at t: where the tip is heading right now.
+      const dx = 2 * (1 - t) * (((from.x + to.x) / 2) - from.x) + 2 * t * (to.x - ((from.x + to.x) / 2));
+      const dy = 2 * (1 - t) * (apexY - from.y) + 2 * t * (to.y - apexY);
+      return { x, y, angle: Math.atan2(dy, dx) };
+    };
+    projectile.setRotation(curve(0).angle);
+    this.tweens.addCounter({
+      from: 0,
+      to: 1,
+      duration: FLIGHT_MS / this.speed,
+      onUpdate: (tw) => {
+        const p = curve(tw.progress);
+        projectile.setPosition(p.x, p.y);
+        projectile.setRotation(p.angle);
+      },
+      onComplete: () => projectile.destroy(),
+    });
+  }
+
+  /** Spread for simultaneous hits so a volley reads as one number per
+   * attacker, not three stacked into one. */
+  private floatStack = 0;
+
   private floatText(view: UnitView, text: string, color: string): void {
     const top = view.sprite.y - this.headHeight(view.snap.class, view.snap.side) - 20;
+    const jitter = this.floatStack;
+    this.floatStack = (this.floatStack + 14) % 42;
     const tag = this.add
-      .text(view.sprite.x, top, text, {
+      .text(view.sprite.x + jitter - 14, top, text, {
         fontFamily: '"Nunito", sans-serif',
         fontSize: "17px",
         color,
@@ -1034,12 +1105,17 @@ export class BattleScene extends Phaser.Scene {
   private onHit(ev: Extract<BattleEvent, { type: "hit" }>): void {
     const target = this.view(ev.target);
     if (!target.alive) return;
+    const attacker = this.view(ev.unit);
     target.hp = ev.hpAfter;
     this.refreshHud();
 
-    // The impact waits for the attacker's thrust to land: attack and hit
-    // share a tick, so playing both at once hides the windup under the flash.
-    const delay = 280 / this.speed;
+    // Impact lands when the blow would connect: melee at the thrust's reach,
+    // ranged when the projectile arrives. Attack and hit share a tick, so
+    // firing both at once hid the windup under the flash.
+    const delay =
+      attacker.snap.class === "archer"
+        ? ((RELEASE_FRAME.archer / ATTACK_FRAME_RATE) * 1000 + FLIGHT_MS) / this.speed
+        : 280 / this.speed;
 
     // White flash plus a nudge, per the PRD.
     this.time.delayedCall(delay, () => {

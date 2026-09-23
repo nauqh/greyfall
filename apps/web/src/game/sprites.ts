@@ -8,11 +8,13 @@ import { packUrl } from "./art";
 
 export const FRAME_RATE = 10;
 
-/** Attacks play at 2x the loop rate or the windup reads as nothing. */
-export const ATTACK_FRAME_RATE = 18;
+/** Attacks run at the cadence the art was authored for: a 1s action window
+ * with 7-11 frame sheets means 12fps shows every frame; 18fps ate a third of
+ * them. */
+export const ATTACK_FRAME_RATE = 12;
 
 export type Side = "a" | "b";
-export type AnimName = "idle" | "run" | "attack";
+export type AnimName = "idle" | "run" | "attack" | "attack2";
 
 interface Body {
   frame: number;
@@ -37,8 +39,8 @@ export const BODY: Record<UnitClass, Body> = {
 export const MONSTER_BODY: Record<UnitClass, Body> = {
   // Skull: ink cols 61..129, rows 57..129 of 192.
   warrior: { frame: 192, anchorX: 95, anchorY: 129 },
-  // Harpoon Shark: ink cols 48..120, rows 57..135 of 192.
-  archer: { frame: 192, anchorX: 84, anchorY: 135 },
+  // Gnoll: ink cols 50..144, rows 60..134 of 192.
+  archer: { frame: 192, anchorX: 97, anchorY: 134 },
   // Spear Goblin: 256px frames; the spear tip reaches row 50 but the head
   // mass starts at 104 - the pip belongs over the skull, not the spearhead.
   lancer: { frame: 256, anchorX: 126, anchorY: 175 },
@@ -60,7 +62,7 @@ export const BODY_HEIGHT: Record<UnitClass, number> = {
 /** Per-monster head heights, from the same ink measurements. */
 export const MONSTER_BODY_HEIGHT: Record<UnitClass, number> = {
   warrior: 72,
-  archer: 78,
+  archer: 74,
   monk: 81,
   // Ground 175, skull top 104: the spear's extra 54px are not head.
   lancer: 71,
@@ -75,11 +77,14 @@ export const MONSTER_BODY_HEIGHT: Record<UnitClass, number> = {
  */
 export const SPRITE_NUDGE = 18;
 
-const POSES: Record<UnitClass, Record<AnimName, string>> = {
+const POSES: Record<UnitClass, Partial<Record<AnimName, string>>> = {
   warrior: {
     idle: "Warrior/Warrior_Idle.png",
     run: "Warrior/Warrior_Run.png",
     attack: "Warrior/Warrior_Attack1.png",
+    // The kit's second slash; the warrior alternates so a beat of battle
+    // reads as the two blows the art draws.
+    attack2: "Warrior/Warrior_Attack2.png",
   },
   archer: {
     idle: "Archer/Archer_Idle.png",
@@ -106,16 +111,16 @@ const POSES: Record<UnitClass, Record<AnimName, string>> = {
 /** Side b's monsters, one Enemy Pack unit per troop class. Frame counts are
  * whatever the strip divides into at the class's frame width; makeAnims
  * reads the real count off the loaded texture. */
-const MONSTER_POSES: Record<UnitClass, Record<AnimName, string>> = {
+const MONSTER_POSES: Record<UnitClass, Partial<Record<AnimName, string>>> = {
   warrior: {
     idle: "Skull/Skull_Idle.png",
     run: "Skull/Skull_Run.png",
     attack: "Skull/Skull_Attack.png",
   },
   archer: {
-    idle: "Harpoon Shark/Harpoon Shark_Idle.png",
-    run: "Harpoon Shark/Harpoon Shark_Run.png",
-    attack: "Harpoon Shark/Harpoon Shark_Throw.png",
+    idle: "Gnoll/Gnoll_Idle.png",
+    run: "Gnoll/Gnoll_Walk.png",
+    attack: "Gnoll/Gnoll_Throw.png",
   },
   monk: {
     idle: "Hex Shaman/Hex Shaman_Idle.png",
@@ -174,7 +179,7 @@ export function loadUnits(scene: Phaser.Scene): void {
     for (const anim of Object.keys(MONSTER_POSES[cls]) as AnimName[]) {
       scene.load.spritesheet(
         unitKey("b", cls, anim),
-        packUrl(`Enemy Pack/${MONSTER_POSES[cls][anim].replace(/ /g, "%20")}`),
+        packUrl(`Enemy Pack/${MONSTER_POSES[cls][anim]!.replace(/ /g, "%20")}`),
         {
           frameWidth: size,
           frameHeight: size,
@@ -203,7 +208,7 @@ export function makeAnims(scene: Phaser.Scene): void {
       .filter((f) => f !== "__BASE").length;
 
   const bodyOf = (side: Side): Record<UnitClass, Body> => (side === "a" ? BODY : MONSTER_BODY);
-  const posesOf = (side: Side): Record<UnitClass, Record<AnimName, string>> =>
+  const posesOf = (side: Side): Record<UnitClass, Partial<Record<AnimName, string>>> =>
     side === "a" ? POSES : MONSTER_POSES;
 
   for (const side of ["a", "b"] as const) {
@@ -218,8 +223,8 @@ export function makeAnims(scene: Phaser.Scene): void {
           frames: scene.anims.generateFrameNumbers(key, { start: 0, end: frames - 1 }),
           // Attacks run faster than the loop poses: at 10fps a 7-frame
           // thrust spends its visible frames while the eye is elsewhere.
-          frameRate: anim === "attack" ? ATTACK_FRAME_RATE : FRAME_RATE,
-          repeat: anim === "attack" ? 0 : -1,
+          frameRate: anim.startsWith("attack") ? ATTACK_FRAME_RATE : FRAME_RATE,
+          repeat: anim.startsWith("attack") ? 0 : -1,
         });
       }
     }
