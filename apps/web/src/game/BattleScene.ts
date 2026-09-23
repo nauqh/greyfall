@@ -1106,6 +1106,6 @@ export class BattleScene extends Phaser.Scene {
 export function startBattle(
   parent: HTMLElement,
   launcher: BattleLauncher,
-): { destroy: () => void } {
+): { destroy: () => void; ready: Promise<void> } {
   return startGame(parent, "battle", BattleScene, launcher);
 }

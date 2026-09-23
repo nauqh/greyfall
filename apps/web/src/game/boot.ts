@@ -27,9 +27,13 @@ export function startGame(
   key: string,
   Scene: new () => Phaser.Scene,
   data?: object,
-): { destroy: () => void } {
+): { destroy: () => void; ready: Promise<void> } {
   let game: Phaser.Game | null = null;
   let cancelled = false;
+  let done = (): void => {};
+  // Resolves when the scene's own create() runs: chunks, webfont, Phaser boot
+  // and its asset loader are all behind it, so it is the real ready signal.
+  const ready = new Promise<void>((ok) => (done = ok));
   // Phaser bakes each Text into a canvas when it is created; before the
   // webfont arrives that bake is the fallback font forever.
   void document.fonts
@@ -52,13 +56,16 @@ export function startGame(
       });
       game.events.once(Phaser.Core.Events.READY, () => {
         game!.canvas.style.cursor = 'url("/cursor.png") 0 0, default';
-        game!.scene.add(key, Scene, true, data);
+        const scene = game!.scene.add(key, Scene, true, data)!;
+        scene.events.once(Phaser.Scenes.Events.CREATE, done);
       });
     });
   return {
     destroy: () => {
       cancelled = true;
+      done();
       game?.destroy(true);
     },
+    ready,
   };
 }

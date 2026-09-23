@@ -1,20 +1,21 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /** Holds one Phaser game at the scene's own ratio. */
 export function GameCanvas({
   start,
 }: {
-  start: (el: HTMLElement) => Promise<{ destroy: () => void }>;
+  start: (el: HTMLElement) => Promise<{ destroy: () => void; ready: Promise<void> }>;
 }) {
   const holder = useRef<HTMLDivElement>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const el = holder.current;
     if (!el) return;
     let cancelled = false;
-    let game: { destroy: () => void } | null = null;
+    let game: { destroy: () => void; ready: Promise<void> } | null = null;
 
     // Imported in the effect so Phaser never runs on the server.
     void import("../game/boot")
@@ -31,7 +32,12 @@ export function GameCanvas({
       .then((g) => {
         if (!g) return;
         if (cancelled) g.destroy();
-        else game = g;
+        else {
+          void g.ready.then(() => {
+            if (!cancelled) setReady(true);
+          });
+          game = g;
+        }
       })
       // Without this a scene that throws on the way up leaves an empty holder
       // and a silent page, which is a long way from looking like an error.
@@ -47,5 +53,14 @@ export function GameCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return <div className="canvas" ref={holder} />;
+  return (
+    <div className="canvas" ref={holder}>
+      {/* Loading label while the scene boots; gone the frame create() runs. */}
+      {!ready && (
+        <div className="loader" aria-hidden>
+          <div className="loaderText">Loading...</div>
+        </div>
+      )}
+    </div>
+  );
 }

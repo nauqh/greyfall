@@ -48,6 +48,7 @@ textarea {
    a pre-hydration fallback. max-height keeps a tall board on screen. */
 
 .canvas {
+	position: relative;
 	width: 100%;
 	max-width: 1180px;
 	aspect-ratio: 1200 / 720;
@@ -56,6 +57,35 @@ textarea {
 
 .canvas canvas {
 	display: block;
+}
+
+/* Loading veil: the scene's chunks, webfont, boot and asset loader are all
+   still running, so the animation is CSS, not JS - it keeps its frames while
+   the main thread is busy. */
+.loader {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.loaderText {
+	font-size: 22px;
+	letter-spacing: 0.08em;
+	text-shadow: 0 2px 0 #1c2634;
+	animation: loaderPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes loaderPulse {
+	from,
+	to {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.4;
+	}
 }
 
 /* --- duel lobby ---------------------------------------------------------

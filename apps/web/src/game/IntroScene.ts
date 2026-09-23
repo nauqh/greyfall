@@ -183,6 +183,6 @@ hold the line.`,
 export function startIntro(
   parent: HTMLElement,
   launcher: IntroLauncher,
-): { destroy: () => void } {
+): { destroy: () => void; ready: Promise<void> } {
   return startGame(parent, "intro", IntroScene, launcher);
 }
