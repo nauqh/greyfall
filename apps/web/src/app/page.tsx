@@ -137,6 +137,7 @@ export default function Page() {
               Map
             </button>
           </div>
+          <div className="credit">Developed by Nauqh</div>
         </GameCanvas>
       </main>
     );

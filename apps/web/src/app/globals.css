@@ -188,7 +188,17 @@ textarea {
 	opacity: 0.55;
 }
 
-
+/* The corner credit, WC3-style: small, quiet, bottom-left. */
+.credit {
+	position: absolute;
+	left: 2.2cqw;
+	bottom: 1.8cqw;
+	z-index: 2;
+	font-size: 1.15cqw;
+	letter-spacing: 0.04em;
+	color: rgba(253, 250, 240, 0.85);
+	text-shadow: 0 1px 0 rgba(28, 38, 52, 0.7);
+}
 
 /* --- duel lobby ---------------------------------------------------------
    The one part of the game that is DOM rather than canvas: it is a form, and
