@@ -37,7 +37,7 @@ export function startGame(
   // Phaser bakes each Text into a canvas when it is created; before the
   // webfont arrives that bake is the fallback font forever.
   void document.fonts
-    .load('16px "Gochi Hand"')
+    .load('600 16px "Nunito"')
     .catch(() => {})
     .then(() => {
       if (cancelled) return;
@@ -47,6 +47,10 @@ export function startGame(
         backgroundColor: WATER,
         pixelArt: true,
         roundPixels: true,
+        // No sound ships, and the WebAudio manager races game destroy: its
+        // onGameVisible suspend() can land after destroy closed the context,
+        // throwing "Cannot suspend a closed AudioContext".
+        audio: { noAudio: true },
         scale: {
           mode: Phaser.Scale.FIT,
           autoCenter: Phaser.Scale.CENTER_BOTH,
