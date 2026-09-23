@@ -44,15 +44,16 @@ textarea {
 	padding: 12px;
 }
 
-/* GameCanvas writes the real ratio from boot.ts's GAME_W/GAME_H; this is only
-   a pre-hydration fallback. max-height keeps a tall board on screen. */
+/* The game is full-bleed: Scale.EXPAND keeps one axis at the world's size and
+   grows the other to cover the parent, so this box is the viewport itself and
+   the water runs to every edge with no letterbox seam. The intro's menu still
+   sizes itself in cqw against this box. */
 
 .canvas {
-	position: relative;
-	width: 100%;
-	max-width: 1180px;
-	aspect-ratio: 1200 / 720;
-	max-height: calc(100vh - 28px);
+	position: fixed;
+	inset: 0;
+	overflow: hidden;
+	container-type: inline-size;
 }
 
 .canvas canvas {
@@ -86,6 +87,96 @@ textarea {
 	50% {
 		opacity: 0.4;
 	}
+}
+
+/* --- intro menu ---------------------------------------------------------
+   The Warcraft menu shape: the world is the backdrop, the menu is a panel on
+   top of it. Sized in cqw so it scales with the page. */
+
+/* --- intro menu ---------------------------------------------------------
+   The menu panel wears the same paper nine-slice as the draft screen's
+   container (paper.png, 64px corners, 34px border, exactly like the lobby's
+   .paper), so the title screen and the draft read as one kit. */
+
+.menu {
+	position: absolute;
+	left: 3cqw;
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 2;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+}
+
+/* The last commit's title, pixel-matched to the Phaser label: 600 Nunito at
+   a fixed 30px with a 3px slate stroke and the 0 2px slate shadow, on the
+   slate ribbon. Fixed px is deliberate: Phaser bakes the text once at 30px
+   world units regardless of window size, so the DOM must not scale either,
+   or the two titles diverge. The ribbon still tracks the canvas. */
+.menuTitle {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0 0 17px;
+	min-width: 285px;
+	white-space: nowrap;
+	padding: 0 19px 0 19px;
+	height: 61px;
+	font-family: "Nunito", sans-serif;
+	font-size: 30px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	color: #fdfaf0;
+	paint-order: stroke fill;
+	-webkit-text-stroke: 3px #2e3a4e;
+	border: 45px solid transparent;
+	border-top-width: 0;
+	border-bottom-width: 0;
+	border-image: url("/tiny-swords/ui/ribbon.png") 0 64 fill / 0 45px stretch;
+	text-shadow: 0 2px 0 #1c2634;
+}
+
+/* The kit's own button, drawn the way the draft screen's Phaser buttons are:
+   the BigButton sheet at the same 190x104 size, with the same stroked type.
+   The 64px corner art scales to a 52px border so it never overlaps at 104
+   tall, which is the only visible difference from the canvas version. */
+.menuBtn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 240px;
+	height: 104px;
+	padding: 0;
+	color: #fdfaf0;
+	font: inherit;
+	font-weight: 600;
+	font-size: 16px;
+	letter-spacing: 0.05em;
+	paint-order: stroke fill;
+	-webkit-text-stroke: 3px #2e3a4e;
+	text-shadow: 0 2px 0 rgba(28, 38, 52, 0.6);
+	background: none;
+	/* Native 64px slices at 64px borders: 64+64 overflows the 104px height,
+	   so the rims overlap and the darker middle band never shows - exactly how
+	   Phaser's NineSlice quads render the draft's buttons. Scaled-down borders
+	   (52px) instead stretch the dark middle band, which read as duller. */
+	border: 64px solid transparent;
+	border-image: url("/tiny-swords/ui/blueButton.png") 64 fill / 64px stretch;
+	transition: transform 140ms ease-out;
+}
+
+.menuBtn.red {
+	border-image-source: url("/tiny-swords/ui/redButton.png");
+}
+
+.menuBtn:hover {
+	transform: translateY(2px);
+}
+
+.menuBtn:active {
+	transform: translateY(3px);
 }
 
 /* --- duel lobby ---------------------------------------------------------

@@ -8,6 +8,7 @@
 import { makeRng, type Rng } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
+import { GAME_H, GAME_W, WATER_SPAN } from "./boot";
 import {
   BUILDINGS,
   CLOUDS,
@@ -102,8 +103,13 @@ export function prepareTerrain(scene: Phaser.Scene): void {
 
 // Plain world object, not scroll-fixed: the camera carries a zoom and a
 // matching scroll, and opting out of the scroll alone lands it off-canvas.
-export function buildWater(scene: Phaser.Scene, w: number, h: number): void {
-  scene.add.tileSprite(0, 0, w, h, "water").setOrigin(0).setDepth(DEPTH.water);
+// Far bigger than any window EXPAND can open around the world, and centred on
+// it, so the water runs to the edges of the page with no seam.
+export function buildWater(scene: Phaser.Scene): void {
+  scene.add
+    .tileSprite(GAME_W / 2, GAME_H / 2, WATER_SPAN.w, WATER_SPAN.h, "water")
+    .setOrigin(0.5)
+    .setDepth(DEPTH.water);
 }
 
 /** Snapped to whole 64px tiles. Returns the rect actually covered. */
@@ -149,15 +155,18 @@ export function buildFoam(scene: Phaser.Scene, island: Rect): void {
   }
 }
 
-/** One building on the ground, at the point its base touches. */
+/** One building on the ground, at the point its base touches.
+ *  Side "g" is the pack's Black Buildings: the desaturated Greying set. */
 export interface Structure {
-  side: "a" | "b";
+  side: "a" | "b" | "g";
   name: BuildingName;
   x: number;
   y: number;
+  /** Drawn smaller than the art's native size when set. */
+  scale?: number;
 }
 
-function buildingKey(side: "a" | "b", name: BuildingName): string {
+function buildingKey(side: "a" | "b" | "g", name: BuildingName): string {
   return `build_${side}_${name}`;
 }
 
@@ -188,6 +197,7 @@ export function addBuilding(scene: Phaser.Scene, s: Structure): Phaser.GameObjec
     scene.add
       .image(s.x, s.y, buildingKey(s.side, s.name), (BUILDINGS[s.name] as BuildingSpec).frame ? 0 : undefined)
       .setOrigin(0.5, spec.anchorY / spec.h)
+      .setScale(s.scale ?? 1)
       // The same y-sorted band as the props, so a tree in front of a house
       // covers it and one behind it does not.
       .setDepth(DEPTH.decorBehind + s.y / 1000)
@@ -241,13 +251,44 @@ export function scatterDecor(
     }
   }
 
-  // Out in the water, clear of the island.
+  // Sea rocks in a ring around the island, above and below it, close enough
+  // to read as its shallows. The page is full-bleed now, so a rock scattered
+  // across the whole canvas can land on a screen edge and read as misplaced;
+  // near the island it always reads as scenery. The left column is under the
+  // intro menu, the right one is a sliver, so both are skipped.
   for (let i = 0; i < 6; i++) {
-    const left = rng.next() < 0.5;
-    const x = left ? rng.next() * (island.x0 - 30) : island.x1 + 30 + rng.next() * (canvas.w - island.x1 - 30);
-    const y = 40 + rng.next() * (canvas.h - 80);
+    const x = island.x0 + 40 + rng.next() * (island.x1 - island.x0 - 80);
+    const y =
+      rng.next() < 0.5
+        ? island.y0 - 120 + rng.next() * 70
+        : island.y1 + 50 + rng.next() * 60;
     place("waterRock", x, y, 0.9).setDepth(DEPTH.foam);
   }
+}
+
+/** One prop, hand-placed. Same anim/flip treatment scatterDecor gives. */
+export function addDecor(
+  scene: Phaser.Scene,
+  kind: DecorKind,
+  x: number,
+  y: number,
+  scale = 1,
+  seed: number | string = 0,
+): Phaser.GameObjects.Sprite {
+  const rng = makeRng(`decor-${kind}-${seed}`);
+  const specs = DECOR[kind];
+  const d = specs[rng.int(specs.length)]!;
+  const s = scene.add
+    .sprite(x, y, d.key)
+    .setOrigin(0.5, d.anchorY / d.frame)
+    .setDepth(DEPTH.decorBehind + y / 1000)
+    .setScale(scale);
+  if (d.frames > 1) {
+    s.play(`${d.key}_anim`);
+    if (s.anims.currentAnim) s.anims.setProgress(rng.next());
+    if (rng.next() < 0.5) s.setFlipX(true);
+  }
+  return s;
 }
 
 /** Slow clouds behind the units. */

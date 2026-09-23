@@ -28,8 +28,8 @@ function newSeed(): number {
   return Math.floor(Math.random() * 2 ** 31);
 }
 
-/** Which of the three screens the page is on. */
-type Mode = "intro" | "solo" | "duel";
+/** Which of the four screens the page is on. */
+type Mode = "intro" | "strategic" | "solo" | "duel";
 
 export default function Page() {
   const [mode, setMode] = useState<Mode>("intro");
@@ -94,6 +94,23 @@ export default function Page() {
     );
   }
 
+  if (mode === "strategic") {
+    return (
+      <main className="stage">
+        <GameCanvas
+          key="strategic"
+          start={(el) =>
+            import("../game/StrategicScene").then(({ startStrategic }) =>
+              startStrategic(el, {
+                onMenu: () => setMode("intro"),
+              }),
+            )
+          }
+        />
+      </main>
+    );
+  }
+
   if (mode === "intro") {
     return (
       <main className="stage">
@@ -101,16 +118,23 @@ export default function Page() {
           // Distinct from the battle's, or React reconciles the two as one
           // component and the effect that builds the game never runs again.
           key="intro"
-          start={(el) =>
-            import("../game/IntroScene").then(({ startIntro }) =>
-              startIntro(el, {
-                budget: BALANCE.budget,
-                onBegin: () => setMode("solo"),
-                onDuel: () => setMode("duel"),
-              }),
-            )
-          }
-        />
+          start={(el) => import("../game/IntroScene").then(({ startIntro }) => startIntro(el))}
+        >
+          {/* The Warcraft menu: logo and stacked buttons over the scene, no
+              panel art. Percent position and cqw sizes track the canvas. */}
+          <div className="menu">
+            <h1 className="menuTitle">GREYFALL</h1>
+            <button className="menuBtn" onClick={() => setMode("strategic")}>
+              Map
+            </button>
+            <button className="menuBtn" onClick={() => setMode("solo")}>
+              Begin
+            </button>
+            <button className="menuBtn red" onClick={() => setMode("duel")}>
+              Duel
+            </button>
+          </div>
+        </GameCanvas>
       </main>
     );
   }

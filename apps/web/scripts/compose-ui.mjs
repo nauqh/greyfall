@@ -104,6 +104,9 @@ for (const [name, spec] of Object.entries(art.PANELS)) {
   made.push(write(name, png));
 }
 made.push(write("ribbon", ribbon()));
+// Banner_Slots is already contiguous (192px, 64px corners), just copied here
+// so the CSS has one directory.
+made.push(write("bannerSlots", read("UI Elements/UI Elements/Banners/Banner_Slots.png")));
 
 // One icon per file already, but copied here so the CSS has one directory.
 for (const [key, n] of Object.entries(art.ICON)) {

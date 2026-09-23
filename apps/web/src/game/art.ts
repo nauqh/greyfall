@@ -173,9 +173,12 @@ export const BUILDINGS = {
   castle: { file: "Castle.png", w: 320, h: 256, anchorY: 249 },
   tower: { file: "Tower.png", w: 128, h: 256, anchorY: 230 },
   // Enemy Pack extras, for the far shore. The hut PNG is 16 hut variants of
-  // 192px laid end to end; the tower is a single image.
+  // 192px laid end to end; the dead tree and the towers are single images.
   goblinHut: { file: "Enemy Pack/Extra/Goblin Hut/Goblin Hut.png", w: 192, h: 256, anchorY: 240, frame: 192 },
-  gnomeTower: { file: "Enemy Pack/Extra/Gnome Buildings/Gnome Tower.png", w: 128, h: 256, anchorY: 229 },
+  deadTree: { file: "Enemy Pack/Extra/Dead Tree/Dead Tree.png", w: 384, h: 320, anchorY: 314 },
+  pirateTower:{
+    file:"Enemy Pack/Extra/Pirate Tower/Pirate Tower_Ground.png", w: 128, h: 256, anchorY: 229 
+  },
   barracks: { file: "Barracks.png", w: 192, h: 256, anchorY: 245 },
   archery: { file: "Archery.png", w: 192, h: 256, anchorY: 240 },
   house1: { file: "House1.png", w: 128, h: 192, anchorY: 173 },
@@ -189,7 +192,7 @@ export type BuildingName = keyof typeof BUILDINGS;
 /** The pack ships a set per faction; the sides match the unit colors.
  * Enemy Pack extras carry their own top-level path, so the faction prefix
  * does not apply to them. */
-const BUILD_DIR = { a: "Blue Buildings", b: "Red Buildings" } as const;
+const BUILD_DIR = { a: "Blue Buildings", b: "Red Buildings", g: "Black Buildings" } as const;
 
 export function buildingUrl(side: keyof typeof BUILD_DIR, name: BuildingName): string {
   const file = BUILDINGS[name].file;

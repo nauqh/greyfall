@@ -1,6 +1,11 @@
 // One Phaser game per screen. The intro and the battle share a logical size,
 // a camera setup and a background, so the page only ever deals with one
 // aspect ratio and a screen swap cannot shift the sea.
+//
+// Scale.EXPAND keeps one axis at the world's size and grows the other to
+// cover the parent, so the canvas fills the page and the world gains water
+// around its edges instead of a letterbox seam. The camera's zoom is fixed,
+// so full-page veils size themselves from viewSize().
 
 import * as Phaser from "phaser";
 
@@ -18,9 +23,19 @@ export const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
 
 /** The canvas is DPR times the world; zoom recentres, so aim it back. */
 export function fitCamera(scene: Phaser.Scene): void {
-  scene.cameras.main.setZoom(DPR).centerOn(GAME_W / 2, GAME_H / 2);
+  const cam = scene.cameras.main;
+  cam.setZoom(DPR);
+  cam.centerOn(GAME_W / 2, GAME_H / 2);
+  // EXPAND changes the canvas size on window resize, which shifts what the
+  // camera sees; keep the world centred so the extra water stays even.
+  const recenter = (): void => {
+    cam.centerOn(GAME_W / 2, GAME_H / 2);
+  };
+  scene.scale.on(Phaser.Scale.Events.RESIZE, recenter);
+  scene.events.once(Phaser.Scenes.Events.DESTROY, () => scene.scale.off(Phaser.Scale.Events.RESIZE, recenter));
 }
 
+export const WATER_SPAN = { w: 3600, h: 2000 } as const;
 /** FIT scaling fits the logical world to whatever the page gives it. */
 export function startGame(
   parent: HTMLElement,
@@ -52,8 +67,8 @@ export function startGame(
         // throwing "Cannot suspend a closed AudioContext".
         audio: { noAudio: true },
         scale: {
-          mode: Phaser.Scale.FIT,
-          autoCenter: Phaser.Scale.CENTER_BOTH,
+          mode: Phaser.Scale.EXPAND,
+          autoCenter: Phaser.Scale.NO_CENTER,
           width: Math.round(GAME_W * DPR),
           height: Math.round(GAME_H * DPR),
         },

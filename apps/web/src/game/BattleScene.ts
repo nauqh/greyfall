@@ -28,7 +28,7 @@ import {
 import * as Phaser from "phaser";
 
 import { AVATARS, FX, ICON, iconKey, iconUrl, packUrl } from "./art";
-import { GAME_H, GAME_W, fitCamera, startGame } from "./boot";
+import { GAME_H, GAME_W, WATER_SPAN, fitCamera, startGame } from "./boot";
 import {
   ATTACK_FRAME_RATE,
   BODY_HEIGHT,
@@ -351,7 +351,7 @@ export class BattleScene extends Phaser.Scene {
       y1: ORIGIN_Y - TILE / 2 + BOARD_H,
     };
 
-    buildWater(this, GAME_W, GAME_H);
+    buildWater(this);
     const island = buildIsland(this, ISLAND);
     buildFoam(this, island);
     scatterDecor(this, island, board, { w: GAME_W, h: GAME_H }, this.launcher.seed);
@@ -698,9 +698,10 @@ export class BattleScene extends Phaser.Scene {
     const steps = ["3", "2", "1", "FIGHT"];
     let i = 0;
 
-    // A veil so the count reads over the armies without hiding them.
+    // A veil so the count reads over the armies without hiding them. As wide
+    // as the water, so it covers the whole page, not just the world rect.
     const veil = this.add
-      .rectangle(GAME_W / 2, GAME_H / 2, GAME_W, GAME_H, 0x0a1018, 0.42)
+      .rectangle(GAME_W / 2, GAME_H / 2, WATER_SPAN.w, WATER_SPAN.h, 0x0a1018, 0.42)
       .setDepth(DEPTH.hud + 19);
 
     const beat = (): void => {
@@ -1219,9 +1220,10 @@ export class BattleScene extends Phaser.Scene {
     const cx = GAME_W / 2;
     const cy = GAME_H / 2;
 
-    // The whole veil is the card: no sheet, just darkness and the words.
+    // The whole veil is the card: no sheet, just darkness and the words. As
+    // wide as the water, so it covers the whole page.
     const veil = this.add
-      .rectangle(cx, cy, GAME_W, GAME_H, 0x050608, 0.82)
+      .rectangle(cx, cy, WATER_SPAN.w, WATER_SPAN.h, 0x050608, 0.82)
       .setDepth(DEPTH.hud + 10);
     const title = label(this, cx, cy - 110, headline, {
       fontSize: won && foeName.length > 12 ? "34px" : "44px",

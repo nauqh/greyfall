@@ -1,9 +1,10 @@
-// The title screen: a living island on the right, the menu column on the left.
+// The title screen: a living island on the right, the menu banner on the
+// left. The menu itself is HTML over the canvas (page.tsx), so this scene is
+// world only: village, the warband, and the Grey Host across the water.
 //
-// Same island, foam, decor and clouds as the battle, built from the same
-// terrain helpers, so Begin is a scene swap and not a change of world. The
-// cast is scenery - a warband loafing on its own shore with the Grey Host
-// watching from the far end - and nothing here touches the engine.
+// Same island, foam and decor as the battle, built from the same terrain
+// helpers, so Begin is a scene swap and not a change of world.
+// Nothing here touches the engine.
 
 import * as Phaser from "phaser";
 
@@ -18,37 +19,36 @@ import {
   buildFoam,
   buildIsland,
   buildWater,
-  driftClouds,
   loadBuildings,
+  addDecor,
   loadTerrain,
   prepareTerrain,
   scatterDecor,
   type Rect,
   type Structure,
 } from "./terrain";
-import { button, label, loadPanels, panel, ribbon } from "./ui";
 
-/** Whole 64px tiles, right of the menu column. */
-const ISLAND: Rect = { x0: 384, y0: 96, x1: 1152, y1: 608 };
-
-/** Middle of the water column the menu floats on. */
-const MENU_X = 192;
+/** Whole 64px tiles, right of the menu column. 7 rows tall. */
+const ISLAND: Rect = { x0: 384, y0: 160, x1: 1152, y1: 608 };
 
 /**
  * The village, back to front. Buildings and props share one y-sorted depth
  * band, so the only rule here is that a base line further down the screen is
  * drawn later. Base widths are in art.ts; these x values are spaced off them.
  *
- * The far shore is the Grey Host's: the intro says the Greying has taken the
- * land, and a monster keep looking back across the water says it before the
- * tagline does - one goblin hut, alone on the far shore.
+ * The Tidewarden camp: castle tight into the top-left corner, archery range
+ * at the island's left edge below it, two houses in a row to the castle's
+ * right backed by trees. The Grey Host's tower and hut hug the bottom-right.
  */
 const VILLAGE: readonly Structure[] = [
-  { side: "a", name: "house1", x: 470, y: 280 },
-  { side: "a", name: "barracks", x: 880, y: 300 },
-  { side: "a", name: "castle", x: 660, y: 330 },
-  { side: "b", name: "goblinHut", x: 1100, y: 330 },
-  { side: "a", name: "house3", x: 560, y: 404 },
+  { side: "a", name: "castle", x: 546, y: 266 },
+  { side: "a", name: "archery", x: 480, y: 450 },
+  // Two houses in a row, right of the castle at its height.
+  { side: "a", name: "house2", x: 750, y: 266 },
+  // The dead tree replaces the goblin hut: a hollowed stump the Host nests
+  // in. 192px wide at the base, so it sits just left of its old spot. 0.85
+  // scale - the full-size art crowded the tower.
+  { side: "b", name: "deadTree", x: 1040, y: 640},
 ];
 
 /**
@@ -67,42 +67,29 @@ interface Extra {
   x: number;
   y: number;
   pace: number;
+  /** The art faces left natively; set "right" to mirror. */
+  face?: "left" | "right";
 }
 
 const CAST: readonly Extra[] = [
-  { side: "a", cls: "pawn", x: 500, y: 466, pace: 90 },
-  { side: "a", cls: "monk", x: 800, y: 486, pace: 0 },
-  { side: "a", cls: "warrior", x: 620, y: 532, pace: 100 },
-  { side: "a", cls: "archer", x: 500, y: 566, pace: 0 },
-  { side: "a", cls: "lancer", x: 880, y: 586, pace: -70 },
-  { side: "b", cls: "warrior", x: 1050, y: 480, pace: 0 },
-  { side: "b", cls: "archer", x: 1120, y: 540, pace: 0 },
-  { side: "b", cls: "warrior", x: 1040, y: 578, pace: 80 },
+  { side: "a", cls: "warrior", x: 640, y: 330, pace: 70 },
+  // Archer on the hall roof and another in the left tower's top, facing
+  // right over the castle toward the far shore.
+  { side: "a", cls: "archer", x: 585, y: 150, pace: 0 },
+  { side: "a", cls: "archer", x: 450, y: 125, pace: 0, face: "right" },
+  { side: "b", cls: "warrior", x: 870, y: 550, pace: 0 },
+  { side: "b", cls: "warrior", x: 910, y: 600, pace: -60 },
 ];
 
-export interface IntroLauncher {
-  onBegin: () => void;
-  onDuel: () => void;
-  /** The gold the draft will have, so the title screen can name it. */
-  budget: number;
-}
-
 export class IntroScene extends Phaser.Scene {
-  private launcher!: IntroLauncher;
-
   constructor() {
     super("intro");
-  }
-
-  init(data: IntroLauncher): void {
-    this.launcher = data;
   }
 
   preload(): void {
     loadTerrain(this);
     loadUnits(this);
     loadBuildings(this, VILLAGE);
-    loadPanels(this, ["paper", "blueButton", "redButton"]);
   }
 
   create(): void {
@@ -110,26 +97,44 @@ export class IntroScene extends Phaser.Scene {
     prepareTerrain(this);
     makeAnims(this);
 
-    buildWater(this, GAME_W, GAME_H);
+    buildWater(this);
     const island = buildIsland(this, ISLAND);
     buildFoam(this, island);
     // scatterDecor dresses the margins either side of a board it must keep
     // clear. There is no board here, so the village stands in for one and the
     // props gather in the gaps at either end of the island.
-    const clearing: Rect = { x0: 520, y0: island.y0, x1: 860, y1: island.y1 };
+    // The keep owns the whole left margin now, so the clearing starts at the
+    // island's edge: no prop lands in the top-left corner, only out to the
+    // right of the village.
+    const clearing: Rect = { x0: island.x0, y0: island.y0, x1: 900, y1: island.y1 };
     scatterDecor(this, island, clearing, { w: GAME_W, h: GAME_H }, "intro");
     for (const s of VILLAGE) addBuilding(this, s);
-    driftClouds(this, { w: GAME_W, h: GAME_H }, "intro");
-
     for (const extra of CAST) this.addExtra(extra);
-    this.buildMenu();
+    this.decorate();
+  }
+
+  /**
+   * Hand-placed props so the island reads lived-in: trees and bushes framing
+   * the castle corner, rocks along the southern grass, greenery around both
+   * camps. Every spot is clear of the cast's feet - nobody stands in a bush.
+   */
+  private decorate(): void {
+    addDecor(this, "rock", 508, 500, 1, "c");
+    addDecor(this, "bush", 452, 570, 1, "d");
+    // Trees backing the house row, rising over their roofs. Seeds 3..6 pick
+    // Tree3's greener frames past its yellow autumn ones.
+    addDecor(this, "tree", 850, 250, 0.8, 4);
+    addDecor(this, "tree", 900, 208, 0.9, 5);
+    addDecor(this, "tree", 970, 264, 0.8, 6);
   }
 
   /** One loafing unit: a shadow, a sprite, and a there-and-back walk. */
-  private addExtra({ side, cls, x, y, pace }: Extra): void {
+  private addExtra({ side, cls, x, y, pace, face }: Extra): void {
     const shadow = addShadow(this, x, y, cls === "lancer" ? 0.8 : 0.62);
     const sprite = this.add.sprite(x, y, unitKey(side, cls, "idle")).setDepth(DEPTH.unit + y);
     playPose(sprite, side, cls, "idle");
+    // playPose sets the idle flip from board mirroring; an explicit face wins.
+    if (face) sprite.setFlipX(face === "right");
     if (pace === 0) return;
 
     let dir = Math.sign(pace);
@@ -152,37 +157,8 @@ export class IntroScene extends Phaser.Scene {
     };
     this.time.delayedCall(Math.random() * 2400, leg);
   }
-
-  /** Title, blurb and the two ways in, stacked on the water column. */
-  private buildMenu(): void {
-    ribbon(this, MENU_X, 130, 300, 0.95).setDepth(DEPTH.hud);
-    label(this, MENU_X, 128, "GREYFALL", { fontSize: "30px" }).setDepth(DEPTH.hud + 2);
-
-    panel(this, "paper", MENU_X, 286, 280, 172).setDepth(DEPTH.hud);
-    label(
-      this,
-      MENU_X,
-      278,
-      `The Greying has taken
-the land.
-
-Spend ${this.launcher.budget} gold and
-hold the line.`,
-      { fontSize: "17px", color: "#4a3a28", stroke: "", strokeThickness: 0, align: "center" },
-    ).setDepth(DEPTH.hud + 2);
-
-    button(this, MENU_X, 432, 218, 124, "Begin", "blue", () => this.launcher.onBegin()).setDepth(
-      DEPTH.hud + 3,
-    );
-    button(this, MENU_X, 566, 218, 124, "Duel", "red", () => this.launcher.onDuel()).setDepth(
-      DEPTH.hud + 3,
-    );
-  }
 }
 
-export function startIntro(
-  parent: HTMLElement,
-  launcher: IntroLauncher,
-): { destroy: () => void; ready: Promise<void> } {
-  return startGame(parent, "intro", IntroScene, launcher);
+export function startIntro(parent: HTMLElement): { destroy: () => void; ready: Promise<void> } {
+  return startGame(parent, "intro", IntroScene);
 }

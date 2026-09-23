@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
-/** Holds one Phaser game at the scene's own ratio. */
+/** Holds one Phaser game at the scene's own ratio. Children render over the
+ *  canvas, inside it - the intro's HTML menu lives here. */
 export function GameCanvas({
   start,
+  children,
 }: {
   start: (el: HTMLElement) => Promise<{ destroy: () => void; ready: Promise<void> }>;
+  children?: ReactNode;
 }) {
   const holder = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
@@ -17,16 +20,11 @@ export function GameCanvas({
     let cancelled = false;
     let game: { destroy: () => void; ready: Promise<void> } | null = null;
 
-    // Imported in the effect so Phaser never runs on the server.
-    void import("../game/boot")
-      .then(({ GAME_W, GAME_H }) => {
+    // The scenes themselves are dynamically imported by the page, so Phaser
+    // never runs on the server.
+    void Promise.resolve()
+      .then(() => {
         if (cancelled) return null;
-        // The scene owns the proportions. Hardcoding them in CSS letterboxes
-        // FIT into a wrongly shaped box every time the layout moves.
-        el.style.aspectRatio = `${GAME_W} / ${GAME_H}`;
-        // Cap width by what the viewport height allows, or a short viewport
-        // clamps height only and FIT letterboxes the sides.
-        el.style.maxWidth = `min(1180px, calc((100vh - 28px) * ${GAME_W} / ${GAME_H}))`;
         return start(el);
       })
       .then((g) => {
@@ -61,6 +59,7 @@ export function GameCanvas({
           <div className="loaderText">Loading...</div>
         </div>
       )}
+      {children}
     </div>
   );
 }
