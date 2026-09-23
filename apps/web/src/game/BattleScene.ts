@@ -30,8 +30,8 @@ import * as Phaser from "phaser";
 import { AVATARS, FX, ICON, iconKey, iconUrl, packUrl } from "./art";
 import { GAME_H, GAME_W, fitCamera, startGame } from "./boot";
 import {
-  BODY,
   BODY_HEIGHT,
+  MONSTER_BODY_HEIGHT,
   SPRITE_NUDGE,
   animKey,
   healKey,
@@ -784,7 +784,7 @@ export class BattleScene extends Phaser.Scene {
     const w = 38;
     const h = 5;
     const x = view.sprite.x - w / 2;
-    const y = view.sprite.y - BODY_HEIGHT[view.snap.class] - 12;
+    const y = view.sprite.y - this.headHeight(view.snap.class, view.snap.side) - 12;
     const frac = Math.max(0, view.shownHp / view.snap.maxHp);
     const mine = view.snap.side === this.mySide;
     view.pip.clear();
@@ -874,6 +874,11 @@ export class BattleScene extends Phaser.Scene {
     this.refreshHud();
   }
 
+  /** Head height for a unit, monsters on side b carrying their own. */
+  private headHeight(cls: UnitClass, side: Side): number {
+    return side === "a" ? BODY_HEIGHT[cls] : MONSTER_BODY_HEIGHT[cls];
+  }
+
   private refreshHud(): void {
     for (const side of ["a", "b"] as const) {
       this.bars[side]?.set(this.sideHp(side) / Math.max(1, this.sideMax(side)));
@@ -950,7 +955,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private floatText(view: UnitView, text: string, color: string): void {
-    const top = view.sprite.y - BODY_HEIGHT[view.snap.class] - 20;
+    const top = view.sprite.y - this.headHeight(view.snap.class, view.snap.side) - 20;
     const tag = this.add
       .text(view.sprite.x, top, text, {
         fontFamily: '"Nunito", sans-serif',
@@ -1007,7 +1012,7 @@ export class BattleScene extends Phaser.Scene {
     const burst = this.add
       .sprite(
         target.sprite.x,
-        target.sprite.y - BODY_HEIGHT[target.snap.class] / 2,
+        target.sprite.y - this.headHeight(target.snap.class, target.snap.side) / 2,
         healKey(target.snap.side),
       )
       .setDepth(DEPTH.fx);
@@ -1051,10 +1056,18 @@ export class BattleScene extends Phaser.Scene {
   private showResult(): void {
     this.duel?.onPlayed();
     const result = this.result!;
-    const won = result.winner === "a";
-    const lost = result.winner === "b";
-    // Souls verdicts: short, flat, final.
-    const headline = won ? "GREAT ENEMY FELLED" : lost ? "YOU DIED" : "MUTUAL RUIN";
+    // The engine names sides, the player names players: winner is read
+    // against mySide, not against a.
+    const won = result.winner === this.mySide;
+    const lost = result.winner !== this.mySide && result.winner !== "draw";
+    const foeName = this.duel?.status().opponent ?? "THE GREY HOST";
+    // Souls verdicts, one per ending, short and flat. The win line names
+    // who fell; the loss line is the game's own verdict on you.
+    const headline = won
+      ? `${foeName.toUpperCase()} FELLED`
+      : lost
+        ? "YOU DIED"
+        : "NEITHER SIDE YIELDS";
     const cx = GAME_W / 2;
     const cy = GAME_H / 2;
 
@@ -1063,19 +1076,28 @@ export class BattleScene extends Phaser.Scene {
       .rectangle(cx, cy, GAME_W, GAME_H, 0x050608, 0.82)
       .setDepth(DEPTH.hud + 10);
     const title = label(this, cx, cy - 110, headline, {
-      fontSize: "44px",
+      fontSize: won && foeName.length > 12 ? "34px" : "44px",
       color: won ? "#f4cf6b" : lost ? "#e0796a" : "#c9cdd4",
       strokeThickness: 0,
     }).setDepth(DEPTH.hud + 11);
 
-    // The scoreline stays, but quiet: one line, not a ledger.
+    // The scoreline stays, but quiet: one line, not a ledger. Losing says
+    // how it ended (wipe or the clock), winning does not need the excuse.
+    const loserLine =
+      result.reason === "wipe"
+        ? "your line was wiped from the field"
+        : "the clock ran out on your army";
     const detail = label(
       this,
       cx,
       cy - 34,
-      `${result.survivors[this.mySide]} of yours left standing against ` +
-        `${result.survivors[result.winner === "a" ? "b" : "a"]} of theirs` +
-        ` - ${(result.ticks / BALANCE.tickRate).toFixed(1)}s`,
+      won
+        ? `${result.survivors[this.mySide]} of yours left standing - ` +
+          `${(result.ticks / BALANCE.tickRate).toFixed(1)}s`
+        : lost
+          ? `${loserLine} - ${(result.ticks / BALANCE.tickRate).toFixed(1)}s`
+          : `${result.survivors.a} against ${result.survivors.b} - ` +
+            `${(result.ticks / BALANCE.tickRate).toFixed(1)}s`,
       { fontSize: "15px", color: "#b9a887", strokeThickness: 0 },
     ).setDepth(DEPTH.hud + 11);
 

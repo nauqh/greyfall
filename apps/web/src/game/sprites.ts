@@ -27,6 +27,20 @@ export const BODY: Record<UnitClass, Body> = {
   pawn: { frame: 192, anchorX: 96, anchorY: 134 },
 };
 
+/** Frame size and ground anchor per class, for the Enemy Pack monsters. */
+export const MONSTER_BODY: Record<UnitClass, Body> = {
+  // Skull: ink rows 57..129 of 192; ground line at 129.
+  warrior: { frame: 192, anchorX: 74, anchorY: 129 },
+  // Slingshot Gnome: ink rows 72..136 of 192.
+  archer: { frame: 192, anchorX: 86, anchorY: 136 },
+  // Spear Goblin: 256px frames; ink rows 50..175 of 256.
+  lancer: { frame: 256, anchorX: 101, anchorY: 175 },
+  // Hex Shaman: ink rows 55..136 of 192.
+  monk: { frame: 192, anchorX: 87, anchorY: 136 },
+  // Gnome: ink rows 57..126 of 192.
+  pawn: { frame: 192, anchorX: 71, anchorY: 126 },
+};
+
 /** Head height above the feet, for pips and floating numbers. */
 export const BODY_HEIGHT: Record<UnitClass, number> = {
   warrior: 89,
@@ -34,6 +48,15 @@ export const BODY_HEIGHT: Record<UnitClass, number> = {
   monk: 69,
   lancer: 74,
   pawn: 71,
+};
+
+/** Per-monster head heights, from the same ink measurements. */
+export const MONSTER_BODY_HEIGHT: Record<UnitClass, number> = {
+  warrior: 72,
+  archer: 64,
+  monk: 81,
+  lancer: 125,
+  pawn: 69,
 };
 
 /**
@@ -72,10 +95,44 @@ const POSES: Record<UnitClass, Record<AnimName, string>> = {
   },
 };
 
+/** Side b's monsters, one Enemy Pack unit per troop class. Frame counts are
+ * whatever the strip divides into at the class's frame width; makeAnims
+ * reads the real count off the loaded texture. */
+const MONSTER_POSES: Record<UnitClass, Record<AnimName, string>> = {
+  warrior: {
+    idle: "Skull/Skull_Idle.png",
+    run: "Skull/Skull_Run.png",
+    attack: "Skull/Skull_Attack.png",
+  },
+  archer: {
+    idle: "Slingshot Gnome/Slingshot Gnome_Idle.png",
+    run: "Slingshot Gnome/Slingshot Gnome_Run.png",
+    attack: "Slingshot Gnome/Slingshot Gnome_Shoot.png",
+  },
+  monk: {
+    idle: "Hex Shaman/Hex Shaman_Idle.png",
+    run: "Hex Shaman/Hex Shaman_Run.png",
+    attack: "Hex Shaman/Hex Shaman_Attack.png",
+  },
+  lancer: {
+    idle: "Spear Goblin/Spear Goblin_Idle.png",
+    run: "Spear Goblin/Spear Goblin_Run.png",
+    attack: "Spear Goblin/Spear Goblin_Attack Fast.png",
+  },
+  pawn: {
+    idle: "Gnome/Gnome_Idle.png",
+    run: "Gnome/Gnome_Run.png",
+    attack: "Gnome/Gnome_Attack.png",
+  },
+};
+
 const SIDE_DIR: Record<Side, string> = { a: "Blue Units", b: "Red Units" };
 
 /** The Monk's heal burst, played on the unit being healed. */
 export const HEAL_EFFECT = { frame: 192, frames: 11 } as const;
+
+/** The shaman's blast, the monster stand-in: 1152x128 is 9 frames of 128. */
+export const EXPLOSION = { frame: 128, frames: 9 } as const;
 
 export function unitKey(side: Side, cls: UnitClass, anim: AnimName): string {
   return `${cls}_${side}_${anim}`;
@@ -90,22 +147,42 @@ export function healKey(side: Side): string {
 }
 
 export function loadUnits(scene: Phaser.Scene): void {
-  for (const side of ["a", "b"] as const) {
-    const dir = `Units/${SIDE_DIR[side]}/`;
-    for (const cls of Object.keys(POSES) as UnitClass[]) {
-      const size = BODY[cls].frame;
-      for (const anim of Object.keys(POSES[cls]) as AnimName[]) {
-        scene.load.spritesheet(unitKey(side, cls, anim), packUrl(dir + POSES[cls][anim]), {
+  for (const cls of Object.keys(POSES) as UnitClass[]) {
+    const size = BODY[cls].frame;
+    for (const anim of Object.keys(POSES[cls]) as AnimName[]) {
+      scene.load.spritesheet(unitKey("a", cls, anim), packUrl(`Units/${SIDE_DIR.a}/` + POSES[cls][anim]), {
+        frameWidth: size,
+        frameHeight: size,
+      });
+    }
+  }
+  scene.load.spritesheet(healKey("a"), packUrl(`Units/${SIDE_DIR.a}/Monk/Heal_Effect.png`), {
+    frameWidth: HEAL_EFFECT.frame,
+    frameHeight: HEAL_EFFECT.frame,
+  });
+
+  for (const cls of Object.keys(MONSTER_POSES) as UnitClass[]) {
+    const size = MONSTER_BODY[cls].frame;
+    for (const anim of Object.keys(MONSTER_POSES[cls]) as AnimName[]) {
+      scene.load.spritesheet(
+        unitKey("b", cls, anim),
+        packUrl(`Enemy Pack/${MONSTER_POSES[cls][anim].replace(/ /g, "%20")}`),
+        {
           frameWidth: size,
           frameHeight: size,
-        });
-      }
+        },
+      );
     }
-    scene.load.spritesheet(healKey(side), packUrl(`${dir}Monk/Heal_Effect.png`), {
-      frameWidth: HEAL_EFFECT.frame,
-      frameHeight: HEAL_EFFECT.frame,
-    });
   }
+  // The shaman's blast stands in for the heal burst on the monster side.
+  scene.load.spritesheet(
+    healKey("b"),
+    packUrl(`Enemy Pack/Hex Shaman/${"Hex Shaman_Explosion.png".replace(/ /g, "%20")}`),
+    {
+      frameWidth: EXPLOSION.frame,
+      frameHeight: EXPLOSION.frame,
+    },
+  );
 }
 
 /** Attacks play once; idle and run loop. Animations outlive a scene
@@ -117,9 +194,13 @@ export function makeAnims(scene: Phaser.Scene): void {
       .getFrameNames()
       .filter((f) => f !== "__BASE").length;
 
+  const bodyOf = (side: Side): Record<UnitClass, Body> => (side === "a" ? BODY : MONSTER_BODY);
+  const posesOf = (side: Side): Record<UnitClass, Record<AnimName, string>> =>
+    side === "a" ? POSES : MONSTER_POSES;
+
   for (const side of ["a", "b"] as const) {
-    for (const cls of Object.keys(POSES) as UnitClass[]) {
-      for (const anim of Object.keys(POSES[cls]) as AnimName[]) {
+    for (const cls of Object.keys(posesOf(side)) as UnitClass[]) {
+      for (const anim of Object.keys(posesOf(side)[cls]) as AnimName[]) {
         const key = unitKey(side, cls, anim);
         if (scene.anims.exists(animKey(side, cls, anim))) continue;
         const frames = frameCount(key);
@@ -133,11 +214,12 @@ export function makeAnims(scene: Phaser.Scene): void {
       }
     }
     if (scene.anims.exists(`${healKey(side)}_anim`)) continue;
+    const burst = side === "a" ? HEAL_EFFECT : EXPLOSION;
     scene.anims.create({
       key: `${healKey(side)}_anim`,
       frames: scene.anims.generateFrameNumbers(healKey(side), {
         start: 0,
-        end: HEAL_EFFECT.frames - 1,
+        end: burst.frames - 1,
       }),
       frameRate: 14,
       repeat: 0,
@@ -154,7 +236,7 @@ export function playPose(
   anim: AnimName,
   mirrored = false,
 ): void {
-  const body = BODY[cls];
+  const body = (side === "a" ? BODY : MONSTER_BODY)[cls];
   sprite.setOrigin(body.anchorX / body.frame, body.anchorY / body.frame);
   // The art faces right in both colors; side b holds the right half. On a
   // mirrored board - seat B's own view of the duel - it holds the left half
