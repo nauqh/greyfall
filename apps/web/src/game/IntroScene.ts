@@ -23,7 +23,6 @@ import {
   addDecor,
   loadTerrain,
   prepareTerrain,
-  scatterDecor,
   type Rect,
   type Structure,
 } from "./terrain";
@@ -100,14 +99,8 @@ export class IntroScene extends Phaser.Scene {
     buildWater(this);
     const island = buildIsland(this, ISLAND);
     buildFoam(this, island);
-    // scatterDecor dresses the margins either side of a board it must keep
-    // clear. There is no board here, so the village stands in for one and the
-    // props gather in the gaps at either end of the island.
-    // The keep owns the whole left margin now, so the clearing starts at the
-    // island's edge: no prop lands in the top-left corner, only out to the
-    // right of the village.
-    const clearing: Rect = { x0: island.x0, y0: island.y0, x1: 900, y1: island.y1 };
-    scatterDecor(this, island, clearing, { w: GAME_W, h: GAME_H }, "intro");
+    // No scatterDecor: its random margin props kept dropping trees where the
+    // village layout did not want them. Every prop is hand-placed below.
     for (const s of VILLAGE) addBuilding(this, s);
     for (const extra of CAST) this.addExtra(extra);
     this.decorate();

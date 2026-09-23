@@ -124,14 +124,15 @@ export default function Page() {
               panel art. Percent position and cqw sizes track the canvas. */}
           <div className="menu">
             <h1 className="menuTitle">GREYFALL</h1>
-            <button className="menuBtn" onClick={() => setMode("strategic")}>
-              Map
-            </button>
             <button className="menuBtn" onClick={() => setMode("solo")}>
-              Begin
+              Solo
             </button>
             <button className="menuBtn red" onClick={() => setMode("duel")}>
               Duel
+            </button>
+            {/* In development: dimmed so it reads as not ready. */}
+            <button className="menuBtn dev" onClick={() => setMode("strategic")}>
+              Map
             </button>
           </div>
         </GameCanvas>

@@ -171,6 +171,11 @@ textarea {
 	border-image-source: url("/tiny-swords/ui/redButton.png");
 }
 
+/* In development: reads as not ready. */
+.menuBtn.dev {
+	opacity: 0.55;
+}
+
 .menuBtn:hover {
 	transform: translateY(2px);
 }
