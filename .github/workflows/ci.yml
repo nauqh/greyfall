@@ -32,3 +32,6 @@ jobs:
       # and runs `pnpm assets --require`, which fails loudly rather than
       # shipping a game with no graphics.
       - run: pnpm --filter @greyfall/web build
+        # Placeholder, not a real URL: the build imports db.ts but never queries.
+        env:
+          DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
