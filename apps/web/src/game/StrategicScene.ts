@@ -11,7 +11,8 @@ import type { UnitClass } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
 import { packUrl } from "./art";
-import { DPR, GAME_H, GAME_W, fitCamera, startGame } from "./boot";
+import { DPR, fitCamera, startGame } from "./boot";
+import { HUD_BAR_H, HUD_KEY, StrategicHud } from "./StrategicHud";
 import { loadUnits, makeAnims, playPose, unitKey } from "./sprites";
 import {
   DEPTH,
@@ -26,7 +27,6 @@ import {
   type Rect,
   type Structure,
 } from "./terrain";
-import { button, label, loadPanels, ribbon } from "./ui";
 
 /** `~` water, `.` ground, `#` plateau. `<` / `>` are slopes: they sit in a
  *  plateau's bottom row at its west / east end and run down into the row
@@ -95,6 +95,9 @@ function edge(before: boolean, after: boolean): number {
  *  px/s. Screen-edge scrolling, exactly as Warcraft did it. */
 const EDGE = 28;
 const PAN_PX_S = 840;
+/** Camera zoom steps over DPR. The first is the native view and the
+ *  closest in; out stops about where the whole map fits the page. */
+const ZOOMS = [1, 0.8, 0.6] as const;
 
 /** Placed in cells, so a building's base lands on the row it names. */
 function cell(side: Structure["side"], name: Structure["name"], col: number, row: number, scale?: number): Structure {
@@ -167,7 +170,6 @@ export class StrategicScene extends Phaser.Scene {
     loadTerrain(this);
     loadUnits(this);
     loadBuildings(this, HALLS);
-    loadPanels(this, ["paper", "blueButton", "redButton"]);
     this.load.image("goldMine", packUrl("Terrain/Resources/Gold/Gold Stones/Gold Stone 6.png"));
     this.load.spritesheet("sheep", packUrl("Terrain/Resources/Meat/Sheep/Sheep_Idle.png"), {
       frameWidth: 128,
@@ -189,7 +191,15 @@ export class StrategicScene extends Phaser.Scene {
     driftClouds(this, { w: WORLD_W, h: WORLD_H }, "strategic");
     for (const hall of HALLS) addBuilding(this, hall);
     this.buildGarrison();
-    this.buildHud();
+    this.scene.add(HUD_KEY, StrategicHud, true, {
+      map: MAP,
+      marks: HALLS.map((h) => ({ col: h.x / CELL, row: h.y / CELL, side: h.side })),
+      onMenu: () => this.onMenu(),
+      onZoom: (dir: 1 | -1) => this.zoomStep(dir),
+    });
+    this.input.on("wheel", (_p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
+      if (dy !== 0) this.zoomStep(dy > 0 ? 1 : -1);
+    });
 
     // Touch drag pans; a tap (down-up with little movement) places the flag.
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
@@ -197,9 +207,10 @@ export class StrategicScene extends Phaser.Scene {
     });
     this.input.on("pointermove", (p: Phaser.Input.Pointer) => {
       if (!this.dragStart || !p.isDown) return;
-      // Canvas px to world px: the world renders at zoom DPR.
-      const dx = (p.x - this.dragStart.x) / DPR;
-      const dy = (p.y - this.dragStart.y) / DPR;
+      // Canvas px to world px.
+      const zoom = this.cameras.main.zoom;
+      const dx = (p.x - this.dragStart.x) / zoom;
+      const dy = (p.y - this.dragStart.y) / zoom;
       if (Math.abs(dx) > 6 || Math.abs(dy) > 6) this.dragStart.moved = true;
       this.setScroll(this.dragStart.camX - dx, this.dragStart.camY - dy);
     });
@@ -216,35 +227,44 @@ export class StrategicScene extends Phaser.Scene {
     });
   }
 
-  /** Scroll with the world clamps shared by edge-pan and drag. */
+  /** One step in or out. Zoom scales around the view's centre, so the
+   *  spot being looked at stays put; update() re-clamps as it animates. */
+  private zoomStep(dir: 1 | -1): void {
+    const next = Math.max(0, Math.min(ZOOMS.length - 1, this.zoomLevel + dir));
+    if (next === this.zoomLevel) return;
+    this.zoomLevel = next;
+    this.cameras.main.zoomTo(ZOOMS[next]! * DPR, 180, "Sine.easeOut", true);
+  }
+  private zoomLevel = 0;
+
+  /** Scroll with the world clamps shared by edge-pan, drag and zoom. A view
+   *  wider than the world centres on it. */
   private setScroll(x: number, y: number): void {
     const cam = this.cameras.main;
-    const viewW = cam.width / DPR;
-    const viewH = cam.height / DPR;
-    const shiftX = cam.width / 2 - viewW / 2;
-    const shiftY = cam.height / 2 - viewH / 2;
-    cam.scrollX = Math.max(-shiftX, Math.min(WORLD_W - viewW - shiftX, x));
-    cam.scrollY = Math.max(-shiftY, Math.min(WORLD_H - viewH - shiftY, y));
+    const viewW = cam.width / cam.zoom;
+    const viewH = cam.height / cam.zoom;
+    // The view's left edge sits this far past scroll: zoom works from the centre.
+    const shiftX = (cam.width - viewW) / 2;
+    const shiftY = (cam.height - viewH) / 2;
+    // The HUD bar covers the bottom of the view; the map scrolls up past it.
+    const under = (HUD_BAR_H * DPR) / cam.zoom;
+    const fit = (v: number, max: number): number => (max < 0 ? max / 2 : Math.max(0, Math.min(max, v)));
+    cam.scrollX = fit(x + shiftX, WORLD_W - viewW) - shiftX;
+    cam.scrollY = fit(y + shiftY, WORLD_H + under - viewH) - shiftY;
   }
 
-  /** Screen-edge pan, Warcraft-style, both axes now that the world runs
-   *  1200px tall against the 720px page. */
+  /** Screen-edge pan, Warcraft-style, at the same on-screen speed at any
+   *  zoom. The clamp runs every frame so a zoom tween stays in bounds. */
   update(_time: number, delta: number): void {
     this.updateWanderers(delta);
     const p = this.input.activePointer;
-    // Pointer coordinates are canvas pixels; the world renders at zoom DPR,
-    // so the edge test converts back to world units first.
-    const vx = p.x / DPR;
-    const vy = p.y / DPR;
-    const dx = vx < EDGE ? -1 : vx > GAME_W - EDGE ? 1 : 0;
-    const dy = vy < EDGE ? -1 : vy > GAME_H - EDGE ? 1 : 0;
     const cam = this.cameras.main;
-    if (dx !== 0 || dy !== 0) {
-      this.setScroll(
-        cam.scrollX + (dx * PAN_PX_S * delta) / 1000,
-        cam.scrollY + (dy * PAN_PX_S * delta) / 1000,
-      );
-    }
+    // Pointer coordinates are canvas pixels, DPR per HUD unit.
+    const e = EDGE * DPR;
+    const dx = p.x < e ? -1 : p.x > cam.width - e ? 1 : 0;
+    const dy = p.y < e ? -1 : p.y > cam.height - e ? 1 : 0;
+    const step = (PAN_PX_S * DPR * delta) / 1000 / cam.zoom;
+    this.setScroll(cam.scrollX + dx * step, cam.scrollY + dy * step);
   }
 
   private moveFlag(col: number, row: number): void {
@@ -407,84 +427,6 @@ export class StrategicScene extends Phaser.Scene {
         }
       }
     }
-  }
-
-  /** The zoom column, kept for re-layout on resize and zoom. */
-  private zoomBtns: Phaser.GameObjects.Container[] = [];
-
-  /** Title ribbon while there is nothing else on the map. */
-  private buildHud(): void {
-    // The camera pans, so the plates ride the screen, not the world.
-    ribbon(this, GAME_W / 2, 52, 380).setDepth(DEPTH.hud).setScrollFactor(0);
-    label(this, GAME_W / 2, 48, "THE GREYFALL COAST", { fontSize: "20px" })
-      .setDepth(DEPTH.hud + 2)
-      .setScrollFactor(0);
-    button(this, 90, GAME_H - 84, 140, 88, "Back", "red", () => this.onMenu())
-      .setScale(0.8)
-      .setDepth(DEPTH.hud + 2)
-      .setScrollFactor(0);
-    this.buildZoom();
-    this.layoutHud();
-    this.scale.on(Phaser.Scale.Events.RESIZE, this.layoutHud, this);
-    this.events.once(Phaser.Scenes.Events.DESTROY, () => {
-      this.scale.off(Phaser.Scale.Events.RESIZE, this.layoutHud, this);
-    });
-  }
-
-  /** Zoom controls, pinned to the viewport's right edge so any window width
-   *  keeps them on screen. Zoom 1 is the maximum: the DPR-zoomed native
-   *  view the scene ships at. Out goes in steps to half. */
-  private buildZoom(): void {
-    const steps = [1, 0.75, 0.5];
-    let level = 0;
-    const cam = this.cameras.main;
-    const apply = (): void => {
-      const z = steps[level]! * DPR;
-      cam.setZoom(z);
-      // The clamp inside setScroll is view-size dependent, so just recenter
-      // on the map: the boring choice that never drifts off the island.
-      this.centerOnMap();
-      this.layoutHud();
-    };
-    const zoomIn = label(this, 0, 0, "+", { fontSize: "26px" });
-    const zoomOut = label(this, 0, 0, "\u2212", { fontSize: "26px" });
-    const bIn = button(this, 0, 0, 88, 88, "", "blue", () => {
-      if (level > 0) {
-        level--;
-        apply();
-      }
-    });
-    bIn.add(zoomIn);
-    zoomIn.setDepth(1);
-    const bOut = button(this, 0, 0, 88, 88, "", "blue", () => {
-      if (level < steps.length - 1) {
-        level++;
-        apply();
-      }
-    });
-    bOut.add(zoomOut);
-    zoomOut.setDepth(1);
-    for (const b of [bIn, bOut]) {
-      b.setDepth(DEPTH.hud + 2).setScrollFactor(0).setScale(0.7);
-      this.zoomBtns.push(b);
-    }
-  }
-
-  /** Pin the zoom column to the viewport's right edge in world units:
-   *  scroll-free HUD lives in camera space, whose width is canvas / zoom. */
-  private layoutHud(): void {
-    const cam = this.cameras.main;
-    const viewW = cam.width / cam.zoom;
-    const [bIn, bOut] = this.zoomBtns;
-    bIn?.setPosition(viewW - 70, 130).setData("baseY", 130);
-    bOut?.setPosition(viewW - 70, 236).setData("baseY", 236);
-  }
-
-  /** Keep whatever the camera looks at stable through a zoom change:
-   *  recentering on the map's midpoint is the boring choice that never
-   *  drifts off the island. */
-  private centerOnMap(): void {
-    this.cameras.main.centerOn(STRAT.x0 + (STRAT_COLS * CELL) / 2, STRAT.y0 + (STRAT_ROWS * CELL) / 2);
   }
 }
 
