@@ -180,10 +180,11 @@ textarea {
 .loaderText {
 	position: relative;
 	z-index: 51;
-	font-size: 22px;
-	font-weight: 600;
+	font-size: 30px;
+	font-weight: 700;
 	letter-spacing: 0.08em;
-	color: #5b6577;
+	/* The scenes' text-outline ink: #5b6577 at 22px was lost on the cream sky. */
+	color: #1c2634;
 	/* Held back a moment, so a quick load never flashes the word. */
 	animation:
 		loaderIn 300ms ease-out 400ms both,
@@ -202,7 +203,7 @@ textarea {
 		opacity: 1;
 	}
 	50% {
-		opacity: 0.4;
+		opacity: 0.65;
 	}
 }
 
@@ -477,20 +478,28 @@ textarea {
 .statTip {
 	position: fixed;
 	transform: translate(-50%, calc(-100% - 12px));
-	padding: 5px 10px;
+	width: max-content;
+	max-width: 220px;
+	padding: 8px 12px;
 	border-radius: 8px;
 	background: rgba(21, 28, 40, 0.95);
-	color: #fdfaf0;
-	font-size: 12px;
-	font-weight: 600;
-	letter-spacing: 0.02em;
-	white-space: nowrap;
+	color: #d9dde6;
+	font-size: 13px;
+	font-weight: 400;
+	line-height: 1.4;
+	letter-spacing: 0.01em;
 	pointer-events: none;
 	z-index: 10;
 	box-shadow:
 		0 6px 18px rgba(0, 0, 0, 0.4),
 		inset 0 1px 0 rgba(253, 250, 240, 0.14);
 	animation: statTipIn 140ms ease-out;
+}
+
+.statTipTitle {
+	margin-bottom: 2px;
+	color: #f4cf6b;
+	font-weight: 700;
 }
 
 /* The caret glues the pill to the icon it describes. */

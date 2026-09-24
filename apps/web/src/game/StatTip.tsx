@@ -23,9 +23,19 @@ export function useStatTip(): { tip: TipState | null; onTip: (text: string | nul
 
 export function StatTip({ tip }: { tip: TipState | null }) {
   if (!tip) return null;
+  // "Name: rule" reads as a title over a wrapped line, not one long pill.
+  const cut = tip.text.indexOf(": ");
+  const body = tip.text.slice(cut + 2);
   return (
     <div className="statTip" style={{ left: tip.x, top: tip.y }}>
-      {tip.text}
+      {cut === -1 ? (
+        tip.text
+      ) : (
+        <>
+          <div className="statTipTitle">{tip.text.slice(0, cut)}</div>
+          {body.charAt(0).toUpperCase() + body.slice(1)}
+        </>
+      )}
     </div>
   );
 }

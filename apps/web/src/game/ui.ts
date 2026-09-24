@@ -179,6 +179,17 @@ export const FONT: Phaser.Types.GameObjects.Text.TextStyle = {
   fontStyle: "600",
 };
 
+/**
+ * Glyphs are baked at this many texels per world unit. The camera zooms the
+ * 1200-wide world to fit the screen, so a fixed 2 was upscaled (and blurred)
+ * on any display past 2400 device pixels across; this covers the largest
+ * zoom the screen can reach.
+ */
+export const TEXT_RES = Math.min(
+  4,
+  Math.max(2, Math.ceil((window.screen.width * Math.min(2, window.devicePixelRatio || 1)) / 1200)),
+);
+
 export function label(
   scene: Phaser.Scene,
   x: number,
@@ -189,7 +200,7 @@ export function label(
   const t = scene.add
     .text(x, y, text, { ...FONT, ...over })
     .setOrigin(0.5)
-    .setResolution(2);
+    .setResolution(TEXT_RES);
   // pixelArt forces NEAREST on every texture, which shimmers text at the
   // canvas's fractional FIT scale; glyphs want linear.
   t.texture.setFilter(Phaser.Textures.FilterMode.LINEAR);

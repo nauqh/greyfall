@@ -39,6 +39,7 @@ import {
   loadUnits,
   makeAnims,
   playPose,
+  reviveKey,
   unitKey,
 } from "./sprites";
 import {
@@ -54,7 +55,7 @@ import {
   scatterDecor,
   type Rect,
 } from "./terrain";
-import { HAND, PackBar, button, label, loadPanels, panel, ribbon } from "./ui";
+import { HAND, PackBar, TEXT_RES, button, label, loadPanels, panel, ribbon } from "./ui";
 
 const COLS = BALANCE.board.battleCols;
 const ROWS = BALANCE.board.battleRows;
@@ -128,6 +129,15 @@ const MONSTER_NAME: Record<UnitClass, string> = {
 };
 
 /** The monster's own portrait file, 256x256 like the human ones. */
+/** Ink bounds [x0, y0, x1, y1] of each 256px avatar, measured off the art:
+ *  the padding differs per face, so one scale drew them at different sizes. */
+const PORTRAIT_INK: Record<"a" | "m", Partial<Record<UnitClass, [number, number, number, number]>>> = {
+  a: { warrior: [22, 31, 219, 213], lancer: [52, 58, 201, 187], archer: [64, 29, 204, 189], monk: [57, 44, 201, 199] },
+  m: { warrior: [39, 59, 201, 202], lancer: [38, 56, 211, 199], archer: [42, 38, 220, 201], monk: [39, 55, 204, 213] },
+};
+/** Every card portrait's ink fits this square. */
+const PORTRAIT_BOX = 62;
+
 const MONSTER_PORTRAIT: Record<UnitClass, string> = {
   warrior: "Skull/Skull_Avatar.png",
   lancer: "Spear Goblin/Spear Goblin_Avatar.png",
@@ -149,6 +159,36 @@ const BLURB: Record<UnitClass, string> = {
   monk: "Mends what still lives.",
 };
 
+const AB = BALANCE.abilities;
+const ABILITY_INK = "#2f5d8a";
+/** Draft card grid: content edges either side of centre, and the text column beside the portrait. */
+const CARD_EDGE = 84;
+const COLUMN = -4;
+const pct = (f: number): string => `${Math.round(f * 100)}%`;
+/** Each class's ability line on its card, and the tooltip that explains it. */
+const ABILITY: Partial<Record<UnitClass, { name: string; tip: string; on: boolean }>> = {
+  warrior: {
+    name: "Guard",
+    tip: `Guard: once a battle, below ${pct(AB.guard.hpBelow)} health, takes ${pct(1 - AB.guard.damageTaken)} less damage for ${AB.guard.seconds}s`,
+    on: AB.guard.enabled,
+  },
+  lancer: {
+    name: "Taunt",
+    tip: `Taunt: enemies within ${AB.taunt.radius} tiles must attack it`,
+    on: AB.taunt.enabled,
+  },
+  archer: {
+    name: "Piercing shot",
+    tip: `Piercing shot: one arrow in ${AB.pierce.every} also hits the enemy behind for ${pct(AB.pierce.damage)} damage`,
+    on: AB.pierce.enabled,
+  },
+  monk: {
+    name: "Revive",
+    tip: `Revive: once a battle, raises the first fallen ally at ${pct(AB.revive.hp)} health`,
+    on: AB.revive.enabled,
+  },
+};
+
 /** The Monk deals no damage, so his card shows what he does instead. */
 const STAT_TIP = {
   hp: "Health: how much damage it can take",
@@ -168,6 +208,8 @@ interface DraftCard {
   ink: Phaser.GameObjects.Text[];
   cost: Phaser.GameObjects.Text;
   portrait: Phaser.GameObjects.Image;
+  /** Accent ink of its own, so it is not one of `ink`. */
+  ability: Phaser.GameObjects.Text | null;
 }
 
 interface UnitView {
@@ -579,8 +621,8 @@ export class BattleScene extends Phaser.Scene {
   }
 
   /**
-   * One roster card, 236x188: portrait on the left, the price and the name
-   * beside it, the three numbers along the foot.
+   * One roster card, 236x188: name and price across the top, the portrait
+   * with the blurb and ability beside it, the three numbers along the foot.
    *
    * Laid out across rather than stacked because the paper nine-slice keeps its
    * 64px corners at any size. A card this short is nearly all frame top and
@@ -595,19 +637,42 @@ export class BattleScene extends Phaser.Scene {
     const paper = panel(this, "paper", 0, 0, 236, 188);
     const special = panel(this, "specialPaper", 0, 0, 236, 188).setVisible(false);
 
-    const portrait = this.add.image(-66, -12, `${monsters ? "m" : ""}avatar_${cls}`).setScale(0.32);
-    const coin = this.add.image(26, -58, iconKey(ICON.gold)).setScale(0.46);
-    const cost = label(this, 46, -58, `${stats.cost}`, {
-      fontSize: "22px",
-      color: "#7a4f14",
-      ...ink,
-    }).setOrigin(0, 0.5);
-    const name = label(this, 34, -12, this.cardName(cls), {
+    // One left edge (name, portrait ink, first stat icon) and one right edge
+    // (the price) at CARD_EDGE; the text column starts at COLUMN.
+    const name = label(this, -CARD_EDGE, -50, this.cardName(cls), {
       fontSize: monsters && cls === "lancer" ? "17px" : "19px",
       color: "#4a3a28",
       ...ink,
-    });
-    const blurb = label(this, 34, 12, BLURB[cls], { fontSize: "13px", color: "#6b5740", ...ink });
+    }).setOrigin(0, 0.5);
+    const cost = label(this, CARD_EDGE, -50, `${stats.cost}`, {
+      fontSize: "22px",
+      color: "#7a4f14",
+      ...ink,
+    }).setOrigin(1, 0.5);
+    const coin = this.add.image(CARD_EDGE - cost.width - 14, -50, iconKey(ICON.gold)).setScale(0.42);
+
+    const [x0, y0, x1, y1] = PORTRAIT_INK[monsters ? "m" : "a"][cls] ?? [0, 0, 256, 256];
+    const portrait = this.add
+      .image(-CARD_EDGE + PORTRAIT_BOX / 2, 2, `${monsters ? "m" : ""}avatar_${cls}`)
+      .setOrigin((x0 + x1) / 2 / 256, (y0 + y1) / 2 / 256)
+      .setScale(PORTRAIT_BOX / Math.max(x1 - x0, y1 - y0));
+    // Bottom-anchored, so a blurb that wraps grows up and the ability line stays put.
+    const blurb = label(this, COLUMN, -2, BLURB[cls], {
+      fontSize: "13px",
+      color: "#6b5740",
+      wordWrap: { width: CARD_EDGE + 12 - COLUMN },
+      ...ink,
+    }).setOrigin(0, 1);
+
+    // The ability under the blurb: a gem hung left of the column, the full rule on hover.
+    const ab = ABILITY[cls];
+    const abilityParts: Phaser.GameObjects.GameObject[] = [];
+    let ability: Phaser.GameObjects.Text | null = null;
+    if (ab?.on) {
+      const gem = this.add.rectangle(COLUMN - 8, 14, 7, 7, 0xe0b64f).setStrokeStyle(1.5, 0x7a4f14).setAngle(45);
+      ability = label(this, COLUMN, 14, ab.name, { fontSize: "14px", color: ABILITY_INK, ...ink }).setOrigin(0, 0.5);
+      abilityParts.push(gem, ability);
+    }
 
     // Three numbers, each behind the pack icon that says what it is. The Monk
     // deals no damage, so his middle pair is what he does instead. Each pair
@@ -629,14 +694,18 @@ export class BattleScene extends Phaser.Scene {
         hotspots.push({ go, tip });
       }
     };
-    pair(-60, ICON.hp, STAT_TIP.hp, stats.hp);
+    pair(-CARD_EDGE + 23, ICON.hp, STAT_TIP.hp, stats.hp);
     pair(
-      4,
+      0,
       stats.heal > 0 ? ICON.heal : ICON.damage,
       stats.heal > 0 ? STAT_TIP.heal : STAT_TIP.damage,
       stats.heal > 0 ? stats.heal : stats.damage,
     );
-    pair(68, ICON.range, STAT_TIP.range, stats.range);
+    pair(CARD_EDGE - 23, ICON.range, STAT_TIP.range, stats.range);
+    if (ability && ab) {
+      ability.setInteractive({ cursor: HAND });
+      hotspots.push({ go: ability, tip: ab.tip });
+    }
 
     const box = this.add.container(cx, cy, [
       paper,
@@ -646,10 +715,11 @@ export class BattleScene extends Phaser.Scene {
       cost,
       name,
       blurb,
+      ...abilityParts,
       ...pairs,
     ]);
     box.setSize(236, 188);
-    const card: DraftCard = { box, cy, paper, special, name, ink: texts, cost, portrait };
+    const card: DraftCard = { box, cy, paper, special, name, ink: texts, cost, portrait, ability };
     box
       .setInteractive({ cursor: HAND })
       .on("pointerup", () => this.pick(cls))
@@ -1039,6 +1109,7 @@ export class BattleScene extends Phaser.Scene {
       card.special.setVisible(picked);
       card.name.setColor(picked ? "#f5f2e4" : "#4a3a28");
       for (const t of card.ink) if (t !== card.name) t.setColor(picked ? "#a8b4c4" : "#6b5740");
+      card.ability?.setColor(picked ? "#e8c06a" : ABILITY_INK);
       // Out of reach reads the WC3 way: a greyed face and a red price,
       // still legible, rather than the whole card fading out.
       const afford = BALANCE.units[cls].cost <= gold;
@@ -1375,7 +1446,85 @@ export class BattleScene extends Phaser.Scene {
       case "death":
         this.onDeath(ev);
         break;
+      case "ability":
+        this.onAbility(ev);
+        break;
+      case "revive":
+        this.onRevive(ev);
+        break;
     }
+  }
+
+  private onAbility(ev: Extract<BattleEvent, { type: "ability" }>): void {
+    const view = this.view(ev.unit);
+    if (!view.alive) return;
+    const { side, class: cls } = view.snap;
+
+    if (ev.ability === "pierce") {
+      // The same arrow flies on: a second one released with the first reads as it.
+      const target = this.view(ev.target!);
+      const release = (RELEASE_FRAME.archer / ATTACK_FRAME_RATE) * 1000;
+      this.time.delayedCall(release / this.speed, () => {
+        if (view.alive && target.alive) this.flyProjectile(view, target);
+      });
+      this.floatText(view, "PIERCE", "#ffe08a");
+      return;
+    }
+
+    if (this.anims.exists(animKey(side, cls, "guard"))) playPose(view.sprite, side, cls, "guard");
+    if (ev.ability === "guard") {
+      this.floatText(view, "GUARD", "#9fd4ff");
+      return;
+    }
+
+    // Taunt: a ring out to the reach that pulls enemies in.
+    const reach = (BALANCE.abilities.taunt.radius + 0.5) * TILE;
+    const ring = this.add
+      .graphics({ x: view.sprite.x, y: view.sprite.y - SPRITE_NUDGE })
+      .setDepth(DEPTH.unit + view.sprite.y - 1);
+    ring.lineStyle(4, 0xe8c547, 0.9).strokeCircle(0, 0, reach);
+    ring.setScale(0.2);
+    this.tweens.add({ targets: ring, scale: 1, duration: 500 / this.speed, ease: "Sine.easeOut" });
+    // Fading while it grew left the ring half-seen; it lands, then fades.
+    this.tweens.add({
+      targets: ring,
+      alpha: 0,
+      delay: 500 / this.speed,
+      duration: 500 / this.speed,
+      onComplete: () => ring.destroy(),
+    });
+    this.floatText(view, "TAUNT", "#ffd36b");
+  }
+
+  private onRevive(ev: Extract<BattleEvent, { type: "revive" }>): void {
+    const caster = this.view(ev.unit);
+    const view = this.view(ev.target);
+    if (caster.alive) {
+      const dx = view.sprite.x - caster.sprite.x;
+      if (Math.abs(dx) > 0.5) caster.sprite.setFlipX(dx < 0);
+      playPose(caster.sprite, caster.snap.side, caster.snap.class, "attack");
+    }
+
+    // Undo the death beat: the body sank, faded and hid.
+    view.alive = true;
+    view.hp = ev.hpAfter;
+    view.shownHp = ev.hpAfter;
+    this.tweens.killTweensOf([view.sprite, view.shadow]);
+    view.sprite.setVisible(true).setAlpha(1).setScale(1).clearTint();
+    view.shadow.setVisible(true).setAlpha(0.35);
+    // Death paused the anim; replaying the same idle key would stay paused.
+    view.sprite.anims.stop();
+    playPose(view.sprite, view.snap.side, view.snap.class, "idle", this.mirrored);
+    this.drawPip(view);
+    this.refreshHud();
+
+    const key = reviveKey(view.snap.side);
+    const burst = this.add
+      .sprite(view.sprite.x, view.sprite.y - this.headHeight(view.snap.class, view.snap.side) / 2, key)
+      .setDepth(DEPTH.fx);
+    burst.play(`${key}_anim`);
+    burst.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => burst.destroy());
+    this.floatText(view, "REVIVED", "#a9e88a");
   }
 
   private onMove(ev: Extract<BattleEvent, { type: "move" }>): void {
@@ -1502,7 +1651,7 @@ export class BattleScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(DEPTH.fx + 1)
-      .setResolution(2);
+      .setResolution(TEXT_RES);
     // Pop, rise, and only fade on the way out, WC3 floating-text style: a
     // number that starts fading the instant it appears is half-read.
     tag.setScale(1.35);

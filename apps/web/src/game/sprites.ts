@@ -14,7 +14,7 @@ export const FRAME_RATE = 10;
 export const ATTACK_FRAME_RATE = 12;
 
 export type Side = "a" | "b";
-export type AnimName = "idle" | "run" | "attack" | "attack2";
+export type AnimName = "idle" | "run" | "attack" | "attack2" | "guard";
 
 interface Body {
   frame: number;
@@ -85,6 +85,7 @@ const POSES: Record<UnitClass, Partial<Record<AnimName, string>>> = {
     // The kit's second slash; the warrior alternates so a beat of battle
     // reads as the two blows the art draws.
     attack2: "Warrior/Warrior_Attack2.png",
+    guard: "Warrior/Warrior_Guard.png",
   },
   archer: {
     idle: "Archer/Archer_Idle.png",
@@ -100,6 +101,8 @@ const POSES: Record<UnitClass, Partial<Record<AnimName, string>>> = {
     idle: "Lancer/Lancer_Idle.png",
     run: "Lancer/Lancer_Run.png",
     attack: "Lancer/Lancer_Right_Attack.png",
+    // Played on taunt. The Spear Goblin has no guard pose, so its taunt is the ring alone.
+    guard: "Lancer/Lancer_Right_Defence.png",
   },
   pawn: {
     idle: "Pawn/Pawn_Idle.png",
@@ -116,6 +119,7 @@ const MONSTER_POSES: Record<UnitClass, Partial<Record<AnimName, string>>> = {
     idle: "Skull/Skull_Idle.png",
     run: "Skull/Skull_Run.png",
     attack: "Skull/Skull_Attack.png",
+    guard: "Extra/Skull Guard/Skull_Guard.png",
   },
   archer: {
     idle: "Gnoll/Gnoll_Idle.png",
@@ -147,6 +151,9 @@ export const HEAL_EFFECT = { frame: 192, frames: 11 } as const;
 /** The shaman's blast, the monster stand-in: 1152x128 is 9 frames of 128. */
 export const EXPLOSION = { frame: 128, frames: 9 } as const;
 
+/** The monster Monk's revive spell: 2112x192 is 11 frames of 192. */
+export const REVIVE_SPELL = { frame: 192, frames: 11 } as const;
+
 export function unitKey(side: Side, cls: UnitClass, anim: AnimName): string {
   return `${cls}_${side}_${anim}`;
 }
@@ -157,6 +164,11 @@ export function animKey(side: Side, cls: UnitClass, anim: AnimName): string {
 
 export function healKey(side: Side): string {
   return `heal_${side}`;
+}
+
+/** The Monk's revive burst: the heal burst for knights, the shaman's own spell for monsters. */
+export function reviveKey(side: Side): string {
+  return side === "a" ? healKey("a") : "revive_b";
 }
 
 export function loadUnits(scene: Phaser.Scene): void {
@@ -196,6 +208,13 @@ export function loadUnits(scene: Phaser.Scene): void {
       frameHeight: EXPLOSION.frame,
     },
   );
+  scene.load.spritesheet(
+    reviveKey("b"),
+    packUrl(
+      `Enemy Pack/Extra/${"Hex Shaman Transformation Spell/Hex Shaman_Transformation Spell.png".replace(/ /g, "%20")}`,
+    ),
+    { frameWidth: REVIVE_SPELL.frame, frameHeight: REVIVE_SPELL.frame },
+  );
 }
 
 /** Attacks play once; idle and run loop. Animations outlive a scene
@@ -224,9 +243,21 @@ export function makeAnims(scene: Phaser.Scene): void {
           // Attacks run faster than the loop poses: at 10fps a 7-frame
           // thrust spends its visible frames while the eye is elsewhere.
           frameRate: anim.startsWith("attack") ? ATTACK_FRAME_RATE : FRAME_RATE,
-          repeat: anim.startsWith("attack") ? 0 : -1,
+          repeat: anim === "idle" || anim === "run" ? -1 : 0,
         });
       }
+    }
+    if (side === "b" && !scene.anims.exists(`${reviveKey("b")}_anim`)) {
+      scene.anims.create({
+        key: `${reviveKey("b")}_anim`,
+        frames: scene.anims.generateFrameNumbers(reviveKey("b"), {
+          start: 0,
+          end: REVIVE_SPELL.frames - 1,
+        }),
+        frameRate: 14,
+        repeat: 0,
+        hideOnComplete: true,
+      });
     }
     if (scene.anims.exists(`${healKey(side)}_anim`)) continue;
     const burst = side === "a" ? HEAL_EFFECT : EXPLOSION;
