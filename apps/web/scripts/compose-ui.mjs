@@ -109,8 +109,10 @@ made.push(write("ribbon", ribbon()));
 made.push(write("bannerSlots", read("UI Elements/UI Elements/Banners/Banner_Slots.png")));
 
 // One icon per file already, but copied here so the CSS has one directory.
+// ICON_FILES names the pack file directly; the numbered ones live in the
+// Icons sheet.
 for (const [key, n] of Object.entries(art.ICON)) {
-  const src = read(`${art.ICONS.file}${String(n).padStart(2, "0")}.png`);
+  const src = read(art.ICON_FILES[n] ?? `${art.ICONS.file}${n}.png`);
   made.push(write(`icon_${key}`, src));
 }
 

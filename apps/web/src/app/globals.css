@@ -150,6 +150,7 @@ textarea {
 	height: 104px;
 	padding: 0;
 	text-transform: uppercase;
+	text-decoration: none;
 	color: #fdfaf0;
 	font: inherit;
 	font-weight: 600;
@@ -429,28 +430,43 @@ textarea {
    so hovering it cannot hide itself. */
 .statTip {
 	position: fixed;
-	transform: translate(-50%, calc(-100% - 10px));
+	transform: translate(-50%, calc(-100% - 12px));
 	padding: 5px 10px;
-	border-radius: 6px;
-	background: rgba(21, 28, 40, 0.94);
-	border: 1px solid rgba(253, 250, 240, 0.18);
+	border-radius: 8px;
+	background: rgba(21, 28, 40, 0.95);
 	color: #fdfaf0;
-	font-size: 13px;
+	font-size: 12px;
 	font-weight: 600;
+	letter-spacing: 0.02em;
 	white-space: nowrap;
 	pointer-events: none;
 	z-index: 10;
-	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-	animation: statTipIn 120ms ease-out;
+	box-shadow:
+		0 6px 18px rgba(0, 0, 0, 0.4),
+		inset 0 1px 0 rgba(253, 250, 240, 0.14);
+	animation: statTipIn 140ms ease-out;
+}
+
+/* The caret glues the pill to the icon it describes. */
+.statTip::after {
+	content: "";
+	position: absolute;
+	left: 50%;
+	bottom: -4px;
+	width: 9px;
+	height: 9px;
+	background: rgba(21, 28, 40, 0.95);
+	transform: translateX(-50%) rotate(45deg);
+	border-radius: 2px;
 }
 
 @keyframes statTipIn {
 	from {
 		opacity: 0;
-		transform: translate(-50%, calc(-100% - 6px));
+		transform: translate(-50%, calc(-100% - 8px));
 	}
 	to {
 		opacity: 1;
-		transform: translate(-50%, calc(-100% - 10px));
+		transform: translate(-50%, calc(-100% - 12px));
 	}
 }

@@ -17,9 +17,18 @@ const IDLE_POLL_MS = 5000;
 /** A placement is a click, and a click is not worth a round trip each. */
 const AUTOSAVE_MS = 250;
 
-export function Room({ initial, onLeave }: { initial: RoomView; onLeave: () => void }) {
+export function Room({
+  code,
+  initial,
+  onLeave,
+}: {
+  code: string;
+  /** A view held before the first poll lands; absent on a direct visit. */
+  initial?: RoomView;
+  onLeave: () => void;
+}) {
   const room = api.room.get.useQuery(
-    { code: initial.code },
+    { code },
     {
       initialData: initial,
       // Stop polling fast once the battle is in hand: a stored BattleResult is
@@ -36,8 +45,10 @@ export function Room({ initial, onLeave }: { initial: RoomView; onLeave: () => v
   const view = room.data ?? initial;
 
   // The scene reads this every frame. Holding it in a ref rather than passing
-  // it down means a poll never remounts the game underneath a battle.
-  const live = useRef(view);
+  // it down means a poll never remounts the game underneath a battle. Null
+  // only before the first poll lands, and nothing below reads it then: the
+  // loading guard sits first, so every read happens under a real view.
+  const live = useRef<RoomView | undefined>(view);
   live.current = view;
 
   const setArmy = api.room.setArmy.useMutation();
@@ -49,7 +60,7 @@ export function Room({ initial, onLeave }: { initial: RoomView; onLeave: () => v
   // winner while the fight is still playing. Nothing is said until the scene
   // has finished showing it.
   const [played, setPlayed] = useState(false);
-  useEffect(() => setPlayed(false), [view.round]);
+  useEffect(() => setPlayed(false), [view?.round]);
 
   // An evicted or closed room is not something to sit in.
   useEffect(() => {
@@ -66,7 +77,7 @@ export function Room({ initial, onLeave }: { initial: RoomView; onLeave: () => v
         timer.current = null;
         const next = queued.current;
         queued.current = null;
-        if (next) setArmy.mutate({ code: live.current.code, army: next });
+        if (next) setArmy.mutate({ code, army: next });
       }, AUTOSAVE_MS);
     },
     [setArmy],
@@ -74,9 +85,19 @@ export function Room({ initial, onLeave }: { initial: RoomView; onLeave: () => v
   useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
 
   const quit = useCallback(() => {
-    leave.mutate({ code: live.current.code });
+    leave.mutate({ code });
     onLeave();
-  }, [leave, onLeave]);
+  }, [leave, code, onLeave]);
+
+  // A short wait while the first poll lands; a wrong or expired code is
+  // handled by the room.error effect, which walks out to the lobby.
+  if (!view) {
+    return (
+      <div className="lobby">
+        <p className="tagline">Entering the room...</p>
+      </div>
+    );
+  }
 
   if (view.state === "waiting") {
     return <Waiting view={view} onLeave={quit} />;
@@ -98,8 +119,8 @@ export function Room({ initial, onLeave }: { initial: RoomView; onLeave: () => v
             import("../game/BattleScene").then(({ startBattle }) =>
               startBattle(el, {
                 result: null,
-                seed: live.current.code,
-                mySide: live.current.seat === 0 ? "a" : "b",
+                seed: code,
+                mySide: view.seat === 0 ? "a" : "b",
                 // Never called in a duel: the server owns the resolution, and
                 // Lock in stands where Start does in a solo battle.
                 onDraft: () => {
@@ -115,10 +136,10 @@ export function Room({ initial, onLeave }: { initial: RoomView; onLeave: () => v
                 onTip,
                 duel: {
                   onArmyChange: pushArmy,
-                  onLock: () => lock.mutate({ code: live.current.code }),
+                  onLock: () => lock.mutate({ code }),
                   onPlayed: () => setPlayed(true),
                   status: () => {
-                    const v = live.current;
+                    const v = live.current!;
                     return {
                       msRemaining: v.msRemaining,
                       youLocked: v.you.locked,
