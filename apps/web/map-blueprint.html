@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Strategic map blueprint - 24x8</title>
+<style>
+  body { background: #fff; color: #333; font: 12px/1.4 monospace; padding: 24px; display: grid; place-content: center; min-height: 100vh; margin: 0; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(24, 32px);
+    gap: 1px;
+    background: #ccc;
+    width: max-content;
+    border: 1px solid #ccc;
+  }
+  .cell { width: 32px; height: 32px; background: #fff; }
+  .hall-mono { background: #555; }
+  .hall-tree { background: #bbb; }
+  .colhead { height: 20px; background: #fff; display: flex; align-items: center; justify-content: center; color: #888; }
+
+  .legend { text-align: center; }
+  .legend p { margin: 6px 0 0; }
+  .legend span { display: inline-block; width: 14px; height: 14px; margin-right: 6px; vertical-align: -2px; border: 1px solid #ccc; }
+</style>
+</head>
+<body>
+
+<div class="grid">
+  <!-- column headers -->
+  <div class="colhead">0</div><div class="colhead">1</div><div class="colhead">2</div><div class="colhead">3</div><div class="colhead">4</div><div class="colhead">5</div><div class="colhead">6</div><div class="colhead">7</div><div class="colhead">8</div><div class="colhead">9</div><div class="colhead">10</div><div class="colhead">11</div><div class="colhead">12</div><div class="colhead">13</div><div class="colhead">14</div><div class="colhead">15</div><div class="colhead">16</div><div class="colhead">17</div><div class="colhead">18</div><div class="colhead">19</div><div class="colhead">20</div><div class="colhead">21</div><div class="colhead">22</div><div class="colhead">23</div>
+
+  <!-- row 0: dead tree base sits on this row's bottom edge, ink from col 21 -->
+  <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell hall-tree"></div><div class="cell hall-tree"></div><div class="cell hall-tree"></div>
+  <!-- row 1 -->
+  <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+  <!-- row 2 -->
+  <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+  <!-- row 3 -->
+  <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+  <!-- row 4: monastery top (crown/towers) -->
+  <div class="cell hall-mono"></div><div class="cell hall-mono"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+  <!-- row 5: monastery body -->
+  <div class="cell hall-mono"></div><div class="cell hall-mono"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+  <!-- row 6: monastery body -->
+  <div class="cell hall-mono"></div><div class="cell hall-mono"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+  <!-- row 7: monastery base (ground contact) -->
+  <div class="cell hall-mono"></div><div class="cell hall-mono"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+</div>
+
+<div class="legend">
+  <p><span style="background:#fff"></span>land &nbsp; <span style="background:#555"></span>monastery (knights, bottom left) &nbsp; <span style="background:#bbb"></span>dead tree (monsters, top right)</p>
+  <p>No lakes: the whole 24x8 grid is land. Cells are 84px, matching the battle tile.</p>
+  <p>Monastery: 146x310 ink, native size, base on the map's bottom edge (cols 0-1). Dead tree: 384x320 ink, base at col 23.5 row 1, crown overhanging the coast into the sea.</p>
+</div>
+
+</body>
+</html>

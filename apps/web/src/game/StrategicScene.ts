@@ -13,56 +13,57 @@ import { DPR, GAME_H, GAME_W, WATER_SPAN, fitCamera, startGame } from "./boot";
 import { loadUnits, makeAnims, playPose, unitKey } from "./sprites";
 import {
   DEPTH,
+  addBuilding,
   addShadow,
   buildFoam,
   buildIsland,
   buildWater,
   driftClouds,
+  loadBuildings,
   loadTerrain,
   prepareTerrain,
   scatterDecor,
   type Rect,
+  type Structure,
 } from "./terrain";
 import { button, label, loadPanels, ribbon } from "./ui";
 
-/** Strategic cells, square 64px like the terrain art. 8 rows tall, 24
- *  columns long: the map runs 1536px against the 1200px world, so it is the
- *  width that needs the pan. */
+/** Strategic cells, square 84px to match the battle's TILE, so the pack's
+ *  native-size art (units, halls) keeps the same ratio on both maps. 8 rows
+ *  tall, 24 columns long: the map runs 2016px against the 1200px world, so
+ *  it is the width that needs the pan. */
 export const STRAT_COLS = 24;
 export const STRAT_ROWS = 8;
-const CELL = 64;
-/** The grid as a rect, vertically centred. The 160px of water either end
- *  matches, so the coast never touches the edge of the scroll. */
+const CELL = 84;
+/** The grid as a rect, vertically centred in the pannable world, not in
+ *  the 720px page: the 160px of water either end matches the sides, and
+ *  scrolling down buys the same space above the map as below it. */
 const PAD = 160;
+const WORLD_W = PAD + STRAT_COLS * CELL + PAD;
+const WORLD_H = GAME_H + 3 * PAD;
 const STRAT: Rect = {
   x0: PAD,
-  y0: (GAME_H - STRAT_ROWS * CELL) / 2,
+  y0: (WORLD_H - STRAT_ROWS * CELL) / 2,
   x1: PAD + STRAT_COLS * CELL,
-  y1: (GAME_H - STRAT_ROWS * CELL) / 2 + STRAT_ROWS * CELL,
+  y1: (WORLD_H - STRAT_ROWS * CELL) / 2 + STRAT_ROWS * CELL,
 };
-/** The whole pannable world: the map plus its water padding. */
-const WORLD_W = STRAT.x1 + PAD;
 
-/**
- * The lake: every cell of water in it, keyed "col,row".
- *
- * A band across the island's middle whose two shores are separate, phase-
- * shifted sine curves, so the shape wobbles organically instead of reading
- * as a drawn oval. Rows are clamped to 2..5, which is what leaves the two
- * land lanes - rows 0..1 above, 6..7 below - to cross left to right.
- */
+/** No lakes for now: the island is one landmass, the whole grid is land.
+ *  The flag's no-swim check reads this set, so an empty set is plain land. */
 const LAKE = new Set<string>();
-for (let col = 7; col <= 16; col++) {
-  const t = (col - 7) / 9;
-  const top = Math.max(2, 2 + Math.round(0.9 * Math.sin(t * Math.PI * 1.7) + 0.4 * Math.sin(col * 1.9)));
-  const bot = Math.min(5, 5 - Math.round(0.9 * Math.sin(t * Math.PI * 1.3 + 1.6) + 0.4 * Math.sin(col * 1.4 + 2)));
-  for (let row = top; row <= bot; row++) LAKE.add(`${col},${row}`);
-}
 
 /** How close to the screen edge the pointer pans, and how fast, in world
  *  px/s. Screen-edge scrolling, exactly as Warcraft did it. */
 const EDGE = 28;
-const PAN_PX_S = 420;
+const PAN_PX_S = 840;
+
+/** The two main halls, at the pack's native size: the knights' monastery on
+ *  the bottom left, the monsters' dead tree on the top right, its crown
+ *  overhanging the coast into the sea. */
+const HALLS: Structure[] = [
+  { side: "a", name: "monastery", x: STRAT.x0 + 0.8 * CELL, y: STRAT.y0 + 8 * CELL },
+  { side: "g", name: "deadTree", x: STRAT.x0 + 23.5 * CELL, y: STRAT.y0 + 1 * CELL },
+];
 
 export class StrategicScene extends Phaser.Scene {
   /** Grid position of the flag; null until the first click. */
@@ -70,6 +71,8 @@ export class StrategicScene extends Phaser.Scene {
   private flagMark: Phaser.GameObjects.Container | null = null;
   /** Handed in by the page; absent when the map opens on its own. */
   private onMenu: () => void = () => {};
+  /** Touch-drag state: where the gesture started, camera included. */
+  private dragStart: { x: number; y: number; camX: number; camY: number; moved: boolean } | null = null;
 
   init(data: { onMenu?: () => void }): void {
     this.onMenu = data.onMenu ?? (() => {});
@@ -82,24 +85,40 @@ export class StrategicScene extends Phaser.Scene {
   preload(): void {
     loadTerrain(this);
     loadUnits(this);
+    loadBuildings(this, HALLS);
     loadPanels(this, ["paper", "blueButton", "redButton"]);
   }
 
   create(): void {
-    fitCamera(this);
+    fitCamera(this, WORLD_W / 2, WORLD_H / 2);
     prepareTerrain(this);
     makeAnims(this);
 
     buildWater(this);
     const island = buildIsland(this, STRAT);
     buildFoam(this, island);
-    scatterDecor(this, island, STRAT, { w: WORLD_W, h: GAME_H }, "strategic");
-    driftClouds(this, { w: WORLD_W, h: GAME_H }, "strategic");
+    scatterDecor(this, island, STRAT, { w: WORLD_W, h: WORLD_H }, "strategic");
+    driftClouds(this, { w: WORLD_W, h: WORLD_H }, "strategic");
     this.buildLake();
+    for (const hall of HALLS) addBuilding(this, hall);
     this.buildHud();
 
-    this.input.on("pointerdown", () => {
-      const p = this.input.activePointer;
+    // Touch drag pans; a tap (down-up with little movement) places the flag.
+    this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
+      this.dragStart = { x: p.x, y: p.y, camX: this.cameras.main.scrollX, camY: this.cameras.main.scrollY, moved: false };
+    });
+    this.input.on("pointermove", (p: Phaser.Input.Pointer) => {
+      if (!this.dragStart || !p.isDown) return;
+      // Canvas px to world px: the world renders at zoom DPR.
+      const dx = (p.x - this.dragStart.x) / DPR;
+      const dy = (p.y - this.dragStart.y) / DPR;
+      if (Math.abs(dx) > 6 || Math.abs(dy) > 6) this.dragStart.moved = true;
+      this.setScroll(this.dragStart.camX - dx, this.dragStart.camY - dy);
+    });
+    this.input.on("pointerup", (p: Phaser.Input.Pointer) => {
+      const start = this.dragStart;
+      this.dragStart = null;
+      if (!start || start.moved) return;
       const col = Math.floor((p.worldX - STRAT.x0) / CELL);
       const row = Math.floor((p.worldY - STRAT.y0) / CELL);
       if (col < 0 || col >= STRAT_COLS || row < 0 || row >= STRAT_ROWS) return;
@@ -109,23 +128,34 @@ export class StrategicScene extends Phaser.Scene {
     });
   }
 
-  /** Screen-edge pan, Warcraft-style. Only horizontal: the 8-row map stands
-   *  centred in the 720px world, so scrollY stays clamped at 0 and only the
-   *  length of the coast scrolls. */
+  /** Scroll with the world clamps shared by edge-pan and drag. */
+  private setScroll(x: number, y: number): void {
+    const cam = this.cameras.main;
+    const viewW = cam.width / DPR;
+    const viewH = cam.height / DPR;
+    const shiftX = cam.width / 2 - viewW / 2;
+    const shiftY = cam.height / 2 - viewH / 2;
+    cam.scrollX = Math.max(-shiftX, Math.min(WORLD_W - viewW - shiftX, x));
+    cam.scrollY = Math.max(-shiftY, Math.min(WORLD_H - viewH - shiftY, y));
+  }
+
+  /** Screen-edge pan, Warcraft-style, both axes now that the world runs
+   *  1200px tall against the 720px page. */
   update(_time: number, delta: number): void {
     const p = this.input.activePointer;
     // Pointer coordinates are canvas pixels; the world renders at zoom DPR,
     // so the edge test converts back to world units first.
     const vx = p.x / DPR;
+    const vy = p.y / DPR;
     const dx = vx < EDGE ? -1 : vx > GAME_W - EDGE ? 1 : 0;
+    const dy = vy < EDGE ? -1 : vy > GAME_H - EDGE ? 1 : 0;
     const cam = this.cameras.main;
-    if (dx !== 0) cam.scrollX += (dx * PAN_PX_S * delta) / 1000;
-    // The DPR zoom shifts what scrollX means: the view's left edge sits
-    // `shift` world px right of scrollX, so the clamp runs against that, not
-    // against 0. Gets the full range whatever the window's width.
-    const viewW = cam.width / DPR;
-    const shift = cam.width / 2 - viewW / 2;
-    cam.scrollX = Math.max(-shift, Math.min(WORLD_W - viewW - shift, cam.scrollX));
+    if (dx !== 0 || dy !== 0) {
+      this.setScroll(
+        cam.scrollX + (dx * PAN_PX_S * delta) / 1000,
+        cam.scrollY + (dy * PAN_PX_S * delta) / 1000,
+      );
+    }
   }
 
   private moveFlag(col: number, row: number): void {
@@ -194,12 +224,14 @@ export class StrategicScene extends Phaser.Scene {
       }
       // Bury each blob's body under grass again - centre and all eight
       // neighbours, the blob overhangs every one - leaving only the fringe
-      // over the water.
+      // over the water. Stretched to the cell: the tile is 64px native and
+      // cells run 84px, so at native size it would leave seams the foam
+      // shows through.
       for (let dc = -1; dc <= 1; dc++) {
         for (let dr = -1; dr <= 1; dr++) {
           if (LAKE.has(`${col + dc},${row + dr}`)) continue;
           const p = this.cellXY(col + dc, row + dr);
-          this.add.image(p.x, p.y, "tileset", "t11").setDepth(grassZ);
+          this.add.image(p.x, p.y, "tileset", "t11").setDisplaySize(CELL, CELL).setDepth(grassZ);
         }
       }
     }

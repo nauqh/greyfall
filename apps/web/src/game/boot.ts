@@ -22,14 +22,14 @@ export const WATER = "#47aba9";
 export const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
 
 /** The canvas is DPR times the world; zoom recentres, so aim it back. */
-export function fitCamera(scene: Phaser.Scene): void {
+export function fitCamera(scene: Phaser.Scene, cx = GAME_W / 2, cy = GAME_H / 2): void {
   const cam = scene.cameras.main;
   cam.setZoom(DPR);
-  cam.centerOn(GAME_W / 2, GAME_H / 2);
+  cam.centerOn(cx, cy);
   // EXPAND changes the canvas size on window resize, which shifts what the
   // camera sees; keep the world centred so the extra water stays even.
   const recenter = (): void => {
-    cam.centerOn(GAME_W / 2, GAME_H / 2);
+    cam.centerOn(cx, cy);
   };
   scene.scale.on(Phaser.Scale.Events.RESIZE, recenter);
   scene.events.once(Phaser.Scenes.Events.DESTROY, () => scene.scale.off(Phaser.Scale.Events.RESIZE, recenter));
