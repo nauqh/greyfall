@@ -133,6 +133,8 @@ export function ribbon(
     .setScale(scale);
 }
 
+/** The pack's arrow cursor, the canvas default. */
+export const ARROW = 'url("/cursor.png") 0 0, default';
 /** The pack's hand cursor, cropped to the art, fingertip hotspot at (4, 0). */
 export const HAND = 'url("/cursor-pointer.png") 4 0, pointer';
 

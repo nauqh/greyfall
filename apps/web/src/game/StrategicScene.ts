@@ -13,6 +13,7 @@ import * as Phaser from "phaser";
 import { packUrl } from "./art";
 import { baseZoom, fitCamera, startGame } from "./boot";
 import { HUD_COVER_H, HUD_KEY, StrategicHud } from "./StrategicHud";
+import { HAND } from "./ui";
 import {
   MAP,
   STRAT_COLS,
@@ -41,9 +42,11 @@ import {
 
 /** The tileset's native tile: nothing is stretched. */
 const CELL = 64;
-/** The map carries its own sea margin, so the world is the grid. */
+/** The map carries its own sea margin, so the world is the grid, plus open
+ *  sea above it that the view may scroll into (y runs negative there). */
 const WORLD_W = STRAT_COLS * CELL;
 const WORLD_H = STRAT_ROWS * CELL;
+const TOP_SEA = 2 * CELL;
 const STRAT: Rect = { x0: 0, y0: 0, x1: WORLD_W, y1: WORLD_H };
 
 /** The tileset's 4x4 blocks: 3x3 edges plus a one-wide column, a one-tall
@@ -56,9 +59,8 @@ function edge(before: boolean, after: boolean): number {
  *  px/s. Screen-edge scrolling, exactly as Warcraft did it. */
 const EDGE = 28;
 const PAN_PX_S = 840;
-/** Camera zoom steps over baseZoom. The first is the native view and the
- *  closest in; out stops about where the whole map fits the page. */
-const ZOOMS = [1, 0.8, 0.6] as const;
+/** Zoom steps: native, halfway, and all of the world in view. */
+const ZOOM_STEPS = 3;
 
 /** Placed in cells, so a building's base lands on the row it names. */
 function cell(side: Structure["side"], name: Structure["name"], col: number, row: number, scale?: number): Structure {
@@ -149,7 +151,7 @@ export class StrategicScene extends Phaser.Scene {
   }
 
   create(): void {
-    fitCamera(this, WORLD_W / 2, WORLD_H / 2, () => ZOOMS[this.zoomLevel]!);
+    fitCamera(this, WORLD_W / 2, (WORLD_H - TOP_SEA) / 2, () => this.zoomScale(this.zoomLevel));
     prepareTerrain(this);
     makeAnims(this);
     if (!this.anims.exists("sheep_anim")) {
@@ -173,11 +175,18 @@ export class StrategicScene extends Phaser.Scene {
     });
 
     // Touch drag pans; a tap (down-up with little movement) places the flag.
+    // The map drags, so it wears the pack's hand, the kit's only hand cursor.
+    this.input.setDefaultCursor(HAND);
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
       this.dragStart = { x: p.x, y: p.y, camX: this.cameras.main.scrollX, camY: this.cameras.main.scrollY, moved: false };
     });
     this.input.on("pointermove", (p: Phaser.Input.Pointer) => {
-      if (!this.dragStart || !p.isDown) return;
+      if (!this.dragStart) return;
+      // Released over the HUD, which eats the pointerup this scene would hear.
+      if (!p.isDown) {
+        this.dragStart = null;
+        return;
+      }
       // Canvas px to world px.
       const zoom = this.cameras.main.zoom;
       const dx = (p.x - this.dragStart.x) / zoom;
@@ -201,12 +210,23 @@ export class StrategicScene extends Phaser.Scene {
   /** One step in or out. Zoom scales around the view's centre, so the
    *  spot being looked at stays put; update() re-clamps as it animates. */
   private zoomStep(dir: 1 | -1): void {
-    const next = Math.max(0, Math.min(ZOOMS.length - 1, this.zoomLevel + dir));
+    const next = Math.max(0, Math.min(ZOOM_STEPS - 1, this.zoomLevel + dir));
     if (next === this.zoomLevel) return;
     this.zoomLevel = next;
-    this.cameras.main.zoomTo(ZOOMS[next]! * baseZoom(this), 180, "Sine.easeOut", true);
+    this.cameras.main.zoomTo(this.zoomScale(next) * baseZoom(this), 180, "Sine.easeOut", true);
   }
   private zoomLevel = 0;
+
+  /** A step as a multiple of baseZoom. The last fits the whole world, top
+   *  sea included, above the HUD on both axes, so there is nothing to drag;
+   *  it depends on the screen, so it is worked out each time. */
+  private zoomScale(level: number): number {
+    const cam = this.cameras.main;
+    const base = baseZoom(this);
+    const fit = Math.min(cam.width / WORLD_W, (cam.height - HUD_COVER_H * base) / (TOP_SEA + WORLD_H)) / base;
+    const out = Math.min(1, fit);
+    return [1, (1 + out) / 2, out][level]!;
+  }
 
   /** Scroll with the world clamps shared by edge-pan, drag and zoom. A view
    *  wider than the world centres on it. */
@@ -221,7 +241,7 @@ export class StrategicScene extends Phaser.Scene {
     const under = (HUD_COVER_H * baseZoom(this)) / cam.zoom;
     const fit = (v: number, max: number): number => (max < 0 ? max / 2 : Math.max(0, Math.min(max, v)));
     cam.scrollX = fit(x + shiftX, WORLD_W - viewW) - shiftX;
-    cam.scrollY = fit(y + shiftY, WORLD_H + under - viewH) - shiftY;
+    cam.scrollY = fit(y + shiftY + TOP_SEA, TOP_SEA + WORLD_H + under - viewH) - shiftY - TOP_SEA;
   }
 
   /** Screen-edge pan, Warcraft-style, at the same on-screen speed at any
@@ -354,6 +374,7 @@ export class StrategicScene extends Phaser.Scene {
     put("rock", [[15.5, 6.6], [26.6, 6.5], [11.6, 10.8], [8.4, 16.6]]);
     put("waterRock", [
       [1.2, 6.4], [17.5, 1.6], [13.8, 10.9], [18.3, 11.6], [10.8, 15.4], [24.5, 18.2], [31.0, 11.5], [6.2, 18.5],
+      [7.5, -0.6], [20.4, -1.1], [29.2, -0.4],
     ]).forEach((s) => s.setDepth(DEPTH.foam));
 
     for (const [c, r] of [[15.5, 3.8], [16.6, 14.8], [20.0, 9.8]] as const) {

@@ -9,14 +9,13 @@ import * as Phaser from "phaser";
 
 import { iconKey, iconUrl, packUrl } from "./art";
 import { WATER, baseZoom } from "./boot";
-import { HAND, label, loadPanels, panel, ribbon } from "./ui";
+import { ARROW, HAND, label, loadPanels, panel } from "./ui";
 
 export const HUD_KEY = "strategicHud";
-/** The bottom bar's height in HUD units, and its gap to the screen edge. */
+/** The bottom bar's height in HUD units. */
 const BAR_H = 160;
-const BAR_GAP = 12;
 /** How much of the screen's bottom the HUD covers; the map scrolls up past it. */
-export const HUD_COVER_H = BAR_H + BAR_GAP;
+export const HUD_COVER_H = BAR_H;
 
 export interface HudData {
   /** The map rows, `~ . # < >` as StrategicScene draws them. */
@@ -29,8 +28,9 @@ export interface HudData {
 
 const ICON = { build: "01", wood: "02", gold: "03", meat: "04", attack: "05", hold: "06", move: "08", stop: "09", menu: "10" };
 /** The wood table art's empty margin at the half scale it is drawn at:
- *  its ink starts this far inside the panel. */
-const TABLE_PAD = { side: 22, top: 22, bottom: 13 };
+ *  its ink starts this far inside the panel. Bottom is pushed below the
+ *  screen: the rim under the wood and the corner brackets above it. */
+const TABLE_PAD = { side: 22, top: 22, bottom: 42 };
 
 export class StrategicHud extends Phaser.Scene {
   private hud!: HudData;
@@ -72,14 +72,11 @@ export class StrategicHud extends Phaser.Scene {
   private buildTop(w: number): void {
     this.iconButton(36, 36, ICON.menu, () => this.hud.onMenu());
 
-    ribbon(this, w / 2, 40, 360);
-    label(this, w / 2, 36, "THE GREYFALL COAST", { fontSize: "20px" });
-
     // Resource strip, top right: placeholder stock.
     const stripW = 330;
     const x0 = w - 16 - stripW;
     // Paper corners are 64px, so it is drawn at double size and halved.
-    panel(this, "paper", x0 + stripW / 2, 36, stripW * 2, 128).setScale(0.5).setInteractive();
+    panel(this, "paper", x0 + stripW / 2, 36, stripW * 2, 128).setScale(0.5).setInteractive({ cursor: ARROW });
     [
       [ICON.gold, "500"],
       [ICON.wood, "300"],
@@ -92,49 +89,52 @@ export class StrategicHud extends Phaser.Scene {
   }
 
   private buildBar(w: number, h: number): void {
-    // The frame's ink fills the bar rect, clear of the screen edge all round.
-    const inkBottom = h - BAR_GAP;
-    const panelW = w - 2 * BAR_GAP + 2 * TABLE_PAD.side;
+    // Half the screen wide, centred, running off the bottom edge like
+    // Warcraft's console.
+    const x0 = w / 4;
+    const x1 = w - w / 4;
+    const panelW = x1 - x0 + 2 * TABLE_PAD.side;
     const panelH = BAR_H + TABLE_PAD.top + TABLE_PAD.bottom;
-    panel(this, "woodTable", w / 2, inkBottom + TABLE_PAD.bottom - panelH / 2, panelW * 2, panelH * 2)
+    panel(this, "woodTable", w / 2, h + TABLE_PAD.bottom - panelH / 2, panelW * 2, panelH * 2)
       .setScale(0.5)
-      // Eats clicks so the map under the bar never gets them.
-      .setInteractive();
-    const cy = inkBottom - BAR_H / 2;
+      // Eats clicks so the map under the bar never gets them; the arrow says
+      // it is not map to drag.
+      .setInteractive({ cursor: ARROW });
+    const cy = h - BAR_H / 2;
 
     // Minimap, left.
-    const mapW = 200;
-    const mapH = 125;
-    const mapX = BAR_GAP + 24;
-    this.add.image(mapX + mapW / 2, cy, "hudSlot").setDisplaySize(mapW + 16, mapH + 16);
+    const mapW = 150;
+    const mapH = 94;
+    const mapX = x0 + 18;
+    this.add.image(mapX + mapW / 2, cy, "hudSlot").setDisplaySize(mapW + 14, mapH + 14);
     this.drawMinimap(mapX, cy - mapH / 2, mapW, mapH);
 
     // Zoom, beside the minimap.
-    const zx = mapX + mapW + 36;
-    this.iconButton(zx, cy - 26, "+", () => this.hud.onZoom(-1));
-    this.iconButton(zx, cy + 26, "−", () => this.hud.onZoom(1));
+    const zx = mapX + mapW + 26;
+    this.iconButton(zx, cy - 24, "+", () => this.hud.onZoom(-1));
+    this.iconButton(zx, cy + 24, "−", () => this.hud.onZoom(1));
 
     // Command card, right: 3x3, placeholder orders in the first slots.
-    const step = 44;
-    const cardX = w - BAR_GAP - 24 - 3 * step;
+    const step = 40;
+    const cardX = x1 - 18 - 3 * step;
     const orders = [ICON.move, ICON.stop, ICON.hold, ICON.attack, ICON.build];
     for (let i = 0; i < 9; i++) {
       const x = cardX + (i % 3) * step + step / 2;
       const y = cy - step + Math.floor(i / 3) * step;
-      const b = this.add.image(x, y, "hudButton").setDisplaySize(58, 58);
+      const b = this.add.image(x, y, "hudButton").setDisplaySize(54, 54);
       const order = orders[i];
-      if (order) this.add.image(x, y - 2, iconKey(order)).setScale(0.45);
+      if (order) this.add.image(x, y - 2, iconKey(order)).setScale(0.4);
       else b.setAlpha(0.45);
     }
 
     // Selection, centre: portrait slot and what is selected.
-    const selX0 = zx + 44;
-    const selX1 = cardX - 20;
-    this.add.image((selX0 + selX1) / 2, cy, "hudPaper").setDisplaySize(selX1 - selX0, 128);
-    this.add.image(selX0 + 66, cy, "hudSlot").setDisplaySize(100, 100);
+    const selX0 = zx + 36;
+    const selX1 = cardX - 12;
+    this.add.image((selX0 + selX1) / 2, cy, "hudPaper").setDisplaySize(selX1 - selX0, 110);
+    this.add.image(selX0 + 42, cy, "hudSlot").setDisplaySize(68, 68);
     const ink = { color: "#4a3a2a", stroke: "#f3e6c8", strokeThickness: 0 };
-    label(this, selX0 + 132, cy - 16, "Nothing selected", { ...ink, fontSize: "20px" }).setOrigin(0, 0.5);
-    label(this, selX0 + 132, cy + 14, "Select a troop or building", { ...ink, fontSize: "15px" }).setOrigin(0, 0.5);
+    label(this, selX0 + 86, cy - 12, "Nothing selected", { ...ink, fontSize: "15px" }).setOrigin(0, 0.5);
+    label(this, selX0 + 86, cy + 12, "Click to select", { ...ink, fontSize: "13px" }).setOrigin(0, 0.5);
   }
 
   /** The map as flat colour, one rect per cell, halls as dots. */

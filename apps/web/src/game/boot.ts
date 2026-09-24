@@ -9,6 +9,8 @@
 
 import * as Phaser from "phaser";
 
+import { ARROW } from "./ui";
+
 export const GAME_W = 1200;
 export const GAME_H = 720;
 
@@ -105,7 +107,7 @@ export function startGame(
         },
       });
       game.events.once(Phaser.Core.Events.READY, () => {
-        game!.canvas.style.cursor = 'url("/cursor.png") 0 0, default';
+        game!.canvas.style.cursor = ARROW;
         const scene = game!.scene.add(key, Scene, true, data)!;
         scene.events.once(Phaser.Scenes.Events.CREATE, done);
       });
