@@ -13,8 +13,10 @@ import {
   BUILDINGS,
   CLOUDS,
   CLOUD_CREAM,
+  CLOUD_DRIFT,
   CLOUD_GRID,
   cloudAt,
+  cloudDrift,
   DECOR,
   TERRAIN,
   buildingUrl,
@@ -369,21 +371,42 @@ export function cloudCover(scene: Phaser.Scene, mode: "open" | "close", done: ()
     .rectangle(view.centerX, view.centerY, view.width + 400, view.height + 400, CLOUD_CREAM)
     .setDepth(depth)
     .setAlpha(opening ? 1 : 0);
+  // Three layers, each swaying on the wall clock (art.ts cloudDrift), so the
+  // bank never freezes while the next page loads and a cover handed over
+  // mid-sway (to the DOM loader, or to the next scene) lines up exactly.
+  const layers = CLOUD_DRIFT.map((_, i) => scene.add.container(0, 0).setDepth(depth + 1 + i));
+  // Still under reduced motion, matching the CSS cover's media query.
+  const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+  const sway = (): void => {
+    if (still) return;
+    const now = Date.now();
+    layers.forEach((l, i) => l.setX(cloudDrift(i, now)));
+  };
+  sway();
+  scene.events.on(Phaser.Scenes.Events.UPDATE, sway);
+  const stopSway = (): void => {
+    scene.events.off(Phaser.Scenes.Events.UPDATE, sway);
+  };
+  scene.events.once(Phaser.Scenes.Events.SHUTDOWN, stopSway);
+
   const clouds: Phaser.GameObjects.Image[] = [];
   for (let row = 0; view.y - 60 + row * CLOUD_GRID.dy < view.bottom + 120; row++) {
     for (let col = 0; view.x - 120 + col * CLOUD_GRID.dx < view.right + 200; col++) {
       const c = cloudAt(row, col);
-      clouds.push(
-        scene.add
-          .image(view.x + c.x, view.y + c.y, c.key)
-          .setCrop(0, 0, 576, CLOUD_GRID.cropH)
-          .setFlipX(c.flip)
-          .setScale(CLOUD_GRID.scale)
-          .setDepth(depth + 1 + c.layer),
-      );
+      const cloud = scene.add
+        .image(view.x + c.x, view.y + c.y, c.key)
+        .setCrop(0, 0, 576, CLOUD_GRID.cropH)
+        .setFlipX(c.flip)
+        .setScale(CLOUD_GRID.scale);
+      layers[c.layer]!.add(cloud);
+      clouds.push(cloud);
     }
   }
 
+  // Parting, the clouds grow as they go, a push through the bank; closing,
+  // they settle from that size. Closing starts just past the edge, so the
+  // first frame after the click already moves.
+  const big = CLOUD_GRID.scale * 1.25;
   let last = 0;
   for (const c of clouds) {
     // Middle first on the way out, edges first on the way in, each cloud on
@@ -391,29 +414,45 @@ export function cloudCover(scene: Phaser.Scene, mode: "open" | "close", done: ()
     const reach = Math.abs(c.x - cx) / (view.width / 2);
     const delay = opening ? 200 + reach * 350 : (1 - Math.min(1, reach)) * 300;
     last = Math.max(last, delay);
-    const away = c.x + Math.sign(c.x - cx || 1) * view.width * 0.8;
+    const side = Math.sign(c.x - cx || 1);
     if (opening) {
       scene.tweens.add({
         targets: c,
-        x: away,
+        x: c.x + side * view.width * 0.8,
+        scale: big,
         alpha: 0,
         delay,
         duration: 1000,
         ease: "Sine.easeIn",
-        onComplete: () => c.destroy(),
       });
     } else {
       const home = c.x;
-      c.setX(away).setAlpha(0);
-      scene.tweens.add({ targets: c, x: home, alpha: 1, delay, duration: 800, ease: "Sine.easeOut" });
+      c.setX(home + side * view.width * 0.5).setScale(big).setAlpha(0);
+      scene.tweens.add({
+        targets: c,
+        x: home,
+        scale: CLOUD_GRID.scale,
+        alpha: 1,
+        delay,
+        duration: 700,
+        ease: "Sine.easeOut",
+      });
     }
   }
   scene.tweens.add({
     targets: backdrop,
     alpha: opening ? 0 : 1,
-    delay: opening ? 250 : last + 500,
-    duration: opening ? 350 : 300,
+    delay: opening ? 250 : last + 400,
+    duration: 300,
     onComplete: () => opening && backdrop.destroy(),
   });
-  scene.time.delayedCall(opening ? last + 600 : last + 820, done);
+  scene.time.delayedCall(opening ? last + 1000 : last + 720, () => {
+    // An open cover is spent once the last cloud is out; a closed one stays
+    // up, still swaying, until the page swaps.
+    if (opening) {
+      stopSway();
+      for (const l of layers) l.destroy();
+    }
+  });
+  scene.time.delayedCall(opening ? last + 600 : last + 720, done);
 }

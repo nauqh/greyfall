@@ -231,6 +231,30 @@ export function cloudAt(row: number, col: number): { x: number; y: number; key: 
   };
 }
 
+/**
+ * Each cloud layer's idle sway, so the bank never stands still while a page
+ * loads: `a` world units either side, `p` ms per sweep, alternating like a
+ * CSS `alternate` animation. Signs differ so layers slide past each other.
+ */
+export const CLOUD_DRIFT = [
+  { a: 14, p: 9000 },
+  { a: -24, p: 7000 },
+  { a: 36, p: 5500 },
+] as const;
+
+/**
+ * A layer's sway at a wall-clock time. Driven by Date.now() in Phaser and by
+ * a CSS animation phased to Date.now() in the DOM, so the covers hand over
+ * mid-motion without a jump. Sine.easeInOut, which the CSS approximates with
+ * cubic-bezier(0.37, 0, 0.63, 1).
+ */
+export function cloudDrift(layer: number, now: number): number {
+  const { a, p } = CLOUD_DRIFT[layer]!;
+  const c = now % (2 * p);
+  const k = c < p ? c / p : 1 - (c - p) / p;
+  return -a + 2 * a * (-(Math.cos(Math.PI * k) - 1) / 2);
+}
+
 /** The cloud cover's cream, shared with the DOM cover (.cloudsSky) so the
  *  page's loader and a scene's cover are one continuous sky. */
 export const CLOUD_CREAM = 0xeef0e2;

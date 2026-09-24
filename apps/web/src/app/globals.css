@@ -100,6 +100,30 @@ textarea {
 	background: #eef0e2;
 }
 
+/* One sway layer (art.ts CLOUD_DRIFT): --a world units either side, --p per
+   sweep, eased like Phaser's Sine.easeInOut. Clouds.tsx phases it to the
+   wall clock so it lines up with a scene's cover. */
+.cloudLayer {
+	position: absolute;
+	inset: 0;
+	animation: cloudSway var(--p) cubic-bezier(0.37, 0, 0.63, 1) infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cloudLayer {
+		animation: none;
+	}
+}
+
+@keyframes cloudSway {
+	from {
+		transform: translateX(calc(var(--a) * -1 * var(--u)));
+	}
+	to {
+		transform: translateX(calc(var(--a) * var(--u)));
+	}
+}
+
 .cloud {
 	position: absolute;
 	width: calc(1843.2 * var(--u));
@@ -108,6 +132,8 @@ textarea {
 	background: url("/tiny-swords/Terrain/Decorations/Clouds/Clouds_01.png") top / calc(1843.2 * var(--u))
 		calc(819.2 * var(--u)) no-repeat;
 	image-rendering: pixelated;
+	/* Scale about the full frame's centre, where Phaser scales it. */
+	transform-origin: 50% calc(409.6 * var(--u));
 }
 
 .cloud.cloud5 {
@@ -129,16 +155,18 @@ textarea {
 }
 
 .clouds.close.run .cloud {
-	animation: cloudAway 800ms cubic-bezier(0.12, 0, 0.39, 0) var(--delay) both reverse;
+	animation: cloudAway 700ms cubic-bezier(0.12, 0, 0.39, 0) var(--delay) both reverse;
 }
 
 .clouds.close.run .cloudsSky {
-	animation: skyAway 300ms linear 800ms both reverse;
+	animation: skyAway 300ms linear 700ms both reverse;
 }
 
+/* Growing as they part: a push through the bank, as cloudCover does. */
 @keyframes cloudAway {
 	to {
 		translate: var(--dx) 0;
+		scale: 1.25;
 		opacity: 0;
 	}
 }
@@ -156,7 +184,16 @@ textarea {
 	font-weight: 600;
 	letter-spacing: 0.08em;
 	color: #5b6577;
-	animation: loaderPulse 1.2s ease-in-out infinite;
+	/* Held back a moment, so a quick load never flashes the word. */
+	animation:
+		loaderIn 300ms ease-out 400ms both,
+		loaderPulse 1.2s ease-in-out 700ms infinite;
+}
+
+@keyframes loaderIn {
+	from {
+		opacity: 0;
+	}
 }
 
 @keyframes loaderPulse {
