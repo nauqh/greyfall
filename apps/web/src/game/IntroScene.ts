@@ -149,7 +149,7 @@ export class IntroScene extends Phaser.Scene {
     board.add(label(this, x, top, "GREYFALL", { fontSize: "34px", strokeThickness: 4 }));
 
     MENU.forEach((item, i) => {
-      const b = button(this, x, y - 70 + i * 100, 220, 96, item.text.toUpperCase(), "blue", () =>
+      const b = button(this, x, y - 64 + i * 84, 220, 96, item.text.toUpperCase(), "blue", () =>
         this.leave(item.href),
       );
       board.add(b);
