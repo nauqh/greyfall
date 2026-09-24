@@ -146,7 +146,7 @@ export class StrategicHud extends Phaser.Scene {
     const ch = h / rows;
     const g = this.add.graphics();
     g.fillStyle(Phaser.Display.Color.HexStringToColor(WATER).color).fillRect(x, y, w, h);
-    const tone: Record<string, number> = { ".": 0x8cbf4f, "#": 0x6a9a3a, "<": 0x6a9a3a, ">": 0x6a9a3a };
+    const tone: Record<string, number> = { ".": 0x62aa63, "#": 0x99b653, "<": 0x99b653, ">": 0x99b653 };
     map.forEach((line, r) => {
       [...line].forEach((k, c) => {
         const color = tone[k];

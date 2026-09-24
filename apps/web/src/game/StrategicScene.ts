@@ -138,6 +138,9 @@ export class StrategicScene extends Phaser.Scene {
     loadTerrain(this);
     loadUnits(this);
     loadBuildings(this, HALLS);
+    // Lowland grass in the sheet's deeper green, as the pack's demo map does:
+    // the plateaus keep the sunlit colour1, so height reads as colour too.
+    this.load.image("tilesetLow", packUrl("Terrain/Tileset/Tilemap_color3.png"));
     this.load.image("goldMine", packUrl("Terrain/Resources/Gold/Gold Stones/Gold Stone 6.png"));
     this.load.spritesheet("sheep", packUrl("Terrain/Resources/Meat/Sheep/Sheep_Idle.png"), {
       frameWidth: 128,
@@ -269,8 +272,8 @@ export class StrategicScene extends Phaser.Scene {
   /** Foam under the shore, ground everywhere on land, then plateau tops,
    *  cliffs and slopes over it: the pack's own layer order. */
   private buildMap(): void {
-    const tile = (c: number, r: number, tc: number, tr: number, z: number): void => {
-      this.add.image(c * CELL, r * CELL, "tileset", `tile_${tc}_${tr}`).setOrigin(0).setDepth(z);
+    const tile = (c: number, r: number, tc: number, tr: number, z: number, sheet = "tileset"): void => {
+      this.add.image(c * CELL, r * CELL, sheet, `tile_${tc}_${tr}`).setOrigin(0).setDepth(z);
     };
     const plateau = (c: number, r: number): boolean => at(c, r) === "#";
     // A cliff face stands in every cell under a plateau or ramp that is not
@@ -284,42 +287,46 @@ export class StrategicScene extends Phaser.Scene {
         for (let dc = -1; dc <= 1; dc++) {
           for (let dr = -1; dr <= 1; dr++) shore ||= !isLand(c + dc, r + dr);
         }
-        // Opaque and in step, like the battle island: the blobs read as one
-        // shoreline only when they lap together. A cliff standing in the sea
-        // gets its own.
+        // Under every shore cell and every cliff standing in the sea, each
+        // on its own frame, as the pack's tilemap guide asks.
         if ((isLand(c, r) && shore) || (!isLand(c, r) && wall(c, r))) {
-          this.add.sprite(c * CELL + CELL / 2, r * CELL + CELL / 2, "foam").setDepth(DEPTH.foam).play("foam_anim");
+          const foam = this.add.sprite(c * CELL + CELL / 2, r * CELL + CELL / 2, "foam").setDepth(DEPTH.foam);
+          foam.play("foam_anim");
+          if (foam.anims.currentAnim) foam.anims.setProgress(Math.random());
         }
         if (isLand(c, r)) {
-          tile(c, r, edge(isLand(c - 1, r), isLand(c + 1, r)), edge(isLand(c, r - 1), isLand(c, r + 1)), DEPTH.island);
+          const tc = edge(isLand(c - 1, r), isLand(c + 1, r));
+          tile(c, r, tc, edge(isLand(c, r - 1), isLand(c, r + 1)), DEPTH.island, "tilesetLow");
         }
       }
     }
-    // The pack's drop shadow under every plateau cell and cliff face, a
-    // little low: it shows as a dark band at the cliff foot and a thin halo
-    // down the sides, which is what reads as height. Not round ramps: their
-    // open corners would show it as a box.
+    // The guide's shadow: one per elevated tile, a whole tile below it, so
+    // it pools at the cliff foot and rims the sides. A ramp's foot already
+    // stands on the lowland, so only its head casts one.
     for (let r = 0; r < STRAT_ROWS; r++) {
       for (let c = 0; c < STRAT_COLS; c++) {
-        if (plateau(c, r) || (wall(c, r) && !isSlope(c, r) && !isSlope(c, r - 1))) {
-          this.add.image(c * CELL + CELL / 2, r * CELL + CELL / 2 + 16, "shadow_src").setDepth(DEPTH.island + 0.25);
+        if (plateau(c, r) || isSlope(c, r)) {
+          this.add.image(c * CELL + CELL / 2, (r + 1) * CELL + CELL / 2, "shadow_src").setDepth(DEPTH.island + 0.25);
         }
       }
     }
-    // Tops, then walls, then ramps over the walls. Tops edge against plateau
-    // only, so the cell above a ramp keeps its rim. Walls cap where the run
-    // ends; row 4 stands on grass, row 5 in water.
+    // Tops, then walls, then ramps over the walls. Beside a ramp a top runs
+    // on without a side edge, as the guide's stair examples show; above one
+    // it keeps its rim. Walls cap where the run ends; row 4 stands on grass,
+    // row 5 in water. Walls take the lowland colour: the tufts at their foot
+    // are the ground below.
     const top = DEPTH.island + 0.5;
     for (let r = 0; r < STRAT_ROWS; r++) {
       for (let c = 0; c < STRAT_COLS; c++) {
         if (plateau(c, r)) {
-          tile(c, r, 5 + edge(plateau(c - 1, r), plateau(c + 1, r)), edge(plateau(c, r - 1), plateau(c, r + 1)), top);
+          const side = (dc: number): boolean => plateau(c + dc, r) || isSlope(c + dc, r);
+          tile(c, r, 5 + edge(side(-1), side(1)), edge(plateau(c, r - 1), plateau(c, r + 1)), top);
         }
       }
     }
     for (let r = 0; r < STRAT_ROWS; r++) {
       for (let c = 0; c < STRAT_COLS; c++) {
-        if (wall(c, r)) tile(c, r, 5 + edge(wall(c - 1, r), wall(c + 1, r)), isLand(c, r) ? 4 : 5, top);
+        if (wall(c, r)) tile(c, r, 5 + edge(wall(c - 1, r), wall(c + 1, r)), isLand(c, r) ? 4 : 5, top, "tilesetLow");
       }
     }
     for (let r = 0; r < STRAT_ROWS; r++) {

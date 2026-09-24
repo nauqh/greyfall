@@ -80,12 +80,17 @@ export function prepareTerrain(scene: Phaser.Scene): void {
     }
   }
 
-  // Every cell of the 9x6 sheet, for the strategic map's autotiler.
-  for (let c = 0; c < 9; c++) {
-    for (let r = 0; r < 6; r++) {
-      const name = `tile_${c}_${r}`;
-      if (!tex.has(name)) {
-        tex.add(name, 0, c * TERRAIN.tile, r * TERRAIN.tile, TERRAIN.tile, TERRAIN.tile);
+  // Every cell of the 9x6 sheet, for the strategic map's autotiler, on
+  // each colour of the sheet a scene has loaded.
+  for (const key of ["tileset", "tilesetLow"]) {
+    if (!scene.textures.exists(key)) continue;
+    const sheet = scene.textures.get(key);
+    for (let c = 0; c < 9; c++) {
+      for (let r = 0; r < 6; r++) {
+        const name = `tile_${c}_${r}`;
+        if (!sheet.has(name)) {
+          sheet.add(name, 0, c * TERRAIN.tile, r * TERRAIN.tile, TERRAIN.tile, TERRAIN.tile);
+        }
       }
     }
   }
