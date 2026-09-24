@@ -10,6 +10,7 @@ import type { BattleResult, Placement } from "@greyfall/engine";
 import { useCallback, useRef, useState } from "react";
 
 import { GameCanvas } from "../game/GameCanvas";
+import { StatTip, useStatTip } from "../game/StatTip";
 import { Lobby } from "../pvp/Lobby";
 import { TrpcProvider } from "../pvp/Provider";
 import { Room } from "../pvp/Room";
@@ -41,6 +42,7 @@ export default function Page() {
     enemy: [],
     seed: newSeed(),
   });
+  const { tip, onTip } = useStatTip();
 
   // Rematch runs inside a click handler and has to resimulate there and then,
   // so the armies are kept in a ref too: reading them back out of state would
@@ -164,10 +166,13 @@ export default function Page() {
                 setBattle({ result: null, player: [], enemy: [], seed: newSeed() });
                 setMode("intro");
               },
+              onTip,
             }),
           )
         }
-      />
+      >
+        <StatTip tip={tip} />
+      </GameCanvas>
     </main>
   );
 }

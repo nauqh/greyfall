@@ -7,6 +7,7 @@ import type { Placement } from "@greyfall/engine";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { GameCanvas } from "../game/GameCanvas";
+import { StatTip, useStatTip } from "../game/StatTip";
 import { api } from "./client.ts";
 import type { RoomView } from "../server/room/view.ts";
 
@@ -84,6 +85,7 @@ export function Room({ initial, onLeave }: { initial: RoomView; onLeave: () => v
   // A walkover has no event log to play, so there is nothing for the canvas
   // to show and the page says what happened instead.
   const walkover = view.state === "result" && view.battle === null;
+  const { tip, onTip } = useStatTip();
 
   return (
     <div className="roomStage">
@@ -110,6 +112,7 @@ export function Room({ initial, onLeave }: { initial: RoomView; onLeave: () => v
                   throw new Error("a duel rematch belongs to the room");
                 },
                 onMenu: onLeave,
+                onTip,
                 duel: {
                   onArmyChange: pushArmy,
                   onLock: () => lock.mutate({ code: live.current.code }),
@@ -128,7 +131,9 @@ export function Room({ initial, onLeave }: { initial: RoomView; onLeave: () => v
               }),
             )
           }
-        />
+        >
+          <StatTip tip={tip} />
+        </GameCanvas>
       )}
 
       {view.state === "result" && (played || walkover) ? (

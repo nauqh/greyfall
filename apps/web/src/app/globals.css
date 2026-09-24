@@ -423,3 +423,34 @@ textarea {
 	color: #ffd2c8;
 	text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
 }
+
+/* Hover tooltip for the draft cards' stat icons. Fixed to the native pointer
+   position the scene reports; the box hugs the text and never takes input,
+   so hovering it cannot hide itself. */
+.statTip {
+	position: fixed;
+	transform: translate(-50%, calc(-100% - 10px));
+	padding: 5px 10px;
+	border-radius: 6px;
+	background: rgba(21, 28, 40, 0.94);
+	border: 1px solid rgba(253, 250, 240, 0.18);
+	color: #fdfaf0;
+	font-size: 13px;
+	font-weight: 600;
+	white-space: nowrap;
+	pointer-events: none;
+	z-index: 10;
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+	animation: statTipIn 120ms ease-out;
+}
+
+@keyframes statTipIn {
+	from {
+		opacity: 0;
+		transform: translate(-50%, calc(-100% - 6px));
+	}
+	to {
+		opacity: 1;
+		transform: translate(-50%, calc(-100% - 10px));
+	}
+}

@@ -141,6 +141,14 @@ const BLURB: Record<UnitClass, string> = {
   monk: "Mends what still lives.",
 };
 
+/** The Monk deals no damage, so his card shows what he does instead. */
+const STAT_TIP = {
+  hp: "Health: how much damage it can take",
+  damage: "Damage: dealt each second",
+  heal: "Healing: restored each second",
+  range: "Range: how far it can attack from",
+};
+
 /** Dark ink on paper, light ink on the selected card's slate. */
 interface DraftCard {
   box: Phaser.GameObjects.Container;
@@ -203,6 +211,11 @@ export interface BattleLauncher {
   /** Present only in a duel: the server owns the army and the result. */
   duel?: DuelHooks;
   onDraft: (army: Placement[], seed: number | string) => BattleResult;
+  /**
+   * Hover tooltip requests, with the native pointer position so React can
+   * draw the box over the canvas. Absent when nobody is listening.
+   */
+  onTip?: (text: string | null, x: number, y: number) => void;
   /**
    * Both hand back what the next round needs, rather than tearing the page's
    * canvas down and putting a fresh one up. The scene restarts itself on the
@@ -406,20 +419,14 @@ export class BattleScene extends Phaser.Scene {
       color: "#8c3a30",
       strokeThickness: 0,
     });
-    const how = label(
-      this,
-      900,
-      552,
-      "Pick a unit above, then click your half of the field to place it.\nClick one already placed to take it back.",
-      { fontSize: "14px", color: "#6b5740", strokeThickness: 0, align: "center" },
-    );
-    this.draftBox.add([panel_, band, title, this.goldText, this.goldCoin, this.errorText, how]);
+    this.draftBox.add([panel_, band, title, this.goldText, this.goldCoin, this.errorText]);
 
     for (const [i, cls] of ROSTER.entries()) {
       const cx = 900 + (i % 2 === 0 ? -124 : 124);
       const cy = i < 2 ? 232 : 432;
       this.draftBox.add(this.buildCard(cls, cx, cy));
     }
+    this.buildAdvisor();
 
     // 104 is under the sheet's own 64px corners, so the frame squashes a
     // little rather than stretching. Any shorter and it reads as a strip.
@@ -436,9 +443,15 @@ export class BattleScene extends Phaser.Scene {
       // The status takes over the instructions' slot (y 552, under the
       // cards) instead of its own line: anything above the cards' bottom
       // edge at y 526 is read through them, which is how the waiting
-      // message ended up printed across the roster.
-      this.duelText = how;
-      this.duelText.setColor("#7a4f14");
+      // message ended up printed across the roster. The how-to itself now
+      // lives in the advisor pawn's speech bubble.
+      this.duelText = label(this, 900, 552, "", {
+        fontSize: "14px",
+        color: "#7a4f14",
+        strokeThickness: 0,
+        align: "center",
+      });
+      this.draftBox.add(this.duelText);
       this.refreshDuel();
     }
 
@@ -502,22 +515,35 @@ export class BattleScene extends Phaser.Scene {
     const blurb = label(this, 34, 12, BLURB[cls], { fontSize: "13px", color: "#6b5740", ...ink });
 
     // Three numbers, each behind the pack icon that says what it is. The Monk
-    // deals no damage, so his middle pair is what he does instead.
+    // deals no damage, so his middle pair is what he does instead. Each pair
+    // hovers into a tooltip: the icons alone do not say what they mean.
     const pairs: Phaser.GameObjects.GameObject[] = [];
     const texts = [name, blurb];
-    const pair = (dx: number, icon: number, value: number): void => {
-      pairs.push(this.add.image(dx - 12, 48, iconKey(icon)).setScale(0.34));
+    const hotspots: { go: Phaser.GameObjects.Image | Phaser.GameObjects.Text; tip: string }[] = [];
+    const pair = (dx: number, icon: string, tip: string, value: number, scale = 0.34): void => {
+      const img = this.add.image(dx - 12, 48, iconKey(icon)).setScale(scale);
       const t = label(this, dx + 2, 48, `${value}`, {
         fontSize: "15px",
         color: "#4a3a28",
         ...ink,
       }).setOrigin(0, 0.5);
-      pairs.push(t);
+      pairs.push(img, t);
       texts.push(t);
+      for (const go of [img, t]) {
+        go.setInteractive({ cursor: HAND });
+        hotspots.push({ go, tip });
+      }
     };
-    pair(-60, ICON.hp, stats.hp);
-    pair(4, stats.heal > 0 ? ICON.heal : ICON.damage, stats.heal > 0 ? stats.heal : stats.damage);
-    pair(68, ICON.range, stats.range);
+    pair(-60, ICON.hp, STAT_TIP.hp, stats.hp);
+    pair(
+      4,
+      stats.heal > 0 ? ICON.heal : ICON.damage,
+      stats.heal > 0 ? STAT_TIP.heal : STAT_TIP.damage,
+      stats.heal > 0 ? stats.heal : stats.damage,
+    );
+    // The arrow is a thin strip of ink, so it takes a larger scale than the
+    // square sheet icons to carry the same visual weight.
+    pair(68, ICON.range, STAT_TIP.range, stats.range, 0.5);
 
     const box = this.add.container(cx, cy, [
       paper,
@@ -539,6 +565,27 @@ export class BattleScene extends Phaser.Scene {
       })
       .on("pointerover", () => this.liftCard(card, true))
       .on("pointerout", () => this.refreshDraft());
+    // Input picks only the topmost hit, so the stat icons and numbers steal
+    // hover and clicks from the card while under the pointer: they repeat the
+    // card's handlers and raise the tooltip, which React draws above the
+    // canvas, anchored to the native pointer position.
+    const raiseTip = (p: Phaser.Input.Pointer, tip: string): void => {
+      const e = p.event as MouseEvent | undefined;
+      this.launcher.onTip?.(tip, e?.clientX ?? 0, e?.clientY ?? 0);
+    };
+    for (const { go, tip } of hotspots) {
+      go
+        .on("pointerover", (p: Phaser.Input.Pointer) => {
+          raiseTip(p, tip);
+          this.liftCard(card, true);
+        })
+        .on("pointermove", (p: Phaser.Input.Pointer) => raiseTip(p, tip))
+        .on("pointerout", () => this.launcher.onTip?.(null, 0, 0))
+        .on("pointerup", () => {
+          this.picked = cls;
+          this.refreshDraft();
+        });
+    }
     this.cards.set(cls, card);
     return box;
   }
@@ -564,9 +611,8 @@ export class BattleScene extends Phaser.Scene {
     const them = st.opponent ?? "your opponent";
     const clock = st.msRemaining === null ? "" : ` - ${Math.ceil(st.msRemaining / 1000)}s left`;
     // One line, in the instructions slot: two lines would climb back into
-    // the cards above. The label doubles as the instructions, so until
-    // someone locks it keeps saying how to place - a countdown from full
-    // time would erase the one text a new player still needs. The last
+    // the cards above. The how-to has moved to the advisor pawn's bubble,
+    // so this label only speaks when there is something to say. The last
     // half-minute is the exception: that is the deadline bearing down.
     if (st.youLocked || st.theyLocked) {
       this.duelText.setText(
@@ -584,6 +630,72 @@ export class BattleScene extends Phaser.Scene {
       this.lockBtn.setAlpha(0.55);
       this.cellZone.disableInteractive();
     }
+  }
+
+  /**
+   * The draft's how-to, Warcraft style: an advisor pawn stands beside your
+   * half of the board with its speech bubble above it. Everything joins the
+   * draft box, so it rides the slide in and out and dies with the panel.
+   */
+  private buildAdvisor(): void {
+    const x = 145;
+    const y = 252;
+    const shadow = addShadow(this, x, y, 0.5);
+    const pawn = this.add.sprite(x, y, unitKey(this.mySide, "pawn", "idle"));
+    playPose(pawn, this.mySide, "pawn", "idle", this.mirrored);
+
+    const text = label(
+      this,
+      0,
+      0,
+      "Pick a unit from the cards above, then click a tile on your side of the field to place it.\nClick a placed unit to remove it and get its gold back.",
+      {
+        fontSize: "13px",
+        color: "#4a3a28",
+        strokeThickness: 0,
+        align: "left",
+        wordWrap: { width: 270 },
+      },
+    ).setOrigin(0, 0);
+
+    // Bubble in the pack's own paper: cream fill, ink border, tail down to
+    // the pawn. The tail is part of the outline, not a shape stacked on it:
+    // the fill is the union of the rounded rect and the triangle, then one
+    // stroke runs bottom edge to bottom edge and out around the tail, so
+    // there is no border line across where the tail joins.
+    const FILL = 0xefe4cd;
+    const INK = 0x4a3a28;
+    const bw = Math.ceil(text.width) + 26;
+    const bh = Math.ceil(text.height) + 20;
+    const r = 12;
+    const bx = x + 12;
+    const by = 148 - bh;
+    const la = bx + 24;
+    const ra = bx + 54;
+    const tipX = x + 4;
+    const tipY = y - 84;
+    const g = this.add.graphics();
+    g.fillStyle(FILL, 1);
+    g.fillRoundedRect(bx, by, bw, bh, r);
+    g.fillTriangle(la, by + bh, ra, by + bh, tipX, tipY);
+    g.lineStyle(3, INK, 1);
+    g.beginPath();
+    g.moveTo(la, by + bh);
+    g.lineTo(bx + r, by + bh);
+    g.arc(bx + r, by + bh - r, r, Math.PI / 2, Math.PI);
+    g.lineTo(bx, by + r);
+    g.arc(bx + r, by + r, r, Math.PI, Math.PI * 1.5);
+    g.lineTo(bx + bw - r, by);
+    g.arc(bx + bw - r, by + r, r, Math.PI * 1.5, Math.PI * 2);
+    g.lineTo(bx + bw, by + bh - r);
+    g.arc(bx + bw - r, by + bh - r, r, 0, Math.PI / 2);
+    g.lineTo(ra, by + bh);
+    g.lineTo(tipX, tipY);
+    g.closePath();
+    g.strokePath();
+    text.setPosition(bx + 13, by + 10);
+
+    this.draftBox.add([shadow, pawn, g, text]);
   }
 
   /** The old CSS translateY transition, as a tween. */
@@ -688,6 +800,7 @@ export class BattleScene extends Phaser.Scene {
       ease: "Sine.easeIn",
       onComplete: () => {
         this.draftBox.destroy();
+        this.launcher.onTip?.(null, 0, 0);
         this.runIntro();
       },
     });

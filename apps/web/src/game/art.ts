@@ -215,18 +215,30 @@ export const AVATARS = { file: "UI Elements/UI Elements/Human Avatars/Avatars_",
 export const ICONS = { file: "UI Elements/UI Elements/Icons/Icon_", count: 12 } as const;
 
 /**
- * Which of the pack's twelve icons stands for what, numbered as the files are.
- * They label the draft's numbers, so a stat line is read rather than parsed:
- * a shield, a pair of swords, a green arrow and a target ring, plus the coin
- * the whole screen is spending.
+ * Which of the pack's twelve icons stands for what, numbered as the files
+ * are. They label the draft's numbers, so a stat line is read rather than
+ * parsed: a shield for health, crossed arms for damage, a green gem for
+ * healing, plus the coin the whole screen is spending. Range has no sheet
+ * icon (Icon_11 is an info mark), so it uses the archer's own arrow.
  */
-export const ICON = { gold: 3, damage: 5, hp: 6, heal: 7, range: 11 } as const;
+export const ICON = {
+  gold: "03",
+  damage: "05",
+  hp: "06",
+  heal: "07",
+  range: "arrow",
+} as const;
 
-export function iconUrl(n: number): string {
-  return packUrl(`${ICONS.file}${String(n).padStart(2, "0")}.png`);
+/** Icons that live outside the numbered sheet. */
+const ICON_FILES: Record<string, string> = {
+  arrow: "Red Units/Archer/Arrow.png",
+};
+
+export function iconUrl(n: string): string {
+  return packUrl(ICON_FILES[n] ?? `${ICONS.file}${n}.png`);
 }
 
-export function iconKey(n: number): string {
+export function iconKey(n: string): string {
   return `icon_${n}`;
 }
 
