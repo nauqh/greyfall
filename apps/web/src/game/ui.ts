@@ -180,12 +180,17 @@ export function button(
 
   const box = scene.add.container(x, y, [face, text_]);
   box.setSize(w, h);
-
-  // Hover sinks 2px; press sinks a bit more. The down art reads as a dim,
-  // not a press, so it is unused.
+  // Hover sinks around the base position, which the scene may move later
+  // (a viewport-anchored HUD re-lays out on resize); the sink follows it.
+  box.setData("baseY", y);
   const sink = (on: number): void => {
     scene.tweens.killTweensOf(box);
-    scene.tweens.add({ targets: box, y: y + on, duration: 140, ease: "Sine.easeInOut" });
+    scene.tweens.add({
+      targets: box,
+      y: (box.getData("baseY") as number) + on,
+      duration: 140,
+      ease: "Sine.easeInOut",
+    });
   };
 
   box.setInteractive({ cursor: HAND })

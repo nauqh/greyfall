@@ -80,6 +80,16 @@ export function prepareTerrain(scene: Phaser.Scene): void {
     }
   }
 
+  // Every cell of the 9x6 sheet, for the strategic map's autotiler.
+  for (let c = 0; c < 9; c++) {
+    for (let r = 0; r < 6; r++) {
+      const name = `tile_${c}_${r}`;
+      if (!tex.has(name)) {
+        tex.add(name, 0, c * TERRAIN.tile, r * TERRAIN.tile, TERRAIN.tile, TERRAIN.tile);
+      }
+    }
+  }
+
   if (!scene.anims.exists("foam_anim")) {
     scene.anims.create({
       key: "foam_anim",

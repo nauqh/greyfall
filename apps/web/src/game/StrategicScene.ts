@@ -1,69 +1,140 @@
-// The Warcraft-style strategic map: an 8x20 grid of island tiles you move a
-// flag cursor around, over open water, on the same sea the battle plays on.
-// The board runs 8 rows tall and 20 columns long, and the camera scrolls
-// left to right along it, exactly as Warcraft's map did. A curved lake cuts
-// the island's middle, leaving two land lanes around it.
+// The Warcraft-style strategic map, built the way the pack's own demo map
+// (map.gif) is: one 64px tile per cell, autotiled from an ASCII height map.
+// Ground takes the tileset's left block, plateaus its right block, every
+// south-facing plateau edge drops a cliff into the cell below, and a slope
+// piece at a plateau's end is the way up.
 //
 // Phase 1 of the strategic layer: look and move only. Nothing here touches
 // the engine or the draft.
 
+import type { UnitClass } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
-import { DPR, GAME_H, GAME_W, WATER_SPAN, fitCamera, startGame } from "./boot";
+import { packUrl } from "./art";
+import { DPR, GAME_H, GAME_W, fitCamera, startGame } from "./boot";
 import { loadUnits, makeAnims, playPose, unitKey } from "./sprites";
 import {
   DEPTH,
   addBuilding,
+  addDecor,
   addShadow,
-  buildFoam,
-  buildIsland,
   buildWater,
   driftClouds,
   loadBuildings,
   loadTerrain,
   prepareTerrain,
-  scatterDecor,
   type Rect,
   type Structure,
 } from "./terrain";
 import { button, label, loadPanels, ribbon } from "./ui";
 
-/** Strategic cells, square 84px to match the battle's TILE, so the pack's
- *  native-size art (units, halls) keeps the same ratio on both maps. 8 rows
- *  tall, 24 columns long: the map runs 2016px against the 1200px world, so
- *  it is the width that needs the pan. */
-export const STRAT_COLS = 24;
-export const STRAT_ROWS = 8;
-const CELL = 84;
-/** The grid as a rect, vertically centred in the pannable world, not in
- *  the 720px page: the 160px of water either end matches the sides, and
- *  scrolling down buys the same space above the map as below it. */
-const PAD = 160;
-const WORLD_W = PAD + STRAT_COLS * CELL + PAD;
-const WORLD_H = GAME_H + 3 * PAD;
-const STRAT: Rect = {
-  x0: PAD,
-  y0: (WORLD_H - STRAT_ROWS * CELL) / 2,
-  x1: PAD + STRAT_COLS * CELL,
-  y1: (WORLD_H - STRAT_ROWS * CELL) / 2 + STRAT_ROWS * CELL,
-};
+/** `~` water, `.` ground, `#` plateau. `<` / `>` are slopes: they sit in a
+ *  plateau's bottom row at its west / east end and run down into the row
+ *  below. The row under a plateau's bottom edge is its cliff face, so it is
+ *  drawn as stone and nothing stands there. */
+const MAP = [
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~#########~~~~~~~~~~~.....~~~~",
+  "~~###########...~~~~~~.........~",
+  "~~###########......~~~..####...~",
+  "~~###########.......~...####>..~",
+  "~~..#########>..........~~.....~",
+  "~~.............~~...........~~~~",
+  "~~~...####.......~~~~........~~~",
+  "~~~...####>.....~~~~~~.......~~~",
+  "~~~.............~~~..~~.......~~",
+  "~~..........~~~~~~~~~~~.......~~",
+  "~~..###....~~~~~.~~~~~~~......~~",
+  "~~..###>..~~~~~~~~~~..........~~",
+  "~~.......~~~~~~~..........###.~~",
+  "~~~~.....~~~~~~........#######~~",
+  "~~~~.....~~~~~.........#######~~",
+  "~~~~~~~..~~~..........<#######~~",
+  "~~~~~~~~~~~~~.........~~~~~~~~~~",
+  "~~..~~~~~~~~~~~~~.....~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+];
+export const STRAT_COLS = MAP[0]!.length;
+export const STRAT_ROWS = MAP.length;
+/** The tileset's native tile: nothing is stretched. */
+const CELL = 64;
+/** The map carries its own sea margin, so the world is the grid. */
+const WORLD_W = STRAT_COLS * CELL;
+const WORLD_H = STRAT_ROWS * CELL;
+const STRAT: Rect = { x0: 0, y0: 0, x1: WORLD_W, y1: WORLD_H };
 
-/** No lakes for now: the island is one landmass, the whole grid is land.
- *  The flag's no-swim check reads this set, so an empty set is plain land. */
-const LAKE = new Set<string>();
+function at(col: number, row: number): string {
+  return MAP[row]?.[col] ?? "~";
+}
+function isLand(col: number, row: number): boolean {
+  return at(col, row) !== "~";
+}
+function isHigh(col: number, row: number): boolean {
+  return "#<>".includes(at(col, row));
+}
+/** A plateau cell or slope whose south side drops. */
+function castsCliff(col: number, row: number): boolean {
+  return isHigh(col, row) && !isHigh(col, row + 1);
+}
+/** Where the flag and the troops may stand: land that is not a cliff face.
+ *  A slope's lower half is the ramp, so it stays walkable. */
+function isWalkable(col: number, row: number): boolean {
+  return isLand(col, row) && !(at(col, row - 1) === "#" && castsCliff(col, row - 1));
+}
+function level(col: number, row: number): number {
+  return isHigh(col, row) ? 2 : isLand(col, row) ? 1 : 0;
+}
+
+/** The tileset's 4x4 blocks: 3x3 edges plus a one-wide column, a one-tall
+ *  row and a single. Picks the column (or row) from the two neighbours. */
+function edge(before: boolean, after: boolean): number {
+  return before ? (after ? 1 : 2) : after ? 0 : 3;
+}
 
 /** How close to the screen edge the pointer pans, and how fast, in world
  *  px/s. Screen-edge scrolling, exactly as Warcraft did it. */
 const EDGE = 28;
 const PAN_PX_S = 840;
 
-/** The two main halls, at the pack's native size: the knights' monastery on
- *  the bottom left, the monsters' dead tree on the top right, its crown
- *  overhanging the coast into the sea. */
+/** Placed in cells, so a building's base lands on the row it names. */
+function cell(side: Structure["side"], name: Structure["name"], col: number, row: number, scale?: number): Structure {
+  return { side, name, x: col * CELL, y: row * CELL, scale };
+}
+
+/** Blue holds the north-west plateau, red the south-east one; the small
+ *  plateaus between are outposts, with a goblin camp on the western one. */
 const HALLS: Structure[] = [
-  { side: "a", name: "monastery", x: STRAT.x0 + 0.8 * CELL, y: STRAT.y0 + 8 * CELL },
-  { side: "g", name: "deadTree", x: STRAT.x0 + 23.5 * CELL, y: STRAT.y0 + 1 * CELL },
+  cell("a", "castle", 6.5, 3.9),
+  cell("a", "barracks", 10.6, 4.2),
+  cell("a", "house1", 4.9, 5.85),
+  cell("a", "house2", 6.6, 5.9),
+  cell("a", "archery", 7.4, 8.8),
+  cell("a", "tower", 9.3, 8.7),
+  cell("b", "castle", 26.5, 15.9),
+  cell("b", "barracks", 21.0, 13.9),
+  cell("b", "house3", 18.6, 15.5),
+  cell("b", "house1", 20.4, 16.0),
+  cell("b", "tower", 26.0, 4.7),
+  cell("b", "goblinHut", 5.2, 12.8),
+  cell("g", "deadTree", 3.0, 13.8, 0.6),
 ];
+
+/** Garrisons around their halls. All homes are walkable. */
+const GARRISON: { side: "a" | "b"; cls: UnitClass; home: { col: number; row: number } }[] = [
+  { side: "a", cls: "pawn", home: { col: 8, row: 5 } },
+  { side: "a", cls: "warrior", home: { col: 11, row: 5 } },
+  { side: "a", cls: "lancer", home: { col: 12, row: 3 } },
+  { side: "a", cls: "archer", home: { col: 8, row: 7 } },
+  { side: "a", cls: "pawn", home: { col: 14, row: 4 } },
+  { side: "b", cls: "pawn", home: { col: 17, row: 14 } },
+  { side: "b", cls: "warrior", home: { col: 22, row: 13 } },
+  { side: "b", cls: "lancer", home: { col: 24, row: 12 } },
+  { side: "b", cls: "archer", home: { col: 25, row: 14 } },
+  { side: "b", cls: "pawn", home: { col: 20, row: 11 } },
+];
+/** A wander is a slow amble to a nearby point, a pause, then on. */
+const WANDER_SPEED = 30;
+const WANDER_PAUSE = [1200, 3500] as const;
 
 export class StrategicScene extends Phaser.Scene {
   /** Grid position of the flag; null until the first click. */
@@ -73,6 +144,16 @@ export class StrategicScene extends Phaser.Scene {
   private onMenu: () => void = () => {};
   /** Touch-drag state: where the gesture started, camera included. */
   private dragStart: { x: number; y: number; camX: number; camY: number; moved: boolean } | null = null;
+  /** The garrison troops ambling around their halls. */
+  private wanderers: {
+    side: "a" | "b";
+    cls: UnitClass;
+    home: { x: number; y: number };
+    sprite: Phaser.GameObjects.Sprite;
+    root: Phaser.GameObjects.Container;
+    target: { x: number; y: number } | null;
+    pauseMs: number;
+  }[] = [];
 
   init(data: { onMenu?: () => void }): void {
     this.onMenu = data.onMenu ?? (() => {});
@@ -87,20 +168,27 @@ export class StrategicScene extends Phaser.Scene {
     loadUnits(this);
     loadBuildings(this, HALLS);
     loadPanels(this, ["paper", "blueButton", "redButton"]);
+    this.load.image("goldMine", packUrl("Terrain/Resources/Gold/Gold Stones/Gold Stone 6.png"));
+    this.load.spritesheet("sheep", packUrl("Terrain/Resources/Meat/Sheep/Sheep_Idle.png"), {
+      frameWidth: 128,
+      frameHeight: 128,
+    });
   }
 
   create(): void {
     fitCamera(this, WORLD_W / 2, WORLD_H / 2);
     prepareTerrain(this);
     makeAnims(this);
+    if (!this.anims.exists("sheep_anim")) {
+      this.anims.create({ key: "sheep_anim", frames: this.anims.generateFrameNumbers("sheep"), frameRate: 8, repeat: -1 });
+    }
 
     buildWater(this);
-    const island = buildIsland(this, STRAT);
-    buildFoam(this, island);
-    scatterDecor(this, island, STRAT, { w: WORLD_W, h: WORLD_H }, "strategic");
+    this.buildMap();
+    this.buildScenery();
     driftClouds(this, { w: WORLD_W, h: WORLD_H }, "strategic");
-    this.buildLake();
     for (const hall of HALLS) addBuilding(this, hall);
+    this.buildGarrison();
     this.buildHud();
 
     // Touch drag pans; a tap (down-up with little movement) places the flag.
@@ -122,8 +210,8 @@ export class StrategicScene extends Phaser.Scene {
       const col = Math.floor((p.worldX - STRAT.x0) / CELL);
       const row = Math.floor((p.worldY - STRAT.y0) / CELL);
       if (col < 0 || col >= STRAT_COLS || row < 0 || row >= STRAT_ROWS) return;
-      // Water is water: the flag never stands in the lake.
-      if (LAKE.has(`${col},${row}`)) return;
+      // The flag stands on land, never on water or a cliff face.
+      if (!isWalkable(col, row)) return;
       this.moveFlag(col, row);
     });
   }
@@ -142,6 +230,7 @@ export class StrategicScene extends Phaser.Scene {
   /** Screen-edge pan, Warcraft-style, both axes now that the world runs
    *  1200px tall against the 720px page. */
   update(_time: number, delta: number): void {
+    this.updateWanderers(delta);
     const p = this.input.activePointer;
     // Pointer coordinates are canvas pixels; the world renders at zoom DPR,
     // so the edge test converts back to world units first.
@@ -162,10 +251,11 @@ export class StrategicScene extends Phaser.Scene {
     this.flag = { col, row };
     const { x, y } = this.cellXY(col, row);
     if (!this.flagMark) {
-      const shadow = addShadow(this, x, y, 0.5);
-      // Above the lake's buried grass, which restamps at ground level.
+      // Local origin like the garrison: the container carries the position.
+      const shadow = addShadow(this, 0, 0, 0.5);
+      // Above the stamped water grass, which restamps at ground level.
       shadow.setDepth(DEPTH.ground + 2);
-      const sprite = this.add.sprite(x, y, unitKey("a", "pawn", "idle"));
+      const sprite = this.add.sprite(0, 0, unitKey("a", "pawn", "idle"));
       playPose(sprite, "a", "pawn", "idle");
       this.flagMark = this.add.container(x, y, [shadow, sprite]);
       sprite.setDepth(1);
@@ -183,59 +273,144 @@ export class StrategicScene extends Phaser.Scene {
     };
   }
 
-  /** The lake stamped over the grass. The foam is the island's own trick
-   *  folded inside out: each blob is centred on the land cell beside the
-   *  water and buried back under grass, so only its fringe pokes into the
-   *  lake - the same lip the island's edge leaves in the sea, not white
-   *  squares floating on the water. */
-  private buildLake(): void {
-    const waterZ = DEPTH.island + 1;
-    const foamZ = waterZ + 0.5;
-    const grassZ = waterZ + 1;
-    for (const key of LAKE) {
-      const [col, row] = key.split(",").map(Number) as [number, number];
-      const { x, y } = this.cellXY(col, row);
-      this.add.image(x, y, "water").setDisplaySize(CELL, CELL).setDepth(waterZ);
-    }
-    const foamCells = new Set<string>();
-    for (const key of LAKE) {
-      const [col, row] = key.split(",").map(Number) as [number, number];
-      for (const [nc, nr] of [
-        [col - 1, row],
-        [col + 1, row],
-        [col, row - 1],
-        [col, row + 1],
-      ] as const) {
-        if (nc < 0 || nc >= STRAT_COLS || nr < 0 || nr >= STRAT_ROWS) continue;
-        if (!LAKE.has(`${nc},${nr}`)) foamCells.add(`${nc},${nr}`);
+  /** Foam under the shore, ground everywhere on land, then plateau tops,
+   *  cliffs and slopes over it: the pack's own layer order. */
+  private buildMap(): void {
+    const tile = (c: number, r: number, tc: number, tr: number, z: number): void => {
+      this.add.image(c * CELL, r * CELL, "tileset", `tile_${tc}_${tr}`).setOrigin(0).setDepth(z);
+    };
+    for (let r = 0; r < STRAT_ROWS; r++) {
+      for (let c = 0; c < STRAT_COLS; c++) {
+        let shore = false;
+        for (let dc = -1; dc <= 1; dc++) {
+          for (let dr = -1; dr <= 1; dr++) shore ||= !isLand(c + dc, r + dr);
+        }
+        // Opaque and in step, like the battle island: the blobs read as one
+        // shoreline only when they lap together. A cliff standing in the sea
+        // gets its own.
+        if ((isLand(c, r) && shore) || (!isLand(c, r) && castsCliff(c, r - 1))) {
+          this.add.sprite(c * CELL + CELL / 2, r * CELL + CELL / 2, "foam").setDepth(DEPTH.foam).play("foam_anim");
+        }
+        if (isLand(c, r)) {
+          tile(c, r, edge(isLand(c - 1, r), isLand(c + 1, r)), edge(isLand(c, r - 1), isLand(c, r + 1)), DEPTH.island);
+        }
       }
     }
-    for (const key of foamCells) {
-      const [col, row] = key.split(",").map(Number) as [number, number];
-      const { x, y } = this.cellXY(col, row);
-      const foam = this.add.sprite(x, y, "foam").setDepth(foamZ).play("foam_anim");
-      // The island's edge laps in step on purpose; a lake reads more natural
-      // out of rhythm, so every blob starts at its own frame and drifts at
-      // its own pace - the shared anim runs 8fps, this lands the blobs
-      // around 4-5fps without touching the island's shore.
-      if (foam.anims.currentAnim) {
-        foam.anims.setProgress(Math.random());
-        foam.anims.timeScale = 0.55 + Math.random() * 0.15;
-      }
-      // Bury each blob's body under grass again - centre and all eight
-      // neighbours, the blob overhangs every one - leaving only the fringe
-      // over the water. Stretched to the cell: the tile is 64px native and
-      // cells run 84px, so at native size it would leave seams the foam
-      // shows through.
-      for (let dc = -1; dc <= 1; dc++) {
-        for (let dr = -1; dr <= 1; dr++) {
-          if (LAKE.has(`${col + dc},${row + dr}`)) continue;
-          const p = this.cellXY(col + dc, row + dr);
-          this.add.image(p.x, p.y, "tileset", "t11").setDisplaySize(CELL, CELL).setDepth(grassZ);
+    const top = DEPTH.island + 0.5;
+    for (let r = 0; r < STRAT_ROWS; r++) {
+      for (let c = 0; c < STRAT_COLS; c++) {
+        const k = at(c, r);
+        if (k === "#") {
+          tile(c, r, 5 + edge(isHigh(c - 1, r), isHigh(c + 1, r)), edge(isHigh(c, r - 1), isHigh(c, r + 1)), top);
+          if (castsCliff(c, r)) {
+            // A slope beside the wall carries the stone on, so it counts as
+            // wall for the end caps. Row 4 stands on grass, row 5 in water.
+            const col = 5 + edge(castsCliff(c - 1, r), castsCliff(c + 1, r));
+            tile(c, r + 1, col, isLand(c, r + 1) ? 4 : 5, top);
+          }
+        } else if (k === "<" || k === ">") {
+          const col = k === "<" ? 0 : 3;
+          tile(c, r, col, 4, top);
+          tile(c, r + 1, col, 5, top);
         }
       }
     }
   }
+
+  /** Lumber lines along the coasts, gold by each base and one contested in
+   *  the lake, sheep on the lowland and rocks in the shallows. */
+  private buildScenery(): void {
+    const put = (kind: "tree" | "bush" | "rock" | "waterRock", spots: [number, number][]): Phaser.GameObjects.Sprite[] =>
+      spots.map(([c, r], i) => addDecor(this, kind, c * CELL, r * CELL, 1, `strat-${kind}-${i}`));
+    put("tree", [
+      [2.6, 2.4], [3.4, 1.7], [11.9, 1.9], [13.8, 2.6], [14.9, 2.3],
+      [23.5, 1.9], [24.6, 1.6], [25.8, 1.9], [27.0, 1.7], [28.5, 2.4], [29.8, 2.9], [30.4, 4.3],
+      [2.6, 9.8], [2.5, 11.2], [2.6, 13.4], [4.4, 14.2],
+      [15.8, 15.8], [17.0, 16.6], [13.6, 17.8], [29.4, 13.6],
+    ]);
+    put("bush", [[12.5, 6.5], [18.4, 3.7], [9.6, 12.8], [22.7, 9.5], [21.3, 17.6], [3.4, 18.6]]);
+    put("rock", [[15.5, 6.6], [26.6, 6.5], [11.6, 10.8], [8.4, 16.6]]);
+    put("waterRock", [
+      [1.2, 6.4], [17.5, 1.6], [13.8, 10.9], [18.3, 11.6], [10.8, 15.4], [24.5, 18.2], [31.0, 11.5], [6.2, 18.5],
+    ]).forEach((s) => s.setDepth(DEPTH.foam));
+
+    for (const [c, r] of [[15.5, 3.8], [16.6, 14.8], [20.0, 9.8]] as const) {
+      this.add
+        .image(c * CELL, r * CELL, "goldMine")
+        .setOrigin(0.5, 0.78)
+        .setDepth(DEPTH.decorBehind + (r * CELL) / 1000);
+    }
+    for (const [c, r] of [[3.3, 7.3], [12.4, 9.4], [25.4, 10.6], [27.6, 11.4]] as const) {
+      const sheep = this.add
+        .sprite(c * CELL, r * CELL, "sheep")
+        .setOrigin(0.5, 0.66)
+        .setDepth(DEPTH.decorBehind + (r * CELL) / 1000)
+        .setFlipX(c > 16)
+        .play("sheep_anim");
+      if (sheep.anims.currentAnim) sheep.anims.setProgress(Math.random());
+    }
+  }
+  /** The garrison: one of every class per hall, each idling or ambling
+   *  around its home cell. Run anim while moving, idle while paused, the
+   *  flip follows the direction of travel. */
+  private buildGarrison(): void {
+    this.wanderers = GARRISON.map((g) => {
+      const { x, y } = this.cellXY(g.home.col, g.home.row);
+      // Children ride at local origin: a container adds its own position,
+      // so world coords on the children would double the offset and throw
+      // every troop off the map.
+      const shadow = addShadow(this, 0, 0, g.cls === "lancer" ? 0.8 : 0.62);
+      const sprite = this.add.sprite(0, 0, unitKey(g.side, g.cls, "idle"));
+      playPose(sprite, g.side, g.cls, "idle");
+      const root = this.add.container(x, y, [shadow, sprite]);
+      root.setDepth(DEPTH.unit + y);
+      return { side: g.side, cls: g.cls, home: { x, y }, sprite, root, target: null, pauseMs: 0 };
+    });
+  }
+
+  /** Wander AI: pick a point near home, walk it, pause, repeat. */
+  private updateWanderers(delta: number): void {
+    for (const w of this.wanderers) {
+      if (w.target) {
+        const dx = w.target.x - w.root.x;
+        const dy = w.target.y - w.root.y;
+        const dist = Math.hypot(dx, dy);
+        const step = (WANDER_SPEED * delta) / 1000;
+        if (dist <= step) {
+          w.root.setPosition(w.target.x, w.target.y);
+          w.target = null;
+          w.pauseMs = WANDER_PAUSE[0] + Math.random() * (WANDER_PAUSE[1] - WANDER_PAUSE[0]);
+          playPose(w.sprite, w.side, w.cls, "idle");
+          w.sprite.setFlipX(w.side === "b");
+        } else {
+          w.root.setPosition(w.root.x + (dx / dist) * step, w.root.y + (dy / dist) * step);
+          w.root.setDepth(DEPTH.unit + w.root.y);
+          playPose(w.sprite, w.side, w.cls, "run");
+          w.sprite.setFlipX(dx < 0 !== (w.side === "b"));
+        }
+      } else {
+        w.pauseMs -= delta;
+        if (w.pauseMs <= 0) {
+          // Never stray more than 1.5 cells from home, and stay on the
+          // home's level: no walking off a plateau through its cliff.
+          const col = (w.home.x - STRAT.x0) / CELL;
+          const row = (w.home.y - STRAT.y0) / CELL;
+          for (let tries = 0; !w.target && tries < 8; tries++) {
+            const c = col + (Math.random() * 3 - 1.5);
+            const r = row + (Math.random() * 3 - 1.5);
+            const tc = Math.floor(c);
+            const tr = Math.floor(r);
+            if (!isWalkable(tc, tr) || level(tc, tr) !== level(Math.floor(col), Math.floor(row))) continue;
+            w.target = { x: STRAT.x0 + c * CELL, y: STRAT.y0 + r * CELL };
+          }
+          if (!w.target) w.target = { ...w.home };
+        }
+      }
+    }
+  }
+
+  /** The zoom column, kept for re-layout on resize and zoom. */
+  private zoomBtns: Phaser.GameObjects.Container[] = [];
 
   /** Title ribbon while there is nothing else on the map. */
   private buildHud(): void {
@@ -248,6 +423,68 @@ export class StrategicScene extends Phaser.Scene {
       .setScale(0.8)
       .setDepth(DEPTH.hud + 2)
       .setScrollFactor(0);
+    this.buildZoom();
+    this.layoutHud();
+    this.scale.on(Phaser.Scale.Events.RESIZE, this.layoutHud, this);
+    this.events.once(Phaser.Scenes.Events.DESTROY, () => {
+      this.scale.off(Phaser.Scale.Events.RESIZE, this.layoutHud, this);
+    });
+  }
+
+  /** Zoom controls, pinned to the viewport's right edge so any window width
+   *  keeps them on screen. Zoom 1 is the maximum: the DPR-zoomed native
+   *  view the scene ships at. Out goes in steps to half. */
+  private buildZoom(): void {
+    const steps = [1, 0.75, 0.5];
+    let level = 0;
+    const cam = this.cameras.main;
+    const apply = (): void => {
+      const z = steps[level]! * DPR;
+      cam.setZoom(z);
+      // The clamp inside setScroll is view-size dependent, so just recenter
+      // on the map: the boring choice that never drifts off the island.
+      this.centerOnMap();
+      this.layoutHud();
+    };
+    const zoomIn = label(this, 0, 0, "+", { fontSize: "26px" });
+    const zoomOut = label(this, 0, 0, "\u2212", { fontSize: "26px" });
+    const bIn = button(this, 0, 0, 88, 88, "", "blue", () => {
+      if (level > 0) {
+        level--;
+        apply();
+      }
+    });
+    bIn.add(zoomIn);
+    zoomIn.setDepth(1);
+    const bOut = button(this, 0, 0, 88, 88, "", "blue", () => {
+      if (level < steps.length - 1) {
+        level++;
+        apply();
+      }
+    });
+    bOut.add(zoomOut);
+    zoomOut.setDepth(1);
+    for (const b of [bIn, bOut]) {
+      b.setDepth(DEPTH.hud + 2).setScrollFactor(0).setScale(0.7);
+      this.zoomBtns.push(b);
+    }
+  }
+
+  /** Pin the zoom column to the viewport's right edge in world units:
+   *  scroll-free HUD lives in camera space, whose width is canvas / zoom. */
+  private layoutHud(): void {
+    const cam = this.cameras.main;
+    const viewW = cam.width / cam.zoom;
+    const [bIn, bOut] = this.zoomBtns;
+    bIn?.setPosition(viewW - 70, 130).setData("baseY", 130);
+    bOut?.setPosition(viewW - 70, 236).setData("baseY", 236);
+  }
+
+  /** Keep whatever the camera looks at stable through a zoom change:
+   *  recentering on the map's midpoint is the boring choice that never
+   *  drifts off the island. */
+  private centerOnMap(): void {
+    this.cameras.main.centerOn(STRAT.x0 + (STRAT_COLS * CELL) / 2, STRAT.y0 + (STRAT_ROWS * CELL) / 2);
   }
 }
 
