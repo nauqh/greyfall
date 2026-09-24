@@ -88,6 +88,37 @@ export function panel(
     .setOrigin(0.5);
 }
 
+/** Rows of the composed 320px wood table, measured off the art: its head
+ *  down to the first plank seam, a clean run of plank between the seams, and
+ *  its foot from under the second seam. */
+const WOOD_ROWS = { headEnd: 123, bandStart: 134, bandEnd: 188, footStart: 198 } as const;
+
+/** The wood table at its native width and any height, as one seamless
+ *  board: the clean plank run repeats instead of stretching, so neither the
+ *  grain nor the plank seams show a join. */
+export function woodBoard(scene: Phaser.Scene, x: number, y: number, h: number): Phaser.GameObjects.Image {
+  const s = compose(scene, "woodTable");
+  const H = Math.round(h);
+  const key = `${s.key}_board_${H}`;
+  if (!scene.textures.exists(key)) {
+    const src = scene.textures.get(s.key).getSourceImage() as HTMLCanvasElement;
+    const W = src.width;
+    const { headEnd, bandStart, bandEnd, footStart } = WOOD_ROWS;
+    const foot = src.height - footStart;
+    const tex = scene.textures.createCanvas(key, W, H)!;
+    const ctx = tex.context;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(src, 0, 0, W, headEnd, 0, 0, W, headEnd);
+    for (let dy = headEnd; dy < H - foot; dy += bandEnd - bandStart) {
+      const rows = Math.min(bandEnd - bandStart, H - foot - dy);
+      ctx.drawImage(src, 0, bandStart, W, rows, 0, dy, W, rows);
+    }
+    ctx.drawImage(src, 0, footStart, W, foot, 0, H - foot, W, foot);
+    tex.refresh();
+  }
+  return scene.add.image(x, y, key);
+}
+
 /** Slate title ribbon. The middle stretches; the forked ends never do. */
 export function ribbon(
   scene: Phaser.Scene,

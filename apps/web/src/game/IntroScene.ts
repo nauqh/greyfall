@@ -27,19 +27,18 @@ import {
   type Rect,
   type Structure,
 } from "./terrain";
-import { button, label, loadPanels, panel } from "./ui";
+import { button, label, loadPanels, panel, woodBoard } from "./ui";
 
 /** Whole 64px tiles; the first five columns are the signboard's yard. */
 const ISLAND: Rect = { x0: 64, y0: 128, x1: 1152, y1: 640 };
 
 /** The signboard's centre; the village starts right of it. */
-const BOARD = { x: 240, y: 392, w: 352, h: 448 } as const;
+const BOARD = { x: 240, y: 392, w: 320, h: 448 } as const;
 
 const MENU = [
   { text: "Solo", href: "/battle" },
   { text: "Duel", href: "/duel" },
-  // In development: dimmed so it reads as not ready.
-  { text: "Map", href: "/map", dev: true },
+  { text: "Map", href: "/map" },
 ] as const;
 
 /**
@@ -139,15 +138,17 @@ export class IntroScene extends Phaser.Scene {
     // The sheets pad their ink ~45px inside each 128px corner, hence the slack.
     const top = y - h / 2 + 45;
     const board = this.add.container(0, 0).setDepth(DEPTH.unit + y + h / 2);
-    board.add(panel(this, "woodTable", x, y, w, h));
-    board.add(panel(this, "bigRibbon", x, top + 4, w + 40, 128));
+    board.add(woodBoard(this, x, y, h));
+    // The pack's blue ribbon, lifted a shade so the title reads light.
+    const ribbon = panel(this, "bigRibbon", x, top + 4, w + 100, 128);
+    ribbon.postFX?.addColorMatrix().brightness(1.3);
+    board.add(ribbon);
     board.add(label(this, x, top, "GREYFALL", { fontSize: "34px", strokeThickness: 4 }));
 
     MENU.forEach((item, i) => {
       const b = button(this, x, y - 70 + i * 100, 220, 96, item.text.toUpperCase(), "blue", () =>
         this.leave(item.href),
       );
-      if ("dev" in item) b.setAlpha(0.55);
       board.add(b);
     });
   }
