@@ -8,12 +8,15 @@
 import * as Phaser from "phaser";
 
 import { iconKey, iconUrl, packUrl } from "./art";
-import { DPR, WATER } from "./boot";
+import { WATER, baseZoom } from "./boot";
 import { HAND, label, loadPanels, panel, ribbon } from "./ui";
 
 export const HUD_KEY = "strategicHud";
-/** The bottom bar's height in HUD units; the map scrolls up past it. */
-export const HUD_BAR_H = 160;
+/** The bottom bar's height in HUD units, and its gap to the screen edge. */
+const BAR_H = 160;
+const BAR_GAP = 12;
+/** How much of the screen's bottom the HUD covers; the map scrolls up past it. */
+export const HUD_COVER_H = BAR_H + BAR_GAP;
 
 export interface HudData {
   /** The map rows, `~ . # < >` as StrategicScene draws them. */
@@ -25,9 +28,9 @@ export interface HudData {
 }
 
 const ICON = { build: "01", wood: "02", gold: "03", meat: "04", attack: "05", hold: "06", move: "08", stop: "09", menu: "10" };
-/** The wood table art carries ~22px of empty margin at the half scale it
- *  is drawn at, so its ink starts that far inside the panel. */
-const TABLE_PAD = 22;
+/** The wood table art's empty margin at the half scale it is drawn at:
+ *  its ink starts this far inside the panel. */
+const TABLE_PAD = { side: 22, top: 22, bottom: 13 };
 
 export class StrategicHud extends Phaser.Scene {
   private hud!: HudData;
@@ -49,8 +52,10 @@ export class StrategicHud extends Phaser.Scene {
   }
 
   create(): void {
-    // Origin 0 so HUD units map to canvas px times DPR from the top left.
-    this.cameras.main.setOrigin(0).setZoom(DPR);
+    // Origin 0 so HUD units map to canvas px times the map's base zoom from
+    // the top left: the HUD scales with the screen as the map does.
+    const zoom = baseZoom(this);
+    this.cameras.main.setOrigin(0).setZoom(zoom);
     // EXPAND resizes the canvas; a rebuild is the boring way to re-anchor.
     const rebuild = (): void => {
       this.scene.restart();
@@ -58,8 +63,8 @@ export class StrategicHud extends Phaser.Scene {
     this.scale.on(Phaser.Scale.Events.RESIZE, rebuild);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, rebuild));
 
-    const w = this.scale.width / DPR;
-    const h = this.scale.height / DPR;
+    const w = this.scale.width / zoom;
+    const h = this.scale.height / zoom;
     this.buildTop(w);
     this.buildBar(w, h);
   }
@@ -87,17 +92,20 @@ export class StrategicHud extends Phaser.Scene {
   }
 
   private buildBar(w: number, h: number): void {
-    const panelH = HUD_BAR_H + 60;
-    panel(this, "woodTable", w / 2, h - HUD_BAR_H - TABLE_PAD + panelH / 2, (w + 2 * TABLE_PAD) * 2, panelH * 2)
+    // The frame's ink fills the bar rect, clear of the screen edge all round.
+    const inkBottom = h - BAR_GAP;
+    const panelW = w - 2 * BAR_GAP + 2 * TABLE_PAD.side;
+    const panelH = BAR_H + TABLE_PAD.top + TABLE_PAD.bottom;
+    panel(this, "woodTable", w / 2, inkBottom + TABLE_PAD.bottom - panelH / 2, panelW * 2, panelH * 2)
       .setScale(0.5)
       // Eats clicks so the map under the bar never gets them.
       .setInteractive();
-    const cy = h - HUD_BAR_H / 2 + 2;
+    const cy = inkBottom - BAR_H / 2;
 
     // Minimap, left.
     const mapW = 200;
     const mapH = 125;
-    const mapX = 24;
+    const mapX = BAR_GAP + 24;
     this.add.image(mapX + mapW / 2, cy, "hudSlot").setDisplaySize(mapW + 16, mapH + 16);
     this.drawMinimap(mapX, cy - mapH / 2, mapW, mapH);
 
@@ -108,7 +116,7 @@ export class StrategicHud extends Phaser.Scene {
 
     // Command card, right: 3x3, placeholder orders in the first slots.
     const step = 44;
-    const cardX = w - 24 - 3 * step;
+    const cardX = w - BAR_GAP - 24 - 3 * step;
     const orders = [ICON.move, ICON.stop, ICON.hold, ICON.attack, ICON.build];
     for (let i = 0; i < 9; i++) {
       const x = cardX + (i % 3) * step + step / 2;

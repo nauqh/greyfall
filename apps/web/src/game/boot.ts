@@ -2,10 +2,10 @@
 // a camera setup and a background, so the page only ever deals with one
 // aspect ratio and a screen swap cannot shift the sea.
 //
-// Scale.EXPAND keeps one axis at the world's size and grows the other to
-// cover the parent, so the canvas fills the page and the world gains water
-// around its edges instead of a letterbox seam. The camera's zoom is fixed,
-// so full-page veils size themselves from viewSize().
+// The canvas is the page, pixel for device pixel: nothing stretches the
+// frame after Phaser draws it. Each camera zooms by baseZoom() instead, which
+// fits the 1200x720 world on one axis and lets the other see more, so the
+// world gains water around its edges instead of a letterbox seam.
 
 import * as Phaser from "phaser";
 
@@ -15,28 +15,51 @@ export const GAME_H = 720;
 /** = Terrain/Tileset/Water Background color.png, and the page's own body. */
 export const WATER = "#47aba9";
 
-// Phaser 3.90 has no HiDPI support: the canvas backing store is the game
-// size, and the browser bilinear-upscales it to physical pixels, which is
-// what smears thin glyphs. Render at devicePixelRatio instead and zoom the
-// camera to match, so the canvas only ever gets downscaled.
+// Phaser 3.90 has no HiDPI support, so the backing store is sized in device
+// pixels by hand and shown at 1 / DPR, its CSS size.
 export const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
 
-/** The canvas is DPR times the world; zoom recentres, so aim it back. */
-export function fitCamera(scene: Phaser.Scene, cx = GAME_W / 2, cy = GAME_H / 2): void {
+/** Canvas px per world unit: the whole 1200x720 world, fitted on one axis.
+ *  Not a whole number on most screens, so pixel art lands on uneven screen
+ *  pixels; flooring it (min 1) would make them even at the cost of showing
+ *  more world on bigger screens. */
+export function baseZoom(scene: Phaser.Scene): number {
+  return Math.min(scene.scale.width / GAME_W, scene.scale.height / GAME_H);
+}
+
+/** Zoom to fit, times `scale` (a scene's own zoom level), centred on cx, cy,
+ *  and again on every resize. */
+export function fitCamera(
+  scene: Phaser.Scene,
+  cx = GAME_W / 2,
+  cy = GAME_H / 2,
+  scale: () => number = () => 1,
+): void {
   const cam = scene.cameras.main;
-  cam.setZoom(DPR);
-  cam.centerOn(cx, cy);
-  // EXPAND changes the canvas size on window resize, which shifts what the
-  // camera sees; keep the world centred so the extra water stays even.
-  const recenter = (): void => {
+  const fit = (): void => {
+    cam.setZoom(baseZoom(scene) * scale());
     cam.centerOn(cx, cy);
   };
-  scene.scale.on(Phaser.Scale.Events.RESIZE, recenter);
-  scene.events.once(Phaser.Scenes.Events.DESTROY, () => scene.scale.off(Phaser.Scale.Events.RESIZE, recenter));
+  fit();
+  scene.scale.on(Phaser.Scale.Events.RESIZE, fit);
+  // Shutdown, not only destroy: a scene that restarts itself (the battle,
+  // every round) would otherwise add a listener per restart.
+  const off = (): void => {
+    scene.scale.off(Phaser.Scale.Events.RESIZE, fit);
+  };
+  scene.events.once(Phaser.Scenes.Events.SHUTDOWN, off);
+  scene.events.once(Phaser.Scenes.Events.DESTROY, off);
 }
 
 export const WATER_SPAN = { w: 3600, h: 2000 } as const;
-/** FIT scaling fits the logical world to whatever the page gives it. */
+/** The parent's size in device pixels. */
+function deviceSize(parent: HTMLElement): { w: number; h: number } {
+  return {
+    w: Math.max(1, Math.round(parent.clientWidth * DPR)),
+    h: Math.max(1, Math.round(parent.clientHeight * DPR)),
+  };
+}
+
 export function startGame(
   parent: HTMLElement,
   key: string,
@@ -49,6 +72,12 @@ export function startGame(
   // Resolves when the scene's own create() runs: chunks, webfont, Phaser boot
   // and its asset loader are all behind it, so it is the real ready signal.
   const ready = new Promise<void>((ok) => (done = ok));
+  // Scale.NONE does not follow the page, so the canvas is resized here.
+  const follow = new ResizeObserver(() => {
+    const { w, h } = deviceSize(parent);
+    game?.scale.resize(w, h);
+  });
+  follow.observe(parent);
   // Phaser bakes each Text into a canvas when it is created; before the
   // webfont arrives that bake is the fallback font forever.
   void document.fonts
@@ -56,6 +85,7 @@ export function startGame(
     .catch(() => {})
     .then(() => {
       if (cancelled) return;
+      const { w, h } = deviceSize(parent);
       game = new Phaser.Game({
         type: Phaser.AUTO,
         parent,
@@ -67,10 +97,11 @@ export function startGame(
         // throwing "Cannot suspend a closed AudioContext".
         audio: { noAudio: true },
         scale: {
-          mode: Phaser.Scale.EXPAND,
+          mode: Phaser.Scale.NONE,
           autoCenter: Phaser.Scale.NO_CENTER,
-          width: Math.round(GAME_W * DPR),
-          height: Math.round(GAME_H * DPR),
+          width: w,
+          height: h,
+          zoom: 1 / DPR,
         },
       });
       game.events.once(Phaser.Core.Events.READY, () => {
@@ -82,6 +113,7 @@ export function startGame(
   return {
     destroy: () => {
       cancelled = true;
+      follow.disconnect();
       done();
       game?.destroy(true);
     },

@@ -11,8 +11,19 @@ import type { UnitClass } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
 import { packUrl } from "./art";
-import { DPR, fitCamera, startGame } from "./boot";
-import { HUD_BAR_H, HUD_KEY, StrategicHud } from "./StrategicHud";
+import { baseZoom, fitCamera, startGame } from "./boot";
+import { HUD_COVER_H, HUD_KEY, StrategicHud } from "./StrategicHud";
+import {
+  MAP,
+  STRAT_COLS,
+  STRAT_ROWS,
+  at,
+  findPath,
+  isSlope,
+  isLand,
+  isWalkable,
+  type Cell,
+} from "./stratMap";
 import { loadUnits, makeAnims, playPose, unitKey } from "./sprites";
 import {
   DEPTH,
@@ -28,62 +39,12 @@ import {
   type Structure,
 } from "./terrain";
 
-/** `~` water, `.` ground, `#` plateau. `<` / `>` are slopes: they sit in a
- *  plateau's bottom row at its west / east end and run down into the row
- *  below. The row under a plateau's bottom edge is its cliff face, so it is
- *  drawn as stone and nothing stands there. */
-const MAP = [
-  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
-  "~~~#########~~~~~~~~~~~.....~~~~",
-  "~~###########...~~~~~~.........~",
-  "~~###########......~~~..####...~",
-  "~~###########.......~...####>..~",
-  "~~..#########>..........~~.....~",
-  "~~.............~~...........~~~~",
-  "~~~...####.......~~~~........~~~",
-  "~~~...####>.....~~~~~~.......~~~",
-  "~~~.............~~~..~~.......~~",
-  "~~..........~~~~~~~~~~~.......~~",
-  "~~..###....~~~~~.~~~~~~~......~~",
-  "~~..###>..~~~~~~~~~~..........~~",
-  "~~.......~~~~~~~..........###.~~",
-  "~~~~.....~~~~~~........#######~~",
-  "~~~~.....~~~~~.........#######~~",
-  "~~~~~~~..~~~..........<#######~~",
-  "~~~~~~~~~~~~~.........~~~~~~~~~~",
-  "~~..~~~~~~~~~~~~~.....~~~~~~~~~~",
-  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
-];
-export const STRAT_COLS = MAP[0]!.length;
-export const STRAT_ROWS = MAP.length;
 /** The tileset's native tile: nothing is stretched. */
 const CELL = 64;
 /** The map carries its own sea margin, so the world is the grid. */
 const WORLD_W = STRAT_COLS * CELL;
 const WORLD_H = STRAT_ROWS * CELL;
 const STRAT: Rect = { x0: 0, y0: 0, x1: WORLD_W, y1: WORLD_H };
-
-function at(col: number, row: number): string {
-  return MAP[row]?.[col] ?? "~";
-}
-function isLand(col: number, row: number): boolean {
-  return at(col, row) !== "~";
-}
-function isHigh(col: number, row: number): boolean {
-  return "#<>".includes(at(col, row));
-}
-/** A plateau cell or slope whose south side drops. */
-function castsCliff(col: number, row: number): boolean {
-  return isHigh(col, row) && !isHigh(col, row + 1);
-}
-/** Where the flag and the troops may stand: land that is not a cliff face.
- *  A slope's lower half is the ramp, so it stays walkable. */
-function isWalkable(col: number, row: number): boolean {
-  return isLand(col, row) && !(at(col, row - 1) === "#" && castsCliff(col, row - 1));
-}
-function level(col: number, row: number): number {
-  return isHigh(col, row) ? 2 : isLand(col, row) ? 1 : 0;
-}
 
 /** The tileset's 4x4 blocks: 3x3 edges plus a one-wide column, a one-tall
  *  row and a single. Picks the column (or row) from the two neighbours. */
@@ -95,7 +56,7 @@ function edge(before: boolean, after: boolean): number {
  *  px/s. Screen-edge scrolling, exactly as Warcraft did it. */
 const EDGE = 28;
 const PAN_PX_S = 840;
-/** Camera zoom steps over DPR. The first is the native view and the
+/** Camera zoom steps over baseZoom. The first is the native view and the
  *  closest in; out stops about where the whole map fits the page. */
 const ZOOMS = [1, 0.8, 0.6] as const;
 
@@ -114,7 +75,7 @@ const HALLS: Structure[] = [
   cell("a", "archery", 7.4, 8.8),
   cell("a", "tower", 9.3, 8.7),
   cell("b", "castle", 26.5, 15.9),
-  cell("b", "barracks", 21.0, 13.9),
+  cell("b", "barracks", 19.6, 13.9),
   cell("b", "house3", 18.6, 15.5),
   cell("b", "house1", 20.4, 16.0),
   cell("b", "tower", 26.0, 4.7),
@@ -133,30 +94,37 @@ const GARRISON: { side: "a" | "b"; cls: UnitClass; home: { col: number; row: num
   { side: "b", cls: "warrior", home: { col: 22, row: 13 } },
   { side: "b", cls: "lancer", home: { col: 24, row: 12 } },
   { side: "b", cls: "archer", home: { col: 25, row: 14 } },
-  { side: "b", cls: "pawn", home: { col: 20, row: 11 } },
+  { side: "b", cls: "pawn", home: { col: 21, row: 12 } },
 ];
-/** A wander is a slow amble to a nearby point, a pause, then on. */
+/** A wander is a slow amble to a nearby cell, a pause, then on. */
 const WANDER_SPEED = 30;
 const WANDER_PAUSE = [1200, 3500] as const;
+/** How many cells a wander may walk, detours round cliffs included. */
+const WANDER_STEPS = 4;
+const FLAG_SPEED = 90;
+
+interface Walker {
+  side: "a" | "b";
+  cls: UnitClass;
+  /** Wanderers amble around it; the flag pawn has none and waits for orders. */
+  home: Cell | null;
+  speed: number;
+  sprite: Phaser.GameObjects.Sprite;
+  root: Phaser.GameObjects.Container;
+  /** Cell centres still to walk, in order. */
+  path: { x: number; y: number }[];
+  pauseMs: number;
+}
 
 export class StrategicScene extends Phaser.Scene {
-  /** Grid position of the flag; null until the first click. */
-  private flag: { col: number; row: number } | null = null;
-  private flagMark: Phaser.GameObjects.Container | null = null;
+  /** The pawn the flag sends; null until the first click. */
+  private flagPawn: Walker | null = null;
   /** Handed in by the page; absent when the map opens on its own. */
   private onMenu: () => void = () => {};
   /** Touch-drag state: where the gesture started, camera included. */
   private dragStart: { x: number; y: number; camX: number; camY: number; moved: boolean } | null = null;
-  /** The garrison troops ambling around their halls. */
-  private wanderers: {
-    side: "a" | "b";
-    cls: UnitClass;
-    home: { x: number; y: number };
-    sprite: Phaser.GameObjects.Sprite;
-    root: Phaser.GameObjects.Container;
-    target: { x: number; y: number } | null;
-    pauseMs: number;
-  }[] = [];
+  /** Everyone on foot: the garrison and the flag pawn. */
+  private walkers: Walker[] = [];
 
   init(data: { onMenu?: () => void }): void {
     this.onMenu = data.onMenu ?? (() => {});
@@ -178,7 +146,7 @@ export class StrategicScene extends Phaser.Scene {
   }
 
   create(): void {
-    fitCamera(this, WORLD_W / 2, WORLD_H / 2);
+    fitCamera(this, WORLD_W / 2, WORLD_H / 2, () => ZOOMS[this.zoomLevel]!);
     prepareTerrain(this);
     makeAnims(this);
     if (!this.anims.exists("sheep_anim")) {
@@ -233,7 +201,7 @@ export class StrategicScene extends Phaser.Scene {
     const next = Math.max(0, Math.min(ZOOMS.length - 1, this.zoomLevel + dir));
     if (next === this.zoomLevel) return;
     this.zoomLevel = next;
-    this.cameras.main.zoomTo(ZOOMS[next]! * DPR, 180, "Sine.easeOut", true);
+    this.cameras.main.zoomTo(ZOOMS[next]! * baseZoom(this), 180, "Sine.easeOut", true);
   }
   private zoomLevel = 0;
 
@@ -247,7 +215,7 @@ export class StrategicScene extends Phaser.Scene {
     const shiftX = (cam.width - viewW) / 2;
     const shiftY = (cam.height - viewH) / 2;
     // The HUD bar covers the bottom of the view; the map scrolls up past it.
-    const under = (HUD_BAR_H * DPR) / cam.zoom;
+    const under = (HUD_COVER_H * baseZoom(this)) / cam.zoom;
     const fit = (v: number, max: number): number => (max < 0 ? max / 2 : Math.max(0, Math.min(max, v)));
     cam.scrollX = fit(x + shiftX, WORLD_W - viewW) - shiftX;
     cam.scrollY = fit(y + shiftY, WORLD_H + under - viewH) - shiftY;
@@ -256,35 +224,40 @@ export class StrategicScene extends Phaser.Scene {
   /** Screen-edge pan, Warcraft-style, at the same on-screen speed at any
    *  zoom. The clamp runs every frame so a zoom tween stays in bounds. */
   update(_time: number, delta: number): void {
-    this.updateWanderers(delta);
+    this.updateWalkers(delta);
     const p = this.input.activePointer;
     const cam = this.cameras.main;
-    // Pointer coordinates are canvas pixels, DPR per HUD unit.
-    const e = EDGE * DPR;
+    // Pointer coordinates are canvas pixels, baseZoom per HUD unit.
+    const e = EDGE * baseZoom(this);
     const dx = p.x < e ? -1 : p.x > cam.width - e ? 1 : 0;
     const dy = p.y < e ? -1 : p.y > cam.height - e ? 1 : 0;
-    const step = (PAN_PX_S * DPR * delta) / 1000 / cam.zoom;
+    const step = (PAN_PX_S * baseZoom(this) * delta) / 1000 / cam.zoom;
     this.setScroll(cam.scrollX + dx * step, cam.scrollY + dy * step);
   }
 
+  /** The first click drops the pawn there; after that it walks the way. */
   private moveFlag(col: number, row: number): void {
-    this.flag = { col, row };
-    const { x, y } = this.cellXY(col, row);
-    if (!this.flagMark) {
-      // Local origin like the garrison: the container carries the position.
-      const shadow = addShadow(this, 0, 0, 0.5);
-      // Above the stamped water grass, which restamps at ground level.
-      shadow.setDepth(DEPTH.ground + 2);
-      const sprite = this.add.sprite(0, 0, unitKey("a", "pawn", "idle"));
-      playPose(sprite, "a", "pawn", "idle");
-      this.flagMark = this.add.container(x, y, [shadow, sprite]);
-      sprite.setDepth(1);
-      shadow.setDepth(0);
-      this.flagMark.setDepth(DEPTH.unit + y);
+    if (!this.flagPawn) {
+      this.flagPawn = this.addWalker("a", "pawn", { col, row }, null, FLAG_SPEED, 0.5);
+      return;
     }
-    this.flagMark.setPosition(x, y);
-    this.flagMark.setDepth(DEPTH.unit + y);
+    this.sendTo(this.flagPawn, { col, row });
   }
+
+  /** Route a walker over ground and ramps only. From the cell it is already
+   *  heading into, so a new order never cuts across mid-step. */
+  private sendTo(w: Walker, to: Cell): boolean {
+    const heading = w.path[0];
+    const route = findPath(heading ? this.cellAt(heading.x, heading.y) : this.cellAt(w.root.x, w.root.y), to);
+    if (!route) return false;
+    w.path = [...(heading ? [heading] : []), ...route.map((c) => this.cellXY(c.col, c.row))];
+    return true;
+  }
+
+  private cellAt(x: number, y: number): Cell {
+    return { col: Math.floor(x / CELL), row: Math.floor(y / CELL) };
+  }
+
 
   private cellXY(col: number, row: number): { x: number; y: number } {
     return {
@@ -299,6 +272,12 @@ export class StrategicScene extends Phaser.Scene {
     const tile = (c: number, r: number, tc: number, tr: number, z: number): void => {
       this.add.image(c * CELL, r * CELL, "tileset", `tile_${tc}_${tr}`).setOrigin(0).setDepth(z);
     };
+    const plateau = (c: number, r: number): boolean => at(c, r) === "#";
+    // A cliff face stands in every cell under a plateau or ramp that is not
+    // plateau itself - behind a ramp too, so the ramp reads as cut into the
+    // rock rather than laid on the lawn.
+    const wall = (c: number, r: number): boolean => (plateau(c, r - 1) || isSlope(c, r - 1)) && !plateau(c, r);
+
     for (let r = 0; r < STRAT_ROWS; r++) {
       for (let c = 0; c < STRAT_COLS; c++) {
         let shore = false;
@@ -308,7 +287,7 @@ export class StrategicScene extends Phaser.Scene {
         // Opaque and in step, like the battle island: the blobs read as one
         // shoreline only when they lap together. A cliff standing in the sea
         // gets its own.
-        if ((isLand(c, r) && shore) || (!isLand(c, r) && castsCliff(c, r - 1))) {
+        if ((isLand(c, r) && shore) || (!isLand(c, r) && wall(c, r))) {
           this.add.sprite(c * CELL + CELL / 2, r * CELL + CELL / 2, "foam").setDepth(DEPTH.foam).play("foam_anim");
         }
         if (isLand(c, r)) {
@@ -316,23 +295,39 @@ export class StrategicScene extends Phaser.Scene {
         }
       }
     }
+    // The pack's drop shadow under every plateau cell and cliff face, a
+    // little low: it shows as a dark band at the cliff foot and a thin halo
+    // down the sides, which is what reads as height. Not round ramps: their
+    // open corners would show it as a box.
+    for (let r = 0; r < STRAT_ROWS; r++) {
+      for (let c = 0; c < STRAT_COLS; c++) {
+        if (plateau(c, r) || (wall(c, r) && !isSlope(c, r) && !isSlope(c, r - 1))) {
+          this.add.image(c * CELL + CELL / 2, r * CELL + CELL / 2 + 16, "shadow_src").setDepth(DEPTH.island + 0.25);
+        }
+      }
+    }
+    // Tops, then walls, then ramps over the walls. Tops edge against plateau
+    // only, so the cell above a ramp keeps its rim. Walls cap where the run
+    // ends; row 4 stands on grass, row 5 in water.
     const top = DEPTH.island + 0.5;
     for (let r = 0; r < STRAT_ROWS; r++) {
       for (let c = 0; c < STRAT_COLS; c++) {
-        const k = at(c, r);
-        if (k === "#") {
-          tile(c, r, 5 + edge(isHigh(c - 1, r), isHigh(c + 1, r)), edge(isHigh(c, r - 1), isHigh(c, r + 1)), top);
-          if (castsCliff(c, r)) {
-            // A slope beside the wall carries the stone on, so it counts as
-            // wall for the end caps. Row 4 stands on grass, row 5 in water.
-            const col = 5 + edge(castsCliff(c - 1, r), castsCliff(c + 1, r));
-            tile(c, r + 1, col, isLand(c, r + 1) ? 4 : 5, top);
-          }
-        } else if (k === "<" || k === ">") {
-          const col = k === "<" ? 0 : 3;
-          tile(c, r, col, 4, top);
-          tile(c, r + 1, col, 5, top);
+        if (plateau(c, r)) {
+          tile(c, r, 5 + edge(plateau(c - 1, r), plateau(c + 1, r)), edge(plateau(c, r - 1), plateau(c, r + 1)), top);
         }
+      }
+    }
+    for (let r = 0; r < STRAT_ROWS; r++) {
+      for (let c = 0; c < STRAT_COLS; c++) {
+        if (wall(c, r)) tile(c, r, 5 + edge(wall(c - 1, r), wall(c + 1, r)), isLand(c, r) ? 4 : 5, top);
+      }
+    }
+    for (let r = 0; r < STRAT_ROWS; r++) {
+      for (let c = 0; c < STRAT_COLS; c++) {
+        if (!isSlope(c, r)) continue;
+        const col = at(c, r) === "<" ? 0 : 3;
+        tile(c, r, col, 4, top);
+        tile(c, r + 1, col, 5, top);
       }
     }
   }
@@ -371,63 +366,78 @@ export class StrategicScene extends Phaser.Scene {
     }
   }
   /** The garrison: one of every class per hall, each idling or ambling
-   *  around its home cell. Run anim while moving, idle while paused, the
-   *  flip follows the direction of travel. */
+   *  around its home cell. */
   private buildGarrison(): void {
-    this.wanderers = GARRISON.map((g) => {
-      const { x, y } = this.cellXY(g.home.col, g.home.row);
-      // Children ride at local origin: a container adds its own position,
-      // so world coords on the children would double the offset and throw
-      // every troop off the map.
-      const shadow = addShadow(this, 0, 0, g.cls === "lancer" ? 0.8 : 0.62);
-      const sprite = this.add.sprite(0, 0, unitKey(g.side, g.cls, "idle"));
-      playPose(sprite, g.side, g.cls, "idle");
-      const root = this.add.container(x, y, [shadow, sprite]);
-      root.setDepth(DEPTH.unit + y);
-      return { side: g.side, cls: g.cls, home: { x, y }, sprite, root, target: null, pauseMs: 0 };
-    });
-  }
-
-  /** Wander AI: pick a point near home, walk it, pause, repeat. */
-  private updateWanderers(delta: number): void {
-    for (const w of this.wanderers) {
-      if (w.target) {
-        const dx = w.target.x - w.root.x;
-        const dy = w.target.y - w.root.y;
-        const dist = Math.hypot(dx, dy);
-        const step = (WANDER_SPEED * delta) / 1000;
-        if (dist <= step) {
-          w.root.setPosition(w.target.x, w.target.y);
-          w.target = null;
-          w.pauseMs = WANDER_PAUSE[0] + Math.random() * (WANDER_PAUSE[1] - WANDER_PAUSE[0]);
-          playPose(w.sprite, w.side, w.cls, "idle");
-          w.sprite.setFlipX(w.side === "b");
-        } else {
-          w.root.setPosition(w.root.x + (dx / dist) * step, w.root.y + (dy / dist) * step);
-          w.root.setDepth(DEPTH.unit + w.root.y);
-          playPose(w.sprite, w.side, w.cls, "run");
-          w.sprite.setFlipX(dx < 0 !== (w.side === "b"));
-        }
-      } else {
-        w.pauseMs -= delta;
-        if (w.pauseMs <= 0) {
-          // Never stray more than 1.5 cells from home, and stay on the
-          // home's level: no walking off a plateau through its cliff.
-          const col = (w.home.x - STRAT.x0) / CELL;
-          const row = (w.home.y - STRAT.y0) / CELL;
-          for (let tries = 0; !w.target && tries < 8; tries++) {
-            const c = col + (Math.random() * 3 - 1.5);
-            const r = row + (Math.random() * 3 - 1.5);
-            const tc = Math.floor(c);
-            const tr = Math.floor(r);
-            if (!isWalkable(tc, tr) || level(tc, tr) !== level(Math.floor(col), Math.floor(row))) continue;
-            w.target = { x: STRAT.x0 + c * CELL, y: STRAT.y0 + r * CELL };
-          }
-          if (!w.target) w.target = { ...w.home };
-        }
-      }
+    for (const g of GARRISON) {
+      this.addWalker(g.side, g.cls, g.home, g.home, WANDER_SPEED, g.cls === "lancer" ? 0.8 : 0.62);
     }
   }
+
+  private addWalker(
+    side: "a" | "b",
+    cls: UnitClass,
+    at: Cell,
+    home: Cell | null,
+    speed: number,
+    shadowScale: number,
+  ): Walker {
+    const { x, y } = this.cellXY(at.col, at.row);
+    // Children ride at local origin: a container adds its own position,
+    // so world coords on the children would double the offset and throw
+    // every troop off the map.
+    const shadow = addShadow(this, 0, 0, shadowScale);
+    const sprite = this.add.sprite(0, 0, unitKey(side, cls, "idle"));
+    playPose(sprite, side, cls, "idle");
+    const root = this.add.container(x, y, [shadow, sprite]).setDepth(DEPTH.unit + y);
+    const w: Walker = { side, cls, home, speed, sprite, root, path: [], pauseMs: 0 };
+    this.walkers.push(w);
+    return w;
+  }
+
+  /** Walk each path a cell centre at a time: run anim while moving, idle
+   *  while paused, the flip follows the direction of travel. A wanderer
+   *  with nowhere to go picks a cell near home it can reach in a few steps. */
+  private updateWalkers(delta: number): void {
+    for (const w of this.walkers) {
+      const next = w.path[0];
+      if (next) {
+        const dx = next.x - w.root.x;
+        const dy = next.y - w.root.y;
+        const dist = Math.hypot(dx, dy);
+        const step = (w.speed * delta) / 1000;
+        if (dist <= step) {
+          w.root.setPosition(next.x, next.y);
+          w.path.shift();
+        } else {
+          w.root.setPosition(w.root.x + (dx / dist) * step, w.root.y + (dy / dist) * step);
+          if (dx !== 0) w.sprite.setFlipX(dx < 0 !== (w.side === "b"));
+        }
+        w.root.setDepth(DEPTH.unit + w.root.y);
+        if (w.path.length > 0) {
+          playPose(w.sprite, w.side, w.cls, "run");
+        } else {
+          playPose(w.sprite, w.side, w.cls, "idle");
+          w.pauseMs = WANDER_PAUSE[0] + Math.random() * (WANDER_PAUSE[1] - WANDER_PAUSE[0]);
+        }
+        continue;
+      }
+      if (!w.home) continue;
+      w.pauseMs -= delta;
+      if (w.pauseMs > 0) continue;
+      for (let tries = 0; tries < 8 && w.path.length === 0; tries++) {
+        const to = {
+          col: w.home.col + Math.floor(Math.random() * 5) - 2,
+          row: w.home.row + Math.floor(Math.random() * 5) - 2,
+        };
+        const route = findPath(this.cellAt(w.root.x, w.root.y), to);
+        if (route && route.length > 0 && route.length <= WANDER_STEPS) {
+          w.path = route.map((c) => this.cellXY(c.col, c.row));
+        }
+      }
+      if (w.path.length === 0) w.pauseMs = WANDER_PAUSE[0];
+    }
+  }
+
 }
 
 /** What the page hands the map. Nothing for now but the way back. */
