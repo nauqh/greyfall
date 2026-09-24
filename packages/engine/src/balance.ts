@@ -69,6 +69,22 @@ export const BALANCE = {
   } as Record<UnitClass, UnitStats>,
 
   /**
+   * One ability per class. The PRD sells these as level 3 building upgrades;
+   * until buildings exist every unit has its ability, and `enabled` is the
+   * switch the upgrade will flip.
+   */
+  abilities: {
+    /** Warrior, once a battle below the HP threshold: spends an action to halve damage taken. */
+    guard: { enabled: true, hpBelow: 0.5, damageTaken: 0.5, seconds: 3 },
+    /** Lancer, always on: enemies within `radius` must attack the nearest Lancer. */
+    taunt: { enabled: true, radius: 2 },
+    /** Archer, every `every`th shot: also hits the enemy straight behind the target. */
+    pierce: { enabled: true, every: 3, damage: 0.5 },
+    /** Monk, once a battle: spends an action raising the first fallen ally at this HP fraction. */
+    revive: { enabled: true, hp: 0.5 },
+  },
+
+  /**
    * Openers the AI buys first when the budget allows, so it fields real comps
    * instead of a random pile. Leftover gold rolls singles by aiPickWeights.
    */

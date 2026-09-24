@@ -4,6 +4,7 @@ import fc from "fast-check";
 import {
   BALANCE,
   MAX_TICKS,
+  TICKS_PER_ACTION,
   armyCost,
   battleCol,
   battleRow,
@@ -328,10 +329,13 @@ describe("simulate", () => {
     expect(result.winner).toBe("draw");
     expect(result.reason).toBe("wipe");
     expect(result.hpRemaining).toEqual({ a: 0, b: 0 });
-    // 120 hp at 14 damage a second: both fall on the 9th exchange, which
-    // lands at t = 80, so the battle ends on tick 81.
-    expect(result.events.filter((e) => e.type === "hit" && e.unit === "a0")).toHaveLength(9);
-    expect(result.ticks).toBe(8 * BALANCE.tickRate + 1);
+    // 120 hp at 14 a hit: under half after the 5th, so each raises Guard once,
+    // and both still fall on the same tick.
+    const hits = result.events.filter((e) => e.type === "hit" && e.unit === "a0");
+    const guards = result.events.filter((e) => e.type === "ability" && e.ability === "guard");
+    expect(guards.map((e) => e.unit).sort()).toEqual(["a0", "b0"]);
+    expect(hits[0]!.t).toBeLessThan(TICKS_PER_ACTION);
+    expect(hits.filter((e) => e.type === "hit" && e.damage === 7).length).toBeGreaterThan(0);
   });
 
   it("gives the counter its edge: a Warrior beats an Archer in melee", () => {
@@ -365,6 +369,55 @@ describe("simulate", () => {
     const result = simulate(a, generateArmy(20, 5), 3);
     const kinds = new Set(result.events.map((e) => e.type));
     for (const kind of ["move", "attack", "hit", "death"]) expect(kinds).toContain(kind);
+  });
+
+  it("breaks a distance tie toward the weakest target, not the lowest index", () => {
+    const b: Army = [
+      { class: "warrior", col: 4, row: 0 },
+      { class: "pawn", col: 4, row: 2 },
+    ];
+    const result = simulate([{ class: "archer", col: 0, row: 1 }], b, 1);
+    const firstHit = result.events.find((e) => e.type === "hit" && e.unit === "a0");
+    expect(firstHit?.type === "hit" && firstHit.target).toBe("b1");
+  });
+
+  it("taunt: a Lancer within 2 tiles pulls a melee unit off the Archer beside it", () => {
+    const a: Army = [
+      { class: "archer", col: 4, row: 0 },
+      { class: "lancer", col: 3, row: 2 },
+    ];
+    const result = simulate(a, warriorAt(4, 0), 1);
+    const firstHit = result.events.find((e) => e.type === "hit" && e.unit === "b0");
+    expect(firstHit?.type === "hit" && firstHit.target).toBe("a1");
+  });
+
+  it("pierce: every third arrow also hits the unit straight behind at half damage", () => {
+    const b: Army = [
+      { class: "monk", col: 4, row: 1 },
+      { class: "monk", col: 3, row: 1 },
+    ];
+    const result = simulate([{ class: "archer", col: 0, row: 1 }], b, 1);
+    const shots = result.events.filter((e) => e.type === "hit" && e.unit === "a0");
+    expect(shots.slice(0, 4).map((e) => e.type === "hit" && e.target)).toEqual(["b0", "b0", "b0", "b1"]);
+    expect(shots[3]!.type === "hit" && shots[3]!.damage).toBe(5);
+  });
+
+  it("revive: a Monk raises the first fallen ally once, at half HP", () => {
+    const a: Army = [
+      { class: "warrior", col: 4, row: 1 },
+      { class: "monk", col: 0, row: 1 },
+    ];
+    const b: Army = [
+      { class: "lancer", col: 4, row: 0 },
+      { class: "lancer", col: 4, row: 1 },
+      { class: "lancer", col: 4, row: 2 },
+    ];
+    const result = simulate(a, b, 1);
+    const revives = result.events.filter((e) => e.type === "revive");
+    expect(revives).toHaveLength(1);
+    expect(revives[0]).toMatchObject({ unit: "a1", target: "a0", hpAfter: 60 });
+    const deaths = result.events.filter((e) => e.type === "death" && e.unit === "a0");
+    expect(deaths[0]!.t).toBeLessThan(revives[0]!.t);
   });
 
   it("keeps an Archer on its own back column out of the melee entirely", () => {

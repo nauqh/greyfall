@@ -106,7 +106,7 @@ Buildings unlock classes and upgrade them. Upgrades replace the merge mechanic o
 | Warrior | 3 | 120 | 14 | 1 | Melee damage |
 | Lancer | 3 | 140 | 10 | 1 | Front-line tank |
 | Archer | 3 | 60 | 10 | 3 | Ranged damage |
-| Monk | 4 | 70 | 0 | 2 | Heals the lowest-HP ally for 8 |
+| Monk | 4 | 70 | 0 | 2 | Heals the ally missing the most HP for 8 |
 
 ### Counters
 
@@ -132,8 +132,13 @@ Before arranging, the player sees the next opponent's covenant, unit counts per 
 ### Battle simulation
 
 - Runs on the server at 10 ticks per second with a seeded random number generator; the same armies and seed always produce the same result.
-- Units target the nearest enemy; ties break by board position.
-- Taunting Lancers force targeting within 2 tiles. Monks heal the lowest-HP ally in range.
+- Units target the nearest enemy; ties go to the lowest HP, then board position. Each unit's first action is delayed by a seeded 0-1 s so armies do not swing in lockstep.
+- Monks heal the ally missing the most HP in range.
+- Abilities, one per class. Until buildings exist every unit has its own; the level 3 upgrade will gate it later (`BALANCE.abilities.*.enabled`):
+  - Guard (Warrior): once per battle, below 50% HP, spends an action to take half damage for 3 seconds.
+  - Taunt (Lancer): always on; enemies within 2 tiles must attack the nearest Lancer, and target anyone else only when no Lancer can be hit or reached.
+  - Piercing (Archer): every 3rd shot also hits the enemy directly behind the target, in the same row, for half damage.
+  - Revive (Monk): once per battle, spends an action raising the first ally to fall, at 50% HP, if its tile is free.
 - Random rolls are limited to dodge and burn procs.
 - A battle times out after 45 seconds; the side with more total HP remaining wins.
 

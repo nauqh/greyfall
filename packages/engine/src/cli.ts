@@ -86,6 +86,12 @@ function main(): void {
       case "death":
         console.log(`${at(e.t)} ${name.get(e.unit)} dies`);
         break;
+      case "ability":
+        console.log(`${at(e.t)} ${name.get(e.unit)} uses ${e.ability}`);
+        break;
+      case "revive":
+        console.log(`${at(e.t)} ${name.get(e.unit)} revives ${name.get(e.target)} (${e.hpAfter} hp)`);
+        break;
     }
   }
 

@@ -34,7 +34,10 @@ export type BattleEvent =
   | { t: number; type: "attack"; unit: string; target: string }
   | { t: number; type: "hit"; unit: string; target: string; damage: number; hpAfter: number }
   | { t: number; type: "heal"; unit: string; target: string; amount: number; hpAfter: number }
-  | { t: number; type: "death"; unit: string };
+  | { t: number; type: "death"; unit: string }
+  /** Guard and taunt name only the unit; pierce names the second target, whose hit follows. */
+  | { t: number; type: "ability"; unit: string; ability: "guard" | "taunt" | "pierce"; target?: string }
+  | { t: number; type: "revive"; unit: string; target: string; hpAfter: number };
 
 /** A unit as it stood when the battle began, for playback and the CLI. */
 export interface UnitSnapshot {
@@ -61,6 +64,14 @@ interface SimUnit extends UnitSnapshot {
   hp: number;
   /** The tick this unit may next act on. */
   nextAt: number;
+  /** Guard cuts damage for ticks in [guardFrom, guardUntil). */
+  guardFrom: number;
+  guardUntil: number;
+  guardUsed: boolean;
+  shots: number;
+  reviveUsed: boolean;
+  revived: boolean;
+  diedAt: number;
 }
 
 /** Row is a lane: the same meaning for both sides, no reflection. */
@@ -134,6 +145,13 @@ function build(army: Army, side: Side): SimUnit[] {
       col: battleCol(side, p.col),
       row: battleRow(side, p.row),
       nextAt: 0,
+      guardFrom: 0,
+      guardUntil: 0,
+      guardUsed: false,
+      shots: 0,
+      reviveUsed: false,
+      revived: false,
+      diedAt: 0,
     };
   });
 }
@@ -259,11 +277,15 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
     if (errors.length > 0) throw new Error(`army ${side} is invalid: ${errors.join("; ")}`);
   }
 
-  // No covenants yet, so nothing rolls dice. The seed is threaded through so
-  // Phase 2 dodge and burn need no signature change.
-  void makeRng(seed);
+  const rng = makeRng(seed);
 
   const units = [...build(armyA, "a"), ...build(armyB, "b")];
+
+  // A random first-action delay breaks the one-second lockstep that made every
+  // unit swing on the same tick and pile overkill onto dying targets. Offsets
+  // go by army index, the same for both sides, so a mirror match stays a draw.
+  const offsets = Array.from({ length: BALANCE.board.maxUnits }, () => rng.int(TICKS_PER_ACTION));
+  for (const u of units) u.nextAt = offsets[Number(u.id.slice(1))]!;
   const snapshots: UnitSnapshot[] = units.map((u) => ({
     id: u.id,
     side: u.side,
@@ -278,6 +300,18 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
   const clamp = (u: SimUnit) => Math.max(0, Math.min(u.maxHp, u.hp));
   const tileKey = (u: { col: number; row: number }) => `${u.col},${u.row}`;
 
+  const ability = BALANCE.abilities;
+  // Guard starts the tick after it is raised, so a hit landing in the same
+  // tick does not depend on whether the attacker or the Warrior came first.
+  const dealt = (target: SimUnit, raw: number, t: number) =>
+    t >= target.guardFrom && t < target.guardUntil ? Math.round(raw * ability.guard.damageTaken) : raw;
+
+  if (ability.taunt.enabled) {
+    for (const u of units) {
+      if (u.class === "lancer") events.push({ t: 0, type: "ability", unit: u.id, ability: "taunt" });
+    }
+  }
+
   let ticks = 0;
   let reason: BattleResult["reason"] = "timeout";
 
@@ -288,9 +322,12 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
     // kill each other both connect and array order grants no free first strike.
     const hpAtStart = units.map((u) => u.hp);
     const aliveAtStart = units.map(alive);
+    const revivedAtStart = units.map((u) => u.revived);
     const startPos = units.map((u) => ({ col: u.col, row: u.row }));
     const occupied = new Set(units.filter(alive).map(tileKey));
     const intents: { i: number; steps: { col: number; row: number }[] }[] = [];
+    // Tiles a Monk is raising someone on this tick; nobody may step into them.
+    const raising = new Set<string>();
 
     for (let i = 0; i < units.length; i++) {
       const unit = units[i]!;
@@ -299,10 +336,51 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
       const stats = BALANCE.units[unit.class];
       const healer = stats.heal > 0;
 
-      // Healers rank allies by how hurt they are, itself included; everyone
-      // else ranks enemies by how near they are. Every key component survives
-      // the left-right mirror, so a mirror match is never decided by a
-      // tie-break.
+      if (
+        ability.guard.enabled &&
+        unit.class === "warrior" &&
+        !unit.guardUsed &&
+        hpAtStart[i]! < unit.maxHp * ability.guard.hpBelow
+      ) {
+        unit.guardUsed = true;
+        unit.guardFrom = t + 1;
+        unit.guardUntil = t + 1 + ability.guard.seconds * BALANCE.tickRate;
+        unit.nextAt = t + TICKS_PER_ACTION;
+        events.push({ t, type: "ability", unit: unit.id, ability: "guard" });
+        continue;
+      }
+
+      if (ability.revive.enabled && unit.class === "monk" && !unit.reviveUsed) {
+        // The first ally to fall whose tile is still free. Index order is the
+        // same on both sides, so a mirror match raises the mirror unit.
+        // A cell holding a corpse from each side goes by column parity, as
+        // contested steps do; first come would hand it to side A every time.
+        const contested = (u: SimUnit) =>
+          units.some(
+            (o, j) => o.side !== u.side && !aliveAtStart[j] && !revivedAtStart[j] && tileKey(o) === tileKey(u),
+          ) && (u.col % 2 === 0 ? "a" : "b") !== u.side;
+        const fallen = units
+          .filter((u, j) => u.side === unit.side && !aliveAtStart[j] && !u.revived)
+          .filter((u) => !occupied.has(tileKey(u)) && !raising.has(tileKey(u)) && !contested(u))
+          .sort((x, y) => x.diedAt - y.diedAt)[0];
+        if (fallen) {
+          unit.reviveUsed = true;
+          unit.nextAt = t + TICKS_PER_ACTION;
+          fallen.revived = true;
+          fallen.hp = Math.round(fallen.maxHp * ability.revive.hp);
+          fallen.nextAt = t + TICKS_PER_ACTION;
+          raising.add(tileKey(fallen));
+          events.push({ t, type: "revive", unit: unit.id, target: fallen.id, hpAfter: fallen.hp });
+          continue;
+        }
+      }
+
+      // Healers rank allies by HP missing, itself included, so a mauled tank
+      // outranks a scratched archer. Everyone else ranks enemies by how near
+      // they are, then the weakest, so a line whose targets are all equally
+      // near focuses one down instead of splitting by lane. Every key
+      // component survives the left-right mirror, so a mirror match is never
+      // decided by a tie-break.
       const ranked: { j: number; dist: number; key: number[] }[] = [];
       for (let j = 0; j < units.length; j++) {
         const other = units[j]!;
@@ -312,9 +390,10 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
 
         const pos = startPos[j]!;
         const dist = chebyshev(unit, pos);
+        const lane = [Math.abs(pos.row - unit.row), Math.abs(pos.col - unit.col), j];
         const key = healer
-          ? [hpAtStart[j]!, dist, Math.abs(pos.row - unit.row), Math.abs(pos.col - unit.col), j]
-          : [dist, Math.abs(pos.row - unit.row), Math.abs(pos.col - unit.col), j];
+          ? [hpAtStart[j]! - other.maxHp, dist, ...lane]
+          : [dist, hpAtStart[j]!, ...lane];
         ranked.push({ j, dist, key });
       }
       ranked.sort((x, y) => compareRanks(x.key, y.key));
@@ -322,29 +401,41 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
       // A healer with nobody to heal holds position and re-checks next tick.
       if (ranked.length === 0) continue;
 
-      // The best target that can be hit from where the unit already stands.
-      // For an attacker the ranking is by distance, so this is the nearest and
-      // nothing else could be in range; for a healer it is the worst hurt
-      // within reach, which is what the PRD asks of the Monk.
-      const hit = ranked.find((c) => c.dist <= stats.range);
-      if (hit) {
-        const target = units[hit.j]!;
-        unit.nextAt = t + TICKS_PER_ACTION;
-        // Unclamped until the tick ends: clamping as each lands would make the
-        // total depend on whether the hit or the heal came first.
-        if (healer) {
-          const amount = Math.min(stats.heal, target.maxHp - hpAtStart[hit.j]!);
-          target.hp += amount;
-          events.push({
-            t,
-            type: "heal",
-            unit: unit.id,
-            target: target.id,
-            amount,
-            hpAfter: clamp(target),
-          });
-        } else {
-          const damage = damageAgainst(unit.class, target.class);
+      // Taunted: the Lancers close by come first, and the rest of the ranking
+      // only once there is no way to hit or reach any of them.
+      const taunting =
+        !healer && ability.taunt.enabled
+          ? ranked.filter((c) => units[c.j]!.class === "lancer" && c.dist <= ability.taunt.radius)
+          : [];
+      const tiers = taunting.length > 0 ? [taunting, ranked] : [ranked];
+
+      const flip = unit.side === "a" ? 1 : -1;
+      for (const tier of tiers) {
+        // The best target that can be hit from where the unit already stands.
+        // For an attacker the ranking is by distance, so this is the nearest
+        // and nothing else could be in range; for a healer it is the worst
+        // hurt within reach, which is what the PRD asks of the Monk.
+        const hit = tier.find((c) => c.dist <= stats.range);
+        if (hit) {
+          const target = units[hit.j]!;
+          unit.nextAt = t + TICKS_PER_ACTION;
+          // Unclamped until the tick ends: clamping as each lands would make
+          // the total depend on whether the hit or the heal came first.
+          if (healer) {
+            const amount = Math.min(stats.heal, target.maxHp - hpAtStart[hit.j]!);
+            target.hp += amount;
+            events.push({
+              t,
+              type: "heal",
+              unit: unit.id,
+              target: target.id,
+              amount,
+              hpAfter: clamp(target),
+            });
+            break;
+          }
+
+          const damage = dealt(target, damageAgainst(unit.class, target.class), t);
           target.hp -= damage;
           events.push({ t, type: "attack", unit: unit.id, target: target.id });
           events.push({
@@ -355,27 +446,57 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
             damage,
             hpAfter: clamp(target),
           });
-        }
-        continue;
-      }
 
-      // Nothing in reach, so walk - to the best target there is actually a
-      // route to. Falling down the ranking is what stops a unit walled off
-      // from the nearest enemy standing and staring at one it cannot get to.
-      const flip = unit.side === "a" ? 1 : -1;
-      for (const cand of ranked) {
-        const steps = pathSteps(unit, startPos[cand.j]!, stats.range, occupied, flip);
-        if (steps.length > 0) {
-          intents.push({ i, steps });
+          unit.shots += 1;
+          if (ability.pierce.enabled && unit.class === "archer" && unit.shots % ability.pierce.every === 0) {
+            const tpos = startPos[hit.j]!;
+            const dir = Math.sign(tpos.col - unit.col);
+            const behind = units.findIndex(
+              (u, j) =>
+                aliveAtStart[j] &&
+                u.side === target.side &&
+                startPos[j]!.col === tpos.col + dir &&
+                startPos[j]!.row === tpos.row,
+            );
+            if (dir !== 0 && behind !== -1) {
+              const second = units[behind]!;
+              const raw = Math.round(damageAgainst(unit.class, second.class) * ability.pierce.damage);
+              const damage2 = dealt(second, raw, t);
+              second.hp -= damage2;
+              events.push({ t, type: "ability", unit: unit.id, ability: "pierce", target: second.id });
+              events.push({
+                t,
+                type: "hit",
+                unit: unit.id,
+                target: second.id,
+                damage: damage2,
+                hpAfter: clamp(second),
+              });
+            }
+          }
           break;
         }
+
+        // Nothing in reach, so walk - to the best target there is actually a
+        // route to. Falling down the ranking is what stops a unit walled off
+        // from the nearest enemy standing and staring at one it cannot get to.
+        let routed = false;
+        for (const cand of tier) {
+          const steps = pathSteps(unit, startPos[cand.j]!, stats.range, occupied, flip);
+          if (steps.length > 0) {
+            intents.push({ i, steps });
+            routed = true;
+            break;
+          }
+        }
+        if (routed) break;
       }
     }
 
     // Moves are granted in rounds: one unit takes each contested cell and the
     // rest fall back to their next step next round.
     const granted = new Map<number, { col: number; row: number }>();
-    const taken = new Set<string>();
+    const taken = new Set<string>(raising);
     let pending = intents.filter((m) => alive(units[m.i]!));
 
     for (let round = 0; round < 3 && pending.length > 0; round++) {
@@ -411,6 +532,7 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
 
     for (let i = 0; i < units.length; i++) {
       if (aliveAtStart[i] && !alive(units[i]!)) {
+        units[i]!.diedAt = t;
         events.push({ t, type: "death", unit: units[i]!.id });
       }
     }
