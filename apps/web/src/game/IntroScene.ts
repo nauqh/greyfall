@@ -1,6 +1,6 @@
-// The title screen: a living island on the right, the menu banner on the
-// left. The menu itself is HTML over the canvas (page.tsx), so this scene is
-// world only: village, the warband, and the Grey Host across the water.
+// The title screen, PvZ-style: the menu is a signboard standing on the
+// island, part of the world rather than a panel over it. The village, the
+// warband and the Grey Host share the island with it.
 //
 // Same island, foam and decor as the battle, built from the same terrain
 // helpers, so Begin is a scene swap and not a change of world.
@@ -21,14 +21,26 @@ import {
   buildWater,
   loadBuildings,
   addDecor,
+  driftClouds,
   loadTerrain,
   prepareTerrain,
   type Rect,
   type Structure,
 } from "./terrain";
+import { button, label, loadPanels, panel } from "./ui";
 
-/** Whole 64px tiles, right of the menu column. 7 rows tall. */
-const ISLAND: Rect = { x0: 384, y0: 160, x1: 1152, y1: 608 };
+/** Whole 64px tiles; the first five columns are the signboard's yard. */
+const ISLAND: Rect = { x0: 64, y0: 128, x1: 1152, y1: 640 };
+
+/** The signboard's centre; the village starts right of it. */
+const BOARD = { x: 240, y: 392, w: 352, h: 448 } as const;
+
+const MENU = [
+  { text: "Solo", href: "/battle" },
+  { text: "Duel", href: "/duel" },
+  // In development: dimmed so it reads as not ready.
+  { text: "Map", href: "/map", dev: true },
+] as const;
 
 /**
  * The village, back to front. Buildings and props share one y-sorted depth
@@ -82,13 +94,24 @@ const CAST: readonly Extra[] = [
   { side: "b", cls: "monk", x: 890, y: 520, pace: 0 },
 ];
 
+export interface IntroLauncher {
+  go: (href: string) => void;
+}
+
 export class IntroScene extends Phaser.Scene {
+  private go: (href: string) => void = () => {};
+
   constructor() {
     super("intro");
   }
 
+  init(data: IntroLauncher): void {
+    this.go = data.go;
+  }
+
   preload(): void {
     loadTerrain(this);
+    loadPanels(this, ["woodTable", "bigRibbon", "blueButton"]);
     loadUnits(this);
     loadBuildings(this, VILLAGE);
   }
@@ -106,6 +129,34 @@ export class IntroScene extends Phaser.Scene {
     for (const s of VILLAGE) addBuilding(this, s);
     for (const extra of CAST) this.addExtra(extra);
     this.decorate();
+    this.signboard();
+    driftClouds(this, { w: GAME_W, h: GAME_H }, "intro");
+  }
+
+  /** The menu as a wooden board planted in the grass, title ribbon across its top. */
+  private signboard(): void {
+    const { x, y, w, h } = BOARD;
+    // The sheets pad their ink ~45px inside each 128px corner, hence the slack.
+    const top = y - h / 2 + 45;
+    const board = this.add.container(0, 0).setDepth(DEPTH.unit + y + h / 2);
+    board.add(panel(this, "woodTable", x, y, w, h));
+    board.add(panel(this, "bigRibbon", x, top + 4, w + 40, 128));
+    board.add(label(this, x, top, "GREYFALL", { fontSize: "34px", strokeThickness: 4 }));
+
+    MENU.forEach((item, i) => {
+      const b = button(this, x, y - 70 + i * 100, 220, 96, item.text.toUpperCase(), "blue", () =>
+        this.leave(item.href),
+      );
+      if ("dev" in item) b.setAlpha(0.55);
+      board.add(b);
+    });
+  }
+
+  /** A short fade, so picking a door reads as walking through it. */
+  private leave(href: string): void {
+    this.input.enabled = false;
+    this.cameras.main.fadeOut(260, 0, 0, 0);
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.go(href));
   }
 
   /**
@@ -154,6 +205,9 @@ export class IntroScene extends Phaser.Scene {
   }
 }
 
-export function startIntro(parent: HTMLElement): { destroy: () => void; ready: Promise<void> } {
-  return startGame(parent, "intro", IntroScene);
+export function startIntro(
+  parent: HTMLElement,
+  launcher: IntroLauncher,
+): { destroy: () => void; ready: Promise<void> } {
+  return startGame(parent, "intro", IntroScene, launcher);
 }

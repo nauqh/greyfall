@@ -45,6 +45,14 @@ export const PANELS = {
   redButton: sheet320("UI Elements/UI Elements/Buttons/BigRedButton_Regular.png"),
   woodTable: sheet448("UI Elements/UI Elements/Wood Table/WoodTable.png"),
   banner: sheet448("UI Elements/UI Elements/Banners/Banner.png"),
+  // Top row of BigRibbons (blue): ends and middle only, so rows 2-3 are empty.
+  bigRibbon: {
+    file: "UI Elements/UI Elements/Ribbons/BigRibbons.png",
+    colX: [0, 192, 320],
+    colW: [128, 64, 128],
+    rowY: [0, 0, 0],
+    rowH: [128, 0, 0],
+  },
 } satisfies Record<string, SliceSheet>;
 
 export type PanelName = keyof typeof PANELS;
