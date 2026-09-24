@@ -32,6 +32,7 @@ import {
   addDecor,
   addShadow,
   buildWater,
+  cloudCover,
   driftClouds,
   loadBuildings,
   loadTerrain,
@@ -164,11 +165,25 @@ export class StrategicScene extends Phaser.Scene {
     driftClouds(this, { w: WORLD_W, h: WORLD_H }, "strategic");
     for (const hall of HALLS) addBuilding(this, hall);
     this.buildGarrison();
-    this.scene.add(HUD_KEY, StrategicHud, true, {
+    const hud = this.scene.add(HUD_KEY, StrategicHud, true, {
       map: MAP,
       marks: HALLS.map((h) => ({ col: h.x / CELL, row: h.y / CELL, side: h.side })),
-      onMenu: () => this.onMenu(),
+      // The HUD is the top scene, so the cloud cover goes there to sit over
+      // its buttons too.
+      onMenu: () => {
+        this.input.enabled = false;
+        hud.input.enabled = false;
+        cloudCover(hud, "close", () => this.onMenu());
+      },
       onZoom: (dir: 1 | -1) => this.zoomStep(dir),
+    })!;
+    // The opening parts over the map from this scene, on the frame the page's
+    // loader leaves; the HUD is still loading its own art then, so it fades
+    // in after. Once, from here: the HUD restarts itself on every resize.
+    cloudCover(this, "open", () => {});
+    hud.events.once(Phaser.Scenes.Events.CREATE, () => {
+      hud.cameras.main.setAlpha(0);
+      hud.tweens.add({ targets: hud.cameras.main, alpha: 1, delay: 700, duration: 400 });
     });
     this.input.on("wheel", (_p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
       if (dy !== 0) this.zoomStep(dy > 0 ? 1 : -1);

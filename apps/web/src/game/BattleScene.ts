@@ -47,6 +47,7 @@ import {
   buildFoam,
   buildIsland,
   buildWater,
+  cloudCover,
   driftClouds,
   loadTerrain,
   prepareTerrain,
@@ -261,6 +262,8 @@ export class BattleScene extends Phaser.Scene {
     pauseMs: number;
   } | null = null;
   private cellZone!: Phaser.GameObjects.Zone;
+  /** The draft's way back to the menu; gone once the fight starts. */
+  private menuBtn: Phaser.GameObjects.Container | null = null;
   /** The placement preview under the cursor while drafting. */
   private ghostCell!: Phaser.GameObjects.Graphics;
   private ghost: Phaser.GameObjects.Sprite | null = null;
@@ -319,6 +322,7 @@ export class BattleScene extends Phaser.Scene {
     this.clockText = null;
     this.bubble = null;
     this.ghost = null;
+    this.menuBtn = null;
     this.bubbleLine = "";
     this.adviceTimer = null;
     // Field initialisers run once, at construction; a restart runs only this.
@@ -414,7 +418,37 @@ export class BattleScene extends Phaser.Scene {
     this.spawnArmies();
     this.buildHud();
     this.queue = [...this.result!.events].sort((x, y) => x.t - y.t);
-    this.runIntro();
+    this.opening(() => {
+      this.summonAdvisor(() => {});
+      this.runIntro();
+    });
+  }
+
+  /**
+   * The first open is under cloud: a bank covers the view, then parts from
+   * the middle outward to show the board. Later rounds are the same island,
+   * so they skip it and go straight on.
+   */
+  private opening(then: () => void): void {
+    if (this.rounds > 0) return then();
+    cloudCover(this, "open", then);
+  }
+
+  /** The advisor turns up in a puff of dust, the way placed units do. */
+  private summonAdvisor(then: () => void): void {
+    const { sprite, shadow } = this.advisor!;
+    const dust = this.add
+      .sprite(sprite.x, sprite.y, "dust")
+      .setOrigin(0.5, 0.85)
+      .setDepth(DEPTH.unit + sprite.y + 1)
+      .setScale(2.4)
+      .setAlpha(0.8);
+    dust.play("dust_anim");
+    dust.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => dust.destroy());
+    shadow.setVisible(true).setAlpha(0);
+    sprite.setVisible(true).setAlpha(0);
+    this.tweens.add({ targets: [sprite, shadow], alpha: 1, delay: 80, duration: 240, ease: "Sine.easeOut" });
+    this.time.delayedCall(420, then);
   }
 
   // --- draft ---------------------------------------------------------------
@@ -485,13 +519,30 @@ export class BattleScene extends Phaser.Scene {
       this.refreshDuel();
     }
 
-    // In from the right, the way it went out. Only on a second round: the
-    // first draft is what the screen opens on, and sliding that in would just
-    // delay the game.
-    if (this.rounds > 0) {
-      this.draftBox.setX(GAME_W);
-      this.tweens.add({ targets: this.draftBox, x: 0, duration: 420, ease: "Sine.easeOut" });
-    }
+    // Clouds part, the roster slides in from the right (the way it goes
+    // out), then the advisor turns up and starts talking.
+    this.draftBox.setX(GAME_W);
+    this.opening(() =>
+      this.tweens.add({
+        targets: this.draftBox,
+        x: 0,
+        duration: 460,
+        ease: "Sine.easeOut",
+        onComplete: () => this.summonAdvisor(() => this.advise()),
+      }),
+    );
+
+    this.buildMenuButton();
+
+    // A click on nothing clickable - the panel, the water, the sky - drops
+    // the picked card. The grid and the cards are interactive, so they keep it.
+    this.input.on("pointerdown", (_p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
+      if (!this.drafting || over.length > 0 || !this.picked) return;
+      this.picked = null;
+      this.hoverCell(null);
+      this.refreshDraft();
+      this.advise();
+    });
 
     // Own half only, and it is always the left half of the screen: the enemy
     // half sits under the panel whichever side of the engine you hold.
@@ -525,7 +576,6 @@ export class BattleScene extends Phaser.Scene {
     });
 
     this.refreshDraft();
-    this.advise();
   }
 
   /**
@@ -588,18 +638,9 @@ export class BattleScene extends Phaser.Scene {
     );
     pair(68, ICON.range, STAT_TIP.range, stats.range);
 
-    // The WC3 command card's hotkey, in the corner the card leaves empty.
-    const hotkey = label(this, -84, -58, `${ROSTER.findIndex((c) => c === cls) + 1}`, {
-      fontSize: "13px",
-      color: "#9a8466",
-      ...ink,
-    });
-    texts.push(hotkey);
-
     const box = this.add.container(cx, cy, [
       paper,
       special,
-      hotkey,
       portrait,
       coin,
       cost,
@@ -692,7 +733,48 @@ export class BattleScene extends Phaser.Scene {
     );
     playPose(pawn, this.mySide, "pawn", "idle", this.mirrored);
     pawn.setDepth(DEPTH.unit + ADVISOR_HOME.y);
+    // Hidden until summonAdvisor brings it in.
+    pawn.setVisible(false);
+    shadow.setVisible(false);
     this.advisor = { sprite: pawn, shadow, target: null, pauseMs: 900 };
+  }
+
+  /**
+   * The kit's small square button with its gear, top-left over the water,
+   * clear of the board and the roster. Drafting only: mid-fight the way out
+   * is the result card. Leaving closes the clouds first, the same exit the
+   * title screen takes.
+   */
+  private buildMenuButton(): void {
+    const x = 58;
+    const y = 52;
+    const face = this.add.image(0, 0, "smallButton").setScale(0.8);
+    const gear = this.add.image(0, -3, iconKey(ICON.settings)).setScale(0.5);
+    const btn = this.add.container(x, y, [face, gear]).setDepth(DEPTH.hud + 6);
+    btn.setSize(face.displayWidth, face.displayHeight);
+    const sink = (on: number): void => {
+      this.tweens.killTweensOf(btn);
+      this.tweens.add({ targets: btn, y: y + on, duration: 140, ease: "Sine.easeInOut" });
+    };
+    btn
+      .setInteractive({ cursor: HAND })
+      .on("pointerover", () => {
+        sink(2);
+        this.tweens.add({ targets: gear, angle: 45, duration: 240, ease: "Sine.easeOut" });
+      })
+      .on("pointerout", () => {
+        sink(0);
+        this.tweens.add({ targets: gear, angle: 0, duration: 240, ease: "Sine.easeOut" });
+      })
+      .on("pointerdown", () => sink(3))
+      .on("pointerup", () => {
+        if (!this.drafting) return;
+        this.drafting = false;
+        this.input.enabled = false;
+        this.launcher.onTip?.(null, 0, 0);
+        cloudCover(this, "close", () => this.launcher.onMenu());
+      });
+    this.menuBtn = btn;
   }
 
   /** Seat B drafts monsters, so its cards and lines use the monster's name. */
@@ -810,7 +892,7 @@ export class BattleScene extends Phaser.Scene {
   /** Stand a while, pick a nearby patch, amble there, idle again. */
   private tickAdvisor(delta: number): void {
     const a = this.advisor;
-    if (!a) return;
+    if (!a?.sprite.visible) return;
     const s = a.sprite;
     if (!a.target) {
       a.pauseMs -= delta;
@@ -980,6 +1062,10 @@ export class BattleScene extends Phaser.Scene {
     }
     this.placed.clear();
     this.cellZone.destroy();
+    const menuBtn = this.menuBtn;
+    this.menuBtn = null;
+    menuBtn?.disableInteractive();
+    this.tweens.add({ targets: menuBtn, alpha: 0, duration: 240, onComplete: () => menuBtn?.destroy() });
     this.ghostCell.destroy();
     this.ghost?.destroy();
 
@@ -1621,7 +1707,10 @@ export class BattleScene extends Phaser.Scene {
       .setInteractive({ cursor: HAND })
       .on("pointerover", () => menu.setColor("#fdfaf0"))
       .on("pointerout", () => menu.setColor("#b9a887"))
-      .on("pointerup", () => this.launcher.onMenu());
+      .on("pointerup", () => {
+        this.input.enabled = false;
+        cloudCover(this, "close", () => this.launcher.onMenu());
+      });
 
     // A duel's rematch belongs to the room, not to this client, so the page
     // offers it instead and the menu is left off with them.

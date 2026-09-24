@@ -212,6 +212,29 @@ export const CLOUDS = {
   count: 8,
 } as const;
 
+/** The cloud bank's layout, in world units from the view's top-left. The
+ *  DOM cover (Clouds.tsx) lays out the same grid from the same numbers, so
+ *  an HTML screen's clouds and a scene's line up cloud for cloud. */
+export const CLOUD_GRID = { dx: 260, dy: 130, scale: 3.2, cropH: 156 } as const;
+
+/** One cloud of the bank. The two big clouds only, cropped above their
+ *  drawn-in shadows: stacked, the grey undersides read as dirt. */
+export function cloudAt(row: number, col: number): { x: number; y: number; key: string; flip: boolean; layer: number } {
+  const k = row * 7 + col;
+  const jitter = (k * 37) % 90;
+  return {
+    x: -120 + col * CLOUD_GRID.dx + jitter,
+    y: -60 + row * CLOUD_GRID.dy + (jitter % 40),
+    key: k % 2 ? "cloud5" : "cloud1",
+    flip: k % 3 === 0,
+    layer: k % 3,
+  };
+}
+
+/** The cloud cover's cream, shared with the DOM cover (.cloudsSky) so the
+ *  page's loader and a scene's cover are one continuous sky. */
+export const CLOUD_CREAM = 0xeef0e2;
+
 export const FX = {
   dust: { file: "Particle FX/Dust_01.png", frame: 64, frames: 8 },
   explosion: { file: "Particle FX/Explosion_01.png", frame: 192, frames: 8 },
@@ -235,6 +258,7 @@ export const ICON = {
   hp: "06",
   heal: "07",
   range: "11",
+  settings: "10",
 } as const;
 
 /** Icons that live outside the numbered sheet. */

@@ -60,9 +60,8 @@ textarea {
 	display: block;
 }
 
-/* Loading veil: the scene's chunks, webfont, boot and asset loader are all
-   still running, so the animation is CSS, not JS - it keeps its frames while
-   the main thread is busy. */
+/* Loading screen: the cloud cover (Clouds.tsx) with the word over it. CSS,
+   not JS, so it keeps drawing while the main thread is busy booting. */
 .loader {
 	position: absolute;
 	inset: 0;
@@ -72,10 +71,91 @@ textarea {
 	justify-content: center;
 }
 
+/* The cloud bank in DOM, the same layout and timings as terrain.ts
+   cloudCover. --u is CSS px per world unit (the scenes' fit zoom). Each
+   cloud is art.ts cloudAt's, at CLOUD_GRID.scale 3.2, cropped to its top
+   156 of 256 rows and placed by its full frame's centre, as Phaser places a
+   cropped image, so a DOM cover and a scene's cover line up. */
+.clouds {
+	--u: min(100vw / 1200, 100vh / 720);
+	position: fixed;
+	inset: 0;
+	z-index: 50;
+	overflow: hidden;
+}
+
+/* An opening cover lets clicks through once it has started parting. */
+.clouds.open.run {
+	pointer-events: none;
+}
+
+.clouds.close:not(.run) {
+	visibility: hidden;
+}
+
+.cloudsSky {
+	position: absolute;
+	inset: 0;
+	/* = CLOUD_CREAM */
+	background: #eef0e2;
+}
+
+.cloud {
+	position: absolute;
+	width: calc(1843.2 * var(--u));
+	height: calc(499.2 * var(--u));
+	transform: translate(-50%, calc(-409.6 * var(--u)));
+	background: url("/tiny-swords/Terrain/Decorations/Clouds/Clouds_01.png") top / calc(1843.2 * var(--u))
+		calc(819.2 * var(--u)) no-repeat;
+	image-rendering: pixelated;
+}
+
+.cloud.cloud5 {
+	background-image: url("/tiny-swords/Terrain/Decorations/Clouds/Clouds_05.png");
+}
+
+.cloud.flip {
+	transform: translate(-50%, calc(-409.6 * var(--u))) scaleX(-1);
+}
+
+/* Sine.easeIn, as the scenes tween it. The close plays the same keyframes
+   in reverse, which reverses the curve too: that is the scenes' easeOut. */
+.clouds.open.run .cloud {
+	animation: cloudAway 1000ms cubic-bezier(0.12, 0, 0.39, 0) var(--delay) both;
+}
+
+.clouds.open.run .cloudsSky {
+	animation: skyAway 350ms linear 250ms both;
+}
+
+.clouds.close.run .cloud {
+	animation: cloudAway 800ms cubic-bezier(0.12, 0, 0.39, 0) var(--delay) both reverse;
+}
+
+.clouds.close.run .cloudsSky {
+	animation: skyAway 300ms linear 800ms both reverse;
+}
+
+@keyframes cloudAway {
+	to {
+		translate: var(--dx) 0;
+		opacity: 0;
+	}
+}
+
+@keyframes skyAway {
+	to {
+		opacity: 0;
+	}
+}
+
 .loaderText {
+	position: relative;
+	z-index: 51;
 	font-size: 22px;
+	font-weight: 600;
 	letter-spacing: 0.08em;
-	text-shadow: 0 2px 0 #1c2634;
+	color: #5b6577;
 	animation: loaderPulse 1.2s ease-in-out infinite;
 }
 

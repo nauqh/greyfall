@@ -12,6 +12,9 @@ import { GAME_H, GAME_W, WATER_SPAN } from "./boot";
 import {
   BUILDINGS,
   CLOUDS,
+  CLOUD_CREAM,
+  CLOUD_GRID,
+  cloudAt,
   DECOR,
   TERRAIN,
   buildingUrl,
@@ -338,4 +341,79 @@ export function addShadow(scene: Phaser.Scene, x: number, y: number, scale: numb
     .setDepth(DEPTH.ground)
     .setAlpha(0.35)
     .setScale(scale);
+}
+
+/**
+ * A bank of cloud over the whole view, the screen transition between pages.
+ * "open" starts covered and parts from the middle outward; "close" draws the
+ * clouds in from the sides until the view is covered. `done` fires as the
+ * last clouds thin (open) or once the cover is solid (close).
+ */
+export function cloudCover(scene: Phaser.Scene, mode: "open" | "close", done: () => void): void {
+  // worldView only refreshes at render, so in create() it predates the
+  // camera's fit zoom; work the view out from scroll and zoom instead.
+  const cam = scene.cameras.main;
+  const vw = cam.width / cam.zoom;
+  const vh = cam.height / cam.zoom;
+  const view = new Phaser.Geom.Rectangle(
+    cam.scrollX + (cam.width - vw) * cam.originX,
+    cam.scrollY + (cam.height - vh) * cam.originY,
+    vw,
+    vh,
+  );
+  const depth = DEPTH.hud + 40;
+  const cx = view.centerX;
+  const opening = mode === "open";
+  // Solid under the clouds, so the gaps between them never show the world.
+  const backdrop = scene.add
+    .rectangle(view.centerX, view.centerY, view.width + 400, view.height + 400, CLOUD_CREAM)
+    .setDepth(depth)
+    .setAlpha(opening ? 1 : 0);
+  const clouds: Phaser.GameObjects.Image[] = [];
+  for (let row = 0; view.y - 60 + row * CLOUD_GRID.dy < view.bottom + 120; row++) {
+    for (let col = 0; view.x - 120 + col * CLOUD_GRID.dx < view.right + 200; col++) {
+      const c = cloudAt(row, col);
+      clouds.push(
+        scene.add
+          .image(view.x + c.x, view.y + c.y, c.key)
+          .setCrop(0, 0, 576, CLOUD_GRID.cropH)
+          .setFlipX(c.flip)
+          .setScale(CLOUD_GRID.scale)
+          .setDepth(depth + 1 + c.layer),
+      );
+    }
+  }
+
+  let last = 0;
+  for (const c of clouds) {
+    // Middle first on the way out, edges first on the way in, each cloud on
+    // its own side of the screen.
+    const reach = Math.abs(c.x - cx) / (view.width / 2);
+    const delay = opening ? 200 + reach * 350 : (1 - Math.min(1, reach)) * 300;
+    last = Math.max(last, delay);
+    const away = c.x + Math.sign(c.x - cx || 1) * view.width * 0.8;
+    if (opening) {
+      scene.tweens.add({
+        targets: c,
+        x: away,
+        alpha: 0,
+        delay,
+        duration: 1000,
+        ease: "Sine.easeIn",
+        onComplete: () => c.destroy(),
+      });
+    } else {
+      const home = c.x;
+      c.setX(away).setAlpha(0);
+      scene.tweens.add({ targets: c, x: home, alpha: 1, delay, duration: 800, ease: "Sine.easeOut" });
+    }
+  }
+  scene.tweens.add({
+    targets: backdrop,
+    alpha: opening ? 0 : 1,
+    delay: opening ? 250 : last + 500,
+    duration: opening ? 350 : 300,
+    onComplete: () => opening && backdrop.destroy(),
+  });
+  scene.time.delayedCall(opening ? last + 600 : last + 820, done);
 }

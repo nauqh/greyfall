@@ -9,6 +9,7 @@
 import { useRouter } from "next/navigation";
 import { use } from "react";
 
+import { Clouds } from "../../../game/Clouds";
 import { Room } from "../../../pvp/Room";
 import { TrpcProvider } from "../../../pvp/Provider";
 
@@ -20,6 +21,7 @@ export default function DuelRoomPage({ params }: { params: Promise<{ code: strin
       <TrpcProvider>
         <Room code={code} onLeave={() => router.push("/duel")} />
       </TrpcProvider>
+      <Clouds mode="open" />
     </main>
   );
 }

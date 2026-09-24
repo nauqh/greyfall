@@ -6,6 +6,7 @@
 import type { Placement } from "@greyfall/engine";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { Clouds, useCloudExit } from "../game/Clouds";
 import { GameCanvas } from "../game/GameCanvas";
 import { StatTip, useStatTip } from "../game/StatTip";
 import { api } from "./client.ts";
@@ -84,10 +85,25 @@ export function Room({
   );
   useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
 
+  const exit = useCloudExit();
   const quit = useCallback(() => {
     leave.mutate({ code });
-    onLeave();
-  }, [leave, code, onLeave]);
+    exit.leave(onLeave);
+  }, [leave, code, onLeave, exit]);
+
+  // Hooks stay above the early returns below: this one used to sit after
+  // them, so leaving the waiting screen ran one more hook than the render
+  // before and React threw.
+  const { tip, onTip } = useStatTip();
+
+  // Waiting to drafting is a screen change without a route change: the
+  // waiting screen closes into cloud first, and the board parts out of it.
+  // Only when this client saw the waiting screen; a refresh mid-draft goes
+  // straight to the board.
+  const [sawWaiting, setSawWaiting] = useState(false);
+  useEffect(() => {
+    if (view?.state === "waiting") setSawWaiting(true);
+  }, [view?.state]);
 
   // A short wait while the first poll lands; a wrong or expired code is
   // handled by the room.error effect, which walks out to the lobby.
@@ -99,14 +115,18 @@ export function Room({
     );
   }
 
-  if (view.state === "waiting") {
-    return <Waiting view={view} onLeave={quit} />;
+  if (view.state === "waiting" || sawWaiting) {
+    return (
+      <>
+        <Waiting view={view} onLeave={quit} />
+        {view.state === "waiting" ? exit.cover : <Clouds mode="close" onDone={() => setSawWaiting(false)} />}
+      </>
+    );
   }
 
   // A walkover has no event log to play, so there is nothing for the canvas
   // to show and the page says what happened instead.
   const walkover = view.state === "result" && view.battle === null;
-  const { tip, onTip } = useStatTip();
 
   return (
     <div className="roomStage">
@@ -177,6 +197,7 @@ export function Room({
           {error ? <span className="error">{error}</span> : null}
         </div>
       ) : null}
+      {exit.cover}
     </div>
   );
 }

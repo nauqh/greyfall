@@ -21,6 +21,7 @@ import {
   buildWater,
   loadBuildings,
   addDecor,
+  cloudCover,
   driftClouds,
   loadTerrain,
   prepareTerrain,
@@ -130,6 +131,8 @@ export class IntroScene extends Phaser.Scene {
     this.decorate();
     this.signboard();
     driftClouds(this, { w: GAME_W, h: GAME_H }, "intro");
+    this.input.enabled = false;
+    cloudCover(this, "open", () => (this.input.enabled = true));
   }
 
   /** The menu as a wooden board planted in the grass, title ribbon across its top. */
@@ -153,11 +156,11 @@ export class IntroScene extends Phaser.Scene {
     });
   }
 
-  /** A short fade, so picking a door reads as walking through it. */
+  /** Clouds draw shut, then the page moves on; the next screen's loader
+   *  and opening are the same cloud, so the swap never shows. */
   private leave(href: string): void {
     this.input.enabled = false;
-    this.cameras.main.fadeOut(260, 0, 0, 0);
-    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.go(href));
+    cloudCover(this, "close", () => this.go(href));
   }
 
   /**

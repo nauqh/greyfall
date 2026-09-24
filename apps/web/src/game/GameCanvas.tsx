@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
+import { Clouds } from "./Clouds";
+
 /** Holds one Phaser game at the scene's own ratio. Children render over the
  *  canvas, inside it - the intro's HTML menu lives here. */
 export function GameCanvas({
@@ -56,6 +58,9 @@ export function GameCanvas({
       {/* Loading label while the scene boots; gone the frame create() runs. */}
       {!ready && (
         <div className="loader" aria-hidden>
+          {/* The cloud bank the scenes open and close on, so a page change
+              reads as one sky: close, load, part. */}
+          <Clouds mode="cover" />
           <div className="loaderText">Loading...</div>
         </div>
       )}
