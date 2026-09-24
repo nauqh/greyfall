@@ -219,18 +219,18 @@ export const ICONS = { file: "UI Elements/UI Elements/Icons/Icon_", count: 12 } 
  * are. They label the draft's numbers, so a stat line is read rather than
  * parsed: a shield for health, crossed arms for damage, a green gem for
  * healing, plus the coin the whole screen is spending. Range has no sheet
- * icon (Icon_11 is an info mark), so it uses the archer's own arrow.
+ * icon either, so it takes the info mark, Icon_11.
  */
 export const ICON = {
   gold: "03",
   damage: "05",
   hp: "06",
   heal: "07",
-  range: "arrow",
+  range: "11",
 } as const;
 
 /** Icons that live outside the numbered sheet. */
-const ICON_FILES: Record<string, string> = {
+export const ICON_FILES: Record<string, string> = {
   arrow: "Red Units/Archer/Arrow.png",
 };
 

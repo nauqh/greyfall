@@ -88,6 +88,13 @@ const RELEASE_FRAME = { archer: 5 } as const;
 /** Airtime of a ranged projectile, release to impact. */
 const FLIGHT_MS = 320;
 
+/** The advisor's corner. Its amble never leaves this rect, which keeps it
+ *  clear of the placement grid at x 180 and the HUD plates at y 58. */
+const ADVISOR_HOME = { x: 145, y: 252 };
+const ADVISOR_AREA = { x0: 78, x1: 168, y0: 236, y1: 302 };
+/** An amble, not a march. */
+const ADVISOR_SPEED = 46;
+
 /**
  * Time left, m:ss. A battle that runs the clock out is decided on HP, so what
  * matters to watch is how much of it is gone - counting up said nothing until
@@ -237,6 +244,15 @@ export class BattleScene extends Phaser.Scene {
   private draftArmy: Placement[] = [];
   private picked: UnitClass | null = null;
   private draftBox!: Phaser.GameObjects.Container;
+  /** The how-to bubble; tracks the pawn and leaves with the draft panel. */
+  private bubble: Phaser.GameObjects.Container | null = null;
+  /** The resident advisor: stand a while, amble to a nearby patch, idle. */
+  private advisor: {
+    sprite: Phaser.GameObjects.Sprite;
+    shadow: Phaser.GameObjects.Image;
+    target: { x: number; y: number } | null;
+    pauseMs: number;
+  } | null = null;
   private cellZone!: Phaser.GameObjects.Zone;
   private goldText!: Phaser.GameObjects.Text;
   private goldCoin!: Phaser.GameObjects.Image;
@@ -370,6 +386,7 @@ export class BattleScene extends Phaser.Scene {
     scatterDecor(this, island, board, { w: GAME_W, h: GAME_H }, this.launcher.seed);
     this.drawGrid();
     driftClouds(this, { w: GAME_W, h: GAME_H }, this.launcher.seed);
+    this.buildAdvisor();
 
     if (this.result) {
       this.beginBattle();
@@ -426,7 +443,7 @@ export class BattleScene extends Phaser.Scene {
       const cy = i < 2 ? 232 : 432;
       this.draftBox.add(this.buildCard(cls, cx, cy));
     }
-    this.buildAdvisor();
+    this.buildBubble();
 
     // 104 is under the sheet's own 64px corners, so the frame squashes a
     // little rather than stretching. Any shorter and it reads as a strip.
@@ -541,9 +558,7 @@ export class BattleScene extends Phaser.Scene {
       stats.heal > 0 ? STAT_TIP.heal : STAT_TIP.damage,
       stats.heal > 0 ? stats.heal : stats.damage,
     );
-    // The arrow is a thin strip of ink, so it takes a larger scale than the
-    // square sheet icons to carry the same visual weight.
-    pair(68, ICON.range, STAT_TIP.range, stats.range, 0.5);
+    pair(68, ICON.range, STAT_TIP.range, stats.range);
 
     const box = this.add.container(cx, cy, [
       paper,
@@ -633,17 +648,28 @@ export class BattleScene extends Phaser.Scene {
   }
 
   /**
-   * The draft's how-to, Warcraft style: an advisor pawn stands beside your
-   * half of the board with its speech bubble above it. Everything joins the
-   * draft box, so it rides the slide in and out and dies with the panel.
+   * The battle's resident: an advisor pawn that ambles around the island's
+   * top-left corner. Lives outside the draft box, so when the roster slides
+   * away it is only the bubble that leaves - the pawn stays for the fight.
    */
   private buildAdvisor(): void {
-    const x = 145;
-    const y = 252;
-    const shadow = addShadow(this, x, y, 0.5);
-    const pawn = this.add.sprite(x, y, unitKey(this.mySide, "pawn", "idle"));
+    const shadow = addShadow(this, ADVISOR_HOME.x, ADVISOR_HOME.y, 0.5);
+    const pawn = this.add.sprite(
+      ADVISOR_HOME.x,
+      ADVISOR_HOME.y,
+      unitKey(this.mySide, "pawn", "idle"),
+    );
     playPose(pawn, this.mySide, "pawn", "idle", this.mirrored);
+    pawn.setDepth(DEPTH.unit + ADVISOR_HOME.y);
+    this.advisor = { sprite: pawn, shadow, target: null, pauseMs: 900 };
+  }
 
+  /**
+   * The how-to in a speech bubble above the advisor. Drawn once at the
+   * pawn's home and shifted whole to follow it; joins the draft box, so
+   * starting the battle takes the bubble and leaves the pawn.
+   */
+  private buildBubble(): void {
     const text = label(
       this,
       0,
@@ -651,51 +677,95 @@ export class BattleScene extends Phaser.Scene {
       "Pick a unit from the cards above, then click a tile on your side of the field to place it.\nClick a placed unit to remove it and get its gold back.",
       {
         fontSize: "13px",
-        color: "#4a3a28",
+        color: "#52412e",
         strokeThickness: 0,
         align: "left",
-        wordWrap: { width: 270 },
+        wordWrap: { width: 260 },
       },
     ).setOrigin(0, 0);
 
-    // Bubble in the pack's own paper: cream fill, ink border, tail down to
-    // the pawn. The tail is part of the outline, not a shape stacked on it:
-    // the fill is the union of the rounded rect and the triangle, then one
-    // stroke runs bottom edge to bottom edge and out around the tail, so
-    // there is no border line across where the tail joins.
-    const FILL = 0xefe4cd;
-    const INK = 0x4a3a28;
-    const bw = Math.ceil(text.width) + 26;
-    const bh = Math.ceil(text.height) + 20;
+    const bw = Math.ceil(text.width) + 28;
+    const bh = Math.ceil(text.height) + 22;
     const r = 12;
-    const bx = x + 12;
-    const by = 148 - bh;
-    const la = bx + 24;
-    const ra = bx + 54;
-    const tipX = x + 4;
-    const tipY = y - 84;
-    const g = this.add.graphics();
-    g.fillStyle(FILL, 1);
-    g.fillRoundedRect(bx, by, bw, bh, r);
-    g.fillTriangle(la, by + bh, ra, by + bh, tipX, tipY);
-    g.lineStyle(3, INK, 1);
-    g.beginPath();
-    g.moveTo(la, by + bh);
-    g.lineTo(bx + r, by + bh);
-    g.arc(bx + r, by + bh - r, r, Math.PI / 2, Math.PI);
-    g.lineTo(bx, by + r);
-    g.arc(bx + r, by + r, r, Math.PI, Math.PI * 1.5);
-    g.lineTo(bx + bw - r, by);
-    g.arc(bx + bw - r, by + r, r, Math.PI * 1.5, Math.PI * 2);
-    g.lineTo(bx + bw, by + bh - r);
-    g.arc(bx + bw - r, by + bh - r, r, 0, Math.PI / 2);
-    g.lineTo(ra, by + bh);
-    g.lineTo(tipX, tipY);
-    g.closePath();
-    g.strokePath();
-    text.setPosition(bx + 13, by + 10);
+    const bx = ADVISOR_HOME.x + 12;
+    const bottom = ADVISOR_HOME.y - 96;
+    const by = bottom - bh;
+    const la = bx + 20;
+    const ra = bx + 36;
+    const tipX = ADVISOR_HOME.x + 4;
+    const tipY = ADVISOR_HOME.y - 74;
 
-    this.draftBox.add([shadow, pawn, g, text]);
+    // Paper and ink over a soft drop shadow. The fill is the union of the
+    // rounded rect and the tail, and one stroke runs around the whole
+    // outline, so no border crosses the tail's mouth.
+    const FILL = 0xf2e7cf;
+    const INK = 0x3d3123;
+    const g = this.add.graphics();
+    const pass = (oy: number, fill: number, alpha: number, stroke: boolean): void => {
+      g.fillStyle(fill, alpha);
+      g.fillRoundedRect(bx, by + oy, bw, bh, r);
+      g.fillTriangle(la, bottom + oy, ra, bottom + oy, tipX, tipY + oy);
+      if (!stroke) return;
+      g.lineStyle(3, INK, 1);
+      g.beginPath();
+      g.moveTo(la, bottom + oy);
+      g.lineTo(bx + r, bottom + oy);
+      g.arc(bx + r, bottom - r + oy, r, Math.PI / 2, Math.PI);
+      g.lineTo(bx, by + r + oy);
+      g.arc(bx + r, by + r + oy, r, Math.PI, Math.PI * 1.5);
+      g.lineTo(bx + bw - r, by + oy);
+      g.arc(bx + bw - r, by + r + oy, r, Math.PI * 1.5, Math.PI * 2);
+      g.lineTo(bx + bw, bottom - r + oy);
+      g.arc(bx + bw - r, bottom - r + oy, r, 0, Math.PI / 2);
+      g.lineTo(ra, bottom + oy);
+      g.lineTo(tipX, tipY + oy);
+      g.closePath();
+      g.strokePath();
+    };
+    pass(4, 0x2e2417, 0.18, false);
+    pass(0, FILL, 1, true);
+    text.setPosition(bx + 14, by + 11);
+
+    this.bubble = this.add.container(0, 0, [g, text]);
+    this.draftBox.add(this.bubble);
+  }
+
+  /** Stand a while, pick a nearby patch, amble there, idle again. */
+  private tickAdvisor(delta: number): void {
+    const a = this.advisor;
+    if (!a) return;
+    const s = a.sprite;
+    if (!a.target) {
+      a.pauseMs -= delta;
+      if (a.pauseMs > 0) return;
+      for (let tries = 0; tries < 8; tries++) {
+        const x = ADVISOR_AREA.x0 + Math.random() * (ADVISOR_AREA.x1 - ADVISOR_AREA.x0);
+        const y = ADVISOR_AREA.y0 + Math.random() * (ADVISOR_AREA.y1 - ADVISOR_AREA.y0);
+        if (Math.hypot(x - s.x, y - s.y) < 28) continue;
+        a.target = { x, y };
+        break;
+      }
+      if (!a.target) return;
+      playPose(s, this.mySide, "pawn", "run", this.mirrored);
+    }
+    const dx = a.target.x - s.x;
+    const dy = a.target.y - s.y;
+    const dist = Math.hypot(dx, dy);
+    const step = (ADVISOR_SPEED * delta) / 1000;
+    if (dist <= step) {
+      s.setPosition(a.target.x, a.target.y);
+      a.target = null;
+      a.pauseMs = 1400 + Math.random() * 2600;
+      playPose(s, this.mySide, "pawn", "idle", this.mirrored);
+    } else {
+      s.x += (dx / dist) * step;
+      s.y += (dy / dist) * step;
+      // The art faces right; face the way it walks, as the units do.
+      if (Math.abs(dx) > 0.5) s.setFlipX(dx < 0);
+    }
+    a.shadow.setPosition(s.x, s.y);
+    s.setDepth(DEPTH.unit + s.y);
+    if (this.bubble) this.bubble.setPosition(s.x - ADVISOR_HOME.x, s.y - ADVISOR_HOME.y);
   }
 
   /** The old CSS translateY transition, as a tween. */
@@ -800,6 +870,7 @@ export class BattleScene extends Phaser.Scene {
       ease: "Sine.easeIn",
       onComplete: () => {
         this.draftBox.destroy();
+        this.bubble = null;
         this.launcher.onTip?.(null, 0, 0);
         this.runIntro();
       },
@@ -868,6 +939,7 @@ export class BattleScene extends Phaser.Scene {
       this.drawPip(view);
     }
     for (const bar of [this.bars.a, this.bars.b]) bar?.tick(delta);
+    this.tickAdvisor(delta);
 
     if (this.drafting) {
       this.refreshDuel();
