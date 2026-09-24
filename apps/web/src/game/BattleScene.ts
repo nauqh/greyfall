@@ -166,6 +166,7 @@ interface DraftCard {
   /** Everything that has to swap from dark ink on paper to light on slate. */
   ink: Phaser.GameObjects.Text[];
   cost: Phaser.GameObjects.Text;
+  portrait: Phaser.GameObjects.Image;
 }
 
 interface UnitView {
@@ -179,6 +180,10 @@ interface UnitView {
   shownHp: number;
   /** The warrior's slashes alternate; this is which one plays next. */
   slash: 1 | 2;
+  /** Pending return to idle after a step; a follow-on step cancels it. */
+  settle: Phaser.Time.TimerEvent | null;
+  /** Floating numbers still in the air over this unit. */
+  floats: number;
 }
 
 /** What the scene needs from a room it does not itself own. */
@@ -246,6 +251,8 @@ export class BattleScene extends Phaser.Scene {
   private draftBox!: Phaser.GameObjects.Container;
   /** The how-to bubble; tracks the pawn and leaves with the draft panel. */
   private bubble: Phaser.GameObjects.Container | null = null;
+  private bubbleLine = "";
+  private adviceTimer: Phaser.Time.TimerEvent | null = null;
   /** The resident advisor: stand a while, amble to a nearby patch, idle. */
   private advisor: {
     sprite: Phaser.GameObjects.Sprite;
@@ -254,6 +261,9 @@ export class BattleScene extends Phaser.Scene {
     pauseMs: number;
   } | null = null;
   private cellZone!: Phaser.GameObjects.Zone;
+  /** The placement preview under the cursor while drafting. */
+  private ghostCell!: Phaser.GameObjects.Graphics;
+  private ghost: Phaser.GameObjects.Sprite | null = null;
   private goldText!: Phaser.GameObjects.Text;
   private goldCoin!: Phaser.GameObjects.Image;
   private errorText!: Phaser.GameObjects.Text;
@@ -307,6 +317,10 @@ export class BattleScene extends Phaser.Scene {
     this.cards = new Map();
     this.placed = new Map();
     this.clockText = null;
+    this.bubble = null;
+    this.ghost = null;
+    this.bubbleLine = "";
+    this.adviceTimer = null;
     // Field initialisers run once, at construction; a restart runs only this.
     // A stale PackBar here would be ticked every frame with its art already
     // destroyed along with the old scene's display list.
@@ -443,7 +457,6 @@ export class BattleScene extends Phaser.Scene {
       const cy = i < 2 ? 232 : 432;
       this.draftBox.add(this.buildCard(cls, cx, cy));
     }
-    this.buildBubble();
 
     // 104 is under the sheet's own 64px corners, so the frame squashes a
     // little rather than stretching. Any shorter and it reads as a strip.
@@ -486,18 +499,33 @@ export class BattleScene extends Phaser.Scene {
     const zy = ORIGIN_Y - TILE / 2;
     this.cellZone = this.add
       .zone(zx + (COLS / 2) * (TILE / 2), zy + BOARD_H / 2, (COLS / 2) * TILE, BOARD_H)
-      .setInteractive()
+      .setInteractive();
+    const cellAt = (p: Phaser.Input.Pointer): { battle: number; row: number } | null => {
+      const screenCol = Math.floor((p.worldX - zx) / TILE);
+      const row = Math.floor((p.worldY - zy) / TILE);
+      if (screenCol < 0 || screenCol >= COLS / 2 || row < 0 || row >= ROWS) return null;
+      // Screen column to battle column. For side A that is the identity.
+      return { battle: this.mirrored ? COLS - 1 - screenCol : screenCol, row };
+    };
+    this.ghostCell = this.add.graphics().setDepth(DEPTH.ground + 1);
+    this.cellZone
+      .on("pointermove", (p: Phaser.Input.Pointer) => this.hoverCell(cellAt(p)))
+      .on("pointerout", () => this.hoverCell(null))
       .on("pointerdown", (p: Phaser.Input.Pointer) => {
-        const screenCol = Math.floor((p.worldX - zx) / TILE);
-        const row = Math.floor((p.worldY - zy) / TILE);
-        if (screenCol < 0 || screenCol >= COLS / 2 || row < 0 || row >= ROWS) return;
-        // Screen column to battle column to your own half's column. For side
-        // A that is the identity; for side B it is the flip, twice.
-        const battle = this.mirrored ? COLS - 1 - screenCol : screenCol;
-        this.toggleCell(this.myCol(battle), row);
+        const c = cellAt(p);
+        if (!c) return;
+        this.toggleCell(this.myCol(c.battle), c.row);
+        this.hoverCell(c);
       });
 
+    // The cards' hotkeys, 1 to 4.
+    this.input.keyboard?.on("keydown", (e: KeyboardEvent) => {
+      const cls = ROSTER[Number(e.key) - 1];
+      if (this.drafting && cls) this.pick(cls);
+    });
+
     this.refreshDraft();
+    this.advise();
   }
 
   /**
@@ -524,7 +552,7 @@ export class BattleScene extends Phaser.Scene {
       color: "#7a4f14",
       ...ink,
     }).setOrigin(0, 0.5);
-    const name = label(this, 34, -12, monsters ? MONSTER_NAME[cls] : CLASS_NAME[cls], {
+    const name = label(this, 34, -12, this.cardName(cls), {
       fontSize: monsters && cls === "lancer" ? "17px" : "19px",
       color: "#4a3a28",
       ...ink,
@@ -560,9 +588,18 @@ export class BattleScene extends Phaser.Scene {
     );
     pair(68, ICON.range, STAT_TIP.range, stats.range);
 
+    // The WC3 command card's hotkey, in the corner the card leaves empty.
+    const hotkey = label(this, -84, -58, `${ROSTER.findIndex((c) => c === cls) + 1}`, {
+      fontSize: "13px",
+      color: "#9a8466",
+      ...ink,
+    });
+    texts.push(hotkey);
+
     const box = this.add.container(cx, cy, [
       paper,
       special,
+      hotkey,
       portrait,
       coin,
       cost,
@@ -571,13 +608,10 @@ export class BattleScene extends Phaser.Scene {
       ...pairs,
     ]);
     box.setSize(236, 188);
-    const card: DraftCard = { box, cy, paper, special, name, ink: texts, cost };
+    const card: DraftCard = { box, cy, paper, special, name, ink: texts, cost, portrait };
     box
       .setInteractive({ cursor: HAND })
-      .on("pointerup", () => {
-        this.picked = cls;
-        this.refreshDraft();
-      })
+      .on("pointerup", () => this.pick(cls))
       .on("pointerover", () => this.liftCard(card, true))
       .on("pointerout", () => this.refreshDraft());
     // Input picks only the topmost hit, so the stat icons and numbers steal
@@ -596,10 +630,7 @@ export class BattleScene extends Phaser.Scene {
         })
         .on("pointermove", (p: Phaser.Input.Pointer) => raiseTip(p, tip))
         .on("pointerout", () => this.launcher.onTip?.(null, 0, 0))
-        .on("pointerup", () => {
-          this.picked = cls;
-          this.refreshDraft();
-        });
+        .on("pointerup", () => this.pick(cls));
     }
     this.cards.set(cls, card);
     return box;
@@ -664,36 +695,70 @@ export class BattleScene extends Phaser.Scene {
     this.advisor = { sprite: pawn, shadow, target: null, pauseMs: 900 };
   }
 
+  /** Seat B drafts monsters, so its cards and lines use the monster's name. */
+  private cardName(cls: UnitClass): string {
+    return this.mySide === "b" ? MONSTER_NAME[cls] : CLASS_NAME[cls];
+  }
+
+  private pick(cls: UnitClass): void {
+    if (BALANCE.units[cls].cost > BALANCE.budget - armyCost(this.draftArmy)) {
+      this.remark("Not enough gold.");
+      return;
+    }
+    this.picked = cls;
+    this.refreshDraft();
+    this.advise();
+  }
+
+  /** What the advisor says for the draft as it stands, WC3-advisor style:
+   *  one short line for the next step, not the whole manual at once. */
+  private advise(): void {
+    const next = !this.picked
+      ? "Pick a unit from the cards."
+      : this.draftArmy.length === 0
+        ? `Click a tile on your side to place the ${this.cardName(this.picked)}.`
+        : "Click a unit to send it back. Start when ready.";
+    this.say(next);
+  }
+
+  /** A passing remark, then back to the advice. */
+  private remark(line: string): void {
+    this.say(line);
+    this.adviceTimer?.remove();
+    this.adviceTimer = this.time.delayedCall(1800, () => this.advise());
+  }
+
   /**
-   * The how-to in a speech bubble above the advisor. Drawn once at the
-   * pawn's home and shifted whole to follow it; joins the draft box, so
-   * starting the battle takes the bubble and leaves the pawn.
+   * A speech bubble above the advisor, redrawn per line. It pops out of its
+   * tail and the words type in, so each new line reads as the pawn talking.
+   * Built around the pawn's feet at (0, 0) and moved whole to follow it.
    */
-  private buildBubble(): void {
-    const text = label(
-      this,
-      0,
-      0,
-      "Pick a unit from the cards above, then click a tile on your side of the field to place it.\nClick a placed unit to remove it and get its gold back.",
-      {
-        fontSize: "13px",
-        color: "#52412e",
-        strokeThickness: 0,
-        align: "left",
-        wordWrap: { width: 260 },
-      },
-    ).setOrigin(0, 0);
+  private say(line: string): void {
+    if (!this.drafting || line === this.bubbleLine) return;
+    this.bubbleLine = line;
+    this.bubble?.destroy();
+
+    const text = label(this, 0, 0, "", {
+      fontSize: "13px",
+      color: "#52412e",
+      strokeThickness: 0,
+      align: "left",
+      wordWrap: { width: 220 },
+    }).setOrigin(0, 0);
+    // Wrap once up front: wrapping a half-typed line moves words mid-type.
+    const full = text.getWrappedText(line).join("\n");
+    text.setWordWrapWidth(null).setText(full);
 
     const bw = Math.ceil(text.width) + 28;
-    const bh = Math.ceil(text.height) + 22;
+    const bh = Math.ceil(text.height) + 20;
     const r = 12;
-    const bx = ADVISOR_HOME.x + 12;
-    const bottom = ADVISOR_HOME.y - 96;
+    const bx = 12;
+    const bottom = -96;
     const by = bottom - bh;
     const la = bx + 20;
     const ra = bx + 36;
-    const tipX = ADVISOR_HOME.x + 4;
-    const tipY = ADVISOR_HOME.y - 74;
+    const tipX = 4;
+    const tipY = -74;
 
     // Paper and ink over a soft drop shadow. The fill is the union of the
     // rounded rect and the tail, and one stroke runs around the whole
@@ -724,10 +789,22 @@ export class BattleScene extends Phaser.Scene {
     };
     pass(4, 0x2e2417, 0.18, false);
     pass(0, FILL, 1, true);
-    text.setPosition(bx + 14, by + 11);
+    text.setPosition(bx + 14, by + 10).setText("");
 
-    this.bubble = this.add.container(0, 0, [g, text]);
-    this.draftBox.add(this.bubble);
+    const at = this.advisor?.sprite ?? ADVISOR_HOME;
+    // Scaled about the pawn's feet, so the pop grows out of the tail.
+    const bubble = this.add.container(at.x, at.y, [g, text]).setScale(0.6).setAlpha(0);
+    this.bubble = bubble;
+    this.draftBox.add(bubble);
+    this.tweens.add({ targets: bubble, scale: 1, alpha: 1, duration: 170, ease: "Back.easeOut" });
+    let shown = 0;
+    this.time.addEvent({
+      delay: 22,
+      repeat: full.length - 1,
+      callback: () => {
+        if (bubble.active) text.setText(full.slice(0, ++shown));
+      },
+    });
   }
 
   /** Stand a while, pick a nearby patch, amble there, idle again. */
@@ -765,7 +842,7 @@ export class BattleScene extends Phaser.Scene {
     }
     a.shadow.setPosition(s.x, s.y);
     s.setDepth(DEPTH.unit + s.y);
-    if (this.bubble) this.bubble.setPosition(s.x - ADVISOR_HOME.x, s.y - ADVISOR_HOME.y);
+    this.bubble?.setPosition(s.x, s.y);
   }
 
   /** The old CSS translateY transition, as a tween. */
@@ -779,6 +856,44 @@ export class BattleScene extends Phaser.Scene {
     });
   }
 
+  /** Whether one more of this class still fits the gold and the unit cap. */
+  private fits(cls: UnitClass): boolean {
+    return (
+      armyCost([...this.draftArmy, { class: cls, col: 0, row: 0 }]) <= BALANCE.budget &&
+      this.draftArmy.length < BALANCE.board.maxUnits
+    );
+  }
+
+  /**
+   * WC3 build placement: the picked unit, see-through, on the cell under the
+   * cursor, on a green cell where it can go and a red one where it cannot.
+   * A cell that already holds a unit goes red too: clicking it removes.
+   */
+  private hoverCell(c: { battle: number; row: number } | null): void {
+    this.ghostCell.clear();
+    this.ghost?.setVisible(false);
+    if (!c || !this.drafting || !this.cellZone.input?.enabled) return;
+    const taken = this.placed.has(`${this.myCol(c.battle)},${c.row}`);
+    if (!taken && !this.picked) return;
+    const ok = !taken && this.fits(this.picked!);
+    const color = ok ? 0x86d15e : 0xd9544a;
+    const { x, y } = this.tileXY(c.battle, c.row);
+    const w = TILE - 6;
+    this.ghostCell
+      .fillStyle(color, 0.22)
+      .fillRect(x - w / 2, y - w / 2, w, w)
+      .lineStyle(2, color, 0.75)
+      .strokeRect(x - w / 2, y - w / 2, w, w);
+    if (taken) return;
+
+    const at = this.spriteXY(c.battle, c.row);
+    this.ghost ??= this.add.sprite(0, 0, unitKey(this.mySide, this.picked!, "idle")).setAlpha(0.55);
+    playPose(this.ghost, this.mySide, this.picked!, "idle", this.mirrored);
+    this.ghost.setPosition(at.x, at.y).setDepth(DEPTH.unit + at.y).setVisible(true);
+    if (ok) this.ghost.clearTint();
+    else this.ghost.setTint(0xff7a7a);
+  }
+
   private toggleCell(col: number, row: number): void {
     const key = `${col},${row}`;
     const existing = this.placed.get(key);
@@ -790,7 +905,8 @@ export class BattleScene extends Phaser.Scene {
     } else {
       if (this.picked === null) return;
       const next: Placement[] = [...this.draftArmy, { class: this.picked, col, row }];
-      if (armyCost(next) > BALANCE.budget || next.length > BALANCE.board.maxUnits) return;
+      if (next.length > BALANCE.board.maxUnits) return this.remark("No room for more.");
+      if (armyCost(next) > BALANCE.budget) return this.remark("Not enough gold.");
       this.draftArmy = next;
       const { x, y } = this.spriteXY(this.myCol(col), row);
       const shadow = addShadow(this, x, y, this.picked === "lancer" ? 0.8 : 0.62);
@@ -825,6 +941,7 @@ export class BattleScene extends Phaser.Scene {
     }
     this.duel?.onArmyChange(this.draftArmy);
     this.refreshDraft();
+    this.advise();
   }
 
   private refreshDraft(): void {
@@ -840,8 +957,13 @@ export class BattleScene extends Phaser.Scene {
       card.special.setVisible(picked);
       card.name.setColor(picked ? "#f5f2e4" : "#4a3a28");
       for (const t of card.ink) if (t !== card.name) t.setColor(picked ? "#a8b4c4" : "#6b5740");
-      card.cost.setColor(picked ? "#e8c06a" : "#7a4f14");
-      card.box.setAlpha(BALANCE.units[cls].cost <= gold ? 1 : 0.5);
+      // Out of reach reads the WC3 way: a greyed face and a red price,
+      // still legible, rather than the whole card fading out.
+      const afford = BALANCE.units[cls].cost <= gold;
+      card.cost.setColor(!afford ? "#b0443a" : picked ? "#e8c06a" : "#7a4f14");
+      if (afford) card.portrait.clearTint();
+      else card.portrait.setTint(0x8a8a8a);
+      card.box.setAlpha(afford || picked ? 1 : 0.8);
       this.liftCard(card, picked);
     }
   }
@@ -858,6 +980,8 @@ export class BattleScene extends Phaser.Scene {
     }
     this.placed.clear();
     this.cellZone.destroy();
+    this.ghostCell.destroy();
+    this.ghost?.destroy();
 
     this.spawnArmies();
     this.buildHud();
@@ -1024,6 +1148,8 @@ export class BattleScene extends Phaser.Scene {
         hp: snap.maxHp,
         shownHp: snap.maxHp,
         slash: 1,
+        settle: null,
+        floats: 0,
       };
 
       // Attacks are one-shots; back to idle when they finish.
@@ -1044,12 +1170,13 @@ export class BattleScene extends Phaser.Scene {
     const x = view.sprite.x - w / 2;
     const y = view.sprite.y - this.headHeight(view.snap.class, view.snap.side) - 12;
     const frac = Math.max(0, view.shownHp / view.snap.maxHp);
-    const mine = view.snap.side === this.mySide;
+    // WC3 colours a bar by health, not by team: green, then yellow, then
+    // red. The bodies already say whose unit it is.
+    const color = frac > 0.6 ? 0x6fcf4f : frac > 0.3 ? 0xe8c547 : 0xd9544a;
     view.pip.clear();
     view.pip.fillStyle(0x1a1208, 0.85).fillRect(x - 1, y - 1, w + 2, h + 2);
-    view.pip
-      .fillStyle(mine ? 0x7fb069 : 0xc4554d, 1)
-      .fillRect(x, y, Math.max(0, w * frac), h);
+    view.pip.fillStyle(color, 1).fillRect(x, y, Math.max(0, w * frac), h);
+    view.pip.fillStyle(0xffffff, 0.25).fillRect(x, y, Math.max(0, w * frac), 1);
     view.pip.setDepth(DEPTH.unit + view.sprite.y + 1);
   }
 
@@ -1169,6 +1296,12 @@ export class BattleScene extends Phaser.Scene {
     const view = this.view(ev.unit);
     if (!view.alive) return;
     const { x, y } = this.spriteXY(ev.col, ev.row);
+    // A step straight after a step is one walk: keep the run cycle going and
+    // the pace even, as WC3 units march. Easing and idling every cell made a
+    // march read as a string of hops.
+    const chained = view.settle !== null;
+    view.settle?.remove();
+    view.settle = null;
     playPose(view.sprite, view.snap.side, view.snap.class, "run");
     if (Math.abs(x - view.sprite.x) > 0.5) view.sprite.setFlipX(x < view.sprite.x);
     this.tweens.add({
@@ -1176,11 +1309,14 @@ export class BattleScene extends Phaser.Scene {
       x,
       y,
       duration: STEP_MS / this.speed,
-      // Linear starts and stops dead; a sine ease gives the step weight.
-      ease: "Sine.easeInOut",
+      ease: chained ? "Linear" : "Sine.easeIn",
       onUpdate: () => view.sprite.setDepth(DEPTH.unit + view.sprite.y),
       onComplete: () => {
-        if (view.alive) playPose(view.sprite, view.snap.side, view.snap.class, "idle", this.mirrored);
+        // Idle only if no next step arrives inside the tick's leftover time.
+        view.settle = this.time.delayedCall((BALANCE.actionSeconds * 1000 - STEP_MS + 60) / this.speed, () => {
+          view.settle = null;
+          if (view.alive) playPose(view.sprite, view.snap.side, view.snap.class, "idle", this.mirrored);
+        });
       },
     });
   }
@@ -1264,7 +1400,10 @@ export class BattleScene extends Phaser.Scene {
   private floatStack = 0;
 
   private floatText(view: UnitView, text: string, color: string): void {
-    const top = view.sprite.y - this.headHeight(view.snap.class, view.snap.side) - 20;
+    // A volley lands several numbers on one unit at once; each live one
+    // pushes the next a line higher, so they stack instead of overprinting.
+    const top = view.sprite.y - this.headHeight(view.snap.class, view.snap.side) - 20 - view.floats * 16;
+    view.floats += 1;
     const jitter = this.floatStack;
     this.floatStack = (this.floatStack + 14) % 42;
     const tag = this.add
@@ -1278,14 +1417,21 @@ export class BattleScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(DEPTH.fx + 1)
       .setResolution(2);
+    // Pop, rise, and only fade on the way out, WC3 floating-text style: a
+    // number that starts fading the instant it appears is half-read.
+    tag.setScale(1.35);
+    this.tweens.add({ targets: tag, scale: 1, duration: 110 / this.speed, ease: "Back.easeOut" });
     this.tweens.add({
       targets: tag,
-      y: top - 22,
-      alpha: 0,
-      duration: 780 / this.speed,
+      y: top - 28,
+      duration: 900 / this.speed,
       ease: "Sine.easeOut",
-      onComplete: () => tag.destroy(),
+      onComplete: () => {
+        tag.destroy();
+        view.floats -= 1;
+      },
     });
+    this.tweens.add({ targets: tag, alpha: 0, delay: 520 / this.speed, duration: 380 / this.speed });
   }
 
   private onHit(ev: Extract<BattleEvent, { type: "hit" }>): void {
@@ -1303,12 +1449,17 @@ export class BattleScene extends Phaser.Scene {
         ? ((RELEASE_FRAME.archer / ATTACK_FRAME_RATE) * 1000 + FLIGHT_MS) / this.speed
         : 280 / this.speed;
 
-    // White flash plus a nudge, per the PRD.
+    // The PRD's white flash, cut to a blink and handed to a red blush: a
+    // full-body white silhouette for 80ms was the loudest thing on screen.
     this.time.delayedCall(delay, () => {
       if (!target.alive) return;
       target.sprite.setTintFill(0xffffff);
-      this.time.delayedCall(80 / this.speed, () => {
-        if (target.alive) target.sprite.clearTint();
+      this.time.delayedCall(40 / this.speed, () => {
+        if (!target.alive) return;
+        target.sprite.setTint(0xff8a80);
+        this.time.delayedCall(110 / this.speed, () => {
+          if (target.alive) target.sprite.clearTint();
+        });
       });
       // One soft nudge; a 45ms double-shake read as jitter.
       const home = target.sprite.x;
@@ -1363,19 +1514,43 @@ export class BattleScene extends Phaser.Scene {
     view.pip.clear();
     this.refreshHud();
 
-    // Grey, drift up, fade, dust puff: the PRD death beat.
-    view.sprite.clearTint();
-    view.sprite.setTint(0x6f6f6f);
-    playPose(view.sprite, view.snap.side, view.snap.class, "idle", this.mirrored);
+    // The PRD beat, split in two: the body greys and sinks into the ground
+    // where it stood, the way WC3 corpses go, while a pale soul lifts off it
+    // and fades. One sprite doing both read as the whole unit floating away.
+    view.settle?.remove();
+    this.tweens.killTweensOf(view.sprite);
+    const body = view.sprite;
+    body.clearTint().setTint(0x6f6f6f);
+    body.anims.pause();
+    const soul = this.add
+      .sprite(body.x, body.y, body.texture.key, body.frame.name)
+      .setOrigin(body.originX, body.originY)
+      .setFlipX(body.flipX)
+      .setTint(0xcfe0ff)
+      .setAlpha(0.35)
+      .setDepth(DEPTH.fx);
     this.tweens.add({
-      targets: [view.sprite, view.shadow],
-      y: `-=26`,
+      targets: soul,
+      y: soul.y - 40,
       alpha: 0,
-      duration: 900 / this.speed,
-      onComplete: () => {
-        view.sprite.setVisible(false);
-        view.shadow.setVisible(false);
-      },
+      duration: 1100 / this.speed,
+      ease: "Sine.easeOut",
+      onComplete: () => soul.destroy(),
+    });
+    this.tweens.add({
+      targets: body,
+      scaleY: 0.2,
+      alpha: 0,
+      delay: 120 / this.speed,
+      duration: 700 / this.speed,
+      ease: "Sine.easeIn",
+      onComplete: () => body.setVisible(false),
+    });
+    this.tweens.add({
+      targets: view.shadow,
+      alpha: 0,
+      duration: 800 / this.speed,
+      onComplete: () => view.shadow.setVisible(false),
     });
 
     const dust = this.add
