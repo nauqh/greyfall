@@ -4,12 +4,14 @@
 
 ## Overview
 
-Greyfall is a Souls-themed strategy game that runs as a Discord Activity. Two sides share one island: each builds a town, trains an army from a fixed Warcraft-style roster, and fights for the island in rounds. Every round both sides plan in secret while the world is paused, then both plans play out together until the fighting settles, and fights break out wherever armies meet. Rounds repeat until a main hall falls. A match lasts about 15 minutes, works solo against an AI, and is the showcase project for Wan's full-stack skills.
+Greyfall is a strategy game with a Dark Souls mood that runs as a Discord Activity. It mixes Warcraft and auto chess: two sides share one island, each builds a town, trains an army from a fixed roster like Warcraft's, and fights for the island in rounds.
+
+Each round, both sides plan in secret while the world is paused. Then both plans play out at the same time, and fights break out wherever armies meet. Rounds repeat until a main hall falls. A match lasts about 15 minutes and can be played solo against an AI. It is also the showcase project for Wan's skills across the whole stack.
 
 **Goals**
 
 - Ship a playable, polished game inside Discord that friends can launch from a voice call.
-- Demonstrate full-stack depth: server-authoritative simulation, auth, persistence, matchmaking, deployment.
+- Show depth across the whole stack: a simulation the server decides, login, saved games, matchmaking and deployment.
 - Work with zero existing players, using an AI opponent that plays by the same rules.
 
 **Non-goals**
@@ -17,8 +19,8 @@ Greyfall is a Souls-themed strategy game that runs as a Discord Activity. Two si
 - Live control: nothing is commanded during a battle phase. Both sides plan at the same time, never in real time.
 - Random shops, item systems, or monetisation in the MVP.
 - Fog of war in the MVP; the whole island is visible while planning.
-- Mobile-native apps outside Discord.
-- Custom art beyond the Tiny Swords free pack and code-driven effects.
+- Phone apps outside Discord.
+- Custom art beyond the free Tiny Swords pack and effects made in code.
 - Balance analytics and a simulation dashboard; possible after launch.
 
 ## Theme and setting
@@ -42,7 +44,13 @@ The world has been drained of colour by the Greying, a curse that hollows everyt
 
 ## Core gameplay loop
 
-Each round is plan, then watch, auto-chess style, on a Warcraft map. While planning, the world is frozen: the player spends gold, gives orders and picks each unit's stance. When both sides lock in, both plans play out together on the whole island with no input, until the fighting settles. Then a short aftermath, and the next round. Rounds repeat until a main hall (the castle) is destroyed.
+Each round is plan, then watch, as in auto chess, but on a Warcraft map.
+
+- **Plan:** the world is frozen. The player spends gold, gives orders and picks each unit's stance.
+- **Battle:** when both sides lock in, both plans play out together across the island. Nobody can give orders until the fighting settles.
+- **Aftermath:** a short summary, then the next round.
+
+Rounds repeat until a main hall (the castle) is destroyed.
 
 ```mermaid
 flowchart LR
@@ -54,7 +62,7 @@ flowchart LR
   E -->|Yes| F[Match over]
 ```
 
-The planning phase has a 60-second timer in a duel and none in solo play. A battle phase lasts at most 45 seconds and can be sped up 2x. A match usually ends by round 8 to 12.
+In a duel, planning has a timer of 60 seconds. Solo play has no timer. A battle phase lasts at most 45 seconds and can be sped up 2x. A match usually ends by round 8 to 12.
 
 **Round flow**
 
@@ -69,20 +77,20 @@ The planning phase has a 60-second timer in a duel and none in solo play. A batt
 
 **Why phases**
 
-- It is the auto-chess half of the idea: every decision happens before the battle, and the battle shows whether they were good. Whole fights play out; nothing is cut off mid-swing.
+- It is the auto chess half of the idea: every decision happens before the battle, and the battle shows whether the decisions were good. Whole fights play out and none is cut off halfway.
 - A round is one bigger decision rather than many small ones, which is comfortable on a phone inside Discord and keeps a duel near 20 minutes.
-- The skill moves into setup, the way board positioning works in auto-chess: where units go, plus the stance they fight in.
+- The skill moves into setup, the way placing units on the board works in auto chess: where units go, plus the stance they fight in.
 - A round with no attack orders settles almost at once. That is an economy round, a legitimate choice, not a wasted minute.
 
 ## Game systems
 
-The full roster is always available, Warcraft-style; strategy comes from economy, supply, tech, position, stances and counters instead of shop luck. All numbers below are starting values, kept in one config file for tuning.
+As in Warcraft, the full roster is always available. Strategy comes from economy, supply, tech, position, stances and counters, not from luck in a shop. All numbers below are starting values, kept in one config file for tuning.
 
 ### Orders
 
 | Order | Who | Behaviour |
 | --- | --- | --- |
-| Attack-move | Fighters | Walk to a tile, fighting any enemy that comes in range. The default order. |
+| Attack move | Fighters | Walk to a tile, fighting any enemy that comes in range. The default order. |
 | Move | All | Walk to a tile, ignoring enemies. Used to retreat or to slip past. |
 | Attack | Fighters | Walk to and attack a chosen unit or building. |
 | Hold | Fighters | Stay put and fight whatever comes in range, without chasing. |
@@ -106,7 +114,7 @@ The order says where a unit goes; the stance says how it reacts along the way, s
 - Units always target the nearest enemy, ties to the lowest HP, and a Lancer's taunt is the only thing that overrides it. There is no target priority setting.
 - The chase and retreat values are numbers in `balance.ts`, so the presets can be tuned, or new ones added, without changing the UI.
 
-Why presets: the pattern is proven in Age of Empires and Warcraft stances and in Gratuitous Space Battles' pre-battle orders, but the more settings a player has to tune, the more often units do something the player cannot explain. One readable choice keeps the battle legible on a phone.
+Why presets: the pattern is proven in Age of Empires and Warcraft stances and in the orders Gratuitous Space Battles has players set before a battle, but the more settings a player has to tune, the more often units do something the player cannot explain. One readable choice keeps the battle legible on a phone.
 
 ### The island
 
@@ -139,11 +147,11 @@ Buildings unlock classes and upgrade them. Each goes on a fixed plot on its side
 
 | Building | Unlocks | Build cost | Level 2 | Level 3 |
 | --- | --- | --- | --- | --- |
-| Barracks | Warrior | Pre-built | 6 gold: +20% HP | 10 gold: Guard ability |
+| Barracks | Warrior | Already built | 6 gold: +20% HP | 10 gold: Guard ability |
 | Archery range | Archer | 4 gold | 6 gold: +1 range | 10 gold: piercing arrows |
 | Tower | Lancer | 4 gold | 6 gold: +20% HP | 10 gold: Taunt ability |
 | Monastery | Monk | 5 gold | 6 gold: +30% healing | 10 gold: revive one ally per round |
-| Castle | Level 3 upgrades | Pre-built | 8 gold: unlocks level 3 everywhere | None |
+| Castle | Level 3 upgrades | Already built | 8 gold: unlocks level 3 everywhere | None |
 | House | +3 supply | 4 gold | None | None |
 
 ### Units
@@ -152,7 +160,7 @@ Buildings unlock classes and upgrade them. Each goes on a fixed plot on its side
 | --- | --- | --- | --- | --- | --- |
 | Pawn | 3 | 40 | 4 | 1 | Miner; weak filler if sent to fight |
 | Warrior | 3 | 120 | 14 | 1 | Melee damage |
-| Lancer | 3 | 140 | 10 | 1 | Front-line tank |
+| Lancer | 3 | 140 | 10 | 1 | Tank that holds the front line |
 | Archer | 3 | 60 | 10 | 3 | Ranged damage |
 | Monk | 4 | 70 | 0 | 2 | Heals the ally missing the most HP for 8 |
 
@@ -209,12 +217,12 @@ Each covenant has a mirror tribe whose passive works the same way at the same st
 
 Monster buildings come in one colour only, so restoring colour is the knights' reward alone.
 
-**Left over:** Troll is the boss (its wind-up, recovery and death sheets make a telegraphed attack). Bear, Snake and Bumblebee are later tiers for the Wilds or neutral creep camps. Hex Shaman's Transformation Spell plus the Pig sprite is a ready-made Hex.
+**Left over:** Troll is the boss (its wind-up, recovery and death sheets make a telegraphed attack). Bear, Snake and Bumblebee are later tiers for the Wilds or neutral creep camps. Hex Shaman's Transformation Spell plus the Pig sprite already make a Hex.
 
 **Known gaps in the art**
 
 - Only Gnoll, Harpoon Shark, Slingshot Gnome, Hex Shaman and Bomb Fish have projectiles; Giant Bat and Spider need their ranged and support effects drawn in code.
-- No monster has gathering or carrying animations, so monster Pawns gather with a code-drawn sack over the run animation.
+- No monster has gathering or carrying animations, so monster Pawns gather with a sack drawn in code over the run animation.
 - Tanks with a guard sheet for Taunt: Turtle, Minotaur, Panda (Skull has one too, used for Guard). Spear Goblin and Pig Rider have none.
 
 ### Battle phase simulation
@@ -294,15 +302,15 @@ All art comes from the [Tiny Swords](https://pixelfrog-assets.itch.io/tiny-sword
 | 8 buildings in 5 colours | Buildings on their plots; each production building is its class's shop |
 | Terrain tilesets, water, decorations, gold stones | The island, autotiled from its height map |
 | Fire, explosion and dust effects | Deaths and burn damage |
-| Ribbons, banners, bars, buttons, papers, wood table | All UI: the Warcraft-style HUD, HP bars, result banners |
+| Ribbons, banners, bars, buttons, papers, wood table | All UI: the HUD in the style of Warcraft, HP bars, result banners |
 | 25 human avatars | Unit portraits in the selection panel |
 
 **Missing animations and code replacements**
 
 - **Hit:** a 100 ms white flash plus a small shake, using Phaser tint and tweens.
 - **Death:** tint grey, fade out while floating upward, and play a dust puff, read as a soul leaving.
-- **Damage numbers:** pixel-font text that floats and fades.
-- **Greyscale world:** a Phaser colour-matrix filter, lifted region by region as the player holds them, and drawn back in from the edges once the Greying closes in.
+- **Damage numbers:** text in a pixel font that floats and fades.
+- **Greyscale world:** a Phaser colour matrix filter, lifted region by region as the player holds them, and drawn back in from the edges once the Greying closes in.
 - **Planned orders:** while planning, each selected unit shows its path and destination as a dotted line and flag, and its stance as a badge.
 
 **Technical notes**
@@ -315,7 +323,7 @@ All art comes from the [Tiny Swords](https://pixelfrog-assets.itch.io/tiny-sword
 
 - The current free pack allows commercial use and modification but forbids redistribution, so the files must not be in the public repo.
 - Assets live in a private bucket and are downloaded during CI builds; the README tells contributors where to get them.
-- The pixel-knight repo currently includes the pack files and should be fixed the same way, or switched to the CC0-licensed old version of the pack.
+- The pixel-knight repo currently includes the pack files and should be fixed the same way, or switched to the old version of the pack, which is CC0.
 
 ## Technical architecture
 
@@ -392,7 +400,7 @@ Match procedures are protected: they require the session created at sign-in.
 
 ## MVP scope and plan
 
-The battle prototype is done and stays playable (Solo and Duel on their own battle board) until the war on the map replaces it; then it is removed. The strategic map exists as a look-and-move scene: the island, both bases, wandering garrisons, a Warcraft-style HUD with placeholder values. The war is built as new code on that map, reusing the engine's balance table, the sprites, terrain and UI, and the hit and death effects.
+The battle prototype is done and stays playable (Solo and Duel on their own battle board) until the war on the map replaces it; then it is removed. The strategic map exists, but so far you can only look around and move a Pawn: it has the island, both bases, wandering garrisons and a HUD like Warcraft's with placeholder values. The war is built as new code on that map, reusing the engine's balance table, the sprites, terrain and UI, and the hit and death effects.
 
 **Phase 2: Solo war on the island, about 3 weeks**
 
@@ -418,7 +426,7 @@ Out of Phase 2: covenants and tribes beyond one pair, level 3 abilities, region 
 - A new player finishes a first match without explanation.
 - 5 friends play in one Discord call.
 - Engine test coverage above 90%.
-- A case-study write-up and a 2-minute demo video on the landing page.
+- A case study and a demo video of about 2 minutes on the landing page.
 
 **Risks**
 
@@ -428,15 +436,15 @@ Out of Phase 2: covenants and tribes beyond one pair, level 3 abilities, region 
 | Battle phases drag or end empty | The settle rule and the 45 s cap are numbers in `balance.ts`; playtest them in week 2 |
 | Turtling makes matches stall | Mines run dry, and the Greying damages both main halls from round 12, so every match ends |
 | A bad plan loses a round with no way to react | Four stances (Aggressive, Defensive, Hold, Cautious); the round report shows what went wrong and why |
-| Crowding and pathing on a one-unit-per-tile grid | Build and test the engine headless first; watch it in the CLI before the map plays it |
+| Crowding and pathing, with only one unit allowed per tile | Build and test the engine headless first; watch it in the CLI before the map plays it |
 | Too many units to order each round | Orders and stances persist across rounds; group selection; idle fighters defend on their own |
-| The AI is trivial or unbeatable | Rule-based and tuned by numbers in `balance.ts`; later, difficulty as an income bonus |
+| The AI is trivial or unbeatable | Simple rules, tuned by numbers in `balance.ts`; later, difficulty as an income bonus |
 | Discord proxy or CSP issues | Build a placeholder Discord shell early in Phase 3 |
 | Asset license breach | Private bucket and CI download from day one |
 
 **Open questions**
 
-- Are 45 seconds, the 3-second settle rule and round 12 for the Greying the right numbers?
+- Are these the right numbers: a 45 second cap, 3 seconds without a fight to settle, and the Greying from round 12?
 - Full heal at home only, or does everyone keep their damage between rounds?
 - Should a player see a preview of their own plan (a ghost run of their units only) before locking in?
 - In a duel, does the second player play a monster tribe, or do both play knights in different colours?
