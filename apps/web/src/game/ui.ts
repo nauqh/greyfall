@@ -217,9 +217,11 @@ export function button(
   text: string,
   tone: "blue" | "red",
   onClick: () => void,
+  /** Below 1 for buttons shorter than the art's two 64px corners. */
+  scale = 1,
 ): Phaser.GameObjects.Container {
   const up = tone === "blue" ? "blueButton" : "redButton";
-  const face = panel(scene, up, 0, 0, w, h);
+  const face = panel(scene, up, 0, 0, w / scale, h / scale).setScale(scale);
   const text_ = label(scene, 0, -1, text, { fontSize: "16px" });
 
   const box = scene.add.container(x, y, [face, text_]);

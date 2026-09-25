@@ -37,7 +37,7 @@ import * as Phaser from "phaser";
 
 import { packUrl, type BuildingName } from "./art";
 import { baseZoom, fitCamera, startGame } from "./boot";
-import { HUD_COVER_H, HUD_KEY, ICON, StrategicHud, type HudCommand, type HudModel } from "./StrategicHud";
+import { HUD_COVER_H, HUD_KEY, ICON, StrategicHud, portraitKey, type HudCommand, type HudModel } from "./StrategicHud";
 import { HAND } from "./ui";
 import { MAP, STRAT_COLS, STRAT_ROWS, at, isSlope, isLand } from "./stratMap";
 import { BODY_HEIGHT, MONSTER_BODY_HEIGHT, loadUnits, makeAnims, playPose, unitKey } from "./sprites";
@@ -47,6 +47,7 @@ import {
   addDecor,
   addShadow,
   buildWater,
+  buildingKey,
   cloudCover,
   driftClouds,
   loadBuildings,
@@ -59,13 +60,16 @@ import {
   ARROW_RELEASE_MS,
   FLIGHT_MS,
   IMPACT_MS,
+  clearFx,
   deathFx,
   flash,
   floatText,
   loadWarFx,
   makeWarFxAnims,
   projectile,
+  trackFx,
 } from "./warFx";
+import { STEPS, markTutorialDone, tutorialDone, type TutorialContext } from "./tutorial";
 
 /** The tileset's native tile: nothing is stretched. */
 const CELL = 64;
@@ -99,9 +103,6 @@ function cell(side: Structure["side"], name: Structure["name"], col: number, row
   return { side, name, x: col * CELL, y: row * CELL, scale };
 }
 
-/** Scenery that is not part of the war: the goblin camp on the western plateau. */
-const SCENERY: Structure[] = [cell("b", "goblinHut", 5.2, 12.8), cell("g", "deadTree", 3.0, 13.8, 0.6)];
-
 const ART: Record<BuildingKind, BuildingName> = {
   castle: "castle",
   barracks: "barracks",
@@ -126,6 +127,15 @@ const CLASS_NAME: Record<UnitClass, string> = {
   lancer: "Lancer",
   archer: "Archer",
   monk: "Monk",
+};
+
+/** What the monster standing in for each class is called. */
+const MONSTER_NAME: Record<UnitClass, string> = {
+  pawn: "Gnome",
+  warrior: "Skull",
+  lancer: "Turtle",
+  archer: "Gnoll",
+  monk: "Hex Shaman",
 };
 
 /** The pack's three house fronts, one per house plot. */
@@ -163,7 +173,15 @@ export class StrategicScene extends Phaser.Scene {
   /** Handed in by the page; absent when the map opens on its own. */
   private onMenu: () => void = () => {};
   /** Touch-drag state: where the gesture started, camera included. */
-  private dragStart: { x: number; y: number; camX: number; camY: number; moved: boolean } | null = null;
+  private dragStart: { x: number; y: number; camX: number; camY: number; moved: boolean; pan: boolean; touch: boolean } | null = null;
+  /** The drag-select rectangle. */
+  private box!: Phaser.GameObjects.Graphics;
+  /** The last unit clicked and when, to spot a double click. */
+  private lastTap: { id: number; at: number } | null = null;
+  private cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
+  /** The walkthrough's current step, or null once it is done or skipped. */
+  private tutor: number | null = null;
+  private focusRing: Phaser.GameObjects.Graphics | null = null;
 
   /** The round as it began, and as the plan has changed it so far. */
   private roundStart!: MatchState;
@@ -177,7 +195,7 @@ export class StrategicScene extends Phaser.Scene {
   /** An enemy unit or building shown in the panel without being ordered. */
   private inspected: { unit?: number; plot?: string } | null = null;
   /** A command waiting for its target on the map. */
-  private mode: "move" | "attackMove" | "gather" | null = null;
+  private mode: "go" | "gather" | null = null;
   private message = "";
 
   private units = new Map<number, UnitView>();
@@ -204,11 +222,7 @@ export class StrategicScene extends Phaser.Scene {
     loadTerrain(this);
     loadUnits(this);
     loadWarFx(this);
-    const structures = [
-      ...SCENERY,
-      ...PLOTS.map((p) => cell(p.side, artOf(p), 0, 0)),
-    ];
-    loadBuildings(this, structures);
+    loadBuildings(this, PLOTS.map((p) => cell(p.side, artOf(p), 0, 0)));
     // Lowland grass in the sheet's deeper green, as the pack's demo map does:
     // the plateaus keep the sunlit colour1, so height reads as colour too.
     this.load.image("tilesetLow", packUrl("Terrain/Tileset/Tilemap_color3.png"));
@@ -233,8 +247,8 @@ export class StrategicScene extends Phaser.Scene {
     this.buildMap();
     this.buildScenery();
     driftClouds(this, { w: WORLD_W, h: WORLD_H }, "strategic");
-    for (const s of SCENERY) addBuilding(this, s);
     this.overlay = this.add.graphics().setDepth(DEPTH.decorBehind + 0.5);
+    this.box = this.add.graphics().setDepth(DEPTH.fx + 2);
 
     this.startMatch();
 
@@ -245,6 +259,8 @@ export class StrategicScene extends Phaser.Scene {
       // its buttons too.
       onMenu: () => this.toMenu(),
       onZoom: (dir: 1 | -1) => this.zoomStep(dir),
+      onMinimap: (col: number, row: number) => this.lookAt(col, row),
+      speaker: () => this.speakerAnchor(),
       model: () => this.model(),
     }) as StrategicHud;
     // The opening parts over the map from this scene, on the frame the page's
@@ -259,37 +275,114 @@ export class StrategicScene extends Phaser.Scene {
       if (dy !== 0) this.zoomStep(dy > 0 ? 1 : -1);
     });
     this.input.mouse?.disableContextMenu();
-    this.input.keyboard?.on("keydown-ESC", () => {
-      this.clearSelection();
-      this.refresh();
-    });
+    this.input.keyboard?.on("keydown", (e: KeyboardEvent) => this.hotkey(e));
 
-    // Touch drag pans; a tap (down-up with little movement) selects or orders.
-    // The map drags, so it wears the pack's hand, the kit's only hand cursor.
+    // Warcraft's mouse: a left drag boxes units, a click selects, a right
+    // click gives the smart order. A middle drag pans. On touch there is no
+    // right button and no box, so a drag pans and a tap orders.
     this.input.setDefaultCursor(HAND);
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
-      this.dragStart = { x: p.x, y: p.y, camX: this.cameras.main.scrollX, camY: this.cameras.main.scrollY, moved: false };
+      const touch = p.wasTouch;
+      this.dragStart = {
+        x: p.x,
+        y: p.y,
+        camX: this.cameras.main.scrollX,
+        camY: this.cameras.main.scrollY,
+        moved: false,
+        pan: touch || p.middleButtonDown(),
+        touch,
+      };
     });
     this.input.on("pointermove", (p: Phaser.Input.Pointer) => {
-      if (!this.dragStart) return;
+      const d = this.dragStart;
+      if (!d) return;
       // Released over the HUD, which eats the pointerup this scene would hear.
       if (!p.isDown) {
         this.dragStart = null;
+        this.box.clear();
         return;
       }
-      // Canvas px to world px.
-      const zoom = this.cameras.main.zoom;
-      const dx = (p.x - this.dragStart.x) / zoom;
-      const dy = (p.y - this.dragStart.y) / zoom;
-      if (Math.abs(dx) > 6 || Math.abs(dy) > 6) this.dragStart.moved = true;
-      this.setScroll(this.dragStart.camX - dx, this.dragStart.camY - dy);
+      if (Math.abs(p.x - d.x) > 6 || Math.abs(p.y - d.y) > 6) d.moved = true;
+      if (!d.moved) return;
+      if (d.pan) {
+        // Canvas px to world px.
+        const zoom = this.cameras.main.zoom;
+        this.setScroll(d.camX - (p.x - d.x) / zoom, d.camY - (p.y - d.y) / zoom);
+      } else if (this.phase === "plan" && p.leftButtonDown()) {
+        this.drawBox(d, p);
+      }
     });
     this.input.on("pointerup", (p: Phaser.Input.Pointer) => {
-      const start = this.dragStart;
+      const d = this.dragStart;
       this.dragStart = null;
-      if (!start || start.moved) return;
-      this.tap(p);
+      this.box.clear();
+      if (!d) return;
+      if (d.moved && !d.pan && p.leftButtonReleased()) {
+        this.boxSelect(d, p);
+        return;
+      }
+      if (!d.moved) this.tap(p, d.touch);
     });
+  }
+
+  /** The drag rectangle, in world space so it sits on the units it covers. */
+  private drawBox(d: { x: number; y: number }, p: Phaser.Input.Pointer): void {
+    const cam = this.cameras.main;
+    const a = cam.getWorldPoint(d.x, d.y);
+    const b = cam.getWorldPoint(p.x, p.y);
+    this.box
+      .clear()
+      .fillStyle(0x9cff8a, 0.12)
+      .fillRect(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(a.x - b.x), Math.abs(a.y - b.y))
+      .lineStyle(2 / cam.zoom, 0x9cff8a, 0.9)
+      .strokeRect(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+  }
+
+  /** Every own unit whose body the box touches. Fighters win over Pawns, as
+   *  a box drawn over an army at the mine means the army. Shift adds. */
+  private boxSelect(d: { x: number; y: number }, p: Phaser.Input.Pointer): void {
+    if (this.phase !== "plan") return;
+    const cam = this.cameras.main;
+    const a = cam.getWorldPoint(d.x, d.y);
+    const b = cam.getWorldPoint(p.x, p.y);
+    const [x0, x1] = [Math.min(a.x, b.x), Math.max(a.x, b.x)];
+    const [y0, y1] = [Math.min(a.y, b.y), Math.max(a.y, b.y)];
+    const inside = [...this.units.values()]
+      .filter((v) => !v.dead && v.unit.side === "a")
+      .filter((v) => v.root.x >= x0 && v.root.x <= x1 && v.root.y - head(v.unit) <= y1 && v.root.y >= y0)
+      .map((v) => v.unit);
+    const fighters = inside.filter((u) => u.class !== "pawn");
+    const picked = (fighters.length > 0 ? fighters : inside).map((u) => u.id);
+    const shift = (p.event as MouseEvent | undefined)?.shiftKey ?? false;
+    this.selectedPlot = null;
+    this.inspected = null;
+    this.mode = null;
+    this.selected = shift ? [...new Set([...this.selected, ...picked])] : picked;
+    this.message = "";
+    this.refresh();
+  }
+
+  /** Warcraft's keys, fewer: M (or A) arms Move, G gathers, Esc backs out, F1
+   *  picks the Pawns and F2 the army, arrows pan. */
+  private hotkey(e: KeyboardEvent): void {
+    const k = e.key.toLowerCase();
+    if (k === "escape") {
+      if (this.mode) this.mode = null;
+      else this.clearSelection();
+      this.message = "";
+      this.refresh();
+      return;
+    }
+    if (this.phase !== "plan") return;
+    if (k === "f1" || k === "f2") {
+      e.preventDefault();
+      if (k === "f1") this.selectPawns();
+      else this.selectArmy();
+      return;
+    }
+    if (this.selected.length === 0 || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (k === "m" || k === "a") this.setMode("go");
+    else if (k === "g") this.gatherNow();
   }
 
   /** Clouds close over the HUD, the top scene, then the page moves on. */
@@ -310,9 +403,63 @@ export class StrategicScene extends Phaser.Scene {
     this.phase = "plan";
     this.outcome = null;
     this.clearSelection();
-    this.message = "Your Pawns are already digging. Train an army at the barracks, then Fight.";
+    this.tutor = tutorialDone() ? null : 0;
+    this.message = this.tutor === null ? "Your Pawns are already digging. Train an army at the barracks, then Fight." : "";
     this.syncWorld(this.state);
-    this.hud?.refresh();
+    this.refresh();
+  }
+
+  // --- the walkthrough -----------------------------------------------------
+
+  private tutorContext(): TutorialContext {
+    return { state: this.state, selected: this.selected, phase: this.phase };
+  }
+
+  /** Past every step the player has already done, and off after the last. */
+  private advanceTutor(): void {
+    while (this.tutor !== null) {
+      const step = STEPS[this.tutor];
+      if (!step) {
+        this.endTutor();
+        return;
+      }
+      if (!step.done?.(this.tutorContext())) return;
+      this.tutor += 1;
+    }
+  }
+
+  private nextTutor(): void {
+    if (this.tutor === null) return;
+    this.tutor += 1;
+    this.refresh();
+  }
+
+  private endTutor(): void {
+    this.tutor = null;
+    markTutorialDone();
+    this.refresh();
+  }
+
+  /** The step to show now, or none while its moment has not come. */
+  private tutorStep(): (typeof STEPS)[number] | null {
+    if (this.tutor === null || this.phase !== "plan") return null;
+    const step = STEPS[this.tutor];
+    if (!step || (step.when && !step.when(this.tutorContext()))) return null;
+    return step;
+  }
+
+  /** Where the speaking Pawn's head is, in HUD units, or null when it is gone. */
+  private speakerAnchor(): { x: number; y: number } | null {
+    const pawn = [...this.units.values()]
+      .filter((v) => !v.dead && v.unit.side === "a" && v.unit.class === "pawn")
+      .sort((a, b) => a.unit.id - b.unit.id)[0];
+    if (!pawn) return null;
+    const cam = this.cameras.main;
+    const z = baseZoom(this);
+    return {
+      x: ((pawn.root.x - cam.worldView.x) * cam.zoom) / z,
+      y: ((pawn.root.y - head(pawn.unit) - 6 - cam.worldView.y) * cam.zoom) / z,
+    };
   }
 
   /** One planning action for the player: kept when legal, explained when not. */
@@ -369,6 +516,7 @@ export class StrategicScene extends Phaser.Scene {
     if (this.phase !== "battle" || !this.outcome) return;
     this.tweens.killAll();
     this.time.removeAllEvents();
+    clearFx(this);
     for (const v of this.units.values()) v.root.destroy();
     this.units.clear();
     this.finishBattle();
@@ -527,8 +675,22 @@ export class StrategicScene extends Phaser.Scene {
   }
 
   private refresh(): void {
+    this.advanceTutor();
     this.drawMarks();
+    this.drawFocus();
     this.hud?.refresh();
+  }
+
+  /** A pulsing outline on the building the walkthrough is pointing at. */
+  private drawFocus(): void {
+    const g = (this.focusRing ??= this.add.graphics().setDepth(DEPTH.fx));
+    if (!this.tweens.isTweening(g)) {
+      this.tweens.add({ targets: g, alpha: { from: 1, to: 0.25 }, duration: 600, yoyo: true, repeat: -1 });
+    }
+    g.clear();
+    if (this.tutorStep()?.focus !== "barracks") return;
+    const p = plotById("a-barracks")!;
+    g.lineStyle(4, 0xffe28a, 1).strokeRoundedRect(p.col * CELL - 6, (p.row - 2) * CELL, p.w * CELL + 12, (p.h + 2) * CELL + 6, 10);
   }
 
   // --- input ---------------------------------------------------------------
@@ -570,40 +732,69 @@ export class StrategicScene extends Phaser.Scene {
     return { cell: cellAt };
   }
 
-  private tap(p: Phaser.Input.Pointer): void {
+  /**
+   * A click that did not drag. Right click: the smart order for the
+   * selection, as in Warcraft. Left click: aims an armed command, else
+   * selects what is under it, and on empty ground deselects. A tap on touch
+   * has no right button, so with units selected it orders instead.
+   */
+  private tap(p: Phaser.Input.Pointer, touch: boolean): void {
     if (this.phase !== "plan") return;
     const hit = this.hitTest(p.worldX, p.worldY);
     const right = p.rightButtonReleased();
-    const shift = (p.event as MouseEvent | undefined)?.shiftKey ?? false;
+    const ev = p.event as MouseEvent | undefined;
+    const shift = ev?.shiftKey ?? false;
     const mine = (u?: WarUnit) => u?.side === "a";
 
-    if (!right && hit.unit && mine(hit.unit) && this.mode === null) {
+    if (right) {
+      this.mode = null;
+      if (this.selected.length > 0) this.order(hit);
+      return;
+    }
+    if (this.mode !== null && this.selected.length > 0) {
+      this.order(hit);
+      return;
+    }
+
+    if (hit.unit && mine(hit.unit)) {
       this.selectedPlot = null;
       this.inspected = null;
       const id = hit.unit.id;
-      this.selected = shift
-        ? this.selected.includes(id)
-          ? this.selected.filter((x) => x !== id)
-          : [...this.selected, id]
-        : [id];
+      const now = this.time.now;
+      const again = this.lastTap?.id === id && now - this.lastTap.at < 350;
+      this.lastTap = { id, at: now };
+      if (again || ev?.ctrlKey || ev?.metaKey) {
+        // Double click: every unit of its kind on screen.
+        const view = this.cameras.main.worldView;
+        const cls = hit.unit.class;
+        this.selected = [...this.units.values()]
+          .filter((v) => !v.dead && v.unit.side === "a" && v.unit.class === cls && view.contains(v.root.x, v.root.y))
+          .map((v) => v.unit.id);
+      } else {
+        this.selected = shift
+          ? this.selected.includes(id)
+            ? this.selected.filter((x) => x !== id)
+            : [...this.selected, id]
+          : [id];
+      }
       this.message = "";
       this.refresh();
       return;
     }
 
-    if (this.selected.length > 0) {
+    if (touch && this.selected.length > 0) {
       this.order(hit);
       return;
     }
 
-    if (!right && hit.plot && hit.plot.side === "a") {
+    if (hit.plot && hit.plot.side === "a") {
       this.selectedPlot = hit.plot.id;
       this.inspected = null;
       this.message = "";
       this.refresh();
       return;
     }
-    if (!right && (hit.unit || hit.plot)) {
+    if (hit.unit || hit.plot) {
       this.inspected = hit.unit ? { unit: hit.unit.id } : { plot: hit.plot!.id };
       this.selectedPlot = null;
       this.refresh();
@@ -621,12 +812,12 @@ export class StrategicScene extends Phaser.Scene {
     const mode = this.mode;
     this.mode = null;
 
-    if (hit.unit && hit.unit.side === "b" && mode !== "move") {
+    if (hit.unit && hit.unit.side === "b") {
       const fighters = units.filter((u) => u.class !== "monk").map((u) => u.id);
       if (fighters.length > 0) this.act({ type: "order", units: fighters, order: { type: "attack", unit: hit.unit.id } });
       return;
     }
-    if (hit.plot && hit.plot.side === "b" && this.state.buildings[hit.plot.id]!.level > 0 && mode !== "move") {
+    if (hit.plot && hit.plot.side === "b" && this.state.buildings[hit.plot.id]!.level > 0) {
       const fighters = units.filter((u) => u.class !== "monk").map((u) => u.id);
       if (fighters.length > 0) this.act({ type: "order", units: fighters, order: { type: "attackBuilding", plot: hit.plot.id } });
       return;
@@ -645,8 +836,10 @@ export class StrategicScene extends Phaser.Scene {
       this.refresh();
       return;
     }
-    const type = mode ?? (pawnsOnly ? "move" : "attackMove");
-    this.act({ type: "order", units: ids, order: { type: type === "gather" ? "attackMove" : type, to } });
+    // One move for the player: fighters fight whatever they meet on the way,
+    // Pawns walk on past it.
+    const type = pawnsOnly ? "move" : "attackMove";
+    this.act({ type: "order", units: ids, order: { type, to } });
   }
 
   private nearestMineWithRoom(): string | undefined {
@@ -665,23 +858,38 @@ export class StrategicScene extends Phaser.Scene {
       round: s.round,
       gold: s.gold.a,
       supply: [supplyUsed(s, "a"), supplyCap(s, "a")],
+      greyIn: Math.max(0, WAR.greying.fromRound - s.round),
+      banner: { text: `Round ${s.round}: Plan`, tone: "blue" },
       title: "",
       detail: "",
+      portrait: null,
+      hp: null,
       message: this.message,
       commands: [],
       primary: null,
-      secondary: null,
+      secondary: [],
       report: null,
       dots: s.units.map((u) => ({ col: u.col, row: u.row, side: u.side })),
+      tutorial: null,
     };
+    const step = this.tutorStep();
+    if (step) {
+      base.tutorial = {
+        text: step.text,
+        focus: step.focus,
+        button: step.button ? { label: step.button, onClick: () => this.nextTutor() } : null,
+        onSkip: () => this.endTutor(),
+      };
+    }
 
     if (this.phase === "battle") {
       return {
         ...base,
-        title: `Round ${s.round}: the battle`,
+        banner: { text: `Round ${s.round}: Battle`, tone: "red" },
+        title: "The battle",
         detail: "Both plans play out at once. Nothing can be ordered until it settles.",
-        primary: { label: `Speed ${this.speed}x`, tone: "blue", onClick: () => this.toggleSpeed() },
-        secondary: { label: "Skip", onClick: () => this.skip() },
+        primary: { label: `Speed ${this.speed}x`, style: "blue", onClick: () => this.toggleSpeed() },
+        secondary: [{ label: "Skip", onClick: () => this.skip() }],
       };
     }
     if (this.phase === "report" || this.phase === "over") {
@@ -690,144 +898,152 @@ export class StrategicScene extends Phaser.Scene {
 
     const plan: HudModel = {
       ...base,
-      primary: { label: "Fight!", tone: "red", onClick: () => this.fight() },
-      secondary: { label: "Army", onClick: () => this.selectArmy() },
+      primary: { label: "Fight!", style: "sword", onClick: () => this.fight() },
+      secondary: [
+        { label: "Army", onClick: () => this.selectArmy() },
+        { label: "Pawns", onClick: () => this.selectPawns() },
+      ],
     };
     if (this.selected.length > 0) return { ...plan, ...this.unitPanel() };
     if (this.selectedPlot) return { ...plan, ...this.plotPanel(this.selectedPlot) };
     if (this.inspected) return { ...plan, ...this.inspectPanel() };
     return {
       ...plan,
-      title: `Round ${s.round}: plan`,
-      detail: "Click a unit or a building. Right click or tap the map to give orders. Fight when ready.",
+      title: "Your plan",
+      detail: "Drag a box or click to select, right click to order. Double click picks every unit of a kind; F2 the whole army.",
       commands: [
-        { icon: ICON.attack, hint: "Select every fighter you have.", onClick: () => this.selectArmy() },
-        { icon: ICON.gold, hint: "Select every Pawn.", onClick: () => this.selectPawns() },
         null,
         null,
         null,
         null,
         null,
         null,
-        { icon: "↺", hint: "Undo this round's whole plan.", onClick: () => this.resetPlan(), enabled: this.plan.length > 0 },
+        null,
+        null,
+        { label: "Undo all", hint: "Undo this round's whole plan.", onClick: () => this.resetPlan(), enabled: this.plan.length > 0 },
       ],
     };
   }
 
-  private unitPanel(): Pick<HudModel, "title" | "detail" | "commands"> {
+  private unitPanel(): Pick<HudModel, "title" | "detail" | "commands" | "portrait" | "hp"> {
     const units = this.state.units.filter((u) => this.selected.includes(u.id));
     const counts = new Map<UnitClass, number>();
     for (const u of units) counts.set(u.class, (counts.get(u.class) ?? 0) + 1);
-    const title =
-      units.length === 1
-        ? `${CLASS_NAME[units[0]!.class]}  ${units[0]!.hp}/${maxHp(this.state, "a", units[0]!.class)} HP`
-        : `${units.length} units: ${[...counts].map(([c, n]) => `${n} ${CLASS_NAME[c]}`).join(", ")}`;
-    const first = units[0];
-    const doing = first ? describeOrder(first.order) : "";
+    const one = units.length === 1 ? units[0]! : null;
+    const title = one
+      ? CLASS_NAME[one.class]
+      : `${units.length} units: ${[...counts].map(([c, n]) => `${n} ${CLASS_NAME[c]}`).join(", ")}`;
     const pawns = units.some((u) => u.class === "pawn");
     const fighters = units.filter((u) => u.class !== "pawn");
     const allFallBack = fighters.length > 0 && fighters.every((u) => u.stance === "fallBack");
-    const ids = units.map((u) => u.id);
+    // One Move, big in the card's corner: go there, fighting whatever gets in the way.
     return {
       title,
-      detail: `${units.length === 1 ? doing : "Tap the map to send them."}`,
+      portrait: portraitKey("a", (one ?? units[0]!).class),
+      hp: one ? [one.hp, maxHp(this.state, "a", one.class)] : null,
+      detail: one ? describeOrder(one.order) : "Right click where they should go. They fight whatever they meet on the way.",
       commands: [
         {
-          icon: ICON.attack,
-          hint: "Attack move: tap a tile. They fight anything they meet on the way, chasing up to 3 tiles.",
-          onClick: () => this.setMode("attackMove"),
-          active: this.mode === "attackMove",
-        },
-        {
+          label: "Move",
           icon: ICON.move,
-          hint: "Move: tap a tile. They walk there and ignore enemies, to retreat or slip past.",
-          onClick: () => this.setMode("move"),
-          active: this.mode === "move",
+          big: true,
+          hint: "Move (M): click where to go, or right click. They fight anything they meet on the way; click an enemy to go straight for it.",
+          onClick: () => this.setMode("go"),
+          active: this.mode === "go",
         },
+        null,
         {
-          icon: ICON.hold,
-          hint: "Hold: stay on this tile and fight whatever comes in range. Never moves.",
-          onClick: () => this.act({ type: "order", units: ids, order: { type: "hold" } }),
-        },
-        {
-          icon: ICON.stop,
-          hint: "Stop: guard this tile, fighting enemies within 3 tiles, then come back.",
-          onClick: () => this.act({ type: "order", units: ids, order: { type: "stop" } }),
-        },
-        {
+          label: "Gather",
           icon: ICON.gold,
-          hint: "Gather: Pawns dig at a mine, 2 gold a round each. Tap a mine, or press for the nearest with room.",
+          hint: "Gather (G): Pawns dig at the nearest mine with room, 2 gold a round each. Or right click a mine.",
           onClick: () => this.gatherNow(),
           enabled: pawns,
           active: this.mode === "gather",
         },
-        {
-          icon: allFallBack ? "Fall" : "Firm",
-          hint: allFallBack
-            ? "Stance: Fall back. Below 50% HP they run home, where they heal. Press to stand firm."
-            : "Stance: Stand firm. They fight until they die. Press to fall back when hurt instead.",
-          onClick: () =>
-            this.act({ type: "stance", units: fighters.map((u) => u.id), stance: allFallBack ? "firm" : "fallBack" }),
-          enabled: fighters.length > 0,
-        },
         null,
         null,
-        { icon: "✕", hint: "Deselect.", onClick: () => (this.clearSelection(), this.refresh()) },
+        allFallBack
+          ? {
+              label: "Fall back",
+              icon: ICON.back,
+              hint: "Stance: Fall back. Below 50% HP they run home, where they heal. Press to stand firm.",
+              onClick: () => this.act({ type: "stance", units: fighters.map((u) => u.id), stance: "firm" }),
+            }
+          : {
+              label: "Stand firm",
+              hint: "Stance: Stand firm. They fight until they die. Press to fall back when hurt instead.",
+              onClick: () => this.act({ type: "stance", units: fighters.map((u) => u.id), stance: "fallBack" }),
+              enabled: fighters.length > 0,
+            },
+        null,
+        null,
+        { label: "Close", hint: "Deselect.", onClick: () => (this.clearSelection(), this.refresh()) },
       ],
     };
   }
 
-  private plotPanel(id: string): Pick<HudModel, "title" | "detail" | "commands"> {
+  private plotPanel(id: string): Pick<HudModel, "title" | "detail" | "commands" | "portrait" | "hp"> {
     const p = plotById(id)!;
     const b = this.state.buildings[id]!;
     const cls = trainsAt(p);
     const name = NAME[p.kind];
-    const deselect: HudCommand = { icon: "✕", hint: "Deselect.", onClick: () => (this.clearSelection(), this.refresh()) };
+    const portrait = buildingKey(p.side, artOf(p));
+    const deselect: HudCommand = { label: "Close", hint: "Deselect.", onClick: () => (this.clearSelection(), this.refresh()) };
     if (b.level === 0 && !b.pending) {
       const cost = WAR.buildCost[p.kind]!;
       return {
         title: `${name}: empty plot`,
+        portrait,
+        hp: null,
         detail: p.kind === "house" ? `A house adds ${WAR.supply.perHouse} supply.` : `Unlocks the ${cls ? CLASS_NAME[cls] : ""}. Finished after this round's battle.`,
         commands: [
-          { icon: ICON.build, hint: `Build a ${name.toLowerCase()} for ${cost} gold. It stands after this round's battle.`, onClick: () => this.act({ type: "build", plot: id }), enabled: this.state.gold.a >= cost },
+          {
+            label: `Build ${cost}g`,
+            icon: ICON.build,
+            hint: `Build a ${name.toLowerCase()} for ${cost} gold. It stands after this round's battle.`,
+            onClick: () => this.act({ type: "build", plot: id }),
+            enabled: this.state.gold.a >= cost,
+          },
           null, null, null, null, null, null, null, deselect,
         ],
       };
     }
     if (b.pending === "build") {
-      return { title: `${name}: being built`, detail: "It stands after this round's battle.", commands: [null, null, null, null, null, null, null, null, deselect] };
+      return { title: `${name}: being built`, portrait, hp: null, detail: "It stands after this round's battle.", commands: [null, null, null, null, null, null, null, null, deselect] };
     }
-    const left = WAR.trainPerRound[b.level]! - b.trained;
-    const commands: (HudCommand | null)[] = [];
+    // Train fills the card's top-left 2x2 block; upgrade sits beside it.
+    const commands: (HudCommand | null)[] = [null, null, null, null, null, null, null, null, deselect];
     if (cls) {
       const cost = WAR.unitCost[cls];
-      commands.push({
-        icon: CLASS_NAME[cls].slice(0, 4),
-        hint: `Train a ${CLASS_NAME[cls]} for ${cost} gold. ${left} more this round.`,
+      commands[0] = {
+        label: CLASS_NAME[cls],
+        sub: `${cost} gold`,
+        portrait: portraitKey("a", cls),
+        big: true,
+        hint: `Train a ${CLASS_NAME[cls]} for ${cost} gold. It can take orders at once.`,
         onClick: () => this.act({ type: "train", plot: id }),
-        enabled: left > 0 && this.state.gold.a >= cost,
-      });
+        enabled: this.state.gold.a >= cost,
+      };
     }
     if (cls && p.kind !== "castle") {
-      commands.push({
-        icon: "Lv2",
+      commands[2] = {
+        label: b.level >= WAR.maxLevel ? "Level 2" : `Upgrade ${WAR.upgradeCost}g`,
         hint:
           b.level >= WAR.maxLevel
             ? "Already at its highest level."
             : b.pending === "upgrade"
               ? "Upgrading: done after this round's battle."
-              : `Upgrade for ${WAR.upgradeCost} gold: ${upgradeText(p.kind)}, and trains 3 a round.`,
+              : `Upgrade for ${WAR.upgradeCost} gold: ${upgradeText(p.kind)}.`,
         onClick: () => this.act({ type: "upgrade", plot: id }),
         enabled: b.level < WAR.maxLevel && !b.pending && this.state.gold.a >= WAR.upgradeCost,
-      });
+      };
     }
-    while (commands.length < 8) commands.push(null);
-    commands.push(deselect);
-    const hp = `${b.hp}/${p.kind === "castle" ? WAR.buildingHp.castle : WAR.buildingHp.other} HP`;
     return {
-      title: `${name}, level ${b.level}  ${hp}`,
+      title: `${name}, level ${b.level}`,
+      portrait,
+      hp: [b.hp, p.kind === "castle" ? WAR.buildingHp.castle : WAR.buildingHp.other],
       detail: cls
-        ? `Trains the ${CLASS_NAME[cls]}: ${left} more this round.${b.pending === "upgrade" ? " Upgrading." : ""}`
+        ? `Trains the ${CLASS_NAME[cls]}.${b.pending === "upgrade" ? " Upgrading." : ""}`
         : p.kind === "house"
           ? `Adds ${WAR.supply.perHouse} supply.`
           : "",
@@ -835,15 +1051,17 @@ export class StrategicScene extends Phaser.Scene {
     };
   }
 
-  private inspectPanel(): Pick<HudModel, "title" | "detail" | "commands"> {
+  private inspectPanel(): Pick<HudModel, "title" | "detail" | "commands" | "portrait" | "hp"> {
     const i = this.inspected!;
-    const none = [null, null, null, null, null, null, null, null, { icon: "✕", hint: "Close.", onClick: () => (this.clearSelection(), this.refresh()) }];
+    const none = [null, null, null, null, null, null, null, null, { label: "Close", hint: "Close.", onClick: () => (this.clearSelection(), this.refresh()) }];
     if (i.unit !== undefined) {
       const u = this.state.units.find((x) => x.id === i.unit);
       if (u) {
         return {
-          title: `Enemy ${CLASS_NAME[u.class]}  ${u.hp}/${maxHp(this.state, u.side, u.class)} HP`,
-          detail: "Select your own units, then tap this one to attack it.",
+          title: `Enemy ${MONSTER_NAME[u.class]}`,
+          portrait: portraitKey(u.side, u.class),
+          hp: [u.hp, maxHp(this.state, u.side, u.class)],
+          detail: `Fights as a ${CLASS_NAME[u.class]}. Select your own units, then tap it to attack it.`,
           commands: none,
         };
       }
@@ -851,9 +1069,15 @@ export class StrategicScene extends Phaser.Scene {
     const p = i.plot ? plotById(i.plot) : undefined;
     if (p) {
       const b = this.state.buildings[p.id]!;
-      return { title: `Enemy ${NAME[p.kind]}, level ${b.level}  ${b.hp} HP`, detail: "Select your fighters, then tap it to attack it.", commands: none };
+      return {
+        title: `Enemy ${NAME[p.kind].toLowerCase()}, level ${b.level}`,
+        portrait: buildingKey(p.side, artOf(p)),
+        hp: [b.hp, p.kind === "castle" ? WAR.buildingHp.castle : WAR.buildingHp.other],
+        detail: "Select your fighters, then tap it to attack it.",
+        commands: none,
+      };
     }
-    return { title: "", detail: "", commands: none };
+    return { title: "", detail: "", portrait: null, hp: null, commands: none };
   }
 
   private reportModel(): NonNullable<HudModel["report"]> {
@@ -885,6 +1109,7 @@ export class StrategicScene extends Phaser.Scene {
       const title = end.winner === "a" ? "The land is reclaimed" : end.winner === "b" ? "THE GREY TAKES YOU" : "Both halls fall";
       return {
         title,
+        tone: end.winner === "a" ? "blue" : "red",
         lines: [...lines, `The war ended in round ${r.round}.`],
         button: "Play again",
         onClick: () => this.startMatch(),
@@ -893,12 +1118,12 @@ export class StrategicScene extends Phaser.Scene {
     }
     const inc = end.income.a;
     lines.push(`Round ${end.round} income: ${inc.base} gold, plus ${inc.mines} from the mines.`);
-    return { title: `Round ${r.round}`, lines, button: "Next round", onClick: () => this.nextRound() };
+    return { title: `Round ${r.round}: Report`, tone: "blue", lines, button: "Next round", onClick: () => this.nextRound() };
   }
 
-  private setMode(mode: "move" | "attackMove" | "gather"): void {
+  private setMode(mode: "go" | "gather"): void {
     this.mode = this.mode === mode ? null : mode;
-    this.message = this.mode ? "Now tap where on the map." : "";
+    this.message = this.mode ? "Now click the target on the map. Esc cancels." : "";
     this.refresh();
   }
 
@@ -1094,11 +1319,12 @@ export class StrategicScene extends Phaser.Scene {
     const img = this.buildings.get(plotId);
     if (!img) return;
     this.buildings.delete(plotId);
+    trackFx(this, img);
     this.time.delayedCall(IMPACT_MS / this.speed, () => {
       img.setTint(0x6f6f6f);
       const p = plotById(plotId)!;
       const base = plotBase(p);
-      this.add.sprite(base.x, base.y, "dust").setOrigin(0.5, 0.8).setScale(2).setDepth(DEPTH.fx).play("dust_anim");
+      trackFx(this, this.add.sprite(base.x, base.y, "dust").setOrigin(0.5, 0.8).setScale(2).setDepth(DEPTH.fx).play("dust_anim"));
       this.tweens.add({ targets: img, alpha: 0, duration: 900 / this.speed, onComplete: () => img.destroy() });
     });
   }
@@ -1126,6 +1352,12 @@ export class StrategicScene extends Phaser.Scene {
     return [1, (1 + out) / 2, out][level]!;
   }
 
+  /** Centre the view on a cell, as a click on Warcraft's minimap does. */
+  private lookAt(col: number, row: number): void {
+    const cam = this.cameras.main;
+    this.setScroll((col + 0.5) * CELL - cam.width / 2, (row + 0.5) * CELL - cam.height / 2);
+  }
+
   /** Scroll with the world clamps shared by edge-pan, drag and zoom. A view
    *  wider than the world centres on it. */
   private setScroll(x: number, y: number): void {
@@ -1150,8 +1382,9 @@ export class StrategicScene extends Phaser.Scene {
     const cam = this.cameras.main;
     // Pointer coordinates are canvas pixels, baseZoom per HUD unit.
     const e = EDGE * baseZoom(this);
-    const dx = p.x < e ? -1 : p.x > cam.width - e ? 1 : 0;
-    const dy = p.y < e ? -1 : p.y > cam.height - e ? 1 : 0;
+    const k = (this.cursors ??= this.input.keyboard?.createCursorKeys() ?? null);
+    const dx = p.x < e || k?.left.isDown ? -1 : p.x > cam.width - e || k?.right.isDown ? 1 : 0;
+    const dy = p.y < e || k?.up.isDown ? -1 : p.y > cam.height - e || k?.down.isDown ? 1 : 0;
     const step = (PAN_PX_S * baseZoom(this) * delta) / 1000 / cam.zoom;
     this.setScroll(cam.scrollX + dx * step, cam.scrollY + dy * step);
   }
@@ -1266,11 +1499,11 @@ export class StrategicScene extends Phaser.Scene {
 function describeOrder(o: Order): string {
   switch (o.type) {
     case "attackMove":
-      return "Attack moving: fights whatever it meets on the way.";
+      return "Moving, fighting whatever it meets on the way.";
     case "move":
-      return "Moving: ignores enemies until it arrives.";
+      return "Walking there.";
     case "attack":
-      return "Attacking a chosen enemy.";
+      return "Going for a chosen enemy.";
     case "attackBuilding":
       return "Attacking a building.";
     case "hold":
@@ -1278,7 +1511,7 @@ function describeOrder(o: Order): string {
     case "gather":
       return "Digging gold at a mine.";
     case "stop":
-      return "Guarding its tile.";
+      return "Guarding where it stands.";
   }
 }
 

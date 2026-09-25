@@ -189,7 +189,7 @@ export interface Structure {
   scale?: number;
 }
 
-function buildingKey(side: "a" | "b" | "g", name: BuildingName): string {
+export function buildingKey(side: "a" | "b" | "g", name: BuildingName): string {
   return `build_${side}_${name}`;
 }
 
