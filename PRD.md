@@ -93,10 +93,10 @@ The player gives one kind of order, as simple as "go there":
 
 | Order | Who | Behaviour |
 | --- | --- | --- |
-| Move | Fighters | Walk to a tile. Fight any enemy met on the way, chasing up to 3 tiles off the path, then carry on. On arrival, guard that spot: fight enemies within 3 tiles, then go back to it. |
+| Move | Fighters | Walk to a tile. Fight any enemy troops met on the way, chasing up to 3 tiles off the path, then carry on; buildings on the way are passed by. On arrival, guard that spot: fight enemies and buildings within 3 tiles, then go back to it. |
 | Move onto an enemy | Fighters | Clicking an enemy unit or building instead sends them straight for it, following it anywhere. |
 | Move | Pawn | Walk to a tile without stopping to fight. |
-| Gather | Pawn | Walk to a gold mine and dig there. Income is paid per round, so nothing is carried home. |
+| Gather | Pawn | Right click a gold mine: walk there and dig. Income is paid per round, so nothing is carried home. |
 
 The engine also has Hold (stay on a tile, never move; a Hold on a ramp steps beside it so no unit blocks a ramp) and a Move that ignores enemies. Only the AI uses Hold, for archers on high ground; the player has neither, since two kinds of move confused more than they helped.
 
@@ -122,7 +122,7 @@ Orders already set how far a unit chases, so the stance answers the one question
 - The art cannot show the difference. Units have only idle, run and attack poses, plus guard for some; nothing looks "aggressive" or "defensive", so a player watching the battle could not tell them apart.
 - Falling back is the one behaviour that reads at a glance: a unit turns and runs home. It is also the one choice orders cannot express, because it depends on HP during the fight.
 
-This keeps a unit's command card to a large Move, Gather and the stance toggle; a building's card is a large train button with the troop's portrait, and Upgrade. Every button carries a text label: the pack has only 12 generic icons (sword, shield, green arrow, orange back arrow, red cross, gold coin and a few more), and Build has no icon.
+Every order is a click, so a unit's command card holds only the stance toggle, labelled with what the unit does when hurt (Fight on, Fall back); a building's card is a large train button with the troop's portrait, and Upgrade. Every button carries a text label: the pack has only 12 generic icons (sword, shield, green arrow, orange back arrow, red cross, gold coin and a few more), and Build has no icon.
 
 ### The island
 
@@ -154,7 +154,7 @@ Each side starts on its home plateau with a castle, a barracks, 3 Pawns gatherin
 Buildings unlock classes and upgrade them.
 
 - **Plots:** each side has 8 fixed plots on its home plateau: castle, barracks, archery range, tower, monastery and 3 houses. One of each building; a plot takes only its own building.
-- **Building:** paid in gold while planning; no Pawn is needed. A new building or upgrade finishes at the end of that round's battle phase.
+- **Building:** paid in gold while planning, and raised by a Pawn. Each build or upgrade takes the free Pawn nearest the plot off its work: it walks there during the battle phase and hammers beside the plot, earning no gold that round, and goes back to digging at home once the building stands at the end of the phase. With 3 Pawns, at most 3 builds and upgrades run at once, and a building Pawn takes no other order until the round ends.
 - **Training:** units appear on the free tiles beside their building at once, so they can take orders in the same plan. Gold and supply are the only limits on how many.
 - **HP:** the castle, the main hall, has 1000 HP; the rest have 300. Buildings do not attack and cannot be repaired. That is enough that a small army marching from home cannot raze an undefended castle inside one battle phase, so the defender always gets a plan to answer a siege.
 - **Damage to buildings:** units deal half their damage to buildings, from any tile in range of the building's base. Five Warriors take about 29 seconds to bring down an undefended castle, so with the march it takes two rounds.
@@ -176,7 +176,7 @@ Each production building has one upgrade, to level 2. The castle has none.
 
 | Class | Cost (gold) | HP | Damage | Range (tiles) | Role |
 | --- | --- | --- | --- | --- | --- |
-| Pawn | Not trained; 3 per side | 40 | 4 | 1 | Miner; weak filler if sent to fight |
+| Pawn | Not trained; 3 per side | 40 | None | 1 | Miner. Never fights, and cannot be ordered to attack; enemies can still kill it |
 | Warrior | 3 | 120 | 14 | 1 | Melee damage |
 | Lancer | 3 | 140 | 10 | 1 | Tank that holds the front line |
 | Archer | 3 | 60 | 10 | 3 | Ranged damage |
@@ -219,7 +219,7 @@ Monster buildings come in one colour only, and each monster has its own avatar f
 - The engine is `battle(state, planA, planB)`, with the seed kept in the match state: the new state plus an event log that the client plays back on the map. A plan is the round's purchases, orders and stances.
 - **Settled:** the phase ends once no unit is still walking to a destination and no unit has fought for 3 seconds. Gathering, holding and guarding units count as done, and so does a unit that has made no progress for 3 seconds, so one stuck unit never holds a battle open. **Cap:** 45 seconds. A fight still running at the cap freezes where it stands and carries on next round; this should be rare.
 - Movement follows the island's paths, ramps included. Units act in id order within a tick; blue's ids are odd and red's even, so two plans made from the same state never mint the same id.
-- In combat, a unit targets enemy units before buildings, nearest first; ties go to the lowest HP, then id. When every side of its target is taken it tries the next, so it never freezes in front of an unreachable one. Melee strikes only on its own level or along a ramp, never across a cliff's side; ranged units shoot up and down cliffs. Each unit's first action in a battle phase is delayed by a seeded 0-1 s so armies do not swing in lockstep.
+- In combat, a unit targets enemy units before buildings, nearest first, and a marching unit ignores buildings altogether until it arrives; ties go to the lowest HP, then id. When every side of its target is taken it tries the next, so it never freezes in front of an unreachable one. Melee strikes only on its own level or along a ramp, never across a cliff's side; ranged units shoot up and down cliffs. Each unit's first action in a battle phase is delayed by a seeded 0-1 s so armies do not swing in lockstep.
 - Monks heal the ally missing the most HP in range.
 - The only random roll is the first-action delay above.
 
@@ -441,5 +441,4 @@ These were cut from the MVP to keep it simple, and because the art only partly s
 - Are these the right numbers: a 45 second cap, 3 seconds without a fight to settle, and the Greying from round 12?
 - Should a player see a preview of their own plan (a ghost run of their units only) before locking in?
 - One match, or a run of several islands with humanity as the run's lives?
-- Should a Pawn have to walk to a plot and build it, as in Warcraft? It gives raids a target but adds a rule; MVP builds from gold alone.
 - Final name check against Steam, itch.io and the Discord app directory.
