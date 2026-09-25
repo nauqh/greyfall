@@ -6,7 +6,7 @@
 
 Greyfall is a strategy game with a Dark Souls mood that runs as a Discord Activity. It mixes Warcraft and auto chess: two sides share one island, each builds a town, trains an army from a fixed roster like Warcraft's, and fights for the island in rounds.
 
-Each round, both sides plan in secret while the world is paused. Then both plans play out at the same time, and fights break out wherever armies meet. Rounds repeat until a main hall falls. A match lasts about 15 minutes and can be played solo against an AI. It is also the showcase project for Wan's skills across the whole stack.
+Each round, both sides plan in secret while the world is paused. Then both plans play out at the same time, and fights break out wherever armies meet. Rounds repeat until a main hall falls. A solo match lasts about 15 minutes, a duel about 20, and solo is played against an AI. It is also the showcase project for Wan's skills across the whole stack.
 
 **Goals**
 
@@ -27,7 +27,7 @@ Each round, both sides plan in secret while the world is paused. Then both plans
 
 The world has been drained of colour by the Greying, a curse that hollows everything it touches. The player is the Keeper of the last bonfire, rebuilding a kingdom around its flame and pushing the grey back.
 
-- **Colour as reward:** The island starts in greyscale. Colour returns to each region the player holds, so a won match looks like the bright original art.
+- **Colour as reward:** The island starts in greyscale, except the player's home plateau. Colour returns to each region the player holds, so a won match looks like the bright original art.
 - **Tone:** Sparse, melancholy writing in the style of FromSoft item descriptions, set against cheerful sprites.
 - **Death screen:** "THE GREY TAKES YOU" when the player's main hall falls.
 - **Victory:** The land is reclaimed when the enemy main hall falls.
@@ -93,9 +93,9 @@ The order decides where a unit goes and how far it will go after an enemy.
 | Order | Who | Behaviour |
 | --- | --- | --- |
 | Attack move | Fighters | Walk to a tile. Fight any enemy that comes in range, chasing up to 3 tiles off the path, then carry on. The default order. |
-| Move | All | Walk to a tile, ignoring enemies. Used to retreat or to slip past. |
+| Move | All | Walk to a tile, ignoring enemies and taunts. Used to retreat or to slip past. |
 | Attack | Fighters | Walk to a chosen unit or building and attack it, following it anywhere. |
-| Hold | Fighters | Stay on the tile and fight whatever comes in range. Never moves. |
+| Hold | Fighters | Stay on the tile and fight whatever comes in range. Never moves. A Hold on a ramp moves to the nearest tile beside it, so no unit blocks a ramp. |
 | Gather | Pawn | Mine a gold mine and carry gold to the castle, repeating. |
 | Stop | All | Clear the order. The unit guards its tile: it fights enemies within 3 tiles, then goes back. |
 
@@ -127,15 +127,21 @@ This keeps the command card to one grid of 3x3: Attack move, Move, Attack, Hold,
 
 - A 32x20 grid of 64px tiles with three levels: water, lowland and plateau. Plateaus are reached only by ramps, so ramps are natural chokepoints.
 - One unit per tile. All units walk 1 tile per second; crossing from one base to the other takes about 25 seconds, so a single battle phase fits a march and a fight.
+- Two friendly units that want each other's tiles swap. Enemies never swap, so a line of enemies really blocks a path.
+- Buildings cover the tiles under their base (castle 3x2, production buildings 2x2, houses 1x1). Nobody walks through them.
 - **High ground:** an attack from lowland against a unit on a plateau deals 25% less damage. No roll, so it stays deterministic.
 - **Regions:** the island is divided into named regions (each plateau, each stretch of lowland). A player holds a region at the end of a battle phase if only their units stand in it. Held regions show in colour.
 - **Gold mines:** one beside each base and one contested in the middle.
 
+### Starting position
+
+Each side starts on its home plateau with a castle, a barracks, 2 Pawns gathering at the home mine and 10 gold, so 2 of 6 supply is used. Round 1's income arrives on top, so the first plan has 24 gold.
+
 ### Economy
 
-- Starting gold: 10. Base income: 10 gold per round. Unspent gold carries over.
+- Base income: 10 gold per round, paid at the start of every round including the first. Unspent gold carries over.
 - Pawns cost 3 gold and 1 supply. A Pawn gathering at a mine earns 2 gold per round, paid at the start of the round, so it pays for itself in two rounds. Income is per round rather than per trip so a short battle phase does not starve anyone; Pawns still walk and mine on the map during the battle.
-- A Pawn earns only while the path from its mine to the castle is clear at the end of the battle phase; enemies standing on the mine stop its income.
+- A mine pays nothing for a round if an enemy fighter stands within 2 tiles of it at the end of that round's battle phase. Raiding a mine stops its income without killing a Pawn.
 - A mine takes up to 3 Pawns at once. Home mines hold 60 gold, the middle mine 120, so a home mine runs dry around round 10 and a long match has to fight over the middle.
 - The trade-off: early Pawns make a stronger later army at the cost of a weaker early one.
 
@@ -146,11 +152,15 @@ This keeps the command card to one grid of 3x3: Attack move, Move, Attack, Hold,
 
 ### Buildings and upgrades
 
-Buildings unlock classes and upgrade them. Each goes on a fixed plot on its side's home plateau.
+Buildings unlock classes and upgrade them.
 
-- Units trained while planning appear beside their building when the battle phase starts.
-- A new building or upgrade finishes at the end of the round's battle phase.
-- Buildings have HP and can be attacked. The castle, the main hall, has 600 HP; the rest have 300. A destroyed building loses its levels and can be rebuilt on its plot.
+- **Plots:** each side has 8 fixed plots on its home plateau: castle, barracks, archery range, tower, monastery and 3 houses. One of each building; a plot takes only its own building.
+- **Building:** paid in gold while planning; no Pawn is needed. A new building or upgrade finishes at the end of that round's battle phase.
+- **Training:** a building trains up to 2 units per round, 3 once it reaches level 2. They appear on the free tiles beside it when the battle phase starts.
+- **HP:** the castle, the main hall, has 600 HP; the rest have 300. Buildings do not attack and cannot be repaired.
+- **Damage to buildings:** units deal half their damage to buildings, from any tile in range of the building's base. Five Warriors take about 17 seconds to bring down an undefended castle.
+- **Destroyed:** a building loses its levels and can be rebuilt on its plot. Units of its class stay, but no more can be trained until it stands again.
+- **Upgrades** apply at once to every unit of that class, including those already in the field.
 
 | Building | Unlocks | Build cost | Level 2 | Level 3 |
 | --- | --- | --- | --- | --- |
@@ -192,7 +202,7 @@ The player picks one covenant at the start of a match; all their units use that 
 
 ### Monster tribes
 
-The other side of the island is the Greying's host, drawn from the pack's Enemy Pack. Knights and monsters are mirrors: each monster fills a knight class's role with the same cost, stats and counters, so the balance table stays one table and only the sprites differ. Knights grow stronger by upgrading buildings (same sprite); monsters grow stronger by mutating into a new body at the next tier.
+The other side of the island is the Greying's host, drawn from the pack's Enemy Pack. Knights and monsters are mirrors: each monster fills a knight class's role with the same cost, stats and counters, so the balance table stays one table and only the sprites differ. Both grow stronger by upgrading buildings with the same bonuses. Knights keep their sprite. A monster changes body only where the art has a next tier (Spear Goblin to Pig Rider); otherwise an upgraded monster gets a tint and a slightly larger sprite.
 
 Each covenant has a mirror tribe whose passive works the same way at the same strength:
 
@@ -236,13 +246,13 @@ Monster buildings come in one colour only, so restoring colour is the knights' r
 
 - Runs on the server at 10 ticks per second with a seeded random number generator. The same state, the same two plans and the same seed always produce the same next state.
 - The engine is `battle(state, planA, planB, seed)`: the new state plus an event log that the client plays back on the map. A plan is the round's purchases, orders and stances.
-- **Settled:** the phase ends once every order is finished and no unit has fought for 3 seconds. **Cap:** 45 seconds. A fight still running at the cap freezes where it stands and carries on next round; this should be rare.
-- Movement follows the island's paths, ramps included. When two units want the same tile on the same tick, the one with the lower id takes it and the other waits.
+- **Settled:** the phase ends once no unit is still walking to a destination and no unit has fought for 3 seconds. Gathering, holding and guarding units count as done. **Cap:** 45 seconds. A fight still running at the cap freezes where it stands and carries on next round; this should be rare.
+- Movement follows the island's paths, ramps included. Friendly units swap tiles; when two enemies want the same free tile on the same tick, the one with the lower id takes it and the other waits.
 - In combat, a unit targets the nearest enemy in range; ties go to the lowest HP, then tile. Each unit's first action in a battle phase is delayed by a seeded 0-1 s so armies do not swing in lockstep.
 - Monks heal the ally missing the most HP in range.
 - Abilities, one per class, unlocked by the level 3 upgrade (`BALANCE.abilities.*.enabled`):
   - Guard (Warrior): once per round, below 50% HP, spends an action to take half damage for 3 seconds.
-  - Taunt (Lancer): always on; enemies within 2 tiles must attack the nearest Lancer, and target anyone else only when no Lancer can be hit or reached.
+  - Taunt (Lancer): always on; enemies within 2 tiles, except those on a Move order, must attack the nearest Lancer, and target anyone else only when no Lancer can be hit or reached.
   - Piercing (Archer): every 3rd shot also hits the enemy directly behind the target, along the line of fire, for half damage.
   - Revive (Monk): once per round, spends an action raising the first ally to fall that round, at 50% HP, if its tile is free.
 - Random rolls are limited to dodge and burn procs.
@@ -261,7 +271,7 @@ Most matches should end by round 8 to 12 through real attacks. The Greying only 
 
 **AI (solo)**
 
-The AI plans each round with the same actions and rules as the player, and never sees the player's orders.
+The AI plans each round with the same actions and rules as the player, and never sees the player's orders. It plays the monster tribe that mirrors the player's covenant.
 
 - Economy first: Pawns up to its home mine's limit, then houses as supply runs out.
 - Builds and upgrades by its tribe's preferred army, with some seeded variation so no two matches open the same way.
@@ -409,12 +419,12 @@ Match procedures are protected: they require the session created at sign-in.
 
 The battle prototype is done and stays playable (Solo and Duel on their own battle board) until the war on the map replaces it; then it is removed. The strategic map exists, but so far you can only look around and move a Pawn: it has the island, both bases, wandering garrisons and a HUD like Warcraft's with placeholder values. The war is built as new code on that map, reusing the engine's balance table, the sprites, terrain and UI, and the hit and death effects.
 
-**Phase 2: Solo war on the island, about 3 weeks**
+**Phase 2: Solo war on the island, about 5 weeks**
 
 - The engine gains the island grid, orders and stances, economy, buildings and `battle()`, tested headless with a CLI that prints a round, before any screen.
 - The map gains selection, orders with drawn paths, a live HUD (gold, supply), building menus in the command card, playback of each battle phase, and the round report.
 - The stance toggle lands last in Phase 2, once the core loop plays; until then every fighter stands firm.
-- One fixed covenant against one fixed tribe, and a simple AI.
+- One fixed covenant against one fixed tribe, and a simple AI. If time runs short, the AI starts as a stub that builds a fixed army and attacks from round 6.
 
 Out of Phase 2: covenants and tribes beyond one pair, level 3 abilities, region colour and the Greying's closing in, duels, Discord, persistence.
 
@@ -423,10 +433,10 @@ Out of Phase 2: covenants and tribes beyond one pair, level 3 abilities, region 
 | Phase | Weeks | Milestone | Done when |
 | --- | --- | --- | --- |
 | 1 | Done | Battle prototype | Army picker, battle board, playback, duel rooms |
-| 2 | 1 | Engine war core | Island grid and pathing, orders and stances, economy, `battle()` and the AI work headless; a CLI prints a round; determinism and invariant tests pass |
-| 2 | 2-3 | War on the map | Plan and battle on the island: train, build, order, pick stances, watch; main hall win and loss; solo against the AI in the browser |
-| 3 | 4-6 | Full game | Covenants and tribes, upgrades and abilities, region colour and the Greying, duels on the island; tRPC server and Postgres; old battle board removed |
-| 4 | 7-9 | Discord and launch | Activity with Discord sign-in, replay page, leaderboard, greyscale polish, sound, production deploy |
+| 2 | 1-2 | Engine war core | Island grid and pathing, orders and stances, economy, `battle()` and the AI work headless; a CLI prints a round; determinism and invariant tests pass |
+| 2 | 3-5 | War on the map | Plan and battle on the island: train, build, order, pick stances, watch; main hall win and loss; solo against the AI in the browser |
+| 3 | 6-8 | Full game | Covenants and tribes, upgrades and abilities, region colour and the Greying, duels on the island; tRPC server and Postgres; old battle board removed |
+| 4 | 9-11 | Discord and launch | Activity with Discord sign-in, replay page, leaderboard, greyscale polish, sound, production deploy |
 
 **Success metrics**
 
@@ -443,7 +453,7 @@ Out of Phase 2: covenants and tribes beyond one pair, level 3 abilities, region 
 | Battle phases drag or end empty | The settle rule and the 45 s cap are numbers in `balance.ts`; playtest them in week 2 |
 | Turtling makes matches stall | Mines run dry, and the Greying damages both main halls from round 12, so every match ends |
 | A bad plan loses a round with no way to react | Orders set how far units chase, the Fall back stance saves wounded units, and the round report shows what went wrong and why |
-| Crowding and pathing, with only one unit allowed per tile | Build and test the engine headless first; watch it in the CLI before the map plays it |
+| Crowding and pathing, with only one unit allowed per tile | Friendly units swap, holds stay off ramps; build and test the engine headless first and watch it in the CLI before the map plays it |
 | Too many units to order each round | Orders and stances persist across rounds; group selection; idle fighters guard their tile on their own |
 | The AI is trivial or unbeatable | Simple rules, tuned by numbers in `balance.ts`; later, difficulty as an income bonus |
 | Discord proxy or CSP issues | Build a placeholder Discord shell early in Phase 3 |
@@ -456,7 +466,7 @@ Out of Phase 2: covenants and tribes beyond one pair, level 3 abilities, region 
 - Should a player see a preview of their own plan (a ghost run of their units only) before locking in?
 - In a duel, does the second player play a monster tribe, or do both play knights in different colours?
 - One match, or a run of several islands with humanity as the run's lives?
-- Fixed building plots, or free placement on the home plateau?
+- Should a Pawn have to walk to a plot and build it, as in Warcraft? It gives raids a target but adds a rule; MVP builds from gold alone.
 - Can players hire units from other covenants as mercenaries at a higher cost?
 - Should the Forsaken (black) become a fifth playable covenant?
 - Final name check against Steam, itch.io and the Discord app directory.
