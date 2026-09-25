@@ -42,11 +42,11 @@ The world has been drained of colour by the Greying, a curse that hollows everyt
 
 ## Core gameplay loop
 
-Each round is plan, then watch, auto-chess style, on a Warcraft map. While planning, the world is frozen: the player spends gold, gives orders and sets how their units behave. When both sides lock in, both plans play out together on the whole island with no input, until the fighting settles. Then a short aftermath, and the next round. Rounds repeat until a main hall (the castle) is destroyed.
+Each round is plan, then watch, auto-chess style, on a Warcraft map. While planning, the world is frozen: the player spends gold, gives orders and picks each unit's stance. When both sides lock in, both plans play out together on the whole island with no input, until the fighting settles. Then a short aftermath, and the next round. Rounds repeat until a main hall (the castle) is destroyed.
 
 ```mermaid
 flowchart LR
-  A[Plan: world frozen,<br/>spend, order, set rules] --> B[Both sides lock in]
+  A[Plan: world frozen,<br/>spend, order, stance] --> B[Both sides lock in]
   B --> C[Battle: both plans at once,<br/>until settled or 45 s]
   C --> D[Aftermath: report,<br/>colour, healing]
   D --> E{A main hall fell?}
@@ -59,24 +59,24 @@ The planning phase has a 60-second timer in a duel and none in solo play. A batt
 **Round flow**
 
 1. **Income:** 10 gold, plus 2 gold for each Pawn gathering at a mine that still holds gold.
-2. **Read the island:** every unit and building is visible, the enemy's included. The enemy's orders and rules are not.
+2. **Read the island:** every unit and building is visible, the enemy's included. The enemy's orders and stances are not.
 3. **Spend:** train units, train Pawns, build, upgrade.
 4. **Order:** give each unit or group an order. Orders persist across rounds until done or replaced.
-5. **Set rules:** decide how each unit or group reacts once the battle starts (below).
+5. **Stance:** pick how each unit or group reacts once the battle starts (below). Most players leave the default.
 6. **Lock:** in solo, the AI has already planned. In a duel, the battle starts when both players lock or the timer runs out.
-7. **Battle:** both plans run together. Units follow their orders and rules and fight whatever they meet.
+7. **Battle:** both plans run together. Units follow their orders and stances and fight whatever they meet.
 8. **Aftermath:** a round report (losses, gold mined, buildings damaged), colour returns to held regions, and units at home heal.
 
 **Why phases**
 
 - It is the auto-chess half of the idea: every decision happens before the battle, and the battle shows whether they were good. Whole fights play out; nothing is cut off mid-swing.
 - A round is one bigger decision rather than many small ones, which is comfortable on a phone inside Discord and keeps a duel near 20 minutes.
-- The skill moves into setup, the way board positioning works in auto-chess: where units stand, plus the rules for how they react.
+- The skill moves into setup, the way board positioning works in auto-chess: where units go, plus the stance they fight in.
 - A round with no attack orders settles almost at once. That is an economy round, a legitimate choice, not a wasted minute.
 
 ## Game systems
 
-The full roster is always available, Warcraft-style; strategy comes from economy, supply, tech, position, standing rules and counters instead of shop luck. All numbers below are starting values, kept in one config file for tuning.
+The full roster is always available, Warcraft-style; strategy comes from economy, supply, tech, position, stances and counters instead of shop luck. All numbers below are starting values, kept in one config file for tuning.
 
 ### Orders
 
@@ -87,21 +87,26 @@ The full roster is always available, Warcraft-style; strategy comes from economy
 | Attack | Fighters | Walk to and attack a chosen unit or building. |
 | Hold | Fighters | Stay put and fight whatever comes in range, without chasing. |
 | Gather | Pawn | Mine a gold mine and carry gold to the castle, repeating. |
-| Stop | All | Clear the order. An idle fighter defends within its chase distance, then returns. |
+| Stop | All | Clear the order. An idle fighter fights by its stance, then returns to its post. |
 
 Orders go to one unit or a selected group. A group order sends each unit along its own path to tiles around the target.
 
-### Standing rules
+### Stances
 
-Nothing can be commanded once a battle starts, so each unit or group carries rules, set while planning, for how it reacts:
+The order says where a unit goes; the stance says how it reacts along the way, since nothing can be commanded once a battle starts. A stance is one choice from four presets, one button on the command card, shown as a badge over the unit. It persists across rounds like an order.
 
-| Rule | Options | Default |
-| --- | --- | --- |
-| Retreat | Below 25% HP, below 50% HP, or never | Never |
-| Chase | 0 tiles (hold), 3 tiles, or unlimited | 3 tiles |
-| Target | Nearest, weakest, or ranged first | Nearest |
+| Stance | Behaviour | Chase | Retreat |
+| --- | --- | --- | --- |
+| Aggressive | Chases anything it sees | Unlimited | Never |
+| Defensive (default) | Fights nearby, then returns to its post | 3 tiles | Never |
+| Hold | Never moves; fights whatever is in range | 0 tiles | Never |
+| Cautious | Like Defensive, but runs home when hurt | 3 tiles | Below 50% HP |
 
-A retreating unit walks back to its home plateau and stops fighting. Rules persist across rounds like orders.
+- A retreating unit walks back to its home plateau and stops fighting. The round report says why ("Warrior retreated: Cautious, 42% HP").
+- Units always target the nearest enemy, ties to the lowest HP, and a Lancer's taunt is the only thing that overrides it. There is no target priority setting.
+- The chase and retreat values are numbers in `balance.ts`, so the presets can be tuned, or new ones added, without changing the UI.
+
+Why presets: the pattern is proven in Age of Empires and Warcraft stances and in Gratuitous Space Battles' pre-battle orders, but the more settings a player has to tune, the more often units do something the player cannot explain. One readable choice keeps the battle legible on a phone.
 
 ### The island
 
@@ -215,7 +220,7 @@ Monster buildings come in one colour only, so restoring colour is the knights' r
 ### Battle phase simulation
 
 - Runs on the server at 10 ticks per second with a seeded random number generator. The same state, the same two plans and the same seed always produce the same next state.
-- The engine is `battle(state, planA, planB, seed)`: the new state plus an event log that the client plays back on the map. A plan is the round's purchases, orders and rules.
+- The engine is `battle(state, planA, planB, seed)`: the new state plus an event log that the client plays back on the map. A plan is the round's purchases, orders and stances.
 - **Settled:** the phase ends once every order is finished and no unit has fought for 3 seconds. **Cap:** 45 seconds. A fight still running at the cap freezes where it stands and carries on next round; this should be rare.
 - Movement follows the island's paths, ramps included. When two units want the same tile on the same tick, the one with the lower id takes it and the other waits.
 - In combat, a unit targets the nearest enemy in range; ties go to the lowest HP, then tile. Each unit's first action in a battle phase is delayed by a seeded 0-1 s so armies do not swing in lockstep.
@@ -245,11 +250,11 @@ The AI plans each round with the same actions and rules as the player, and never
 
 - Economy first: Pawns up to its home mine's limit, then houses as supply runs out.
 - Builds and upgrades by its tribe's preferred army, with some seeded variation so no two matches open the same way.
-- Attacks when its army's value is clearly larger than the player's visible army, defends when enemies step onto its plateau, and contests the middle mine when ahead or when its home mine runs low. It sets standing rules too: wounded units retreat, archers hold high ground.
+- Attacks when its army's value is clearly larger than the player's visible army, defends when enemies step onto its plateau, and contests the middle mine when ahead or when its home mine runs low. It picks stances too: Cautious for its front line, Hold for archers on high ground.
 
 **Duel**
 
-Two players share an island, each planning in secret. The server runs the battle phase when both lock in or the planning timer runs out; a player who never locks keeps their standing orders and rules. The existing duel rooms (code, seats, deadline, one resolution per round) carry over in shape: a room round becomes a match round.
+Two players share an island, each planning in secret. The server runs the battle phase when both lock in or the planning timer runs out; a player who never locks keeps their standing orders and stances. The existing duel rooms (code, seats, deadline, one resolution per round) carry over in shape: a room round becomes a match round.
 
 ## Discord and social
 
@@ -298,7 +303,7 @@ All art comes from the [Tiny Swords](https://pixelfrog-assets.itch.io/tiny-sword
 - **Death:** tint grey, fade out while floating upward, and play a dust puff, read as a soul leaving.
 - **Damage numbers:** pixel-font text that floats and fades.
 - **Greyscale world:** a Phaser colour-matrix filter, lifted region by region as the player holds them, and drawn back in from the edges once the Greying closes in.
-- **Planned orders:** while planning, each selected unit shows its path and destination as a dotted line and flag, and its rules as small badges.
+- **Planned orders:** while planning, each selected unit shows its path and destination as a dotted line and flag, and its stance as a badge.
 
 **Technical notes**
 
@@ -329,7 +334,7 @@ flowchart LR
 | Layer | Choice | Notes |
 | --- | --- | --- |
 | Monorepo | pnpm workspaces | `packages/engine`, `apps/web` |
-| Engine | Pure TypeScript, no dependencies | Island grid and pathing, economy, orders and rules, battle phase, AI, seeded RNG |
+| Engine | Pure TypeScript, no dependencies | Island grid and pathing, economy, orders and stances, battle phase, AI, seeded RNG |
 | Tests | Vitest, fast-check | Unit tests and property tests on the engine |
 | Client | Phaser inside Next.js | Loaded with `ssr: false`; destroyed on unmount |
 | Discord | Embedded App SDK | OAuth sign-in; relative URLs for Discord's proxy |
@@ -341,7 +346,7 @@ flowchart LR
 **Key rules**
 
 - The engine is a pure function: state plus both sides' plans in, new state plus events out. The client never decides outcomes.
-- Planning actions (train, build, upgrade, order, rules) are validated by the engine on the client for instant feedback and again on the server.
+- Planning actions (train, build, upgrade, order, stance) are validated by the engine on the client for instant feedback and again on the server.
 - A battle phase returns an event log (`move`, `attack`, `hit`, `heal`, `death`, `burn`, `retreat`, `gather`, `build`) that the client plays back on the map.
 - The island's grid and pathing live in the engine, not the client, so the server can run a battle phase.
 
@@ -364,7 +369,7 @@ The game API is a tRPC router mounted at `/api/trpc`, a relative URL that works 
 | --- | --- | --- |
 | `match.start` | Mutation | Start a solo match or open a duel, with a chosen covenant |
 | `match.get` | Query | Current state, round and deadline |
-| `match.plan` | Mutation | Submit this round's purchases, orders and rules; validated by the engine |
+| `match.plan` | Mutation | Submit this round's purchases, orders and stances; validated by the engine |
 | `match.lock` | Mutation | Lock in; the battle phase runs when both sides have |
 | `match.concede` | Mutation | Concede the match |
 | `replay.get` | Query | Replay data by match id |
@@ -391,8 +396,9 @@ The battle prototype is done and stays playable (Solo and Duel on their own batt
 
 **Phase 2: Solo war on the island, about 3 weeks**
 
-- The engine gains the island grid, orders and rules, economy, buildings and `battle()`, tested headless with a CLI that prints a round, before any screen.
-- The map gains selection, orders with drawn paths, rules, a live HUD (gold, supply), building menus in the command card, playback of each battle phase, and the round report.
+- The engine gains the island grid, orders and stances, economy, buildings and `battle()`, tested headless with a CLI that prints a round, before any screen.
+- The map gains selection, orders with drawn paths, a live HUD (gold, supply), building menus in the command card, playback of each battle phase, and the round report.
+- Stances land last in Phase 2, once the core loop plays; until then every unit is Defensive.
 - One fixed covenant against one fixed tribe, and a simple AI.
 
 Out of Phase 2: covenants and tribes beyond one pair, level 3 abilities, region colour and the Greying's closing in, duels, Discord, persistence.
@@ -402,8 +408,8 @@ Out of Phase 2: covenants and tribes beyond one pair, level 3 abilities, region 
 | Phase | Weeks | Milestone | Done when |
 | --- | --- | --- | --- |
 | 1 | Done | Battle prototype | Army picker, battle board, playback, duel rooms |
-| 2 | 1 | Engine war core | Island grid and pathing, orders and rules, economy, `battle()` and the AI work headless; a CLI prints a round; determinism and invariant tests pass |
-| 2 | 2-3 | War on the map | Plan and battle on the island: train, build, order, set rules, watch; main hall win and loss; solo against the AI in the browser |
+| 2 | 1 | Engine war core | Island grid and pathing, orders and stances, economy, `battle()` and the AI work headless; a CLI prints a round; determinism and invariant tests pass |
+| 2 | 2-3 | War on the map | Plan and battle on the island: train, build, order, pick stances, watch; main hall win and loss; solo against the AI in the browser |
 | 3 | 4-6 | Full game | Covenants and tribes, upgrades and abilities, region colour and the Greying, duels on the island; tRPC server and Postgres; old battle board removed |
 | 4 | 7-9 | Discord and launch | Activity with Discord sign-in, replay page, leaderboard, greyscale polish, sound, production deploy |
 
@@ -421,9 +427,9 @@ Out of Phase 2: covenants and tribes beyond one pair, level 3 abilities, region 
 | Scope creep in content | Freeze the roster at 5 classes until launch |
 | Battle phases drag or end empty | The settle rule and the 45 s cap are numbers in `balance.ts`; playtest them in week 2 |
 | Turtling makes matches stall | Mines run dry, and the Greying damages both main halls from round 12, so every match ends |
-| A bad plan loses a round with no way to react | Standing rules (retreat, chase, target); the round report shows what went wrong |
+| A bad plan loses a round with no way to react | Four stances (Aggressive, Defensive, Hold, Cautious); the round report shows what went wrong and why |
 | Crowding and pathing on a one-unit-per-tile grid | Build and test the engine headless first; watch it in the CLI before the map plays it |
-| Too many units to order each round | Orders and rules persist across rounds; group selection; idle fighters defend on their own |
+| Too many units to order each round | Orders and stances persist across rounds; group selection; idle fighters defend on their own |
 | The AI is trivial or unbeatable | Rule-based and tuned by numbers in `balance.ts`; later, difficulty as an income bonus |
 | Discord proxy or CSP issues | Build a placeholder Discord shell early in Phase 3 |
 | Asset license breach | Private bucket and CI download from day one |
