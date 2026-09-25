@@ -125,6 +125,48 @@ The player picks one covenant at the start of a run; all their units use that co
 | Dawnsworn (yellow) | +20% healing received | +35% |
 | The Unwritten (purple) | 10% chance to dodge attacks | 18% |
 
+### Monster tribes
+
+The other side of the board is the Greying's host, drawn from the pack's Enemy Pack. Knights and monsters are mirrors: each monster fills a knight class's role with the same cost, stats and counters, so the balance table stays one table and only the sprites differ. Knights grow stronger by upgrading buildings (same sprite); monsters grow stronger by mutating into a new body at the next tier.
+
+Each covenant has a mirror tribe whose passive works the same way at the same strength:
+
+| Role | Knights | Goblin Warband (mirrors Emberkin) | Tidal Brood (mirrors Tidewardens) | The Hollowed (mirrors Dawnsworn) | The Wilds (mirrors The Unwritten) |
+| --- | --- | --- | --- | --- | --- |
+| Melee | Warrior | Torch Goblin | Paddle Shark | Skull | Lizard |
+| Tank | Lancer | Spear Goblin, then Pig Rider | Turtle | Minotaur | Panda |
+| Ranged | Archer | Slingshot Gnome | Harpoon Shark | Gnoll | Giant Bat |
+| Support | Monk | Imp | Bomb Fish | Hex Shaman | Spider |
+| Worker | Pawn | Gnome | Gnome | Thief | Gnome |
+
+| Tribe | Passive | Mirrors |
+| --- | --- | --- |
+| Goblin Warband | Attacks burn | Emberkin burn |
+| Tidal Brood | Units start battle with a shell that absorbs damage | Tidewardens shield |
+| The Hollowed | Attacks drain health back to the attacker | Dawnsworn healing received |
+| The Wilds | Chance to dodge attacks | Unwritten dodge |
+
+**Buildings**
+
+| Knight | Monster |
+| --- | --- |
+| Castle | Cave |
+| Barracks | Goblin Hut |
+| Archery range | Gnome Tower |
+| Tower | Pirate Tower |
+| Monastery | Dead Tree |
+| House | Gnome Hut, Fish Hut |
+
+Monster buildings come in one colour only, so restoring colour is the knights' reward alone.
+
+**Left over:** Troll is the boss (its wind-up, recovery and death sheets make a telegraphed attack). Bear, Snake and Bumblebee are later tiers for the Wilds or neutral creep camps. Hex Shaman's Transformation Spell plus the Pig sprite is a ready-made Hex.
+
+**Known gaps in the art**
+
+- Only Gnoll, Harpoon Shark, Slingshot Gnome, Hex Shaman and Bomb Fish have projectiles; Giant Bat and Spider need their ranged and support effects drawn in code.
+- No monster has gathering or carrying animations, so monster economy is raiding, not mining.
+- Tanks with a guard sheet for Taunt: Turtle, Minotaur, Panda (Skull has one too, used for Guard). Spear Goblin and Pig Rider have none.
+
 ### Scouting
 
 Before arranging, the player sees the next opponent's covenant, unit counts per class and building levels. Positions stay hidden.
