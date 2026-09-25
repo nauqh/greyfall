@@ -28,6 +28,8 @@ const has = (path: Cell[], col: number, row: number): boolean => path.some((p) =
 // Blue plateau down to the lowland goes by its ramp; red's by its own.
 assert.ok(has(walk(c(6, 2), c(14, 7)), 13, 5));
 assert.ok(has(walk(c(26, 15), c(18, 14)), 22, 16));
+// The bases are joined: blue's ramp foot runs east to red's ramp.
+assert.ok(walk(c(8, 4), c(24, 15)));
 // The sea islet is out of reach.
 assert.equal(findPath(c(6, 2), c(3, 18)), null);
 

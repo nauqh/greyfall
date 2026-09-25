@@ -4,28 +4,43 @@
 // south-facing plateau edge drops a cliff into the cell below, and a slope
 // piece at a plateau's end is the way up.
 //
-// Phase 1 of the strategic layer: look and move only. Nothing here touches
-// the engine or the draft.
+// The war is played here: plan with the world frozen, fight, read the round
+// report, again, until a main hall falls. The engine decides everything;
+// this scene draws its state, turns clicks into planning actions, and plays
+// a battle's event log back.
 
-import type { UnitClass } from "@greyfall/engine";
+import {
+  MINES,
+  PLOTS,
+  WAR,
+  applyAction,
+  battle,
+  isOpen,
+  maxHp,
+  newMatch,
+  planAi,
+  plotById,
+  supplyCap,
+  supplyUsed,
+  trainsAt,
+  type Action,
+  type BattleOutcome,
+  type BuildingKind,
+  type MatchState,
+  type Order,
+  type Plot,
+  type UnitClass,
+  type WarEvent,
+  type WarUnit,
+} from "@greyfall/engine";
 import * as Phaser from "phaser";
 
-import { packUrl } from "./art";
+import { packUrl, type BuildingName } from "./art";
 import { baseZoom, fitCamera, startGame } from "./boot";
-import { HUD_COVER_H, HUD_KEY, StrategicHud } from "./StrategicHud";
+import { HUD_COVER_H, HUD_KEY, ICON, StrategicHud, type HudCommand, type HudModel } from "./StrategicHud";
 import { HAND } from "./ui";
-import {
-  MAP,
-  STRAT_COLS,
-  STRAT_ROWS,
-  at,
-  findPath,
-  isSlope,
-  isLand,
-  isWalkable,
-  type Cell,
-} from "./stratMap";
-import { loadUnits, makeAnims, playPose, unitKey } from "./sprites";
+import { MAP, STRAT_COLS, STRAT_ROWS, at, isSlope, isLand } from "./stratMap";
+import { BODY_HEIGHT, MONSTER_BODY_HEIGHT, loadUnits, makeAnims, playPose, unitKey } from "./sprites";
 import {
   DEPTH,
   addBuilding,
@@ -40,6 +55,17 @@ import {
   type Rect,
   type Structure,
 } from "./terrain";
+import {
+  ARROW_RELEASE_MS,
+  FLIGHT_MS,
+  IMPACT_MS,
+  deathFx,
+  flash,
+  floatText,
+  loadWarFx,
+  makeWarFxAnims,
+  projectile,
+} from "./warFx";
 
 /** The tileset's native tile: nothing is stretched. */
 const CELL = 64;
@@ -63,71 +89,108 @@ const PAN_PX_S = 840;
 /** Zoom steps: native, halfway, and all of the world in view. */
 const ZOOM_STEPS = 3;
 
+/** A step's walk takes most of the second it is given, so a march reads as
+ *  one walk rather than a string of hops. */
+const STEP_MS = 880;
+const TICK_MS = 1000 / 10;
+
 /** Placed in cells, so a building's base lands on the row it names. */
 function cell(side: Structure["side"], name: Structure["name"], col: number, row: number, scale?: number): Structure {
   return { side, name, x: col * CELL, y: row * CELL, scale };
 }
 
-/** Blue holds the north-west plateau, red the south-east one; the small
- *  plateaus between are outposts, with a goblin camp on the western one. */
-const HALLS: Structure[] = [
-  cell("a", "castle", 6.5, 3.9),
-  cell("a", "barracks", 10.6, 4.2),
-  cell("a", "house1", 4.9, 5.85),
-  cell("a", "house2", 6.6, 5.9),
-  cell("a", "archery", 7.4, 8.8),
-  cell("a", "tower", 9.3, 8.7),
-  cell("b", "castle", 26.5, 15.9),
-  cell("b", "barracks", 19.6, 13.9),
-  cell("b", "house3", 18.6, 15.5),
-  cell("b", "house1", 20.4, 16.0),
-  cell("b", "tower", 26.0, 4.7),
-  cell("b", "goblinHut", 5.2, 12.8),
-  cell("g", "deadTree", 3.0, 13.8, 0.6),
-];
+/** Scenery that is not part of the war: the goblin camp on the western plateau. */
+const SCENERY: Structure[] = [cell("b", "goblinHut", 5.2, 12.8), cell("g", "deadTree", 3.0, 13.8, 0.6)];
 
-/** Garrisons around their halls. All homes are walkable. */
-const GARRISON: { side: "a" | "b"; cls: UnitClass; home: { col: number; row: number } }[] = [
-  { side: "a", cls: "pawn", home: { col: 8, row: 5 } },
-  { side: "a", cls: "warrior", home: { col: 11, row: 5 } },
-  { side: "a", cls: "lancer", home: { col: 12, row: 3 } },
-  { side: "a", cls: "archer", home: { col: 8, row: 7 } },
-  { side: "a", cls: "pawn", home: { col: 14, row: 4 } },
-  { side: "b", cls: "pawn", home: { col: 17, row: 14 } },
-  { side: "b", cls: "warrior", home: { col: 22, row: 13 } },
-  { side: "b", cls: "lancer", home: { col: 24, row: 12 } },
-  { side: "b", cls: "archer", home: { col: 25, row: 14 } },
-  { side: "b", cls: "pawn", home: { col: 21, row: 12 } },
-];
-/** A wander is a slow amble to a nearby cell, a pause, then on. */
-const WANDER_SPEED = 30;
-const WANDER_PAUSE = [1200, 3500] as const;
-/** How many cells a wander may walk, detours round cliffs included. */
-const WANDER_STEPS = 4;
-const FLAG_SPEED = 90;
+const ART: Record<BuildingKind, BuildingName> = {
+  castle: "castle",
+  barracks: "barracks",
+  archery: "archery",
+  tower: "tower",
+  monastery: "monastery",
+  house: "house1",
+};
 
-interface Walker {
-  side: "a" | "b";
-  cls: UnitClass;
-  /** Wanderers amble around it; the flag pawn has none and waits for orders. */
-  home: Cell | null;
-  speed: number;
-  sprite: Phaser.GameObjects.Sprite;
-  root: Phaser.GameObjects.Container;
-  /** Cell centres still to walk, in order. */
-  path: { x: number; y: number }[];
-  pauseMs: number;
+const NAME: Record<BuildingKind, string> = {
+  castle: "Castle",
+  barracks: "Barracks",
+  archery: "Archery range",
+  tower: "Tower",
+  monastery: "Monastery",
+  house: "House",
+};
+
+const CLASS_NAME: Record<UnitClass, string> = {
+  pawn: "Pawn",
+  warrior: "Warrior",
+  lancer: "Lancer",
+  archer: "Archer",
+  monk: "Monk",
+};
+
+/** The pack's three house fronts, one per house plot. */
+function artOf(p: Plot): BuildingName {
+  if (p.kind !== "house") return ART[p.kind];
+  return `house${p.id.slice(-1)}` as BuildingName;
 }
 
+/** Where a plot's art stands: centred on its footprint, base on its last row. */
+function plotBase(p: Plot): { x: number; y: number } {
+  return { x: (p.col + p.w / 2) * CELL, y: (p.row + p.h) * CELL };
+}
+
+function cellXY(col: number, row: number): { x: number; y: number } {
+  return { x: STRAT.x0 + col * CELL + CELL / 2, y: STRAT.y0 + row * CELL + CELL / 2 };
+}
+
+function head(u: { side: "a" | "b"; class: UnitClass }): number {
+  return (u.side === "a" ? BODY_HEIGHT : MONSTER_BODY_HEIGHT)[u.class];
+}
+
+interface UnitView {
+  unit: WarUnit;
+  root: Phaser.GameObjects.Container;
+  sprite: Phaser.GameObjects.Sprite;
+  shadow: Phaser.GameObjects.Image;
+  marks: Phaser.GameObjects.Graphics;
+  settle: Phaser.Time.TimerEvent | null;
+  dead: boolean;
+}
+
+type Phase = "plan" | "battle" | "report" | "over";
+
 export class StrategicScene extends Phaser.Scene {
-  /** The pawn the flag sends; null until the first click. */
-  private flagPawn: Walker | null = null;
   /** Handed in by the page; absent when the map opens on its own. */
   private onMenu: () => void = () => {};
   /** Touch-drag state: where the gesture started, camera included. */
   private dragStart: { x: number; y: number; camX: number; camY: number; moved: boolean } | null = null;
-  /** Everyone on foot: the garrison and the flag pawn. */
-  private walkers: Walker[] = [];
+
+  /** The round as it began, and as the plan has changed it so far. */
+  private roundStart!: MatchState;
+  private state!: MatchState;
+  private plan: Action[] = [];
+  private phase: Phase = "plan";
+  private outcome: BattleOutcome | null = null;
+
+  private selected: number[] = [];
+  private selectedPlot: string | null = null;
+  /** An enemy unit or building shown in the panel without being ordered. */
+  private inspected: { unit?: number; plot?: string } | null = null;
+  /** A command waiting for its target on the map. */
+  private mode: "move" | "attackMove" | "gather" | null = null;
+  private message = "";
+
+  private units = new Map<number, UnitView>();
+  private buildings = new Map<string, Phaser.GameObjects.Image>();
+  private overlay!: Phaser.GameObjects.Graphics;
+  private hud!: StrategicHud;
+
+  /** Battle playback: ms into the battle, the next event, playback speed. */
+  private clock = 0;
+  private cursor = 0;
+  private speed = 1;
+  /** Building HP as the playback has shown it, for their bars. */
+  private buildingHp = new Map<string, number>();
 
   init(data: { onMenu?: () => void }): void {
     this.onMenu = data.onMenu ?? (() => {});
@@ -140,7 +203,12 @@ export class StrategicScene extends Phaser.Scene {
   preload(): void {
     loadTerrain(this);
     loadUnits(this);
-    loadBuildings(this, HALLS);
+    loadWarFx(this);
+    const structures = [
+      ...SCENERY,
+      ...PLOTS.map((p) => cell(p.side, artOf(p), 0, 0)),
+    ];
+    loadBuildings(this, structures);
     // Lowland grass in the sheet's deeper green, as the pack's demo map does:
     // the plateaus keep the sunlit colour1, so height reads as colour too.
     this.load.image("tilesetLow", packUrl("Terrain/Tileset/Tilemap_color3.png"));
@@ -152,9 +220,11 @@ export class StrategicScene extends Phaser.Scene {
   }
 
   create(): void {
-    fitCamera(this, WORLD_W / 2, (WORLD_H - TOP_SEA) / 2, () => this.zoomScale(this.zoomLevel));
+    // Open on the player's own plateau.
+    fitCamera(this, 10 * CELL, 6 * CELL, () => this.zoomScale(this.zoomLevel));
     prepareTerrain(this);
     makeAnims(this);
+    makeWarFxAnims(this);
     if (!this.anims.exists("sheep_anim")) {
       this.anims.create({ key: "sheep_anim", frames: this.anims.generateFrameNumbers("sheep"), frameRate: 8, repeat: -1 });
     }
@@ -163,33 +233,38 @@ export class StrategicScene extends Phaser.Scene {
     this.buildMap();
     this.buildScenery();
     driftClouds(this, { w: WORLD_W, h: WORLD_H }, "strategic");
-    for (const hall of HALLS) addBuilding(this, hall);
-    this.buildGarrison();
-    const hud = this.scene.add(HUD_KEY, StrategicHud, true, {
+    for (const s of SCENERY) addBuilding(this, s);
+    this.overlay = this.add.graphics().setDepth(DEPTH.decorBehind + 0.5);
+
+    this.startMatch();
+
+    this.hud = this.scene.add(HUD_KEY, StrategicHud, true, {
       map: MAP,
-      marks: HALLS.map((h) => ({ col: h.x / CELL, row: h.y / CELL, side: h.side })),
+      marks: PLOTS.filter((p) => p.kind === "castle").map((p) => ({ col: p.col + 1, row: p.row + 1, side: p.side })),
       // The HUD is the top scene, so the cloud cover goes there to sit over
       // its buttons too.
-      onMenu: () => {
-        this.input.enabled = false;
-        hud.input.enabled = false;
-        cloudCover(hud, "close", () => this.onMenu());
-      },
+      onMenu: () => this.toMenu(),
       onZoom: (dir: 1 | -1) => this.zoomStep(dir),
-    })!;
+      model: () => this.model(),
+    }) as StrategicHud;
     // The opening parts over the map from this scene, on the frame the page's
     // loader leaves; the HUD is still loading its own art then, so it fades
     // in after. Once, from here: the HUD restarts itself on every resize.
     cloudCover(this, "open", () => {});
-    hud.events.once(Phaser.Scenes.Events.CREATE, () => {
-      hud.cameras.main.setAlpha(0);
-      hud.tweens.add({ targets: hud.cameras.main, alpha: 1, delay: 700, duration: 400 });
+    this.hud.events.once(Phaser.Scenes.Events.CREATE, () => {
+      this.hud.cameras.main.setAlpha(0);
+      this.hud.tweens.add({ targets: this.hud.cameras.main, alpha: 1, delay: 700, duration: 400 });
     });
     this.input.on("wheel", (_p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
       if (dy !== 0) this.zoomStep(dy > 0 ? 1 : -1);
     });
+    this.input.mouse?.disableContextMenu();
+    this.input.keyboard?.on("keydown-ESC", () => {
+      this.clearSelection();
+      this.refresh();
+    });
 
-    // Touch drag pans; a tap (down-up with little movement) places the flag.
+    // Touch drag pans; a tap (down-up with little movement) selects or orders.
     // The map drags, so it wears the pack's hand, the kit's only hand cursor.
     this.input.setDefaultCursor(HAND);
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
@@ -213,14 +288,822 @@ export class StrategicScene extends Phaser.Scene {
       const start = this.dragStart;
       this.dragStart = null;
       if (!start || start.moved) return;
-      const col = Math.floor((p.worldX - STRAT.x0) / CELL);
-      const row = Math.floor((p.worldY - STRAT.y0) / CELL);
-      if (col < 0 || col >= STRAT_COLS || row < 0 || row >= STRAT_ROWS) return;
-      // The flag stands on land, never on water or a cliff face.
-      if (!isWalkable(col, row)) return;
-      this.moveFlag(col, row);
+      this.tap(p);
     });
   }
+
+  /** Clouds close over the HUD, the top scene, then the page moves on. */
+  private toMenu(): void {
+    this.input.enabled = false;
+    this.hud.input.enabled = false;
+    cloudCover(this.hud, "close", () => this.onMenu());
+  }
+
+  // --- the match -----------------------------------------------------------
+
+  private startMatch(): void {
+    for (const v of this.units.values()) v.root.destroy();
+    this.units.clear();
+    this.roundStart = newMatch(Date.now() % 1_000_000);
+    this.state = this.roundStart;
+    this.plan = [];
+    this.phase = "plan";
+    this.outcome = null;
+    this.clearSelection();
+    this.message = "Your Pawns are already digging. Train an army at the barracks, then Fight.";
+    this.syncWorld(this.state);
+    this.hud?.refresh();
+  }
+
+  /** One planning action for the player: kept when legal, explained when not. */
+  private act(action: Action): boolean {
+    if (this.phase !== "plan") return false;
+    const r = applyAction(this.state, "a", action);
+    if (!r.ok) {
+      this.message = r.error.charAt(0).toUpperCase() + r.error.slice(1) + ".";
+      this.refresh();
+      return false;
+    }
+    this.state = r.state;
+    this.plan.push(action);
+    this.message = "";
+    // Units that died between the plan and now cannot stay selected.
+    this.selected = this.selected.filter((id) => this.state.units.some((u) => u.id === id));
+    this.syncWorld(this.state);
+    this.refresh();
+    return true;
+  }
+
+  private resetPlan(): void {
+    this.state = this.roundStart;
+    this.plan = [];
+    this.clearSelection();
+    this.message = "Plan cleared.";
+    this.syncWorld(this.state);
+    this.refresh();
+  }
+
+  private fight(): void {
+    if (this.phase !== "plan") return;
+    let out: BattleOutcome;
+    try {
+      out = battle(this.roundStart, this.plan, planAi(this.roundStart, "b"));
+    } catch (err) {
+      this.message = err instanceof Error ? err.message : "The battle could not start.";
+      this.refresh();
+      return;
+    }
+    this.outcome = out;
+    this.phase = "battle";
+    this.clearSelection();
+    this.message = "";
+    this.clock = 0;
+    this.cursor = 0;
+    this.buildingHp = new Map(PLOTS.map((p) => [p.id, out.start.buildings[p.id]!.hp]));
+    this.syncWorld(out.start);
+    this.refresh();
+  }
+
+  /** Skip the rest of the playback straight to the report. */
+  private skip(): void {
+    if (this.phase !== "battle" || !this.outcome) return;
+    this.tweens.killAll();
+    this.time.removeAllEvents();
+    for (const v of this.units.values()) v.root.destroy();
+    this.units.clear();
+    this.finishBattle();
+  }
+
+  private finishBattle(): void {
+    const out = this.outcome!;
+    this.roundStart = out.end;
+    this.state = out.end;
+    this.plan = [];
+    this.phase = out.end.winner ? "over" : "report";
+    this.syncWorld(out.end);
+    this.refresh();
+  }
+
+  private nextRound(): void {
+    this.phase = "plan";
+    this.outcome = null;
+    this.message = "";
+    this.refresh();
+  }
+
+  // --- drawing the state ---------------------------------------------------
+
+  /** Make the island show `state`: buildings, units, marks. Snaps, no tweens. */
+  private syncWorld(state: MatchState): void {
+    for (const p of PLOTS) {
+      const b = state.buildings[p.id]!;
+      let img = this.buildings.get(p.id);
+      const shows = b.level > 0 || b.pending === "build";
+      if (shows && !img) {
+        const { x, y } = plotBase(p);
+        img = addBuilding(this, cell(p.side, artOf(p), x / CELL, y / CELL));
+        this.buildings.set(p.id, img);
+      }
+      if (!shows && img) {
+        img.destroy();
+        this.buildings.delete(p.id);
+        img = undefined;
+      }
+      // Under construction: a pale outline of what is coming.
+      img?.setAlpha(b.level === 0 ? 0.45 : 1).clearTint();
+    }
+
+    const seen = new Set<number>();
+    for (const u of state.units) {
+      seen.add(u.id);
+      let v = this.units.get(u.id);
+      if (!v) v = this.addUnit(u);
+      v.unit = u;
+      const { x, y } = cellXY(u.col, u.row);
+      this.tweens.killTweensOf(v.root);
+      v.root.setPosition(x, y).setDepth(DEPTH.unit + y).setAlpha(1);
+      playPose(v.sprite, u.side, u.class, "idle");
+    }
+    for (const [id, v] of this.units) {
+      if (!seen.has(id)) {
+        v.root.destroy();
+        this.units.delete(id);
+      }
+    }
+    this.drawMarks();
+  }
+
+  private addUnit(u: WarUnit): UnitView {
+    const { x, y } = cellXY(u.col, u.row);
+    // Children ride at local origin: a container adds its own position,
+    // so world coords on the children would double the offset and throw
+    // every troop off the map.
+    const shadow = addShadow(this, 0, 0, u.class === "lancer" ? 0.8 : 0.62);
+    const sprite = this.add.sprite(0, 0, unitKey(u.side, u.class, "idle"));
+    const marks = this.add.graphics();
+    playPose(sprite, u.side, u.class, "idle");
+    const root = this.add.container(x, y, [marks, shadow, sprite]).setDepth(DEPTH.unit + y);
+    const v: UnitView = { unit: u, root, sprite, shadow, marks, settle: null, dead: false };
+    this.units.set(u.id, v);
+    return v;
+  }
+
+  /** Selection rings, HP bars, stance badges, planned orders, open plots. */
+  private drawMarks(): void {
+    const g = this.overlay;
+    g.clear();
+    const planning = this.phase === "plan";
+
+    for (const v of this.units.values()) {
+      const u = v.unit;
+      const m = v.marks;
+      m.clear();
+      const chosen = this.selected.includes(u.id) || this.inspected?.unit === u.id;
+      if (chosen) {
+        m.lineStyle(2, u.side === "a" ? 0x9cff8a : 0xff7a6a, 0.95).strokeEllipse(0, 2, 40, 16);
+      }
+      const max = maxHp(this.state, u.side, u.class);
+      if (chosen || u.hp < max) {
+        const top = -head(u) - 12;
+        m.fillStyle(0x1c2634, 0.85).fillRect(-16, top, 32, 5);
+        m.fillStyle(u.side === "a" ? 0x7ad35a : 0xe0533e).fillRect(-15, top + 1, Math.max(1, 30 * (u.hp / max)), 3);
+      }
+      if (u.stance === "fallBack" && u.class !== "pawn" && u.side === "a") {
+        // A small white flag: this unit falls back when hurt.
+        const fx = 14;
+        const fy = -head(u) - 2;
+        m.lineStyle(2, 0x3a2a1a).lineBetween(fx, fy, fx, fy + 16);
+        m.fillStyle(0xfdfaf0).fillTriangle(fx, fy, fx + 10, fy + 4, fx, fy + 8);
+      }
+    }
+
+    if (!planning) return;
+    // Open plots of the player's own, where a building could go.
+    for (const p of PLOTS) {
+      if (p.side !== "a") continue;
+      const b = this.state.buildings[p.id]!;
+      const picked = this.selectedPlot === p.id;
+      if (b.level > 0 || b.pending) {
+        if (picked) g.lineStyle(2, 0x9cff8a, 0.95).strokeRect(p.col * CELL, (p.row - 1) * CELL, p.w * CELL, (p.h + 1) * CELL);
+        continue;
+      }
+      g.lineStyle(2, picked ? 0x9cff8a : 0xfdfaf0, picked ? 0.95 : 0.55);
+      g.strokeRect(p.col * CELL + 4, p.row * CELL + 4, p.w * CELL - 8, p.h * CELL - 8);
+    }
+    // Where the selected units are going.
+    for (const id of this.selected) {
+      const u = this.state.units.find((x) => x.id === id);
+      if (!u) continue;
+      const from = cellXY(u.col, u.row);
+      const to = this.orderTarget(u.order);
+      if (!to) continue;
+      const tone = u.order.type === "move" ? 0x9cff8a : u.order.type === "gather" ? 0xffd66a : 0xff9c7a;
+      g.lineStyle(2, tone, 0.8).lineBetween(from.x, from.y, to.x, to.y);
+      g.fillStyle(tone, 0.9).fillTriangle(to.x, to.y - 18, to.x + 12, to.y - 13, to.x, to.y - 8);
+      g.lineStyle(2, tone, 0.9).lineBetween(to.x, to.y - 18, to.x, to.y);
+    }
+  }
+
+  private orderTarget(o: Order): { x: number; y: number } | null {
+    switch (o.type) {
+      case "move":
+      case "attackMove":
+        return cellXY(o.to.col, o.to.row);
+      case "attack": {
+        const t = this.state.units.find((u) => u.id === o.unit);
+        return t ? cellXY(t.col, t.row) : null;
+      }
+      case "attackBuilding": {
+        const p = plotById(o.plot);
+        return p ? plotBase(p) : null;
+      }
+      case "gather": {
+        const m = MINES.find((x) => x.id === o.mine);
+        return m ? cellXY(m.col, m.row) : null;
+      }
+      default:
+        return null;
+    }
+  }
+
+  private refresh(): void {
+    this.drawMarks();
+    this.hud?.refresh();
+  }
+
+  // --- input ---------------------------------------------------------------
+
+  private clearSelection(): void {
+    this.selected = [];
+    this.selectedPlot = null;
+    this.inspected = null;
+    this.mode = null;
+  }
+
+  /** What is under a tap: a unit first (its body stands above its tile),
+   *  then a building (its art stands above its footprint), a mine, ground. */
+  private hitTest(x: number, y: number): { unit?: WarUnit; plot?: Plot; mine?: string; cell: { col: number; row: number } } {
+    const cellAt = { col: Math.floor(x / CELL), row: Math.floor(y / CELL) };
+    let best: WarUnit | undefined;
+    let bestD = 34;
+    for (const v of this.units.values()) {
+      if (v.dead) continue;
+      const d = Math.hypot(x - v.root.x, y - (v.root.y - head(v.unit) / 2));
+      if (d < bestD) {
+        bestD = d;
+        best = v.unit;
+      }
+    }
+    if (best) return { unit: best, cell: cellAt };
+    const plot = PLOTS.find(
+      (p) =>
+        cellAt.col >= p.col &&
+        cellAt.col < p.col + p.w &&
+        cellAt.row >= p.row - (p.kind === "house" ? 1 : 2) &&
+        cellAt.row < p.row + p.h,
+    );
+    if (plot && (this.state.buildings[plot.id]!.level > 0 || this.state.buildings[plot.id]!.pending || plot.side === "a")) {
+      return { plot, cell: cellAt };
+    }
+    const mine = MINES.find((m) => Math.abs(m.col - cellAt.col) <= 0 && Math.abs(m.row - cellAt.row) <= 0);
+    if (mine) return { mine: mine.id, cell: cellAt };
+    return { cell: cellAt };
+  }
+
+  private tap(p: Phaser.Input.Pointer): void {
+    if (this.phase !== "plan") return;
+    const hit = this.hitTest(p.worldX, p.worldY);
+    const right = p.rightButtonReleased();
+    const shift = (p.event as MouseEvent | undefined)?.shiftKey ?? false;
+    const mine = (u?: WarUnit) => u?.side === "a";
+
+    if (!right && hit.unit && mine(hit.unit) && this.mode === null) {
+      this.selectedPlot = null;
+      this.inspected = null;
+      const id = hit.unit.id;
+      this.selected = shift
+        ? this.selected.includes(id)
+          ? this.selected.filter((x) => x !== id)
+          : [...this.selected, id]
+        : [id];
+      this.message = "";
+      this.refresh();
+      return;
+    }
+
+    if (this.selected.length > 0) {
+      this.order(hit);
+      return;
+    }
+
+    if (!right && hit.plot && hit.plot.side === "a") {
+      this.selectedPlot = hit.plot.id;
+      this.inspected = null;
+      this.message = "";
+      this.refresh();
+      return;
+    }
+    if (!right && (hit.unit || hit.plot)) {
+      this.inspected = hit.unit ? { unit: hit.unit.id } : { plot: hit.plot!.id };
+      this.selectedPlot = null;
+      this.refresh();
+      return;
+    }
+    this.clearSelection();
+    this.refresh();
+  }
+
+  /** The smart order for what was tapped, or the waiting command's. */
+  private order(hit: ReturnType<StrategicScene["hitTest"]>): void {
+    const units = this.state.units.filter((u) => this.selected.includes(u.id));
+    const pawnsOnly = units.every((u) => u.class === "pawn");
+    const ids = units.map((u) => u.id);
+    const mode = this.mode;
+    this.mode = null;
+
+    if (hit.unit && hit.unit.side === "b" && mode !== "move") {
+      const fighters = units.filter((u) => u.class !== "monk").map((u) => u.id);
+      if (fighters.length > 0) this.act({ type: "order", units: fighters, order: { type: "attack", unit: hit.unit.id } });
+      return;
+    }
+    if (hit.plot && hit.plot.side === "b" && this.state.buildings[hit.plot.id]!.level > 0 && mode !== "move") {
+      const fighters = units.filter((u) => u.class !== "monk").map((u) => u.id);
+      if (fighters.length > 0) this.act({ type: "order", units: fighters, order: { type: "attackBuilding", plot: hit.plot.id } });
+      return;
+    }
+    if (hit.mine || mode === "gather") {
+      const mineId = hit.mine ?? this.nearestMineWithRoom();
+      const pawns = units.filter((u) => u.class === "pawn").map((u) => u.id);
+      if (pawns.length > 0 && mineId) {
+        this.act({ type: "order", units: pawns, order: { type: "gather", mine: mineId } });
+        return;
+      }
+    }
+    const to = hit.cell;
+    if (!isOpen(to)) {
+      this.message = "Nobody can stand there.";
+      this.refresh();
+      return;
+    }
+    const type = mode ?? (pawnsOnly ? "move" : "attackMove");
+    this.act({ type: "order", units: ids, order: { type: type === "gather" ? "attackMove" : type, to } });
+  }
+
+  private nearestMineWithRoom(): string | undefined {
+    for (const id of ["mine-a", "mine-mid"]) {
+      const taken = this.state.units.filter((u) => u.side === "a" && u.order.type === "gather" && u.order.mine === id).length;
+      if (taken < WAR.pawnsPerMine) return id;
+    }
+    return undefined;
+  }
+
+  // --- the HUD's model -----------------------------------------------------
+
+  private model(): HudModel {
+    const s = this.state;
+    const base: HudModel = {
+      round: s.round,
+      gold: s.gold.a,
+      supply: [supplyUsed(s, "a"), supplyCap(s, "a")],
+      title: "",
+      detail: "",
+      message: this.message,
+      commands: [],
+      primary: null,
+      secondary: null,
+      report: null,
+      dots: s.units.map((u) => ({ col: u.col, row: u.row, side: u.side })),
+    };
+
+    if (this.phase === "battle") {
+      return {
+        ...base,
+        title: `Round ${s.round}: the battle`,
+        detail: "Both plans play out at once. Nothing can be ordered until it settles.",
+        primary: { label: `Speed ${this.speed}x`, tone: "blue", onClick: () => this.toggleSpeed() },
+        secondary: { label: "Skip", onClick: () => this.skip() },
+      };
+    }
+    if (this.phase === "report" || this.phase === "over") {
+      return { ...base, report: this.reportModel() };
+    }
+
+    const plan: HudModel = {
+      ...base,
+      primary: { label: "Fight!", tone: "red", onClick: () => this.fight() },
+      secondary: { label: "Army", onClick: () => this.selectArmy() },
+    };
+    if (this.selected.length > 0) return { ...plan, ...this.unitPanel() };
+    if (this.selectedPlot) return { ...plan, ...this.plotPanel(this.selectedPlot) };
+    if (this.inspected) return { ...plan, ...this.inspectPanel() };
+    return {
+      ...plan,
+      title: `Round ${s.round}: plan`,
+      detail: "Click a unit or a building. Right click or tap the map to give orders. Fight when ready.",
+      commands: [
+        { icon: ICON.attack, hint: "Select every fighter you have.", onClick: () => this.selectArmy() },
+        { icon: ICON.gold, hint: "Select every Pawn.", onClick: () => this.selectPawns() },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        { icon: "↺", hint: "Undo this round's whole plan.", onClick: () => this.resetPlan(), enabled: this.plan.length > 0 },
+      ],
+    };
+  }
+
+  private unitPanel(): Pick<HudModel, "title" | "detail" | "commands"> {
+    const units = this.state.units.filter((u) => this.selected.includes(u.id));
+    const counts = new Map<UnitClass, number>();
+    for (const u of units) counts.set(u.class, (counts.get(u.class) ?? 0) + 1);
+    const title =
+      units.length === 1
+        ? `${CLASS_NAME[units[0]!.class]}  ${units[0]!.hp}/${maxHp(this.state, "a", units[0]!.class)} HP`
+        : `${units.length} units: ${[...counts].map(([c, n]) => `${n} ${CLASS_NAME[c]}`).join(", ")}`;
+    const first = units[0];
+    const doing = first ? describeOrder(first.order) : "";
+    const pawns = units.some((u) => u.class === "pawn");
+    const fighters = units.filter((u) => u.class !== "pawn");
+    const allFallBack = fighters.length > 0 && fighters.every((u) => u.stance === "fallBack");
+    const ids = units.map((u) => u.id);
+    return {
+      title,
+      detail: `${units.length === 1 ? doing : "Tap the map to send them."}`,
+      commands: [
+        {
+          icon: ICON.attack,
+          hint: "Attack move: tap a tile. They fight anything they meet on the way, chasing up to 3 tiles.",
+          onClick: () => this.setMode("attackMove"),
+          active: this.mode === "attackMove",
+        },
+        {
+          icon: ICON.move,
+          hint: "Move: tap a tile. They walk there and ignore enemies, to retreat or slip past.",
+          onClick: () => this.setMode("move"),
+          active: this.mode === "move",
+        },
+        {
+          icon: ICON.hold,
+          hint: "Hold: stay on this tile and fight whatever comes in range. Never moves.",
+          onClick: () => this.act({ type: "order", units: ids, order: { type: "hold" } }),
+        },
+        {
+          icon: ICON.stop,
+          hint: "Stop: guard this tile, fighting enemies within 3 tiles, then come back.",
+          onClick: () => this.act({ type: "order", units: ids, order: { type: "stop" } }),
+        },
+        {
+          icon: ICON.gold,
+          hint: "Gather: Pawns dig at a mine, 2 gold a round each. Tap a mine, or press for the nearest with room.",
+          onClick: () => this.gatherNow(),
+          enabled: pawns,
+          active: this.mode === "gather",
+        },
+        {
+          icon: allFallBack ? "Fall" : "Firm",
+          hint: allFallBack
+            ? "Stance: Fall back. Below 50% HP they run home, where they heal. Press to stand firm."
+            : "Stance: Stand firm. They fight until they die. Press to fall back when hurt instead.",
+          onClick: () =>
+            this.act({ type: "stance", units: fighters.map((u) => u.id), stance: allFallBack ? "firm" : "fallBack" }),
+          enabled: fighters.length > 0,
+        },
+        null,
+        null,
+        { icon: "✕", hint: "Deselect.", onClick: () => (this.clearSelection(), this.refresh()) },
+      ],
+    };
+  }
+
+  private plotPanel(id: string): Pick<HudModel, "title" | "detail" | "commands"> {
+    const p = plotById(id)!;
+    const b = this.state.buildings[id]!;
+    const cls = trainsAt(p);
+    const name = NAME[p.kind];
+    const deselect: HudCommand = { icon: "✕", hint: "Deselect.", onClick: () => (this.clearSelection(), this.refresh()) };
+    if (b.level === 0 && !b.pending) {
+      const cost = WAR.buildCost[p.kind]!;
+      return {
+        title: `${name}: empty plot`,
+        detail: p.kind === "house" ? `A house adds ${WAR.supply.perHouse} supply.` : `Unlocks the ${cls ? CLASS_NAME[cls] : ""}. Finished after this round's battle.`,
+        commands: [
+          { icon: ICON.build, hint: `Build a ${name.toLowerCase()} for ${cost} gold. It stands after this round's battle.`, onClick: () => this.act({ type: "build", plot: id }), enabled: this.state.gold.a >= cost },
+          null, null, null, null, null, null, null, deselect,
+        ],
+      };
+    }
+    if (b.pending === "build") {
+      return { title: `${name}: being built`, detail: "It stands after this round's battle.", commands: [null, null, null, null, null, null, null, null, deselect] };
+    }
+    const left = WAR.trainPerRound[b.level]! - b.trained;
+    const commands: (HudCommand | null)[] = [];
+    if (cls) {
+      const cost = WAR.unitCost[cls];
+      commands.push({
+        icon: CLASS_NAME[cls].slice(0, 4),
+        hint: `Train a ${CLASS_NAME[cls]} for ${cost} gold. ${left} more this round.`,
+        onClick: () => this.act({ type: "train", plot: id }),
+        enabled: left > 0 && this.state.gold.a >= cost,
+      });
+    }
+    if (cls && p.kind !== "castle") {
+      commands.push({
+        icon: "Lv2",
+        hint:
+          b.level >= WAR.maxLevel
+            ? "Already at its highest level."
+            : b.pending === "upgrade"
+              ? "Upgrading: done after this round's battle."
+              : `Upgrade for ${WAR.upgradeCost} gold: ${upgradeText(p.kind)}, and trains 3 a round.`,
+        onClick: () => this.act({ type: "upgrade", plot: id }),
+        enabled: b.level < WAR.maxLevel && !b.pending && this.state.gold.a >= WAR.upgradeCost,
+      });
+    }
+    while (commands.length < 8) commands.push(null);
+    commands.push(deselect);
+    const hp = `${b.hp}/${p.kind === "castle" ? WAR.buildingHp.castle : WAR.buildingHp.other} HP`;
+    return {
+      title: `${name}, level ${b.level}  ${hp}`,
+      detail: cls
+        ? `Trains the ${CLASS_NAME[cls]}: ${left} more this round.${b.pending === "upgrade" ? " Upgrading." : ""}`
+        : p.kind === "house"
+          ? `Adds ${WAR.supply.perHouse} supply.`
+          : "",
+      commands,
+    };
+  }
+
+  private inspectPanel(): Pick<HudModel, "title" | "detail" | "commands"> {
+    const i = this.inspected!;
+    const none = [null, null, null, null, null, null, null, null, { icon: "✕", hint: "Close.", onClick: () => (this.clearSelection(), this.refresh()) }];
+    if (i.unit !== undefined) {
+      const u = this.state.units.find((x) => x.id === i.unit);
+      if (u) {
+        return {
+          title: `Enemy ${CLASS_NAME[u.class]}  ${u.hp}/${maxHp(this.state, u.side, u.class)} HP`,
+          detail: "Select your own units, then tap this one to attack it.",
+          commands: none,
+        };
+      }
+    }
+    const p = i.plot ? plotById(i.plot) : undefined;
+    if (p) {
+      const b = this.state.buildings[p.id]!;
+      return { title: `Enemy ${NAME[p.kind]}, level ${b.level}  ${b.hp} HP`, detail: "Select your fighters, then tap it to attack it.", commands: none };
+    }
+    return { title: "", detail: "", commands: none };
+  }
+
+  private reportModel(): NonNullable<HudModel["report"]> {
+    const out = this.outcome!;
+    const r = out.report;
+    const list = (xs: UnitClass[]) => {
+      if (xs.length === 0) return "none";
+      const c = new Map<UnitClass, number>();
+      for (const x of xs) c.set(x, (c.get(x) ?? 0) + 1);
+      return [...c].map(([k, n]) => `${n} ${CLASS_NAME[k]}`).join(", ");
+    };
+    const place = (id: string) => {
+      const p = plotById(id)!;
+      return `${p.side === "a" ? "your" : "their"} ${NAME[p.kind].toLowerCase()}`;
+    };
+    const lines = [
+      `The battle lasted ${r.seconds.toFixed(1)} s${r.settled ? "" : ", cut off: it carries on next round"}.`,
+      `You lost: ${list(r.losses.a)}.   They lost: ${list(r.losses.b)}.`,
+    ];
+    const mine = r.fellBack.filter((f) => f.side === "a");
+    if (mine.length > 0) lines.push(`Fell back: ${mine.map((f) => `${CLASS_NAME[f.class]} at ${f.hpPercent}%`).join(", ")}.`);
+    if (r.destroyed.length > 0) lines.push(`Destroyed: ${r.destroyed.map(place).join(", ")}.`);
+    const built = [...r.built, ...r.upgraded].filter((id) => id.startsWith("a-"));
+    if (built.length > 0) lines.push(`Finished: ${built.map(place).join(", ")}.`);
+    if (r.greying > 0) lines.push(`The Greying takes ${r.greying} HP from each main hall.`);
+
+    const end = out.end;
+    if (end.winner) {
+      const title = end.winner === "a" ? "The land is reclaimed" : end.winner === "b" ? "THE GREY TAKES YOU" : "Both halls fall";
+      return {
+        title,
+        lines: [...lines, `The war ended in round ${r.round}.`],
+        button: "Play again",
+        onClick: () => this.startMatch(),
+        also: { label: "Menu", onClick: () => this.toMenu() },
+      };
+    }
+    const inc = end.income.a;
+    lines.push(`Round ${end.round} income: ${inc.base} gold, plus ${inc.mines} from the mines.`);
+    return { title: `Round ${r.round}`, lines, button: "Next round", onClick: () => this.nextRound() };
+  }
+
+  private setMode(mode: "move" | "attackMove" | "gather"): void {
+    this.mode = this.mode === mode ? null : mode;
+    this.message = this.mode ? "Now tap where on the map." : "";
+    this.refresh();
+  }
+
+  private gatherNow(): void {
+    const mineId = this.nearestMineWithRoom();
+    const pawns = this.state.units.filter((u) => this.selected.includes(u.id) && u.class === "pawn").map((u) => u.id);
+    if (!mineId) {
+      this.message = "Every mine you can reach is full.";
+      this.refresh();
+      return;
+    }
+    this.act({ type: "order", units: pawns, order: { type: "gather", mine: mineId } });
+  }
+
+  private selectArmy(): void {
+    this.clearSelection();
+    this.selected = this.state.units.filter((u) => u.side === "a" && u.class !== "pawn").map((u) => u.id);
+    this.message = this.selected.length === 0 ? "No army yet: train one at the barracks." : "";
+    this.refresh();
+  }
+
+  private selectPawns(): void {
+    this.clearSelection();
+    this.selected = this.state.units.filter((u) => u.side === "a" && u.class === "pawn").map((u) => u.id);
+    this.refresh();
+  }
+
+  private toggleSpeed(): void {
+    this.speed = this.speed === 1 ? 2 : 1;
+    this.hud.refresh();
+  }
+
+  // --- battle playback -----------------------------------------------------
+
+  private playEvents(delta: number): void {
+    const out = this.outcome;
+    if (!out || this.phase !== "battle") return;
+    this.clock += delta * this.speed;
+    while (this.cursor < out.events.length && out.events[this.cursor]!.t * TICK_MS <= this.clock) {
+      this.play(out.events[this.cursor]!);
+      this.cursor += 1;
+    }
+    if (this.cursor >= out.events.length && this.clock >= out.ticks * TICK_MS + 900) this.finishBattle();
+  }
+
+  private play(e: WarEvent): void {
+    switch (e.type) {
+      case "move":
+        return this.onMove(e.unit, e.col, e.row);
+      case "attack":
+        return this.onAttack(e.unit, e.target, e.damage, e.hpAfter);
+      case "hitBuilding":
+        return this.onHitBuilding(e.unit, e.plot, e.damage, e.hpAfter);
+      case "heal":
+        return this.onHeal(e.unit, e.target, e.amount, e.hpAfter);
+      case "fallBack": {
+        const v = this.units.get(e.unit);
+        if (v && !v.dead) {
+          v.unit = { ...v.unit, stance: "fallBack" };
+          floatText(this, v.root.x, v.root.y - head(v.unit) - 22, "Falls back", "#fdfaf0", this.speed);
+        }
+        return;
+      }
+      case "death":
+        return this.onDeath(e.unit);
+      case "destroyed":
+        return this.onDestroyed(e.plot);
+    }
+  }
+
+  private onMove(id: number, col: number, row: number): void {
+    const v = this.units.get(id);
+    if (!v || v.dead) return;
+    const { x, y } = cellXY(col, row);
+    const chained = v.settle !== null;
+    v.settle?.remove();
+    v.settle = null;
+    playPose(v.sprite, v.unit.side, v.unit.class, "run");
+    if (Math.abs(x - v.root.x) > 0.5) v.sprite.setFlipX(x < v.root.x);
+    v.unit = { ...v.unit, col, row };
+    this.tweens.killTweensOf(v.root);
+    this.tweens.add({
+      targets: v.root,
+      x,
+      y,
+      duration: STEP_MS / this.speed,
+      ease: chained ? "Linear" : "Sine.easeIn",
+      onUpdate: () => v.root.setDepth(DEPTH.unit + v.root.y),
+      onComplete: () => {
+        v.settle = this.time.delayedCall((1000 - STEP_MS + 60) / this.speed, () => {
+          v.settle = null;
+          if (!v.dead) playPose(v.sprite, v.unit.side, v.unit.class, "idle");
+        });
+      },
+    });
+  }
+
+  private face(v: UnitView, x: number): void {
+    const dx = x - v.root.x;
+    if (Math.abs(dx) > 0.5) v.sprite.setFlipX(dx < 0);
+  }
+
+  private strikePose(v: UnitView): void {
+    v.settle?.remove();
+    playPose(v.sprite, v.unit.side, v.unit.class, "attack");
+    v.settle = this.time.delayedCall(700 / this.speed, () => {
+      v.settle = null;
+      if (!v.dead) playPose(v.sprite, v.unit.side, v.unit.class, "idle");
+    });
+  }
+
+  /** When the blow lands: the swing's reach for melee, the arrow's arrival for archers. */
+  private impactDelay(attacker: UnitView): number {
+    return (attacker.unit.class === "archer" ? ARROW_RELEASE_MS + FLIGHT_MS : IMPACT_MS) / this.speed;
+  }
+
+  private onAttack(by: number, target: number, damage: number, hpAfter: number): void {
+    const a = this.units.get(by);
+    const t = this.units.get(target);
+    if (!a || !t) return;
+    if (!a.dead) {
+      this.face(a, t.root.x);
+      this.strikePose(a);
+      if (a.unit.class === "archer") {
+        this.time.delayedCall(ARROW_RELEASE_MS / this.speed, () => {
+          if (a.root.active && t.root.active) {
+            projectile(this, a.unit.side, { x: a.root.x, y: a.root.y - 46 }, { x: t.root.x, y: t.root.y - 40 }, this.speed);
+          }
+        });
+      }
+    }
+    this.time.delayedCall(this.impactDelay(a), () => {
+      if (!t.root.active) return;
+      t.unit = { ...t.unit, hp: hpAfter };
+      flash(this, t.sprite, this.speed);
+      floatText(this, t.root.x, t.root.y - head(t.unit) - 20, `-${damage}`, "#ff8f7a", this.speed);
+      this.drawMarks();
+    });
+  }
+
+  private onHitBuilding(by: number, plotId: string, damage: number, hpAfter: number): void {
+    const a = this.units.get(by);
+    const p = plotById(plotId)!;
+    const img = this.buildings.get(plotId);
+    const base = plotBase(p);
+    if (a && !a.dead) {
+      this.face(a, base.x);
+      this.strikePose(a);
+      if (a.unit.class === "archer") {
+        this.time.delayedCall(ARROW_RELEASE_MS / this.speed, () => {
+          if (a.root.active) projectile(this, a.unit.side, { x: a.root.x, y: a.root.y - 46 }, { x: base.x, y: base.y - 60 }, this.speed);
+        });
+      }
+    }
+    this.time.delayedCall(a ? this.impactDelay(a) : IMPACT_MS, () => {
+      this.buildingHp.set(plotId, hpAfter);
+      if (img?.active) flash(this, img, this.speed);
+      floatText(this, base.x, base.y - 110, `-${damage}`, "#ff8f7a", this.speed);
+    });
+  }
+
+  private onHeal(by: number, target: number, amount: number, hpAfter: number): void {
+    const c = this.units.get(by);
+    const t = this.units.get(target);
+    if (!t) return;
+    if (c && !c.dead) {
+      this.face(c, t.root.x);
+      this.strikePose(c);
+    }
+    this.time.delayedCall(IMPACT_MS / this.speed, () => {
+      if (!t.root.active) return;
+      t.unit = { ...t.unit, hp: hpAfter };
+      floatText(this, t.root.x, t.root.y - head(t.unit) - 20, `+${amount}`, "#a9e88a", this.speed);
+      this.drawMarks();
+    });
+  }
+
+  private onDeath(id: number): void {
+    const v = this.units.get(id);
+    if (!v || v.dead) return;
+    v.dead = true;
+    // After the killing blow has shown.
+    this.time.delayedCall((ARROW_RELEASE_MS + FLIGHT_MS) / this.speed, () => {
+      v.settle?.remove();
+      this.tweens.killTweensOf(v.root);
+      v.marks.clear();
+      this.units.delete(id);
+      deathFx(this, v.root, v.sprite, this.speed);
+    });
+  }
+
+  private onDestroyed(plotId: string): void {
+    const img = this.buildings.get(plotId);
+    if (!img) return;
+    this.buildings.delete(plotId);
+    this.time.delayedCall(IMPACT_MS / this.speed, () => {
+      img.setTint(0x6f6f6f);
+      const p = plotById(plotId)!;
+      const base = plotBase(p);
+      this.add.sprite(base.x, base.y, "dust").setOrigin(0.5, 0.8).setScale(2).setDepth(DEPTH.fx).play("dust_anim");
+      this.tweens.add({ targets: img, alpha: 0, duration: 900 / this.speed, onComplete: () => img.destroy() });
+    });
+  }
+
+  // --- camera --------------------------------------------------------------
 
   /** One step in or out. Zoom scales around the view's centre, so the
    *  spot being looked at stays put; update() re-clamps as it animates. */
@@ -262,7 +1145,7 @@ export class StrategicScene extends Phaser.Scene {
   /** Screen-edge pan, Warcraft-style, at the same on-screen speed at any
    *  zoom. The clamp runs every frame so a zoom tween stays in bounds. */
   update(_time: number, delta: number): void {
-    this.updateWalkers(delta);
+    this.playEvents(delta);
     const p = this.input.activePointer;
     const cam = this.cameras.main;
     // Pointer coordinates are canvas pixels, baseZoom per HUD unit.
@@ -273,36 +1156,7 @@ export class StrategicScene extends Phaser.Scene {
     this.setScroll(cam.scrollX + dx * step, cam.scrollY + dy * step);
   }
 
-  /** The first click drops the pawn there; after that it walks the way. */
-  private moveFlag(col: number, row: number): void {
-    if (!this.flagPawn) {
-      this.flagPawn = this.addWalker("a", "pawn", { col, row }, null, FLAG_SPEED, 0.5);
-      return;
-    }
-    this.sendTo(this.flagPawn, { col, row });
-  }
-
-  /** Route a walker over ground and ramps only. From the cell it is already
-   *  heading into, so a new order never cuts across mid-step. */
-  private sendTo(w: Walker, to: Cell): boolean {
-    const heading = w.path[0];
-    const route = findPath(heading ? this.cellAt(heading.x, heading.y) : this.cellAt(w.root.x, w.root.y), to);
-    if (!route) return false;
-    w.path = [...(heading ? [heading] : []), ...route.map((c) => this.cellXY(c.col, c.row))];
-    return true;
-  }
-
-  private cellAt(x: number, y: number): Cell {
-    return { col: Math.floor(x / CELL), row: Math.floor(y / CELL) };
-  }
-
-
-  private cellXY(col: number, row: number): { x: number; y: number } {
-    return {
-      x: STRAT.x0 + col * CELL + CELL / 2,
-      y: STRAT.y0 + row * CELL + CELL / 2,
-    };
-  }
+  // --- the island ----------------------------------------------------------
 
   /** Foam under the shore, ground everywhere on land, then plateau tops,
    *  cliffs and slopes over it: the pack's own layer order. */
@@ -374,8 +1228,8 @@ export class StrategicScene extends Phaser.Scene {
     }
   }
 
-  /** Lumber lines along the coasts, gold by each base and one contested in
-   *  the lake, sheep on the lowland and rocks in the shallows. */
+  /** Lumber lines along the coasts, gold where the engine's mines are, sheep
+   *  on the lowland and rocks in the shallows. */
   private buildScenery(): void {
     const put = (kind: "tree" | "bush" | "rock" | "waterRock", spots: [number, number][]): Phaser.GameObjects.Sprite[] =>
       spots.map(([c, r], i) => addDecor(this, kind, c * CELL, r * CELL, 1, `strat-${kind}-${i}`));
@@ -392,11 +1246,10 @@ export class StrategicScene extends Phaser.Scene {
       [7.5, -0.6], [20.4, -1.1], [29.2, -0.4],
     ]).forEach((s) => s.setDepth(DEPTH.foam));
 
-    for (const [c, r] of [[15.5, 3.8], [16.6, 14.8], [20.0, 9.8]] as const) {
-      this.add
-        .image(c * CELL, r * CELL, "goldMine")
-        .setOrigin(0.5, 0.78)
-        .setDepth(DEPTH.decorBehind + (r * CELL) / 1000);
+    for (const m of MINES) {
+      const x = (m.col + 0.5) * CELL;
+      const y = (m.row + 0.8) * CELL;
+      this.add.image(x, y, "goldMine").setOrigin(0.5, 0.78).setDepth(DEPTH.decorBehind + y / 1000);
     }
     for (const [c, r] of [[3.3, 7.3], [12.4, 9.4], [25.4, 10.6], [27.6, 11.4]] as const) {
       const sheep = this.add
@@ -408,79 +1261,40 @@ export class StrategicScene extends Phaser.Scene {
       if (sheep.anims.currentAnim) sheep.anims.setProgress(Math.random());
     }
   }
-  /** The garrison: one of every class per hall, each idling or ambling
-   *  around its home cell. */
-  private buildGarrison(): void {
-    for (const g of GARRISON) {
-      this.addWalker(g.side, g.cls, g.home, g.home, WANDER_SPEED, g.cls === "lancer" ? 0.8 : 0.62);
-    }
-  }
+}
 
-  private addWalker(
-    side: "a" | "b",
-    cls: UnitClass,
-    at: Cell,
-    home: Cell | null,
-    speed: number,
-    shadowScale: number,
-  ): Walker {
-    const { x, y } = this.cellXY(at.col, at.row);
-    // Children ride at local origin: a container adds its own position,
-    // so world coords on the children would double the offset and throw
-    // every troop off the map.
-    const shadow = addShadow(this, 0, 0, shadowScale);
-    const sprite = this.add.sprite(0, 0, unitKey(side, cls, "idle"));
-    playPose(sprite, side, cls, "idle");
-    const root = this.add.container(x, y, [shadow, sprite]).setDepth(DEPTH.unit + y);
-    const w: Walker = { side, cls, home, speed, sprite, root, path: [], pauseMs: 0 };
-    this.walkers.push(w);
-    return w;
+function describeOrder(o: Order): string {
+  switch (o.type) {
+    case "attackMove":
+      return "Attack moving: fights whatever it meets on the way.";
+    case "move":
+      return "Moving: ignores enemies until it arrives.";
+    case "attack":
+      return "Attacking a chosen enemy.";
+    case "attackBuilding":
+      return "Attacking a building.";
+    case "hold":
+      return "Holding its tile.";
+    case "gather":
+      return "Digging gold at a mine.";
+    case "stop":
+      return "Guarding its tile.";
   }
+}
 
-  /** Walk each path a cell centre at a time: run anim while moving, idle
-   *  while paused, the flip follows the direction of travel. A wanderer
-   *  with nowhere to go picks a cell near home it can reach in a few steps. */
-  private updateWalkers(delta: number): void {
-    for (const w of this.walkers) {
-      const next = w.path[0];
-      if (next) {
-        const dx = next.x - w.root.x;
-        const dy = next.y - w.root.y;
-        const dist = Math.hypot(dx, dy);
-        const step = (w.speed * delta) / 1000;
-        if (dist <= step) {
-          w.root.setPosition(next.x, next.y);
-          w.path.shift();
-        } else {
-          w.root.setPosition(w.root.x + (dx / dist) * step, w.root.y + (dy / dist) * step);
-          if (dx !== 0) w.sprite.setFlipX(dx < 0 !== (w.side === "b"));
-        }
-        w.root.setDepth(DEPTH.unit + w.root.y);
-        if (w.path.length > 0) {
-          playPose(w.sprite, w.side, w.cls, "run");
-        } else {
-          playPose(w.sprite, w.side, w.cls, "idle");
-          w.pauseMs = WANDER_PAUSE[0] + Math.random() * (WANDER_PAUSE[1] - WANDER_PAUSE[0]);
-        }
-        continue;
-      }
-      if (!w.home) continue;
-      w.pauseMs -= delta;
-      if (w.pauseMs > 0) continue;
-      for (let tries = 0; tries < 8 && w.path.length === 0; tries++) {
-        const to = {
-          col: w.home.col + Math.floor(Math.random() * 5) - 2,
-          row: w.home.row + Math.floor(Math.random() * 5) - 2,
-        };
-        const route = findPath(this.cellAt(w.root.x, w.root.y), to);
-        if (route && route.length > 0 && route.length <= WANDER_STEPS) {
-          w.path = route.map((c) => this.cellXY(c.col, c.row));
-        }
-      }
-      if (w.path.length === 0) w.pauseMs = WANDER_PAUSE[0];
-    }
+function upgradeText(kind: BuildingKind): string {
+  switch (kind) {
+    case "barracks":
+      return "Warriors +20% HP";
+    case "archery":
+      return "Archers +1 range";
+    case "tower":
+      return "Lancers +20% HP";
+    case "monastery":
+      return "Monks heal 30% more";
+    default:
+      return "";
   }
-
 }
 
 /** What the page hands the map. Nothing for now but the way back. */
