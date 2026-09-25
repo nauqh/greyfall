@@ -89,16 +89,16 @@ As in Warcraft, the full roster is always available. Strategy comes from economy
 
 ### Orders
 
-The order decides where a unit goes and how far it will go after an enemy.
+The player gives one kind of order, as simple as "go there":
 
 | Order | Who | Behaviour |
 | --- | --- | --- |
-| Attack move | Fighters | Walk to a tile. Fight any enemy that comes in range, chasing up to 3 tiles off the path, then carry on. The default order. |
-| Move | All | Walk to a tile, ignoring enemies. Used to retreat or to slip past. |
-| Attack | Fighters | Walk to a chosen unit or building and attack it, following it anywhere. |
-| Hold | Fighters | Stay on the tile and fight whatever comes in range. Never moves. A Hold on a ramp moves to the nearest tile beside it, so no unit blocks a ramp. |
+| Move | Fighters | Walk to a tile. Fight any enemy met on the way, chasing up to 3 tiles off the path, then carry on. On arrival, guard that spot: fight enemies within 3 tiles, then go back to it. |
+| Move onto an enemy | Fighters | Clicking an enemy unit or building instead sends them straight for it, following it anywhere. |
+| Move | Pawn | Walk to a tile without stopping to fight. |
 | Gather | Pawn | Walk to a gold mine and dig there. Income is paid per round, so nothing is carried home. |
-| Stop | All | Clear the order. The unit guards its tile: it fights enemies within 3 tiles, then goes back. |
+
+The engine also has Hold (stay on a tile, never move; a Hold on a ramp steps beside it so no unit blocks a ramp) and a Move that ignores enemies. Only the AI uses Hold, for archers on high ground; the player has neither, since two kinds of move confused more than they helped.
 
 Orders go to one unit or a selected group. A group order sends each unit along its own path to tiles around the target.
 
@@ -122,7 +122,7 @@ Orders already set how far a unit chases, so the stance answers the one question
 - The art cannot show the difference. Units have only idle, run and attack poses, plus guard for some; nothing looks "aggressive" or "defensive", so a player watching the battle could not tell them apart.
 - Falling back is the one behaviour that reads at a glance: a unit turns and runs home. It is also the one choice orders cannot express, because it depends on HP during the fight.
 
-This keeps the command card to one grid of 3x3: Attack move, Move, Attack, Hold, Stop, Gather, the stance toggle, Build, and one slot spare. Every button carries a text label: the pack has only 12 generic icons (sword, shield, green arrow, orange back arrow, red cross, gold coin and a few more), so Attack and Attack move would otherwise share the sword, and Build has no icon.
+This keeps a unit's command card to a large Move, Gather and the stance toggle; a building's card is a large train button with the troop's portrait, and Upgrade. Every button carries a text label: the pack has only 12 generic icons (sword, shield, green arrow, orange back arrow, red cross, gold coin and a few more), and Build has no icon.
 
 ### The island
 
@@ -135,7 +135,7 @@ This keeps the command card to one grid of 3x3: Attack move, Move, Attack, Hold,
 
 ### Starting position
 
-Each side starts on its home plateau with a castle, a barracks, 3 Pawns gathering at the home mine and 10 gold, so 3 of 6 supply is used. Round 1's income arrives on top, so the first plan has 26 gold.
+Each side starts on its home plateau with a castle, a barracks, 3 Pawns gathering at the home mine and 10 gold, so 3 of 7 supply is used. Round 1's income arrives on top, so the first plan has 26 gold.
 
 ### Economy
 
@@ -146,7 +146,7 @@ Each side starts on its home plateau with a castle, a barracks, 3 Pawns gatherin
 
 ### Supply
 
-- Starting supply cap: 6. Every unit and Pawn uses 1 supply; a unit that dies frees its supply.
+- Starting supply cap: 7, so the three Pawns leave room for an army of four. Every unit and Pawn uses 1 supply; a unit that dies frees its supply.
 - A house costs 4 gold and adds 3 supply. Hard cap: 15 supply.
 
 ### Buildings and upgrades
@@ -240,6 +240,7 @@ Most matches should end by round 8 to 12 through real attacks. The Greying only 
 The AI plans each round with the same actions and rules as the player, and never sees the player's orders. It plays the monster host.
 
 - Economy first: its 3 Pawns dig at the home mine, and it builds houses as supply runs out.
+- Never marches on the player before round 3, so a new player gets two rounds to build.
 - Builds and upgrades toward a mixed army, with some seeded variation so no two matches open the same way.
 - Attacks when its army's value is clearly larger than the player's visible army, defends when enemies step onto its plateau, and contests the middle mine when ahead or when its home mine runs low. It uses Fall back for its wounded front line and Hold orders for archers on high ground.
 
@@ -384,7 +385,7 @@ Match procedures are protected: they require the session created at sign-in.
 
 ## MVP scope and plan
 
-The battle prototype is done and stays playable (Solo and Duel on their own battle board) until the war on the map replaces it; then it is removed. The strategic map at `/map` shows the island and lets troops walk it, with no game behind it yet. Phase 2 turns it into the war: new code on the strategic map, reusing the engine's balance table, the sprites, terrain and UI, with the battle board's hit and death effects adapted for it. Until the monster buildings land in Phase 3, the monster side stands in red knight buildings.
+The battle prototype is done and stays playable (Solo and Duel on their own battle board) until the war on the map replaces it; then it is removed. The war on the map is playable solo at `/map`: plan, fight, read the report, until a main hall falls. It is new code on the strategic map, reusing the engine's balance table, the sprites, terrain and UI, with the battle board's hit and death effects adapted for it. The Greying already closes in there, as the safety net that ends every match. Until the monster buildings land in Phase 3, the monster side stands in red knight buildings.
 
 **Phase 2: Solo war on the island, about 5 weeks**
 
@@ -393,7 +394,7 @@ The battle prototype is done and stays playable (Solo and Duel on their own batt
 - The stance toggle lands last in Phase 2, once the core loop plays; until then every fighter stands firm.
 - Blue knights against the monster host, and a simple AI. If time runs short, the AI starts as a stub that builds a fixed army and attacks from round 6.
 
-Out of Phase 2: the colour choice, monster buildings, the Greying, duels, Discord, persistence.
+Out of Phase 2: the colour choice, monster buildings, duels, Discord, persistence.
 
 **Later, after launch**
 
@@ -409,9 +410,9 @@ These were cut from the MVP to keep it simple, and because the art only partly s
 | Phase | Weeks | Milestone | Done when |
 | --- | --- | --- | --- |
 | 1 | Done | Battle prototype | Army picker, battle board, playback, duel rooms |
-| 2 | 1-2 | Engine war core | Island grid and pathing, orders and stances, economy, `battle()` and the AI work headless; a CLI prints a round; determinism and invariant tests pass |
-| 2 | 3-5 | War on the map | Plan and battle on the island: train, build, upgrade, order, pick stances, watch; main hall win and loss; solo against the AI in the browser |
-| 3 | 6-8 | Full game | Colour choice, monster buildings, the Greying, duels on the island; tRPC server and Postgres; old battle board removed |
+| 2 | Done | Engine war core | Island grid and pathing, orders and stances, economy, `battle()` and the AI work headless; a CLI prints a round; determinism and invariant tests pass |
+| 2 | Done | War on the map | Plan and battle on the island: train, build, upgrade, order, pick stances, watch; main hall win and loss; solo against the AI in the browser |
+| 3 | 6-8 | Full game | Colour choice, monster buildings, duels on the island; tRPC server and Postgres; old battle board removed |
 | 4 | 9-11 | Discord and launch | Activity with Discord sign-in, replay page, leaderboard, polish, sound, production deploy |
 
 **Success metrics**
