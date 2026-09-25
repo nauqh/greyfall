@@ -52,10 +52,16 @@ export const STEPS: readonly Step[] = [
     focus: "fight",
   },
   {
-    text: "That is a round: plan, fight, read the report. Build houses for supply and new buildings for new troops. Break their castle before the Greying eats both!",
-    button: "Got it",
+    text: "That is a round: plan, fight, read the report. Break their castle before the Greying eats both!",
+    button: "Go on",
     focus: null,
     when: (c) => c.phase === "plan" && c.state.round >= 2,
+  },
+  {
+    text: "More troops come from more buildings. Click an empty plot on your plateau and build: archery range for Archers, tower for Lancers, monastery for Monks. Houses add supply.",
+    button: "Got it",
+    focus: null,
+    when: (c) => c.phase === "plan",
   },
 ];
 

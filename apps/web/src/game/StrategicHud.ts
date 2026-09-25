@@ -50,8 +50,6 @@ export interface HudCommand {
   hint: string;
   onClick: () => void;
   enabled?: boolean;
-  /** Lit, for a mode waiting on a click on the map. */
-  active?: boolean;
 }
 
 export interface HudModel {
@@ -71,7 +69,7 @@ export interface HudModel {
   message: string;
   commands: (HudCommand | null)[];
   /** The sword is the round's one big action; the others are plain buttons. */
-  primary: { label: string; style: "sword" | "blue"; onClick: () => void } | null;
+  primary: { label: string; onClick: () => void } | null;
   secondary: { label: string; onClick: () => void }[];
   /** The round report or the end of the match, over everything. */
   report: { title: string; tone: "blue" | "red"; lines: string[]; button: string; onClick: () => void; also?: { label: string; onClick: () => void } } | null;
@@ -109,6 +107,8 @@ interface BubblePart {
 /** The paper art's fill, for the speech bubble's tail. */
 const PAPER = 0xeee1c6;
 const BUBBLE_W = 300;
+/** The first top-left button's centre, right of the menu button. */
+const SECONDARY_X = 128;
 
 /** Portraits: the blue knights' five faces, and each monster's own. */
 const KNIGHT_FACE: Record<UnitClass, number> = { warrior: 1, lancer: 2, archer: 3, monk: 4, pawn: 5 };
@@ -173,7 +173,6 @@ export class StrategicHud extends Phaser.Scene {
     this.load.image("hudPaper", packUrl("UI Elements/UI Elements/Banners/Banner_Slots.png"));
     this.load.image("sqBlue", packUrl("UI Elements/UI Elements/Buttons/SmallBlueSquareButton_Regular.png"));
     this.load.image("sqBlueDown", packUrl("UI Elements/UI Elements/Buttons/SmallBlueSquareButton_Pressed.png"));
-    this.load.image("sqRed", packUrl("UI Elements/UI Elements/Buttons/SmallRedSquareButton_Regular.png"));
     this.load.image("swords", packUrl("UI Elements/UI Elements/Swords/Swords.png"));
     this.load.image("bigRibbons", packUrl("UI Elements/UI Elements/Ribbons/BigRibbons.png"));
     for (const n of new Set(Object.values(ICON))) this.load.image(iconKey(n), iconUrl(n));
@@ -212,7 +211,7 @@ export class StrategicHud extends Phaser.Scene {
       const t = this.textures.get(key);
       if (!t.has(name)) t.add(name, 0, x, y, w, h);
     };
-    for (const k of ["sqBlue", "sqBlueDown", "sqRed"]) add(k, "ink", SQUARE.x, SQUARE.y, SQUARE.w, SQUARE.h);
+    for (const k of ["sqBlue", "sqBlueDown"]) add(k, "ink", SQUARE.x, SQUARE.y, SQUARE.w, SQUARE.h);
     for (const [tone, row] of Object.entries(SWORD_ROW)) {
       const y = row * SWORD.rowH;
       const b = SWORD.blade;
@@ -367,13 +366,13 @@ export class StrategicHud extends Phaser.Scene {
     // Resources on a strip of paper in the corner.
     const items: [string | null, string][] = [
       [ICON.gold, String(m.gold)],
-      [ICON.meat, `${m.supply[0]}/${m.supply[1]}`],
+      [ICON.meat, `${m.supply[0]}/${m.supply[1]} supply`],
       [null, m.greyIn > 0 ? `Greying in ${m.greyIn}` : "The Greying"],
     ];
-    const stripW = 330;
+    const stripW = 390;
     const x0 = w - 12 - stripW;
     this.keep(panel(this, "paper", x0 + stripW / 2, 34, stripW * 2, 104).setScale(0.5).setInteractive({ cursor: ARROW }));
-    const at = [x0 + 30, x0 + 118, x0 + 206];
+    const at = [x0 + 30, x0 + 112, x0 + 262];
     items.forEach(([icon, value], i) => {
       const x = at[i]!;
       if (icon) this.keep(this.add.image(x, 33, iconKey(icon)).setScale(0.48));
@@ -486,7 +485,7 @@ export class StrategicHud extends Phaser.Scene {
 
   private commandButton(x: number, y: number, cmd: HudCommand, detail: string, size = BTN): Phaser.GameObjects.Container {
     const on = cmd.enabled !== false;
-    const face = this.add.image(0, 0, cmd.active ? "sqRed" : "sqBlue", "ink").setDisplaySize(size, size * (SQUARE.h / SQUARE.w));
+    const face = this.add.image(0, 0, "sqBlue", "ink").setDisplaySize(size, size * (SQUARE.h / SQUARE.w));
     const parts: Phaser.GameObjects.GameObject[] = [face];
     if (cmd.portrait && this.textures.exists(cmd.portrait)) {
       // A troop: its face large enough to read, then its name and price.
@@ -517,7 +516,7 @@ export class StrategicHud extends Phaser.Scene {
       .on("pointerdown", () => {
         if (!on) return;
         box.setY(y + 2);
-        if (!cmd.active) face.setTexture("sqBlueDown", "ink").setDisplaySize(size, size * (SQUARE.h / SQUARE.w));
+        face.setTexture("sqBlueDown", "ink").setDisplaySize(size, size * (SQUARE.h / SQUARE.w));
       })
       .on("pointerup", () => {
         box.setY(y);
@@ -530,14 +529,11 @@ export class StrategicHud extends Phaser.Scene {
     const y = this.layout.h - BAR_H - 34;
     const focus = m.tutorial?.focus;
     if (focus === "fight" && m.primary) this.glow(this.barX1 - 110, y, 226, 66);
-    if (focus === "army" && m.secondary.length > 0) this.glow(this.barX0 + 76, y, 154, 58);
-    if (m.primary?.style === "sword") {
-      this.keep(this.swordButton(this.barX1 - 110, y, 210, m.primary.label, m.primary.onClick));
-    } else if (m.primary) {
-      this.keep(button(this, this.barX1 - 80, y, 150, 48, m.primary.label, "blue", m.primary.onClick, 0.5));
-    }
+    if (focus === "army" && m.secondary.length > 0) this.glow(SECONDARY_X, 34, 136, 58);
+    if (m.primary) this.keep(this.swordButton(this.barX1 - 110, y, 210, m.primary.label, m.primary.onClick));
+    // Beside the menu button, clear of the map's plots and the console.
     m.secondary.forEach((s, i) => {
-      this.keep(button(this, this.barX0 + 76 + i * 150, y, 140, 48, s.label, "blue", s.onClick, 0.5));
+      this.keep(button(this, SECONDARY_X + i * 132, 34, 124, 48, s.label, "blue", s.onClick, 0.5));
     });
   }
 

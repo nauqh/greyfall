@@ -15,6 +15,10 @@ import {
   WAR,
   applyAction,
   battle,
+  freeBuilders,
+  mineById,
+  plotDistance,
+  tileDistance,
   isOpen,
   maxHp,
   newMatch,
@@ -38,9 +42,16 @@ import * as Phaser from "phaser";
 import { packUrl, type BuildingName } from "./art";
 import { baseZoom, fitCamera, startGame } from "./boot";
 import { HUD_COVER_H, HUD_KEY, ICON, StrategicHud, portraitKey, type HudCommand, type HudModel } from "./StrategicHud";
-import { HAND } from "./ui";
+import { HAND, label } from "./ui";
 import { MAP, STRAT_COLS, STRAT_ROWS, at, isSlope, isLand } from "./stratMap";
 import { BODY_HEIGHT, MONSTER_BODY_HEIGHT, loadUnits, makeAnims, playPose, unitKey } from "./sprites";
+
+/** Work loops for a Pawn standing at its job: the pickaxe at a mine, the
+ *  hammer at a plot. The Gnome has neither, so its swing does both. */
+const WORK = {
+  dig: { key: "pawnDig", file: "Units/Blue Units/Pawn/Pawn_Interact Pickaxe.png" },
+  hammer: { key: "pawnHammer", file: "Units/Blue Units/Pawn/Pawn_Interact Hammer.png" },
+} as const;
 import {
   DEPTH,
   addBuilding,
@@ -182,6 +193,7 @@ export class StrategicScene extends Phaser.Scene {
   /** The walkthrough's current step, or null once it is done or skipped. */
   private tutor: number | null = null;
   private focusRing: Phaser.GameObjects.Graphics | null = null;
+  private plotTags = new Map<string, Phaser.GameObjects.Text>();
 
   /** The round as it began, and as the plan has changed it so far. */
   private roundStart!: MatchState;
@@ -195,7 +207,6 @@ export class StrategicScene extends Phaser.Scene {
   /** An enemy unit or building shown in the panel without being ordered. */
   private inspected: { unit?: number; plot?: string } | null = null;
   /** A command waiting for its target on the map. */
-  private mode: "go" | "gather" | null = null;
   private message = "";
 
   private units = new Map<number, UnitView>();
@@ -226,6 +237,7 @@ export class StrategicScene extends Phaser.Scene {
     // Lowland grass in the sheet's deeper green, as the pack's demo map does:
     // the plateaus keep the sunlit colour1, so height reads as colour too.
     this.load.image("tilesetLow", packUrl("Terrain/Tileset/Tilemap_color3.png"));
+    for (const w of Object.values(WORK)) this.load.spritesheet(w.key, packUrl(w.file), { frameWidth: 192, frameHeight: 192 });
     this.load.image("goldMine", packUrl("Terrain/Resources/Gold/Gold Stones/Gold Stone 6.png"));
     this.load.spritesheet("sheep", packUrl("Terrain/Resources/Meat/Sheep/Sheep_Idle.png"), {
       frameWidth: 128,
@@ -239,6 +251,12 @@ export class StrategicScene extends Phaser.Scene {
     prepareTerrain(this);
     makeAnims(this);
     makeWarFxAnims(this);
+    for (const w of Object.values(WORK)) {
+      if (!this.anims.exists(w.key)) this.anims.create({ key: w.key, frames: this.anims.generateFrameNumbers(w.key), frameRate: 10, repeat: -1 });
+    }
+    if (!this.anims.exists("gnomeWork")) {
+      this.anims.create({ key: "gnomeWork", frames: this.anims.generateFrameNumbers(unitKey("b", "pawn", "attack")), frameRate: 10, repeat: -1 });
+    }
     if (!this.anims.exists("sheep_anim")) {
       this.anims.create({ key: "sheep_anim", frames: this.anims.generateFrameNumbers("sheep"), frameRate: 8, repeat: -1 });
     }
@@ -356,19 +374,17 @@ export class StrategicScene extends Phaser.Scene {
     const shift = (p.event as MouseEvent | undefined)?.shiftKey ?? false;
     this.selectedPlot = null;
     this.inspected = null;
-    this.mode = null;
     this.selected = shift ? [...new Set([...this.selected, ...picked])] : picked;
     this.message = "";
     this.refresh();
   }
 
-  /** Warcraft's keys, fewer: M (or A) arms Move, G gathers, Esc backs out, F1
-   *  picks the Pawns and F2 the army, arrows pan. */
+  /** Warcraft's keys, the few this game needs: Esc deselects, F1 picks the
+   *  Pawns and F2 the army, arrows pan. Orders are all clicks. */
   private hotkey(e: KeyboardEvent): void {
     const k = e.key.toLowerCase();
     if (k === "escape") {
-      if (this.mode) this.mode = null;
-      else this.clearSelection();
+      this.clearSelection();
       this.message = "";
       this.refresh();
       return;
@@ -380,9 +396,6 @@ export class StrategicScene extends Phaser.Scene {
       else this.selectArmy();
       return;
     }
-    if (this.selected.length === 0 || e.ctrlKey || e.metaKey || e.altKey) return;
-    if (k === "m" || k === "a") this.setMode("go");
-    else if (k === "g") this.gatherNow();
   }
 
   /** Clouds close over the HUD, the top scene, then the page moves on. */
@@ -431,6 +444,13 @@ export class StrategicScene extends Phaser.Scene {
   private nextTutor(): void {
     if (this.tutor === null) return;
     this.tutor += 1;
+    this.refresh();
+  }
+
+  /** From the top; steps the player has already done pass by themselves. */
+  private restartTutor(): void {
+    this.tutor = 0;
+    this.message = "";
     this.refresh();
   }
 
@@ -570,7 +590,7 @@ export class StrategicScene extends Phaser.Scene {
       const { x, y } = cellXY(u.col, u.row);
       this.tweens.killTweensOf(v.root);
       v.root.setPosition(x, y).setDepth(DEPTH.unit + y).setAlpha(1);
-      playPose(v.sprite, u.side, u.class, "idle");
+      this.restPose(v);
     }
     for (const [id, v] of this.units) {
       if (!seen.has(id)) {
@@ -579,6 +599,31 @@ export class StrategicScene extends Phaser.Scene {
       }
     }
     this.drawMarks();
+  }
+
+  /** Standing still: idle, or a Pawn at its job, digging beside its mine or
+   *  hammering beside the plot it builds, facing the work. */
+  private restPose(v: UnitView): void {
+    const u = v.unit;
+    playPose(v.sprite, u.side, u.class, "idle");
+    // The world is frozen while planning; work plays out with the battle.
+    if (u.class !== "pawn" || this.phase !== "battle") return;
+    const o = u.order;
+    let at: number | null = null;
+    let job: "dig" | "hammer" = "dig";
+    if (o.type === "gather") {
+      const m = mineById(o.mine);
+      if (m && tileDistance(u, m) <= 1) at = cellXY(m.col, m.row).x;
+    } else if (o.type === "build") {
+      const p = plotById(o.plot);
+      if (p && plotDistance(p, u) === 1) {
+        at = plotBase(p).x;
+        job = "hammer";
+      }
+    }
+    if (at === null) return;
+    v.sprite.play(u.side === "a" ? WORK[job].key : "gnomeWork", true);
+    if (Math.abs(at - v.root.x) > 0.5) v.sprite.setFlipX(at < v.root.x);
   }
 
   private addUnit(u: WarUnit): UnitView {
@@ -600,6 +645,7 @@ export class StrategicScene extends Phaser.Scene {
   private drawMarks(): void {
     const g = this.overlay;
     g.clear();
+    for (const t of this.plotTags.values()) t.setVisible(false);
     const planning = this.phase === "plan";
 
     for (const v of this.units.values()) {
@@ -626,7 +672,8 @@ export class StrategicScene extends Phaser.Scene {
     }
 
     if (!planning) return;
-    // Open plots of the player's own, where a building could go.
+    // Open plots of the player's own, where a building could go, each saying
+    // what it would be and what it unlocks.
     for (const p of PLOTS) {
       if (p.side !== "a") continue;
       const b = this.state.buildings[p.id]!;
@@ -637,6 +684,7 @@ export class StrategicScene extends Phaser.Scene {
       }
       g.lineStyle(2, picked ? 0x9cff8a : 0xfdfaf0, picked ? 0.95 : 0.55);
       g.strokeRect(p.col * CELL + 4, p.row * CELL + 4, p.w * CELL - 8, p.h * CELL - 8);
+      this.plotTag(p).setVisible(true);
     }
     // Where the selected units are going.
     for (const id of this.selected) {
@@ -650,6 +698,21 @@ export class StrategicScene extends Phaser.Scene {
       g.fillStyle(tone, 0.9).fillTriangle(to.x, to.y - 18, to.x + 12, to.y - 13, to.x, to.y - 8);
       g.lineStyle(2, tone, 0.9).lineBetween(to.x, to.y - 18, to.x, to.y);
     }
+  }
+
+  /** The words on an empty plot, made once and shown while it is empty. */
+  private plotTag(p: Plot): Phaser.GameObjects.Text {
+    let t = this.plotTags.get(p.id);
+    if (!t) {
+      const cls = trainsAt(p);
+      const what = cls ? CLASS_NAME[cls] : `+${WAR.supply.perHouse} supply`;
+      t = label(this, (p.col + p.w / 2) * CELL, (p.row + p.h / 2) * CELL, `${NAME[p.kind]}\n${what}, ${WAR.buildCost[p.kind]}g`, {
+        fontSize: p.w > 1 ? "14px" : "11px",
+        align: "center",
+      }).setDepth(DEPTH.decorBehind + 0.6);
+      this.plotTags.set(p.id, t);
+    }
+    return t;
   }
 
   private orderTarget(o: Order): { x: number; y: number } | null {
@@ -668,6 +731,10 @@ export class StrategicScene extends Phaser.Scene {
       case "gather": {
         const m = MINES.find((x) => x.id === o.mine);
         return m ? cellXY(m.col, m.row) : null;
+      }
+      case "build": {
+        const p = plotById(o.plot);
+        return p ? plotBase(p) : null;
       }
       default:
         return null;
@@ -699,7 +766,6 @@ export class StrategicScene extends Phaser.Scene {
     this.selected = [];
     this.selectedPlot = null;
     this.inspected = null;
-    this.mode = null;
   }
 
   /** What is under a tap: a unit first (its body stands above its tile),
@@ -747,12 +813,7 @@ export class StrategicScene extends Phaser.Scene {
     const mine = (u?: WarUnit) => u?.side === "a";
 
     if (right) {
-      this.mode = null;
       if (this.selected.length > 0) this.order(hit);
-      return;
-    }
-    if (this.mode !== null && this.selected.length > 0) {
-      this.order(hit);
       return;
     }
 
@@ -787,7 +848,9 @@ export class StrategicScene extends Phaser.Scene {
       return;
     }
 
+    // A left click on anything else makes that the selection, as in Warcraft.
     if (hit.plot && hit.plot.side === "a") {
+      this.selected = [];
       this.selectedPlot = hit.plot.id;
       this.inspected = null;
       this.message = "";
@@ -796,6 +859,7 @@ export class StrategicScene extends Phaser.Scene {
     }
     if (hit.unit || hit.plot) {
       this.inspected = hit.unit ? { unit: hit.unit.id } : { plot: hit.plot!.id };
+      this.selected = [];
       this.selectedPlot = null;
       this.refresh();
       return;
@@ -804,29 +868,35 @@ export class StrategicScene extends Phaser.Scene {
     this.refresh();
   }
 
-  /** The smart order for what was tapped, or the waiting command's. */
+  /** The one order there is, read from what was clicked: an enemy to go for,
+   *  a mine to dig, or ground to walk to. */
   private order(hit: ReturnType<StrategicScene["hitTest"]>): void {
     const units = this.state.units.filter((u) => this.selected.includes(u.id));
     const pawnsOnly = units.every((u) => u.class === "pawn");
-    const ids = units.map((u) => u.id);
-    const mode = this.mode;
-    this.mode = null;
+    // A Pawn that is building stays at its plot until the round ends.
+    const ids = units.filter((u) => u.order.type !== "build").map((u) => u.id);
+    if (ids.length === 0) {
+      this.message = "Those Pawns are building until the round ends.";
+      this.refresh();
+      return;
+    }
+    // Monks heal and Pawns dig; only the rest go for an enemy.
+    const strikers = units.filter((u) => u.class !== "monk" && u.class !== "pawn").map((u) => u.id);
+    const pawnIds = units.filter((u) => u.class === "pawn" && u.order.type !== "build").map((u) => u.id);
 
     if (hit.unit && hit.unit.side === "b") {
-      const fighters = units.filter((u) => u.class !== "monk").map((u) => u.id);
+      const fighters = strikers;
       if (fighters.length > 0) this.act({ type: "order", units: fighters, order: { type: "attack", unit: hit.unit.id } });
       return;
     }
     if (hit.plot && hit.plot.side === "b" && this.state.buildings[hit.plot.id]!.level > 0) {
-      const fighters = units.filter((u) => u.class !== "monk").map((u) => u.id);
+      const fighters = strikers;
       if (fighters.length > 0) this.act({ type: "order", units: fighters, order: { type: "attackBuilding", plot: hit.plot.id } });
       return;
     }
-    if (hit.mine || mode === "gather") {
-      const mineId = hit.mine ?? this.nearestMineWithRoom();
-      const pawns = units.filter((u) => u.class === "pawn").map((u) => u.id);
-      if (pawns.length > 0 && mineId) {
-        this.act({ type: "order", units: pawns, order: { type: "gather", mine: mineId } });
+    if (hit.mine) {
+      if (pawnIds.length > 0) {
+        this.act({ type: "order", units: pawnIds, order: { type: "gather", mine: hit.mine } });
         return;
       }
     }
@@ -840,14 +910,6 @@ export class StrategicScene extends Phaser.Scene {
     // Pawns walk on past it.
     const type = pawnsOnly ? "move" : "attackMove";
     this.act({ type: "order", units: ids, order: { type, to } });
-  }
-
-  private nearestMineWithRoom(): string | undefined {
-    for (const id of ["mine-a", "mine-mid"]) {
-      const taken = this.state.units.filter((u) => u.side === "a" && u.order.type === "gather" && u.order.mine === id).length;
-      if (taken < WAR.pawnsPerMine) return id;
-    }
-    return undefined;
   }
 
   // --- the HUD's model -----------------------------------------------------
@@ -888,8 +950,10 @@ export class StrategicScene extends Phaser.Scene {
         banner: { text: `Round ${s.round}: Battle`, tone: "red" },
         title: "The battle",
         detail: "Both plans play out at once. Nothing can be ordered until it settles.",
-        primary: { label: `Speed ${this.speed}x`, style: "blue", onClick: () => this.toggleSpeed() },
-        secondary: [{ label: "Skip", onClick: () => this.skip() }],
+        secondary: [
+          { label: "Skip", onClick: () => this.skip() },
+          { label: `Speed ${this.speed}x`, onClick: () => this.toggleSpeed() },
+        ],
       };
     }
     if (this.phase === "report" || this.phase === "over") {
@@ -898,10 +962,12 @@ export class StrategicScene extends Phaser.Scene {
 
     const plan: HudModel = {
       ...base,
-      primary: { label: "Fight!", style: "sword", onClick: () => this.fight() },
+      primary: { label: "Fight!", onClick: () => this.fight() },
       secondary: [
         { label: "Army", onClick: () => this.selectArmy() },
         { label: "Pawns", onClick: () => this.selectPawns() },
+        // Hidden while the walkthrough runs; it has its own way out.
+        ...(this.tutor === null ? [{ label: "Tutorial", onClick: () => this.restartTutor() }] : []),
       ],
     };
     if (this.selected.length > 0) return { ...plan, ...this.unitPanel() };
@@ -933,52 +999,37 @@ export class StrategicScene extends Phaser.Scene {
     const title = one
       ? CLASS_NAME[one.class]
       : `${units.length} units: ${[...counts].map(([c, n]) => `${n} ${CLASS_NAME[c]}`).join(", ")}`;
-    const pawns = units.some((u) => u.class === "pawn");
     const fighters = units.filter((u) => u.class !== "pawn");
     const allFallBack = fighters.length > 0 && fighters.every((u) => u.stance === "fallBack");
-    // One Move, big in the card's corner: go there, fighting whatever gets in the way.
+    const close: HudCommand = { label: "Close", hint: "Deselect.", onClick: () => (this.clearSelection(), this.refresh()) };
+    // Orders are clicks, so the card holds only what a click cannot say:
+    // what the fighters do once they are badly hurt.
+    const stance: HudCommand | null =
+      fighters.length === 0
+        ? null
+        : allFallBack
+          ? {
+              label: "Fall back",
+              icon: ICON.back,
+              hint: "When hurt: they fall back. Below half HP they run home, where they heal. Press to make them fight on.",
+              onClick: () => this.act({ type: "stance", units: fighters.map((u) => u.id), stance: "firm" }),
+            }
+          : {
+              label: "Fight on",
+              icon: ICON.hold,
+              hint: "When hurt: they fight on until they die. Press to make them run home below half HP instead.",
+              onClick: () => this.act({ type: "stance", units: fighters.map((u) => u.id), stance: "fallBack" }),
+            };
+    const help =
+      fighters.length === 0
+        ? "Pawns dig gold and never fight. Right click a mine to send them there."
+        : "Right click the ground to send them; they fight whatever they meet. Right click an enemy to go straight for it.";
     return {
       title,
       portrait: portraitKey("a", (one ?? units[0]!).class),
       hp: one ? [one.hp, maxHp(this.state, "a", one.class)] : null,
-      detail: one ? describeOrder(one.order) : "Right click where they should go. They fight whatever they meet on the way.",
-      commands: [
-        {
-          label: "Move",
-          icon: ICON.move,
-          big: true,
-          hint: "Move (M): click where to go, or right click. They fight anything they meet on the way; click an enemy to go straight for it.",
-          onClick: () => this.setMode("go"),
-          active: this.mode === "go",
-        },
-        null,
-        {
-          label: "Gather",
-          icon: ICON.gold,
-          hint: "Gather (G): Pawns dig at the nearest mine with room, 2 gold a round each. Or right click a mine.",
-          onClick: () => this.gatherNow(),
-          enabled: pawns,
-          active: this.mode === "gather",
-        },
-        null,
-        null,
-        allFallBack
-          ? {
-              label: "Fall back",
-              icon: ICON.back,
-              hint: "Stance: Fall back. Below 50% HP they run home, where they heal. Press to stand firm.",
-              onClick: () => this.act({ type: "stance", units: fighters.map((u) => u.id), stance: "firm" }),
-            }
-          : {
-              label: "Stand firm",
-              hint: "Stance: Stand firm. They fight until they die. Press to fall back when hurt instead.",
-              onClick: () => this.act({ type: "stance", units: fighters.map((u) => u.id), stance: "fallBack" }),
-              enabled: fighters.length > 0,
-            },
-        null,
-        null,
-        { label: "Close", hint: "Deselect.", onClick: () => (this.clearSelection(), this.refresh()) },
-      ],
+      detail: one ? `${describeOrder(one.order)} ${help}` : help,
+      commands: [stance, null, null, null, null, null, null, null, close],
     };
   }
 
@@ -989,6 +1040,9 @@ export class StrategicScene extends Phaser.Scene {
     const name = NAME[p.kind];
     const portrait = buildingKey(p.side, artOf(p));
     const deselect: HudCommand = { label: "Close", hint: "Deselect.", onClick: () => (this.clearSelection(), this.refresh()) };
+    // A Pawn raises every building and upgrade, so a free one is part of the price.
+    const pawnFree = freeBuilders(this.state, "a").length > 0;
+    const busy = "Every Pawn is already building this round.";
     if (b.level === 0 && !b.pending) {
       const cost = WAR.buildCost[p.kind]!;
       return {
@@ -1000,29 +1054,34 @@ export class StrategicScene extends Phaser.Scene {
           {
             label: `Build ${cost}g`,
             icon: ICON.build,
-            hint: `Build a ${name.toLowerCase()} for ${cost} gold. It stands after this round's battle.`,
+            hint: pawnFree
+              ? `Build a ${name.toLowerCase()} for ${cost} gold. A Pawn leaves its mine to build it this round, and it stands after the battle.`
+              : busy,
             onClick: () => this.act({ type: "build", plot: id }),
-            enabled: this.state.gold.a >= cost,
+            enabled: pawnFree && this.state.gold.a >= cost,
           },
           null, null, null, null, null, null, null, deselect,
         ],
       };
     }
     if (b.pending === "build") {
-      return { title: `${name}: being built`, portrait, hp: null, detail: "It stands after this round's battle.", commands: [null, null, null, null, null, null, null, null, deselect] };
+      return { title: `${name}: being built`, portrait, hp: null, detail: "A Pawn is building it. It stands after this round's battle.", commands: [null, null, null, null, null, null, null, null, deselect] };
     }
     // Train fills the card's top-left 2x2 block; upgrade sits beside it.
     const commands: (HudCommand | null)[] = [null, null, null, null, null, null, null, null, deselect];
     if (cls) {
       const cost = WAR.unitCost[cls];
+      const room = supplyUsed(this.state, "a") < supplyCap(this.state, "a");
       commands[0] = {
         label: CLASS_NAME[cls],
-        sub: `${cost} gold`,
+        sub: `${cost} gold, 1 supply`,
         portrait: portraitKey("a", cls),
         big: true,
-        hint: `Train a ${CLASS_NAME[cls]} for ${cost} gold. It can take orders at once.`,
+        hint: room
+          ? `Train a ${CLASS_NAME[cls]} for ${cost} gold and 1 supply. It can take orders at once.`
+          : "No supply left: every unit takes 1. Build a house for 3 more.",
         onClick: () => this.act({ type: "train", plot: id }),
-        enabled: this.state.gold.a >= cost,
+        enabled: room && this.state.gold.a >= cost,
       };
     }
     if (cls && p.kind !== "castle") {
@@ -1033,9 +1092,11 @@ export class StrategicScene extends Phaser.Scene {
             ? "Already at its highest level."
             : b.pending === "upgrade"
               ? "Upgrading: done after this round's battle."
-              : `Upgrade for ${WAR.upgradeCost} gold: ${upgradeText(p.kind)}.`,
+              : pawnFree
+                ? `Upgrade for ${WAR.upgradeCost} gold: ${upgradeText(p.kind)}. A Pawn leaves its mine to do it this round.`
+                : busy,
         onClick: () => this.act({ type: "upgrade", plot: id }),
-        enabled: b.level < WAR.maxLevel && !b.pending && this.state.gold.a >= WAR.upgradeCost,
+        enabled: pawnFree && b.level < WAR.maxLevel && !b.pending && this.state.gold.a >= WAR.upgradeCost,
       };
     }
     return {
@@ -1046,7 +1107,7 @@ export class StrategicScene extends Phaser.Scene {
         ? `Trains the ${CLASS_NAME[cls]}.${b.pending === "upgrade" ? " Upgrading." : ""}`
         : p.kind === "house"
           ? `Adds ${WAR.supply.perHouse} supply.`
-          : "",
+          : "Your main hall. If it falls, the war is lost.",
       commands,
     };
   }
@@ -1061,7 +1122,7 @@ export class StrategicScene extends Phaser.Scene {
           title: `Enemy ${MONSTER_NAME[u.class]}`,
           portrait: portraitKey(u.side, u.class),
           hp: [u.hp, maxHp(this.state, u.side, u.class)],
-          detail: `Fights as a ${CLASS_NAME[u.class]}. Select your own units, then tap it to attack it.`,
+          detail: `Fights as a ${CLASS_NAME[u.class]}. Select your fighters, then right click it to go for it.`,
           commands: none,
         };
       }
@@ -1073,7 +1134,7 @@ export class StrategicScene extends Phaser.Scene {
         title: `Enemy ${NAME[p.kind].toLowerCase()}, level ${b.level}`,
         portrait: buildingKey(p.side, artOf(p)),
         hp: [b.hp, p.kind === "castle" ? WAR.buildingHp.castle : WAR.buildingHp.other],
-        detail: "Select your fighters, then tap it to attack it.",
+        detail: "Select your fighters, then right click it to go for it.",
         commands: none,
       };
     }
@@ -1119,23 +1180,6 @@ export class StrategicScene extends Phaser.Scene {
     const inc = end.income.a;
     lines.push(`Round ${end.round} income: ${inc.base} gold, plus ${inc.mines} from the mines.`);
     return { title: `Round ${r.round}: Report`, tone: "blue", lines, button: "Next round", onClick: () => this.nextRound() };
-  }
-
-  private setMode(mode: "go" | "gather"): void {
-    this.mode = this.mode === mode ? null : mode;
-    this.message = this.mode ? "Now click the target on the map. Esc cancels." : "";
-    this.refresh();
-  }
-
-  private gatherNow(): void {
-    const mineId = this.nearestMineWithRoom();
-    const pawns = this.state.units.filter((u) => this.selected.includes(u.id) && u.class === "pawn").map((u) => u.id);
-    if (!mineId) {
-      this.message = "Every mine you can reach is full.";
-      this.refresh();
-      return;
-    }
-    this.act({ type: "order", units: pawns, order: { type: "gather", mine: mineId } });
   }
 
   private selectArmy(): void {
@@ -1215,7 +1259,7 @@ export class StrategicScene extends Phaser.Scene {
       onComplete: () => {
         v.settle = this.time.delayedCall((1000 - STEP_MS + 60) / this.speed, () => {
           v.settle = null;
-          if (!v.dead) playPose(v.sprite, v.unit.side, v.unit.class, "idle");
+          if (!v.dead) this.restPose(v);
         });
       },
     });
@@ -1231,7 +1275,7 @@ export class StrategicScene extends Phaser.Scene {
     playPose(v.sprite, v.unit.side, v.unit.class, "attack");
     v.settle = this.time.delayedCall(700 / this.speed, () => {
       v.settle = null;
-      if (!v.dead) playPose(v.sprite, v.unit.side, v.unit.class, "idle");
+      if (!v.dead) this.restPose(v);
     });
   }
 
@@ -1512,6 +1556,8 @@ function describeOrder(o: Order): string {
       return "Digging gold at a mine.";
     case "stop":
       return "Guarding where it stands.";
+    case "build":
+      return `Building the ${NAME[plotById(o.plot)!.kind].toLowerCase()}; back to digging once it stands.`;
   }
 }
 
