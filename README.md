@@ -4,9 +4,12 @@ A Souls-themed auto-battler. You buy an army from a fixed roster, arrange it on
 a board, and watch it fight. See [PRD.md](PRD.md) for the design and
 [AGENTS.md](AGENTS.md) for how work is done in this repo.
 
-Phase 1, the battle prototype, is what currently exists: pick units within a
-gold budget, place them on your half of the board, and watch the engine play the
-fight back in the browser. No server, database or sign-in yet.
+Phase 1, the battle prototype, still ships: pick units within a gold budget,
+place them on your half of the board, and watch the engine play the fight back.
+
+Phase 2, the war on the island, is playable solo at `/map` (Map on the title
+screen): build and train on the strategic map, give orders, fight in rounds
+against the AI until a main hall falls. No server, database or sign-in yet.
 
 ## Requirements
 
@@ -123,6 +126,8 @@ pnpm test                         # engine unit and property tests
 pnpm typecheck                    # both packages
 pnpm battle                       # print one battle in the terminal
 pnpm battle -- --seed 7 --moves   # a chosen seed, movement included
+pnpm war                          # a whole war on the island, AI against AI
+pnpm war -- --seed 7 --round 3    # a chosen seed, one round's battle in full
 pnpm assets                       # fetch and unpack the art pack
 ```
 
@@ -133,7 +138,9 @@ before setting the pack up.
 
 ```
 packages/engine   the simulation: balance tables, seeded rng, simulate(),
-                  generateArmy(), and a CLI. Pure TypeScript, no dependencies.
+                  generateArmy(), the island war (newMatch, applyAction,
+                  battle, planAi) and two CLIs. Pure TypeScript, no
+                  dependencies.
 apps/web          Next.js app. React for the draft screen, Phaser for the
                   battle playback.
 ```

@@ -154,7 +154,9 @@ export const WAR = {
   upgradeCost: 6,
   /** Level 3 and the castle upgrade land with abilities, after Phase 2. */
   maxLevel: 2,
-  buildingHp: { castle: 600, other: 300 },
+  /** A castle outlasts one battle phase against a small army that marched
+   *  from home, so a siege always leaves its defender a plan to answer it. */
+  buildingHp: { castle: 1000, other: 300 },
 
   /** What a level 2 production building gives its class. */
   level2: { warriorHp: 0.2, archerRange: 1, lancerHp: 0.2, monkHeal: 0.3 },

@@ -96,7 +96,7 @@ The order decides where a unit goes and how far it will go after an enemy.
 | Move | All | Walk to a tile, ignoring enemies and taunts. Used to retreat or to slip past. |
 | Attack | Fighters | Walk to a chosen unit or building and attack it, following it anywhere. |
 | Hold | Fighters | Stay on the tile and fight whatever comes in range. Never moves. A Hold on a ramp moves to the nearest tile beside it, so no unit blocks a ramp. |
-| Gather | Pawn | Mine a gold mine and carry gold to the castle, repeating. |
+| Gather | Pawn | Walk to a gold mine and dig there. Income is paid per round, so nothing is carried home. |
 | Stop | All | Clear the order. The unit guards its tile: it fights enemies within 3 tiles, then goes back. |
 
 Orders go to one unit or a selected group. A group order sends each unit along its own path to tiles around the target.
@@ -126,12 +126,12 @@ This keeps the command card to one grid of 3x3: Attack move, Move, Attack, Hold,
 ### The island
 
 - A 32x20 grid of 64px tiles with three levels: water, lowland and plateau. Plateaus are reached only by ramps, so ramps are natural chokepoints.
-- One unit per tile. All units walk 1 tile per second; crossing from one base to the other takes about 25 seconds, so a single battle phase fits a march and a fight.
-- Two friendly units that want each other's tiles swap. Enemies never swap, so a line of enemies really blocks a path.
-- Buildings cover the tiles under their base (castle 3x2, production buildings 2x2, houses 1x1). Nobody walks through them.
+- All units walk 1 tile per second; crossing from one base to the other takes about 25 seconds, so a single battle phase fits a march and a fight.
+- Friendly units walk through each other but never stop on the same tile. Enemies block, so a line of enemies really holds a ramp. Stricter rules (one unit per tile, with swaps) deadlocked the one-tile ramps: see the engine commit.
+- Buildings cover the tiles under their base (castle 3x2, production buildings 2x1, houses 1x1). Nobody walks through them. Red's plateau is half the size of blue's, which is why production footprints are one row deep.
 - **High ground:** an attack from lowland against a unit on a plateau deals 25% less damage. No roll, so it stays deterministic.
 - **Regions:** the island is divided into named regions (each plateau, each stretch of lowland). A player holds a region at the end of a battle phase if only their units stand in it. Held regions show in colour.
-- **Gold mines:** one beside each base and one contested in the middle.
+- **Gold mines:** one beside each base and one contested on the eastern lowland, 17 steps from each castle. The lake between the bases has no shore to stand on.
 
 ### Starting position
 
@@ -156,9 +156,9 @@ Buildings unlock classes and upgrade them.
 
 - **Plots:** each side has 8 fixed plots on its home plateau: castle, barracks, archery range, tower, monastery and 3 houses. One of each building; a plot takes only its own building.
 - **Building:** paid in gold while planning; no Pawn is needed. A new building or upgrade finishes at the end of that round's battle phase.
-- **Training:** a building trains up to 2 units per round, 3 once it reaches level 2. They appear on the free tiles beside it when the battle phase starts.
-- **HP:** the castle, the main hall, has 600 HP; the rest have 300. Buildings do not attack and cannot be repaired.
-- **Damage to buildings:** units deal half their damage to buildings, from any tile in range of the building's base. Five Warriors take about 17 seconds to bring down an undefended castle.
+- **Training:** a building trains up to 2 units per round, 3 once it reaches level 2. They appear on the free tiles beside it at once, so they can take orders in the same plan. A new Pawn goes straight to its home mine while it has room.
+- **HP:** the castle, the main hall, has 1000 HP; the rest have 300. Buildings do not attack and cannot be repaired. At 600 HP a small army could march from home and raze an undefended castle inside one battle phase, leaving the defender no plan to answer the siege.
+- **Damage to buildings:** units deal half their damage to buildings, from any tile in range of the building's base. Five Warriors take about 29 seconds to bring down an undefended castle, so with the march it takes two rounds.
 - **Destroyed:** a building loses its levels and can be rebuilt on its plot. Units of its class stay, but no more can be trained until it stands again.
 - **Upgrades** apply at once to every unit of that class, including those already in the field.
 
@@ -246,9 +246,9 @@ Monster buildings come in one colour only, so restoring colour is the knights' r
 
 - Runs on the server at 10 ticks per second with a seeded random number generator. The same state, the same two plans and the same seed always produce the same next state.
 - The engine is `battle(state, planA, planB, seed)`: the new state plus an event log that the client plays back on the map. A plan is the round's purchases, orders and stances.
-- **Settled:** the phase ends once no unit is still walking to a destination and no unit has fought for 3 seconds. Gathering, holding and guarding units count as done. **Cap:** 45 seconds. A fight still running at the cap freezes where it stands and carries on next round; this should be rare.
-- Movement follows the island's paths, ramps included. Friendly units swap tiles; when two enemies want the same free tile on the same tick, the one with the lower id takes it and the other waits.
-- In combat, a unit targets the nearest enemy in range; ties go to the lowest HP, then tile. Each unit's first action in a battle phase is delayed by a seeded 0-1 s so armies do not swing in lockstep.
+- **Settled:** the phase ends once no unit is still walking to a destination and no unit has fought for 3 seconds. Gathering, holding and guarding units count as done, and so does a unit that has made no progress for 3 seconds, so one stuck unit never holds a battle open. **Cap:** 45 seconds. A fight still running at the cap freezes where it stands and carries on next round; this should be rare.
+- Movement follows the island's paths, ramps included. Units act in id order within a tick; blue's ids are odd and red's even, so two plans made from the same state never mint the same id.
+- In combat, a unit targets enemy units before buildings, nearest first; ties go to the lowest HP, then id. When every side of its target is taken it tries the next, so it never freezes in front of an unreachable one. Melee strikes only on its own level or along a ramp, never across a cliff's side; ranged units shoot up and down cliffs. Each unit's first action in a battle phase is delayed by a seeded 0-1 s so armies do not swing in lockstep.
 - Monks heal the ally missing the most HP in range.
 - Abilities, one per class, unlocked by the level 3 upgrade (`BALANCE.abilities.*.enabled`):
   - Guard (Warrior): once per round, below 50% HP, spends an action to take half damage for 3 seconds.
@@ -417,7 +417,7 @@ Match procedures are protected: they require the session created at sign-in.
 
 ## MVP scope and plan
 
-The battle prototype is done and stays playable (Solo and Duel on their own battle board) until the war on the map replaces it; then it is removed. The strategic map exists, but so far you can only look around and move a Pawn: it has the island, both bases, wandering garrisons and a HUD like Warcraft's with placeholder values. The war is built as new code on that map, reusing the engine's balance table, the sprites, terrain and UI, and the hit and death effects.
+The battle prototype is done and stays playable (Solo and Duel on their own battle board) until the war on the map replaces it; then it is removed. The war on the map is playable solo against the AI at `/map`: plan, fight, read the report, until a main hall falls. It is new code on the strategic map, reusing the engine's balance table, the sprites, terrain and UI, with the hit and death effects adapted in `warFx.ts`. The red side still draws red knight buildings; the monster buildings land with the tribes in Phase 3.
 
 **Phase 2: Solo war on the island, about 5 weeks**
 
@@ -433,8 +433,8 @@ Out of Phase 2: covenants and tribes beyond one pair, level 3 abilities, region 
 | Phase | Weeks | Milestone | Done when |
 | --- | --- | --- | --- |
 | 1 | Done | Battle prototype | Army picker, battle board, playback, duel rooms |
-| 2 | 1-2 | Engine war core | Island grid and pathing, orders and stances, economy, `battle()` and the AI work headless; a CLI prints a round; determinism and invariant tests pass |
-| 2 | 3-5 | War on the map | Plan and battle on the island: train, build, order, pick stances, watch; main hall win and loss; solo against the AI in the browser |
+| 2 | 1-2, done | Engine war core | Island grid and pathing, orders and stances, economy, `battle()` and the AI work headless; a CLI prints a round; determinism and invariant tests pass |
+| 2 | 3-5, playable | War on the map | Plan and battle on the island: train, build, order, pick stances, watch; main hall win and loss; solo against the AI in the browser |
 | 3 | 6-8 | Full game | Covenants and tribes, upgrades and abilities, region colour and the Greying, duels on the island; tRPC server and Postgres; old battle board removed |
 | 4 | 9-11 | Discord and launch | Activity with Discord sign-in, replay page, leaderboard, greyscale polish, sound, production deploy |
 
