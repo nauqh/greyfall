@@ -70,6 +70,7 @@ export {
   applyAction,
   applyPlan,
   enemyOf,
+  freeBuilders,
   healOf,
   incomeFor,
   levelOf,

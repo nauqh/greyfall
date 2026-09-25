@@ -105,6 +105,12 @@ function reachesPlot(from: Cell, plot: Plot, range: number): boolean {
   return plotCells(plot).some((c) => reaches(from, c, range));
 }
 
+/** The row just below a plot, where a builder stands in front of the art
+ *  rather than on its roof. */
+function inFront(plot: Plot, c: Cell): boolean {
+  return plotDistance(plot, c) === 1 && c.row === plot.row + plot.h;
+}
+
 function standing(state: MatchState, plot: Plot): boolean {
   const b = state.buildings[plot.id]!;
   return b.level > 0 && b.pending !== "build" && b.hp > 0;
@@ -215,6 +221,10 @@ export function battle(state: MatchState, planA: Plan, planB: Plan): BattleOutco
       }
       case "hold":
         return false;
+      case "build": {
+        const p = plotById(o.plot);
+        return p !== undefined && !inFront(p, u);
+      }
     }
   };
 
@@ -257,6 +267,15 @@ export function battle(state: MatchState, planA: Plan, planB: Plan): BattleOutco
         u.order = { type: "stop" };
         u.post = { col: u.col, row: u.row };
         return false;
+      case "build": {
+        // In front of the plot, hammering, until the round ends; any side
+        // will do when the front cannot be reached.
+        const p = plotById(o.plot);
+        if (!p || (inFront(p, u) && !othersOn(u, u))) return false;
+        if (stepToward(u, (c) => inFront(p, c), t)) return true;
+        if (plotDistance(p, u) === 1 && !othersOn(u, u)) return false;
+        return stepToward(u, (c) => plotDistance(p, c) === 1, t);
+      }
     }
   };
 
@@ -273,7 +292,8 @@ export function battle(state: MatchState, planA: Plan, planB: Plan): BattleOutco
   const targetsFor = (u: Sim): { units: Sim[]; plots: Plot[] } => {
     const range = rangeOf(world, u.side, u.class);
     const o = u.order;
-    if (o.type === "move" || o.type === "gather") return { units: [], plots: [] };
+    // Pawns dig and walk; they never strike, only get struck.
+    if (u.class === "pawn" || o.type === "move" || o.type === "gather") return { units: [], plots: [] };
     if (o.type === "attack") {
       const target = byId.get(o.unit);
       return { units: live(target) ? [target] : [], plots: [] };
@@ -286,7 +306,10 @@ export function battle(state: MatchState, planA: Plan, planB: Plan): BattleOutco
     const reach = o.type === "hold" ? range : WAR.chase + range;
     return {
       units: enemyUnits(u).filter((e) => tileDistance(from, e) <= reach),
-      plots: enemyPlots(u).filter((p) => plotDistance(p, from) <= reach),
+      // On the march only troops stop it; a building beside the road would
+      // hold an army there while the enemy's army walks on. Buildings are
+      // struck once it arrives, or when it is sent at one.
+      plots: o.type === "attackMove" ? [] : enemyPlots(u).filter((p) => plotDistance(p, from) <= reach),
     };
   };
 
@@ -493,6 +516,13 @@ function aftermath(world: MatchState, report: RoundReport): MatchState {
       report.upgraded.push(p.id);
     }
     b.pending = null;
+  }
+
+  // Builders whose work is done go back to digging at home.
+  for (const u of world.units) {
+    if (u.order.type === "build" && !world.buildings[u.order.plot]!.pending) {
+      u.order = { type: "gather", mine: `mine-${u.side}` };
+    }
   }
 
   for (const u of world.units) {

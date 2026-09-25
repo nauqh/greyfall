@@ -30,6 +30,8 @@ export type Order =
   | { type: "attackBuilding"; plot: string }
   | { type: "hold" }
   | { type: "gather"; mine: string }
+  /** A Pawn raising or upgrading this plot; set by the build and upgrade actions. */
+  | { type: "build"; plot: string }
   | { type: "stop" };
 
 export type Stance = "firm" | "fallBack";
@@ -295,6 +297,20 @@ export function newMatch(seed: number | string = 0): MatchState {
   return payIncome(state);
 }
 
+/** Pawns of `side` not already building something. */
+export function freeBuilders(state: MatchState, side: WarSide): WarUnit[] {
+  return state.units.filter((u) => u.side === side && u.class === "pawn" && u.order.type !== "build");
+}
+
+/** The free Pawn nearest the plot goes to build it, leaving whatever it was
+ *  doing: a Pawn building earns nothing that round. */
+function sendBuilder(state: MatchState, side: WarSide, plot: Plot): boolean {
+  const pawn = freeBuilders(state, side).sort((a, b) => plotDistance(plot, a) - plotDistance(plot, b) || a.id - b.id)[0];
+  if (!pawn) return false;
+  pawn.order = { type: "build", plot: plot.id };
+  return true;
+}
+
 function fail(error: string): ActionResult {
   return { ok: false, error };
 }
@@ -309,9 +325,11 @@ function allows(cls: UnitClass, order: Order): boolean {
   switch (order.type) {
     case "gather":
       return cls === "pawn";
+    case "build":
+      return false;
     case "attack":
     case "attackBuilding":
-      return cls !== "monk";
+      return cls !== "monk" && cls !== "pawn";
     default:
       return true;
   }
@@ -351,6 +369,7 @@ export function applyAction(state: MatchState, side: WarSide, action: Action): A
       const cost = WAR.buildCost[plot.kind]!;
       if (plot.kind === "castle") return fail("the castle cannot be rebuilt");
       if (next.gold[side] < cost) return fail(`a ${plot.kind} costs ${cost} gold`);
+      if (!sendBuilder(next, side, plot)) return fail("every Pawn is already building");
       next.gold[side] -= cost;
       b.pending = "build";
       return { ok: true, state: next };
@@ -364,6 +383,7 @@ export function applyAction(state: MatchState, side: WarSide, action: Action): A
       if (b.level === 0 || b.pending) return fail(`the ${plot.kind} is not ready`);
       if (b.level >= WAR.maxLevel) return fail(`the ${plot.kind} is at its highest level`);
       if (next.gold[side] < WAR.upgradeCost) return fail(`an upgrade costs ${WAR.upgradeCost} gold`);
+      if (!sendBuilder(next, side, plot)) return fail("every Pawn is already building");
       next.gold[side] -= WAR.upgradeCost;
       b.pending = "upgrade";
       return { ok: true, state: next };
@@ -377,6 +397,7 @@ export function applyAction(state: MatchState, side: WarSide, action: Action): A
       const order = action.order;
       const bad = units.find((u) => !allows(u.class, order));
       if (bad) return fail(`a ${bad.class} cannot take that order`);
+      if (units.some((u) => u.order.type === "build")) return fail("a Pawn that is building stays until the round ends");
 
       if (order.type === "move" || order.type === "attackMove") {
         if (!isOpen(order.to)) return fail("nobody can stand there");

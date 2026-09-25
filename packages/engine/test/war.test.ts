@@ -19,6 +19,8 @@ import {
   newMatch,
   planAi,
   plotCells,
+  plotDistance,
+  plotById,
   supplyCap,
   supplyUsed,
   type Action,
@@ -196,6 +198,60 @@ describe("battle", () => {
     const raided = { ...s, units: [...s.units, raider] };
     expect(incomeFor(s, "a").mines).toBe(WAR.pawns * WAR.pawnIncome);
     expect(incomeFor(raided, "a").mines).toBe(0);
+  });
+
+  it("sends a Pawn to build, off its mine, and at most one building per Pawn", () => {
+    let s = { ...newMatch(1), gold: { a: 100, b: 100 } };
+    s = act(s, "a", { type: "build", plot: "a-house1" });
+    s = act(s, "a", { type: "build", plot: "a-house2" });
+    s = act(s, "a", { type: "build", plot: "a-house3" });
+    const builders = s.units.filter((u) => u.side === "a" && u.order.type === "build");
+    expect(builders).toHaveLength(WAR.pawns);
+    expect(applyAction(s, "a", { type: "build", plot: "a-archery" }).ok).toBe(false);
+    expect(applyAction(s, "a", { type: "order", units: [builders[0]!.id], order: { type: "gather", mine: "mine-a" } }).ok).toBe(false);
+    const out = battle(s, [], []);
+    for (const id of ["a-house1", "a-house2", "a-house3"]) expect(out.end.buildings[id]!.level).toBe(1);
+    // Nobody dug this round, and every builder goes back to its mine.
+    expect(out.end.income.a.mines).toBe(0);
+    const pawns = out.end.units.filter((u) => u.side === "a" && u.class === "pawn");
+    expect(pawns.every((u) => u.order.type === "gather")).toBe(true);
+  });
+
+  it("marches past enemy buildings rather than stopping to hit them", () => {
+    const s = empty();
+    const barracks = plotById("b-barracks")!;
+    const near = MAP.flatMap((line, row) => [...line].map((_, col) => ({ col, row }))).filter(isOpen);
+    const start = near.find((c) => plotDistance(barracks, c) === 1)!;
+    const dest = near.find((c) => plotDistance(castlePlot("a"), c) === 2)!;
+    const knight = { id: 1, side: "a" as const, class: "warrior" as const, hp: 120, ...start, order: { type: "attackMove" as const, to: dest }, stance: "firm" as const, post: start };
+    const out = battle({ ...s, units: [knight] }, [], []);
+    expect(out.events.some((e) => e.type === "hitBuilding")).toBe(false);
+    expect(out.events.some((e) => e.type === "move")).toBe(true);
+  });
+
+  it("walks the builder to its plot during the battle", () => {
+    const s = act(newMatch(1), "a", { type: "build", plot: "a-archery" });
+    const builder = s.units.find((u) => u.order.type === "build")!;
+    const out = battle(s, [], []);
+    const moved = out.events.filter((e) => e.type === "move" && e.unit === builder.id);
+    expect(moved.length).toBeGreaterThan(0);
+    const last = moved.at(-1) as { col: number; row: number };
+    const plot = plotById("a-archery")!;
+    // In front of the plot, not on a neighbour's roof.
+    expect(plotDistance(plot, last)).toBe(1);
+    expect(last.row).toBe(plot.row + plot.h);
+  });
+
+  it("never lets a Pawn strike, even beside an enemy, nor take an attack order", () => {
+    const s = empty();
+    const at = (col: number, row: number) => ({ col, row });
+    const pawn = { id: 1, side: "a" as const, class: "pawn" as const, hp: 40, ...at(20, 5), order: { type: "stop" as const }, stance: "firm" as const, post: at(20, 5) };
+    const foe = { id: 2, side: "b" as const, class: "warrior" as const, hp: 120, ...at(21, 5), order: { type: "stop" as const }, stance: "firm" as const, post: at(21, 5) };
+    const out = battle({ ...s, units: [pawn, foe] }, [], []);
+    expect(out.events.some((e) => e.type === "attack" && e.unit === 1)).toBe(false);
+    expect(out.events.some((e) => e.type === "attack" && e.unit === 2)).toBe(true);
+    const r = applyAction({ ...s, units: [pawn, foe] }, "a", { type: "order", units: [1], order: { type: "attack", unit: 2 } });
+    expect(r.ok).toBe(false);
   });
 
   it("sends a wounded Fall back unit home, where it heals", () => {
