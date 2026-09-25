@@ -122,7 +122,7 @@ const PORTRAIT: Record<UnitClass, number> = { warrior: 1, lancer: 2, archer: 3, 
 /** What side b's cards call each class: the monster standing in for it. */
 const MONSTER_NAME: Record<UnitClass, string> = {
   warrior: "Skull",
-  lancer: "Spear Goblin",
+  lancer: "Turtle",
   archer: "Gnoll",
   monk: "Hex Shaman",
   pawn: "Gnome",
@@ -133,14 +133,14 @@ const MONSTER_NAME: Record<UnitClass, string> = {
  *  the padding differs per face, so one scale drew them at different sizes. */
 const PORTRAIT_INK: Record<"a" | "m", Partial<Record<UnitClass, [number, number, number, number]>>> = {
   a: { warrior: [22, 31, 219, 213], lancer: [52, 58, 201, 187], archer: [64, 29, 204, 189], monk: [57, 44, 201, 199] },
-  m: { warrior: [39, 59, 201, 202], lancer: [38, 56, 211, 199], archer: [42, 38, 220, 201], monk: [39, 55, 204, 213] },
+  m: { warrior: [39, 59, 201, 202], lancer: [40, 71, 210, 195], archer: [42, 38, 220, 201], monk: [39, 55, 204, 213] },
 };
 /** Every card portrait's ink fits this square. */
 const PORTRAIT_BOX = 62;
 
 const MONSTER_PORTRAIT: Record<UnitClass, string> = {
   warrior: "Skull/Skull_Avatar.png",
-  lancer: "Spear Goblin/Spear Goblin_Avatar.png",
+  lancer: "Turtle/Turtle_Avatar.png",
   archer: "Gnoll/Gnoll_Avatar.png",
   monk: "Hex Shaman/Hex Shaman_Avatar.png",
   pawn: "Gnome/Gnome_Avatar.png",
@@ -640,7 +640,7 @@ export class BattleScene extends Phaser.Scene {
     // One left edge (name, portrait ink, first stat icon) and one right edge
     // (the price) at CARD_EDGE; the text column starts at COLUMN.
     const name = label(this, -CARD_EDGE, -50, this.cardName(cls), {
-      fontSize: monsters && cls === "lancer" ? "17px" : "19px",
+      fontSize: "19px",
       color: "#4a3a28",
       ...ink,
     }).setOrigin(0, 0.5);

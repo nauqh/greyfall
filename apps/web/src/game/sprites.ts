@@ -41,9 +41,8 @@ export const MONSTER_BODY: Record<UnitClass, Body> = {
   warrior: { frame: 192, anchorX: 95, anchorY: 129 },
   // Gnoll: ink cols 50..144, rows 60..134 of 192.
   archer: { frame: 192, anchorX: 97, anchorY: 134 },
-  // Spear Goblin: 256px frames; the spear tip reaches row 50 but the head
-  // mass starts at 104 - the pip belongs over the skull, not the spearhead.
-  lancer: { frame: 256, anchorX: 126, anchorY: 175 },
+  // Turtle: 320px frames like the Lancer; ink cols 92..240, rows 117..208.
+  lancer: { frame: 320, anchorX: 166, anchorY: 208 },
   // Hex Shaman: ink cols 44..139, rows 55..136 of 192.
   monk: { frame: 192, anchorX: 92, anchorY: 136 },
   // Gnome: ink cols 52..128, rows 57..126 of 192.
@@ -64,8 +63,7 @@ export const MONSTER_BODY_HEIGHT: Record<UnitClass, number> = {
   warrior: 72,
   archer: 74,
   monk: 81,
-  // Ground 175, skull top 104: the spear's extra 54px are not head.
-  lancer: 71,
+  lancer: 91,
   pawn: 69,
 };
 
@@ -101,7 +99,7 @@ const POSES: Record<UnitClass, Partial<Record<AnimName, string>>> = {
     idle: "Lancer/Lancer_Idle.png",
     run: "Lancer/Lancer_Run.png",
     attack: "Lancer/Lancer_Right_Attack.png",
-    // Played on taunt. The Spear Goblin has no guard pose, so its taunt is the ring alone.
+    // Played on taunt; the Turtle's shell retreat is its counterpart.
     guard: "Lancer/Lancer_Right_Defence.png",
   },
   pawn: {
@@ -132,9 +130,10 @@ const MONSTER_POSES: Record<UnitClass, Partial<Record<AnimName, string>>> = {
     attack: "Hex Shaman/Hex Shaman_Attack.png",
   },
   lancer: {
-    idle: "Spear Goblin/Spear Goblin_Idle.png",
-    run: "Spear Goblin/Spear Goblin_Run.png",
-    attack: "Spear Goblin/Spear Goblin_Attack Fast.png",
+    idle: "Turtle/Turtle_Idle.png",
+    run: "Turtle/Turtle_Walk.png",
+    attack: "Turtle/Turtle_Attack.png",
+    guard: "Extra/Turtle Guard/Turtle_Guard_In.png",
   },
   pawn: {
     idle: "Gnome/Gnome_Idle.png",
