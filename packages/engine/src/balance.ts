@@ -113,3 +113,64 @@ export function damageAgainst(attacker: UnitClass, defender: UnitClass): number 
   const bonus = BALANCE.counters[attacker] === defender ? BALANCE.counterBonus : 0;
   return Math.round(base * (1 + bonus));
 }
+
+/**
+ * The war on the island. Kept apart from BALANCE so the battle prototype,
+ * which still ships, keeps its own board and budget untouched. Unit HP,
+ * damage and counters come from BALANCE; only what the island changes is
+ * here.
+ */
+export const WAR = {
+  startGold: 10,
+  /** Paid at the start of every round, the first included. */
+  income: 10,
+  /** Per Pawn digging at a mine, while the mine holds gold. */
+  pawnIncome: 2,
+  startPawns: 2,
+  mineGold: { "mine-a": 60, "mine-b": 60, "mine-mid": 120 } as Record<string, number>,
+  pawnsPerMine: 3,
+  /** An enemy fighter this close to a mine at the end of a battle stops its income. */
+  raidRadius: 2,
+
+  supply: { start: 6, perHouse: 3, max: 15 },
+
+  /** The Pawn costs more on the island than on the board: it pays for itself. */
+  unitCost: { pawn: 3, warrior: 3, lancer: 3, archer: 3, monk: 4 } as Record<UnitClass, number>,
+  /** The board's archer range was set for a 10-wide board; the island uses the PRD's 3. */
+  range: { pawn: 1, warrior: 1, lancer: 1, archer: 3, monk: 2 } as Record<UnitClass, number>,
+
+  /** What each building trains. Houses train nothing. */
+  trains: {
+    castle: "pawn",
+    barracks: "warrior",
+    archery: "archer",
+    tower: "lancer",
+    monastery: "monk",
+  } as Partial<Record<string, UnitClass>>,
+  /** Units a building may train in one round, by its level. */
+  trainPerRound: [0, 2, 3],
+  /** Barracks and castle start built; the barracks price is for a rebuild. */
+  buildCost: { castle: 0, barracks: 4, archery: 4, tower: 4, monastery: 5, house: 4 } as Record<string, number>,
+  upgradeCost: 6,
+  /** Level 3 and the castle upgrade land with abilities, after Phase 2. */
+  maxLevel: 2,
+  buildingHp: { castle: 600, other: 300 },
+
+  /** What a level 2 production building gives its class. */
+  level2: { warriorHp: 0.2, archerRange: 1, lancerHp: 0.2, monkHeal: 0.3 },
+
+  /** Units deal this share of their damage to buildings. */
+  buildingDamage: 0.5,
+  /** Damage from lowland onto a plateau is scaled by this. */
+  highGround: 0.75,
+  /** How far an attack move chases off its path, and a stopped unit off its tile. */
+  chase: 3,
+  /** A Fall back unit leaves the fight below this share of its HP. */
+  fallBackBelow: 0.5,
+
+  /** A battle phase ends this long after the last fight, or at the cap. */
+  settleSeconds: 3,
+  capSeconds: 45,
+  /** From this round both main halls lose a growing share of their HP each round. */
+  greying: { fromRound: 12, step: 0.05 },
+} as const;

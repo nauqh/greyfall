@@ -1,5 +1,6 @@
 export {
   BALANCE,
+  WAR,
   MAX_TICKS,
   TICKS_PER_ACTION,
   UNIT_CLASSES,
@@ -28,3 +29,69 @@ export {
 } from "./simulate.ts";
 
 export { generateArmy } from "./army.ts";
+
+export {
+  MAP,
+  MINES,
+  PLOTS,
+  STRAT_COLS,
+  STRAT_ROWS,
+  at,
+  canStep,
+  castlePlot,
+  castsCliff,
+  cellKey,
+  findPath,
+  findRoute,
+  isHigh,
+  isHome,
+  isLand,
+  isOpen,
+  isSlope,
+  isStaticBlocked,
+  isWalkable,
+  level,
+  mineSlots,
+  plateauOf,
+  plotCells,
+  plotDistance,
+  sameCell,
+  stepsFrom,
+  tileDistance,
+  type BuildingKind,
+  type Cell,
+  type Mine,
+  type Plot,
+  type WarSide,
+} from "./island.ts";
+
+export {
+  SIDES,
+  applyAction,
+  applyPlan,
+  enemyOf,
+  healOf,
+  incomeFor,
+  levelOf,
+  maxHp,
+  mineById,
+  newMatch,
+  payIncome,
+  plotById,
+  rangeOf,
+  spreadAround,
+  supplyCap,
+  supplyUsed,
+  trainsAt,
+  type Action,
+  type ActionResult,
+  type Building,
+  type MatchState,
+  type Order,
+  type Plan,
+  type Stance,
+  type WarUnit,
+} from "./war.ts";
+
+export { battle, concede, type BattleOutcome, type RoundReport, type WarEvent } from "./battle.ts";
+export { planAi } from "./ai.ts";

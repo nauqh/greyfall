@@ -7,6 +7,7 @@
     "typecheck": "pnpm -r typecheck",
     "test:assets": "pnpm --filter @greyfall/web test:assets",
     "battle": "pnpm --filter @greyfall/engine battle",
+    "war": "pnpm --filter @greyfall/engine war",
     "assets": "pnpm --filter @greyfall/web run assets",
     "dev": "pnpm --filter @greyfall/web dev"
   },
