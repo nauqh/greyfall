@@ -7,7 +7,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
-import { CLOUD_DRIFT, cloudAt } from "./art";
+import { CLOUD_DRIFT, cloudAt, cloudAway } from "./art";
 
 // Enough rows and columns for any window; the container clips the rest.
 const CLOUDS = Array.from({ length: 14 * 12 }, (_, i) => cloudAt(Math.floor(i / 12), i % 12));
@@ -18,11 +18,11 @@ const CLOSE_MS = 1050;
 
 /**
  * "cover" sits still, "open" parts from the middle outward, "close" draws in
- * from the sides. Direction and delay depend on the window, so they are set
+ * from the edges. Direction and delay depend on the window, so they are set
  * after mount: server and first client render agree, then the motion starts.
  */
 export function Clouds({ mode, onDone }: { mode: "cover" | "open" | "close"; onDone?: () => void }) {
-  const [run, setRun] = useState<{ w: number; u: number } | null>(null);
+  const [run, setRun] = useState<{ w: number; h: number; u: number } | null>(null);
   const [gone, setGone] = useState(false);
   const layers = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -39,7 +39,7 @@ export function Clouds({ mode, onDone }: { mode: "cover" | "open" | "close"; onD
 
   useEffect(() => {
     if (mode === "cover") return;
-    setRun({ w: window.innerWidth, u: Math.min(window.innerWidth / 1200, window.innerHeight / 720) });
+    setRun({ w: window.innerWidth, h: window.innerHeight, u: Math.min(window.innerWidth / 1200, window.innerHeight / 720) });
     const t = setTimeout(() => {
       if (mode === "open") setGone(true);
       onDone?.();
@@ -66,17 +66,23 @@ export function Clouds({ mode, onDone }: { mode: "cover" | "open" | "close"; onD
             if (c.layer !== layer) return null;
             let motion = {};
             if (run) {
-              const x = c.x * run.u;
-              const reach = Math.abs(x - run.w / 2) / (run.w / 2);
-              const delay = mode === "open" ? 200 + reach * 350 : (1 - Math.min(1, reach)) * 300;
-              const side = Math.sign(x - run.w / 2 || 1);
-              motion = { "--dx": `${side * run.w * (mode === "open" ? 0.8 : 0.5)}px`, "--delay": `${delay}ms` };
+              const away = cloudAway(c.x * run.u - run.w / 2, c.y * run.u - run.h / 2, run.w, run.h);
+              const delay = mode === "open" ? 200 + away.reach * 350 : (1 - away.reach) * 300;
+              const far = run.w * (mode === "open" ? 0.8 : 0.5);
+              motion = { "--dx": `${away.dx * far}px`, "--dy": `${away.dy * far}px`, "--delay": `${delay}ms` };
             }
             return (
               <div
                 key={i}
                 className={`cloud ${c.key}${c.flip ? " flip" : ""}`}
-                style={{ left: `calc(${c.x} * var(--u))`, top: `calc(${c.y} * var(--u))`, ...motion }}
+                style={
+                  {
+                    left: `calc(${c.x} * var(--u))`,
+                    top: `calc(${c.y} * var(--u))`,
+                    "--s": c.s,
+                    ...motion,
+                  } as React.CSSProperties
+                }
               />
             );
           })}

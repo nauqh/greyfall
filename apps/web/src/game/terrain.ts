@@ -12,10 +12,12 @@ import { GAME_H, GAME_W, WATER_SPAN } from "./boot";
 import {
   BUILDINGS,
   CLOUDS,
-  CLOUD_CREAM,
+  CLOUD_COVER,
   CLOUD_DRIFT,
   CLOUD_GRID,
+  CLOUD_SKY,
   cloudAt,
+  cloudAway,
   cloudDrift,
   DECOR,
   TERRAIN,
@@ -64,6 +66,7 @@ export function loadTerrain(scene: Phaser.Scene): void {
   for (let i = 1; i <= CLOUDS.count; i++) {
     scene.load.image(`cloud${i}`, packUrl(`${CLOUDS.file}${i}.png`));
   }
+  for (const key of Object.keys(CLOUD_COVER)) scene.load.image(key, packUrl(`ui/${key}.png`));
 }
 
 /** Register the nine grass tiles and the scenery animations. */
@@ -348,7 +351,7 @@ export function addShadow(scene: Phaser.Scene, x: number, y: number, scale: numb
 /**
  * A bank of cloud over the whole view, the screen transition between pages.
  * "open" starts covered and parts from the middle outward; "close" draws the
- * clouds in from the sides until the view is covered. `done` fires as the
+ * clouds in from the edges until the view is covered. `done` fires as the
  * last clouds thin (open) or once the cover is solid (close).
  */
 export function cloudCover(scene: Phaser.Scene, mode: "open" | "close", done: () => void): void {
@@ -364,11 +367,10 @@ export function cloudCover(scene: Phaser.Scene, mode: "open" | "close", done: ()
     vh,
   );
   const depth = DEPTH.hud + 40;
-  const cx = view.centerX;
   const opening = mode === "open";
   // Solid under the clouds, so the gaps between them never show the world.
   const backdrop = scene.add
-    .rectangle(view.centerX, view.centerY, view.width + 400, view.height + 400, CLOUD_CREAM)
+    .rectangle(view.centerX, view.centerY, view.width + 400, view.height + 400, CLOUD_SKY)
     .setDepth(depth)
     .setAlpha(opening ? 1 : 0);
   // Three layers, each swaying on the wall clock (art.ts cloudDrift), so the
@@ -395,55 +397,44 @@ export function cloudCover(scene: Phaser.Scene, mode: "open" | "close", done: ()
       const c = cloudAt(row, col);
       const cloud = scene.add
         .image(view.x + c.x, view.y + c.y, c.key)
-        .setCrop(0, 0, 576, CLOUD_GRID.cropH)
         .setFlipX(c.flip)
-        .setScale(CLOUD_GRID.scale);
+        .setScale(CLOUD_GRID.scale * c.s);
       layers[c.layer]!.add(cloud);
       clouds.push(cloud);
     }
   }
 
-  // Parting, the clouds grow as they go, a push through the bank; closing,
-  // they settle from that size. Closing starts just past the edge, so the
-  // first frame after the click already moves.
-  const big = CLOUD_GRID.scale * 1.25;
+  // A flight through the bank: parting, every cloud leaves outward from the
+  // centre and grows, so the view opens as a round hole edged with puffs;
+  // closing, they settle back in from that size. A left/right split opened a
+  // seam of the clouds' thin wisps with the world striped through it.
   let last = 0;
   for (const c of clouds) {
-    // Middle first on the way out, edges first on the way in, each cloud on
-    // its own side of the screen.
-    const reach = Math.abs(c.x - cx) / (view.width / 2);
-    const delay = opening ? 200 + reach * 350 : (1 - Math.min(1, reach)) * 300;
+    const away = cloudAway(c.x - view.centerX, c.y - view.centerY, view.width, view.height);
+    const delay = opening ? 200 + away.reach * 350 : (1 - away.reach) * 300;
     last = Math.max(last, delay);
-    const side = Math.sign(c.x - cx || 1);
+    const home = { x: c.x, y: c.y, scale: c.scale };
+    const far = opening ? 0.8 : 0.5;
+    const out = { x: c.x + away.dx * view.width * far, y: c.y + away.dy * view.width * far };
+    // A cloud stays solid while it moves and only thins at the end of its
+    // run: fading the whole way made the bank a grey smear.
     if (opening) {
-      scene.tweens.add({
-        targets: c,
-        x: c.x + side * view.width * 0.8,
-        scale: big,
-        alpha: 0,
-        delay,
-        duration: 1000,
-        ease: "Sine.easeIn",
-      });
+      scene.tweens.add({ targets: c, ...out, scale: home.scale * 1.25, delay, duration: 1000, ease: "Sine.easeIn" });
+      scene.tweens.add({ targets: c, alpha: 0, delay: delay + 550, duration: 450, ease: "Sine.easeIn" });
     } else {
-      const home = c.x;
-      c.setX(home + side * view.width * 0.5).setScale(big).setAlpha(0);
-      scene.tweens.add({
-        targets: c,
-        x: home,
-        scale: CLOUD_GRID.scale,
-        alpha: 1,
-        delay,
-        duration: 700,
-        ease: "Sine.easeOut",
-      });
+      c.setPosition(out.x, out.y).setScale(home.scale * 1.25).setAlpha(0);
+      scene.tweens.add({ targets: c, ...home, delay, duration: 700, ease: "Sine.easeOut" });
+      scene.tweens.add({ targets: c, alpha: 1, delay, duration: 300, ease: "Sine.easeOut" });
     }
   }
+  // Parting, the gap first opens onto haze, which lifts once the middle has
+  // cleared: fading it sooner striped the world through the clouds' wisps.
+  // Closing, it comes back as the edges meet, so no gap shows the world.
   scene.tweens.add({
     targets: backdrop,
     alpha: opening ? 0 : 1,
-    delay: opening ? 250 : last + 400,
-    duration: 300,
+    delay: opening ? 800 : last + 100,
+    duration: opening ? 500 : 450,
     onComplete: () => opening && backdrop.destroy(),
   });
   scene.time.delayedCall(opening ? last + 1000 : last + 720, () => {

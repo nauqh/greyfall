@@ -215,19 +215,39 @@ export const CLOUDS = {
 /** The cloud bank's layout, in world units from the view's top-left. The
  *  DOM cover (Clouds.tsx) lays out the same grid from the same numbers, so
  *  an HTML screen's clouds and a scene's line up cloud for cloud. */
-export const CLOUD_GRID = { dx: 260, dy: 130, scale: 3.2, cropH: 156 } as const;
+export const CLOUD_GRID = { dx: 260, dy: 130, scale: 3.2 } as const;
 
-/** One cloud of the bank. The two big clouds only, cropped above their
- *  drawn-in shadows: stacked, the grey undersides read as dirt. */
-export function cloudAt(row: number, col: number): { x: number; y: number; key: string; flip: boolean; layer: number } {
+/** The two big pack clouds, recoloured white by compose-ui.mjs into ui/<key>.png. */
+export const CLOUD_COVER = { cover1: 1, cover5: 5 } as const;
+
+/** One cloud of the bank. Odd rows sit half a cloud over, so the bank reads
+ *  as heaped cloud rather than a grid, and each cloud varies a little in size.
+ *  The back layer takes the shaded cloud, so the grey reads as depth. */
+export function cloudAt(
+  row: number,
+  col: number,
+): { x: number; y: number; key: keyof typeof CLOUD_COVER; flip: boolean; layer: number; s: number } {
   const k = row * 7 + col;
   const jitter = (k * 37) % 90;
+  const layer = k % 3;
   return {
-    x: -120 + col * CLOUD_GRID.dx + jitter,
+    x: -120 + col * CLOUD_GRID.dx + (row % 2) * (CLOUD_GRID.dx / 2) + jitter - 45,
     y: -60 + row * CLOUD_GRID.dy + (jitter % 40),
-    key: k % 2 ? "cloud5" : "cloud1",
-    flip: k % 3 === 0,
-    layer: k % 3,
+    key: layer === 0 ? "cover5" : "cover1",
+    flip: k % 4 < 2,
+    layer,
+    s: 0.9 + ((k * 53) % 21) / 100,
+  };
+}
+
+/** Which way a cloud at (x, y) from the view's centre leaves it, as a unit
+ *  vector, and how far out it sits: 0 at the centre, 1 at a corner or past. */
+export function cloudAway(x: number, y: number, w: number, h: number): { dx: number; dy: number; reach: number } {
+  const len = Math.hypot(x, y);
+  return {
+    dx: len ? x / len : 1,
+    dy: len ? y / len : 0,
+    reach: Math.min(1, Math.hypot(x / (w / 2), y / (h / 2)) / Math.SQRT2),
   };
 }
 
@@ -255,9 +275,9 @@ export function cloudDrift(layer: number, now: number): number {
   return -a + 2 * a * (-(Math.cos(Math.PI * k) - 1) / 2);
 }
 
-/** The cloud cover's cream, shared with the DOM cover (.cloudsSky) so the
- *  page's loader and a scene's cover are one continuous sky. */
-export const CLOUD_CREAM = 0xeef0e2;
+/** The sky under the cover, the white clouds' mid tone, shared with the DOM
+ *  cover (.cloudsSky) so the page's loader and a scene's cover are one sky. */
+export const CLOUD_SKY = 0xf0f4f9;
 
 export const FX = {
   dust: { file: "Particle FX/Dust_01.png", frame: 64, frames: 8 },

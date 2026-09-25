@@ -116,4 +116,26 @@ for (const [key, n] of Object.entries(art.ICON)) {
   made.push(write(`icon_${key}`, src));
 }
 
+// The cover clouds, recoloured white. The pack draws them cream with a
+// translucent navy shadow under each; the shadow is dropped (cropping it off
+// used to cut the clouds' own round bottoms flat) and the three body tones
+// map to white with cool grey shading.
+const CLOUD_TONES = new Map([
+  ["252,254,239", [255, 255, 255]],
+  ["229,233,205", [240, 244, 249]],
+  ["219,216,190", [224, 231, 240]],
+]);
+for (const [name, n] of Object.entries(art.CLOUD_COVER)) {
+  const png = read(`${art.CLOUDS.file}${n}.png`);
+  for (let i = 0; i < png.data.length; i += 4) {
+    const tone = CLOUD_TONES.get(`${png.data[i]},${png.data[i + 1]},${png.data[i + 2]}`);
+    if (!tone || png.data[i + 3] < 255) {
+      png.data[i + 3] = 0;
+      continue;
+    }
+    [png.data[i], png.data[i + 1], png.data[i + 2]] = tone;
+  }
+  made.push(write(name, png));
+}
+
 console.log(`[compose-ui] wrote ${made.length} files to public/tiny-swords/ui`);
