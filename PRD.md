@@ -88,33 +88,40 @@ As in Warcraft, the full roster is always available. Strategy comes from economy
 
 ### Orders
 
+The order decides where a unit goes and how far it will go after an enemy.
+
 | Order | Who | Behaviour |
 | --- | --- | --- |
-| Attack move | Fighters | Walk to a tile, fighting any enemy that comes in range. The default order. |
+| Attack move | Fighters | Walk to a tile. Fight any enemy that comes in range, chasing up to 3 tiles off the path, then carry on. The default order. |
 | Move | All | Walk to a tile, ignoring enemies. Used to retreat or to slip past. |
-| Attack | Fighters | Walk to and attack a chosen unit or building. |
-| Hold | Fighters | Stay put and fight whatever comes in range, without chasing. |
+| Attack | Fighters | Walk to a chosen unit or building and attack it, following it anywhere. |
+| Hold | Fighters | Stay on the tile and fight whatever comes in range. Never moves. |
 | Gather | Pawn | Mine a gold mine and carry gold to the castle, repeating. |
-| Stop | All | Clear the order. An idle fighter fights by its stance, then returns to its post. |
+| Stop | All | Clear the order. The unit guards its tile: it fights enemies within 3 tiles, then goes back. |
 
 Orders go to one unit or a selected group. A group order sends each unit along its own path to tiles around the target.
 
 ### Stances
 
-The order says where a unit goes; the stance says how it reacts along the way, since nothing can be commanded once a battle starts. A stance is one choice from four presets, one button on the command card, shown as a badge over the unit. It persists across rounds like an order.
+Orders already set how far a unit chases, so the stance answers the one question they leave open: what a unit does when it is losing. It is a single toggle on the command card, and it persists across rounds like an order.
 
-| Stance | Behaviour | Chase | Retreat |
-| --- | --- | --- | --- |
-| Aggressive | Chases anything it sees | Unlimited | Never |
-| Defensive (default) | Fights nearby, then returns to its post | 3 tiles | Never |
-| Hold | Never moves; fights whatever is in range | 0 tiles | Never |
-| Cautious | Like Defensive, but runs home when hurt | 3 tiles | Below 50% HP |
+| Stance | Behaviour | On screen |
+| --- | --- | --- |
+| Stand firm (default for fighters) | Fights until it dies | No badge |
+| Fall back (default for Pawns) | Below 50% HP, turns and runs to its home plateau, and stops fighting | A badge over the unit; it runs home with its run animation |
 
-- A retreating unit walks back to its home plateau and stops fighting. The round report says why ("Warrior retreated: Cautious, 42% HP").
-- Units always target the nearest enemy, ties to the lowest HP, and a Lancer's taunt is the only thing that overrides it. There is no target priority setting.
-- The chase and retreat values are numbers in `balance.ts`, so the presets can be tuned, or new ones added, without changing the UI.
+- A unit that falls back heals to full in the aftermath, since it ends the round at home. It costs a fighter for the rest of that battle; standing firm risks losing it for good.
+- The round report says why a unit left ("Warrior fell back at 42% HP").
+- Units target the nearest enemy, ties to the lowest HP, and a Lancer's taunt is the only thing that overrides it. There is no target priority setting.
+- The 50% threshold is a number in `balance.ts`.
 
-Why presets: the pattern is proven in Age of Empires and Warcraft stances and in the orders Gratuitous Space Battles has players set before a battle, but the more settings a player has to tune, the more often units do something the player cannot explain. One readable choice keeps the battle legible on a phone.
+**Why only two.** An earlier draft had four presets (Aggressive, Defensive, Hold, Cautious), and they repeated each other:
+
+- Three of the four differed only in how far a unit chases, which the order already decides. Hold was both an order and a stance.
+- The art cannot show the difference. Units have only idle, run and attack poses, plus guard for some; nothing looks "aggressive" or "defensive", so a player watching the battle could not tell them apart.
+- Falling back is the one behaviour that reads at a glance: a unit turns and runs home. It is also the one choice orders cannot express, because it depends on HP during the fight.
+
+This keeps the command card to one grid of 3x3: Attack move, Move, Attack, Hold, Stop, Gather, the stance toggle, Build, and one slot spare.
 
 ### The island
 
@@ -258,7 +265,7 @@ The AI plans each round with the same actions and rules as the player, and never
 
 - Economy first: Pawns up to its home mine's limit, then houses as supply runs out.
 - Builds and upgrades by its tribe's preferred army, with some seeded variation so no two matches open the same way.
-- Attacks when its army's value is clearly larger than the player's visible army, defends when enemies step onto its plateau, and contests the middle mine when ahead or when its home mine runs low. It picks stances too: Cautious for its front line, Hold for archers on high ground.
+- Attacks when its army's value is clearly larger than the player's visible army, defends when enemies step onto its plateau, and contests the middle mine when ahead or when its home mine runs low. It uses Fall back for its wounded front line and Hold orders for archers on high ground.
 
 **Duel**
 
@@ -406,7 +413,7 @@ The battle prototype is done and stays playable (Solo and Duel on their own batt
 
 - The engine gains the island grid, orders and stances, economy, buildings and `battle()`, tested headless with a CLI that prints a round, before any screen.
 - The map gains selection, orders with drawn paths, a live HUD (gold, supply), building menus in the command card, playback of each battle phase, and the round report.
-- Stances land last in Phase 2, once the core loop plays; until then every unit is Defensive.
+- The stance toggle lands last in Phase 2, once the core loop plays; until then every fighter stands firm.
 - One fixed covenant against one fixed tribe, and a simple AI.
 
 Out of Phase 2: covenants and tribes beyond one pair, level 3 abilities, region colour and the Greying's closing in, duels, Discord, persistence.
@@ -435,9 +442,9 @@ Out of Phase 2: covenants and tribes beyond one pair, level 3 abilities, region 
 | Scope creep in content | Freeze the roster at 5 classes until launch |
 | Battle phases drag or end empty | The settle rule and the 45 s cap are numbers in `balance.ts`; playtest them in week 2 |
 | Turtling makes matches stall | Mines run dry, and the Greying damages both main halls from round 12, so every match ends |
-| A bad plan loses a round with no way to react | Four stances (Aggressive, Defensive, Hold, Cautious); the round report shows what went wrong and why |
+| A bad plan loses a round with no way to react | Orders set how far units chase, the Fall back stance saves wounded units, and the round report shows what went wrong and why |
 | Crowding and pathing, with only one unit allowed per tile | Build and test the engine headless first; watch it in the CLI before the map plays it |
-| Too many units to order each round | Orders and stances persist across rounds; group selection; idle fighters defend on their own |
+| Too many units to order each round | Orders and stances persist across rounds; group selection; idle fighters guard their tile on their own |
 | The AI is trivial or unbeatable | Simple rules, tuned by numbers in `balance.ts`; later, difficulty as an income bonus |
 | Discord proxy or CSP issues | Build a placeholder Discord shell early in Phase 3 |
 | Asset license breach | Private bucket and CI download from day one |
