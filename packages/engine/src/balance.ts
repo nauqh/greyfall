@@ -122,28 +122,34 @@ export function damageAgainst(attacker: UnitClass, defender: UnitClass): number 
  */
 export const WAR = {
   startGold: 10,
-  /** Paid at the start of every round, the first included. */
-  income: 10,
+  /** Base income, paid at the start of every round, the first included. A
+   *  bigger army pays upkeep: the first tier whose fighter count (Pawns not
+   *  counted) the side has reached, from the top, sets it. */
+  upkeep: [
+    { fighters: 11, income: 4, name: "high" },
+    { fighters: 7, income: 7, name: "low" },
+    { fighters: 0, income: 10, name: "none" },
+  ],
   /** Per Pawn digging at a mine, while the mine holds gold. */
   pawnIncome: 2,
-  /** Pawns are never trained: each side keeps exactly this many. */
-  pawns: 3,
-  mineGold: { "mine-a": 60, "mine-b": 60, "mine-mid": 120 } as Record<string, number>,
+  /** Each side starts with `start` Pawns and the castle trains more up to
+   *  `max`. Dead ones stay dead, unless a side has none left. */
+  pawns: { start: 3, max: 6 },
+  mineGold: { "mine-a": 60, "mine-b": 60, "mine-ya": 40, "mine-yb": 40, "mine-mid": 120 } as Record<string, number>,
   pawnsPerMine: 3,
   /** An enemy fighter this close to a mine at the end of a battle stops its income. */
   raidRadius: 2,
 
-  /** 7, not 6: the three Pawns take their share, and at 6 AI matches mostly
-   *  stalled into the Greying (5 of 8 seeds drew). */
-  supply: { start: 7, perHouse: 3, max: 15 },
+  /** Three houses reach 20: six Pawns and fourteen others. */
+  supply: { start: 8, perHouse: 4, max: 20 },
 
-  /** The Pawn is never bought; its price only weighs it in the AI's army value. */
-  unitCost: { pawn: 3, warrior: 3, lancer: 3, archer: 3, monk: 4 } as Record<UnitClass, number>,
+  unitCost: { pawn: 4, warrior: 3, lancer: 3, archer: 3, monk: 4 } as Record<UnitClass, number>,
   /** The board's archer range was set for a 10-wide board; the island uses the PRD's 3. */
   range: { pawn: 1, warrior: 1, lancer: 1, archer: 3, monk: 2 } as Record<UnitClass, number>,
 
-  /** What each building trains. The castle and houses train nothing. */
+  /** What each building trains. Houses train nothing. */
   trains: {
+    castle: "pawn",
     barracks: "warrior",
     archery: "archer",
     tower: "lancer",

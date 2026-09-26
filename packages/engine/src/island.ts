@@ -4,33 +4,41 @@
  * scene draws from the same rows.
  */
 
-/** `~` water, `.` ground, `#` plateau. `<` / `>` are ramps, cut into a
- *  cliff where it steps down a row: plateau above the ramp, the deeper part
- *  of the plateau beside it (right of `<`, left of `>`), and the shallower
- *  part's cliff face on the other side. The ramp runs down into the row
- *  below. The row under a plateau's bottom edge is its cliff face, so it is
- *  drawn as stone and nothing stands there. */
+/** `~` water, `.` lowland (level 1), `T` forest (lowland no one walks
+ *  through; arrows fly over), `#` plateau (level 2), `^` the Crown (level
+ *  3). `<` / `>` are ramps up to a plateau and `[` / `]` stairs up to the
+ *  Crown. As in the pack's tilemap guide, a ramp stands just outside the
+ *  higher ground, beside its bottom row: that ground on one side (right of
+ *  `<`, left of `>`), lower ground above it and on the other side. It runs
+ *  down into the row below, beside the cliff. The row under higher ground's
+ *  bottom edge is its cliff face, so it is drawn as stone and nothing stands
+ *  there. Mirrored left to right, ramps included, because cliffs only face
+ *  south. */
 export const MAP = [
-  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
-  "~~~#########~~~~~~~~~~~.....~~~~",
-  "~~#############~~~~~~~.........~",
-  "~~#############....~~~..######.~",
-  "~~#############.....~...####>..~",
-  "~~..#########>..........~~.....~",
-  "~~..............~...........~~~~",
-  "~~~...######.....~~~~........~~~",
-  "~~~...####>.....~~~~~~.......~~~",
-  "~~~.............~~~..~~.......~~",
-  "~~..........~~~~~~~~~~~.......~~",
-  "~~..#####..~~~~~.~~~~~~~......~~",
-  "~~..###>..~~~~~~~~~~..........~~",
-  "~~.......~~~~~~~..........###.~~",
-  "~~~~.....~~~~~~......#########~~",
-  "~~~~.....~~~~~.......#########~~",
-  "~~~~~~~..~~~..........<#######~~",
-  "~~~~~~~~~~~~~..........~~~~~~~~~",
-  "~~..~~~~~~~~~~~~~.....~~~~~~~~~~",
-  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~###########~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~###^^^^^###~~~~~~~~~~~~~~~",
+  "~~~########~~~~~##^^^^^##~~~~~########~~~",
+  "~~##########....#[^^^^^]#....##########~~",
+  "~~##########....#########....##########~~",
+  "~~########......#########......########~~",
+  "~~########.....<#########>.....########~~",
+  "~~########......~~~~~~~~~......########~~",
+  "~~########>...~~~~~~~~~~~~~...<########~~",
+  "~~TT..........~~~~~~~~~~~~~..........TT~~",
+  "~~TTT.........~~~~~~~~~~~~~.........TTT~~",
+  "~~TTT.........~~~~~~~~~~~~~.........TTT~~",
+  "~~~TT.........~~~~~~~~~~~~~.........TT~~~",
+  "~~~~T..........###~~~~~###..........T~~~~",
+  "~~~~TT.........###>~~~<###.........TT~~~~",
+  "~~~~TTT...TTT...............TTT...TTT~~~~",
+  "~TT~TT....TTT...............TTT....TT~TT~",
+  "~T~~~T.............................T~~~T~",
+  "~~~~~TT............~.~............TT~~~~~",
+  "~~~~~~~TTT.......~~~~~~~.......TTT~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
 ];
 export const STRAT_COLS = MAP[0]!.length;
 export const STRAT_ROWS = MAP.length;
@@ -46,28 +54,33 @@ export function at(col: number, row: number): string {
 export function isLand(col: number, row: number): boolean {
   return at(col, row) !== "~";
 }
+export function level(col: number, row: number): number {
+  const ch = at(col, row);
+  return "^[]".includes(ch) ? 3 : "#<>".includes(ch) ? 2 : ch === "~" ? 0 : 1;
+}
+/** Any ground above the lowland: a plateau, the Crown, or a ramp onto either. */
 export function isHigh(col: number, row: number): boolean {
-  return "#<>".includes(at(col, row));
+  return level(col, row) >= 2;
 }
 export function isSlope(col: number, row: number): boolean {
-  return "<>".includes(at(col, row));
+  return "<>[]".includes(at(col, row));
 }
-/** A plateau cell or slope whose south side drops. */
+export function isForest(col: number, row: number): boolean {
+  return at(col, row) === "T";
+}
+/** High ground, not a ramp, whose south side drops. */
 export function castsCliff(col: number, row: number): boolean {
-  return isHigh(col, row) && !isHigh(col, row + 1);
+  return "#^".includes(at(col, row)) && level(col, row + 1) < level(col, row);
 }
-/** Land that is not a cliff face. A slope's lower half is the ramp, so it
- *  stays walkable. */
+/** Land that is neither forest nor a cliff face. A slope's lower half is the
+ *  ramp, so it stays walkable. */
 export function isWalkable(col: number, row: number): boolean {
-  return isLand(col, row) && !(at(col, row - 1) === "#" && castsCliff(col, row - 1));
-}
-export function level(col: number, row: number): number {
-  return isHigh(col, row) ? 2 : isLand(col, row) ? 1 : 0;
+  return isLand(col, row) && !isForest(col, row) && !castsCliff(col, row - 1);
 }
 
-/** One move to a neighbouring cell. The level only changes on a ramp, from
- *  a slope's top straight down to its foot or back up. Diagonals stay on
- *  one level and never cut a corner. */
+/** One move to a neighbouring cell. The level only changes on a ramp, one
+ *  level at a time, from a slope's top straight down to its foot or back up.
+ *  Diagonals stay on one level and never cut a corner. */
 export function canStep(from: Cell, to: Cell): boolean {
   if (!isWalkable(to.col, to.row)) return false;
   const dc = to.col - from.col;
@@ -81,8 +94,8 @@ export function canStep(from: Cell, to: Cell): boolean {
     );
   }
   if (level(from.col, from.row) === level(to.col, to.row)) return true;
-  const top = dr > 0 ? from : to;
-  return dc === 0 && isSlope(top.col, top.row);
+  const [top, foot] = dr > 0 ? [from, to] : [to, from];
+  return dc === 0 && isSlope(top.col, top.row) && level(top.col, top.row) - level(foot.col, foot.row) === 1;
 }
 
 const STEPS = new Map<number, readonly Cell[]>();
@@ -157,16 +170,17 @@ export function findPath(from: Cell, to: Cell, blocked?: (c: Cell) => boolean): 
   return findRoute(from, (c) => sameCell(c, to), blocked);
 }
 
-/** Every plateau cell joined to `start` without leaving the high ground. */
+/** Every cell joined to `start` without leaving its level of high ground. */
 export function plateauOf(start: Cell): Cell[] {
   if (!isHigh(start.col, start.row)) return [];
+  const lv = level(start.col, start.row);
   const seen = new Set<number>([cellKey(start)]);
   const out: Cell[] = [start];
   for (let head = 0; head < out.length; head++) {
     const cur = out[head]!;
     for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
       const next = { col: cur.col + dc, row: cur.row + dr };
-      if (seen.has(cellKey(next)) || !isHigh(next.col, next.row)) continue;
+      if (seen.has(cellKey(next)) || level(next.col, next.row) !== lv) continue;
       seen.add(cellKey(next));
       out.push(next);
     }
@@ -196,26 +210,27 @@ function plot(side: WarSide, kind: BuildingKind, col: number, row: number, n = "
   return { id: `${side}-${kind}${n}`, side, kind, col, row, w, h };
 }
 
-/** Blue holds the north-west plateau, red the south-east one. Red's plateau
- *  is half the size of blue's, so its plots pack tighter; both leave a lane
- *  from every plot to their ramp (checked in the tests). */
+/** Blue holds the west plateau, red its mirror in the east: column c on one
+ *  side is 40 minus c on the other. The castle stands at the back and the
+ *  production buildings in a front row, so no building covers another's
+ *  door; every plot keeps a lane to the ramp (checked in the tests). */
 export const PLOTS: readonly Plot[] = [
-  plot("a", "castle", 5, 2),
-  plot("a", "barracks", 10, 3),
-  plot("a", "archery", 8, 1),
-  plot("a", "tower", 2, 2),
-  plot("a", "monastery", 12, 2),
-  plot("a", "house", 4, 5, "1"),
-  plot("a", "house", 6, 5, "2"),
-  plot("a", "house", 8, 5, "3"),
-  plot("b", "castle", 25, 14),
-  plot("b", "barracks", 28, 14),
-  plot("b", "archery", 28, 16),
-  plot("b", "tower", 23, 14),
-  plot("b", "monastery", 27, 13),
-  plot("b", "house", 26, 13, "1"),
-  plot("b", "house", 21, 14, "2"),
-  plot("b", "house", 29, 15, "3"),
+  plot("a", "castle", 4, 5),
+  plot("a", "barracks", 2, 9),
+  plot("a", "archery", 5, 9),
+  plot("a", "tower", 8, 5),
+  plot("a", "monastery", 8, 9),
+  plot("a", "house", 2, 5, "1"),
+  plot("a", "house", 9, 7, "2"),
+  plot("a", "house", 7, 7, "3"),
+  plot("b", "castle", 34, 5),
+  plot("b", "barracks", 37, 9),
+  plot("b", "archery", 34, 9),
+  plot("b", "tower", 31, 5),
+  plot("b", "monastery", 31, 9),
+  plot("b", "house", 38, 5, "1"),
+  plot("b", "house", 31, 7, "2"),
+  plot("b", "house", 33, 7, "3"),
 ];
 
 export function plotCells(p: Plot): Cell[] {
@@ -237,12 +252,15 @@ export interface Mine {
   row: number;
 }
 
-/** One by each base and one contested on the eastern lowland, the only
- *  ground both ramps reach; the lake between the bases has no shore to stand on. */
+/** A home mine on each plateau, out of reach until its ramp falls; a small
+ *  one in each yard below; and the rich one at the ford, dug from the ford's
+ *  south row. */
 export const MINES: readonly Mine[] = [
-  { id: "mine-a", col: 15, row: 3 },
-  { id: "mine-b", col: 16, row: 14 },
-  { id: "mine-mid", col: 24, row: 8 },
+  { id: "mine-a", col: 2, row: 7 },
+  { id: "mine-b", col: 38, row: 7 },
+  { id: "mine-ya", col: 5, row: 13 },
+  { id: "mine-yb", col: 35, row: 13 },
+  { id: "mine-mid", col: 20, row: 20 },
 ];
 
 /** Where a side's own castle stands; its plateau is that side's home. */

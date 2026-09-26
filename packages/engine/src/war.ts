@@ -193,6 +193,11 @@ function gatherers(state: MatchState, mineId: string, side?: WarSide): WarUnit[]
  * Income for the round about to start: the base, plus each Pawn standing at
  * a mine it gathers from, unless an enemy fighter is near that mine.
  */
+export function upkeepOf(state: MatchState, side: WarSide): (typeof WAR.upkeep)[number] {
+  const fighters = state.units.filter((u) => u.side === side && u.class !== "pawn").length;
+  return WAR.upkeep.find((t) => fighters >= t.fighters)!;
+}
+
 export function incomeFor(state: MatchState, side: WarSide): { base: number; mines: number; drawn: Record<string, number> } {
   const drawn: Record<string, number> = {};
   let mines = 0;
@@ -212,7 +217,7 @@ export function incomeFor(state: MatchState, side: WarSide): { base: number; min
       mines += take;
     }
   }
-  return { base: WAR.income, mines, drawn };
+  return { base: upkeepOf(state, side).income, mines, drawn };
 }
 
 /** Pay a new round's income into both purses and draw it from the mines. */
@@ -247,16 +252,27 @@ function homeMine(side: WarSide): Mine {
   return mineById(`mine-${side}`)!;
 }
 
-/** Pawns that died stand beside the castle again, back to digging at home. */
+/** Where a Pawn looking for work goes: home first, then the yard, then the
+ *  ford; the first with gold and a free digging spot. */
+export function openMine(state: MatchState, side: WarSide): Mine | undefined {
+  return [`mine-${side}`, `mine-y${side}`, "mine-mid"]
+    .map((id) => mineById(id)!)
+    .find((m) => (state.mines[m.id] ?? 0) > 0 && gatherers(state, m.id, side).length < WAR.pawnsPerMine);
+}
+
+/** Work for a Pawn, or a wait where it stands when every mine is full. */
+export function pawnOrder(state: MatchState, side: WarSide): Order {
+  const mine = openMine(state, side);
+  return mine ? { type: "gather", mine: mine.id } : { type: "stop" };
+}
+
+/** A side left with no Pawns gets one beside the castle, so nobody is locked
+ *  out of the economy. Otherwise the dead stay dead. */
 export function restorePawns(state: MatchState): MatchState {
   const next = structuredClone(state);
   for (const side of SIDES) {
-    const missing = WAR.pawns - next.units.filter((u) => u.side === side && u.class === "pawn").length;
-    if (missing <= 0) continue;
-    const mine = homeMine(side);
-    for (const at of tilesBeside(next, castlePlot(side), missing)) {
-      addUnit(next, side, "pawn", at, { type: "gather", mine: mine.id });
-    }
+    if (next.units.some((u) => u.side === side && u.class === "pawn")) continue;
+    for (const at of tilesBeside(next, castlePlot(side), 1)) addUnit(next, side, "pawn", at, pawnOrder(next, side));
   }
   return next;
 }
@@ -285,7 +301,7 @@ export function newMatch(seed: number | string = 0): MatchState {
   }
   for (const side of SIDES) {
     const mine = homeMine(side);
-    for (const slot of mineSlots(mine).slice(0, WAR.pawns)) {
+    for (const slot of mineSlots(mine).slice(0, WAR.pawns.start)) {
       addUnit(state, side, "pawn", slot, { type: "gather", mine: mine.id });
     }
   }
@@ -354,10 +370,13 @@ export function applyAction(state: MatchState, side: WarSide, action: Action): A
       const cost = WAR.unitCost[cls];
       if (next.gold[side] < cost) return fail(`a ${cls} costs ${cost} gold`);
       if (supplyUsed(next, side) >= supplyCap(next, side)) return fail("no supply left; build a house");
+      if (cls === "pawn" && next.units.filter((u) => u.side === side && u.class === "pawn").length >= WAR.pawns.max) {
+        return fail(`a side keeps at most ${WAR.pawns.max} Pawns`);
+      }
       const [at] = tilesBeside(next, plot, 1);
       if (!at) return fail(`no room beside the ${plot.kind}`);
       next.gold[side] -= cost;
-      addUnit(next, side, cls, at, { type: "stop" });
+      addUnit(next, side, cls, at, cls === "pawn" ? pawnOrder(next, side) : { type: "stop" });
       return { ok: true, state: next };
     }
 

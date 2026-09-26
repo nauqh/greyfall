@@ -12,6 +12,8 @@ import {
   applyAction,
   enemyOf,
   maxHp,
+  openMine,
+  pawnOrder,
   supplyCap,
   supplyUsed,
   type Action,
@@ -22,8 +24,9 @@ import {
 } from "./war.ts";
 
 /** Where each side's army waits: the plateau lip above its own ramp. */
-const RALLY: Record<WarSide, Cell> = { a: { col: 11, row: 4 }, b: { col: 24, row: 16 } };
-const MID: Cell = { col: 23, row: 8 };
+const RALLY: Record<WarSide, Cell> = { a: { col: 6, row: 8 }, b: { col: 34, row: 8 } };
+/** The ford, beside the rich mine. */
+const MID: Cell = { col: 20, row: 18 };
 
 /** How much stronger it must be before it marches on the enemy castle. */
 const ATTACK_EDGE = 1.3;
@@ -75,6 +78,12 @@ export function planAi(state: MatchState, side: WarSide): Plan {
     }
   }
 
+  // One more Pawn a round while a mine has room for it.
+  const pawns = own().filter((u) => u.class === "pawn").length;
+  if (state.round >= 2 && pawns < WAR.pawns.max && openMine(cur, side) && cur.gold[side] >= WAR.unitCost.pawn + 3) {
+    tryDo({ type: "train", plot: `${side}-castle` });
+  }
+
   // Buildings, in an order the seed shuffles a little.
   const wanted = rng.next() < 0.5 ? ["archery", "tower"] : ["tower", "archery"];
   if (state.round >= 4) wanted.push("monastery");
@@ -116,8 +125,10 @@ export function planAi(state: MatchState, side: WarSide): Plan {
   // Orders.
   const fighters = own().filter((u) => u.class !== "pawn");
   const enemies = cur.units.filter((u) => u.side !== side && u.class !== "pawn");
-  const idlePawns = own().filter((u) => u.class === "pawn" && u.order.type !== "gather");
-  if (idlePawns.length > 0) tryDo({ type: "order", units: idlePawns.map((u) => u.id), order: { type: "gather", mine: homeMine } });
+  for (const u of own().filter((p) => p.class === "pawn" && p.order.type === "stop")) {
+    const order = pawnOrder(cur, side);
+    if (order.type === "gather") tryDo({ type: "order", units: [u.id], order });
+  }
 
   const intruders = cur.units.filter((u) => u.side !== side && isHome(side, u));
   const ourValue = value(cur, fighters);

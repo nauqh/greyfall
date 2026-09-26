@@ -34,6 +34,7 @@ import {
   maxHp,
   mineById,
   payIncome,
+  pawnOrder,
   plotById,
   rangeOf,
   restorePawns,
@@ -520,15 +521,9 @@ function aftermath(world: MatchState, report: RoundReport): MatchState {
     b.pending = null;
   }
 
-  // Builders whose work is done go back to digging at home.
+  // A fallen level 2 building takes its bonus HP with it.
   for (const u of world.units) {
-    if (u.order.type === "build" && !world.buildings[u.order.plot]!.pending) {
-      u.order = { type: "gather", mine: `mine-${u.side}` };
-    }
-  }
-
-  for (const u of world.units) {
-    if (isHome(u.side, u)) u.hp = maxHp(world, u.side, u.class);
+    u.hp = isHome(u.side, u) ? maxHp(world, u.side, u.class) : Math.min(u.hp, maxHp(world, u.side, u.class));
   }
 
   if (world.round >= WAR.greying.fromRound) {
@@ -551,7 +546,13 @@ function aftermath(world: MatchState, report: RoundReport): MatchState {
   }
 
   world.round += 1;
-  return payIncome(restorePawns(world));
+  const next = payIncome(restorePawns(world));
+  // Builders go back to digging, home first, once this round's income is in:
+  // a builder that finished beside a mine dug nothing this round.
+  for (const u of next.units) {
+    if (u.order.type === "build" && !next.buildings[u.order.plot]!.pending) u.order = pawnOrder(next, u.side);
+  }
+  return next;
 }
 
 /** Concede: the other side wins at once. */

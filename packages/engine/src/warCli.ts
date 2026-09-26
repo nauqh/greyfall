@@ -3,14 +3,17 @@
  *
  *   pnpm war
  *   pnpm war -- --seed 7 --round 3
+ *   pnpm war -- --map
  *
- * Flags: --seed <n|string>, --round <n> (print that round's battle in full).
+ * Flags: --seed <n|string>, --round <n> (print that round's battle in full),
+ * --map (print the island with its plots and mines, and stop).
  */
 
 import { planAi } from "./ai.ts";
 import { battle, type WarEvent } from "./battle.ts";
 import { BALANCE, WAR } from "./balance.ts";
-import { newMatch, supplyCap, supplyUsed, type MatchState } from "./war.ts";
+import { MAP, MINES, PLOTS, plotCells } from "./island.ts";
+import { newMatch, supplyCap, supplyUsed, upkeepOf, type MatchState } from "./war.ts";
 
 function flag(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -43,7 +46,16 @@ function describe(e: WarEvent, name: (id: number) => string): string | null {
   }
 }
 
+/** Plots as their side's letter (castles upper case), mines as $. */
+function printMap(): void {
+  const rows = MAP.map((line) => [...line]);
+  for (const p of PLOTS) for (const c of plotCells(p)) rows[c.row]![c.col] = p.kind === "castle" ? p.side.toUpperCase() : p.side;
+  for (const m of MINES) rows[m.row]![m.col] = "$";
+  rows.forEach((r, i) => console.log(`${String(i).padStart(2)} ${r.join("")}`));
+}
+
 function main(): void {
+  if (process.argv.includes("--map")) return printMap();
   const seedArg = flag("seed") ?? "1";
   const seed = Number.isNaN(Number(seedArg)) ? seedArg : Number(seedArg);
   const detail = Number(flag("round") ?? 0);
@@ -55,7 +67,7 @@ function main(): void {
     const out = battle(s, planAi(s, "a"), planAi(s, "b"));
     const r = out.report;
     console.log(
-      `Round ${r.round}  gold A ${s.gold.a} B ${s.gold.b}  supply A ${supplyUsed(s, "a")}/${supplyCap(s, "a")} B ${supplyUsed(s, "b")}/${supplyCap(s, "b")}`,
+      `Round ${r.round}  gold A ${s.gold.a} B ${s.gold.b}  supply A ${supplyUsed(s, "a")}/${supplyCap(s, "a")} B ${supplyUsed(s, "b")}/${supplyCap(s, "b")}  upkeep A ${upkeepOf(s, "a").name} B ${upkeepOf(s, "b").name}`,
     );
     console.log(`  A: ${army(out.start, "a")}`);
     console.log(`  B: ${army(out.start, "b")}`);
