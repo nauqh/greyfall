@@ -1,24 +1,39 @@
-// The title screen: a quiet corner of the war map, drawn by the same code as
-// the map scene. The Tidewardens' plateau, its castle, cliffs and ramp, and a
-// few of their own. The page's menu floats on a cloud bank over the sea.
+// The title screen: the Tidewardens' town on its own island (introIsland.ts),
+// its cliffs and ramps, and the garrison at drill and at work. The page's
+// menu is written on a parchment scroll over the sea.
 
 import * as Phaser from "phaser";
 
-import { PLOTS, type UnitClass } from "@greyfall/engine";
+import { type UnitClass } from "@greyfall/engine";
 
 import { baseZoom, fitCamera, startGame } from "./boot";
-import { CELL, WORK, artOf, buildMap, buildScenery, cell, loadMapArt, makeMapAnims, plotBase } from "./islandMap";
+import { buildIntroIsland, buildIntroScenery } from "./introIsland";
+import { CELL, WORK, cell, loadMapArt, makeMapAnims } from "./islandMap";
 import { loadUnits, makeAnims, playPose, unitKey, type Side } from "./sprites";
-import { DEPTH, addBuilding, addShadow, buildWater, cloudCover, driftClouds, loadBuildings, loadTerrain, prepareTerrain } from "./terrain";
+import { DEPTH, addBuilding, addDecor, addShadow, buildWater, cloudCover, driftClouds, loadBuildings, loadTerrain, prepareTerrain } from "./terrain";
 
-/** Cells in view across a landscape screen; the westmost third is the cloud
- *  bank's, so the plateau starts just past the menu. */
-const VIEW = { col0: -9, col1: 20, midRow: 5.2 } as const;
-/** Portrait: the plateau and its ramp, lifted clear of the southern bank. */
-const VIEW_TALL = { col0: 1.5, col1: 17.5, midRow: 7.2 } as const;
+/** Cells in view across a landscape screen; the westmost part is the menu
+ *  scroll's, so the plateau starts just past it. */
+const VIEW = { col0: -14.2, col1: 24.7, midRow: 7.2 } as const;
+/** Portrait: the town, lifted clear of the menu scroll along the bottom. */
+const VIEW_TALL = { col0: 1.5, col1: 17.5, midRow: 8.6 } as const;
 
-/** Only the castle stands; the empty plateau is the war still to come. */
-const HOME = PLOTS.filter((p) => p.side === "a" && p.kind === "castle");
+/** How far below a unit's centre its feet stand, in px. */
+const FOOT = 34;
+
+/** The Tidewardens' town, spread wider than the war's plots: the keep on
+ *  the plateau, the monastery on the knoll below it, the rest on the lowland.
+ *  Each is its base's centre, in cells. */
+const TOWN = [
+  cell("a", "tower", 3, 3),
+  cell("a", "castle", 6.5, 4),
+  cell("a", "barracks", 11, 4),
+  cell("a", "monastery", 8, 9),
+  cell("a", "archery", 6, 12),
+  cell("a", "house1", 21.5, 9),
+  cell("a", "house2", 15.5, 10),
+  cell("a", "house3", 18.5, 6),
+];
 
 /** The cast, in cells. `pace` is how many cells a unit walks from its spot
  *  and back, signed for which way it sets off; 0 keeps it rooted. */
@@ -32,14 +47,40 @@ interface Extra {
   left?: boolean;
   /** A Pawn's work loop instead of idle. */
   work?: keyof typeof WORK;
+  /** Standing up on a building: the row of its base, to draw just over it. */
+  on?: number;
 }
 
 const CAST: readonly Extra[] = [
-  { side: "a", cls: "warrior", col: 5, row: 4, pace: 3 },
-  { side: "a", cls: "archer", col: 9, row: 2.6 },
-  // At the mine east of the plateau.
-  { side: "a", cls: "pawn", col: 16, row: 3, left: true, work: "dig" },
+  // On the castle's two turrets and the tower top.
+  { side: "a", cls: "archer", col: 4.52, row: 1.45, on: 4 },
+  { side: "a", cls: "archer", col: 7.61, row: 1.45, on: 4, left: true },
+  { side: "a", cls: "archer", col: 2.6, row: 0.68, on: 3 },
+  { side: "a", cls: "warrior", col: 10.3, row: 4.6 },
+  { side: "a", cls: "warrior", col: 11.5, row: 4.7, left: true },
+  { side: "a", cls: "warrior", col: 4.2, row: 4.6, pace: 2 },
+  { side: "a", cls: "monk", col: 14, row: 2.9, left: true },
+  { side: "a", cls: "lancer", col: 7.2, row: 13.8, left: true },
+  // Out on the east lobe.
+  { side: "a", cls: "pawn", col: 20.2, row: 8.2, work: "hammer" },
+  // At the mine east of the plateau, and one on the road to it.
+  { side: "a", cls: "pawn", col: 16.3, row: 3, left: true, work: "dig" },
+  { side: "a", cls: "pawn", col: 14.7, row: 4.7, pace: 2 },
+  // Under the cliffs.
+  { side: "a", cls: "warrior", col: 8.8, row: 9.8, pace: 1.5 },
+  { side: "a", cls: "monk", col: 10.5, row: 6.9 },
+  { side: "a", cls: "lancer", col: 3.2, row: 6 },
+  { side: "a", cls: "archer", col: 8, row: 10.9, left: true },
 ];
+
+/** The title screen's own woods, groves on the lowland round the town. */
+const TREES: readonly [number, number][] = [
+  [2.5, 6.9], [2.4, 8.4],
+  [19.3, 4.9], [20.3, 5.6], [21.4, 5.1], [22.6, 5.8], [23.1, 6.9],
+  [10.6, 10.4], [11.5, 9.9], [3.2, 12.9],
+];
+
+const SHEEP: readonly [number, number][] = [[22.2, 8.2], [19.4, 8.6], [13.4, 6.8]];
 
 export class IntroScene extends Phaser.Scene {
   constructor() {
@@ -50,7 +91,7 @@ export class IntroScene extends Phaser.Scene {
     loadTerrain(this);
     loadUnits(this);
     loadMapArt(this);
-    loadBuildings(this, HOME.map((p) => cell(p.side, artOf(p), 0, 0)));
+    loadBuildings(this, TOWN);
   }
 
   create(): void {
@@ -67,11 +108,24 @@ export class IntroScene extends Phaser.Scene {
     makeMapAnims(this);
 
     buildWater(this);
-    buildMap(this);
-    buildScenery(this);
-    for (const p of HOME) {
-      const { x, y } = plotBase(p);
-      addBuilding(this, cell(p.side, artOf(p), x / CELL, y / CELL));
+    buildIntroIsland(this);
+    buildIntroScenery(this);
+    for (const s of TOWN) addBuilding(this, s);
+    TREES.forEach(([c, r], i) => addDecor(this, "tree", c * CELL, r * CELL, 1, `intro-tree-${i}`));
+    for (const [c, r] of SHEEP) {
+      const sheep = this.add
+        .sprite(c * CELL, r * CELL, "sheep")
+        .setOrigin(0.5, 0.66)
+        .setDepth(DEPTH.decorBehind + (r * CELL) / 1000)
+        .setFlipX(c > 16)
+        .play("sheep_anim");
+      if (sheep.anims.currentAnim) sheep.anims.setProgress(Math.random());
+    }
+    // Props sit in a band under every unit; here the cast walks among them,
+    // so move them into the units' band. Units sort by their centre, their
+    // feet about FOOT below it, so props sort by base minus FOOT.
+    for (const o of this.children.list as Phaser.GameObjects.Image[]) {
+      if (o.depth >= DEPTH.decorBehind && o.depth < DEPTH.clouds) o.setDepth(DEPTH.unit + (o.depth - DEPTH.decorBehind) * 1000 - FOOT);
     }
     for (const extra of CAST) this.addExtra(extra);
     driftClouds(this, { w: 20 * CELL, h: 12 * CELL }, "intro");
@@ -79,11 +133,12 @@ export class IntroScene extends Phaser.Scene {
   }
 
   /** One unit loafing: a shadow, a sprite, and maybe a there-and-back walk. */
-  private addExtra({ side, cls, col, row, pace = 0, left, work }: Extra): void {
+  private addExtra({ side, cls, col, row, pace = 0, left, work, on }: Extra): void {
     const x = (col + 0.5) * CELL;
     const y = (row + 0.5) * CELL;
-    const shadow = addShadow(this, x, y, cls === "lancer" ? 0.8 : 0.62);
-    const sprite = this.add.sprite(x, y, unitKey(side, cls, "idle")).setDepth(DEPTH.unit + y);
+    // Up on a building the ground is its roof, which bakes in its own shade.
+    const shadow = addShadow(this, x, y, cls === "lancer" ? 0.8 : 0.62).setVisible(on === undefined);
+    const sprite = this.add.sprite(x, y, unitKey(side, cls, "idle")).setDepth(DEPTH.unit + (on === undefined ? y : on * CELL - FOOT + 1));
     playPose(sprite, side, cls, "idle");
     if (work) sprite.play(WORK[work].key);
     if (sprite.anims.currentAnim) sprite.anims.setProgress(Math.random());

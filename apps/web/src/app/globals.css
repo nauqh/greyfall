@@ -210,64 +210,40 @@ textarea {
 }
 
 /* --- title menu -----------------------------------------------------------
-   The island plays on behind; the menu floats on a bank of the loader's own
-   clouds over the western sea. It arrives as the cover parts, and the
+   The island plays on behind; the menu is written on the kit's parchment
+   scroll, over the western sea. It arrives as the cover parts, and the
    picked entry rides the kit's sword banner (scripts/compose-ui.mjs). */
 
-.bank {
-	--k: clamp(7px, 1vh, 12px);
-	position: absolute;
-	inset: 0;
-	z-index: 2;
-	overflow: hidden;
-	pointer-events: none;
-	animation: bankIn 1400ms cubic-bezier(0.22, 1, 0.36, 1) 200ms both;
-}
-
-.bankCloud {
-	position: absolute;
-	left: calc(var(--x) * var(--k));
-	top: var(--y);
-	width: calc(var(--w) * var(--k));
-	aspect-ratio: 576 / 256;
-	translate: -50% -50%;
-	background: url("/tiny-swords/ui/cover1.png") center / 100% 100% no-repeat;
-	image-rendering: pixelated;
-	animation: bankSway 7s cubic-bezier(0.37, 0, 0.63, 1) var(--d) infinite alternate;
-}
-
-.bankCloud.cover5 {
-	background-image: url("/tiny-swords/ui/cover5.png");
-}
-
-.bankCloud.flip {
-	scale: -1 1;
-}
-
-@keyframes bankSway {
-	from {
-		transform: translateX(calc(var(--k) * -1.5));
-	}
-	to {
-		transform: translateX(calc(var(--k) * 1.5));
-	}
-}
-
-@keyframes bankIn {
-	from {
-		opacity: 0;
-		transform: translateX(-60%);
-	}
+/* The scroll is 320x320 with its paper inside 28..276 x 60..303, curls at
+   the foot. The slice keeps the roll, the corners and the curls unstretched;
+   --u is screen px per art px. */
+.titleMenu,
+.menuScroll {
+	--u: clamp(1px, 0.15vh, 1.5px);
 }
 
 .titleMenu {
 	position: absolute;
 	z-index: 3;
-	left: clamp(24px, 4vw, 64px);
+	/* The art's own transparent margin, less a strip of sea. */
+	left: calc(clamp(8px, 2vw, 32px) - 28 * var(--u));
 	top: 50%;
 	transform: translateY(-50%);
 	display: flex;
 	flex-direction: column;
+	padding: 0 12px;
+	border: solid transparent;
+	border-width: calc(84 * var(--u)) calc(64 * var(--u)) calc(76 * var(--u)) calc(64 * var(--u));
+	border-image: url("/tiny-swords/ui/banner.png") 84 64 76 64 fill stretch;
+	image-rendering: pixelated;
+	animation: scrollIn 700ms cubic-bezier(0.22, 1, 0.36, 1) 200ms both;
+}
+
+@keyframes scrollIn {
+	from {
+		opacity: 0;
+		translate: 0 24px;
+	}
 }
 
 .logo {
@@ -276,7 +252,7 @@ textarea {
 	flex-direction: column;
 	font-family: var(--display), serif;
 	font-weight: 900;
-	font-size: clamp(44px, 5vw, 72px);
+	font-size: clamp(40px, 4vw, 60px);
 	line-height: 1;
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
@@ -310,19 +286,19 @@ textarea {
 /* The banner is 320x128: a 128px hilt, a 64px blade that stretches, a 128px
    point. Every entry keeps the side borders so picking one never moves text. */
 .menuItem {
-	--h: 72px;
+	--h: 60px;
 	display: flex;
 	align-items: center;
-	width: 340px;
+	width: 290px;
 	height: var(--h);
 	padding: 0 0 4px 4px;
 	font-family: var(--display), serif;
 	font-weight: 700;
-	font-size: 28px;
+	font-size: 24px;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
 	text-decoration: none;
-	/* Ink on the cloud bank. */
+	/* Ink on the parchment. */
 	color: #1c2634;
 	border: 0 solid transparent;
 	border-width: 0 var(--h);
@@ -350,7 +326,7 @@ textarea {
 
 .menuHint {
 	min-height: 3em;
-	max-width: 340px;
+	max-width: 290px;
 	margin: 20px 0 0 8px;
 	font-size: 15px;
 	line-height: 1.5;
@@ -392,79 +368,82 @@ textarea {
 
 /* Portrait: the logo up top, the menu along the bottom, the village between. */
 @media (max-aspect-ratio: 6/5) {
-	/* The west bank turned south: x runs up from the bottom, y across. */
-	.bankCloud {
-		left: var(--y);
-		top: auto;
-		bottom: calc(var(--x) * var(--k));
-		translate: -50% 50%;
-	}
-	@keyframes bankIn {
-		from {
-			opacity: 0;
-			transform: translateY(60%);
-		}
-	}
-	.credit {
-		color: #2e3a4d;
-		text-shadow: none;
-	}
 	/* The logo stands on the open sea. */
 	.logoSub {
 		color: var(--ink);
 		-webkit-text-stroke: 3px #1c2634;
 		paint-order: stroke fill;
 	}
+	/* Only the menu is on the scroll; the logo keeps the open sea. */
 	.titleMenu {
 		inset: 72px 16px 40px;
 		transform: none;
 		align-items: center;
 		text-align: center;
+		padding: 0;
+		border: 0;
+		border-image: none;
+		animation: none;
+	}
+	.menuScroll {
+		--u: 0.9px;
+		margin-top: auto;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 0 8px;
+		border: solid transparent;
+		border-width: calc(84 * var(--u)) calc(64 * var(--u)) calc(76 * var(--u)) calc(64 * var(--u));
+		border-image: url("/tiny-swords/ui/banner.png") 84 64 76 64 fill stretch;
+		image-rendering: pixelated;
+		animation: scrollIn 700ms cubic-bezier(0.22, 1, 0.36, 1) 200ms both;
 	}
 	.logoSub {
 		font-size: 11px;
 		letter-spacing: 0.16em;
 	}
 	.menu {
-		margin-top: auto;
+		margin-top: 0;
 		gap: 0;
 	}
 	.menuItem {
-		--h: 56px;
-		width: 280px;
-		font-size: 22px;
+		--h: 50px;
+		width: 240px;
+		font-size: 20px;
 	}
 	.menuHint {
 		margin: 8px 0 0;
 		font-size: 14px;
 	}
+	.credit {
+		margin: 6px 0 0;
+		font-size: 10px;
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.bank,
-	.bankCloud,
+	.titleMenu,
+	.menuScroll,
 	.logo,
 	.menuItem,
 	.menuItem.on,
-	.menuHint {
+	.menuHint,
+	.credit {
 		animation: none;
 	}
 }
 
-/* The credit line, WC3-style: bottom-right corner, small and quiet. Fixed
-   px so it stays legible at any window size. */
+/* The credit, signed at the foot of the scroll in the subtitle's ink. */
 .credit {
-	position: absolute;
-	right: 16px;
-	bottom: 12px;
-	z-index: 3;
-	font-size: 13px;
-	font-weight: 600;
-	letter-spacing: 0.04em;
-	color: rgba(253, 250, 240, 0.8);
-	text-shadow: 0 1px 0 #1c2634;
-	pointer-events: none;
+	margin: 12px 0 0 8px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.2em;
+	text-transform: uppercase;
+	color: #8a5a12;
+	opacity: 0.8;
 	user-select: none;
+	animation: hintIn 320ms ease-out 900ms both;
 }
 
 /* --- duel lobby ---------------------------------------------------------

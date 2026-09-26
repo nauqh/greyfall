@@ -16,25 +16,6 @@ const MENU = [
   { href: "/duel", label: "Duel", hint: "Open a room and send the code to a friend." },
 ] as const;
 
-/** The bank the menu floats on, heaped along the west edge. x and w in
- *  bank units (about 1vh), y in % of the screen; cover5 is the shaded cloud,
- *  kept to the back so the grey reads as depth. */
-const BANK = [
-  { key: "cover5", x: 0, y: 4, w: 120 },
-  { key: "cover5", x: 16, y: 34, w: 125 },
-  { key: "cover5", x: 4, y: 66, w: 125 },
-  { key: "cover5", x: 14, y: 98, w: 120 },
-  { key: "cover1", x: 6, y: -4, w: 105 },
-  { key: "cover1", x: 24, y: 16, w: 100 },
-  { key: "cover1", x: 2, y: 24, w: 100 },
-  { key: "cover1", x: 26, y: 40, w: 100 },
-  { key: "cover1", x: 4, y: 48, w: 100 },
-  { key: "cover1", x: 24, y: 62, w: 100 },
-  { key: "cover1", x: 2, y: 74, w: 100 },
-  { key: "cover1", x: 20, y: 86, w: 100 },
-  { key: "cover1", x: -2, y: 98, w: 100 },
-] as const;
-
 export default function Page() {
   const router = useRouter();
   const exit = useCloudExit();
@@ -68,48 +49,41 @@ export default function Page() {
       >
         {ready && (
           <>
-            <div className="bank" aria-hidden>
-              {BANK.map((c, i) => (
-                <div
-                  key={i}
-                  className={`bankCloud ${c.key}${i % 3 === 1 ? " flip" : ""}`}
-                  style={{ "--x": c.x, "--y": `${c.y}%`, "--w": c.w, "--d": `${-i * 1700}ms` } as React.CSSProperties}
-                />
-              ))}
-            </div>
             <div className="titleMenu">
               <h1 className="logo">
                 Greyfall
                 <span className="logoSub">The last island before the grey</span>
               </h1>
-              <nav className="menu" aria-label="Main menu">
-                {MENU.map((m, i) => (
-                  <Link
-                    key={m.href}
-                    ref={(el) => {
-                      items.current[i] = el;
-                    }}
-                    href={m.href}
-                    className={`menuItem${i === pick ? " on" : ""}`}
-                    style={{ "--i": i } as React.CSSProperties}
-                    aria-describedby="menuHint"
-                    onMouseEnter={(e) => e.currentTarget.focus({ preventScroll: true })}
-                    onFocus={() => setPick(i)}
-                    onClick={(e) => {
-                      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-                      e.preventDefault();
-                      go(m.href);
-                    }}
-                  >
-                    {m.label}
-                  </Link>
-                ))}
-              </nav>
-              <p id="menuHint" className="menuHint" key={pick}>
-                {MENU[pick]!.hint}
-              </p>
+              <div className="menuScroll">
+                <nav className="menu" aria-label="Main menu">
+                  {MENU.map((m, i) => (
+                    <Link
+                      key={m.href}
+                      ref={(el) => {
+                        items.current[i] = el;
+                      }}
+                      href={m.href}
+                      className={`menuItem${i === pick ? " on" : ""}`}
+                      style={{ "--i": i } as React.CSSProperties}
+                      aria-describedby="menuHint"
+                      onMouseEnter={(e) => e.currentTarget.focus({ preventScroll: true })}
+                      onFocus={() => setPick(i)}
+                      onClick={(e) => {
+                        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                        e.preventDefault();
+                        go(m.href);
+                      }}
+                    >
+                      {m.label}
+                    </Link>
+                  ))}
+                </nav>
+                <p id="menuHint" className="menuHint" key={pick}>
+                  {MENU[pick]!.hint}
+                </p>
+                <p className="credit">Developed by Nauqh</p>
+              </div>
             </div>
-            <div className="credit">Developed by Nauqh</div>
           </>
         )}
       </GameCanvas>
