@@ -16,6 +16,7 @@ import {
   isOpen,
   isSlope,
   level,
+  buildSlots,
   mineSlots,
   plotCells,
   plotDistance,
@@ -105,10 +106,8 @@ function reachesPlot(from: Cell, plot: Plot, range: number): boolean {
   return plotCells(plot).some((c) => reaches(from, c, range));
 }
 
-/** The row just below a plot, where a builder stands in front of the art
- *  rather than on its roof. */
-function inFront(plot: Plot, c: Cell): boolean {
-  return plotDistance(plot, c) === 1 && c.row === plot.row + plot.h;
+function atBuildSlot(plot: Plot, c: Cell): boolean {
+  return buildSlots(plot).some((s) => sameCell(s, c));
 }
 
 function standing(state: MatchState, plot: Plot): boolean {
@@ -223,7 +222,7 @@ export function battle(state: MatchState, planA: Plan, planB: Plan): BattleOutco
         return false;
       case "build": {
         const p = plotById(o.plot);
-        return p !== undefined && !inFront(p, u);
+        return p !== undefined && !atBuildSlot(p, u);
       }
     }
   };
@@ -268,13 +267,16 @@ export function battle(state: MatchState, planA: Plan, planB: Plan): BattleOutco
         u.post = { col: u.col, row: u.row };
         return false;
       case "build": {
-        // In front of the plot, hammering, until the round ends; any side
-        // will do when the front cannot be reached.
+        // Beside the plot, hammering, until the round ends; in front of the
+        // art rather than behind it when a front tile is free.
         const p = plotById(o.plot);
-        if (!p || (inFront(p, u) && !othersOn(u, u))) return false;
-        if (stepToward(u, (c) => inFront(p, c), t)) return true;
-        if (plotDistance(p, u) === 1 && !othersOn(u, u)) return false;
-        return stepToward(u, (c) => plotDistance(p, c) === 1, t);
+        if (!p) return false;
+        const slot = (c: Cell) => atBuildSlot(p, c);
+        const front = (c: Cell) => slot(c) && c.row >= p.row + p.h;
+        if (front(u) && !othersOn(u, u)) return false;
+        if (stepToward(u, front, t)) return true;
+        if (slot(u) && !othersOn(u, u)) return false;
+        return stepToward(u, slot, t);
       }
     }
   };

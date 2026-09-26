@@ -17,8 +17,9 @@ import {
   battle,
   freeBuilders,
   mineById,
-  plotDistance,
-  tileDistance,
+  buildSlots,
+  mineSlots,
+  sameCell,
   isOpen,
   maxHp,
   newMatch,
@@ -613,10 +614,10 @@ export class StrategicScene extends Phaser.Scene {
     let job: "dig" | "hammer" = "dig";
     if (o.type === "gather") {
       const m = mineById(o.mine);
-      if (m && tileDistance(u, m) <= 1) at = cellXY(m.col, m.row).x;
+      if (m && mineSlots(m).some((c) => sameCell(c, u))) at = cellXY(m.col, m.row).x;
     } else if (o.type === "build") {
       const p = plotById(o.plot);
-      if (p && plotDistance(p, u) === 1) {
+      if (p && buildSlots(p).some((c) => sameCell(c, u))) {
         at = plotBase(p).x;
         job = "hammer";
       }

@@ -8,6 +8,7 @@ import {
   WAR,
   applyAction,
   battle,
+  buildSlots,
   canStep,
   castlePlot,
   findPath,
@@ -82,6 +83,13 @@ describe("island", () => {
 
   it("gives every mine room for its Pawns", () => {
     for (const m of MINES) expect(mineSlots(m).length).toBeGreaterThanOrEqual(WAR.pawnsPerMine);
+  });
+
+  it("gives every plot build slots on its own plateau, none down the cliff", () => {
+    for (const p of PLOTS) {
+      expect(buildSlots(p).length, p.id).toBeGreaterThan(0);
+      for (const c of buildSlots(p)) expect(isHome(p.side, c), `${p.id} ${c.col},${c.row}`).toBe(true);
+    }
   });
 
   it("only changes level along a ramp", () => {
@@ -240,6 +248,16 @@ describe("battle", () => {
     // In front of the plot, not on a neighbour's roof.
     expect(plotDistance(plot, last)).toBe(1);
     expect(last.row).toBe(plot.row + plot.h);
+  });
+
+  it("builds from the plot's own plateau, not from the ground below its cliff", () => {
+    for (const id of ["a-house1", "a-house2", "a-house3"]) {
+      const s = act(newMatch(1), "a", { type: "build", plot: id });
+      const builder = s.units.find((u) => u.order.type === "build")!;
+      const out = battle(s, [], []);
+      const last = out.events.filter((e) => e.type === "move" && e.unit === builder.id).at(-1) as { col: number; row: number };
+      expect(isHome("a", last), `${id} built from ${last.col},${last.row}`).toBe(true);
+    }
   });
 
   it("never lets a Pawn strike, even beside an enemy, nor take an attack order", () => {

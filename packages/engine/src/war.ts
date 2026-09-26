@@ -9,11 +9,12 @@ import { BALANCE, WAR, type UnitClass } from "./balance.ts";
 import {
   MINES,
   PLOTS,
+  buildSlots,
   castlePlot,
   cellKey,
+  findRoute,
   isOpen,
   mineSlots,
-  plotDistance,
   stepsFrom,
   tileDistance,
   type BuildingKind,
@@ -165,14 +166,8 @@ function floodOpen(seeds: readonly Cell[], n: number, skip: ReadonlySet<number>)
 
 /** The nearest open, empty tiles to a plot, nearest first. */
 function tilesBeside(state: MatchState, plot: Plot, n: number): Cell[] {
-  const seeds: Cell[] = [];
   // South row first: a unit stepping out stands in front of the art, not on its roof.
-  for (let r = plot.row + plot.h; r >= plot.row - 1; r--) {
-    for (let c = plot.col - 1; c <= plot.col + plot.w; c++) {
-      const cell = { col: c, row: r };
-      if (plotDistance(plot, cell) === 1 && isOpen(cell)) seeds.push(cell);
-    }
-  }
+  const seeds = [...buildSlots(plot)].sort((a, b) => b.row - a.row);
   return floodOpen(seeds, n, new Set(state.units.map(cellKey)));
 }
 
@@ -305,7 +300,12 @@ export function freeBuilders(state: MatchState, side: WarSide): WarUnit[] {
 /** The free Pawn nearest the plot goes to build it, leaving whatever it was
  *  doing: a Pawn building earns nothing that round. */
 function sendBuilder(state: MatchState, side: WarSide, plot: Plot): boolean {
-  const pawn = freeBuilders(state, side).sort((a, b) => plotDistance(plot, a) - plotDistance(plot, b) || a.id - b.id)[0];
+  // By the walk, not the crow's flight: a Pawn below the cliff is far.
+  const slots = new Set(buildSlots(plot).map(cellKey));
+  const walk = (u: WarUnit) => findRoute(u, (c) => slots.has(cellKey(c)), (c) => !isOpen(c))?.length ?? Infinity;
+  const pawn = freeBuilders(state, side)
+    .map((u) => ({ u, d: walk(u) }))
+    .sort((a, b) => a.d - b.d || a.u.id - b.u.id)[0]?.u;
   if (!pawn) return false;
   pawn.order = { type: "build", plot: plot.id };
   return true;

@@ -285,3 +285,23 @@ export function mineSlots(mine: Mine): Cell[] {
   }
   return out;
 }
+
+const BUILD_SLOTS = new Map<string, Cell[]>();
+
+/** Where a Pawn stands to build a plot: the nearest open tiles on the plot's
+ *  own plateau, never down its cliff. */
+export function buildSlots(p: Plot): Cell[] {
+  let out = BUILD_SLOTS.get(p.id);
+  if (out) return out;
+  out = [];
+  for (let d = 1; out.length === 0 && d <= 3; d++) {
+    for (let r = p.row - d; r < p.row + p.h + d; r++) {
+      for (let c = p.col - d; c < p.col + p.w + d; c++) {
+        const cell = { col: c, row: r };
+        if (plotDistance(p, cell) === d && isOpen(cell) && isHome(p.side, cell)) out.push(cell);
+      }
+    }
+  }
+  BUILD_SLOTS.set(p.id, out);
+  return out;
+}

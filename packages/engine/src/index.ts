@@ -51,6 +51,7 @@ export {
   isStaticBlocked,
   isWalkable,
   level,
+  buildSlots,
   mineSlots,
   plateauOf,
   plotCells,
