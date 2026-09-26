@@ -4,7 +4,7 @@
 // regexes the remaining .png literals out of the other game sources, since
 // those files cannot be imported outside a browser (Phaser needs a DOM).
 
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -42,9 +42,12 @@ wanted.add(art.TERRAIN.water);
 wanted.add(art.TERRAIN.foam);
 wanted.add(art.TERRAIN.shadow);
 for (const group of Object.values(art.DECOR)) for (const d of group) wanted.add(d.file);
-// Buildings name only their file; the faction directory is applied at load.
-for (const b of Object.values(art.BUILDINGS))
-  for (const dir of ["Blue Buildings", "Red Buildings"]) wanted.add(`Buildings/${dir}/${b.file}`);
+// Buildings name only their file; the faction directory is applied at load,
+// except to Enemy Pack extras, which carry their own path (art.ts buildingUrl).
+for (const b of Object.values(art.BUILDINGS)) {
+  if (b.file.startsWith("Enemy Pack/")) wanted.add(b.file);
+  else for (const dir of ["Blue Buildings", "Red Buildings"]) wanted.add(`Buildings/${dir}/${b.file}`);
+}
 wanted.add(art.FX.dust.file);
 wanted.add(art.FX.explosion.file);
 const seq = (prefix, count, pad) =>
@@ -66,16 +69,24 @@ for (const rel of SOURCES.slice(1)) {
   }
 }
 
-// Unit poses are written relative to `Units/<side>/`; both sides load them.
+// Unit poses are written relative to `Units/<side>/`, both sides load them;
+// the monster host's are relative to `Enemy Pack/` (sprites.ts).
 const SIDE = (p) => join(PACK, "Units", "Blue Units", p) && [
   join(PACK, "Units", "Blue Units", p),
   join(PACK, "Units", "Red Units", p),
 ];
 
+// Literals built in template strings or URL-encoded only name the end of a
+// path, so they are matched against every file in the pack.
+const ALL = readdirSync(PACK, { recursive: true }).map((p) => p.replaceAll("\\", "/"));
+
 const missing = [];
-for (const rel of wanted) {
+for (const raw of wanted) {
+  const rel = decodeURIComponent(raw);
   if (existsSync(join(PACK, rel))) continue;
+  if (ALL.some((p) => p === rel || p.endsWith(`/${rel}`))) continue;
   if (rel.includes("/") && SIDE(rel).every((p) => existsSync(p))) continue;
+  if (existsSync(join(PACK, "Enemy Pack", rel))) continue;
   missing.push(rel);
 }
 
