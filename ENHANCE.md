@@ -2,6 +2,8 @@
 
 Sep 26, 2026 · @Wan
 
+> Since Sep 27, 2026 the island, the economy and the modes have moved on: see [RTS.md](RTS.md). The 41x24 map and the fixed plots below are superseded by a 61x38 island with free placement, and the sides are two knight clans.
+
 ## Summary
 
 Greyfall keeps its plan-then-battle rounds and adds a light layer of Warcraft: a new island with two roads over three land levels, bonfires to hold, neutral camps to clear, one hero, a real economy choice, and a Greying that eats the map instead of just the halls. Each change answers something 30 AI-vs-AI wars on today's map showed (`pnpm war`, seeds 1 to 30):
