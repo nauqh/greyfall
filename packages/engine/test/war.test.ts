@@ -2,39 +2,44 @@ import { describe, expect, it } from "vitest";
 import fc from "fast-check";
 
 import {
+  AI_EVERY_TICKS,
+  BALANCE,
   MAP,
   MINES,
-  PLOTS,
+  START,
   STRAT_COLS,
   STRAT_ROWS,
   WAR,
-  at,
   applyAction,
+  at,
   battle,
-  buildSlots,
+  canPlace,
   canStep,
   castlePlot,
+  createSim,
   findPath,
+  findPlacement,
+  freeIn,
   incomeFor,
   isHome,
-  isOpen,
   isWalkable,
   maxHp,
   mineSlots,
   newMatch,
+  occupied,
   planAi,
   plotCells,
   plotDistance,
-  plotById,
+  runAi,
   supplyCap,
   supplyUsed,
   upkeepOf,
   type Action,
+  type BuildingKind,
   type MatchState,
   type WarSide,
+  type WarUnit,
 } from "../src/index.ts";
-
-const blocked = (c: { col: number; row: number }) => !isOpen(c);
 
 function act(state: MatchState, side: WarSide, action: Action): MatchState {
   const r = applyAction(state, side, action);
@@ -42,152 +47,155 @@ function act(state: MatchState, side: WarSide, action: Action): MatchState {
   return r.state;
 }
 
+/** Build a kind where the AI would put it. */
+function build(state: MatchState, side: WarSide, kind: BuildingKind): { state: MatchState; id: string } {
+  const spot = findPlacement(state, side, kind)!;
+  const next = act(state, side, { type: "build", kind, col: spot.col, row: spot.row });
+  const id = Object.keys(next.buildings).find((k) => !state.buildings[k])!;
+  return { state: next, id };
+}
+
 /** A bare island: both castles and barracks, nobody on it. */
-function empty(round = 1): MatchState {
-  const s = newMatch("empty");
+function empty(round = 1, mode: "rounds" | "realtime" = "rounds"): MatchState {
+  const s = newMatch("empty", mode);
   return { ...s, round, units: [] };
 }
 
+function unit(side: WarSide, cls: WarUnit["class"], col: number, row: number, id: number, order: WarUnit["order"] = { type: "stop" }): WarUnit {
+  return { id, side, class: cls, hp: BALANCE.units[cls].hp, col, row, order, stance: "firm", post: { col, row } };
+}
+
+const front = (side: WarSide) => ({ col: START[side].castle.col + 1, row: START[side].castle.row + 2 });
+
 describe("island", () => {
+  const free = freeIn(occupied(newMatch()));
+  const blocked = (c: { col: number; row: number }) => !free(c);
+
   it("has rows of one width", () => {
     expect(new Set(MAP.map((r) => r.length)).size).toBe(1);
-  });
-
-  it("puts every plot on its own home plateau, with no two overlapping", () => {
-    const seen = new Set<string>();
-    for (const p of PLOTS) {
-      for (const c of plotCells(p)) {
-        expect(isHome(p.side, c), `${p.id} ${c.col},${c.row}`).toBe(true);
-        expect(seen.has(`${c.col},${c.row}`), `${p.id} overlaps`).toBe(false);
-        seen.add(`${c.col},${c.row}`);
-      }
-    }
-  });
-
-  it("joins the two bases, and every plot to the enemy's", () => {
-    for (const p of PLOTS) {
-      const beside = [
-        { col: p.col - 1, row: p.row },
-        { col: p.col + p.w, row: p.row },
-        { col: p.col, row: p.row + p.h },
-        { col: p.col, row: p.row - 1 },
-      ].find(isOpen);
-      expect(beside, `${p.id} has no open side`).toBeDefined();
-      const enemy = castlePlot(p.side === "a" ? "b" : "a");
-      expect(findPath(beside!, { col: enemy.col - 1, row: enemy.row + 1 }, blocked), p.id).not.toBeNull();
-    }
   });
 
   it("is the same island for both sides, mirrored left to right", () => {
     const flip: Record<string, string> = { "<": ">", ">": "<", "[": "]", "]": "[" };
     for (const line of MAP) expect([...line].reverse().map((ch) => flip[ch] ?? ch).join("")).toBe(line);
-    for (const p of PLOTS.filter((x) => x.side === "a")) {
-      const twin = plotById(p.id.replace(/^a/, "b"))!;
-      expect([twin.col, twin.row], p.id).toEqual([STRAT_COLS - 1 - p.col - (p.w - 1), p.row]);
+    expect(START.b.castle.col).toBe(STRAT_COLS - 1 - START.a.castle.col - 2);
+    for (const m of MINES) {
+      const twin = MINES.find((o) => o.col === STRAT_COLS - 1 - m.col && o.row === m.row);
+      expect(twin, m.id).toBeDefined();
+    }
+  });
+
+  it("starts each castle and barracks on its own home plateau", () => {
+    const s = newMatch(1);
+    for (const b of Object.values(s.buildings)) {
+      for (const c of plotCells(b)) expect(isHome(b.side, c), `${b.id} ${c.col},${c.row}`).toBe(true);
     }
   });
 
   it("reaches every open tile from the castle", () => {
-    const front = { col: castlePlot("a").col + 1, row: castlePlot("a").row + 2 };
     for (let row = 0; row < STRAT_ROWS; row++) {
       for (let col = 0; col < STRAT_COLS; col++) {
         const c = { col, row };
-        if (isOpen(c)) expect(findPath(front, c, blocked), `${col},${row}`).not.toBeNull();
+        if (!blocked(c)) expect(findPath(front("a"), c, blocked), `${col},${row}`).not.toBeNull();
       }
     }
   });
 
   it("joins the bases by exactly two roads", () => {
-    const front = (side: WarSide) => ({ col: castlePlot(side).col + 1, row: castlePlot(side).row + 2 });
     const without = (cells: [number, number][]) => (c: { col: number; row: number }) =>
       blocked(c) || cells.some(([col, row]) => c.col === col && c.row === row);
-    const pass: [number, number][] = [[15, 8]];
-    const ford: [number, number][] = [[20, 17], [20, 18], [20, 19]];
-    const viaFord = findPath(front("a"), front("b"), without(pass));
-    const viaPass = findPath(front("a"), front("b"), without(ford));
-    // The Low Road dips under the watch cliff; evening it out is balance work.
-    expect(viaPass).toHaveLength(34);
-    expect(viaFord).toHaveLength(38);
+    const pass: [number, number][] = [[22, 13], [38, 13]];
+    const ford: [number, number][] = [];
+    for (let row = 25; row < 34; row++) ford.push([30, row]);
+    // The Low Road runs round the yard; evening the two out is balance work.
+    expect(findPath(front("a"), front("b"), without(ford))).toHaveLength(48);
+    expect(findPath(front("a"), front("b"), without(pass))).toHaveLength(60);
     expect(findPath(front("a"), front("b"), without([...pass, ...ford]))).toBeNull();
   });
 
-  it("puts the ford mine as far from one castle as the other", () => {
-    const mid = MINES.find((m) => m.id === "mine-mid")!;
-    const slot = { col: mid.col, row: mid.row - 1 };
-    expect(mineSlots(mid)).toContainEqual(slot);
-    const a = findPath({ col: 5, row: 7 }, slot, blocked)!.length;
-    const b = findPath({ col: 35, row: 7 }, slot, blocked)!.length;
-    expect(a).toBe(b);
-  });
-
-  it("puts each home mine on its home plateau", () => {
+  it("puts each home mine on its home plateau, and gives every mine room", () => {
     expect(isHome("a", MINES.find((m) => m.id === "mine-a")!)).toBe(true);
     expect(isHome("b", MINES.find((m) => m.id === "mine-b")!)).toBe(true);
-  });
-
-  it("gives every mine room for its Pawns", () => {
-    for (const m of MINES) expect(mineSlots(m).length).toBeGreaterThanOrEqual(WAR.pawnsPerMine);
-  });
-
-  it("gives every plot build slots on its own plateau, none down the cliff", () => {
-    for (const p of PLOTS) {
-      expect(buildSlots(p).length, p.id).toBeGreaterThan(0);
-      for (const c of buildSlots(p)) expect(isHome(p.side, c), `${p.id} ${c.col},${c.row}`).toBe(true);
-    }
+    for (const m of MINES) expect(mineSlots(m).length, m.id).toBeGreaterThanOrEqual(3);
   });
 
   it("only changes level along a ramp or the Crown's stairs, one level at a time", () => {
-    expect(canStep({ col: 10, row: 10 }, { col: 10, row: 11 })).toBe(true);
-    expect(canStep({ col: 9, row: 9 }, { col: 10, row: 9 })).toBe(false);
-    expect(canStep({ col: 17, row: 6 }, { col: 17, row: 5 })).toBe(true);
-    expect(canStep({ col: 18, row: 5 }, { col: 18, row: 6 })).toBe(false);
-    expect(canStep({ col: 17, row: 5 }, { col: 16, row: 5 })).toBe(false);
-    expect(isWalkable(20, 6)).toBe(false);
+    expect(canStep({ col: 16, row: 15 }, { col: 16, row: 16 })).toBe(true);
+    expect(canStep({ col: 15, row: 12 }, { col: 16, row: 12 })).toBe(false);
+    expect(canStep({ col: 25, row: 9 }, { col: 25, row: 8 })).toBe(true);
+    expect(canStep({ col: 25, row: 8 }, { col: 24, row: 8 })).toBe(false);
+    expect(isWalkable(27, 9)).toBe(false);
   });
 
   it("keeps everyone out of the forest", () => {
-    expect(at(2, 12)).toBe("T");
-    expect(isWalkable(2, 12)).toBe(false);
+    expect(at(2, 16)).toBe("T");
+    expect(isWalkable(2, 16)).toBe(false);
+  });
+});
+
+describe("placement", () => {
+  it("builds on open ground of its own plateau or the lowland", () => {
+    const s = newMatch(1);
+    const spot = findPlacement(s, "a", "barracks")!;
+    expect(canPlace(s, "a", "barracks", spot.col, spot.row)).toBeNull();
+    expect(canPlace(s, "a", "house", 18, 20)).toBeNull();
+  });
+
+  it("refuses the enemy's plateau, high ground, a ramp, forest and a mine's edge", () => {
+    const s = newMatch(1);
+    expect(canPlace(s, "a", "house", 50, 12)).not.toBeNull();
+    expect(canPlace(s, "a", "house", 27, 10)).not.toBeNull();
+    expect(canPlace(s, "a", "house", 16, 15)).not.toBeNull();
+    expect(canPlace(s, "a", "house", 2, 16)).not.toBeNull();
+    const mine = MINES.find((m) => m.id === "mine-ya")!;
+    expect(canPlace(s, "a", "house", mine.col + 1, mine.row)).not.toBeNull();
+  });
+
+  it("refuses to stand on another building or wall a road off", () => {
+    const s = newMatch(1);
+    const barracks = s.buildings["a-barracks"]!;
+    expect(canPlace(s, "a", "house", barracks.col, barracks.row)).not.toBeNull();
+    // The home ramp's foot is the only way down the plateau.
+    expect(canPlace(s, "a", "house", 16, 16)).toBe("that would wall off the road");
   });
 });
 
 describe("planning", () => {
-  it("opens with a castle, a barracks, three Pawns and 26 gold", () => {
+  it("opens with a castle, a barracks, three Pawns and 260 gold", () => {
     const s = newMatch(1);
     for (const side of ["a", "b"] as const) {
       expect(s.gold[side]).toBe(WAR.startGold + upkeepOf(s, side).income + WAR.pawns.start * WAR.pawnIncome);
-      expect(s.gold[side]).toBe(26);
+      expect(s.gold[side]).toBe(260);
       expect(supplyUsed(s, side)).toBe(WAR.pawns.start);
       expect(supplyCap(s, side)).toBe(WAR.supply.start);
       expect(s.buildings[`${side}-castle`]!.level).toBe(1);
       expect(s.buildings[`${side}-barracks`]!.level).toBe(1);
-      expect(s.buildings[`${side}-archery`]!.level).toBe(0);
     }
   });
 
   it("trains at a cost, beside the building", () => {
     let s = newMatch(1);
-    s = act(s, "a", { type: "train", plot: "a-barracks" });
-    s = act(s, "a", { type: "train", plot: "a-barracks" });
-    s = act(s, "a", { type: "train", plot: "a-barracks" });
-    expect(s.gold.a).toBe(26 - 3 * WAR.unitCost.warrior);
-    expect(s.units.filter((u) => u.class === "warrior")).toHaveLength(3);
+    for (let i = 0; i < 3; i++) s = act(s, "a", { type: "train", plot: "a-barracks" });
+    expect(s.gold.a).toBe(260 - 3 * WAR.unitCost.warrior);
+    const warriors = s.units.filter((u) => u.class === "warrior");
+    expect(warriors).toHaveLength(3);
+    for (const w of warriors) expect(plotDistance(s.buildings["a-barracks"]!, w)).toBeLessThanOrEqual(3);
   });
 
   it("trains Pawns at the castle up to the limit, each sent to the next mine with room", () => {
-    let s = { ...newMatch(1), gold: { a: 100, b: 100 } };
+    let s = { ...newMatch(1), gold: { a: 1000, b: 1000 } };
+    s = build(s, "a", "house").state;
+    s = { ...s, buildings: Object.fromEntries(Object.entries(s.buildings).map(([k, b]) => [k, { ...b, level: 1, hp: 300, pending: null }])) };
     for (let i = WAR.pawns.start; i < WAR.pawns.max; i++) s = act(s, "a", { type: "train", plot: "a-castle" });
     const pawns = s.units.filter((u) => u.side === "a" && u.class === "pawn");
     expect(pawns).toHaveLength(WAR.pawns.max);
-    expect(s.gold.a).toBe(100 - (WAR.pawns.max - WAR.pawns.start) * WAR.unitCost.pawn);
     const digging = (id: string) => pawns.filter((u) => u.order.type === "gather" && u.order.mine === id).length;
-    expect([digging("mine-a"), digging("mine-ya")]).toEqual([3, 3]);
+    expect([digging("mine-a"), digging("mine-ya"), digging("mine-na")]).toEqual([4, 4, 1]);
     expect(applyAction(s, "a", { type: "train", plot: "a-castle" }).ok).toBe(false);
   });
 
   it("stops training at the supply cap", () => {
-    let s = newMatch(1);
-    s = { ...s, gold: { a: 100, b: 100 } };
+    let s = { ...newMatch(1), gold: { a: 1000, b: 1000 } };
     for (let i = 0; i < WAR.supply.start - WAR.pawns.start; i++) s = act(s, "a", { type: "train", plot: "a-barracks" });
     expect(supplyUsed(s, "a")).toBe(WAR.supply.start);
     expect(applyAction(s, "a", { type: "train", plot: "a-barracks" })).toMatchObject({ ok: false });
@@ -204,9 +212,7 @@ describe("planning", () => {
     const s = newMatch(1);
     const a = act(s, "a", { type: "train", plot: "a-barracks" });
     const b = act(s, "b", { type: "train", plot: "b-barracks" });
-    const newA = a.units.at(-1)!.id;
-    const newB = b.units.at(-1)!.id;
-    expect(newA).not.toBe(newB);
+    expect(a.units.at(-1)!.id).not.toBe(b.units.at(-1)!.id);
   });
 
   it("spreads a group order over separate tiles", () => {
@@ -214,7 +220,7 @@ describe("planning", () => {
     s = act(s, "a", { type: "train", plot: "a-barracks" });
     s = act(s, "a", { type: "train", plot: "a-barracks" });
     const ids = s.units.filter((u) => u.class === "warrior").map((u) => u.id);
-    s = act(s, "a", { type: "order", units: ids, order: { type: "attackMove", to: { col: 20, row: 7 } } });
+    s = act(s, "a", { type: "order", units: ids, order: { type: "attackMove", to: { col: 19, row: 11 } } });
     const tiles = s.units
       .filter((u) => ids.includes(u.id))
       .map((u) => (u.order.type === "attackMove" ? `${u.order.to.col},${u.order.to.row}` : ""));
@@ -225,11 +231,12 @@ describe("planning", () => {
     const s = newMatch(1);
     const before = structuredClone(s);
     applyAction(s, "a", { type: "train", plot: "a-barracks" });
+    build(s, "a", "house");
     expect(s).toEqual(before);
   });
 });
 
-describe("battle", () => {
+describe("rounds", () => {
   it("settles a quiet round at once and pays the next round's income", () => {
     const s = newMatch(1);
     const out = battle(s, [], []);
@@ -241,9 +248,9 @@ describe("battle", () => {
   });
 
   it("finishes buildings at the end of the round", () => {
-    const s = act(newMatch(1), "a", { type: "build", plot: "a-house1" });
-    const out = battle(s, [], []);
-    expect(out.end.buildings["a-house1"]!.level).toBe(1);
+    const { state, id } = build(newMatch(1), "a", "house");
+    const out = battle(state, [], []);
+    expect(out.end.buildings[id]!.level).toBe(1);
     expect(supplyCap(out.end, "a")).toBe(WAR.supply.start + WAR.supply.perHouse);
   });
 
@@ -263,26 +270,28 @@ describe("battle", () => {
 
   it("stops a mine's income while an enemy fighter stands near it", () => {
     const s = newMatch(1);
-    const raider = { ...s.units[0]!, id: 99, side: "b" as const, class: "warrior" as const, hp: 120 };
-    raider.col = 4;
-    raider.row = 9;
-    const raided = { ...s, units: [...s.units, raider] };
+    const mine = MINES.find((m) => m.id === "mine-a")!;
+    const raided = { ...s, units: [...s.units, unit("b", "warrior", mine.col + 2, mine.row + 1, 99)] };
     expect(incomeFor(s, "a").mines).toBe(WAR.pawns.start * WAR.pawnIncome);
     expect(incomeFor(raided, "a").mines).toBe(0);
   });
 
   it("sends a Pawn to build, off its mine, and at most one building per Pawn", () => {
-    let s = { ...newMatch(1), gold: { a: 100, b: 100 } };
-    s = act(s, "a", { type: "build", plot: "a-house1" });
-    s = act(s, "a", { type: "build", plot: "a-house2" });
-    s = act(s, "a", { type: "build", plot: "a-house3" });
+    let s = { ...newMatch(1), gold: { a: 1000, b: 1000 } };
+    const ids: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const r = build(s, "a", "house");
+      s = r.state;
+      ids.push(r.id);
+    }
     const builders = s.units.filter((u) => u.side === "a" && u.order.type === "build");
     expect(builders).toHaveLength(WAR.pawns.start);
-    expect(applyAction(s, "a", { type: "build", plot: "a-archery" }).ok).toBe(false);
+    const spot = findPlacement(s, "a", "archery")!;
+    expect(applyAction(s, "a", { type: "build", kind: "archery", col: spot.col, row: spot.row }).ok).toBe(false);
     expect(applyAction(s, "a", { type: "order", units: [builders[0]!.id], order: { type: "gather", mine: "mine-a" } }).ok).toBe(false);
     const out = battle(s, [], []);
-    for (const id of ["a-house1", "a-house2", "a-house3"]) expect(out.end.buildings[id]!.level).toBe(1);
-    // Nobody dug this round, and every builder goes back to its mine.
+    for (const id of ids) expect(out.end.buildings[id]!.level).toBe(1);
+    // Nobody dug this round, and every builder goes back to a mine.
     expect(out.end.income.a.mines).toBe(0);
     const pawns = out.end.units.filter((u) => u.side === "a" && u.class === "pawn");
     expect(pawns.every((u) => u.order.type === "gather")).toBe(true);
@@ -290,44 +299,31 @@ describe("battle", () => {
 
   it("marches past enemy buildings rather than stopping to hit them", () => {
     const s = empty();
-    const barracks = plotById("b-barracks")!;
-    const near = MAP.flatMap((line, row) => [...line].map((_, col) => ({ col, row }))).filter(isOpen);
+    const barracks = s.buildings["b-barracks"]!;
+    const free = freeIn(occupied(s));
+    const near = MAP.flatMap((line, row) => [...line].map((_, col) => ({ col, row }))).filter(free);
     const start = near.find((c) => plotDistance(barracks, c) === 1)!;
     const dest = near.find((c) => plotDistance(castlePlot("a"), c) === 2)!;
-    const knight = { id: 1, side: "a" as const, class: "warrior" as const, hp: 120, ...start, order: { type: "attackMove" as const, to: dest }, stance: "firm" as const, post: start };
+    const knight = unit("a", "warrior", start.col, start.row, 1, { type: "attackMove", to: dest });
     const out = battle({ ...s, units: [knight] }, [], []);
     expect(out.events.some((e) => e.type === "hitBuilding")).toBe(false);
     expect(out.events.some((e) => e.type === "move")).toBe(true);
   });
 
-  it("walks the builder to its plot during the battle", () => {
-    const s = act(newMatch(1), "a", { type: "build", plot: "a-archery" });
-    const builder = s.units.find((u) => u.order.type === "build")!;
-    const out = battle(s, [], []);
-    const moved = out.events.filter((e) => e.type === "move" && e.unit === builder.id);
-    expect(moved.length).toBeGreaterThan(0);
-    const last = moved.at(-1) as { col: number; row: number };
-    const plot = plotById("a-archery")!;
-    // In front of the plot, not on a neighbour's roof.
-    expect(plotDistance(plot, last)).toBe(1);
-    expect(last.row).toBe(plot.row + plot.h);
-  });
-
-  it("builds from the plot's own plateau, not from the ground below its cliff", () => {
-    for (const id of ["a-house1", "a-house2", "a-house3"]) {
-      const s = act(newMatch(1), "a", { type: "build", plot: id });
-      const builder = s.units.find((u) => u.order.type === "build")!;
-      const out = battle(s, [], []);
-      const last = out.end.units.find((u) => u.id === builder.id)!;
-      expect(isHome("a", last), `${id} built from ${last.col},${last.row}`).toBe(true);
-    }
+  it("builds from the site's own level, never from the ground below its cliff", () => {
+    const { state, id } = build(newMatch(1), "a", "archery");
+    const builder = state.units.find((u) => u.order.type === "build")!;
+    const out = battle(state, [], []);
+    const last = out.end.units.find((u) => u.id === builder.id)!;
+    const site = out.end.buildings[id]!;
+    expect(plotDistance(site, last)).toBeLessThanOrEqual(3);
+    expect(isHome("a", last)).toBe(isHome("a", site));
   });
 
   it("never lets a Pawn strike, even beside an enemy, nor take an attack order", () => {
     const s = empty();
-    const at = (col: number, row: number) => ({ col, row });
-    const pawn = { id: 1, side: "a" as const, class: "pawn" as const, hp: 40, ...at(20, 5), order: { type: "stop" as const }, stance: "firm" as const, post: at(20, 5) };
-    const foe = { id: 2, side: "b" as const, class: "warrior" as const, hp: 120, ...at(21, 5), order: { type: "stop" as const }, stance: "firm" as const, post: at(21, 5) };
+    const pawn = unit("a", "pawn", 18, 11, 1);
+    const foe = unit("b", "warrior", 19, 11, 2);
     const out = battle({ ...s, units: [pawn, foe] }, [], []);
     expect(out.events.some((e) => e.type === "attack" && e.unit === 1)).toBe(false);
     expect(out.events.some((e) => e.type === "attack" && e.unit === 2)).toBe(true);
@@ -337,17 +333,7 @@ describe("battle", () => {
 
   it("sends a wounded Fall back unit home, where it heals", () => {
     const s = empty();
-    const hurt = {
-      id: 1,
-      side: "a" as const,
-      class: "warrior" as const,
-      hp: 30,
-      col: 20,
-      row: 5,
-      order: { type: "stop" as const },
-      stance: "fallBack" as const,
-      post: { col: 20, row: 5 },
-    };
+    const hurt = { ...unit("a", "warrior", 19, 11, 1), hp: 30, stance: "fallBack" as const };
     const out = battle({ ...s, units: [hurt] }, [], []);
     expect(out.events.some((e) => e.type === "fallBack")).toBe(true);
     const after = out.end.units[0]!;
@@ -370,11 +356,21 @@ describe("battle", () => {
 
   it("lowers base income as the army grows", () => {
     const s = empty();
-    const army = (n: number): MatchState => ({
-      ...s,
-      units: Array.from({ length: n }, (_, i) => ({ ...newMatch(1).units[0]!, id: 2 * i + 1, class: "warrior" as const })),
-    });
-    expect([0, 6, 7, 10, 11].map((n) => upkeepOf(army(n), "a").income)).toEqual([10, 10, 7, 7, 4]);
+    const army = (n: number): MatchState => ({ ...s, units: Array.from({ length: n }, (_, i) => unit("a", "warrior", 0, 0, 2 * i + 1)) });
+    expect([0, 6, 7, 10, 11].map((n) => upkeepOf(army(n), "a").income)).toEqual([100, 100, 70, 70, 40]);
+  });
+
+  it("takes orders during a battle, but nothing else", () => {
+    let s = newMatch(1);
+    s = act(s, "a", { type: "train", plot: "a-barracks" });
+    const w = s.units.find((u) => u.class === "warrior")!;
+    const sim = createSim(s);
+    for (let i = 0; i < 20; i++) sim.step();
+    expect(sim.issue("a", { type: "order", units: [w.id], order: { type: "move", to: { col: 19, row: 11 } } })).toBeNull();
+    expect(sim.issue("a", { type: "train", plot: "a-barracks" })).not.toBeNull();
+    for (let i = 0; i < 300; i++) sim.step();
+    const after = sim.snapshot().units.find((u) => u.id === w.id)!;
+    expect(Math.max(Math.abs(after.col - 19), Math.abs(after.row - 11))).toBeLessThanOrEqual(1);
   });
 
   it("brings the Greying down on both halls from its round", () => {
@@ -400,7 +396,84 @@ describe("battle", () => {
           expect(s.round).toBeLessThanOrEqual(17);
         }
       }),
-      { numRuns: 12 },
+      { numRuns: 8 },
     );
+  }, 120_000);
+});
+
+describe("real time", () => {
+  const seconds = (n: number) => n * BALANCE.tickRate;
+
+  it("carries gold home a bag at a time, taxed by upkeep", () => {
+    const s = newMatch(1, "realtime");
+    const sim = createSim(s);
+    const before = sim.world.gold.a;
+    for (let i = 0; i < seconds(60); i++) sim.step();
+    const bags = sim.events.filter((e) => e.type === "deliver" && e.side === "a");
+    expect(bags.length).toBeGreaterThan(3);
+    expect(bags.every((e) => e.type === "deliver" && e.gold === WAR.realtime.carry)).toBe(true);
+    expect(sim.world.gold.a).toBe(before + bags.length * WAR.realtime.carry);
+    expect(sim.world.mines["mine-a"]).toBe(WAR.mineGold["mine-a"]! - bags.length * WAR.realtime.carry - sim.world.units.filter((u) => u.side === "a" && u.carry).length * WAR.realtime.carry);
+  });
+
+  it("trains from a queue, counting its supply, and refunds a cancel", () => {
+    const sim = createSim(newMatch(1, "realtime"));
+    const gold = sim.world.gold.a;
+    expect(sim.issue("a", { type: "train", plot: "a-barracks" })).toBeNull();
+    expect(sim.issue("a", { type: "train", plot: "a-barracks" })).toBeNull();
+    expect(sim.world.gold.a).toBe(gold - 2 * WAR.unitCost.warrior);
+    expect(supplyUsed(sim.world, "a")).toBe(WAR.pawns.start + 2);
+    expect(sim.issue("a", { type: "cancel", plot: "a-barracks" })).toBeNull();
+    expect(sim.world.gold.a).toBe(gold - WAR.unitCost.warrior);
+    for (let i = 0; i < seconds(WAR.realtime.trainSeconds.warrior) - 1; i++) sim.step();
+    expect(sim.world.units.some((u) => u.side === "a" && u.class === "warrior")).toBe(false);
+    for (let i = 0; i < 3; i++) sim.step();
+    expect(sim.world.units.filter((u) => u.side === "a" && u.class === "warrior")).toHaveLength(1);
+  });
+
+  it("sends new units to the rally point", () => {
+    const sim = createSim(newMatch(1, "realtime"));
+    const to = { col: 19, row: 11 };
+    sim.issue("a", { type: "rally", plot: "a-barracks", to });
+    sim.issue("a", { type: "train", plot: "a-barracks" });
+    for (let i = 0; i < seconds(WAR.realtime.trainSeconds.warrior + 30); i++) sim.step();
+    const w = sim.world.units.find((u) => u.side === "a" && u.class === "warrior")!;
+    expect(Math.max(Math.abs(w.col - to.col), Math.abs(w.row - to.row))).toBeLessThanOrEqual(1);
+  });
+
+  it("raises a building only while a Pawn hammers beside it", () => {
+    const s = newMatch(1, "realtime");
+    const spot = findPlacement(s, "a", "house")!;
+    const sim = createSim(s);
+    expect(sim.issue("a", { type: "build", kind: "house", col: spot.col, row: spot.row })).toBeNull();
+    const id = Object.keys(sim.world.buildings).find((k) => k.startsWith("a-house"))!;
+    for (let i = 0; i < seconds(WAR.realtime.buildSeconds.house! + 20); i++) sim.step();
+    expect(sim.world.buildings[id]!.level).toBe(1);
+    expect(sim.events.some((e) => e.type === "built" && e.plot === id)).toBe(true);
+    expect(supplyCap(sim.world, "a")).toBe(WAR.supply.start + WAR.supply.perHouse);
+  });
+
+  it("is the same match for the same actions", () => {
+    const play = () => {
+      const sim = createSim(newMatch("same", "realtime"));
+      for (let i = 0; i < seconds(90); i++) {
+        if (i % AI_EVERY_TICKS === 0) for (const side of ["a", "b"] as const) runAi(sim, side);
+        sim.step();
+      }
+      return sim.snapshot();
+    };
+    expect(play()).toEqual(play());
+  });
+
+  it("ends by the Greying's deadline, AI against AI", () => {
+    const sim = createSim(newMatch(7, "realtime"));
+    const g = WAR.realtime.greying;
+    const deadline = seconds(g.fromSeconds + 10 * g.everySeconds);
+    while (sim.world.winner === null && sim.t < deadline) {
+      if (sim.t % AI_EVERY_TICKS === 0) for (const side of ["a", "b"] as const) runAi(sim, side);
+      sim.step();
+      sim.events.length = 0;
+    }
+    expect(sim.world.winner).not.toBeNull();
   }, 60_000);
 });

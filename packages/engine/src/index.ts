@@ -31,9 +31,10 @@ export {
 export { generateArmy } from "./army.ts";
 
 export {
+  FOOTPRINT,
   MAP,
   MINES,
-  PLOTS,
+  START,
   STRAT_COLS,
   STRAT_ROWS,
   at,
@@ -49,7 +50,6 @@ export {
   isLand,
   isOpen,
   isSlope,
-  isStaticBlocked,
   isWalkable,
   level,
   buildSlots,
@@ -70,34 +70,46 @@ export {
 export {
   SIDES,
   applyAction,
+  applyInPlace,
   applyPlan,
+  buildingHp,
+  canPlace,
   enemyOf,
+  findPlacement,
   freeBuilders,
+  freeIn,
+  gatherers,
   healOf,
   incomeFor,
   levelOf,
   maxHp,
   mineById,
   newMatch,
+  occupied,
   openMine,
+  ownBuildings,
   pawnOrder,
   payIncome,
   plotById,
   rangeOf,
   spreadAround,
+  standing,
   supplyCap,
   supplyUsed,
+  tilesBeside,
   trainsAt,
   upkeepOf,
   type Action,
   type ActionResult,
   type Building,
   type MatchState,
+  type Mode,
   type Order,
   type Plan,
   type Stance,
+  type Training,
   type WarUnit,
 } from "./war.ts";
 
-export { battle, concede, type BattleOutcome, type RoundReport, type WarEvent } from "./battle.ts";
-export { planAi } from "./ai.ts";
+export { battle, concede, createSim, finishRound, roundDone, startRound, type BattleOutcome, type RoundReport, type Sim, type WarEvent } from "./battle.ts";
+export { AI_EVERY_TICKS, planAi, runAi } from "./ai.ts";

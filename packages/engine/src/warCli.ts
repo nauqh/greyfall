@@ -4,15 +4,17 @@
  *   pnpm war
  *   pnpm war -- --seed 7 --round 3
  *   pnpm war -- --map
+ *   pnpm war -- --realtime --seed 3
  *
  * Flags: --seed <n|string>, --round <n> (print that round's battle in full),
- * --map (print the island with its plots and mines, and stop).
+ * --map (print the island with its buildings and mines, and stop),
+ * --realtime (play the real-time mode, printing a line a minute).
  */
 
-import { planAi } from "./ai.ts";
-import { battle, type WarEvent } from "./battle.ts";
+import { AI_EVERY_TICKS, planAi, runAi } from "./ai.ts";
+import { battle, createSim, type WarEvent } from "./battle.ts";
 import { BALANCE, WAR } from "./balance.ts";
-import { MAP, MINES, PLOTS, plotCells } from "./island.ts";
+import { MAP, MINES, plotCells } from "./island.ts";
 import { newMatch, supplyCap, supplyUsed, upkeepOf, type MatchState } from "./war.ts";
 
 function flag(name: string): string | undefined {
@@ -43,15 +45,44 @@ function describe(e: WarEvent, name: (id: number) => string): string | null {
       return `${at} ${name(e.unit)} dies`;
     case "destroyed":
       return `${at} ${e.plot} is destroyed`;
+    case "built":
+      return `${at} ${e.plot} is built`;
+    case "upgraded":
+      return `${at} ${e.plot} is upgraded`;
+    case "greying":
+      return `${at} the Greying takes ${e.hp} from each hall`;
+    case "spawn":
+    case "deliver":
+      return null;
   }
 }
 
-/** Plots as their side's letter (castles upper case), mines as $. */
+/** Buildings as their side's letter (castles upper case), mines as $. */
 function printMap(): void {
   const rows = MAP.map((line) => [...line]);
-  for (const p of PLOTS) for (const c of plotCells(p)) rows[c.row]![c.col] = p.kind === "castle" ? p.side.toUpperCase() : p.side;
+  for (const p of Object.values(newMatch().buildings)) for (const c of plotCells(p)) rows[c.row]![c.col] = p.kind === "castle" ? p.side.toUpperCase() : p.side;
   for (const m of MINES) rows[m.row]![m.col] = "$";
   rows.forEach((r, i) => console.log(`${String(i).padStart(2)} ${r.join("")}`));
+}
+
+/** Real time, AI against AI: a line a minute until a hall falls. */
+function realtime(seed: number | string): void {
+  const sim = createSim(newMatch(seed, "realtime"));
+  const minute = 60 * BALANCE.tickRate;
+  while (sim.world.winner === null && sim.t < 20 * minute) {
+    if (sim.t % AI_EVERY_TICKS === 0) for (const side of ["a", "b"] as const) runAi(sim, side);
+    sim.step();
+    sim.events.length = 0;
+    if (sim.t % minute === 0) {
+      const s = sim.snapshot();
+      const b = (side: "a" | "b") => Object.values(s.buildings).filter((x) => x.side === side && x.level > 0).length;
+      console.log(`${sim.t / minute} min  gold A ${s.gold.a} B ${s.gold.b}  buildings A ${b("a")} B ${b("b")}  halls A ${s.buildings["a-castle"]!.hp} B ${s.buildings["b-castle"]!.hp}`);
+      console.log(`  A: ${army(s, "a")}`);
+      console.log(`  B: ${army(s, "b")}`);
+    }
+  }
+  const label = { a: "A WINS", b: "B WINS", draw: "DRAW" };
+  console.log(sim.world.winner ? `${label[sim.world.winner]} at ${(sim.t / minute).toFixed(1)} min` : "NO RESULT in 20 min");
 }
 
 function main(): void {
@@ -59,6 +90,7 @@ function main(): void {
   const seedArg = flag("seed") ?? "1";
   const seed = Number.isNaN(Number(seedArg)) ? seedArg : Number(seedArg);
   const detail = Number(flag("round") ?? 0);
+  if (process.argv.includes("--realtime")) return realtime(seed);
 
   console.log(`GREYFALL - war on the island   seed ${seed}\n`);
   let state = newMatch(seed);

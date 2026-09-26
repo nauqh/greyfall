@@ -15,30 +15,44 @@
  *  there. Mirrored left to right, ramps included, because cliffs only face
  *  south. */
 export const MAP = [
-  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
-  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
-  "~~~~~~~~~~~~~~~###########~~~~~~~~~~~~~~~",
-  "~~~~~~~~~~~~~~~###^^^^^###~~~~~~~~~~~~~~~",
-  "~~~########~~~~~##^^^^^##~~~~~########~~~",
-  "~~##########....#[^^^^^]#....##########~~",
-  "~~##########....#########....##########~~",
-  "~~########......#########......########~~",
-  "~~########.....<#########>.....########~~",
-  "~~########......~~~~~~~~~......########~~",
-  "~~########>...~~~~~~~~~~~~~...<########~~",
-  "~~TT..........~~~~~~~~~~~~~..........TT~~",
-  "~~TTT.........~~~~~~~~~~~~~.........TTT~~",
-  "~~TTT.........~~~~~~~~~~~~~.........TTT~~",
-  "~~~TT.........~~~~~~~~~~~~~.........TT~~~",
-  "~~~~T..........###~~~~~###..........T~~~~",
-  "~~~~TT.........###>~~~<###.........TT~~~~",
-  "~~~~TTT...TTT...............TTT...TTT~~~~",
-  "~TT~TT....TTT...............TTT....TT~TT~",
-  "~T~~~T.............................T~~~T~",
-  "~~~~~TT............~.~............TT~~~~~",
-  "~~~~~~~TTT.......~~~~~~~.......TTT~~~~~~~",
-  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
-  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~TTT###################TTT~~~~~~~~~~~~~~~~~~",
+  "~~~~##############TTT#####^^^^^^^^^#####TTT##############~~~~",
+  "~~~~##############...#####^^^^^^^^^#####...##############~~~~",
+  "~~~~##############.....###^^^^^^^^^###.....##############~~~~",
+  "~~~~##############.....##[^^^^^^^^^]##.....##############~~~~",
+  "~~~~##############.....###############.....##############~~~~",
+  "~~~~############.......###############.......############~~~~",
+  "~~~~############.......###############.......############~~~~",
+  "~~~~############.......###############.......############~~~~",
+  "~~~~############......<###############>......############~~~~",
+  "~~~~############.......~~~~~~~~~~~~~~~.......############~~~~",
+  "~~~~############>......~~~~~~~~~~~~~~~......<############~~~~",
+  "~~TT...................~~~~~~~~~~~~~~~...................TT~~",
+  "~~TT...................~~~~~~~~~~~~~~~...................TT~~",
+  "~~TT...................~~~~~~~~~~~~~~~...................TT~~",
+  "~~TT...................~~~~~~~~~~~~~~~...................TT~~",
+  "~~~....................~~~~~~~~~~~~~~~....................~~~",
+  "~~~....................~~~~~~~~~~~~~~~....................~~~",
+  "~~~....................~~~~~~~~~~~~~~~....................~~~",
+  "~~TTT..................~~~~~~~~~~~~~~~..................TTT~~",
+  "~~TTT..................~~~~~~~~~~~~~~~..................TTT~~",
+  "T~TTTTTTTT............###..~~~~~~~..###............TTTTTTTT~T",
+  "T~TTTTTTTT............###>.........<###............TTTTTTTT~T",
+  "~~TT...TTT...TTT.............................TTT...TTT...TT~~",
+  "~~TT...TTT...TTT.............................TTT...TTT...TT~~",
+  "~~TT...TTT.........................................TTT...TT~~",
+  "~~TT...TTT.........................................TTT...TT~~",
+  "~~TT.........................~~~.........................TT~~",
+  "~~TT.........................~~~.........................TT~~",
+  "~~~~~~~TTTTTTTTTTTTTTTTTTTT..~~~..TTTTTTTTTTTTTTTTTTTT~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~TTTTTTTT~~~~~~~TTTTTTTT~~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
 ];
 export const STRAT_COLS = MAP[0]!.length;
 export const STRAT_ROWS = MAP.length;
@@ -192,9 +206,8 @@ export type WarSide = "a" | "b";
 
 export type BuildingKind = "castle" | "barracks" | "archery" | "tower" | "monastery" | "house";
 
-/** A fixed building site. The footprint is the base the art stands on, not
- *  the art itself: the castle's 3x2, a production building's 2x1, a house's
- *  one tile. Nobody walks through a plot, built or not. */
+/** A building's footprint: the base the art stands on, not the art itself.
+ *  Nobody walks through one. */
 export interface Plot {
   id: string;
   side: WarSide;
@@ -205,45 +218,39 @@ export interface Plot {
   h: number;
 }
 
-function plot(side: WarSide, kind: BuildingKind, col: number, row: number, n = ""): Plot {
-  const [w, h] = kind === "castle" ? [3, 2] : kind === "house" ? [1, 1] : [2, 1];
-  return { id: `${side}-${kind}${n}`, side, kind, col, row, w, h };
-}
+export const FOOTPRINT: Record<BuildingKind, { w: number; h: number }> = {
+  castle: { w: 3, h: 2 },
+  barracks: { w: 2, h: 1 },
+  archery: { w: 2, h: 1 },
+  tower: { w: 2, h: 1 },
+  monastery: { w: 2, h: 1 },
+  house: { w: 1, h: 1 },
+};
 
-/** Blue holds the west plateau, red its mirror in the east: column c on one
- *  side is 40 minus c on the other. The castle stands at the back and the
- *  production buildings in a front row, so no building covers another's
- *  door; every plot keeps a lane to the ramp (checked in the tests). */
-export const PLOTS: readonly Plot[] = [
-  plot("a", "castle", 4, 5),
-  plot("a", "barracks", 2, 9),
-  plot("a", "archery", 5, 9),
-  plot("a", "tower", 8, 5),
-  plot("a", "monastery", 8, 9),
-  plot("a", "house", 2, 5, "1"),
-  plot("a", "house", 9, 7, "2"),
-  plot("a", "house", 7, 7, "3"),
-  plot("b", "castle", 34, 5),
-  plot("b", "barracks", 37, 9),
-  plot("b", "archery", 34, 9),
-  plot("b", "tower", 31, 5),
-  plot("b", "monastery", 31, 9),
-  plot("b", "house", 38, 5, "1"),
-  plot("b", "house", 31, 7, "2"),
-  plot("b", "house", 33, 7, "3"),
-];
-
-export function plotCells(p: Plot): Cell[] {
+export function plotCells(p: { col: number; row: number; w: number; h: number }): Cell[] {
   const out: Cell[] = [];
   for (let r = p.row; r < p.row + p.h; r++) for (let c = p.col; c < p.col + p.w; c++) out.push({ col: c, row: r });
   return out;
 }
 
-/** Tiles from `c` to the nearest tile of a plot's footprint. */
-export function plotDistance(p: Plot, c: Cell): number {
+/** Tiles from `c` to the nearest tile of a footprint. */
+export function plotDistance(p: { col: number; row: number; w: number; h: number }, c: Cell): number {
   const dc = c.col < p.col ? p.col - c.col : c.col >= p.col + p.w ? c.col - (p.col + p.w - 1) : 0;
   const dr = c.row < p.row ? p.row - c.row : c.row >= p.row + p.h ? c.row - (p.row + p.h - 1) : 0;
   return Math.max(dc, dr);
+}
+
+/** Where each clan's castle and first barracks stand; the castle's plateau
+ *  is that side's home. Red's are blue's, mirrored. */
+export const START: Record<WarSide, { castle: Cell; barracks: Cell }> = {
+  a: { castle: { col: 7, row: 6 }, barracks: { col: 11, row: 10 } },
+  b: { castle: { col: STRAT_COLS - 1 - 7 - 2, row: 6 }, barracks: { col: STRAT_COLS - 1 - 11 - 1, row: 10 } },
+};
+
+/** A side's castle. It never moves and cannot be rebuilt, so its footprint
+ *  is fixed. */
+export function castlePlot(side: WarSide): Plot {
+  return { id: `${side}-castle`, side, kind: "castle", ...START[side].castle, ...FOOTPRINT.castle };
 }
 
 export interface Mine {
@@ -252,44 +259,37 @@ export interface Mine {
   row: number;
 }
 
-/** A home mine on each plateau, out of reach until its ramp falls; a small
- *  one in each yard below; and the rich one at the ford, dug from the ford's
- *  south row. */
-export const MINES: readonly Mine[] = [
-  { id: "mine-a", col: 2, row: 7 },
-  { id: "mine-b", col: 38, row: 7 },
-  { id: "mine-ya", col: 5, row: 13 },
-  { id: "mine-yb", col: 35, row: 13 },
-  { id: "mine-mid", col: 20, row: 20 },
+const mirror = (id: string, col: number, row: number): Mine[] => [
+  { id: `${id}a`, col, row },
+  { id: `${id}b`, col: STRAT_COLS - 1 - col, row },
 ];
 
-/** Where a side's own castle stands; its plateau is that side's home. */
-export function castlePlot(side: WarSide): Plot {
-  return PLOTS.find((p) => p.side === side && p.kind === "castle")!;
-}
+/** Per side, in the order a Pawn looks for work: home on the plateau, the
+ *  yard below it, the north corridor and the south-west woods. The rich mine
+ *  at the ford belongs to nobody. */
+export const MINES: readonly Mine[] = [
+  ...mirror("mine-", 5, 12),
+  ...mirror("mine-y", 8, 20),
+  ...mirror("mine-n", 20, 9),
+  ...mirror("mine-s", 5, 29),
+  { id: "mine-mid", col: 30, row: 30 },
+];
 
 const HOME: Record<WarSide, Set<number>> = {
-  a: new Set(plateauOf(castlePlot("a")).map(cellKey)),
-  b: new Set(plateauOf(castlePlot("b")).map(cellKey)),
+  a: new Set(plateauOf(START.a.castle).map(cellKey)),
+  b: new Set(plateauOf(START.b.castle).map(cellKey)),
 };
 
 export function isHome(side: WarSide, c: Cell): boolean {
   return HOME[side].has(cellKey(c));
 }
 
-/** Tiles no unit may stand on: every plot and every mine. */
-const STATIC_BLOCKED = new Set<number>([
-  ...PLOTS.flatMap((p) => plotCells(p).map(cellKey)),
-  ...MINES.map(cellKey),
-]);
+const MINE_CELLS = new Set<number>(MINES.map(cellKey));
 
-export function isStaticBlocked(c: Cell): boolean {
-  return STATIC_BLOCKED.has(cellKey(c));
-}
-
-/** Walkable and free of buildings and mines. */
+/** Terrain that is walkable and holds no mine. Buildings come and go, so the
+ *  war's own checks add theirs on top (war.ts isFree). */
 export function isOpen(c: Cell): boolean {
-  return isWalkable(c.col, c.row) && !isStaticBlocked(c);
+  return isWalkable(c.col, c.row) && !MINE_CELLS.has(cellKey(c));
 }
 
 /** The open tiles beside a mine, on the mine's own level: where Pawns dig. */
@@ -304,22 +304,19 @@ export function mineSlots(mine: Mine): Cell[] {
   return out;
 }
 
-const BUILD_SLOTS = new Map<string, Cell[]>();
-
-/** Where a Pawn stands to build a plot: the nearest open tiles on the plot's
- *  own plateau, never down its cliff. */
-export function buildSlots(p: Plot): Cell[] {
-  let out = BUILD_SLOTS.get(p.id);
-  if (out) return out;
-  out = [];
-  for (let d = 1; out.length === 0 && d <= 3; d++) {
+/** Where a Pawn stands to build a footprint: the nearest open tiles on the
+ *  footprint's own level, never down its cliff. */
+export function buildSlots(p: Plot, blocked: (c: Cell) => boolean = () => false): Cell[] {
+  const lv = level(p.col, p.row);
+  for (let d = 1; d <= 3; d++) {
+    const out: Cell[] = [];
     for (let r = p.row - d; r < p.row + p.h + d; r++) {
       for (let c = p.col - d; c < p.col + p.w + d; c++) {
         const cell = { col: c, row: r };
-        if (plotDistance(p, cell) === d && isOpen(cell) && isHome(p.side, cell)) out.push(cell);
+        if (plotDistance(p, cell) === d && isOpen(cell) && !blocked(cell) && level(c, r) === lv) out.push(cell);
       }
     }
+    if (out.length > 0) return out;
   }
-  BUILD_SLOTS.set(p.id, out);
-  return out;
+  return [];
 }

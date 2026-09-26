@@ -6,11 +6,17 @@
  */
 
 import { WAR, type UnitClass } from "./balance.ts";
-import { PLOTS, castlePlot, isHome, isOpen, plotDistance, tileDistance, type Cell, type WarSide } from "./island.ts";
+import { STRAT_COLS, castlePlot, isHome, plotDistance, tileDistance, type BuildingKind, type Cell, type WarSide } from "./island.ts";
+import type { Sim } from "./battle.ts";
 import { makeRng } from "./rng.ts";
 import {
   applyAction,
   enemyOf,
+  findPlacement,
+  freeIn,
+  occupied,
+  ownBuildings,
+  standing,
   maxHp,
   openMine,
   pawnOrder,
@@ -24,9 +30,9 @@ import {
 } from "./war.ts";
 
 /** Where each side's army waits: the plateau lip above its own ramp. */
-const RALLY: Record<WarSide, Cell> = { a: { col: 6, row: 8 }, b: { col: 34, row: 8 } };
+const RALLY: Record<WarSide, Cell> = { a: { col: 13, row: 13 }, b: { col: STRAT_COLS - 1 - 13, row: 13 } };
 /** The ford, beside the rich mine. */
-const MID: Cell = { col: 20, row: 18 };
+const MID: Cell = { col: 30, row: 28 };
 
 /** How much stronger it must be before it marches on the enemy castle. */
 const ATTACK_EDGE = 1.3;
@@ -39,14 +45,15 @@ function value(state: MatchState, units: readonly WarUnit[]): number {
   return units.reduce((sum, u) => sum + WAR.unitCost[u.class] * (u.hp / maxHp(state, u.side, u.class)), 0);
 }
 
-/** An open tile beside the enemy castle for the army to march on. */
-function siegeTile(side: WarSide): Cell {
+/** A free tile beside the enemy castle for the army to march on. */
+function siegeTile(state: MatchState, side: WarSide): Cell {
   const castle = castlePlot(enemyOf(side));
+  const free = freeIn(occupied(state));
   for (let d = 1; d < 5; d++) {
     for (let r = castle.row - d; r <= castle.row + castle.h - 1 + d; r++) {
       for (let c = castle.col - d; c <= castle.col + castle.w - 1 + d; c++) {
         const cell = { col: c, row: r };
-        if (plotDistance(castle, cell) === d && isOpen(cell)) return cell;
+        if (plotDistance(castle, cell) === d && free(cell)) return cell;
       }
     }
   }
@@ -65,60 +72,50 @@ export function planAi(state: MatchState, side: WarSide): Plan {
     return true;
   };
   const own = (): WarUnit[] => cur.units.filter((u) => u.side === side);
-  const plotOf = (kind: string, n = "") => PLOTS.find((p) => p.side === side && p.id === `${side}-${kind}${n}`)!;
-  const built = (id: string) => cur.buildings[id]!.level > 0 || cur.buildings[id]!.pending === "build";
+  const has = (kind: BuildingKind) => ownBuildings(cur, side).some((b) => b.kind === kind);
+  const build = (kind: BuildingKind): boolean => {
+    const at = findPlacement(cur, side, kind);
+    return at !== null && tryDo({ type: "build", kind, col: at.col, row: at.row });
+  };
 
   const homeMine = `mine-${side}`;
 
   // Supply: a house before the army runs out of room.
-  if (supplyCap(cur, side) - supplyUsed(cur, side) <= 1) {
-    for (const n of ["1", "2", "3"]) {
-      const id = plotOf("house", n).id;
-      if (!built(id) && tryDo({ type: "build", plot: id })) break;
-    }
+  const building = (kind: BuildingKind) => ownBuildings(cur, side).some((b) => b.kind === kind && b.pending === "build");
+  if (supplyCap(cur, side) - supplyUsed(cur, side) <= 1 && supplyCap(cur, side) < WAR.supply.max && !building("house")) {
+    build("house");
   }
 
-  // One more Pawn a round while a mine has room for it.
-  const pawns = own().filter((u) => u.class === "pawn").length;
-  if (state.round >= 2 && pawns < WAR.pawns.max && openMine(cur, side) && cur.gold[side] >= WAR.unitCost.pawn + 3) {
+  // Workers before the army, as every RTS opens: one more Pawn a round up
+  // to six, then only with gold to spare, while a mine has room for it.
+  const pawns = own().filter((u) => u.class === "pawn").length +
+    ownBuildings(cur, side).reduce((n, b) => n + b.queue.filter((q) => q.cls === "pawn").length, 0);
+  const spare = pawns < 6 ? 0 : 30;
+  if (state.round >= 2 && pawns < WAR.pawns.max && openMine(cur, side) && cur.gold[side] >= WAR.unitCost.pawn + spare) {
     tryDo({ type: "train", plot: `${side}-castle` });
   }
 
   // Buildings, in an order the seed shuffles a little.
-  const wanted = rng.next() < 0.5 ? ["archery", "tower"] : ["tower", "archery"];
+  const wanted: BuildingKind[] = rng.next() < 0.5 ? ["archery", "tower"] : ["tower", "archery"];
   if (state.round >= 4) wanted.push("monastery");
-  for (const kind of wanted) {
-    const id = plotOf(kind).id;
-    if (!built(id)) {
-      tryDo({ type: "build", plot: id });
-      break;
-    }
-  }
+  const next = wanted.find((kind) => !has(kind));
+  if (next) build(next);
 
   // Army: fill every standing production building, weighted toward a mix.
   const weights: Partial<Record<UnitClass, number>> = { warrior: 3, archer: 3, lancer: 3, monk: 1 };
-  const producers = PLOTS.filter((p) => p.side === side && p.kind !== "castle" && p.kind !== "house");
+  const producers = () => ownBuildings(cur, side).filter((b) => b.kind !== "castle" && WAR.trains[b.kind] && standing(b));
   for (let guard = 0; guard < 12; guard++) {
-    const open = producers.filter((p) => {
-      const cls = WAR.trains[p.kind];
-      const b = cur.buildings[p.id]!;
-      return (
-        cls &&
-        b.level > 0 &&
-        b.pending !== "build" &&
-        cur.gold[side] >= WAR.unitCost[cls]
-      );
-    });
+    const open = producers().filter((b) => cur.gold[side] >= WAR.unitCost[WAR.trains[b.kind]!]);
     if (open.length === 0 || supplyUsed(cur, side) >= supplyCap(cur, side)) break;
-    const pick = rng.weighted(open.map((p) => ({ item: p, weight: weights[WAR.trains[p.kind]!] ?? 1 })));
+    const pick = rng.weighted(open.map((b) => ({ item: b, weight: weights[WAR.trains[b.kind]!] ?? 1 })));
     if (!tryDo({ type: "train", plot: pick.id })) break;
   }
 
   // Spare gold with a full army goes into upgrades.
   if (supplyUsed(cur, side) >= supplyCap(cur, side)) {
-    for (const p of producers) {
-      if (cur.gold[side] < WAR.upgradeCost + 4) break;
-      tryDo({ type: "upgrade", plot: p.id });
+    for (const b of producers()) {
+      if (cur.gold[side] < WAR.upgradeCost + 40) break;
+      tryDo({ type: "upgrade", plot: b.id });
     }
   }
 
@@ -143,8 +140,8 @@ export function planAi(state: MatchState, side: WarSide): Plan {
     fighters.length >= 4 &&
     (ourValue >= theirValue * ATTACK_EDGE || (state.round >= LATE.round && fighters.length >= LATE.fighters))
   ) {
-    goal = { order: "attackMove", to: siegeTile(side) };
-  } else if (state.round >= 5 && ourValue >= theirValue && (cur.mines[homeMine] ?? 0) < 20) {
+    goal = { order: "attackMove", to: siegeTile(cur, side) };
+  } else if (state.round >= 5 && ourValue >= theirValue && (cur.mines[homeMine] ?? 0) < 200) {
     goal = { order: "attackMove", to: MID };
   } else {
     goal = { order: "hold", to: RALLY[side] };
@@ -152,7 +149,7 @@ export function planAi(state: MatchState, side: WarSide): Plan {
 
   const heading = (u: WarUnit): Cell | null =>
     u.order.type === "attackMove" || u.order.type === "move" ? u.order.to : null;
-  const target = isOpen(goal.to) ? goal.to : RALLY[side];
+  const target = freeIn(occupied(cur))(goal.to) ? goal.to : RALLY[side];
   // Only units not already on their way there get a new order, so the plan stays short.
   const movers = fighters.filter((u) => {
     const h = heading(u);
@@ -175,3 +172,13 @@ export function planAi(state: MatchState, side: WarSide): Plan {
   return plan;
 }
 
+
+/** Real time: how often the AI looks at the island and plans again. */
+export const AI_EVERY_TICKS = 50;
+
+/** Real time: plan on what the island looks like now and issue the plan
+ *  into the running simulation. An action the world has moved past since
+ *  the plan was made is dropped. */
+export function runAi(sim: Sim, side: WarSide): void {
+  for (const action of planAi(sim.snapshot(), side)) sim.issue(side, action);
+}

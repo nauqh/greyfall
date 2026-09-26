@@ -121,29 +121,42 @@ export function damageAgainst(attacker: UnitClass, defender: UnitClass): number 
  * here.
  */
 export const WAR = {
-  startGold: 10,
-  /** Base income, paid at the start of every round, the first included. A
-   *  bigger army pays upkeep: the first tier whose fighter count (Pawns not
-   *  counted) the side has reached, from the top, sets it. */
+  /** Gold is counted in Warcraft-sized sums, tens not ones, so upkeep can
+   *  tax a single bag in whole coins. */
+  startGold: 100,
+  /** A bigger army pays upkeep: the first tier whose fighter count (Pawns
+   *  not counted) the side has reached, from the top, applies. In rounds it
+   *  sets the base income paid at the start of every round; in real time it
+   *  is Warcraft III's tax on every bag of gold brought home (keep). */
   upkeep: [
-    { fighters: 11, income: 4, name: "high" },
-    { fighters: 7, income: 7, name: "low" },
-    { fighters: 0, income: 10, name: "none" },
+    { fighters: 11, income: 40, keep: 0.4, name: "high" },
+    { fighters: 7, income: 70, keep: 0.7, name: "low" },
+    { fighters: 0, income: 100, keep: 1, name: "none" },
   ],
   /** Per Pawn digging at a mine, while the mine holds gold. */
-  pawnIncome: 2,
+  pawnIncome: 20,
   /** Each side starts with `start` Pawns and the castle trains more up to
    *  `max`. Dead ones stay dead, unless a side has none left. */
-  pawns: { start: 3, max: 6 },
-  mineGold: { "mine-a": 60, "mine-b": 60, "mine-ya": 40, "mine-yb": 40, "mine-mid": 120 } as Record<string, number>,
-  pawnsPerMine: 3,
+  pawns: { start: 3, max: 10 },
+  mineGold: {
+    "mine-a": 1500,
+    "mine-b": 1500,
+    "mine-ya": 1000,
+    "mine-yb": 1000,
+    "mine-na": 1000,
+    "mine-nb": 1000,
+    "mine-sa": 1000,
+    "mine-sb": 1000,
+    "mine-mid": 2500,
+  } as Record<string, number>,
+  pawnsPerMine: 4,
   /** An enemy fighter this close to a mine at the end of a battle stops its income. */
   raidRadius: 2,
 
   /** Three houses reach 20: six Pawns and fourteen others. */
   supply: { start: 8, perHouse: 4, max: 20 },
 
-  unitCost: { pawn: 4, warrior: 3, lancer: 3, archer: 3, monk: 4 } as Record<UnitClass, number>,
+  unitCost: { pawn: 40, warrior: 30, lancer: 30, archer: 30, monk: 40 } as Record<UnitClass, number>,
   /** The board's archer range was set for a 10-wide board; the island uses the PRD's 3. */
   range: { pawn: 1, warrior: 1, lancer: 1, archer: 3, monk: 2 } as Record<UnitClass, number>,
 
@@ -155,9 +168,9 @@ export const WAR = {
     tower: "lancer",
     monastery: "monk",
   } as Partial<Record<string, UnitClass>>,
-  /** Barracks and castle start built; the barracks price is for a rebuild. */
-  buildCost: { castle: 0, barracks: 4, archery: 4, tower: 4, monastery: 5, house: 4 } as Record<string, number>,
-  upgradeCost: 6,
+  /** Barracks and castle start built. */
+  buildCost: { castle: 0, barracks: 40, archery: 40, tower: 40, monastery: 50, house: 40 } as Record<string, number>,
+  upgradeCost: 60,
   /** Level 3 and the castle upgrade land with abilities, after Phase 2. */
   maxLevel: 2,
   /** A castle outlasts one battle phase against a small army that marched
@@ -181,4 +194,23 @@ export const WAR = {
   capSeconds: 45,
   /** From this round both main halls lose a growing share of their HP each round. */
   greying: { fromRound: 12, step: 0.05 },
+
+  /** Real time: the clock replaces the round. */
+  realtime: {
+    /** Gold a Pawn carries home a trip, after digging this long. */
+    carry: 10,
+    digSeconds: 2,
+    trainSeconds: { pawn: 8, warrior: 10, archer: 10, lancer: 12, monk: 14 } as Record<UnitClass, number>,
+    buildSeconds: { castle: 0, house: 10, barracks: 20, archery: 20, tower: 20, monastery: 25 } as Record<string, number>,
+    upgradeSeconds: 25,
+    /** Units a building can have waiting to be trained, paid when queued. */
+    queue: 5,
+    /** Share of max HP a unit on its home plateau regains a second. */
+    homeHeal: 0.05,
+    /** A round's worth of clock, for the AI's pacing and the HUD. */
+    roundSeconds: 45,
+    /** From here the halls lose a growing share of their HP every interval,
+     *  so a match still ends: about four and a half minutes later. */
+    greying: { fromSeconds: 480, everySeconds: 30, step: 0.025 },
+  },
 } as const;
