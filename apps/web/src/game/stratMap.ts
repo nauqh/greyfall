@@ -9,6 +9,7 @@ export {
   canStep,
   castsCliff,
   findPath,
+  isForest,
   isHigh,
   isLand,
   isSlope,

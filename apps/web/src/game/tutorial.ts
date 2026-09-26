@@ -63,6 +63,12 @@ export const STEPS: readonly Step[] = [
     focus: null,
     when: (c) => c.phase === "plan",
   },
+  {
+    text: "Two roads lead to their castle: the High Pass over the ridge, and the Low Road across the ford. Send the army to one, then strike next round. The castle trains more of us for the yard mine, but a big army costs upkeep.",
+    button: "Got it",
+    focus: null,
+    when: (c) => c.phase === "plan" && c.state.round >= 3,
+  },
 ];
 
 const KEY = "greyfall.tutorial.done";

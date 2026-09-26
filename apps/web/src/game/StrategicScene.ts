@@ -12,6 +12,7 @@
 import {
   MINES,
   PLOTS,
+  castlePlot,
   WAR,
   applyAction,
   battle,
@@ -28,6 +29,7 @@ import {
   supplyCap,
   supplyUsed,
   trainsAt,
+  upkeepOf,
   type Action,
   type BattleOutcome,
   type BuildingKind,
@@ -211,7 +213,8 @@ export class StrategicScene extends Phaser.Scene {
 
   create(): void {
     // Open on the player's own plateau.
-    fitCamera(this, 10 * CELL, 6 * CELL, () => this.zoomScale(this.zoomLevel));
+    const home = castlePlot("a");
+    fitCamera(this, (home.col + home.w / 2) * CELL, (home.row + home.h + 1) * CELL, () => this.zoomScale(this.zoomLevel));
     prepareTerrain(this);
     makeAnims(this);
     makeWarFxAnims(this);
@@ -873,6 +876,7 @@ export class StrategicScene extends Phaser.Scene {
       round: s.round,
       gold: s.gold.a,
       supply: [supplyUsed(s, "a"), supplyCap(s, "a")],
+      upkeep: upkeepOf(s, "a").name,
       greyIn: Math.max(0, WAR.greying.fromRound - s.round),
       banner: { text: `Round ${s.round}: Plan`, tone: "blue" },
       title: "",
@@ -1024,16 +1028,22 @@ export class StrategicScene extends Phaser.Scene {
     if (cls) {
       const cost = WAR.unitCost[cls];
       const room = supplyUsed(this.state, "a") < supplyCap(this.state, "a");
+      const pawnsFull =
+        cls === "pawn" && this.state.units.filter((u) => u.side === "a" && u.class === "pawn").length >= WAR.pawns.max;
       commands[0] = {
         label: CLASS_NAME[cls],
         sub: `${cost} gold, 1 supply`,
         portrait: portraitKey("a", cls),
         big: true,
-        hint: room
-          ? `Train a ${CLASS_NAME[cls]} for ${cost} gold and 1 supply. It can take orders at once.`
-          : "No supply left: every unit takes 1. Build a house for 3 more.",
+        hint: pawnsFull
+          ? `You keep at most ${WAR.pawns.max} Pawns.`
+          : !room
+            ? `No supply left: every unit takes 1. Build a house for ${WAR.supply.perHouse} more.`
+            : cls === "pawn"
+              ? `Train a Pawn for ${cost} gold and 1 supply. It walks to the nearest mine with room: home, then the yard, then the ford.`
+              : `Train a ${CLASS_NAME[cls]} for ${cost} gold and 1 supply. It can take orders at once.`,
         onClick: () => this.act({ type: "train", plot: id }),
-        enabled: room && this.state.gold.a >= cost,
+        enabled: room && !pawnsFull && this.state.gold.a >= cost,
       };
     }
     if (cls && p.kind !== "castle") {
@@ -1130,7 +1140,9 @@ export class StrategicScene extends Phaser.Scene {
       };
     }
     const inc = end.income.a;
-    lines.push(`Round ${end.round} income: ${inc.base} gold, plus ${inc.mines} from the mines.`);
+    const upkeep = upkeepOf(end, "a");
+    const paid = upkeep.name === "none" ? "" : ` (${upkeep.name} upkeep on an army of ${upkeep.fighters} or more)`;
+    lines.push(`Round ${end.round} income: ${inc.base} gold${paid}, plus ${inc.mines} from the mines.`);
     return { title: `Round ${r.round}: Report`, tone: "blue", lines, button: "Next round", onClick: () => this.nextRound() };
   }
 

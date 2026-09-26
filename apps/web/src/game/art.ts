@@ -187,6 +187,14 @@ export const BUILDINGS = {
   pirateTower:{
     file:"Enemy Pack/Extra/Pirate Tower/Pirate Tower_Ground.png", w: 128, h: 256, anchorY: 229 
   },
+  // The war map's neutral landmarks; the cave, fish hut and water tower are
+  // idle sheets, drawn on their first frame.
+  cave: { file: "Enemy Pack/Extra/Cave/Cave_Idle.png", w: 192, h: 192, anchorY: 172, frame: 192 },
+  fishHut: { file: "Enemy Pack/Extra/Fish Hut/Fish Hut.png", w: 192, h: 192, anchorY: 177, frame: 192 },
+  gnomeHut: { file: "Enemy Pack/Extra/Gnome Buildings/Gnome Hut.png", w: 128, h: 192, anchorY: 147 },
+  gnomeTower: { file: "Enemy Pack/Extra/Gnome Buildings/Gnome Tower.png", w: 128, h: 256, anchorY: 229 },
+  skullSpike: { file: "Enemy Pack/Extra/Skull decorations/Skull Spike_01.png", w: 64, h: 128, anchorY: 94 },
+  waterTower: { file: "Enemy Pack/Extra/Pirate Tower/Pirate Tower_Water.png", w: 128, h: 192, anchorY: 187, frame: 128 },
   barracks: { file: "Barracks.png", w: 192, h: 256, anchorY: 245 },
   archery: { file: "Archery.png", w: 192, h: 256, anchorY: 240 },
   house1: { file: "House1.png", w: 128, h: 192, anchorY: 173 },

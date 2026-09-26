@@ -59,6 +59,8 @@ export interface HudModel {
   round: number;
   gold: number;
   supply: [used: number, cap: number];
+  /** The upkeep tier the army puts on base income. */
+  upkeep: "none" | "low" | "high";
   /** Rounds until the Greying first bites, 0 once it has begun. */
   greyIn: number;
   /** The ribbon along the top, and its colour: blue while planning, red in battle. */
@@ -388,18 +390,19 @@ export class StrategicHud extends Phaser.Scene {
 
     // Resources on a strip of paper in the corner.
     const items: [string | null, string][] = [
-      [ICON.gold, String(m.gold)],
+      [ICON.gold, m.upkeep === "none" ? String(m.gold) : `${m.gold}, upkeep ${m.upkeep}`],
       [ICON.meat, `${m.supply[0]}/${m.supply[1]} supply`],
       [null, m.greyIn > 0 ? `Greying in ${m.greyIn}` : "The Greying"],
     ];
-    const stripW = 390;
+    const stripW = m.upkeep === "none" ? 390 : 470;
     const x0 = w - 12 - stripW;
     this.keep(panel(this, "paper", x0 + stripW / 2, 34, stripW * 2, 104).setScale(0.5).setInteractive({ cursor: ARROW }));
-    const at = [x0 + 30, x0 + 112, x0 + 262];
+    const shift = stripW - 390;
+    const at = [x0 + 30, x0 + 112 + shift, x0 + 262 + shift];
     items.forEach(([icon, value], i) => {
       const x = at[i]!;
       if (icon) this.keep(this.add.image(x, 33, iconKey(icon)).setScale(0.48));
-      const tint = i === 2 && m.greyIn <= 2 ? "#a12f2f" : INK.color;
+      const tint = (i === 2 && m.greyIn <= 2) || (i === 0 && m.upkeep === "high") ? "#a12f2f" : INK.color;
       this.keep(label(this, icon ? x + 20 : x - 10, 34, value, { ...INK, color: tint, fontSize: i === 2 ? "14px" : "17px" }).setOrigin(0, 0.5));
     });
   }
@@ -729,11 +732,11 @@ export class StrategicHud extends Phaser.Scene {
 }
 
 const TROOP: Record<UnitClass, string> = { pawn: "Pawn", warrior: "Warrior", lancer: "Lancer", archer: "Archer", monk: "Monk" };
-const TRAINED_AT: Record<string, string> = { barracks: "barracks", archery: "archery range", tower: "tower", monastery: "monastery" };
+const TRAINED_AT: Record<string, string> = { castle: "castle", barracks: "barracks", archery: "archery range", tower: "tower", monastery: "monastery" };
 
 /** The guide's three columns, its numbers read off the balance so they never drift. */
 function guideSections(): { head: string; lines: string[] }[] {
-  const troops = Object.entries(WAR.trains).map(([at, cls]) => {
+  const troops = Object.entries(WAR.trains).filter(([, cls]) => cls !== "pawn").map(([at, cls]) => {
     const beats = BALANCE.counters[cls!];
     const does =
       cls === "monk"
@@ -750,7 +753,7 @@ function guideSections(): { head: string; lines: string[] }[] {
         "1. Plan: time stands still. Train, build and give orders.",
         "2. Fight: press Fight! and both sides' plans play out at the same time.",
         "3. Report: buildings finish and gold comes in.",
-        `Gold: ${WAR.income} a round, plus ${WAR.pawnIncome} for every Pawn digging at a mine.`,
+        `Gold: ${WAR.upkeep.map((t) => `${t.income} a round with ${t.fighters}+ fighters`).reverse().join(", ")}; plus ${WAR.pawnIncome} for every Pawn digging at a mine.`,
         `From round ${WAR.greying.fromRound} the Greying eats both castles a little each round. Break theirs first.`,
       ],
     },
@@ -767,7 +770,7 @@ function guideSections(): { head: string; lines: string[] }[] {
       head: "Troops",
       lines: [
         ...troops,
-        "Pawns dig gold and build. They never fight.",
+        `Pawns, from the castle, dig gold and build, up to ${WAR.pawns.max}. They never fight, and the dead stay dead.`,
         `A counter deals ${Math.round(BALANCE.counterBonus * 100)}% more damage. Troops on the lowland deal ${Math.round(WAR.highGround * 100)}% to a plateau.`,
         `Each house adds ${WAR.supply.perHouse} supply; every unit takes 1.`,
       ],

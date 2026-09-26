@@ -90,7 +90,7 @@ export function prepareTerrain(scene: Phaser.Scene): void {
 
   // Every cell of the 9x6 sheet, for the strategic map's autotiler, on
   // each colour of the sheet a scene has loaded.
-  for (const key of ["tileset", "tilesetLow"]) {
+  for (const key of ["tileset", "tilesetLow", "tilesetHigh", "tilesetRoad"]) {
     if (!scene.textures.exists(key)) continue;
     const sheet = scene.textures.get(key);
     for (let c = 0; c < 9; c++) {
