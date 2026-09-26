@@ -74,6 +74,17 @@ function ribbon() {
   return out;
 }
 
+/** The blue sword banner, hilt / blade / tip, off the first 128px row of
+ *  Swords.png: the title menu's highlight, hilt left and point right. */
+function sword() {
+  const src = read("UI Elements/UI Elements/Swords/Swords.png");
+  const out = new PNG({ width: 320, height: 128 });
+  blit(out, src, 0, 0, 128, 128, 0, 0);
+  blit(out, src, 192, 0, 64, 128, 128, 0);
+  blit(out, src, 320, 0, 128, 128, 192, 0);
+  return out;
+}
+
 /** First row from the top with opaque art. */
 function alphaTop(png) {
   for (let y = 0; y < png.height; y++) {
@@ -104,6 +115,7 @@ for (const [name, spec] of Object.entries(art.PANELS)) {
   made.push(write(name, png));
 }
 made.push(write("ribbon", ribbon()));
+made.push(write("sword", sword()));
 // Banner_Slots is already contiguous (192px, 64px corners), just copied here
 // so the CSS has one directory.
 made.push(write("bannerSlots", read("UI Elements/UI Elements/Banners/Banner_Slots.png")));

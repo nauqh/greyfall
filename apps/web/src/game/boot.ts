@@ -33,14 +33,15 @@ export function baseZoom(scene: Phaser.Scene): number {
  *  and again on every resize. */
 export function fitCamera(
   scene: Phaser.Scene,
-  cx = GAME_W / 2,
-  cy = GAME_H / 2,
+  cx: number | (() => number) = GAME_W / 2,
+  cy: number | (() => number) = GAME_H / 2,
   scale: () => number = () => 1,
 ): void {
   const cam = scene.cameras.main;
+  const at = (v: number | (() => number)): number => (typeof v === "function" ? v() : v);
   const fit = (): void => {
     cam.setZoom(baseZoom(scene) * scale());
-    cam.centerOn(cx, cy);
+    cam.centerOn(at(cx), at(cy));
   };
   fit();
   scene.scale.on(Phaser.Scale.Events.RESIZE, fit);

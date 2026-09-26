@@ -1,5 +1,5 @@
-/* Both screens are Phaser canvases now - the title island and the battle -
-   so all that is left here is centring one on the flat teal sea. */
+/* Every screen is a Phaser canvas - the title island, the battle, the war
+   map - so all that is left here is centring one on the flat teal sea. */
 
 :root {
 	color-scheme: dark;
@@ -209,22 +209,246 @@ textarea {
 	}
 }
 
-/* --- intro ---------------------------------------------------------------
-   The menu is drawn in the scene; this is its keyboard twin, off-screen
-   until a link inside it takes focus. */
+/* --- title menu -----------------------------------------------------------
+   The island plays on behind; the menu floats on a bank of the loader's own
+   clouds over the western sea. It arrives as the cover parts, and the
+   picked entry rides the kit's sword banner (scripts/compose-ui.mjs). */
 
-.kbdNav {
+.bank {
+	--k: clamp(7px, 1vh, 12px);
 	position: absolute;
-	left: 12px;
-	top: 12px;
+	inset: 0;
 	z-index: 2;
-	display: flex;
-	gap: 8px;
-	transform: translateY(-200%);
+	overflow: hidden;
+	pointer-events: none;
+	animation: bankIn 1400ms cubic-bezier(0.22, 1, 0.36, 1) 200ms both;
 }
 
-.kbdNav:focus-within {
-	transform: none;
+.bankCloud {
+	position: absolute;
+	left: calc(var(--x) * var(--k));
+	top: var(--y);
+	width: calc(var(--w) * var(--k));
+	aspect-ratio: 576 / 256;
+	translate: -50% -50%;
+	background: url("/tiny-swords/ui/cover1.png") center / 100% 100% no-repeat;
+	image-rendering: pixelated;
+	animation: bankSway 7s cubic-bezier(0.37, 0, 0.63, 1) var(--d) infinite alternate;
+}
+
+.bankCloud.cover5 {
+	background-image: url("/tiny-swords/ui/cover5.png");
+}
+
+.bankCloud.flip {
+	scale: -1 1;
+}
+
+@keyframes bankSway {
+	from {
+		transform: translateX(calc(var(--k) * -1.5));
+	}
+	to {
+		transform: translateX(calc(var(--k) * 1.5));
+	}
+}
+
+@keyframes bankIn {
+	from {
+		opacity: 0;
+		transform: translateX(-60%);
+	}
+}
+
+.titleMenu {
+	position: absolute;
+	z-index: 3;
+	left: clamp(24px, 4vw, 64px);
+	top: 50%;
+	transform: translateY(-50%);
+	display: flex;
+	flex-direction: column;
+}
+
+.logo {
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	font-family: var(--display), serif;
+	font-weight: 900;
+	font-size: clamp(44px, 5vw, 72px);
+	line-height: 1;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--ink);
+	/* The scenes' label look: cream in a navy outline. */
+	-webkit-text-stroke: 6px #1c2634;
+	paint-order: stroke fill;
+	text-shadow: 0 4px 0 #1c2634;
+	animation: titleRise 900ms cubic-bezier(0.22, 1, 0.36, 1) 400ms both;
+}
+
+.logoSub {
+	margin-top: 10px;
+	font-family: "Nunito", sans-serif;
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: 0.26em;
+	color: #8a5a12;
+	/* Stroke and shadow inherit; the logo's would clot these small caps. */
+	-webkit-text-stroke: 0;
+	text-shadow: none;
+}
+
+.menu {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-top: 40px;
+}
+
+/* The banner is 320x128: a 128px hilt, a 64px blade that stretches, a 128px
+   point. Every entry keeps the side borders so picking one never moves text. */
+.menuItem {
+	--h: 72px;
+	display: flex;
+	align-items: center;
+	width: 340px;
+	height: var(--h);
+	padding: 0 0 4px 4px;
+	font-family: var(--display), serif;
+	font-weight: 700;
+	font-size: 28px;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	text-decoration: none;
+	/* Ink on the cloud bank. */
+	color: #1c2634;
+	border: 0 solid transparent;
+	border-width: 0 var(--h);
+	outline: none;
+	transition:
+		color 240ms ease-out,
+		translate 420ms cubic-bezier(0.22, 1, 0.36, 1);
+	animation: menuIn 500ms cubic-bezier(0.22, 1, 0.36, 1) calc(700ms + var(--i) * 80ms) both;
+}
+
+.menuItem.on {
+	color: #3a2f1e;
+	translate: 12px 0;
+	border-image: url("/tiny-swords/ui/sword.png") 0 128 fill / 0 var(--h) stretch;
+	/* Drawn hilt to point on each pick; menuIn is matched by name, so the
+	   arrival does not replay. */
+	animation:
+		menuIn 500ms cubic-bezier(0.22, 1, 0.36, 1) calc(700ms + var(--i) * 80ms) both,
+		swordDraw 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.menuItem:active {
+	translate: 12px 2px;
+}
+
+.menuHint {
+	min-height: 3em;
+	max-width: 340px;
+	margin: 20px 0 0 8px;
+	font-size: 15px;
+	line-height: 1.5;
+	font-weight: 600;
+	color: #2e3a4d;
+	animation: hintIn 320ms ease-out both;
+}
+
+@keyframes titleRise {
+	from {
+		opacity: 0;
+		translate: 0 14px;
+	}
+}
+
+@keyframes menuIn {
+	from {
+		opacity: 0;
+		transform: translateX(-24px);
+	}
+}
+
+@keyframes swordDraw {
+	from {
+		clip-path: inset(0 100% 0 0);
+		opacity: 0.4;
+	}
+	to {
+		clip-path: inset(0 0 0 0);
+	}
+}
+
+@keyframes hintIn {
+	from {
+		opacity: 0;
+		translate: 0 4px;
+	}
+}
+
+/* Portrait: the logo up top, the menu along the bottom, the village between. */
+@media (max-aspect-ratio: 6/5) {
+	/* The west bank turned south: x runs up from the bottom, y across. */
+	.bankCloud {
+		left: var(--y);
+		top: auto;
+		bottom: calc(var(--x) * var(--k));
+		translate: -50% 50%;
+	}
+	@keyframes bankIn {
+		from {
+			opacity: 0;
+			transform: translateY(60%);
+		}
+	}
+	.credit {
+		color: #2e3a4d;
+		text-shadow: none;
+	}
+	/* The logo stands on the open sea. */
+	.logoSub {
+		color: var(--ink);
+		-webkit-text-stroke: 3px #1c2634;
+		paint-order: stroke fill;
+	}
+	.titleMenu {
+		inset: 72px 16px 40px;
+		transform: none;
+		align-items: center;
+		text-align: center;
+	}
+	.logoSub {
+		font-size: 11px;
+		letter-spacing: 0.16em;
+	}
+	.menu {
+		margin-top: auto;
+		gap: 0;
+	}
+	.menuItem {
+		--h: 56px;
+		width: 280px;
+		font-size: 22px;
+	}
+	.menuHint {
+		margin: 8px 0 0;
+		font-size: 14px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.bank,
+	.bankCloud,
+	.logo,
+	.menuItem,
+	.menuItem.on,
+	.menuHint {
+		animation: none;
+	}
 }
 
 /* The credit line, WC3-style: bottom-right corner, small and quiet. Fixed
@@ -233,7 +457,7 @@ textarea {
 	position: absolute;
 	right: 16px;
 	bottom: 12px;
-	z-index: 2;
+	z-index: 3;
 	font-size: 13px;
 	font-weight: 600;
 	letter-spacing: 0.04em;
@@ -241,13 +465,6 @@ textarea {
 	text-shadow: 0 1px 0 #1c2634;
 	pointer-events: none;
 	user-select: none;
-}
-
-.kbdNav a {
-	padding: 6px 12px;
-	border-radius: 6px;
-	color: var(--ink);
-	background: rgba(21, 28, 40, 0.9);
 }
 
 /* --- duel lobby ---------------------------------------------------------

@@ -8,9 +8,11 @@ import { Clouds } from "./Clouds";
  *  canvas, inside it - the intro's HTML menu lives here. */
 export function GameCanvas({
   start,
+  onReady,
   children,
 }: {
   start: (el: HTMLElement) => Promise<{ destroy: () => void; ready: Promise<void> }>;
+  onReady?: () => void;
   children?: ReactNode;
 }) {
   const holder = useRef<HTMLDivElement>(null);
@@ -34,7 +36,9 @@ export function GameCanvas({
         if (cancelled) g.destroy();
         else {
           void g.ready.then(() => {
-            if (!cancelled) setReady(true);
+            if (cancelled) return;
+            setReady(true);
+            onReady?.();
           });
           game = g;
         }
