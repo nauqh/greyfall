@@ -63,6 +63,8 @@ export interface HudModel {
   upkeep: "none" | "low" | "high";
   /** Rounds until the Greying first bites, 0 once it has begun. */
   greyIn: number;
+  /** Real time: the Greying's countdown as a clock, shown instead of greyIn. */
+  clock: { text: string; warn: boolean } | null;
   /** The ribbon along the top, and its colour: blue while planning, red in battle. */
   banner: { text: string; tone: "blue" | "red" };
   title: string;
@@ -79,7 +81,16 @@ export interface HudModel {
   primary: { label: string; onClick: () => void } | null;
   secondary: { label: string; onClick: () => void }[];
   /** The round report or the end of the match, over everything. */
-  report: { title: string; tone: "blue" | "red"; lines: string[]; button: string; onClick: () => void; also?: { label: string; onClick: () => void } } | null;
+  report: {
+    title: string;
+    tone: "blue" | "red";
+    lines: string[];
+    button: string;
+    onClick: () => void;
+    also?: { label: string; onClick: () => void };
+    /** A row of equal choices in place of the buttons, such as the mode picker. */
+    choices?: { label: string; onClick: () => void }[];
+  } | null;
   /** Offered in the field guide while the walkthrough is not running. */
   replayTutorial: (() => void) | null;
   /** The walkthrough line the speaking Pawn says, with what it points at. */
@@ -116,14 +127,10 @@ const SECONDARY_X = 184;
 const TIP_DELAY = 250;
 const TOAST_MS = 5000;
 
-/** Portraits: the blue knights' five faces, and each monster's own. */
-const KNIGHT_FACE: Record<UnitClass, number> = { warrior: 1, lancer: 2, archer: 3, monk: 4, pawn: 5 };
-const MONSTER_FACE: Record<UnitClass, string> = {
-  warrior: "Skull/Skull_Avatar.png",
-  lancer: "Turtle/Turtle_Avatar.png",
-  archer: "Gnoll/Gnoll_Avatar.png",
-  monk: "Hex Shaman/Hex Shaman_Avatar.png",
-  pawn: "Gnome/Gnome_Avatar.png",
+/** Portraits: five of the pack's faces for each knight clan. */
+const KNIGHT_FACE: Record<"a" | "b", Record<UnitClass, number>> = {
+  a: { warrior: 1, lancer: 2, archer: 3, monk: 4, pawn: 5 },
+  b: { warrior: 6, lancer: 7, archer: 8, monk: 9, pawn: 10 },
 };
 
 export function portraitKey(side: "a" | "b", cls: UnitClass): string {
@@ -147,10 +154,21 @@ const INK = { color: "#4a3a2a", stroke: "#f3e6c8", strokeThickness: 0 };
 const CELL = 52;
 const BTN = 48;
 
+type HudPart = "top" | "panel" | "rest";
+
+/** Ink boxes of pictures shown on buttons, by texture key. */
+const INK_BOX = new Map<string, { x: number; y: number; w: number; h: number }>();
+
 export class StrategicHud extends Phaser.Scene {
   private hud!: HudData;
-  /** Everything the model draws; torn down and redrawn on refresh. */
-  private dynamic: Phaser.GameObjects.GameObject[] = [];
+  /** Everything the model draws, in three parts, each torn down and redrawn
+   *  only when what it shows changes: a running world refreshes several times
+   *  a second, and a button redrawn under the pointer loses its click. */
+  private parts: Record<HudPart, Phaser.GameObjects.GameObject[]> = { top: [], panel: [], rest: [] };
+  /** What each part last drew, so an unchanged part is left alone. */
+  private drawn: Record<HudPart, string> = { top: "", panel: "", rest: "" };
+  /** The part keep() files new objects under. */
+  private into: HudPart = "rest";
   /** Between create() and shutdown; a refresh outside it has nothing to draw into. */
   private live = false;
   private layout = { w: 0, h: 0 };
@@ -187,11 +205,10 @@ export class StrategicHud extends Phaser.Scene {
     this.load.image("swords", packUrl("UI Elements/UI Elements/Swords/Swords.png"));
     this.load.image("bigRibbons", packUrl("UI Elements/UI Elements/Ribbons/BigRibbons.png"));
     for (const n of new Set(Object.values(ICON))) this.load.image(iconKey(n), iconUrl(n));
-    for (const [cls, n] of Object.entries(KNIGHT_FACE)) {
-      this.load.image(portraitKey("a", cls as UnitClass), packUrl(`${AVATARS.file}${String(n).padStart(2, "0")}.png`));
-    }
-    for (const [cls, file] of Object.entries(MONSTER_FACE)) {
-      this.load.image(portraitKey("b", cls as UnitClass), packUrl(`Enemy Pack/${file}`));
+    for (const side of ["a", "b"] as const) {
+      for (const [cls, n] of Object.entries(KNIGHT_FACE[side])) {
+        this.load.image(portraitKey(side, cls as UnitClass), packUrl(`${AVATARS.file}${String(n).padStart(2, "0")}.png`));
+      }
     }
   }
 
@@ -211,7 +228,8 @@ export class StrategicHud extends Phaser.Scene {
       this.live = false;
     });
 
-    this.dynamic = [];
+    this.parts = { top: [], panel: [], rest: [] };
+    this.drawn = { top: "", panel: "", rest: "" };
     this.tip = { parts: [], timer: null };
     // A resize destroys the toast with everything else; it shows again.
     this.toast = { id: -1, box: null };
@@ -228,6 +246,7 @@ export class StrategicHud extends Phaser.Scene {
 
   private toggleGuide(): void {
     this.guideOpen = !this.guideOpen;
+    this.drawn.rest = "";
     this.refresh();
   }
 
@@ -257,20 +276,31 @@ export class StrategicHud extends Phaser.Scene {
   /** Redraw everything the model owns. Called by the map on every change. */
   refresh(): void {
     if (!this.live) return;
-    this.hideTip();
-    for (const o of this.dynamic) o.destroy();
-    this.dynamic = [];
-    this.bubble = null;
     const m = this.hud.model();
-    this.buildTop(m);
-    this.buildSelection(m);
-    this.buildCommands(m);
-    this.buildButtons(m);
+    // Functions drop out of the signature; what is drawn is all that is left.
+    const part = (name: HudPart, shows: unknown, draw: () => void): void => {
+      const sig = JSON.stringify(shows);
+      if (sig === this.drawn[name]) return;
+      this.drawn[name] = sig;
+      for (const o of this.parts[name]) o.destroy();
+      this.parts[name] = [];
+      this.into = name;
+      draw();
+      this.into = "rest";
+    };
+    part("top", [m.gold, m.supply, m.upkeep, m.greyIn, m.clock, m.banner], () => this.buildTop(m));
+    part("panel", [m.title, m.detail, m.portrait, m.hp], () => this.buildSelection(m));
+    part("rest", [m.commands, m.primary, m.secondary, m.tutorial, m.report, this.guideOpen], () => {
+      this.hideTip();
+      this.bubble = null;
+      this.buildCommands(m);
+      this.buildButtons(m);
+      if (m.tutorial && !this.guideOpen) this.buildBubble(m.tutorial);
+      if (m.report) this.buildReport(m.report);
+      if (this.guideOpen) this.buildGuide(m);
+    });
     this.showToast(m);
-    if (m.tutorial && !this.guideOpen) this.buildBubble(m.tutorial);
-    if (m.report) this.buildReport(m.report);
-    else if (m.banner.text !== this.splashed) this.splash(m.banner);
-    if (this.guideOpen) this.buildGuide(m);
+    if (!m.report && m.banner.text !== this.splashed) this.splash(m.banner);
   }
 
   update(): void {
@@ -353,7 +383,7 @@ export class StrategicHud extends Phaser.Scene {
   }
 
   private keep<T extends Phaser.GameObjects.GameObject>(o: T): T {
-    this.dynamic.push(o);
+    this.parts[this.into].push(o);
     return o;
   }
 
@@ -392,7 +422,7 @@ export class StrategicHud extends Phaser.Scene {
     const items: [string | null, string][] = [
       [ICON.gold, m.upkeep === "none" ? String(m.gold) : `${m.gold}, upkeep ${m.upkeep}`],
       [ICON.meat, `${m.supply[0]}/${m.supply[1]} supply`],
-      [null, m.greyIn > 0 ? `Greying in ${m.greyIn}` : "The Greying"],
+      [null, m.clock ? m.clock.text : m.greyIn > 0 ? `Greying in ${m.greyIn}` : "The Greying"],
     ];
     const stripW = m.upkeep === "none" ? 390 : 470;
     const x0 = w - 12 - stripW;
@@ -402,7 +432,8 @@ export class StrategicHud extends Phaser.Scene {
     items.forEach(([icon, value], i) => {
       const x = at[i]!;
       if (icon) this.keep(this.add.image(x, 33, iconKey(icon)).setScale(0.48));
-      const tint = (i === 2 && m.greyIn <= 2) || (i === 0 && m.upkeep === "high") ? "#a12f2f" : INK.color;
+      const late = m.clock ? m.clock.warn : m.greyIn <= 2;
+      const tint = (i === 2 && late) || (i === 0 && m.upkeep === "high") ? "#a12f2f" : INK.color;
       this.keep(label(this, icon ? x + 20 : x - 10, 34, value, { ...INK, color: tint, fontSize: i === 2 ? "14px" : "17px" }).setOrigin(0, 0.5));
     });
   }
@@ -493,7 +524,17 @@ export class StrategicHud extends Phaser.Scene {
     const on = cmd.enabled !== false;
     const face = this.add.image(0, 0, "sqBlue", "ink").setDisplaySize(size, size * (SQUARE.h / SQUARE.w));
     const parts: Phaser.GameObjects.GameObject[] = [face];
-    if (cmd.portrait && this.textures.exists(cmd.portrait)) {
+    if (cmd.portrait && this.textures.exists(cmd.portrait) && size <= BTN) {
+      // A small picture button, such as a building to put up: its art, fitted
+      // by its ink rather than its padded frame, over its name.
+      const k = size / BTN;
+      const ink = this.inkOf(cmd.portrait);
+      const scale = (size * 0.86) / Math.max(ink.w, ink.h);
+      const art = this.add.image(0, -4 * k, cmd.portrait).setScale(scale);
+      art.setOrigin((ink.x + ink.w / 2) / art.width, (ink.y + ink.h / 2) / art.height);
+      parts.push(art);
+      parts.push(label(this, 0, 15 * k, cmd.label, { fontSize: `${Math.round(10 * Math.min(k, 1.5))}px`, strokeThickness: 3 }));
+    } else if (cmd.portrait && this.textures.exists(cmd.portrait)) {
       // A troop: its face large enough to read, then its name and price.
       const face_ = this.add.image(0, -size * 0.16, cmd.portrait);
       face_.setScale((size * 0.64) / Math.max(face_.width, face_.height));
@@ -583,12 +624,44 @@ export class StrategicHud extends Phaser.Scene {
       this.keep(label(this, w / 2, cy - ph / 2 + 64 + i * 22, line, { ...INK, fontSize: "14px", fontStyle: "500", wordWrap: { width: pw - 60 }, align: "center" }));
     });
     const by = cy + ph / 2 - 40;
-    if (r.also) {
+    if (r.choices) {
+      const bw = Math.min(150, (pw - 40) / r.choices.length - 10);
+      r.choices.forEach((c, i) => {
+        const x = w / 2 + (i - (r.choices!.length - 1) / 2) * (bw + 12);
+        this.keep(button(this, x, by, bw, 48, c.label, i === 0 ? "blue" : "red", c.onClick, 0.5));
+      });
+    } else if (r.also) {
       this.keep(button(this, w / 2 - 85, by, 150, 48, r.button, "blue", r.onClick, 0.5));
       this.keep(button(this, w / 2 + 85, by, 150, 48, r.also.label, "red", r.also.onClick, 0.5));
     } else {
       this.keep(button(this, w / 2, by, 170, 48, r.button, "blue", r.onClick, 0.5));
     }
+  }
+
+  /** The box around a texture's opaque pixels, measured once per texture. */
+  private inkOf(key: string): { x: number; y: number; w: number; h: number } {
+    const known = INK_BOX.get(key);
+    if (known) return known;
+    const src = this.textures.get(key).getSourceImage() as HTMLImageElement | HTMLCanvasElement;
+    const canvas = document.createElement("canvas");
+    canvas.width = src.width;
+    canvas.height = src.height;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(src, 0, 0);
+    const { data } = ctx.getImageData(0, 0, src.width, src.height);
+    let x0 = src.width, y0 = src.height, x1 = 0, y1 = 0;
+    for (let y = 0; y < src.height; y++) {
+      for (let x = 0; x < src.width; x++) {
+        if (data[(y * src.width + x) * 4 + 3]! < 16) continue;
+        x0 = Math.min(x0, x);
+        y0 = Math.min(y0, y);
+        x1 = Math.max(x1, x);
+        y1 = Math.max(y1, y);
+      }
+    }
+    const box = x1 < x0 ? { x: 0, y: 0, w: src.width, h: src.height } : { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+    INK_BOX.set(key, box);
+    return box;
   }
 
   private queueTip(cmd: HudCommand): void {

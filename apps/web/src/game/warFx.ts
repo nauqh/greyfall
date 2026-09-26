@@ -32,7 +32,6 @@ export function clearFx(scene: Phaser.Scene): void {
 
 export function loadWarFx(scene: Phaser.Scene): void {
   scene.load.spritesheet("arrow", packUrl("Units/Blue Units/Archer/Arrow.png"), { frameWidth: 64, frameHeight: 64 });
-  scene.load.spritesheet("bone", packUrl("Enemy%20Pack/Gnoll/Gnoll_Bone.png"), { frameWidth: 64, frameHeight: 64 });
   scene.load.spritesheet("dust", packUrl(FX.dust.file), { frameWidth: FX.dust.frame, frameHeight: FX.dust.frame });
 }
 
@@ -44,14 +43,6 @@ export function makeWarFxAnims(scene: Phaser.Scene): void {
       frameRate: 16,
       repeat: 0,
       hideOnComplete: true,
-    });
-  }
-  if (!scene.anims.exists("bone_anim")) {
-    scene.anims.create({
-      key: "bone_anim",
-      frames: scene.anims.generateFrameNumbers("bone", { start: 0, end: 3 }),
-      frameRate: 12,
-      repeat: -1,
     });
   }
 }
@@ -87,7 +78,7 @@ export function flash(scene: Phaser.Scene, target: Phaser.GameObjects.Sprite | P
   });
 }
 
-/** The archer's arcing arrow, or the Gnoll's tumbling bone. */
+/** The archer's arcing arrow. */
 export function projectile(
   scene: Phaser.Scene,
   side: "a" | "b",
@@ -97,7 +88,7 @@ export function projectile(
 ): void {
   const shot = trackFx(
     scene,
-    side === "a" ? scene.add.sprite(from.x, from.y, "arrow") : scene.add.sprite(from.x, from.y, "bone").play("bone_anim"),
+    scene.add.sprite(from.x, from.y, "arrow"),
   );
   shot.setDepth(DEPTH.fx);
   const apexY = Math.min(from.y, to.y) - Math.min(90, Math.abs(to.x - from.x) / 4 + 20);

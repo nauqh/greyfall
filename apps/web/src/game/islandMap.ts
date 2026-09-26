@@ -6,18 +6,23 @@ import * as Phaser from "phaser";
 
 import { packUrl, type BuildingName } from "./art";
 import { MAP, STRAT_COLS, STRAT_ROWS, at, isLand, isSlope, level } from "./stratMap";
-import { unitKey } from "./sprites";
 import { DEPTH, addBuilding, addDecor, loadBuildings, type Structure } from "./terrain";
 
 /** The tileset's native tile: nothing is stretched. */
 export const CELL = 64;
 
-/** Work loops for a Pawn standing at its job: the pickaxe at a mine, the
- *  hammer at a plot. The Gnome has neither, so its swing does both. */
+/** Work loops for a Pawn at its job: the pickaxe at a mine, the hammer at a
+ *  plot, and the run with a bag of gold on the way home. The keys and files
+ *  are the blue clan's; workKey gives each clan its own. */
 export const WORK = {
   dig: { key: "pawnDig", file: "Units/Blue Units/Pawn/Pawn_Interact Pickaxe.png" },
   hammer: { key: "pawnHammer", file: "Units/Blue Units/Pawn/Pawn_Interact Hammer.png" },
+  carry: { key: "pawnCarry", file: "Units/Blue Units/Pawn/Pawn_Run Gold.png" },
 } as const;
+
+export function workKey(side: "a" | "b", job: keyof typeof WORK): string {
+  return side === "a" ? WORK[job].key : `${WORK[job].key}Red`;
+}
 
 /** The tileset's 4x4 blocks: 3x3 edges plus a one-wide column, a one-tall
  *  row and a single. Picks the column (or row) from the two neighbours. */
@@ -39,10 +44,10 @@ const ART: Record<BuildingKind, BuildingName> = {
   house: "house1",
 };
 
-/** The pack's three house fronts, one per house plot. */
+/** The pack's three house fronts, taken in turn by the house's number. */
 export function artOf(p: Plot): BuildingName {
   if (p.kind !== "house") return ART[p.kind];
-  return `house${p.id.slice(-1)}` as BuildingName;
+  return `house${(Number(/\d+$/.exec(p.id)?.[0] ?? 0) % 3) + 1}` as BuildingName;
 }
 
 /** Where a plot's art stands: centred on its footprint, base on its last row. */
@@ -61,7 +66,10 @@ export function loadMapArt(scene: Phaser.Scene): void {
   // The dustiest of the five greens, for the two roads.
   scene.load.image("tilesetRoad", packUrl("Terrain/Tileset/Tilemap_color4.png"));
   loadBuildings(scene, LANDMARKS);
-  for (const w of Object.values(WORK)) scene.load.spritesheet(w.key, packUrl(w.file), { frameWidth: 192, frameHeight: 192 });
+  for (const [job, w] of Object.entries(WORK) as [keyof typeof WORK, (typeof WORK)[keyof typeof WORK]][]) {
+    scene.load.spritesheet(w.key, packUrl(w.file), { frameWidth: 192, frameHeight: 192 });
+    scene.load.spritesheet(workKey("b", job), packUrl(w.file.replace("Blue Units", "Red Units")), { frameWidth: 192, frameHeight: 192 });
+  }
   scene.load.image("goldMine", packUrl("Terrain/Resources/Gold/Gold Stones/Gold Stone 6.png"));
   scene.load.spritesheet("sheep", packUrl("Terrain/Resources/Meat/Sheep/Sheep_Idle.png"), {
     frameWidth: 128,
@@ -70,11 +78,11 @@ export function loadMapArt(scene: Phaser.Scene): void {
 }
 
 export function makeMapAnims(scene: Phaser.Scene): void {
-  for (const w of Object.values(WORK)) {
-    if (!scene.anims.exists(w.key)) scene.anims.create({ key: w.key, frames: scene.anims.generateFrameNumbers(w.key), frameRate: 10, repeat: -1 });
-  }
-  if (!scene.anims.exists("gnomeWork")) {
-    scene.anims.create({ key: "gnomeWork", frames: scene.anims.generateFrameNumbers(unitKey("b", "pawn", "attack")), frameRate: 10, repeat: -1 });
+  for (const job of Object.keys(WORK) as (keyof typeof WORK)[]) {
+    for (const side of ["a", "b"] as const) {
+      const key = workKey(side, job);
+      if (!scene.anims.exists(key)) scene.anims.create({ key, frames: scene.anims.generateFrameNumbers(key), frameRate: 10, repeat: -1 });
+    }
   }
   if (!scene.anims.exists("sheep_anim")) {
     scene.anims.create({ key: "sheep_anim", frames: scene.anims.generateFrameNumbers("sheep"), frameRate: 8, repeat: -1 });
@@ -88,15 +96,15 @@ const SHEET: Record<number, string> = { 1: "tilesetLow", 2: "tileset", 3: "tiles
  *  dead tree on the islet, towers and a fish hut in the shallows. Each stands
  *  on forest or water, so none of them sits where a unit can walk. */
 const LANDMARK_SPOTS: { name: BuildingName; col: number; row: number; scale?: number; clears?: [number, number][] }[] = [
-  { name: "cave", col: 3, row: 14, clears: [[2, 12], [3, 12], [4, 12], [2, 13], [3, 13], [4, 13]] },
-  { name: "goblinHut", col: 5.2, row: 19, scale: 0.8, clears: [[4, 17], [5, 17], [6, 17], [4, 18], [5, 18]] },
-  { name: "gnomeHut", col: 7.9, row: 22, clears: [[7, 21], [8, 21]] },
-  { name: "gnomeTower", col: 9.3, row: 22, scale: 0.85, clears: [[9, 21]] },
-  { name: "deadTree", col: 1.6, row: 19.9, scale: 0.4, clears: [[1, 18], [2, 18], [1, 19]] },
-  { name: "skullSpike", col: 6.5, row: 21 },
-  { name: "skullSpike", col: 4.5, row: 16.9 },
-  { name: "fishHut", col: 13, row: 22.9 },
-  { name: "waterTower", col: 13, row: 4.9 },
+  { name: "cave", col: 5.5, row: 26.9, clears: [[4, 25], [5, 25], [6, 25], [4, 26], [5, 26], [6, 26]] },
+  { name: "goblinHut", col: 8.5, row: 30.9, scale: 0.8, clears: [[7, 29], [8, 29], [9, 29], [7, 30], [8, 30], [9, 30]] },
+  { name: "gnomeHut", col: 11, row: 33.9, clears: [[10, 33], [11, 33]] },
+  { name: "gnomeTower", col: 13, row: 33.9, scale: 0.85, clears: [[12, 33], [13, 33]] },
+  { name: "deadTree", col: 0.5, row: 26.9, scale: 0.4, clears: [[0, 25], [0, 26]] },
+  { name: "skullSpike", col: 2.5, row: 19.9, clears: [[2, 19]] },
+  { name: "skullSpike", col: 14.5, row: 28.9, clears: [[14, 28]] },
+  { name: "fishHut", col: 9, row: 35.2 },
+  { name: "waterTower", col: 19.5, row: 3.8 },
 ];
 const LANDMARK_LIST = LANDMARK_SPOTS.flatMap((l) => [l, { ...l, col: STRAT_COLS - l.col, mirror: true }]);
 const LANDMARKS: Structure[] = LANDMARK_LIST.map((l) => ({ ...cell("g", l.name, l.col, l.row), scale: l.scale }));
@@ -113,8 +121,9 @@ function roadTiles(): Set<number> {
   const front = (side: "a" | "b"): Cell => ({ col: castlePlot(side).col + 1, row: castlePlot(side).row + 2 });
   const walk = (closed: [number, number][]): Cell[] =>
     findPath(front("a"), front("b"), (c) => !isOpen(c) || closed.some(([col, row]) => c.col === col && c.row === row)) ?? [];
-  const ford: [number, number][] = [[20, 17], [20, 18], [20, 19]];
-  const pass: [number, number][] = [[15, 8], [25, 8]];
+  // Closing the ford leaves the High Pass, and closing the ridge ramps the Low Road.
+  const ford: [number, number][] = Array.from({ length: 9 }, (_, i) => [30, 25 + i]);
+  const pass: [number, number][] = [[22, 13], [38, 13]];
   const out = new Set<number>();
   for (const c of [...walk(ford), ...walk(pass)]) {
     if (level(c.col, c.row) !== 1) continue;
@@ -237,11 +246,11 @@ export function buildScenery(scene: Phaser.Scene): void {
     const art = addBuilding(scene, LANDMARKS[i]!);
     if ("mirror" in l) art.setFlipX(true);
   });
-  put("bush", both([[11.6, 11.5], [6.6, 16.5], [16.6, 20.7]]));
-  put("rock", both([[13.4, 5.7], [9.3, 19.7]]));
+  put("bush", both([[18.6, 16.5], [11.5, 23.5], [22.6, 29.7]]));
+  put("rock", both([[19.5, 12.7], [10.4, 31.6]]));
   put("waterRock", [
-    ...both([[1.2, 6.4], [0.8, 15.5], [8.5, 22.4], [15.6, 11.9], [11.5, 1.6]]),
-    [20.5, 1.4],
+    ...both([[1.2, 8.4], [0.8, 21.5], [5.5, 35.4], [26.6, 18.9], [15.5, 2.6]]),
+    [30.5, 2.4],
   ]).forEach((s) => s.setDepth(DEPTH.foam));
 
   for (const m of MINES) {
@@ -249,7 +258,7 @@ export function buildScenery(scene: Phaser.Scene): void {
     const y = (m.row + 0.8) * CELL;
     scene.add.image(x, y, "goldMine").setOrigin(0.5, 0.78).setDepth(DEPTH.decorBehind + y / 1000);
   }
-  for (const [c, r] of both([[6.3, 12.3], [12.6, 15.4]])) {
+  for (const [c, r] of both([[10.3, 18.3], [17.6, 29.4]])) {
     const sheep = scene.add
       .sprite(c * CELL, r * CELL, "sheep")
       .setOrigin(0.5, 0.66)

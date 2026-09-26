@@ -27,7 +27,7 @@ const ownFighters = (c: TutorialContext) => c.state.units.filter((u) => u.side =
 
 export const STEPS: readonly Step[] = [
   {
-    text: "Welcome, Keeper! We three Pawns dig this mine for you: 2 gold each, every round. The grey things across the water want your castle.",
+    text: "Welcome, Keeper! We three Pawns dig this mine for you: 20 gold each, every round. The red clan across the island wants your castle.",
     button: "Go on",
     focus: null,
   },
@@ -58,7 +58,7 @@ export const STEPS: readonly Step[] = [
     when: (c) => c.phase === "plan" && c.state.round >= 2,
   },
   {
-    text: "More troops come from more buildings. Click an empty plot on your plateau and build: archery range for Archers, tower for Lancers, monastery for Monks. Houses add supply.",
+    text: "More troops come from more buildings. Select one of us Pawns, pick a building, and click where it goes: archery range for Archers, tower for Lancers, monastery for Monks. Houses add supply.",
     button: "Got it",
     focus: null,
     when: (c) => c.phase === "plan",

@@ -32,7 +32,6 @@ import { GAME_H, GAME_W, WATER_SPAN, fitCamera, startGame } from "./boot";
 import {
   ATTACK_FRAME_RATE,
   BODY_HEIGHT,
-  MONSTER_BODY_HEIGHT,
   SPRITE_NUDGE,
   animKey,
   healKey,
@@ -83,8 +82,8 @@ const TICK_MS = 1000 / BALANCE.tickRate;
 const STEP_MS = 880;
 
 /** The frame of each attack sheet where the weapon leaves the hand. The
- * archer's bow and the Gnoll's arm are both fully back on frame 5; the
- * projectile spawns then, not at frame 0. */
+ * archer's bow is fully back on frame 5; the projectile spawns then, not at
+ * frame 0. */
 const RELEASE_FRAME = { archer: 5 } as const;
 
 /** Airtime of a ranged projectile, release to impact. */
@@ -119,32 +118,16 @@ const ROSTER = UNIT_CLASSES.filter((c) => c !== "pawn");
 /** A portrait per class, from the pack's 25 avatars. */
 const PORTRAIT: Record<UnitClass, number> = { warrior: 1, lancer: 2, archer: 3, monk: 4, pawn: 1 };
 
-/** What side b's cards call each class: the monster standing in for it. */
-const MONSTER_NAME: Record<UnitClass, string> = {
-  warrior: "Skull",
-  lancer: "Turtle",
-  archer: "Gnoll",
-  monk: "Hex Shaman",
-  pawn: "Gnome",
-};
-
-/** The monster's own portrait file, 256x256 like the human ones. */
 /** Ink bounds [x0, y0, x1, y1] of each 256px avatar, measured off the art:
  *  the padding differs per face, so one scale drew them at different sizes. */
-const PORTRAIT_INK: Record<"a" | "m", Partial<Record<UnitClass, [number, number, number, number]>>> = {
-  a: { warrior: [22, 31, 219, 213], lancer: [52, 58, 201, 187], archer: [64, 29, 204, 189], monk: [57, 44, 201, 199] },
-  m: { warrior: [39, 59, 201, 202], lancer: [40, 71, 210, 195], archer: [42, 38, 220, 201], monk: [39, 55, 204, 213] },
+const PORTRAIT_INK: Partial<Record<UnitClass, [number, number, number, number]>> = {
+  warrior: [22, 31, 219, 213],
+  lancer: [52, 58, 201, 187],
+  archer: [64, 29, 204, 189],
+  monk: [57, 44, 201, 199],
 };
 /** Every card portrait's ink fits this square. */
 const PORTRAIT_BOX = 62;
-
-const MONSTER_PORTRAIT: Record<UnitClass, string> = {
-  warrior: "Skull/Skull_Avatar.png",
-  lancer: "Turtle/Turtle_Avatar.png",
-  archer: "Gnoll/Gnoll_Avatar.png",
-  monk: "Hex Shaman/Hex Shaman_Avatar.png",
-  pawn: "Gnome/Gnome_Avatar.png",
-};
 
 /**
  * Each class's counter, named. BALANCE.counters is what makes them true; the
@@ -390,10 +373,6 @@ export class BattleScene extends Phaser.Scene {
       frameWidth: 64,
       frameHeight: 64,
     });
-    this.load.spritesheet("bone", packUrl("Enemy%20Pack/Gnoll/Gnoll_Bone.png"), {
-      frameWidth: 64,
-      frameHeight: 64,
-    });
     this.load.spritesheet("dust", packUrl(FX.dust.file), {
       frameWidth: FX.dust.frame,
       frameHeight: FX.dust.frame,
@@ -402,10 +381,6 @@ export class BattleScene extends Phaser.Scene {
       this.load.image(
         `avatar_${cls}`,
         packUrl(`${AVATARS.file}${String(PORTRAIT[cls]).padStart(2, "0")}.png`),
-      );
-      this.load.image(
-        `mavatar_${cls}`,
-        packUrl(`Enemy%20Pack/${MONSTER_PORTRAIT[cls].replace(/ /g, "%20")}`),
       );
     }
     for (const n of Object.values(ICON)) this.load.image(iconKey(n), iconUrl(n));
@@ -422,14 +397,6 @@ export class BattleScene extends Phaser.Scene {
         frameRate: 16,
         repeat: 0,
         hideOnComplete: true,
-      });
-    }
-    if (!this.anims.exists("bone_anim")) {
-      this.anims.create({
-        key: "bone_anim",
-        frames: this.anims.generateFrameNumbers("bone", { start: 0, end: 3 }),
-        frameRate: 12,
-        repeat: -1,
       });
     }
 
@@ -632,8 +599,6 @@ export class BattleScene extends Phaser.Scene {
   private buildCard(cls: UnitClass, cx: number, cy: number): Phaser.GameObjects.Container {
     const stats = BALANCE.units[cls];
     const ink = { strokeThickness: 0 };
-    // Seat B drafts monsters, so its cards wear the monster's face and name.
-    const monsters = this.mySide === "b";
     const paper = panel(this, "paper", 0, 0, 236, 188);
     const special = panel(this, "specialPaper", 0, 0, 236, 188).setVisible(false);
 
@@ -651,9 +616,9 @@ export class BattleScene extends Phaser.Scene {
     }).setOrigin(1, 0.5);
     const coin = this.add.image(CARD_EDGE - cost.width - 14, -50, iconKey(ICON.gold)).setScale(0.42);
 
-    const [x0, y0, x1, y1] = PORTRAIT_INK[monsters ? "m" : "a"][cls] ?? [0, 0, 256, 256];
+    const [x0, y0, x1, y1] = PORTRAIT_INK[cls] ?? [0, 0, 256, 256];
     const portrait = this.add
-      .image(-CARD_EDGE + PORTRAIT_BOX / 2, 2, `${monsters ? "m" : ""}avatar_${cls}`)
+      .image(-CARD_EDGE + PORTRAIT_BOX / 2, 2, `avatar_${cls}`)
       .setOrigin((x0 + x1) / 2 / 256, (y0 + y1) / 2 / 256)
       .setScale(PORTRAIT_BOX / Math.max(x1 - x0, y1 - y0));
     // Bottom-anchored, so a blurb that wraps grows up and the ability line stays put.
@@ -847,9 +812,8 @@ export class BattleScene extends Phaser.Scene {
     this.menuBtn = btn;
   }
 
-  /** Seat B drafts monsters, so its cards and lines use the monster's name. */
   private cardName(cls: UnitClass): string {
-    return this.mySide === "b" ? MONSTER_NAME[cls] : CLASS_NAME[cls];
+    return CLASS_NAME[cls];
   }
 
   private pick(cls: UnitClass): void {
@@ -1416,9 +1380,8 @@ export class BattleScene extends Phaser.Scene {
     this.refreshHud();
   }
 
-  /** Head height for a unit, monsters on side b carrying their own. */
-  private headHeight(cls: UnitClass, side: Side): number {
-    return side === "a" ? BODY_HEIGHT[cls] : MONSTER_BODY_HEIGHT[cls];
+  private headHeight(cls: UnitClass, _side: Side): number {
+    return BODY_HEIGHT[cls];
   }
 
   private refreshHud(): void {
@@ -1572,8 +1535,7 @@ export class BattleScene extends Phaser.Scene {
 
     if (attacker.snap.class === "archer") {
       // The projectile waits for the anim's release frame - spawning it at
-      // frame 0 had the arrow leaving before the bow was drawn. The Gnoll
-      // releases its bone at the same beat in its own throw.
+      // frame 0 had the arrow leaving before the bow was drawn.
       const release = (RELEASE_FRAME.archer / ATTACK_FRAME_RATE) * 1000;
       this.time.delayedCall(release / this.speed, () => {
         if (!attacker.alive || !target.alive) return;
@@ -1582,28 +1544,14 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
-  /** The archer's arrow, or the Gnoll's tumbling bone. The arrow arcs: a
+  /** The archer's arrow. It arcs: a
    * bowshot that flew dead flat reads as a laser line, so it rises by a
    * third of the range over the chord and turns with its velocity. */
   private flyProjectile(attacker: UnitView, target: UnitView): void {
     const from = { x: attacker.sprite.x, y: attacker.sprite.y - 46 };
     const to = { x: target.sprite.x, y: target.sprite.y - 40 };
-    const projectile =
-      attacker.snap.side === "a"
-        ? this.add.sprite(from.x, from.y, "arrow")
-        : this.add.sprite(from.x, from.y, "bone").play("bone_anim");
+    const projectile = this.add.sprite(from.x, from.y, "arrow");
     projectile.setDepth(DEPTH.fx);
-
-    if (attacker.snap.side !== "a") {
-      this.tweens.add({
-        targets: projectile,
-        x: to.x,
-        y: to.y,
-        duration: FLIGHT_MS / this.speed,
-        onComplete: () => projectile.destroy(),
-      });
-      return;
-    }
 
     // Quadratic bezier: start, apex above the midpoint, target. The arrow's
     // nose follows the curve's tangent so it points where it is going.
