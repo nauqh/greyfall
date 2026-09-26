@@ -42,9 +42,9 @@ import * as Phaser from "phaser";
 
 import { packUrl, type BuildingName } from "./art";
 import { baseZoom, fitCamera, startGame } from "./boot";
-import { HUD_COVER_H, HUD_KEY, ICON, StrategicHud, portraitKey, type HudCommand, type HudModel } from "./StrategicHud";
+import { HUD_COVER_H, HUD_KEY, HUD_TOP_H, ICON, StrategicHud, portraitKey, type HudCommand, type HudModel } from "./StrategicHud";
 import { HAND, label } from "./ui";
-import { MAP, STRAT_COLS, STRAT_ROWS, at, isSlope, isLand } from "./stratMap";
+import { STRAT_COLS, STRAT_ROWS, at, isSlope, isLand } from "./stratMap";
 import { BODY_HEIGHT, MONSTER_BODY_HEIGHT, loadUnits, makeAnims, playPose, unitKey } from "./sprites";
 
 /** Work loops for a Pawn standing at its job: the pickaxe at a mine, the
@@ -208,7 +208,13 @@ export class StrategicScene extends Phaser.Scene {
   /** An enemy unit or building shown in the panel without being ordered. */
   private inspected: { unit?: number; plot?: string } | null = null;
   /** A command waiting for its target on the map. */
-  private message = "";
+  private msg = { text: "", id: 0 };
+  private get message(): string {
+    return this.msg.text;
+  }
+  private set message(text: string) {
+    this.msg = { text, id: this.msg.id + 1 };
+  }
 
   private units = new Map<number, UnitView>();
   private buildings = new Map<string, Phaser.GameObjects.Image>();
@@ -272,13 +278,10 @@ export class StrategicScene extends Phaser.Scene {
     this.startMatch();
 
     this.hud = this.scene.add(HUD_KEY, StrategicHud, true, {
-      map: MAP,
-      marks: PLOTS.filter((p) => p.kind === "castle").map((p) => ({ col: p.col + 1, row: p.row + 1, side: p.side })),
       // The HUD is the top scene, so the cloud cover goes there to sit over
       // its buttons too.
       onMenu: () => this.toMenu(),
       onZoom: (dir: 1 | -1) => this.zoomStep(dir),
-      onMinimap: (col: number, row: number) => this.lookAt(col, row),
       speaker: () => this.speakerAnchor(),
       model: () => this.model(),
     }) as StrategicHud;
@@ -927,12 +930,13 @@ export class StrategicScene extends Phaser.Scene {
       detail: "",
       portrait: null,
       hp: null,
-      message: this.message,
+      message: this.msg.text,
+      messageId: this.msg.id,
       commands: [],
       primary: null,
       secondary: [],
       report: null,
-      dots: s.units.map((u) => ({ col: u.col, row: u.row, side: u.side })),
+      replayTutorial: this.tutor === null ? () => this.restartTutor() : null,
       tutorial: null,
     };
     const step = this.tutorStep();
@@ -967,8 +971,6 @@ export class StrategicScene extends Phaser.Scene {
       secondary: [
         { label: "Army", onClick: () => this.selectArmy() },
         { label: "Pawns", onClick: () => this.selectPawns() },
-        // Hidden while the walkthrough runs; it has its own way out.
-        ...(this.tutor === null ? [{ label: "Tutorial", onClick: () => this.restartTutor() }] : []),
       ],
     };
     if (this.selected.length > 0) return { ...plan, ...this.unitPanel() };
@@ -1392,15 +1394,9 @@ export class StrategicScene extends Phaser.Scene {
   private zoomScale(level: number): number {
     const cam = this.cameras.main;
     const base = baseZoom(this);
-    const fit = Math.min(cam.width / WORLD_W, (cam.height - HUD_COVER_H * base) / (TOP_SEA + WORLD_H)) / base;
+    const fit = Math.min(cam.width / WORLD_W, (cam.height - (HUD_COVER_H + HUD_TOP_H) * base) / (TOP_SEA + WORLD_H)) / base;
     const out = Math.min(1, fit);
     return [1, (1 + out) / 2, out][level]!;
-  }
-
-  /** Centre the view on a cell, as a click on Warcraft's minimap does. */
-  private lookAt(col: number, row: number): void {
-    const cam = this.cameras.main;
-    this.setScroll((col + 0.5) * CELL - cam.width / 2, (row + 0.5) * CELL - cam.height / 2);
   }
 
   /** Scroll with the world clamps shared by edge-pan, drag and zoom. A view
@@ -1412,11 +1408,13 @@ export class StrategicScene extends Phaser.Scene {
     // The view's left edge sits this far past scroll: zoom works from the centre.
     const shiftX = (cam.width - viewW) / 2;
     const shiftY = (cam.height - viewH) / 2;
-    // The HUD bar covers the bottom of the view; the map scrolls up past it.
+    // The HUD bar covers the bottom of the view and the header its top; the
+    // map scrolls past both, so the top sea always shows below the header.
     const under = (HUD_COVER_H * baseZoom(this)) / cam.zoom;
+    const top = TOP_SEA + (HUD_TOP_H * baseZoom(this)) / cam.zoom;
     const fit = (v: number, max: number): number => (max < 0 ? max / 2 : Math.max(0, Math.min(max, v)));
     cam.scrollX = fit(x + shiftX, WORLD_W - viewW) - shiftX;
-    cam.scrollY = fit(y + shiftY + TOP_SEA, TOP_SEA + WORLD_H + under - viewH) - shiftY - TOP_SEA;
+    cam.scrollY = fit(y + shiftY + top, top + WORLD_H + under - viewH) - shiftY - top;
   }
 
   /** Screen-edge pan, Warcraft-style, at the same on-screen speed at any

@@ -1,17 +1,18 @@
 // The strategic map's Warcraft-style HUD: a ribbon naming the round along
 // the top, resources and menu in the corners, and a wooden console along the
-// bottom with the minimap, the selection panel and the command card. Its own
-// scene on top of the map, so zooming the map's camera never scales the HUD,
-// and a click on the console never reaches the map below.
+// bottom with the zoom, the selection panel and the command card. Popups sit
+// over it: command tooltips, message toasts, a phase splash and the field
+// guide. Its own scene on top of the map, so zooming the map's camera never
+// scales the HUD, and a click on the console never reaches the map below.
 //
 // It draws whatever the map scene's model says and calls back into it; the
 // war itself lives in the engine and the map scene.
 
-import type { UnitClass } from "@greyfall/engine";
+import { BALANCE, WAR, type UnitClass } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
 import { AVATARS, iconKey, iconUrl, packUrl } from "./art";
-import { WATER, baseZoom } from "./boot";
+import { baseZoom } from "./boot";
 import { ARROW, HAND, button, label, loadPanels, panel } from "./ui";
 
 export const HUD_KEY = "strategicHud";
@@ -19,6 +20,8 @@ export const HUD_KEY = "strategicHud";
 const BAR_H = 176;
 /** How much of the screen's bottom the HUD covers; the map scrolls up past it. */
 export const HUD_COVER_H = BAR_H;
+/** The header row's height: menu, ribbon and resources. The map keeps sea under it. */
+export const HUD_TOP_H = 72;
 
 /** The pack's icon sheet, by what each stands for on the command card. */
 export const ICON = {
@@ -46,7 +49,7 @@ export interface HudCommand {
   sub?: string;
   /** Fills the card's top-left 2x2 block; only honoured in the first slot. */
   big?: boolean;
-  /** Shown in the selection panel while hovered. */
+  /** Shown in a tooltip over the card while hovered. */
   hint: string;
   onClick: () => void;
   enabled?: boolean;
@@ -65,15 +68,18 @@ export interface HudModel {
   /** A texture key for the selection panel's portrait. */
   portrait: string | null;
   hp: [cur: number, max: number] | null;
-  /** A line under the ribbon: what just went wrong, or what to do next. */
+  /** A toast under the ribbon: what just went wrong, or what to do next. */
   message: string;
+  /** Bumped on every message set, so the same line said twice shows twice. */
+  messageId: number;
   commands: (HudCommand | null)[];
   /** The sword is the round's one big action; the others are plain buttons. */
   primary: { label: string; onClick: () => void } | null;
   secondary: { label: string; onClick: () => void }[];
   /** The round report or the end of the match, over everything. */
   report: { title: string; tone: "blue" | "red"; lines: string[]; button: string; onClick: () => void; also?: { label: string; onClick: () => void } } | null;
-  dots: { col: number; row: number; side: "a" | "b" }[];
+  /** Offered in the field guide while the walkthrough is not running. */
+  replayTutorial: (() => void) | null;
   /** The walkthrough line the speaking Pawn says, with what it points at. */
   tutorial: {
     text: string;
@@ -84,14 +90,8 @@ export interface HudModel {
 }
 
 export interface HudData {
-  /** The map rows, `~ . # < >` as StrategicScene draws them. */
-  map: readonly string[];
-  /** Halls as minimap dots, in cells. */
-  marks: { col: number; row: number; side: "a" | "b" | "g" }[];
   onMenu: () => void;
   onZoom: (dir: 1 | -1) => void;
-  /** A click on the minimap, in cells. */
-  onMinimap: (col: number, row: number) => void;
   /** The speaking Pawn's head in HUD units, asked every frame as the map pans. */
   speaker: () => { x: number; y: number } | null;
   model: () => HudModel;
@@ -107,8 +107,12 @@ interface BubblePart {
 /** The paper art's fill, for the speech bubble's tail. */
 const PAPER = 0xeee1c6;
 const BUBBLE_W = 300;
-/** The first top-left button's centre, right of the menu button. */
-const SECONDARY_X = 128;
+/** The first top-left button's centre, right of the menu and guide buttons. */
+const SECONDARY_X = 184;
+/** How long a pointer rests on a command before its tooltip shows, and how
+ *  long a toast stays up. */
+const TIP_DELAY = 250;
+const TOAST_MS = 5000;
 
 /** Portraits: the blue knights' five faces, and each monster's own. */
 const KNIGHT_FACE: Record<UnitClass, number> = { warrior: 1, lancer: 2, archer: 3, monk: 4, pawn: 5 };
@@ -145,8 +149,9 @@ export class StrategicHud extends Phaser.Scene {
   private hud!: HudData;
   /** Everything the model draws; torn down and redrawn on refresh. */
   private dynamic: Phaser.GameObjects.GameObject[] = [];
-  private dots!: Phaser.GameObjects.Graphics;
-  private layout = { w: 0, h: 0, mapX: 0, mapY: 0, mapW: 150, mapH: 94 };
+  /** Between create() and shutdown; a refresh outside it has nothing to draw into. */
+  private live = false;
+  private layout = { w: 0, h: 0 };
   /** Where buildBar put the command card, the selection paper and the console's ends. */
   private cardX = 0;
   private selX0 = 0;
@@ -154,8 +159,13 @@ export class StrategicHud extends Phaser.Scene {
   private cy = 0;
   private barX0 = 0;
   private barX1 = 0;
-  /** The selection panel's last line, which a hovered command borrows. */
-  private detail: Phaser.GameObjects.Text | null = null;
+  /** The hovered command's tooltip, and the timer that will show it. */
+  private tip: { parts: Phaser.GameObjects.GameObject[]; timer: Phaser.Time.TimerEvent | null } = { parts: [], timer: null };
+  /** The message toast on screen, by the message it shows. */
+  private toast: { id: number; box: Phaser.GameObjects.Container | null } = { id: -1, box: null };
+  /** The last phase splashed, so a redraw never splashes it twice. */
+  private splashed: string | null = null;
+  private guideOpen = false;
   /** The Pawn's speech bubble and its tail, moved every frame to follow it. */
   private bubble: { parts: BubblePart[]; tail: Phaser.GameObjects.Graphics; h: number; at: { x: number; y: number } | null } | null = null;
 
@@ -170,7 +180,6 @@ export class StrategicHud extends Phaser.Scene {
   preload(): void {
     loadPanels(this, ["woodTable", "paper", "blueButton", "redButton"]);
     this.load.image("hudSlot", packUrl("UI Elements/UI Elements/Wood Table/WoodTable_Slots.png"));
-    this.load.image("hudPaper", packUrl("UI Elements/UI Elements/Banners/Banner_Slots.png"));
     this.load.image("sqBlue", packUrl("UI Elements/UI Elements/Buttons/SmallBlueSquareButton_Regular.png"));
     this.load.image("sqBlueDown", packUrl("UI Elements/UI Elements/Buttons/SmallBlueSquareButton_Pressed.png"));
     this.load.image("swords", packUrl("UI Elements/UI Elements/Swords/Swords.png"));
@@ -195,13 +204,28 @@ export class StrategicHud extends Phaser.Scene {
       this.scene.restart();
     };
     this.scale.on(Phaser.Scale.Events.RESIZE, rebuild);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, rebuild));
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scale.off(Phaser.Scale.Events.RESIZE, rebuild);
+      this.live = false;
+    });
 
     this.dynamic = [];
+    this.tip = { parts: [], timer: null };
+    // A resize destroys the toast with everything else; it shows again.
+    this.toast = { id: -1, box: null };
     this.layout.w = this.scale.width / zoom;
     this.layout.h = this.scale.height / zoom;
-    this.menuButton(34, 34);
+    this.iconButton(34, 34, ICON.menu, () => this.hud.onMenu());
+    this.iconButton(90, 34, ICON.info, () => this.toggleGuide());
+    this.input.keyboard?.on("keydown-H", () => this.toggleGuide());
+    this.input.keyboard?.on("keydown-ESC", () => this.guideOpen && this.toggleGuide());
     this.buildBar();
+    this.live = true;
+    this.refresh();
+  }
+
+  private toggleGuide(): void {
+    this.guideOpen = !this.guideOpen;
     this.refresh();
   }
 
@@ -230,8 +254,8 @@ export class StrategicHud extends Phaser.Scene {
 
   /** Redraw everything the model owns. Called by the map on every change. */
   refresh(): void {
-    // Before create() has built the console there is nothing to draw into.
-    if (!this.dots?.active) return;
+    if (!this.live) return;
+    this.hideTip();
     for (const o of this.dynamic) o.destroy();
     this.dynamic = [];
     this.bubble = null;
@@ -240,9 +264,11 @@ export class StrategicHud extends Phaser.Scene {
     this.buildSelection(m);
     this.buildCommands(m);
     this.buildButtons(m);
-    this.drawDots(m);
-    if (m.tutorial) this.buildBubble(m.tutorial);
+    this.showToast(m);
+    if (m.tutorial && !this.guideOpen) this.buildBubble(m.tutorial);
     if (m.report) this.buildReport(m.report);
+    else if (m.banner.text !== this.splashed) this.splash(m.banner);
+    if (this.guideOpen) this.buildGuide(m);
   }
 
   update(): void {
@@ -359,9 +385,6 @@ export class StrategicHud extends Phaser.Scene {
     const rw = Math.max(240, text.width + 130);
     const rib = this.keep(this.strip("bigRibbons", [`${tone}_left`, `${tone}_mid`, `${tone}_right`], w / 2, 34, rw, 0.5));
     rib.add(text);
-    if (m.message) {
-      this.keep(label(this, w / 2, 80, m.message, { fontSize: "15px", wordWrap: { width: Math.min(560, w - 40) }, align: "center" }));
-    }
 
     // Resources on a strip of paper in the corner.
     const items: [string | null, string][] = [
@@ -384,8 +407,8 @@ export class StrategicHud extends Phaser.Scene {
   private buildBar(): void {
     const { w, h } = this.layout;
     // Centred and running off the bottom edge like Warcraft's console; as
-    // wide as the screen allows, up to where the three parts sit comfortably.
-    const half = Math.max(w / 4, Math.min(w / 2 - 8, 390));
+    // wide as the screen allows, up to where the parts sit comfortably.
+    const half = Math.max(w / 4, Math.min(w / 2 - 8, 320));
     const x0 = w / 2 - half;
     const x1 = w / 2 + half;
     // The wood table's ink starts this far inside the panel at half scale.
@@ -399,29 +422,8 @@ export class StrategicHud extends Phaser.Scene {
       .setInteractive({ cursor: ARROW });
     const cy = h - BAR_H / 2 + 2;
 
-    const { mapW, mapH } = this.layout;
-    const mapX = x0 + 16;
-    this.layout.mapX = mapX;
-    this.layout.mapY = cy - mapH / 2;
-    this.add.image(mapX + mapW / 2, cy, "hudSlot").setDisplaySize(mapW + 16, mapH + 16);
-    this.drawMinimap(mapX, cy - mapH / 2, mapW, mapH);
-    this.dots = this.add.graphics();
-    // Click or drag on the minimap to look there, as in Warcraft.
-    const cols = this.hud.map[0]!.length;
-    const rows = this.hud.map.length;
-    const look = (p: Phaser.Input.Pointer): void => {
-      const col = Phaser.Math.Clamp(Math.floor(((p.x / this.cameras.main.zoom - mapX) / mapW) * cols), 0, cols - 1);
-      const row = Phaser.Math.Clamp(Math.floor(((p.y / this.cameras.main.zoom - (cy - mapH / 2)) / mapH) * rows), 0, rows - 1);
-      this.hud.onMinimap(col, row);
-    };
-    this.add
-      .zone(mapX, cy - mapH / 2, mapW, mapH)
-      .setOrigin(0)
-      .setInteractive({ cursor: HAND })
-      .on("pointerdown", look)
-      .on("pointermove", (p: Phaser.Input.Pointer) => p.isDown && look(p));
-
-    const zx = mapX + mapW + 30;
+    // No minimap: the island is small enough that zooming out shows it all.
+    const zx = x0 + 34;
     this.squareButton(zx, cy - 25, 42, "+", () => this.hud.onZoom(-1));
     this.squareButton(zx, cy + 23, 42, "-", () => this.hud.onZoom(1));
 
@@ -431,7 +433,8 @@ export class StrategicHud extends Phaser.Scene {
     this.cy = cy;
     this.barX1 = x1;
     this.barX0 = x0;
-    this.add.image((this.selX0 + this.selX1) / 2, cy, "hudPaper").setDisplaySize(this.selX1 - this.selX0, 136);
+    // The resource strip's paper, which reads cleaner than the banner slots.
+    panel(this, "paper", (this.selX0 + this.selX1) / 2, cy, (this.selX1 - this.selX0) * 2, 136 * 2).setScale(0.5);
   }
 
   private buildSelection(m: HudModel): void {
@@ -462,13 +465,13 @@ export class StrategicHud extends Phaser.Scene {
       this.keep(label(this, x + bw + 8, y + 5, `${cur}/${max}`, { ...INK, fontSize: "12px" }).setOrigin(0, 0.5));
       y += 18;
     }
-    this.detail = this.keep(label(this, x, y, m.detail, { ...INK, fontSize: "12px", fontStyle: "500", ...wrap }).setOrigin(0, 0));
+    this.keep(label(this, x, y, m.detail, { ...INK, fontSize: "12px", fontStyle: "500", ...wrap }).setOrigin(0, 0));
   }
 
   private buildCommands(m: HudModel): void {
     // A big command in the first slot takes the card's top-left 2x2 block.
     const big = m.commands[0]?.big ? m.commands[0] : null;
-    if (big) this.keep(this.commandButton(this.cardX + CELL, this.cy - CELL / 2, big, m.detail, 2 * CELL - 4));
+    if (big) this.keep(this.commandButton(this.cardX + CELL, this.cy - CELL / 2, big, 2 * CELL - 4));
     for (let i = 0; i < 9; i++) {
       if (big && [0, 1, 3, 4].includes(i)) continue;
       const x = this.cardX + (i % 3) * CELL + CELL / 2;
@@ -479,11 +482,11 @@ export class StrategicHud extends Phaser.Scene {
         this.keep(this.add.image(x, y, "hudSlot").setDisplaySize(BTN - 8, BTN - 8).setAlpha(0.55));
         continue;
       }
-      this.keep(this.commandButton(x, y, cmd, m.detail));
+      this.keep(this.commandButton(x, y, cmd));
     }
   }
 
-  private commandButton(x: number, y: number, cmd: HudCommand, detail: string, size = BTN): Phaser.GameObjects.Container {
+  private commandButton(x: number, y: number, cmd: HudCommand, size = BTN): Phaser.GameObjects.Container {
     const on = cmd.enabled !== false;
     const face = this.add.image(0, 0, "sqBlue", "ink").setDisplaySize(size, size * (SQUARE.h / SQUARE.w));
     const parts: Phaser.GameObjects.GameObject[] = [face];
@@ -508,9 +511,9 @@ export class StrategicHud extends Phaser.Scene {
     }
     box
       .setInteractive({ cursor: on ? HAND : ARROW })
-      .on("pointerover", () => this.detail?.setText(cmd.hint))
+      .on("pointerover", () => this.queueTip(cmd))
       .on("pointerout", () => {
-        this.detail?.setText(detail);
+        this.hideTip();
         box.setY(y);
       })
       .on("pointerdown", () => {
@@ -585,37 +588,114 @@ export class StrategicHud extends Phaser.Scene {
     }
   }
 
-  /** The map as flat colour, one rect per cell, halls as dots. */
-  private drawMinimap(x: number, y: number, w: number, h: number): void {
-    const { map, marks } = this.hud;
-    const rows = map.length;
-    const cols = map[0]!.length;
-    const cw = w / cols;
-    const ch = h / rows;
-    const g = this.add.graphics();
-    g.fillStyle(Phaser.Display.Color.HexStringToColor(WATER).color).fillRect(x, y, w, h);
-    const tone: Record<string, number> = { ".": 0x62aa63, "#": 0x99b653, "<": 0x99b653, ">": 0x99b653 };
-    map.forEach((line, r) => {
-      [...line].forEach((k, c) => {
-        const color = tone[k];
-        if (color !== undefined) g.fillStyle(color).fillRect(x + c * cw, y + r * ch, Math.ceil(cw), Math.ceil(ch));
-      });
-    });
-    const side = { a: 0x3b6fd8, b: 0xd8443b, g: 0x444444 };
-    for (const m of marks) {
-      g.fillStyle(side[m.side]).fillRect(x + m.col * cw - 3, y + m.row * ch - 3, 6, 6);
-    }
+  private queueTip(cmd: HudCommand): void {
+    this.hideTip();
+    this.tip.timer = this.time.delayedCall(TIP_DELAY, () => this.showTip(cmd));
   }
 
-  /** Every unit as a small dot over the minimap. */
-  private drawDots(m: HudModel): void {
-    const { mapX, mapY, mapW, mapH } = this.layout;
-    const cw = mapW / this.hud.map[0]!.length;
-    const ch = mapH / this.hud.map.length;
-    this.dots.clear();
-    for (const d of m.dots) {
-      this.dots.fillStyle(d.side === "a" ? 0x9cc4ff : 0xff9c8a).fillRect(mapX + (d.col + 0.5) * cw - 1.5, mapY + (d.row + 0.5) * ch - 1.5, 3, 3);
+  private hideTip(): void {
+    this.tip.timer?.remove();
+    for (const o of this.tip.parts) o.destroy();
+    this.tip = { parts: [], timer: null };
+  }
+
+  /** A paper card over the command card: the command, its price, what it does. */
+  private showTip(cmd: HudCommand): void {
+    const tw = 290;
+    const pad = 18;
+    const title = label(this, 0, 0, cmd.sub ? `${cmd.label} (${cmd.sub})` : cmd.label, { ...INK, fontSize: "16px", fontStyle: "800" }).setOrigin(0, 0);
+    const body = label(this, 0, 0, cmd.hint, { ...INK, fontSize: "13px", fontStyle: "500", wordWrap: { width: tw - 2 * pad }, lineSpacing: 2 }).setOrigin(0, 0);
+    const th = Math.max(64, pad + title.height + 6 + body.height + pad);
+    const x = this.barX1 - 10 - tw;
+    const y = this.cy - 1.5 * CELL - 12 - th;
+    const paper = panel(this, "paper", x + tw / 2, y + th / 2, tw * 2, th * 2).setScale(0.5);
+    title.setPosition(x + pad, y + pad);
+    body.setPosition(x + pad, y + pad + title.height + 6);
+    const box = this.add.container(0, 6, [paper, title, body]).setDepth(40).setAlpha(0);
+    this.tweens.add({ targets: box, alpha: 1, y: 0, duration: 140, ease: "Sine.easeOut" });
+    this.tip.parts = [box];
+  }
+
+  /** The message on a paper slip under the ribbon, gone after a few seconds. */
+  private showToast(m: HudModel): void {
+    if (m.messageId === this.toast.id) return;
+    if (this.toast.box) {
+      this.tweens.killTweensOf(this.toast.box);
+      this.toast.box.destroy();
     }
+    this.toast = { id: m.messageId, box: null };
+    if (!m.message) return;
+    const { w } = this.layout;
+    const text = label(this, 0, 0, m.message, { ...INK, fontSize: "15px", fontStyle: "700", wordWrap: { width: Math.min(520, w - 80) }, align: "center" });
+    const ph = Math.max(64, text.height + 30);
+    const paper = panel(this, "paper", 0, 0, (text.width + 60) * 2, ph * 2).setScale(0.5);
+    const y = 72 + ph / 2;
+    const box = this.add.container(w / 2, y - 8, [paper, text]).setDepth(30).setAlpha(0);
+    this.toast.box = box;
+    this.tweens.add({ targets: box, alpha: 1, y, duration: 180, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: box, alpha: 0, delay: TOAST_MS, duration: 400, onComplete: () => box.destroy() });
+  }
+
+  /** The phase just begun, large and brief over the middle of the map. */
+  private splash(b: HudModel["banner"]): void {
+    // The opening clouds already announce the first phase.
+    const first = this.splashed === null;
+    this.splashed = b.text;
+    if (first) return;
+    const { w, h } = this.layout;
+    const text = label(this, 0, -8, b.text, { fontSize: "30px" });
+    const rib = this.strip("bigRibbons", [`${b.tone}_left`, `${b.tone}_mid`, `${b.tone}_right`], 0, 0, Math.max(360, text.width + 180), 0.8);
+    rib.add(text);
+    const sub = label(this, 0, 60, b.tone === "red" ? "Both plans play out at once." : "Give your orders, then press Fight!", { fontSize: "17px" });
+    const y = (h - BAR_H) / 2 - 20;
+    const box = this.add.container(w / 2, y, [rib, sub]).setDepth(35).setAlpha(0).setScale(0.85);
+    this.tweens.chain({
+      targets: box,
+      tweens: [
+        { alpha: 1, scale: 1, duration: 240, ease: "Back.easeOut" },
+        { alpha: 0, y: y - 16, delay: 1100, duration: 350, ease: "Sine.easeIn", onComplete: () => box.destroy() },
+      ],
+    });
+  }
+
+  /** How a round runs, the controls and the troops, over a veil. */
+  private buildGuide(m: HudModel): void {
+    const { w, h } = this.layout;
+    const pw = Math.min(840, w - 40);
+    const ph = Math.min(480, h - 60);
+    const cx = w / 2;
+    const cy = h / 2;
+    const top = cy - ph / 2;
+    this.keep(this.add.rectangle(cx, cy, w, h, 0x0b1620, 0.45).setDepth(50).setInteractive({ cursor: ARROW }).on("pointerup", () => this.toggleGuide()));
+    this.keep(panel(this, "paper", cx, cy, pw * 2, ph * 2).setScale(0.5).setDepth(51).setInteractive({ cursor: ARROW }));
+    const title = label(this, 0, -6, "Field guide", { fontSize: "20px" });
+    const rib = this.keep(this.strip("bigRibbons", ["blue_left", "blue_mid", "blue_right"], cx, top + 8, Math.max(260, title.width + 130), 0.5)).setDepth(52);
+    rib.add(title);
+
+    const colW = (pw - 80) / 3;
+    guideSections().forEach((sec, i) => {
+      const x = cx - pw / 2 + 40 + i * colW;
+      let y = top + 58;
+      y += this.keep(label(this, x, y, sec.head, { ...INK, fontSize: "17px", fontStyle: "800" }).setOrigin(0, 0).setDepth(52)).height + 8;
+      for (const line of sec.lines) {
+        const t = this.keep(label(this, x, y, line, { ...INK, fontSize: "13px", fontStyle: "500", wordWrap: { width: colW - 20 }, lineSpacing: 1 }).setOrigin(0, 0).setDepth(52));
+        y += t.height + 7;
+      }
+    });
+
+    const by = top + ph - 44;
+    const close = this.keep(button(this, cx, by, 150, 48, "Close", "blue", () => this.toggleGuide(), 0.5)).setDepth(52);
+    const replay = m.replayTutorial;
+    if (replay) {
+      close.setX(cx + 90);
+      this.keep(
+        button(this, cx - 90, by, 170, 48, "Replay tutorial", "blue", () => {
+          this.guideOpen = false;
+          replay();
+        }, 0.5),
+      ).setDepth(52);
+    }
+    this.keep(label(this, cx + pw / 2 - 36, by, "H opens this any time", { ...INK, color: "#8a6a4a", fontSize: "12px" }).setOrigin(1, 0.5).setDepth(52));
   }
 
   /** A small square button with a glyph. Presses sink it a touch. */
@@ -633,9 +713,9 @@ export class StrategicHud extends Phaser.Scene {
       });
   }
 
-  private menuButton(x: number, y: number): void {
+  private iconButton(x: number, y: number, icon: string, onClick: () => void): void {
     const face = this.add.image(0, 0, "sqBlue", "ink").setDisplaySize(48, 48 * (SQUARE.h / SQUARE.w));
-    const mark = this.add.image(0, -2, iconKey(ICON.menu)).setScale(0.5);
+    const mark = this.add.image(0, -2, iconKey(icon)).setScale(0.5);
     const box = this.add.container(x, y, [face, mark]).setSize(48, 48);
     box
       .setInteractive({ cursor: HAND })
@@ -643,7 +723,54 @@ export class StrategicHud extends Phaser.Scene {
       .on("pointerout", () => box.setY(y))
       .on("pointerup", () => {
         box.setY(y);
-        this.hud.onMenu();
+        onClick();
       });
   }
+}
+
+const TROOP: Record<UnitClass, string> = { pawn: "Pawn", warrior: "Warrior", lancer: "Lancer", archer: "Archer", monk: "Monk" };
+const TRAINED_AT: Record<string, string> = { barracks: "barracks", archery: "archery range", tower: "tower", monastery: "monastery" };
+
+/** The guide's three columns, its numbers read off the balance so they never drift. */
+function guideSections(): { head: string; lines: string[] }[] {
+  const troops = Object.entries(WAR.trains).map(([at, cls]) => {
+    const beats = BALANCE.counters[cls!];
+    const does =
+      cls === "monk"
+        ? "heals the troops around it."
+        : cls === "archer"
+          ? `shoots ${WAR.range.archer} tiles, up and down cliffs, and beats ${TROOP[beats!]}s.`
+          : `beats ${TROOP[beats!]}s.`;
+    return `${TROOP[cls!]}, from the ${TRAINED_AT[at]}: ${does}`;
+  });
+  return [
+    {
+      head: "A round",
+      lines: [
+        "1. Plan: time stands still. Train, build and give orders.",
+        "2. Fight: press Fight! and both sides' plans play out at the same time.",
+        "3. Report: buildings finish and gold comes in.",
+        `Gold: ${WAR.income} a round, plus ${WAR.pawnIncome} for every Pawn digging at a mine.`,
+        `From round ${WAR.greying.fromRound} the Greying eats both castles a little each round. Break theirs first.`,
+      ],
+    },
+    {
+      head: "Controls",
+      lines: [
+        "Click to select, drag a box for many. Double click takes every unit of that kind.",
+        "Right click to order. Troops fight whatever they meet on the way. On touch, tap.",
+        "F1 your Pawns, F2 your army, Esc lets go.",
+        "Wheel or + and - to zoom. Arrow keys or the screen edge to pan.",
+      ],
+    },
+    {
+      head: "Troops",
+      lines: [
+        ...troops,
+        "Pawns dig gold and build. They never fight.",
+        `A counter deals ${Math.round(BALANCE.counterBonus * 100)}% more damage. Troops on the lowland deal ${Math.round(WAR.highGround * 100)}% to a plateau.`,
+        `Each house adds ${WAR.supply.perHouse} supply; every unit takes 1.`,
+      ],
+    },
+  ];
 }
