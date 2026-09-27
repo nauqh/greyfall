@@ -13,6 +13,7 @@ import {
   buildSlots,
   canPlace,
   castlePlot,
+  plateauOf,
   cellKey,
   createSim,
   freeBuilders,
@@ -222,9 +223,13 @@ export class StrategicScene extends Phaser.Scene {
   }
 
   create(): void {
-    // Open on the player's own plateau.
-    const home = castlePlot("a");
-    fitCamera(this, (home.col + home.w / 2) * CELL, (home.row + home.h + 2) * CELL, () => this.zoomScale(this.zoomLevel));
+    // Open on the middle of the player's own plateau, castle, barracks and mine in view.
+    const home = plateauOf(castlePlot("a"));
+    const mid = (pick: (c: { col: number; row: number }) => number): number =>
+      ((Math.min(...home.map(pick)) + Math.max(...home.map(pick)) + 1) / 2) * CELL;
+    // Centred in the map's own strip, between the top bar and the command panel.
+    const clear = (): number => ((HUD_COVER_H - HUD_TOP_H) * baseZoom(this)) / (2 * this.cameras.main.zoom);
+    fitCamera(this, mid((c) => c.col), () => mid((c) => c.row) + clear(), () => this.zoomScale(this.zoomLevel));
     prepareTerrain(this);
     makeAnims(this);
     makeWarFxAnims(this);
@@ -261,6 +266,10 @@ export class StrategicScene extends Phaser.Scene {
       if (dy !== 0) this.zoomStep(dy > 0 ? 1 : -1);
     });
     this.input.mouse?.disableContextMenu();
+    // The pointer reads (0,0) until the mouse first moves over the canvas,
+    // which edge-pan took for the top-left corner: the opening view slid away.
+    // Only a move counts: mouseover arrives before the pointer has a position.
+    this.input.on(Phaser.Input.Events.POINTER_MOVE, () => (this.pointerIn = true));
     this.input.keyboard?.on("keydown", (e: KeyboardEvent) => this.hotkey(e));
 
     // Warcraft's mouse: a left drag boxes units, a click selects, a right
@@ -1349,7 +1358,10 @@ export class StrategicScene extends Phaser.Scene {
     this.zoomLevel = next;
     this.cameras.main.zoomTo(this.zoomScale(next) * baseZoom(this), 180, "Sine.easeOut", true);
   }
-  private zoomLevel = 0;
+  /** One step out from the closest: the home plateau with room around it. */
+  private zoomLevel = 1;
+  /** Set by the first mouse move and kept when it leaves: a push past the window's edge is the pan. */
+  private pointerIn = false;
 
   /** A step as a multiple of baseZoom. The last fits the whole world, top
    *  sea included, above the HUD on both axes, so there is nothing to drag;
@@ -1404,7 +1416,7 @@ export class StrategicScene extends Phaser.Scene {
       if (this.placing) this.drawGhost();
     }
     // Pointer coordinates are canvas pixels, baseZoom per HUD unit.
-    const e = EDGE * baseZoom(this);
+    const e = this.pointerIn ? EDGE * baseZoom(this) : -Infinity;
     const k = (this.cursors ??= this.input.keyboard?.createCursorKeys() ?? null);
     const dx = p.x < e || k?.left.isDown ? -1 : p.x > cam.width - e || k?.right.isDown ? 1 : 0;
     const dy = p.y < e || k?.up.isDown ? -1 : p.y > cam.height - e || k?.down.isDown ? 1 : 0;
