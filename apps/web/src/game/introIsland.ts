@@ -6,7 +6,7 @@
 import * as Phaser from "phaser";
 
 import { CELL } from "./islandMap";
-import { DEPTH, addDecor } from "./terrain";
+import { DEPTH, addDecor, standing } from "./terrain";
 
 const MAP = [
   "~~~~~~~~~~~~~~~~~~~~~~~~~~",
@@ -136,13 +136,13 @@ export function buildIntroScenery(scene: Phaser.Scene): void {
   for (const m of MINES) {
     const x = (m.col + 0.5) * CELL;
     const y = (m.row + 0.8) * CELL;
-    scene.add.image(x, y, "goldMine").setOrigin(0.5, 0.78).setDepth(DEPTH.decorBehind + y / 1000);
+    scene.add.image(x, y, "goldMine").setOrigin(0.5, 0.78).setDepth(standing(y));
   }
   for (const [c, r] of [[3.3, 7.3], [12.4, 9.4]] as const) {
     const sheep = scene.add
       .sprite(c * CELL, r * CELL, "sheep")
       .setOrigin(0.5, 0.66)
-      .setDepth(DEPTH.decorBehind + (r * CELL) / 1000)
+      .setDepth(standing(r * CELL))
       .setFlipX(c > 16)
       .play("sheep_anim");
     if (sheep.anims.currentAnim) sheep.anims.setProgress(Math.random());

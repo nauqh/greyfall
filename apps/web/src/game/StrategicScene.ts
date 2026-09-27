@@ -234,7 +234,8 @@ export class StrategicScene extends Phaser.Scene {
     buildMap(this);
     this.strewn = buildScenery(this);
     driftClouds(this, { w: WORLD_W, h: WORLD_H }, "strategic");
-    this.overlay = this.add.graphics().setDepth(DEPTH.decorBehind + 0.5);
+    // Over units and buildings, so bars and order lines never hide behind them.
+    this.overlay = this.add.graphics().setDepth(DEPTH.fx - 2);
     this.box = this.add.graphics().setDepth(DEPTH.fx + 2);
     // Over the units, under hit numbers and the placing ghost.
     this.fog = new Fog(this, "a", DEPTH.fx - 1);

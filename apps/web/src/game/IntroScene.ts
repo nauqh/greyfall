@@ -10,16 +10,13 @@ import { baseZoom, fitCamera, startGame } from "./boot";
 import { buildIntroIsland, buildIntroScenery } from "./introIsland";
 import { CELL, WORK, cell, loadMapArt, makeMapAnims } from "./islandMap";
 import { loadUnits, makeAnims, playPose, unitKey, type Side } from "./sprites";
-import { DEPTH, addBuilding, addDecor, addShadow, buildWater, cloudCover, driftClouds, loadBuildings, loadTerrain, prepareTerrain } from "./terrain";
+import { DEPTH, FOOT, addBuilding, addDecor, addShadow, buildWater, cloudCover, driftClouds, loadBuildings, loadTerrain, prepareTerrain, standing } from "./terrain";
 
 /** Cells in view across a landscape screen; the westmost part is the menu
  *  scroll's, so the plateau starts just past it. */
 const VIEW = { col0: -14.2, col1: 24.7, midRow: 7.2 } as const;
 /** Portrait: the town, lifted clear of the menu scroll along the bottom. */
 const VIEW_TALL = { col0: 1.5, col1: 17.5, midRow: 8.6 } as const;
-
-/** How far below a unit's centre its feet stand, in px. */
-const FOOT = 34;
 
 /** The Tidewardens' town, spread wider than the war's plots: the keep on
  *  the plateau, the monastery on the knoll below it, the rest on the lowland.
@@ -116,16 +113,10 @@ export class IntroScene extends Phaser.Scene {
       const sheep = this.add
         .sprite(c * CELL, r * CELL, "sheep")
         .setOrigin(0.5, 0.66)
-        .setDepth(DEPTH.decorBehind + (r * CELL) / 1000)
+        .setDepth(standing(r * CELL))
         .setFlipX(c > 16)
         .play("sheep_anim");
       if (sheep.anims.currentAnim) sheep.anims.setProgress(Math.random());
-    }
-    // Props sit in a band under every unit; here the cast walks among them,
-    // so move them into the units' band. Units sort by their centre, their
-    // feet about FOOT below it, so props sort by base minus FOOT.
-    for (const o of this.children.list as Phaser.GameObjects.Image[]) {
-      if (o.depth >= DEPTH.decorBehind && o.depth < DEPTH.clouds) o.setDepth(DEPTH.unit + (o.depth - DEPTH.decorBehind) * 1000 - FOOT);
     }
     for (const extra of CAST) this.addExtra(extra);
     driftClouds(this, { w: 20 * CELL, h: 12 * CELL }, "intro");

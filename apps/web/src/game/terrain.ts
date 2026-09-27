@@ -40,12 +40,23 @@ export const DEPTH = {
   foam: 1,
   island: 2,
   ground: 3,
-  decorBehind: 4,
-  clouds: 500,
+  /** Units and everything standing, sorted by y: see standing(). */
   unit: 1000,
+  /** Drifting cloud shade, over the whole world. */
+  clouds: 5000,
   fx: 6000,
   hud: 9000,
 } as const;
+
+/** How far below a unit's centre its feet stand, in px. */
+export const FOOT = 34;
+
+/** Depth for anything standing on the ground, whose base is at y: sorted
+ *  with the units, which sort by their centre, so a unit behind it is hidden
+ *  and one in front covers it. */
+export function standing(y: number): number {
+  return DEPTH.unit + y - FOOT;
+}
 
 export function loadTerrain(scene: Phaser.Scene): void {
   scene.load.image("tileset", packUrl(TERRAIN.tileset));
@@ -221,9 +232,7 @@ export function addBuilding(scene: Phaser.Scene, s: Structure): Phaser.GameObjec
       .image(s.x, s.y, buildingKey(s.side, s.name), (BUILDINGS[s.name] as BuildingSpec).frame ? 0 : undefined)
       .setOrigin(0.5, spec.anchorY / spec.h)
       .setScale(s.scale ?? 1)
-      // The same y-sorted band as the props, so a tree in front of a house
-      // covers it and one behind it does not.
-      .setDepth(DEPTH.decorBehind + s.y / 1000)
+      .setDepth(standing(s.y))
   );
 }
 
@@ -245,7 +254,7 @@ export function scatterDecor(
     const s = scene.add
       .sprite(x, y, d.key)
       .setOrigin(0.5, d.anchorY / d.frame)
-      .setDepth(DEPTH.decorBehind + y / 1000)
+      .setDepth(standing(y))
       .setScale(scale);
     if (d.frames > 1) {
       s.play(`${d.key}_anim`);
@@ -304,7 +313,7 @@ export function addDecor(
   const s = scene.add
     .sprite(x, y, d.key)
     .setOrigin(0.5, d.anchorY / d.frame)
-    .setDepth(DEPTH.decorBehind + y / 1000)
+    .setDepth(standing(y))
     .setScale(scale);
   if (d.frames > 1) {
     s.play(`${d.key}_anim`);

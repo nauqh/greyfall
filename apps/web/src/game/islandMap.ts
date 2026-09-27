@@ -6,7 +6,7 @@ import * as Phaser from "phaser";
 
 import { packUrl, type BuildingName } from "./art";
 import { MAP, STRAT_COLS, STRAT_ROWS, at, isLand, isSlope, level } from "./stratMap";
-import { DEPTH, addBuilding, addDecor, loadBuildings, type Structure } from "./terrain";
+import { DEPTH, addBuilding, addDecor, loadBuildings, standing, type Structure } from "./terrain";
 
 /** The tileset's native tile: nothing is stretched. */
 export const CELL = 64;
@@ -281,13 +281,13 @@ export function buildScenery(scene: Phaser.Scene): Map<number, Phaser.GameObject
   for (const m of MINES) {
     const x = (m.col + 0.5) * CELL;
     const y = (m.row + 0.8) * CELL;
-    scene.add.image(x, y, "goldMine").setOrigin(0.5, 0.78).setDepth(DEPTH.decorBehind + y / 1000);
+    scene.add.image(x, y, "goldMine").setOrigin(0.5, 0.78).setDepth(standing(y));
   }
   for (const [c, r] of both([[8.5, 8.4], [6.5, 24.4], [17.5, 31.3], [20.4, 17.6]])) {
     const sheep = scene.add
       .sprite(c * CELL, r * CELL, "sheep")
       .setOrigin(0.5, 0.66)
-      .setDepth(DEPTH.decorBehind + (r * CELL) / 1000)
+      .setDepth(standing(r * CELL))
       .setFlipX(c > STRAT_COLS / 2)
       .play("sheep_anim");
     if (sheep.anims.currentAnim) sheep.anims.setProgress(Math.random());
