@@ -197,10 +197,13 @@ export function label(
   text: string,
   over: Phaser.Types.GameObjects.Text.TextStyle = {},
 ): Phaser.GameObjects.Text {
+  // A scene with a fixed zoom bakes glyphs at exactly that zoom, one texel per
+  // device pixel; any other ratio blends texels and blurs them.
+  const res = "textRes" in scene ? (scene as { textRes: number }).textRes : TEXT_RES;
   const t = scene.add
     .text(x, y, text, { ...FONT, ...over })
     .setOrigin(0.5)
-    .setResolution(TEXT_RES);
+    .setResolution(res);
   // pixelArt forces NEAREST on every texture, which shimmers text at the
   // canvas's fractional FIT scale; glyphs want linear.
   t.texture.setFilter(Phaser.Textures.FilterMode.LINEAR);

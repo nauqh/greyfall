@@ -1,8 +1,6 @@
 // The war on the island, drawn tile by tile from the engine's height map
-// (islandMap.ts), in one of three modes:
+// (islandMap.ts), in one of two modes:
 //
-//   Rounds         plan with the world frozen, then the battle runs live and
-//                  takes your orders, then the round report, again.
 //   Real time      the world never stops; Space pauses it (solo).
 //   Real time, no pause, the way a multiplayer match would run.
 //
@@ -15,12 +13,10 @@ import {
   FOOTPRINT,
   MINES,
   WAR,
-  applyAction,
   buildSlots,
   canPlace,
   castlePlot,
   createSim,
-  finishRound,
   freeBuilders,
   freeIn,
   maxHp,
@@ -28,18 +24,13 @@ import {
   mineSlots,
   newMatch,
   occupied,
-  planAi,
   plotCells,
-  roundDone,
   runAi,
   sameCell,
-  startRound,
   supplyCap,
   supplyUsed,
   trainsAt,
-  upkeepOf,
   type Action,
-  type BattleOutcome,
   type Building,
   type BuildingKind,
   type MatchState,
@@ -85,7 +76,6 @@ import {
   projectile,
   trackFx,
 } from "./warFx";
-import { STEPS, markTutorialDone, tutorialDone, type TutorialContext } from "./tutorial";
 
 /** The map carries its own sea margin, so the world is the grid, plus open
  *  sea above it that the view may scroll into (y runs negative there). */
@@ -131,10 +121,9 @@ const SHORT: Record<BuildingKind, string> = { ...NAME, archery: "Archery" };
 /** What a Pawn can put up, in the order its card lists them. */
 const BUILDABLE: readonly BuildingKind[] = ["house", "barracks", "archery", "tower", "monastery"];
 
-type PlayMode = "rounds" | "pausable" | "realtime";
+type PlayMode = "pausable" | "realtime";
 
 const MODE_NAME: Record<PlayMode, string> = {
-  rounds: "Rounds",
   pausable: "Real time",
   realtime: "No pause",
 };
@@ -162,8 +151,8 @@ interface UnitView {
   dead: boolean;
 }
 
-/** pick: choosing a mode. plan, battle, report: a round. live: real time. */
-type Phase = "pick" | "plan" | "battle" | "report" | "live" | "over";
+/** pick: choosing a mode. live: the match running. */
+type Phase = "pick" | "live" | "over";
 
 export class StrategicScene extends Phaser.Scene {
   /** Handed in by the page; absent when the map opens on its own. */
@@ -175,26 +164,17 @@ export class StrategicScene extends Phaser.Scene {
   /** The last unit clicked and when, to spot a double click. */
   private lastTap: { id: number; at: number } | null = null;
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
-  /** The walkthrough's current step, or null once it is done or skipped. */
-  private tutor: number | null = null;
-  private focusRing: Phaser.GameObjects.Graphics | null = null;
 
-  private mode: PlayMode = "rounds";
+  private mode: PlayMode = "pausable";
   private phase: Phase = "pick";
-  /** Rounds: the round as it began, and as the plan has changed it so far. */
-  private roundStart!: MatchState;
+  /** The island shown behind the mode picker. */
   private planState!: MatchState;
-  private plan: Action[] = [];
-  /** The running world: a round's battle, or a real-time match. */
   private sim: Sim | null = null;
-  /** Rounds: the battle's opening state, for its report. */
-  private battleStart: MatchState | null = null;
-  private outcome: BattleOutcome | null = null;
   private paused = false;
   /** Real milliseconds not yet turned into ticks. */
   private acc = 0;
   private speed = 1;
-  /** Real time: the match's result, once a hall falls. */
+  /** The match's result, once a hall falls. */
   private finalState: MatchState | null = null;
 
   private selected: number[] = [];
@@ -228,10 +208,10 @@ export class StrategicScene extends Phaser.Scene {
     super("strategic");
   }
 
-  /** The world as it stands: live while the simulation runs, the plan otherwise. */
+  /** The world as it stands: live while the simulation runs, the picker's island otherwise. */
   private get state(): MatchState {
     if (this.finalState) return this.finalState;
-    return this.sim && (this.phase === "battle" || this.phase === "live") ? this.sim.world : this.planState;
+    return this.sim && this.phase === "live" ? this.sim.world : this.planState;
   }
 
   preload(): void {
@@ -266,7 +246,6 @@ export class StrategicScene extends Phaser.Scene {
     this.box = this.add.graphics().setDepth(DEPTH.fx + 2);
 
     this.planState = newMatch(0);
-    this.roundStart = this.planState;
     this.syncWorld(this.planState);
 
     this.hud = this.scene.add(HUD_KEY, StrategicHud, true, {
@@ -274,7 +253,6 @@ export class StrategicScene extends Phaser.Scene {
       // its buttons too.
       onMenu: () => this.toMenu(),
       onZoom: (dir: 1 | -1) => this.zoomStep(dir),
-      speaker: () => this.speakerAnchor(),
       model: () => this.model(),
     }) as StrategicHud;
     // The opening parts over the map from this scene, on the frame the page's
@@ -341,7 +319,7 @@ export class StrategicScene extends Phaser.Scene {
 
   /** Whether the player can select and command right now. */
   private commanding(): boolean {
-    return this.phase === "plan" || this.phase === "battle" || this.phase === "live";
+    return this.phase === "live";
   }
 
   /** The drag rectangle, in world space so it sits on the units it covers. */
@@ -430,7 +408,6 @@ export class StrategicScene extends Phaser.Scene {
   private toPicker(): void {
     this.sim = null;
     this.finalState = null;
-    this.outcome = null;
     this.phase = "pick";
     this.planState = newMatch(0);
     this.syncWorld(this.planState);
@@ -445,186 +422,39 @@ export class StrategicScene extends Phaser.Scene {
     this.units.clear();
     this.mode = mode;
     this.finalState = null;
-    this.outcome = null;
     this.paused = false;
     this.acc = 0;
     this.groups.clear();
     this.clearSelection();
     this.stopPlacing();
     const seed = Date.now() % 1_000_000;
-    if (mode === "rounds") {
-      this.roundStart = newMatch(seed);
-      this.planState = this.roundStart;
-      this.plan = [];
-      this.sim = null;
-      this.phase = "plan";
-      this.tutor = tutorialDone() ? null : 0;
-      this.message = this.tutor === null ? "Your Pawns are already digging. Train an army at the barracks, then Fight." : "";
-      this.syncWorld(this.planState);
-    } else {
-      this.planState = newMatch(seed, "realtime");
-      this.sim = createSim(this.planState);
-      this.phase = "live";
-      this.tutor = null;
-      this.message =
-        mode === "pausable"
-          ? "The world runs on its own. Space pauses. Select a Pawn to build."
-          : "The world runs on its own, with no pause. Select a Pawn to build.";
-      this.syncWorld(this.sim.world);
-    }
+    this.planState = newMatch(seed, "realtime");
+    this.sim = createSim(this.planState);
+    this.phase = "live";
+    this.message =
+      mode === "pausable"
+        ? "The world runs on its own. Space pauses. Select a Pawn to build."
+        : "The world runs on its own, with no pause. Select a Pawn to build.";
+    this.syncWorld(this.sim.world);
     this.refresh();
   }
 
-  // --- the walkthrough -----------------------------------------------------
-
-  private tutorContext(): TutorialContext {
-    return { state: this.state, selected: this.selected, phase: this.phase === "live" ? "battle" : this.phase === "pick" ? "plan" : this.phase };
-  }
-
-  /** Past every step the player has already done, and off after the last. */
-  private advanceTutor(): void {
-    while (this.tutor !== null) {
-      const step = STEPS[this.tutor];
-      if (!step) {
-        this.endTutor();
-        return;
-      }
-      if (!step.done?.(this.tutorContext())) return;
-      this.tutor += 1;
-    }
-  }
-
-  private nextTutor(): void {
-    if (this.tutor === null) return;
-    this.tutor += 1;
-    this.refresh();
-  }
-
-  /** From the top; steps the player has already done pass by themselves. */
-  private restartTutor(): void {
-    this.tutor = 0;
-    this.message = "";
-    this.refresh();
-  }
-
-  private endTutor(): void {
-    this.tutor = null;
-    markTutorialDone();
-    this.refresh();
-  }
-
-  /** The step to show now, or none while its moment has not come. */
-  private tutorStep(): (typeof STEPS)[number] | null {
-    if (this.tutor === null || this.phase !== "plan") return null;
-    const step = STEPS[this.tutor];
-    if (!step || (step.when && !step.when(this.tutorContext()))) return null;
-    return step;
-  }
-
-  /** Where the speaking Pawn's head is, in HUD units, or null when it is gone. */
-  private speakerAnchor(): { x: number; y: number } | null {
-    const pawn = [...this.units.values()]
-      .filter((v) => !v.dead && v.unit.side === "a" && v.unit.class === "pawn")
-      .sort((a, b) => a.unit.id - b.unit.id)[0];
-    if (!pawn) return null;
-    const cam = this.cameras.main;
-    const z = baseZoom(this);
-    return {
-      x: ((pawn.root.x - cam.worldView.x) * cam.zoom) / z,
-      y: ((pawn.root.y - head(pawn.unit) - 6 - cam.worldView.y) * cam.zoom) / z,
-    };
-  }
-
-  /** One action for the player: into the plan while a round is planned, into
-   *  the running world otherwise. Explained when it is refused. */
+  /** One action for the player, into the running world. Explained when it is refused. */
   private act(action: Action): boolean {
     const refuse = (error: string): boolean => {
       this.message = error.charAt(0).toUpperCase() + error.slice(1) + ".";
       this.refresh();
       return false;
     };
-    if (this.phase === "plan") {
-      const r = applyAction(this.planState, "a", action);
-      if (!r.ok) return refuse(r.error);
-      this.planState = r.state;
-      this.plan.push(action);
-      this.syncWorld(this.planState);
-    } else if ((this.phase === "battle" || this.phase === "live") && this.sim) {
-      const error = this.sim.issue("a", action);
-      if (error) return refuse(error);
-      this.syncLive();
-    } else {
-      return false;
-    }
+    if (this.phase !== "live" || !this.sim) return false;
+    const error = this.sim.issue("a", action);
+    if (error) return refuse(error);
+    this.syncLive();
     this.message = "";
     // Units that died meanwhile cannot stay selected.
     this.selected = this.selected.filter((id) => this.state.units.some((u) => u.id === id));
     this.refresh();
     return true;
-  }
-
-  private resetPlan(): void {
-    this.planState = this.roundStart;
-    this.plan = [];
-    this.clearSelection();
-    this.message = "Plan cleared.";
-    this.syncWorld(this.planState);
-    this.refresh();
-  }
-
-  /** Rounds: both plans go in, and the battle starts running. */
-  private fight(): void {
-    if (this.phase !== "plan") return;
-    try {
-      const { sim, start } = startRound(this.roundStart, this.plan, planAi(this.roundStart, "b"));
-      this.sim = sim;
-      this.battleStart = start;
-    } catch (err) {
-      this.message = err instanceof Error ? err.message : "The battle could not start.";
-      this.refresh();
-      return;
-    }
-    this.phase = "battle";
-    this.acc = 0;
-    this.stopPlacing();
-    this.message = "Orders go out the moment you give them.";
-    this.syncWorld(this.sim.world);
-    this.refresh();
-  }
-
-  /** Rounds: the rest of the battle at once, straight to the report. */
-  private skip(): void {
-    if (this.phase !== "battle" || !this.sim) return;
-    while (!roundDone(this.sim)) {
-      this.sim.step();
-      this.sim.events.length = 0;
-    }
-    this.tweens.killAll();
-    this.time.removeAllEvents();
-    clearFx(this);
-    for (const v of this.units.values()) v.root.destroy();
-    this.units.clear();
-    this.finishBattle();
-  }
-
-  private finishBattle(): void {
-    const out = finishRound(this.sim!, this.battleStart!);
-    this.outcome = out;
-    this.sim = null;
-    this.roundStart = out.end;
-    this.planState = out.end;
-    this.plan = [];
-    this.phase = out.end.winner ? "over" : "report";
-    if (out.end.winner) this.finalState = out.end;
-    this.syncWorld(out.end);
-    this.refresh();
-  }
-
-  private nextRound(): void {
-    this.phase = "plan";
-    this.outcome = null;
-    this.message = "";
-    this.refresh();
   }
 
   private togglePause(): void {
@@ -644,19 +474,13 @@ export class StrategicScene extends Phaser.Scene {
   /** One tick of the running world, and what it shows. */
   private tickOnce(): void {
     const sim = this.sim!;
-    if (this.phase === "live" && sim.t % AI_EVERY_TICKS === 0) runAi(sim, "b");
+    if (sim.t % AI_EVERY_TICKS === 0) runAi(sim, "b");
     sim.step();
     const events = sim.events.splice(0);
     for (const e of events) this.play(e);
     this.syncLive();
 
-    if (this.phase === "battle" && roundDone(sim)) {
-      // Let the last blows show before the report.
-      this.phase = "report";
-      this.time.delayedCall(900 / this.speed, () => this.finishBattle());
-      return;
-    }
-    if (this.phase === "live" && sim.world.winner) {
+    if (sim.world.winner) {
       this.finalState = sim.snapshot();
       this.phase = "over";
       this.refresh();
@@ -729,8 +553,7 @@ export class StrategicScene extends Phaser.Scene {
   private restPose(v: UnitView): void {
     const u = v.unit;
     playPose(v.sprite, u.side, u.class, "idle");
-    // The world is frozen while a round is planned; work plays out as it runs.
-    if (u.class !== "pawn" || (this.phase !== "battle" && this.phase !== "live")) return;
+    if (u.class !== "pawn" || this.phase !== "live") return;
     const o = u.order;
     let at: number | null = null;
     let job: "dig" | "hammer" = "dig";
@@ -914,23 +737,8 @@ export class StrategicScene extends Phaser.Scene {
   // --- input ---------------------------------------------------------------
 
   private refresh(): void {
-    this.advanceTutor();
     this.drawMarks();
-    this.drawFocus();
     this.hud?.refresh();
-  }
-
-  /** A pulsing outline on the building the walkthrough is pointing at. */
-  private drawFocus(): void {
-    const g = (this.focusRing ??= this.add.graphics().setDepth(DEPTH.fx));
-    if (!this.tweens.isTweening(g)) {
-      this.tweens.add({ targets: g, alpha: { from: 1, to: 0.25 }, duration: 600, yoyo: true, repeat: -1 });
-    }
-    g.clear();
-    if (this.tutorStep()?.focus !== "barracks") return;
-    const p = this.state.buildings["a-barracks"];
-    if (!p) return;
-    g.lineStyle(4, 0xffe28a, 1).strokeRoundedRect(p.col * CELL - 6, (p.row - 2) * CELL, p.w * CELL + 12, (p.h + 2) * CELL + 6, 10);
   }
 
   private clearSelection(): void {
@@ -975,7 +783,7 @@ export class StrategicScene extends Phaser.Scene {
    * so with units selected it orders instead.
    */
   private tap(p: Phaser.Input.Pointer, touch: boolean): void {
-    if (this.phase === "pick" || this.phase === "report" || this.phase === "over") return;
+    if (this.phase !== "live") return;
     const at = this.cameras.main.getWorldPoint(p.x, p.y);
     const hit = this.hitTest(at.x, at.y);
     const right = p.rightButtonReleased();
@@ -1067,17 +875,10 @@ export class StrategicScene extends Phaser.Scene {
   private order(hit: ReturnType<StrategicScene["hitTest"]>): void {
     const units = this.state.units.filter((u) => this.selected.includes(u.id));
     const pawnsOnly = units.every((u) => u.class === "pawn");
-    // In a round, a Pawn that is building stays at its site until it ends.
-    const held = this.phase !== "live";
-    const ids = units.filter((u) => !held || u.order.type !== "build").map((u) => u.id);
-    if (ids.length === 0) {
-      this.message = "Those Pawns are building until the round ends.";
-      this.refresh();
-      return;
-    }
+    const ids = units.map((u) => u.id);
     // Monks heal and Pawns dig; only the rest go for an enemy.
     const strikers = units.filter((u) => u.class !== "monk" && u.class !== "pawn").map((u) => u.id);
-    const pawnIds = units.filter((u) => u.class === "pawn" && (!held || u.order.type !== "build")).map((u) => u.id);
+    const pawnIds = units.filter((u) => u.class === "pawn").map((u) => u.id);
 
     if (hit.unit && hit.unit.side === "b") {
       if (strikers.length > 0) this.act({ type: "order", units: strikers, order: { type: "attack", unit: hit.unit.id } });
@@ -1107,17 +908,13 @@ export class StrategicScene extends Phaser.Scene {
 
   private model(): HudModel {
     const s = this.state;
-    const live = this.phase === "live" || (this.phase === "over" && this.mode !== "rounds");
     const g = WAR.realtime.greying;
     const greyTicks = g.fromSeconds * 10 - s.tick;
     const base: HudModel = {
-      round: s.round,
       gold: s.gold.a,
       supply: [supplyUsed(s, "a"), supplyCap(s, "a")],
-      upkeep: upkeepOf(s, "a").name,
-      greyIn: Math.max(0, WAR.greying.fromRound - s.round),
-      clock: live ? { text: greyTicks > 0 ? `Greying in ${clockText(greyTicks)}` : "The Greying", warn: greyTicks < 600 } : null,
-      banner: { text: `Round ${s.round}: Plan`, tone: "blue" },
+      clock: { text: greyTicks > 0 ? `Greying in ${clockText(greyTicks)}` : "The Greying", warn: greyTicks < 600 },
+      banner: { text: this.paused ? "Paused" : MODE_NAME[this.mode], tone: this.paused ? "red" : "blue" },
       title: "",
       detail: "",
       portrait: null,
@@ -1128,18 +925,7 @@ export class StrategicScene extends Phaser.Scene {
       primary: null,
       secondary: [],
       report: null,
-      replayTutorial: this.tutor === null && this.mode === "rounds" ? () => this.restartTutor() : null,
-      tutorial: null,
     };
-    const step = this.tutorStep();
-    if (step) {
-      base.tutorial = {
-        text: step.text,
-        focus: step.focus,
-        button: step.button ? { label: step.button, onClick: () => this.nextTutor() } : null,
-        onSkip: () => this.endTutor(),
-      };
-    }
 
     if (this.phase === "pick") {
       return {
@@ -1148,19 +934,14 @@ export class StrategicScene extends Phaser.Scene {
         report: {
           title: "How will you play?",
           tone: "blue",
-          lines: [
-            "Rounds: plan with time stopped, then the battle runs.",
-            "Real time: the world never waits; Space pauses.",
-            "No pause: real time, the way a duel would run.",
-          ],
+          lines: ["Real time: the world never waits; Space pauses.", "No pause: real time, the way a duel would run."],
           button: "",
           onClick: () => {},
-          choices: (["rounds", "pausable", "realtime"] as const).map((m) => ({ label: MODE_NAME[m], onClick: () => this.startMatch(m) })),
+          choices: (["pausable", "realtime"] as const).map((m) => ({ label: MODE_NAME[m], onClick: () => this.startMatch(m) })),
         },
       };
     }
     if (this.phase === "over") return { ...base, report: this.overModel() };
-    if (this.phase === "report") return this.outcome ? { ...base, report: this.reportModel() } : base;
 
     const panel = this.selected.length > 0
       ? this.unitPanel()
@@ -1169,58 +950,17 @@ export class StrategicScene extends Phaser.Scene {
         : this.inspected
           ? this.inspectPanel()
           : null;
-
-    if (this.phase === "battle") {
-      return {
-        ...base,
-        ...(panel ?? { title: "The battle", detail: "Both plans play out at once. Select your units to give new orders." }),
-        banner: { text: `Round ${s.round}: Battle`, tone: "red" },
-        secondary: [
-          { label: "Skip", onClick: () => this.skip() },
-          { label: `Speed ${this.speed}x`, onClick: () => this.toggleSpeed() },
-        ],
-      };
-    }
-    if (this.phase === "live") {
-      return {
-        ...base,
-        ...(panel ?? {
-          title: MODE_NAME[this.mode],
-          detail: `${clockText(s.tick)} played. Select a Pawn to build; a building to train or set its rally point with a right click. Ctrl+1-9 groups units.`,
-        }),
-        banner: { text: this.paused ? "Paused" : MODE_NAME[this.mode], tone: this.paused ? "red" : "blue" },
-        primary: this.mode === "pausable" ? { label: this.paused ? "Resume" : "Pause", onClick: () => this.togglePause() } : null,
-        secondary: [
-          { label: "Army", onClick: () => this.selectArmy() },
-          { label: "Pawns", onClick: () => this.selectPawns() },
-          { label: `Speed ${this.speed}x`, onClick: () => this.toggleSpeed() },
-        ],
-      };
-    }
-
-    const plan: HudModel = {
+    return {
       ...base,
-      primary: { label: "Fight!", onClick: () => this.fight() },
+      ...(panel ?? {
+        title: MODE_NAME[this.mode],
+        detail: `${clockText(s.tick)} played. Select a Pawn to build; a building to train or set its rally point with a right click. Ctrl+1-9 groups units.`,
+      }),
+      primary: this.mode === "pausable" ? { label: this.paused ? "Resume" : "Pause", onClick: () => this.togglePause() } : null,
       secondary: [
         { label: "Army", onClick: () => this.selectArmy() },
         { label: "Pawns", onClick: () => this.selectPawns() },
-      ],
-    };
-    if (panel) return { ...plan, ...panel };
-    return {
-      ...plan,
-      title: "Your plan",
-      detail: "Drag a box or click to select, right click to order. Select a Pawn to build. F2 takes the whole army.",
-      commands: [
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        { label: "Undo all", hint: "Undo this round's whole plan.", onClick: () => this.resetPlan(), enabled: this.plan.length > 0 },
+        { label: `Speed ${this.speed}x`, onClick: () => this.toggleSpeed() },
       ],
     };
   }
@@ -1239,22 +979,22 @@ export class StrategicScene extends Phaser.Scene {
       ? CLASS_NAME[one.class]
       : `${units.length} units: ${[...counts].map(([c, n]) => `${n} ${CLASS_NAME[c]}`).join(", ")}`;
     const fighters = units.filter((u) => u.class !== "pawn");
-    const commands: (HudCommand | null)[] = [null, null, null, null, null, null, null, null, this.close()];
+    let commands: (HudCommand | null)[] = [null, null, null, null, null, null, null, null, this.close()];
     if (fighters.length === 0) {
-      // A Pawn's card is Warcraft's build menu.
-      const pawnFree = freeBuilders(this.state, "a").some((u) => this.selected.includes(u.id)) || this.phase === "live";
-      BUILDABLE.forEach((kind, i) => {
+      // A Pawn's card is Warcraft's build menu, six to a 3x2 grid.
+      commands = BUILDABLE.map((kind) => {
         const cost = WAR.buildCost[kind]!;
         const cls = WAR.trains[kind];
-        commands[i] = {
+        return {
           label: SHORT[kind],
           sub: `${cost} gold`,
           portrait: buildingKey("a", artOf({ id: `${kind}-1`, side: "a", kind, col: 0, row: 0, w: 1, h: 1 })),
           hint: `${NAME[kind]}, ${cost} gold: ${cls ? `trains the ${CLASS_NAME[cls]}` : `+${WAR.supply.perHouse} supply`}. Then click where it goes; a free Pawn walks over and builds it.`,
           onClick: () => this.startPlacing(kind),
-          enabled: pawnFree && this.state.gold.a >= cost,
+          enabled: this.state.gold.a >= cost,
         };
       });
+      commands.push(this.close());
     } else {
       const allFallBack = fighters.every((u) => u.stance === "fallBack");
       commands[0] = allFallBack
@@ -1293,7 +1033,6 @@ export class StrategicScene extends Phaser.Scene {
     const cls = trainsAt(b);
     const name = NAME[b.kind];
     const portrait = buildingKey(b.side, artOf(b));
-    const realtime = this.state.mode === "realtime";
     const commands: (HudCommand | null)[] = [null, null, null, null, null, null, null, null, this.close()];
     if (b.pending === "build") {
       const total = WAR.realtime.buildSeconds[b.kind]! * 10;
@@ -1301,9 +1040,7 @@ export class StrategicScene extends Phaser.Scene {
         title: `${name}: going up`,
         portrait,
         hp: null,
-        detail: realtime
-          ? `A Pawn is building it: ${Math.round((100 * b.progress) / total)}%. It stops while nobody hammers.`
-          : "A Pawn is building it. It stands after this round's battle.",
+        detail: `A Pawn is building it: ${Math.round((100 * b.progress) / total)}%. It stops while nobody hammers.`,
         commands,
       };
     }
@@ -1314,7 +1051,7 @@ export class StrategicScene extends Phaser.Scene {
       const room = supplyUsed(this.state, "a") < supplyCap(this.state, "a");
       const pawns = this.state.units.filter((u) => u.side === "a" && u.class === "pawn").length;
       const pawnsFull = cls === "pawn" && pawns >= WAR.pawns.max;
-      const full = realtime && b.queue.length >= WAR.realtime.queue;
+      const full = b.queue.length >= WAR.realtime.queue;
       commands[0] = {
         label: CLASS_NAME[cls],
         sub: `${cost} gold, 1 supply`,
@@ -1326,9 +1063,7 @@ export class StrategicScene extends Phaser.Scene {
             ? `No supply left: every unit takes 1. Build a house for ${WAR.supply.perHouse} more.`
             : full
               ? `The queue holds ${WAR.realtime.queue}.`
-              : realtime
-                ? `Queue a ${CLASS_NAME[cls]} for ${cost} gold: out in ${WAR.realtime.trainSeconds[cls]} s, to the rally point.`
-                : `Train a ${CLASS_NAME[cls]} for ${cost} gold and 1 supply. It can take orders at once.`,
+              : `Queue a ${CLASS_NAME[cls]} for ${cost} gold: out in ${WAR.realtime.trainSeconds[cls]} s, to the rally point.`,
         onClick: () => this.act({ type: "train", plot: id }),
         enabled: room && !pawnsFull && !full && this.state.gold.a >= cost,
       };
@@ -1345,7 +1080,7 @@ export class StrategicScene extends Phaser.Scene {
           enabled: pawnFree && b.level < WAR.maxLevel && !b.pending && this.state.gold.a >= WAR.upgradeCost,
         };
       }
-      if (realtime && b.queue.length > 0) {
+      if (b.queue.length > 0) {
         commands[3] = {
           label: "Cancel",
           hint: "Take the last unit off the queue, gold back.",
@@ -1359,7 +1094,7 @@ export class StrategicScene extends Phaser.Scene {
       portrait,
       hp: [b.hp, b.kind === "castle" ? WAR.buildingHp.castle : WAR.buildingHp.other],
       detail: cls
-        ? `Trains the ${CLASS_NAME[cls]}.${b.pending === "upgrade" ? " Upgrading." : ""}${queue}${realtime ? " Right click the ground to set its rally point." : ""}`
+        ? `Trains the ${CLASS_NAME[cls]}.${b.pending === "upgrade" ? " Upgrading." : ""}${queue} Right click the ground to set its rally point.`
         : b.kind === "house"
           ? `Adds ${WAR.supply.perHouse} supply.`
           : "Your main hall. If it falls, the war is lost.",
@@ -1395,46 +1130,13 @@ export class StrategicScene extends Phaser.Scene {
     return { title: "", detail: "", portrait: null, hp: null, commands: none };
   }
 
-  private reportModel(): NonNullable<HudModel["report"]> {
-    const out = this.outcome!;
-    const r = out.report;
-    const list = (xs: UnitClass[]) => {
-      if (xs.length === 0) return "none";
-      const c = new Map<UnitClass, number>();
-      for (const x of xs) c.set(x, (c.get(x) ?? 0) + 1);
-      return [...c].map(([k, n]) => `${n} ${CLASS_NAME[k]}`).join(", ");
-    };
-    const place = (id: string) => {
-      const p = out.start.buildings[id] ?? out.end.buildings[id];
-      return p ? `${p.side === "a" ? "your" : "their"} ${NAME[p.kind].toLowerCase()}` : "a building";
-    };
-    const lines = [
-      `The battle lasted ${r.seconds.toFixed(1)} s${r.settled ? "" : ", cut off: it carries on next round"}.`,
-      `You lost: ${list(r.losses.a)}.   They lost: ${list(r.losses.b)}.`,
-    ];
-    const mine = r.fellBack.filter((f) => f.side === "a");
-    if (mine.length > 0) lines.push(`Fell back: ${mine.map((f) => `${CLASS_NAME[f.class]} at ${f.hpPercent}%`).join(", ")}.`);
-    if (r.destroyed.length > 0) lines.push(`Destroyed: ${r.destroyed.map(place).join(", ")}.`);
-    const built = [...r.built, ...r.upgraded].filter((id) => id.startsWith("a-"));
-    if (built.length > 0) lines.push(`Finished: ${built.map(place).join(", ")}.`);
-    if (r.greying > 0) lines.push(`The Greying takes ${r.greying} HP from each main hall.`);
-
-    const end = out.end;
-    const inc = end.income.a;
-    const upkeep = upkeepOf(end, "a");
-    const paid = upkeep.name === "none" ? "" : ` (${upkeep.name} upkeep on an army of ${upkeep.fighters} or more)`;
-    lines.push(`Round ${end.round} income: ${inc.base} gold${paid}, plus ${inc.mines} from the mines.`);
-    return { title: `Round ${r.round}: Report`, tone: "blue", lines, button: "Next round", onClick: () => this.nextRound() };
-  }
-
   private overModel(): NonNullable<HudModel["report"]> {
     const end = this.finalState!;
     const title = end.winner === "a" ? "The blue clan holds the island" : end.winner === "b" ? "The red clan takes the island" : "Both halls fall";
-    const when = end.mode === "realtime" ? `after ${clockText(end.tick)}` : `in round ${end.round}`;
     return {
       title,
       tone: end.winner === "a" ? "blue" : "red",
-      lines: [`The war ended ${when}.`],
+      lines: [`The war ended after ${clockText(end.tick)}.`],
       button: "Play again",
       onClick: () => this.toPicker(),
       also: { label: "Menu", onClick: () => this.toMenu() },
@@ -1688,11 +1390,11 @@ export class StrategicScene extends Phaser.Scene {
    *  on-screen speed at any zoom. The clamp runs every frame so a zoom tween
    *  stays in bounds. */
   update(_time: number, delta: number): void {
-    const running = this.sim && (this.phase === "battle" || this.phase === "live") && !this.paused;
+    const running = this.sim && this.phase === "live" && !this.paused;
     if (running) {
       // A long stall (a hidden tab) catches up a few ticks, not minutes.
       this.acc = Math.min(this.acc + delta * this.speed, TICK_MS * 5);
-      while (this.acc >= TICK_MS && this.sim && (this.phase === "battle" || this.phase === "live")) {
+      while (this.acc >= TICK_MS && this.sim && this.phase === "live") {
         this.acc -= TICK_MS;
         this.tickOnce();
       }

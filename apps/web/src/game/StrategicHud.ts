@@ -1,4 +1,4 @@
-// The strategic map's Warcraft-style HUD: a ribbon naming the round along
+// The strategic map's Warcraft-style HUD: a ribbon naming the mode along
 // the top, resources and menu in the corners, and a wooden console along the
 // bottom with the zoom, the selection panel and the command card. Popups sit
 // over it: command tooltips, message toasts, a phase splash and the field
@@ -47,7 +47,7 @@ export interface HudCommand {
   portrait?: string;
   /** A second line under the label, such as a price. */
   sub?: string;
-  /** Fills the card's top-left 2x2 block; only honoured in the first slot. */
+  /** Fills the card's top-left 2x2 block; only honoured in the first slot of a 3x3 card. */
   big?: boolean;
   /** Shown in a tooltip over the card while hovered. */
   hint: string;
@@ -56,16 +56,11 @@ export interface HudCommand {
 }
 
 export interface HudModel {
-  round: number;
   gold: number;
   supply: [used: number, cap: number];
-  /** The upkeep tier the army puts on base income. */
-  upkeep: "none" | "low" | "high";
-  /** Rounds until the Greying first bites, 0 once it has begun. */
-  greyIn: number;
-  /** Real time: the Greying's countdown as a clock, shown instead of greyIn. */
-  clock: { text: string; warn: boolean } | null;
-  /** The ribbon along the top, and its colour: blue while planning, red in battle. */
+  /** The Greying's countdown as a clock. */
+  clock: { text: string; warn: boolean };
+  /** The ribbon along the top, and its colour: red while paused. */
   banner: { text: string; tone: "blue" | "red" };
   title: string;
   detail: string;
@@ -76,11 +71,12 @@ export interface HudModel {
   message: string;
   /** Bumped on every message set, so the same line said twice shows twice. */
   messageId: number;
+  /** Laid out three to a row: six make a 3x2 card, nine a 3x3. */
   commands: (HudCommand | null)[];
-  /** The sword is the round's one big action; the others are plain buttons. */
+  /** The sword is the one big action; the others are plain buttons. */
   primary: { label: string; onClick: () => void } | null;
   secondary: { label: string; onClick: () => void }[];
-  /** The round report or the end of the match, over everything. */
+  /** The mode picker or the end of the match, over everything. */
   report: {
     title: string;
     tone: "blue" | "red";
@@ -91,35 +87,14 @@ export interface HudModel {
     /** A row of equal choices in place of the buttons, such as the mode picker. */
     choices?: { label: string; onClick: () => void }[];
   } | null;
-  /** Offered in the field guide while the walkthrough is not running. */
-  replayTutorial: (() => void) | null;
-  /** The walkthrough line the speaking Pawn says, with what it points at. */
-  tutorial: {
-    text: string;
-    focus: "barracks" | "army" | "fight" | null;
-    button: { label: string; onClick: () => void } | null;
-    onSkip: () => void;
-  } | null;
 }
 
 export interface HudData {
   onMenu: () => void;
   onZoom: (dir: 1 | -1) => void;
-  /** The speaking Pawn's head in HUD units, asked every frame as the map pans. */
-  speaker: () => { x: number; y: number } | null;
   model: () => HudModel;
 }
 
-/** One piece of the speech bubble, placed at an offset from its centre. */
-interface BubblePart {
-  o: Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Transform & Phaser.GameObjects.Components.Depth;
-  dx: number;
-  dy: number;
-}
-
-/** The paper art's fill, for the speech bubble's tail. */
-const PAPER = 0xeee1c6;
-const BUBBLE_W = 300;
 /** The first top-left button's centre, right of the menu and guide buttons. */
 const SECONDARY_X = 184;
 /** How long a pointer rests on a command before its tooltip shows, and how
@@ -144,15 +119,19 @@ export function portraitKey(side: "a" | "b", cls: UnitClass): string {
  * sword and the big ribbon, split into end, stretchable middle and end.
  */
 const SQUARE = { x: 19, y: 17, w: 90, h: 94 };
+/** The blue face inside SQUARE, clear of its white rim and bottom bevel. */
+const FACE = { x: 7, y: 7, w: 76, h: 71 };
 const SWORD = { rowH: 128, hilt: { x: 23, w: 105 }, blade: { x: 192, w: 64, y: 19, h: 90 }, tip: { x: 320, w: 92 } };
 const SWORD_ROW = { blue: 0, red: 1 } as const;
 const RIBBON_BIG = { rowH: 128, y: 20, h: 103, left: { x: 30, w: 98 }, mid: { x: 192, w: 64 }, right: { x: 320, w: 97 } };
 const RIBBON_ROW = { blue: 0, red: 1 } as const;
 
 const INK = { color: "#4a3a2a", stroke: "#f3e6c8", strokeThickness: 0 };
-/** Command card cell pitch and button size, in HUD units. */
+/** Command card cell pitch and button size for a 3x3 card, in HUD units. */
 const CELL = 52;
 const BTN = 48;
+/** The card's width: a 3x2 card's buttons grow to fill it. */
+const CARD_W = 216;
 
 type HudPart = "top" | "panel" | "rest";
 
@@ -186,11 +165,14 @@ export class StrategicHud extends Phaser.Scene {
   /** The last phase splashed, so a redraw never splashes it twice. */
   private splashed: string | null = null;
   private guideOpen = false;
-  /** The Pawn's speech bubble and its tail, moved every frame to follow it. */
-  private bubble: { parts: BubblePart[]; tail: Phaser.GameObjects.Graphics; h: number; at: { x: number; y: number } | null } | null = null;
 
   constructor() {
     super(HUD_KEY);
+  }
+
+  /** Read by label(): the HUD camera never zooms after create, and a resize rebuilds it. */
+  get textRes(): number {
+    return this.cameras.main.zoom;
   }
 
   init(data: HudData): void {
@@ -288,98 +270,17 @@ export class StrategicHud extends Phaser.Scene {
       draw();
       this.into = "rest";
     };
-    part("top", [m.gold, m.supply, m.upkeep, m.greyIn, m.clock, m.banner], () => this.buildTop(m));
+    part("top", [m.gold, m.supply, m.clock, m.banner], () => this.buildTop(m));
     part("panel", [m.title, m.detail, m.portrait, m.hp], () => this.buildSelection(m));
-    part("rest", [m.commands, m.primary, m.secondary, m.tutorial, m.report, this.guideOpen], () => {
+    part("rest", [m.commands, m.primary, m.secondary, m.report, this.guideOpen], () => {
       this.hideTip();
-      this.bubble = null;
       this.buildCommands(m);
       this.buildButtons(m);
-      if (m.tutorial && !this.guideOpen) this.buildBubble(m.tutorial);
       if (m.report) this.buildReport(m.report);
-      if (this.guideOpen) this.buildGuide(m);
+      if (this.guideOpen) this.buildGuide();
     });
     this.showToast(m);
     if (!m.report && m.banner.text !== this.splashed) this.splash(m.banner);
-  }
-
-  update(): void {
-    this.placeBubble();
-  }
-
-  /** A paper speech bubble: the line, the step's button, and a way out. */
-  private buildBubble(t: NonNullable<HudModel["tutorial"]>): void {
-    const pad = 22;
-    const text = label(this, -BUBBLE_W / 2 + pad, 0, t.text, {
-      ...INK,
-      fontSize: "14px",
-      fontStyle: "600",
-      wordWrap: { width: BUBBLE_W - 2 * pad },
-      lineSpacing: 2,
-    }).setOrigin(0, 0);
-    const foot = 58;
-    const h = text.height + 2 * pad + foot;
-    text.setY(-h / 2 + pad);
-    const paper = panel(this, "paper", 0, 0, BUBBLE_W * 2, h * 2).setScale(0.5).setInteractive({ cursor: ARROW });
-    const fy = h / 2 - pad - 18;
-    // Top-level pieces rather than one container: a button nested two
-    // containers deep never heard its click.
-    const parts: BubblePart[] = [
-      { o: paper, dx: 0, dy: 0 },
-      { o: text, dx: -BUBBLE_W / 2 + pad, dy: -h / 2 + pad },
-    ];
-    if (t.button) {
-      parts.push({ o: button(this, 0, 0, 140, 48, t.button.label, "blue", t.button.onClick, 0.5), dx: -BUBBLE_W / 2 + pad + 70, dy: fy });
-    }
-    const skip = label(this, 0, 0, "Skip tutorial", { ...INK, color: "#8a6a4a", fontSize: "12px" })
-      .setOrigin(1, 0.5)
-      .setInteractive({ cursor: HAND })
-      .on("pointerup", t.onSkip);
-    parts.push({ o: skip, dx: BUBBLE_W / 2 - pad, dy: fy });
-    parts.forEach((p, i) => this.keep(p.o).setDepth(20 + i));
-    const tail = this.keep(this.add.graphics().setDepth(19));
-    this.bubble = { parts, tail, h, at: null };
-    this.placeBubble();
-  }
-
-  /** Over the speaker's head, kept on screen and clear of the ribbon and the
-   *  console; the tail points at the Pawn while it is in view. */
-  private placeBubble(): void {
-    const b = this.bubble;
-    if (!b?.tail.active) return;
-    const { w, h } = this.layout;
-    const at = this.hud.speaker();
-    const minY = 70 + b.h / 2;
-    const maxY = h - BAR_H - 70 - b.h / 2;
-    const cx = Math.round(Phaser.Math.Clamp(at?.x ?? w / 2, BUBBLE_W / 2 + 10, w - BUBBLE_W / 2 - 10));
-    const cy = Math.round(Phaser.Math.Clamp((at?.y ?? minY + b.h / 2) - 26 - b.h / 2, minY, Math.max(minY, maxY)));
-    // Only on a move: the button's hover sink tweens its y in between.
-    if (b.at?.x === cx && b.at.y === cy) return;
-    b.at = { x: cx, y: cy };
-    for (const p of b.parts) {
-      const o = p.o;
-      o.setPosition(cx + p.dx, cy + p.dy);
-      o.setData("baseY", cy + p.dy);
-    }
-    b.tail.clear();
-    if (!at || at.x < 0 || at.x > w || at.y < 0 || at.y > h - BAR_H) return;
-    // A wedge from the bubble's lower edge toward the head it belongs to.
-    const baseY = cy + b.h / 2 - 6;
-    const bx = Phaser.Math.Clamp(at.x, cx - BUBBLE_W / 2 + 30, cx + BUBBLE_W / 2 - 30);
-    if (at.y <= baseY + 4) return;
-    b.tail
-      .fillStyle(PAPER)
-      .fillTriangle(bx - 12, baseY, bx + 12, baseY, at.x, Math.min(at.y, baseY + 34))
-      .lineStyle(2, 0x6b5a45, 0.8)
-      .lineBetween(bx - 12, baseY + 1, at.x, Math.min(at.y, baseY + 34))
-      .lineBetween(bx + 12, baseY + 1, at.x, Math.min(at.y, baseY + 34));
-  }
-
-  /** A soft pulsing ring round whatever the walkthrough points at. */
-  private glow(x: number, y: number, w: number, h: number): void {
-    const g = this.keep(this.add.graphics());
-    g.lineStyle(4, 0xffe28a, 1).strokeRoundedRect(x - w / 2, y - h / 2, w, h, 12);
-    this.tweens.add({ targets: g, alpha: { from: 1, to: 0.2 }, duration: 600, yoyo: true, repeat: -1 });
   }
 
   private keep<T extends Phaser.GameObjects.GameObject>(o: T): T {
@@ -411,7 +312,7 @@ export class StrategicHud extends Phaser.Scene {
 
   private buildTop(m: HudModel): void {
     const { w } = this.layout;
-    // The round on a ribbon, centred like a Warcraft objective.
+    // The mode on a ribbon, centred like a Warcraft objective.
     const tone = m.banner.tone;
     const text = label(this, 0, -6, m.banner.text, { fontSize: "19px" });
     const rw = Math.max(240, text.width + 130);
@@ -420,20 +321,18 @@ export class StrategicHud extends Phaser.Scene {
 
     // Resources on a strip of paper in the corner.
     const items: [string | null, string][] = [
-      [ICON.gold, m.upkeep === "none" ? String(m.gold) : `${m.gold}, upkeep ${m.upkeep}`],
+      [ICON.gold, String(m.gold)],
       [ICON.meat, `${m.supply[0]}/${m.supply[1]} supply`],
-      [null, m.clock ? m.clock.text : m.greyIn > 0 ? `Greying in ${m.greyIn}` : "The Greying"],
+      [null, m.clock.text],
     ];
-    const stripW = m.upkeep === "none" ? 390 : 470;
+    const stripW = 390;
     const x0 = w - 12 - stripW;
     this.keep(panel(this, "paper", x0 + stripW / 2, 34, stripW * 2, 104).setScale(0.5).setInteractive({ cursor: ARROW }));
-    const shift = stripW - 390;
-    const at = [x0 + 30, x0 + 112 + shift, x0 + 262 + shift];
+    const at = [x0 + 30, x0 + 112, x0 + 262];
     items.forEach(([icon, value], i) => {
       const x = at[i]!;
       if (icon) this.keep(this.add.image(x, 33, iconKey(icon)).setScale(0.48));
-      const late = m.clock ? m.clock.warn : m.greyIn <= 2;
-      const tint = (i === 2 && late) || (i === 0 && m.upkeep === "high") ? "#a12f2f" : INK.color;
+      const tint = i === 2 && m.clock.warn ? "#a12f2f" : INK.color;
       this.keep(label(this, icon ? x + 20 : x - 10, 34, value, { ...INK, color: tint, fontSize: i === 2 ? "14px" : "17px" }).setOrigin(0, 0.5));
     });
   }
@@ -461,7 +360,7 @@ export class StrategicHud extends Phaser.Scene {
     this.squareButton(zx, cy - 25, 42, "+", () => this.hud.onZoom(-1));
     this.squareButton(zx, cy + 23, 42, "-", () => this.hud.onZoom(1));
 
-    this.cardX = x1 - 14 - 3 * CELL;
+    this.cardX = x1 - 14 - CARD_W;
     this.selX0 = zx + 28;
     this.selX1 = this.cardX - 10;
     this.cy = cy;
@@ -503,20 +402,26 @@ export class StrategicHud extends Phaser.Scene {
   }
 
   private buildCommands(m: HudModel): void {
+    const rows = m.commands.length === 6 ? 2 : 3;
+    // Three rows fill the console's height; two leave room to grow into the card's width.
+    const pitch = rows === 3 ? CELL : CARD_W / 3;
+    const btn = pitch - (CELL - BTN);
+    const x0 = this.cardX + (CARD_W - 3 * pitch) / 2;
+    const y0 = this.cy - (rows * pitch) / 2;
     // A big command in the first slot takes the card's top-left 2x2 block.
-    const big = m.commands[0]?.big ? m.commands[0] : null;
-    if (big) this.keep(this.commandButton(this.cardX + CELL, this.cy - CELL / 2, big, 2 * CELL - 4));
-    for (let i = 0; i < 9; i++) {
+    const big = rows === 3 && m.commands[0]?.big ? m.commands[0] : null;
+    if (big) this.keep(this.commandButton(x0 + pitch, y0 + pitch, big, 2 * pitch - 4));
+    for (let i = 0; i < rows * 3; i++) {
       if (big && [0, 1, 3, 4].includes(i)) continue;
-      const x = this.cardX + (i % 3) * CELL + CELL / 2;
-      const y = this.cy - CELL + Math.floor(i / 3) * CELL;
+      const x = x0 + (i % 3) * pitch + pitch / 2;
+      const y = y0 + Math.floor(i / 3) * pitch + pitch / 2;
       const cmd = m.commands[i] ?? null;
       if (!cmd) {
         // An empty socket in the wood, not a dead button.
-        this.keep(this.add.image(x, y, "hudSlot").setDisplaySize(BTN - 8, BTN - 8).setAlpha(0.55));
+        this.keep(this.add.image(x, y, "hudSlot").setDisplaySize(btn - 8, btn - 8).setAlpha(0.55));
         continue;
       }
-      this.keep(this.commandButton(x, y, cmd));
+      this.keep(this.commandButton(x, y, cmd, btn));
     }
   }
 
@@ -524,29 +429,37 @@ export class StrategicHud extends Phaser.Scene {
     const on = cmd.enabled !== false;
     const face = this.add.image(0, 0, "sqBlue", "ink").setDisplaySize(size, size * (SQUARE.h / SQUARE.w));
     const parts: Phaser.GameObjects.GameObject[] = [face];
-    if (cmd.portrait && this.textures.exists(cmd.portrait) && size <= BTN) {
-      // A small picture button, such as a building to put up: its art, fitted
-      // by its ink rather than its padded frame, over its name.
-      const k = size / BTN;
-      const ink = this.inkOf(cmd.portrait);
-      const scale = (size * 0.86) / Math.max(ink.w, ink.h);
-      const art = this.add.image(0, -4 * k, cmd.portrait).setScale(scale);
-      art.setOrigin((ink.x + ink.w / 2) / art.width, (ink.y + ink.h / 2) / art.height);
-      parts.push(art);
-      parts.push(label(this, 0, 15 * k, cmd.label, { fontSize: `${Math.round(10 * Math.min(k, 1.5))}px`, strokeThickness: 3 }));
-    } else if (cmd.portrait && this.textures.exists(cmd.portrait)) {
-      // A troop: its face large enough to read, then its name and price.
-      const face_ = this.add.image(0, -size * 0.16, cmd.portrait);
-      face_.setScale((size * 0.64) / Math.max(face_.width, face_.height));
-      parts.push(face_);
-      parts.push(label(this, 0, size * 0.16, cmd.label, { fontSize: "14px", strokeThickness: 3 }));
-      if (cmd.sub) parts.push(label(this, 0, size * 0.29, cmd.sub, { fontSize: "11px", color: "#ffe28a", strokeThickness: 3 }));
-    } else if (cmd.icon) {
-      const k = size / BTN;
-      parts.push(this.add.image(0, -9 * k, iconKey(cmd.icon)).setScale(0.4 * k));
-      parts.push(label(this, 0, 14 * k, cmd.label, { fontSize: `${Math.round(10 * Math.min(k, 1.5))}px`, strokeThickness: 3 }));
+    // Everything stays on the blue face, inside the white rim and the bevel.
+    const px = size / SQUARE.w;
+    const x0 = (FACE.x - SQUARE.w / 2) * px + 2;
+    const x1 = (FACE.x + FACE.w - SQUARE.w / 2) * px - 2;
+    const y0 = (FACE.y - SQUARE.h / 2) * px + 2;
+    const y1 = (FACE.y + FACE.h - SQUARE.h / 2) * px - 2;
+    // A smaller font rather than a scale, which would blur the glyphs.
+    const fit = (t: Phaser.GameObjects.Text): Phaser.GameObjects.Text => {
+      for (let px = parseFloat(String(t.style.fontSize)); t.width > x1 - x0 && px > 7; ) t.setFontSize(--px);
+      return t;
+    };
+    const k = size / BTN;
+    const small = `${Math.round(10 * Math.min(k, 1.25))}px`;
+    const picture = cmd.portrait && this.textures.exists(cmd.portrait) ? cmd.portrait : cmd.icon ? iconKey(cmd.icon) : null;
+    if (!picture) {
+      parts.push(fit(label(this, 0, (y0 + y1) / 2, cmd.label, { fontSize: cmd.label.length > 6 ? "11px" : "13px", wordWrap: { width: x1 - x0 }, align: "center" })));
     } else {
-      parts.push(label(this, 0, -2, cmd.label, { fontSize: cmd.label.length > 6 ? "11px" : "13px", wordWrap: { width: BTN - 8 }, align: "center" }));
+      // The name, and a troop's price under it, stacked up from the face's bottom.
+      const lines = [label(this, 0, 0, cmd.label, { fontSize: cmd.big ? "14px" : small, strokeThickness: 3 })];
+      if (cmd.big && cmd.sub) lines.push(label(this, 0, 0, cmd.sub, { fontSize: "11px", color: "#ffe28a", strokeThickness: 3 }));
+      let bottom = y1;
+      for (const t of lines.reverse()) {
+        fit(t).setOrigin(0.5, 1).setY(bottom);
+        bottom -= t.displayHeight - 3;
+      }
+      // The picture in what is left, fitted by its ink rather than its padded frame.
+      const ink = this.inkOf(picture);
+      const room = Math.min((x1 - x0) / ink.w, (bottom - y0) / ink.h);
+      const art = this.add.image(0, (y0 + bottom) / 2, picture).setScale(cmd.icon && !cmd.portrait ? Math.min(room, 0.4 * k) : room);
+      art.setOrigin((ink.x + ink.w / 2) / art.width, (ink.y + ink.h / 2) / art.height);
+      parts.push(art, ...lines);
     }
     const box = this.add.container(x, y, parts).setSize(size, size);
     if (!on) {
@@ -574,9 +487,6 @@ export class StrategicHud extends Phaser.Scene {
 
   private buildButtons(m: HudModel): void {
     const y = this.layout.h - BAR_H - 34;
-    const focus = m.tutorial?.focus;
-    if (focus === "fight" && m.primary) this.glow(this.barX1 - 110, y, 226, 66);
-    if (focus === "army" && m.secondary.length > 0) this.glow(SECONDARY_X, 34, 136, 58);
     if (m.primary) this.keep(this.swordButton(this.barX1 - 110, y, 210, m.primary.label, m.primary.onClick));
     // Beside the menu button, clear of the map's plots and the console.
     m.secondary.forEach((s, i) => {
@@ -722,9 +632,8 @@ export class StrategicHud extends Phaser.Scene {
     const text = label(this, 0, -8, b.text, { fontSize: "30px" });
     const rib = this.strip("bigRibbons", [`${b.tone}_left`, `${b.tone}_mid`, `${b.tone}_right`], 0, 0, Math.max(360, text.width + 180), 0.8);
     rib.add(text);
-    const sub = label(this, 0, 60, b.tone === "red" ? "Both plans play out at once." : "Give your orders, then press Fight!", { fontSize: "17px" });
     const y = (h - BAR_H) / 2 - 20;
-    const box = this.add.container(w / 2, y, [rib, sub]).setDepth(35).setAlpha(0).setScale(0.85);
+    const box = this.add.container(w / 2, y, [rib]).setDepth(35).setAlpha(0).setScale(0.85);
     this.tweens.chain({
       targets: box,
       tweens: [
@@ -734,8 +643,8 @@ export class StrategicHud extends Phaser.Scene {
     });
   }
 
-  /** How a round runs, the controls and the troops, over a veil. */
-  private buildGuide(m: HudModel): void {
+  /** How the war runs, the controls and the troops, over a veil. */
+  private buildGuide(): void {
     const { w, h } = this.layout;
     const pw = Math.min(840, w - 40);
     const ph = Math.min(480, h - 60);
@@ -760,17 +669,7 @@ export class StrategicHud extends Phaser.Scene {
     });
 
     const by = top + ph - 44;
-    const close = this.keep(button(this, cx, by, 150, 48, "Close", "blue", () => this.toggleGuide(), 0.5)).setDepth(52);
-    const replay = m.replayTutorial;
-    if (replay) {
-      close.setX(cx + 90);
-      this.keep(
-        button(this, cx - 90, by, 170, 48, "Replay tutorial", "blue", () => {
-          this.guideOpen = false;
-          replay();
-        }, 0.5),
-      ).setDepth(52);
-    }
+    this.keep(button(this, cx, by, 150, 48, "Close", "blue", () => this.toggleGuide(), 0.5)).setDepth(52);
     this.keep(label(this, cx + pw / 2 - 36, by, "H opens this any time", { ...INK, color: "#8a6a4a", fontSize: "12px" }).setOrigin(1, 0.5).setDepth(52));
   }
 
@@ -821,13 +720,12 @@ function guideSections(): { head: string; lines: string[] }[] {
   });
   return [
     {
-      head: "A round",
+      head: "The war",
       lines: [
-        "1. Plan: time stands still. Train, build and give orders.",
-        "2. Fight: press Fight! and both sides' plans play out at the same time.",
-        "3. Report: buildings finish and gold comes in.",
-        `Gold: ${WAR.upkeep.map((t) => `${t.income} a round with ${t.fighters}+ fighters`).reverse().join(", ")}; plus ${WAR.pawnIncome} for every Pawn digging at a mine.`,
-        `From round ${WAR.greying.fromRound} the Greying eats both castles a little each round. Break theirs first.`,
+        "The world never stops. In Real time, Space pauses it; in No pause, nothing does.",
+        "Train at your buildings and have a Pawn put up new ones. Orders go out at once.",
+        `Gold: Pawns dig at the mines and carry ${WAR.realtime.carry} home a trip.`,
+        `After ${WAR.realtime.greying.fromSeconds / 60} minutes the Greying eats both castles a little at a time. Break theirs first.`,
       ],
     },
     {
