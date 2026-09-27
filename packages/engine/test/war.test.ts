@@ -134,6 +134,21 @@ describe("island", () => {
 });
 
 describe("placement", () => {
+  it("sends the Pawn the player picked to build, not the nearest", () => {
+    const s = newMatch(1, "realtime");
+    const spot = findPlacement(s, "a", "house")!;
+    const build = { type: "build", kind: "house", col: spot.col, row: spot.row } as const;
+    const builders = (st: MatchState) => st.units.filter((u) => u.order.type === "build").map((u) => u.id);
+    const nearest = builders(act(s, "a", build))[0]!;
+    const other = s.units.find((u) => u.side === "a" && u.class === "pawn" && u.id !== nearest)!;
+    const picked = act(s, "a", { ...build, by: [other.id] });
+    expect(builders(picked)).toEqual([other.id]);
+    // The picked Pawn stops digging; the rest keep at it.
+    expect(picked.units.find((u) => u.id === nearest)!.order.type).toBe("gather");
+    const again = findPlacement(picked, "a", "house")!;
+    expect(applyAction(picked, "a", { type: "build", kind: "house", col: again.col, row: again.row, by: [other.id] }).ok).toBe(false);
+  });
+
   it("builds on open ground of its own plateau or the lowland", () => {
     const s = newMatch(1);
     const spot = findPlacement(s, "a", "barracks")!;

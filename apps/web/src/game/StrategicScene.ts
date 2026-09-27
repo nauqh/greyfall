@@ -125,6 +125,11 @@ function cellXY(col: number, row: number): { x: number; y: number } {
   return { x: STRAT.x0 + col * CELL + CELL / 2, y: STRAT.y0 + row * CELL + CELL / 2 };
 }
 
+/** A Pawn with nothing to do: not digging, building or walking anywhere. */
+function idle(u: WarUnit): boolean {
+  return u.class === "pawn" && (u.order.type === "stop" || u.order.type === "hold");
+}
+
 function head(u: { side: "a" | "b"; class: UnitClass }): number {
   return BODY_HEIGHT[u.class];
 }
@@ -608,6 +613,13 @@ export class StrategicScene extends Phaser.Scene {
         m.fillStyle(0x1c2634, 0.85).fillRect(-16, top, 32, 5);
         m.fillStyle(u.side === "a" ? 0x7ad35a : 0xe0533e).fillRect(-15, top + 1, Math.max(1, 30 * (Math.max(0, u.hp) / max)), 3);
       }
+      if (u.side === "a" && idle(u)) {
+        // Warcraft's idle worker: a gold marker over its head.
+        const top = -head(u) - 30;
+        m.fillStyle(0x3a2a1a).fillCircle(0, top, 14);
+        m.fillStyle(0xffd66a).fillCircle(0, top, 11);
+        m.fillStyle(0x3a2a1a).fillRect(-2, top - 7, 4, 9).fillRect(-2, top + 4, 4, 4);
+      }
       if (u.stance === "fallBack" && u.class !== "pawn" && u.side === "a") {
         // A small white flag: this unit falls back when hurt.
         const fx = 14;
@@ -745,7 +757,9 @@ export class StrategicScene extends Phaser.Scene {
       this.refresh();
       return;
     }
-    if (this.act({ type: "build", kind, col: at.col, row: at.row })) this.stopPlacing();
+    // The selected Pawn builds, not whichever is nearest.
+    const by = this.state.units.filter((u) => this.selected.includes(u.id) && u.class === "pawn").map((u) => u.id);
+    if (this.act({ type: "build", kind, col: at.col, row: at.row, ...(by.length > 0 && { by }) })) this.stopPlacing();
   }
 
   // --- input ---------------------------------------------------------------
@@ -951,17 +965,49 @@ export class StrategicScene extends Phaser.Scene {
         : this.inspected
           ? this.inspectPanel()
           : null;
+    const r = this.roster();
+    const training = (n: number): string => (n > 0 ? ` +${n}` : "");
     return {
       ...base,
       ...(panel ?? {
         title: "The war",
-        detail: `${clockText(s.tick)} played. Select a Pawn to build; a building to train or set its rally point with a right click. Ctrl+1-9 groups units.`,
+        detail: `${clockText(s.tick)} played. ${r.summary} Select a Pawn to build; a building to train or set its rally point with a right click.`,
       }),
       primary: { label: this.paused ? "Resume" : "Pause", onClick: () => this.togglePause() },
       secondary: [
-        { label: "Army", onClick: () => this.selectArmy() },
-        { label: "Pawns", onClick: () => this.selectPawns() },
+        { label: `Army ${r.army}${training(r.armyTraining)}`, onClick: () => this.selectArmy() },
+        { label: r.idle > 0 ? `Pawns ${r.pawns}, ${r.idle} idle` : `Pawns ${r.pawns}${training(r.pawnsTraining)}`, onClick: () => this.selectPawns() },
       ],
+    };
+  }
+
+  /** Blue's units by kind, and what its buildings have queued: "+n" is in training. */
+  private roster(): { army: number; armyTraining: number; pawns: number; pawnsTraining: number; idle: number; summary: string } {
+    const s = this.state;
+    const have = new Map<UnitClass, number>();
+    const queued = new Map<UnitClass, number>();
+    for (const u of s.units) if (u.side === "a") have.set(u.class, (have.get(u.class) ?? 0) + 1);
+    const idlePawns = s.units.filter((u) => u.side === "a" && idle(u)).length;
+    for (const b of Object.values(s.buildings)) {
+      if (b.side === "a") for (const q of b.queue) queued.set(q.cls, (queued.get(q.cls) ?? 0) + 1);
+    }
+    const fighters = (Object.keys(CLASS_NAME) as UnitClass[]).filter((c) => c !== "pawn");
+    const sum = (m: Map<UnitClass, number>): number => fighters.reduce((n, c) => n + (m.get(c) ?? 0), 0);
+    const kinds = fighters
+      .filter((c) => have.get(c) || queued.get(c))
+      .map((c) => {
+        const n = have.get(c) ?? 0;
+        return `${n} ${CLASS_NAME[c]}${n === 1 ? "" : "s"}${queued.get(c) ? ` (+${queued.get(c)})` : ""}`;
+      });
+    const pawns = have.get("pawn") ?? 0;
+    const pawnsTraining = queued.get("pawn") ?? 0;
+    return {
+      army: sum(have),
+      armyTraining: sum(queued),
+      pawns,
+      pawnsTraining,
+      idle: idlePawns,
+      summary: `Army: ${kinds.length > 0 ? kinds.join(", ") : "none yet"}. Pawns: ${pawns}${pawnsTraining ? ` (+${pawnsTraining})` : ""}${idlePawns ? `, ${idlePawns} idle` : ""}.`,
     };
   }
 
@@ -1150,9 +1196,14 @@ export class StrategicScene extends Phaser.Scene {
     this.refresh();
   }
 
+  /** The idle Pawns first, as Warcraft's idle worker button; again, every Pawn. */
   private selectPawns(): void {
+    const pawns = this.state.units.filter((u) => u.side === "a" && u.class === "pawn");
+    const idlers = pawns.filter(idle).map((u) => u.id);
+    const already = idlers.length === this.selected.length && idlers.every((id) => this.selected.includes(id));
     this.clearSelection();
-    this.selected = this.state.units.filter((u) => u.side === "a" && u.class === "pawn").map((u) => u.id);
+    this.selected = idlers.length > 0 && !already ? idlers : pawns.map((u) => u.id);
+    this.message = idlers.length > 0 && !already ? "Idle Pawns. Right click a mine to set them digging; click Pawns again for all." : "";
     this.refresh();
   }
 
@@ -1216,7 +1267,7 @@ export class StrategicScene extends Phaser.Scene {
     v.settle = null;
     // A Pawn walking home with gold carries the bag.
     const live = this.sim?.world.units.find((u) => u.id === id);
-    if (live?.class === "pawn" && live.carry) v.sprite.play(workKey(live.side, "carry"), true);
+    if (live?.class === "pawn" && live.carry && live.order.type === "gather") v.sprite.play(workKey(live.side, "carry"), true);
     else playPose(v.sprite, v.unit.side, v.unit.class, "run");
     if (Math.abs(x - v.root.x) > 0.5) v.sprite.setFlipX(x < v.root.x);
     this.tweens.killTweensOf(v.root);

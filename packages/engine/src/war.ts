@@ -109,7 +109,8 @@ export interface MatchState {
 
 export type Action =
   | { type: "train"; plot: string }
-  | { type: "build"; kind: BuildingKind; col: number; row: number }
+  /** `by`: the Pawns the player picked, the nearest of them builds; without it, the nearest free Pawn. */
+  | { type: "build"; kind: BuildingKind; col: number; row: number; by?: number[] }
   | { type: "upgrade"; plot: string }
   /** Real time: take the last unit off a building's queue, gold back. */
   | { type: "cancel"; plot: string }
@@ -434,12 +435,13 @@ export function freeBuilders(state: MatchState, side: WarSide): WarUnit[] {
 
 /** The free Pawn nearest the site goes to build it, leaving whatever it was
  *  doing: a Pawn building earns nothing meanwhile. */
-function sendBuilder(state: MatchState, side: WarSide, plot: Plot): boolean {
+function sendBuilder(state: MatchState, side: WarSide, plot: Plot, by?: readonly number[]): boolean {
   // By the walk, not the crow's flight: a Pawn below the cliff is far.
   const free = freeIn(occupied(state));
   const slots = new Set(buildSlots(plot, (c) => !free(c)).map(cellKey));
   const walk = (u: WarUnit) => findRoute(u, (c) => slots.has(cellKey(c)), (c) => !free(c))?.length ?? Infinity;
   const pawn = freeBuilders(state, side)
+    .filter((u) => !by || by.includes(u.id))
     .map((u) => ({ u, d: walk(u) }))
     .filter((x) => x.d < Infinity)
     .sort((a, b) => a.d - b.d || a.u.id - b.u.id)[0]?.u;
@@ -516,9 +518,9 @@ export function applyInPlace(next: MatchState, side: WarSide, action: Action): s
       const plot = newBuilding(side, id, action.kind, { col: action.col, row: action.row }, 0);
       plot.pending = "build";
       next.buildings[id] = plot;
-      if (!sendBuilder(next, side, plot)) {
+      if (!sendBuilder(next, side, plot, action.by)) {
         delete next.buildings[id];
-        return "no free Pawn can reach it";
+        return action.by ? "that Pawn is busy building or cannot reach it" : "no free Pawn can reach it";
       }
       next.gold[side] -= cost;
       return null;
