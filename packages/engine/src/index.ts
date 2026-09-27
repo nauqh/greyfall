@@ -113,3 +113,4 @@ export {
 
 export { battle, concede, createSim, finishRound, roundDone, startRound, type BattleOutcome, type RoundReport, type Sim, type WarEvent } from "./battle.ts";
 export { AI_EVERY_TICKS, planAi, runAi } from "./ai.ts";
+export { reaches, sightsOf, visibleCells, type Sight } from "./vision.ts";

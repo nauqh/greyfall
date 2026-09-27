@@ -43,6 +43,7 @@ import * as Phaser from "phaser";
 import { baseZoom, fitCamera, startGame } from "./boot";
 import { HUD_COVER_H, HUD_KEY, HUD_TOP_H, ICON, StrategicHud, portraitKey, type HudCommand, type HudModel } from "./StrategicHud";
 import { HAND } from "./ui";
+import { Fog } from "./fog";
 import { CELL, artOf, buildMap, buildScenery, cell, loadMapArt, makeMapAnims, plotBase, workKey } from "./islandMap";
 import { STRAT_COLS, STRAT_ROWS } from "./stratMap";
 import { BODY_HEIGHT, loadUnits, makeAnims, playPose, unitKey } from "./sprites";
@@ -187,6 +188,8 @@ export class StrategicScene extends Phaser.Scene {
   private buildings = new Map<string, Phaser.GameObjects.Image>();
   /** Bushes and rocks by cell, hidden where a building stands. */
   private strewn = new Map<number, Phaser.GameObjects.Sprite>();
+  /** What blue sees and remembers; red's AI sees the whole island. */
+  private fog!: Fog;
   private overlay!: Phaser.GameObjects.Graphics;
   private hud!: StrategicHud;
 
@@ -233,6 +236,8 @@ export class StrategicScene extends Phaser.Scene {
     driftClouds(this, { w: WORLD_W, h: WORLD_H }, "strategic");
     this.overlay = this.add.graphics().setDepth(DEPTH.decorBehind + 0.5);
     this.box = this.add.graphics().setDepth(DEPTH.fx + 2);
+    // Over the units, under hit numbers and the placing ghost.
+    this.fog = new Fog(this, "a", DEPTH.fx - 1);
 
     this.newWar();
 
@@ -411,6 +416,7 @@ export class StrategicScene extends Phaser.Scene {
 
   private newWar(): void {
     this.sim = createSim(newMatch(Date.now() % 1_000_000, "realtime"));
+    this.fog.reset();
     this.phase = "live";
     this.message = "The world runs on its own. Space pauses. Select a Pawn to build.";
     this.syncWorld(this.sim.world);
@@ -470,7 +476,16 @@ export class StrategicScene extends Phaser.Scene {
       if (!v.dead) v.unit = { ...u, order: u.order, post: u.post };
     }
     this.syncBuildings(world);
+    this.applyFog(world);
     this.drawMarks();
+  }
+
+  /** Enemy units show only in sight; an enemy building once it has been seen. */
+  private applyFog(state: MatchState): void {
+    this.fog.update(state);
+    for (const v of this.units.values()) v.root.setVisible(v.unit.side === "a" || this.fog.sees(v.unit.col, v.unit.row));
+    for (const [id, img] of this.buildings) img.setVisible(state.buildings[id]?.side !== "b" || this.fog.knows(id));
+    if (this.inspected?.unit !== undefined && !this.units.get(this.inspected.unit)?.root.visible) this.inspected = null;
   }
 
   // --- drawing the state ---------------------------------------------------
@@ -519,6 +534,7 @@ export class StrategicScene extends Phaser.Scene {
         this.units.delete(id);
       }
     }
+    this.applyFog(state);
     this.drawMarks();
   }
 
@@ -592,6 +608,7 @@ export class StrategicScene extends Phaser.Scene {
     }
 
     for (const b of Object.values(state.buildings)) {
+      if (b.side === "b" && !this.fog.knows(b.id)) continue;
       // Build and training bars over every building that is busy.
       const base = plotBase(b);
       const bar = (fill: number, tone: number, dy: number): void => {
@@ -643,7 +660,7 @@ export class StrategicScene extends Phaser.Scene {
         return cellXY(o.to.col, o.to.row);
       case "attack": {
         const t = this.state.units.find((u) => u.id === o.unit);
-        return t ? cellXY(t.col, t.row) : null;
+        return t && this.units.get(t.id)?.root.visible ? cellXY(t.col, t.row) : null;
       }
       case "attackBuilding":
       case "build": {
@@ -687,8 +704,8 @@ export class StrategicScene extends Phaser.Scene {
     const kind = this.placing;
     if (!kind) return;
     const at = this.placeAt(kind);
-    const why = canPlace(this.state, "a", kind, at.col, at.row);
     const f = FOOTPRINT[kind];
+    const why = this.placeError(kind, at);
     const plot = { id: `ghost-house-${this.state.nextPlot.a}`, side: "a" as const, kind, ...at, ...f };
     if (this.ghost.kind !== kind) {
       this.ghost.img?.destroy();
@@ -702,9 +719,22 @@ export class StrategicScene extends Phaser.Scene {
     }
   }
 
+  /** As Warcraft: nothing goes up on ground nobody has explored. */
+  private placeError(kind: BuildingKind, at: { col: number; row: number }): string | null {
+    const cells = plotCells({ ...at, ...FOOTPRINT[kind] });
+    if (!cells.every((c) => this.fog.known(c.col, c.row))) return "you have not explored there";
+    return canPlace(this.state, "a", kind, at.col, at.row);
+  }
+
   private place(): void {
     const kind = this.placing!;
     const at = this.placeAt(kind);
+    const why = this.placeError(kind, at);
+    if (why) {
+      this.message = why.charAt(0).toUpperCase() + why.slice(1) + ".";
+      this.refresh();
+      return;
+    }
     if (this.act({ type: "build", kind, col: at.col, row: at.row })) this.stopPlacing();
   }
 
@@ -728,7 +758,7 @@ export class StrategicScene extends Phaser.Scene {
     let best: WarUnit | undefined;
     let bestD = 34;
     for (const v of this.units.values()) {
-      if (v.dead) continue;
+      if (v.dead || !v.root.visible) continue;
       const d = Math.hypot(x - v.root.x, y - (v.root.y - head(v.unit) / 2));
       if (d < bestD) {
         bestD = d;
@@ -738,6 +768,7 @@ export class StrategicScene extends Phaser.Scene {
     if (best) return { unit: best, cell: cellAt };
     const plot = Object.values(this.state.buildings).find(
       (p) =>
+        (p.side === "a" || this.fog.knows(p.id)) &&
         cellAt.col >= p.col &&
         cellAt.col < p.col + p.w &&
         cellAt.row >= p.row - (p.kind === "house" ? 1 : 2) &&
@@ -1129,7 +1160,7 @@ export class StrategicScene extends Phaser.Scene {
         return this.onHeal(e.unit, e.target, e.amount);
       case "fallBack": {
         const v = this.units.get(e.unit);
-        if (v && !v.dead) floatText(this, v.root.x, v.root.y - head(v.unit) - 22, "Falls back", "#fdfaf0", this.speed);
+        if (v && !v.dead && v.root.visible) floatText(this, v.root.x, v.root.y - head(v.unit) - 22, "Falls back", "#fdfaf0", this.speed);
         return;
       }
       case "death":
@@ -1158,6 +1189,7 @@ export class StrategicScene extends Phaser.Scene {
       }
       case "greying":
         for (const side of ["a", "b"] as const) {
+          if (side === "b" && !this.fog.knows("b-castle")) continue;
           const base = plotBase(castlePlot(side));
           floatText(this, base.x, base.y - 180, `The Greying -${e.hp}`, "#c9c9c9", this.speed);
         }
@@ -1217,6 +1249,8 @@ export class StrategicScene extends Phaser.Scene {
     const a = this.units.get(by);
     const t = this.units.get(target);
     if (!a || !t) return;
+    // A fight in the fog shows nothing.
+    if (!a.root.visible && !t.root.visible) return;
     if (!a.dead) {
       this.face(a, t.root.x);
       this.strikePose(a);
@@ -1239,7 +1273,7 @@ export class StrategicScene extends Phaser.Scene {
     const a = this.units.get(by);
     const p = this.sim?.world.buildings[plotId] ?? this.state.buildings[plotId];
     const img = this.buildings.get(plotId);
-    if (!p) return;
+    if (!p || (img && !img.visible)) return;
     const base = plotBase(p);
     if (a && !a.dead) {
       this.face(a, base.x);
@@ -1259,7 +1293,7 @@ export class StrategicScene extends Phaser.Scene {
   private onHeal(by: number, target: number, amount: number): void {
     const c = this.units.get(by);
     const t = this.units.get(target);
-    if (!t) return;
+    if (!t || !t.root.visible) return;
     if (c && !c.dead) {
       this.face(c, t.root.x);
       this.strikePose(c);
@@ -1281,7 +1315,8 @@ export class StrategicScene extends Phaser.Scene {
       this.tweens.killTweensOf(v.root);
       v.marks.clear();
       this.units.delete(id);
-      deathFx(this, v.root, v.sprite, this.speed);
+      if (v.root.visible) deathFx(this, v.root, v.sprite, this.speed);
+      else v.root.destroy();
     });
   }
 
@@ -1290,6 +1325,10 @@ export class StrategicScene extends Phaser.Scene {
     if (!img) return;
     this.buildings.delete(plotId);
     if (this.selectedPlot === plotId) this.selectedPlot = null;
+    if (!img.visible) {
+      img.destroy();
+      return;
+    }
     trackFx(this, img);
     const base = { x: img.x, y: img.y };
     this.time.delayedCall(IMPACT_MS / this.speed, () => {

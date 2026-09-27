@@ -180,6 +180,13 @@ export const WAR = {
   /** What a level 2 production building gives its class. */
   level2: { warriorHp: 0.2, archerRange: 1, lancerHp: 0.2, monkHeal: 0.3 },
 
+  /** Tiles a unit or building sees, round it. Pawns see least, so scouting
+   *  costs a worker's trips; a tower on the high ground sees farthest. */
+  sight: {
+    units: { pawn: 4, warrior: 4, lancer: 5, archer: 6, monk: 5 } as Record<UnitClass, number>,
+    buildings: { castle: 7, barracks: 4, archery: 4, tower: 8, monastery: 4, house: 3 } as Record<string, number>,
+  },
+
   /** Units deal this share of their damage to buildings. */
   buildingDamage: 0.5,
   /** Damage from lowland onto a plateau is scaled by this. */

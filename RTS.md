@@ -31,6 +31,17 @@ Sep 27, 2026. The bases sat at the top of the island, so the High Pass was 12 st
 
 Sources: [SC2 level design: chokepoints and expansions](https://code.tutsplus.com/starcraft-ii-level-design-introduction-and-melee-maps--gamedev-3304t), [Time as a resource: multiplayer map design](https://waywardstrategy.com/2015/06/07/time-as-a-resource-part-2-multiplayer-map-design/), [Choke points in RTS games](https://game-design-snacks.fandom.com/wiki/Choke_points_in_Real_Time_Strategy_games_%E2%80%93_Helps_balance_gameplay).
 
+## Fog of war
+
+Sep 27, 2026. The match opens on the home plateau alone; the rest of the island is dark until someone walks there.
+
+- **Warcraft's two layers.** Black where nobody has been, grey where someone has been but nobody looks now: terrain and enemy buildings as last seen, no enemy units ([Warcraft II's fog](http://classic.battle.net/war2/basic/fog.shtml)).
+- **Sight in tiles** (`WAR.sight`): Pawn and Warrior 4, Lancer and Monk 5, Archer 6; castle 7, tower 8, other buildings 3-4. Pawns see least, so scouting costs a worker's trips.
+- **Nobody sees up a cliff**, as in StarCraft II ([Liquipedia: High Ground](https://liquipedia.net/starcraft2/High_Ground_and_Low_Ground)): a scout below the enemy plateau sees the yard but not the castle, and the Crown hides whoever holds it.
+- **Nothing is built on unexplored ground**, as in Warcraft.
+- `visibleCells(state, side)` is pure engine code, so a server can filter what each player is sent; what a player has explored is the map scene's memory (`fog.ts`), drawn one texel a tile and stretched smooth.
+- The red AI still sees the whole island.
+
 ## RTS patterns worth taking
 
 | Pattern | Where it comes from | What Greyfall takes |
@@ -47,7 +58,7 @@ Sources: [SC2 level design: chokepoints and expansions](https://code.tutsplus.co
 | Group movement: a path per unit plus separation so groups do not stack | StarCraft II (GDC 2011, steering and flocking); howtorts pathing review | Kept grid-simple: one path per unit, friends pass through each other, and groups spread over separate tiles on arrival, as the engine does today |
 | Build anywhere legal, not on fixed plots | Warcraft, StarCraft, Age of Empires | Free placement on buildable ground (own plateau and lowland), with a ghost footprint that turns red where a building cannot go |
 
-Not taken: fog of war (a non-goal in ENHANCE.md), lumber (the pack supports it, see below; a later choice), navmeshes (the grid is small enough for breadth-first search).
+Not taken: lumber (the pack supports it, see below; a later choice), navmeshes (the grid is small enough for breadth-first search).
 
 ## Checked against the pack
 
