@@ -198,7 +198,15 @@ export class StrategicHud extends Phaser.Scene {
     // Origin 0 so HUD units map to canvas px times the map's base zoom from
     // the top left: the HUD scales with the screen as the map does.
     const zoom = baseZoom(this);
-    this.cameras.main.setOrigin(0).setZoom(zoom);
+    const cam = this.cameras.main.setOrigin(0).setZoom(zoom);
+    // Phaser snaps to whole screen pixels only at an integer zoom, and this one
+    // rarely is, so every glyph straddled pixels and blurred. The HUD has no
+    // tiles that could seam apart, so it always snaps.
+    const preRender = cam.preRender.bind(cam);
+    cam.preRender = (): void => {
+      preRender();
+      (cam as { renderRoundPixels: boolean }).renderRoundPixels = true;
+    };
     // EXPAND resizes the canvas; a rebuild is the boring way to re-anchor.
     const rebuild = (): void => {
       this.scene.restart();
@@ -318,10 +326,12 @@ export class StrategicHud extends Phaser.Scene {
     const rib = this.keep(this.strip("bigRibbons", [`${tone}_left`, `${tone}_mid`, `${tone}_right`], w / 2, 34, rw, 0.5));
     rib.add(text);
 
-    // Resources on a strip of paper in the corner.
+    // Resources on a strip of paper in the corner. Supply counts what is left:
+    // queued units have taken theirs, so the field can look emptier than it is.
+    const left = Math.max(0, m.supply[1] - m.supply[0]);
     const items: [string | null, string][] = [
       [ICON.gold, String(m.gold)],
-      [ICON.meat, `${m.supply[0]}/${m.supply[1]} supply`],
+      [ICON.meat, `${left}/${m.supply[1]} left`],
       [null, m.clock.text],
     ];
     const stripW = 390;
@@ -331,7 +341,7 @@ export class StrategicHud extends Phaser.Scene {
     items.forEach(([icon, value], i) => {
       const x = at[i]!;
       if (icon) this.keep(this.add.image(x, 33, iconKey(icon)).setScale(0.48));
-      const tint = i === 2 && m.clock.warn ? "#a12f2f" : INK.color;
+      const tint = (i === 2 && m.clock.warn) || (i === 1 && left === 0) ? "#a12f2f" : INK.color;
       this.keep(label(this, icon ? x + 20 : x - 10, 34, value, { ...INK, color: tint, fontSize: i === 2 ? "14px" : "17px" }).setOrigin(0, 0.5));
     });
   }
@@ -440,7 +450,7 @@ export class StrategicHud extends Phaser.Scene {
       return t;
     };
     const k = size / BTN;
-    const small = `${Math.round(10 * Math.min(k, 1.25))}px`;
+    const small = `${Math.round(10 * Math.min(k, 1.3))}px`;
     const picture = cmd.portrait && this.textures.exists(cmd.portrait) ? cmd.portrait : cmd.icon ? iconKey(cmd.icon) : null;
     if (!picture) {
       parts.push(fit(label(this, 0, (y0 + y1) / 2, cmd.label, { fontSize: cmd.label.length > 6 ? "11px" : "13px", wordWrap: { width: x1 - x0 }, align: "center" })));
@@ -489,7 +499,7 @@ export class StrategicHud extends Phaser.Scene {
     if (m.primary) this.keep(this.swordButton(this.barX1 - 110, y, 210, m.primary.label, m.primary.onClick));
     // Beside the menu button, clear of the map's plots and the console.
     m.secondary.forEach((s, i) => {
-      this.keep(button(this, SECONDARY_X + i * 132, 34, 124, 48, s.label, "blue", s.onClick, 0.5));
+      this.keep(button(this, SECONDARY_X + i * 132, 34, 124, 54, s.label, "blue", s.onClick, 0.5));
     });
   }
 
@@ -534,10 +544,10 @@ export class StrategicHud extends Phaser.Scene {
     });
     const by = cy + ph / 2 - 40;
     if (r.also) {
-      this.keep(button(this, w / 2 - 85, by, 150, 48, r.button, "blue", r.onClick, 0.5));
-      this.keep(button(this, w / 2 + 85, by, 150, 48, r.also.label, "red", r.also.onClick, 0.5));
+      this.keep(button(this, w / 2 - 85, by, 150, 54, r.button, "blue", r.onClick, 0.5));
+      this.keep(button(this, w / 2 + 85, by, 150, 54, r.also.label, "red", r.also.onClick, 0.5));
     } else {
-      this.keep(button(this, w / 2, by, 170, 48, r.button, "blue", r.onClick, 0.5));
+      this.keep(button(this, w / 2, by, 170, 54, r.button, "blue", r.onClick, 0.5));
     }
   }
 
@@ -653,7 +663,7 @@ export class StrategicHud extends Phaser.Scene {
     // The tabs: the one showing full strength, the other faded.
     const tabs = [["guide", "Guide"], ["keys", "Shortcuts"]] as const;
     tabs.forEach(([tab, name], i) => {
-      const b = button(this, cx + (i - 0.5) * 140, top + 62, 130, 44, name, "blue", () => {
+      const b = button(this, cx + (i - 0.5) * 140, top + 62, 130, 54, name, "blue", () => {
         this.guideTab = tab;
         this.refresh();
       }, 0.5);
@@ -682,7 +692,7 @@ export class StrategicHud extends Phaser.Scene {
     });
 
     const by = top + ph - 44;
-    this.keep(button(this, cx, by, 150, 48, "Close", "blue", () => this.toggleGuide(), 0.5)).setDepth(52);
+    this.keep(button(this, cx, by, 150, 54, "Close", "blue", () => this.toggleGuide(), 0.5)).setDepth(52);
   }
 
   /** A small square button with a glyph. Presses sink it a touch. */

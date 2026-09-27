@@ -200,8 +200,11 @@ export function label(
   // A scene with a fixed zoom bakes glyphs at exactly that zoom, one texel per
   // device pixel; any other ratio blends texels and blurs them.
   const res = "textRes" in scene ? (scene as { textRes: number }).textRes : TEXT_RES;
+  const style = { ...FONT, ...over };
+  // The stroke straddles the glyph edge, so a 3px one eats small letters into mud.
+  if (parseFloat(String(style.fontSize)) < 14) style.strokeThickness = Math.min(style.strokeThickness ?? 0, 2);
   const t = scene.add
-    .text(x, y, text, { ...FONT, ...over })
+    .text(x, y, text, style)
     .setOrigin(0.5)
     .setResolution(res);
   // pixelArt forces NEAREST on every texture, which shimmers text at the
