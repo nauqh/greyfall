@@ -1,8 +1,5 @@
 // The war on the island, drawn tile by tile from the engine's height map
-// (islandMap.ts), in one of two modes:
-//
-//   Real time      the world never stops; Space pauses it (solo).
-//   Real time, no pause, the way a multiplayer match would run.
+// (islandMap.ts), in real time: the world never stops unless Space pauses it.
 //
 // The engine decides everything. This scene steps its simulation at 10 ticks
 // a second, draws what each tick's events say happened, and turns clicks
@@ -122,13 +119,6 @@ const SHORT: Record<BuildingKind, string> = { ...NAME, archery: "Archery" };
 /** What a Pawn can put up, in the order its card lists them. */
 const BUILDABLE: readonly BuildingKind[] = ["house", "barracks", "archery", "tower", "monastery"];
 
-type PlayMode = "pausable" | "realtime";
-
-const MODE_NAME: Record<PlayMode, string> = {
-  pausable: "Real time",
-  realtime: "No pause",
-};
-
 function cellXY(col: number, row: number): { x: number; y: number } {
   return { x: STRAT.x0 + col * CELL + CELL / 2, y: STRAT.y0 + row * CELL + CELL / 2 };
 }
@@ -152,8 +142,8 @@ interface UnitView {
   dead: boolean;
 }
 
-/** pick: choosing a mode. live: the match running. */
-type Phase = "pick" | "live" | "over";
+/** live: the match running. over: a hall has fallen. */
+type Phase = "live" | "over";
 
 export class StrategicScene extends Phaser.Scene {
   /** Handed in by the page; absent when the map opens on its own. */
@@ -166,11 +156,8 @@ export class StrategicScene extends Phaser.Scene {
   private lastTap: { id: number; at: number } | null = null;
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
 
-  private mode: PlayMode = "pausable";
-  private phase: Phase = "pick";
-  /** The island shown behind the mode picker. */
-  private planState!: MatchState;
-  private sim: Sim | null = null;
+  private phase: Phase = "live";
+  private sim!: Sim;
   private paused = false;
   /** Real milliseconds not yet turned into ticks. */
   private acc = 0;
@@ -211,10 +198,9 @@ export class StrategicScene extends Phaser.Scene {
     super("strategic");
   }
 
-  /** The world as it stands: live while the simulation runs, the picker's island otherwise. */
+  /** The world as it stands: live while the simulation runs, the result once it ends. */
   private get state(): MatchState {
-    if (this.finalState) return this.finalState;
-    return this.sim && this.phase === "live" ? this.sim.world : this.planState;
+    return this.finalState ?? this.sim.world;
   }
 
   preload(): void {
@@ -248,8 +234,7 @@ export class StrategicScene extends Phaser.Scene {
     this.overlay = this.add.graphics().setDepth(DEPTH.decorBehind + 0.5);
     this.box = this.add.graphics().setDepth(DEPTH.fx + 2);
 
-    this.planState = newMatch(0);
-    this.syncWorld(this.planState);
+    this.newWar();
 
     this.hud = this.scene.add(HUD_KEY, StrategicHud, true, {
       // The HUD is the top scene, so the cloud cover goes there to sit over
@@ -407,39 +392,28 @@ export class StrategicScene extends Phaser.Scene {
 
   // --- the match -----------------------------------------------------------
 
-  /** Back to the mode picker, the island cleared. */
-  private toPicker(): void {
-    this.sim = null;
-    this.finalState = null;
-    this.phase = "pick";
-    this.planState = newMatch(0);
-    this.syncWorld(this.planState);
-    this.refresh();
-  }
-
-  private startMatch(mode: PlayMode): void {
+  /** A fresh match on a cleared island. */
+  private playAgain(): void {
     this.tweens.killAll();
     this.time.removeAllEvents();
     clearFx(this);
     for (const v of this.units.values()) v.root.destroy();
     this.units.clear();
-    this.mode = mode;
     this.finalState = null;
     this.paused = false;
     this.acc = 0;
     this.groups.clear();
     this.clearSelection();
     this.stopPlacing();
-    const seed = Date.now() % 1_000_000;
-    this.planState = newMatch(seed, "realtime");
-    this.sim = createSim(this.planState);
-    this.phase = "live";
-    this.message =
-      mode === "pausable"
-        ? "The world runs on its own. Space pauses. Select a Pawn to build."
-        : "The world runs on its own, with no pause. Select a Pawn to build.";
-    this.syncWorld(this.sim.world);
+    this.newWar();
     this.refresh();
+  }
+
+  private newWar(): void {
+    this.sim = createSim(newMatch(Date.now() % 1_000_000, "realtime"));
+    this.phase = "live";
+    this.message = "The world runs on its own. Space pauses. Select a Pawn to build.";
+    this.syncWorld(this.sim.world);
   }
 
   /** One action for the player, into the running world. Explained when it is refused. */
@@ -449,7 +423,7 @@ export class StrategicScene extends Phaser.Scene {
       this.refresh();
       return false;
     };
-    if (this.phase !== "live" || !this.sim) return false;
+    if (this.phase !== "live") return false;
     const error = this.sim.issue("a", action);
     if (error) return refuse(error);
     this.syncLive();
@@ -462,11 +436,6 @@ export class StrategicScene extends Phaser.Scene {
 
   private togglePause(): void {
     if (this.phase !== "live") return;
-    if (this.mode !== "pausable") {
-      this.message = "No pause in this mode.";
-      this.refresh();
-      return;
-    }
     this.paused = !this.paused;
     this.message = this.paused ? "Paused. Orders still go out; Space to go on." : "";
     this.refresh();
@@ -476,7 +445,7 @@ export class StrategicScene extends Phaser.Scene {
 
   /** One tick of the running world, and what it shows. */
   private tickOnce(): void {
-    const sim = this.sim!;
+    const sim = this.sim;
     if (sim.t % AI_EVERY_TICKS === 0) runAi(sim, "b");
     sim.step();
     const events = sim.events.splice(0);
@@ -495,7 +464,7 @@ export class StrategicScene extends Phaser.Scene {
   /** Bring the views in line with the live world: new units, their current
    *  orders and HP, buildings going up and coming down. */
   private syncLive(): void {
-    const world = this.sim!.world;
+    const world = this.sim.world;
     for (const u of world.units) {
       const v = this.units.get(u.id) ?? this.addUnit(u);
       if (!v.dead) v.unit = { ...u, order: u.order, post: u.post };
@@ -919,7 +888,7 @@ export class StrategicScene extends Phaser.Scene {
       gold: s.gold.a,
       supply: [supplyUsed(s, "a"), supplyCap(s, "a")],
       clock: { text: greyTicks > 0 ? `Greying in ${clockText(greyTicks)}` : "The Greying", warn: greyTicks < 600 },
-      banner: { text: this.paused ? "Paused" : MODE_NAME[this.mode], tone: this.paused ? "red" : "blue" },
+      banner: { text: this.paused ? "Paused" : "Two clans, one island", tone: this.paused ? "red" : "blue" },
       title: "",
       detail: "",
       portrait: null,
@@ -932,20 +901,6 @@ export class StrategicScene extends Phaser.Scene {
       report: null,
     };
 
-    if (this.phase === "pick") {
-      return {
-        ...base,
-        banner: { text: "Two clans, one island", tone: "blue" },
-        report: {
-          title: "How will you play?",
-          tone: "blue",
-          lines: ["Real time: the world never waits; Space pauses.", "No pause: real time, the way a duel would run."],
-          button: "",
-          onClick: () => {},
-          choices: (["pausable", "realtime"] as const).map((m) => ({ label: MODE_NAME[m], onClick: () => this.startMatch(m) })),
-        },
-      };
-    }
     if (this.phase === "over") return { ...base, report: this.overModel() };
 
     const panel = this.selected.length > 0
@@ -958,14 +913,13 @@ export class StrategicScene extends Phaser.Scene {
     return {
       ...base,
       ...(panel ?? {
-        title: MODE_NAME[this.mode],
+        title: "The war",
         detail: `${clockText(s.tick)} played. Select a Pawn to build; a building to train or set its rally point with a right click. Ctrl+1-9 groups units.`,
       }),
-      primary: this.mode === "pausable" ? { label: this.paused ? "Resume" : "Pause", onClick: () => this.togglePause() } : null,
+      primary: { label: this.paused ? "Resume" : "Pause", onClick: () => this.togglePause() },
       secondary: [
         { label: "Army", onClick: () => this.selectArmy() },
         { label: "Pawns", onClick: () => this.selectPawns() },
-        { label: `Speed ${this.speed}x`, onClick: () => this.toggleSpeed() },
       ],
     };
   }
@@ -1143,7 +1097,7 @@ export class StrategicScene extends Phaser.Scene {
       tone: end.winner === "a" ? "blue" : "red",
       lines: [`The war ended after ${clockText(end.tick)}.`],
       button: "Play again",
-      onClick: () => this.toPicker(),
+      onClick: () => this.playAgain(),
       also: { label: "Menu", onClick: () => this.toMenu() },
     };
   }
@@ -1159,11 +1113,6 @@ export class StrategicScene extends Phaser.Scene {
     this.clearSelection();
     this.selected = this.state.units.filter((u) => u.side === "a" && u.class === "pawn").map((u) => u.id);
     this.refresh();
-  }
-
-  private toggleSpeed(): void {
-    this.speed = this.speed === 1 ? 2 : 1;
-    this.hud.refresh();
   }
 
   // --- what a tick shows -----------------------------------------------------
@@ -1395,11 +1344,11 @@ export class StrategicScene extends Phaser.Scene {
    *  on-screen speed at any zoom. The clamp runs every frame so a zoom tween
    *  stays in bounds. */
   update(_time: number, delta: number): void {
-    const running = this.sim && this.phase === "live" && !this.paused;
+    const running = this.phase === "live" && !this.paused;
     if (running) {
       // A long stall (a hidden tab) catches up a few ticks, not minutes.
       this.acc = Math.min(this.acc + delta * this.speed, TICK_MS * 5);
-      while (this.acc >= TICK_MS && this.sim && this.phase === "live") {
+      while (this.acc >= TICK_MS && this.phase === "live") {
         this.acc -= TICK_MS;
         this.tickOnce();
       }

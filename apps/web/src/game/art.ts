@@ -39,7 +39,16 @@ function sheet448(file: string): SliceSheet {
 }
 
 export const PANELS = {
-  paper: sheet320("UI Elements/UI Elements/Papers/RegularPaper.png"),
+  // Each piece has a 3px mauve rim where it meets another, and speckles
+  // that stretching smears into bands: the rims are cut off, and the middles
+  // come from the only speckle-free run (columns 153-165, rows 135-139).
+  paper: {
+    file: "UI Elements/UI Elements/Papers/RegularPaper.png",
+    colX: [0, 153, 259],
+    colW: [61, 13, 61],
+    rowY: [0, 135, 259],
+    rowH: [61, 5, 61],
+  },
   specialPaper: sheet320("UI Elements/UI Elements/Papers/SpecialPaper.png"),
   blueButton: sheet320("UI Elements/UI Elements/Buttons/BigBlueButton_Regular.png"),
   redButton: sheet320("UI Elements/UI Elements/Buttons/BigRedButton_Regular.png"),

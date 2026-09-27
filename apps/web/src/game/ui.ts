@@ -225,7 +225,12 @@ export function button(
 ): Phaser.GameObjects.Container {
   const up = tone === "blue" ? "blueButton" : "redButton";
   const face = panel(scene, up, 0, 0, w / scale, h / scale).setScale(scale);
-  const text_ = label(scene, 0, -1, text, { fontSize: "16px" });
+  // The blue face, measured off the art: 24px below the top, 33px above the
+  // bottom bevel, 26px in from each side. The label is sized and centred on it.
+  const faceW = w - 52 * scale;
+  let px = Math.min(16, Math.floor((h - 57 * scale) * 0.72));
+  const text_ = label(scene, 0, -4.5 * scale - 1, text, { fontSize: `${px}px` });
+  while (text_.width > faceW - 6 && px > 9) text_.setFontSize(--px);
 
   const box = scene.add.container(x, y, [face, text_]);
   box.setSize(w, h);

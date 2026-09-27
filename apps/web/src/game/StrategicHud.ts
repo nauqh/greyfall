@@ -76,7 +76,7 @@ export interface HudModel {
   /** The sword is the one big action; the others are plain buttons. */
   primary: { label: string; onClick: () => void } | null;
   secondary: { label: string; onClick: () => void }[];
-  /** The mode picker or the end of the match, over everything. */
+  /** The end of the match, over everything. */
   report: {
     title: string;
     tone: "blue" | "red";
@@ -84,8 +84,6 @@ export interface HudModel {
     button: string;
     onClick: () => void;
     also?: { label: string; onClick: () => void };
-    /** A row of equal choices in place of the buttons, such as the mode picker. */
-    choices?: { label: string; onClick: () => void }[];
   } | null;
 }
 
@@ -165,6 +163,7 @@ export class StrategicHud extends Phaser.Scene {
   /** The last phase splashed, so a redraw never splashes it twice. */
   private splashed: string | null = null;
   private guideOpen = false;
+  private guideTab: "guide" | "keys" = "guide";
 
   constructor() {
     super(HUD_KEY);
@@ -272,7 +271,7 @@ export class StrategicHud extends Phaser.Scene {
     };
     part("top", [m.gold, m.supply, m.clock, m.banner], () => this.buildTop(m));
     part("panel", [m.title, m.detail, m.portrait, m.hp], () => this.buildSelection(m));
-    part("rest", [m.commands, m.primary, m.secondary, m.report, this.guideOpen], () => {
+    part("rest", [m.commands, m.primary, m.secondary, m.report, this.guideOpen, this.guideTab], () => {
       this.hideTip();
       this.buildCommands(m);
       this.buildButtons(m);
@@ -534,13 +533,7 @@ export class StrategicHud extends Phaser.Scene {
       this.keep(label(this, w / 2, cy - ph / 2 + 64 + i * 22, line, { ...INK, fontSize: "14px", fontStyle: "500", wordWrap: { width: pw - 60 }, align: "center" }));
     });
     const by = cy + ph / 2 - 40;
-    if (r.choices) {
-      const bw = Math.min(150, (pw - 40) / r.choices.length - 10);
-      r.choices.forEach((c, i) => {
-        const x = w / 2 + (i - (r.choices!.length - 1) / 2) * (bw + 12);
-        this.keep(button(this, x, by, bw, 48, c.label, i === 0 ? "blue" : "red", c.onClick, 0.5));
-      });
-    } else if (r.also) {
+    if (r.also) {
       this.keep(button(this, w / 2 - 85, by, 150, 48, r.button, "blue", r.onClick, 0.5));
       this.keep(button(this, w / 2 + 85, by, 150, 48, r.also.label, "red", r.also.onClick, 0.5));
     } else {
@@ -643,7 +636,7 @@ export class StrategicHud extends Phaser.Scene {
     });
   }
 
-  /** How the war runs, the controls and the troops, over a veil. */
+  /** How the war runs and the troops, or every shortcut, over a veil. */
   private buildGuide(): void {
     const { w, h } = this.layout;
     const pw = Math.min(840, w - 40);
@@ -657,20 +650,39 @@ export class StrategicHud extends Phaser.Scene {
     const rib = this.keep(this.strip("bigRibbons", ["blue_left", "blue_mid", "blue_right"], cx, top + 8, Math.max(260, title.width + 130), 0.5)).setDepth(52);
     rib.add(title);
 
-    const colW = (pw - 80) / 3;
-    guideSections().forEach((sec, i) => {
+    // The tabs: the one showing full strength, the other faded.
+    const tabs = [["guide", "Guide"], ["keys", "Shortcuts"]] as const;
+    tabs.forEach(([tab, name], i) => {
+      const b = button(this, cx + (i - 0.5) * 140, top + 62, 130, 44, name, "blue", () => {
+        this.guideTab = tab;
+        this.refresh();
+      }, 0.5);
+      this.keep(b).setDepth(52).setAlpha(this.guideTab === tab ? 1 : 0.55);
+    });
+
+    const y0 = top + 104;
+    const sections = this.guideTab === "guide" ? guideSections() : shortcutSections();
+    const colW = (pw - 80) / sections.length;
+    sections.forEach((sec, i) => {
       const x = cx - pw / 2 + 40 + i * colW;
-      let y = top + 58;
+      let y = y0;
       y += this.keep(label(this, x, y, sec.head, { ...INK, fontSize: "17px", fontStyle: "800" }).setOrigin(0, 0).setDepth(52)).height + 8;
       for (const line of sec.lines) {
-        const t = this.keep(label(this, x, y, line, { ...INK, fontSize: "13px", fontStyle: "500", wordWrap: { width: colW - 20 }, lineSpacing: 1 }).setOrigin(0, 0).setDepth(52));
-        y += t.height + 7;
+        if (typeof line === "string") {
+          const t = this.keep(label(this, x, y, line, { ...INK, fontSize: "13px", fontStyle: "500", wordWrap: { width: colW - 20 }, lineSpacing: 1 }).setOrigin(0, 0).setDepth(52));
+          y += t.height + 7;
+          continue;
+        }
+        // A shortcut: its keys in a fixed column, what they do beside them.
+        const [keys, does] = line;
+        const k = this.keep(label(this, x, y, keys, { ...INK, fontSize: "13px", fontStyle: "800", wordWrap: { width: 120 } }).setOrigin(0, 0).setDepth(52));
+        const d = this.keep(label(this, x + 130, y, does, { ...INK, fontSize: "13px", fontStyle: "500", wordWrap: { width: colW - 150 } }).setOrigin(0, 0).setDepth(52));
+        y += Math.max(k.height, d.height) + 7;
       }
     });
 
     const by = top + ph - 44;
     this.keep(button(this, cx, by, 150, 48, "Close", "blue", () => this.toggleGuide(), 0.5)).setDepth(52);
-    this.keep(label(this, cx + pw / 2 - 36, by, "H opens this any time", { ...INK, color: "#8a6a4a", fontSize: "12px" }).setOrigin(1, 0.5).setDepth(52));
   }
 
   /** A small square button with a glyph. Presses sink it a touch. */
@@ -706,8 +718,10 @@ export class StrategicHud extends Phaser.Scene {
 const TROOP: Record<UnitClass, string> = { pawn: "Pawn", warrior: "Warrior", lancer: "Lancer", archer: "Archer", monk: "Monk" };
 const TRAINED_AT: Record<string, string> = { castle: "castle", barracks: "barracks", archery: "archery range", tower: "tower", monastery: "monastery" };
 
-/** The guide's three columns, its numbers read off the balance so they never drift. */
-function guideSections(): { head: string; lines: string[] }[] {
+type GuideSection = { head: string; lines: (string | [keys: string, does: string])[] };
+
+/** The guide tab's columns, its numbers read off the balance so they never drift. */
+function guideSections(): GuideSection[] {
   const troops = Object.entries(WAR.trains).filter(([, cls]) => cls !== "pawn").map(([at, cls]) => {
     const beats = BALANCE.counters[cls!];
     const does =
@@ -722,19 +736,10 @@ function guideSections(): { head: string; lines: string[] }[] {
     {
       head: "The war",
       lines: [
-        "The world never stops. In Real time, Space pauses it; in No pause, nothing does.",
+        "The world never stops unless you pause it: Space or the Pause sword. Orders still go out while paused.",
         "Train at your buildings and have a Pawn put up new ones. Orders go out at once.",
         `Gold: Pawns dig at the mines and carry ${WAR.realtime.carry} home a trip.`,
         `After ${WAR.realtime.greying.fromSeconds / 60} minutes the Greying eats both castles a little at a time. Break theirs first.`,
-      ],
-    },
-    {
-      head: "Controls",
-      lines: [
-        "Click to select, drag a box for many. Double click takes every unit of that kind.",
-        "Right click to order. Troops fight whatever they meet on the way. On touch, tap.",
-        "F1 your Pawns, F2 your army, Esc lets go.",
-        "Wheel or + and - to zoom. Arrow keys or the screen edge to pan.",
       ],
     },
     {
@@ -744,6 +749,39 @@ function guideSections(): { head: string; lines: string[] }[] {
         `Pawns, from the castle, dig gold and build, up to ${WAR.pawns.max}. They never fight, and the dead stay dead.`,
         `A counter deals ${Math.round(BALANCE.counterBonus * 100)}% more damage. Troops on the lowland deal ${Math.round(WAR.highGround * 100)}% to a plateau.`,
         `Each house adds ${WAR.supply.perHouse} supply; every unit takes 1.`,
+      ],
+    },
+  ];
+}
+
+/** The shortcuts tab: every binding StrategicScene and this HUD listen for. */
+function shortcutSections(): GuideSection[] {
+  return [
+    {
+      head: "Mouse",
+      lines: [
+        ["Click", "Select a unit or building"],
+        ["Drag", "Box your units"],
+        ["Shift + click", "Add to or drop from the selection"],
+        ["Double click", "Every unit of that kind on screen (or Ctrl + click)"],
+        ["Right click", "Move, attack, or dig at a mine; fighters fight on the way"],
+        ["Right click", "With a building selected: its rally point"],
+        ["Middle drag", "Pan the map"],
+        ["Wheel", "Zoom in and out"],
+        ["Touch", "Drag to pan, tap to order"],
+      ],
+    },
+    {
+      head: "Keyboard",
+      lines: [
+        ["F1", "Select all your Pawns"],
+        ["F2", "Select your whole army"],
+        ["Ctrl + 1-9", "Set a control group"],
+        ["1-9", "Recall a control group"],
+        ["Space", "Pause and resume"],
+        ["Esc", "Cancel placing a building, let go of the selection"],
+        ["Arrow keys", "Pan the map (or the screen edge)"],
+        ["H", "Open and close this guide"],
       ],
     },
   ];
