@@ -30,9 +30,12 @@ import {
 } from "./war.ts";
 
 /** Where each side's army waits: the plateau lip above its own ramp. */
-const RALLY: Record<WarSide, Cell> = { a: { col: 13, row: 13 }, b: { col: STRAT_COLS - 1 - 13, row: 13 } };
+const RALLY: Record<WarSide, Cell> = { a: { col: 12, row: 14 }, b: { col: STRAT_COLS - 1 - 12, row: 14 } };
 /** The ford, beside the rich mine. */
 const MID: Cell = { col: 30, row: 28 };
+/** Each lane's middle: the top of the High Pass and the ford. An attack
+ *  heads for one of them first, so the AI does not always take the shorter. */
+const LANES: readonly Cell[] = [{ col: 30, row: 10 }, MID];
 
 /** How much stronger it must be before it marches on the enemy castle. */
 const ATTACK_EDGE = 1.3;
@@ -140,7 +143,12 @@ export function planAi(state: MatchState, side: WarSide): Plan {
     fighters.length >= 4 &&
     (ourValue >= theirValue * ATTACK_EDGE || (state.round >= LATE.round && fighters.length >= LATE.fighters))
   ) {
-    goal = { order: "attackMove", to: siegeTile(cur, side) };
+    // Still on its own side of the lake: pick a lane, the same one for the
+    // whole round. ponytail: a round boundary mid-march can switch lanes.
+    const x = fighters.reduce((sum, u) => sum + u.col, 0) / fighters.length;
+    const home = side === "a" ? x < LANES[0]!.col - 8 : x > LANES[0]!.col + 8;
+    const lane = LANES[makeRng(`${String(state.seed)}:${state.round}:${side}:lane`).int(LANES.length)]!;
+    goal = { order: "attackMove", to: home ? lane : siegeTile(cur, side) };
   } else if (state.round >= 5 && ourValue >= theirValue && (cur.mines[homeMine] ?? 0) < 200) {
     goal = { order: "attackMove", to: MID };
   } else {

@@ -104,12 +104,12 @@ describe("island", () => {
   it("joins the bases by exactly two roads", () => {
     const without = (cells: [number, number][]) => (c: { col: number; row: number }) =>
       blocked(c) || cells.some(([col, row]) => c.col === col && c.row === row);
-    const pass: [number, number][] = [[22, 13], [38, 13]];
+    const pass: [number, number][] = [[21, 10], [39, 10]];
     const ford: [number, number][] = [];
-    for (let row = 25; row < 34; row++) ford.push([30, row]);
-    // The Low Road runs round the yard; evening the two out is balance work.
-    expect(findPath(front("a"), front("b"), without(ford))).toHaveLength(48);
-    expect(findPath(front("a"), front("b"), without(pass))).toHaveLength(60);
+    for (let row = 19; row < 34; row++) ford.push([30, row]);
+    // Within a few steps of each other, so neither lane is the obvious one.
+    expect(findPath(front("a"), front("b"), without(ford))).toHaveLength(52);
+    expect(findPath(front("a"), front("b"), without(pass))).toHaveLength(50);
     expect(findPath(front("a"), front("b"), without([...pass, ...ford]))).toBeNull();
   });
 
@@ -120,16 +120,16 @@ describe("island", () => {
   });
 
   it("only changes level along a ramp or the Crown's stairs, one level at a time", () => {
-    expect(canStep({ col: 16, row: 15 }, { col: 16, row: 16 })).toBe(true);
-    expect(canStep({ col: 15, row: 12 }, { col: 16, row: 12 })).toBe(false);
-    expect(canStep({ col: 25, row: 9 }, { col: 25, row: 8 })).toBe(true);
-    expect(canStep({ col: 25, row: 8 }, { col: 24, row: 8 })).toBe(false);
+    expect(canStep({ col: 13, row: 15 }, { col: 13, row: 16 })).toBe(true);
+    expect(canStep({ col: 12, row: 12 }, { col: 13, row: 12 })).toBe(false);
+    expect(canStep({ col: 26, row: 9 }, { col: 26, row: 8 })).toBe(true);
+    expect(canStep({ col: 26, row: 8 }, { col: 25, row: 8 })).toBe(false);
     expect(isWalkable(27, 9)).toBe(false);
   });
 
   it("keeps everyone out of the forest", () => {
-    expect(at(2, 16)).toBe("T");
-    expect(isWalkable(2, 16)).toBe(false);
+    expect(at(2, 23)).toBe("T");
+    expect(isWalkable(2, 23)).toBe(false);
   });
 });
 
@@ -138,15 +138,15 @@ describe("placement", () => {
     const s = newMatch(1);
     const spot = findPlacement(s, "a", "barracks")!;
     expect(canPlace(s, "a", "barracks", spot.col, spot.row)).toBeNull();
-    expect(canPlace(s, "a", "house", 18, 20)).toBeNull();
+    expect(canPlace(s, "a", "house", 15, 24)).toBeNull();
   });
 
   it("refuses the enemy's plateau, high ground, a ramp, forest and a mine's edge", () => {
     const s = newMatch(1);
     expect(canPlace(s, "a", "house", 50, 12)).not.toBeNull();
     expect(canPlace(s, "a", "house", 27, 10)).not.toBeNull();
-    expect(canPlace(s, "a", "house", 16, 15)).not.toBeNull();
-    expect(canPlace(s, "a", "house", 2, 16)).not.toBeNull();
+    expect(canPlace(s, "a", "house", 13, 15)).not.toBeNull();
+    expect(canPlace(s, "a", "house", 2, 23)).not.toBeNull();
     const mine = MINES.find((m) => m.id === "mine-ya")!;
     expect(canPlace(s, "a", "house", mine.col + 1, mine.row)).not.toBeNull();
   });
@@ -156,7 +156,7 @@ describe("placement", () => {
     const barracks = s.buildings["a-barracks"]!;
     expect(canPlace(s, "a", "house", barracks.col, barracks.row)).not.toBeNull();
     // The home ramp's foot is the only way down the plateau.
-    expect(canPlace(s, "a", "house", 16, 16)).toBe("that would wall off the road");
+    expect(canPlace(s, "a", "house", 13, 16)).toBe("that would wall off the road");
   });
 });
 

@@ -1,7 +1,7 @@
 // The war map's island, drawn from the engine's height map. Shared by the map
 // scene and the title screen, which frames a corner of the same island.
 
-import { MINES, castlePlot, findPath, isOpen, type BuildingKind, type Cell, type Plot } from "@greyfall/engine";
+import { MINES, castlePlot, findPath, isOpen, makeRng, type BuildingKind, type Cell, type Plot } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
 import { packUrl, type BuildingName } from "./art";
@@ -96,15 +96,14 @@ const SHEET: Record<number, string> = { 1: "tilesetLow", 2: "tileset", 3: "tiles
  *  dead tree on the islet, towers and a fish hut in the shallows. Each stands
  *  on forest or water, so none of them sits where a unit can walk. */
 const LANDMARK_SPOTS: { name: BuildingName; col: number; row: number; scale?: number; clears?: [number, number][] }[] = [
-  { name: "cave", col: 5.5, row: 26.9, clears: [[4, 25], [5, 25], [6, 25], [4, 26], [5, 26], [6, 26]] },
-  { name: "goblinHut", col: 8.5, row: 30.9, scale: 0.8, clears: [[7, 29], [8, 29], [9, 29], [7, 30], [8, 30], [9, 30]] },
-  { name: "gnomeHut", col: 11, row: 33.9, clears: [[10, 33], [11, 33]] },
-  { name: "gnomeTower", col: 13, row: 33.9, scale: 0.85, clears: [[12, 33], [13, 33]] },
-  { name: "deadTree", col: 0.5, row: 26.9, scale: 0.4, clears: [[0, 25], [0, 26]] },
-  { name: "skullSpike", col: 2.5, row: 19.9, clears: [[2, 19]] },
-  { name: "skullSpike", col: 14.5, row: 28.9, clears: [[14, 28]] },
+  { name: "cave", col: 9, row: 33.9, clears: [[8, 33], [9, 33], [10, 33]] },
+  { name: "goblinHut", col: 19, row: 33.9, scale: 0.8, clears: [[18, 33], [19, 33]] },
+  { name: "gnomeHut", col: 14, row: 34.9, clears: [[13, 34], [14, 34]] },
+  { name: "gnomeTower", col: 16, row: 34.9, scale: 0.85, clears: [[15, 34], [16, 34]] },
+  { name: "skullSpike", col: 2.5, row: 22.9, clears: [[2, 22]] },
+  { name: "skullSpike", col: 21.5, row: 12.9, clears: [[21, 12]] },
   { name: "fishHut", col: 9, row: 35.2 },
-  { name: "waterTower", col: 19.5, row: 3.8 },
+  { name: "waterTower", col: 17.5, row: 4.8 },
 ];
 const LANDMARK_LIST = LANDMARK_SPOTS.flatMap((l) => [l, { ...l, col: STRAT_COLS - l.col, mirror: true }]);
 const LANDMARKS: Structure[] = LANDMARK_LIST.map((l) => ({ ...cell("g", l.name, l.col, l.row), scale: l.scale }));
@@ -116,16 +115,14 @@ const CLEARED = new Set(
 /** The two roads across the lowland: the pathfinder's walk from castle to
  *  castle over the High Pass and over the ford, one tile wider, as dirt
  *  tracks. High ground keeps its grass: a patch of road there reads as one
- *  more level. */
+ *  more level. The lake splits the island's middle column, so closing that
+ *  column above or below it leaves one lane. */
 function roadTiles(): Set<number> {
   const front = (side: "a" | "b"): Cell => ({ col: castlePlot(side).col + 1, row: castlePlot(side).row + 2 });
-  const walk = (closed: [number, number][]): Cell[] =>
-    findPath(front("a"), front("b"), (c) => !isOpen(c) || closed.some(([col, row]) => c.col === col && c.row === row)) ?? [];
-  // Closing the ford leaves the High Pass, and closing the ridge ramps the Low Road.
-  const ford: [number, number][] = Array.from({ length: 9 }, (_, i) => [30, 25 + i]);
-  const pass: [number, number][] = [[22, 13], [38, 13]];
+  const walk = (north: boolean): Cell[] =>
+    findPath(front("a"), front("b"), (c) => !isOpen(c) || (c.col === (STRAT_COLS - 1) / 2 && c.row > STRAT_ROWS / 2 === north)) ?? [];
   const out = new Set<number>();
-  for (const c of [...walk(ford), ...walk(pass)]) {
+  for (const c of [...walk(true), ...walk(false)]) {
     if (level(c.col, c.row) !== 1) continue;
     out.add(c.row * STRAT_COLS + c.col);
     const wider = { col: c.col, row: c.row + 1 };
@@ -232,33 +229,61 @@ const both = (spots: [number, number][]): [number, number][] => [
 ];
 
 /** A tree on every forest tile a landmark does not stand on, the landmarks,
- *  gold where the engine's mines are, a few bushes, rocks and sheep on the
- *  lowland and rocks in the shallows. */
-export function buildScenery(scene: Phaser.Scene): void {
+ *  gold where the engine's mines are, bushes and rocks strewn over open
+ *  ground off the roads, sheep, and rocks in the shallows. Returns the strewn
+ *  props by cell, for the map to hide under a building. */
+export function buildScenery(scene: Phaser.Scene): Map<number, Phaser.GameObjects.Sprite> {
+  const rng = makeRng("strat-scenery");
   const put = (kind: "tree" | "bush" | "rock" | "waterRock", spots: [number, number][]): Phaser.GameObjects.Sprite[] =>
     spots.map(([c, r], i) => addDecor(scene, kind, c * CELL, r * CELL, 1, `strat-${kind}-${i}`));
+  // Jittered and sometimes doubled, so a wood reads as trees and not a grid.
   const forest: [number, number][] = [];
   MAP.forEach((line, r) =>
-    [...line].forEach((ch, c) => ch === "T" && !CLEARED.has(c + r * STRAT_COLS) && forest.push([c + 0.5, r + 0.9])),
+    [...line].forEach((ch, c) => {
+      if (ch !== "T" || CLEARED.has(c + r * STRAT_COLS)) return;
+      forest.push([c + 0.3 + rng.next() * 0.4, r + 0.75 + rng.next() * 0.3]);
+      if (rng.next() < 0.25) forest.push([c + rng.next(), r + 0.4 + rng.next() * 0.3]);
+    }),
   );
   put("tree", forest);
   LANDMARK_LIST.forEach((l, i) => {
     const art = addBuilding(scene, LANDMARKS[i]!);
     if ("mirror" in l) art.setFlipX(true);
   });
-  put("bush", both([[18.6, 16.5], [11.5, 23.5], [22.6, 29.7]]));
-  put("rock", both([[19.5, 12.7], [10.4, 31.6]]));
-  put("waterRock", [
-    ...both([[1.2, 8.4], [0.8, 21.5], [5.5, 35.4], [26.6, 18.9], [15.5, 2.6]]),
-    [30.5, 2.4],
-  ]).forEach((s) => s.setDepth(DEPTH.foam));
+
+  const roads = roadTiles();
+  const nearMine = (c: number, r: number): boolean => MINES.some((m) => Math.abs(m.col - c) <= 1 && Math.abs(m.row - r) <= 1);
+  const strewn = new Map<number, Phaser.GameObjects.Sprite>();
+  const shallows: [number, number][] = [];
+  for (let r = 0; r < STRAT_ROWS; r++) {
+    for (let c = 0; c < STRAT_COLS; c++) {
+      const key = r * STRAT_COLS + c;
+      if (!isLand(c, r)) {
+        let coast = false;
+        for (let d = -2; d <= 2; d++) coast ||= isLand(c + d, r) || isLand(c, r + d);
+        if (coast && rng.next() < 0.07) shallows.push([c + rng.next(), r + rng.next()]);
+        continue;
+      }
+      if (!isOpen({ col: c, row: r }) || isSlope(c, r) || isSlope(c, r - 1) || roads.has(key) || nearMine(c, r)) continue;
+      // Thicker at the edges of things: beside a wood, the shore or a cliff.
+      let edgy = false;
+      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) edgy ||= !isOpen({ col: c + dc, row: r + dr });
+      const roll = rng.next();
+      const chance = edgy ? 0.22 : 0.06;
+      if (roll >= chance) continue;
+      const kind = roll < chance * 0.65 ? "bush" : "rock";
+      const s = addDecor(scene, kind, (c + 0.2 + rng.next() * 0.6) * CELL, (r + 0.5 + rng.next() * 0.35) * CELL, kind === "bush" ? 0.7 + rng.next() * 0.3 : 1, `strat-strew-${key}`);
+      strewn.set(key, s);
+    }
+  }
+  put("waterRock", shallows).forEach((s) => s.setDepth(DEPTH.foam));
 
   for (const m of MINES) {
     const x = (m.col + 0.5) * CELL;
     const y = (m.row + 0.8) * CELL;
     scene.add.image(x, y, "goldMine").setOrigin(0.5, 0.78).setDepth(DEPTH.decorBehind + y / 1000);
   }
-  for (const [c, r] of both([[10.3, 18.3], [17.6, 29.4]])) {
+  for (const [c, r] of both([[8.5, 8.4], [6.5, 24.4], [17.5, 31.3], [20.4, 17.6]])) {
     const sheep = scene.add
       .sprite(c * CELL, r * CELL, "sheep")
       .setOrigin(0.5, 0.66)
@@ -267,4 +292,5 @@ export function buildScenery(scene: Phaser.Scene): void {
       .play("sheep_anim");
     if (sheep.anims.currentAnim) sheep.anims.setProgress(Math.random());
   }
+  return strewn;
 }

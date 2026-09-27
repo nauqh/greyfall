@@ -302,7 +302,7 @@ export function addUnit(state: MatchState, side: WarSide, cls: UnitClass, at: Ce
 }
 
 /** Where a Pawn looking for work goes: home first, then the yard, the north
- *  corridor, the south-west woods and the ford; the first with gold and room. */
+ *  woods, the south woods and the ford; the first with gold and room. */
 export function openMine(state: MatchState, side: WarSide): Mine | undefined {
   return [`mine-${side}`, `mine-y${side}`, `mine-n${side}`, `mine-s${side}`, "mine-mid"]
     .map((id) => mineById(id)!)

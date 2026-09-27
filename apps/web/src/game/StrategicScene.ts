@@ -16,6 +16,7 @@ import {
   buildSlots,
   canPlace,
   castlePlot,
+  cellKey,
   createSim,
   freeBuilders,
   freeIn,
@@ -197,6 +198,8 @@ export class StrategicScene extends Phaser.Scene {
 
   private units = new Map<number, UnitView>();
   private buildings = new Map<string, Phaser.GameObjects.Image>();
+  /** Bushes and rocks by cell, hidden where a building stands. */
+  private strewn = new Map<number, Phaser.GameObjects.Sprite>();
   private overlay!: Phaser.GameObjects.Graphics;
   private hud!: StrategicHud;
 
@@ -240,7 +243,7 @@ export class StrategicScene extends Phaser.Scene {
 
     buildWater(this);
     buildMap(this);
-    buildScenery(this);
+    this.strewn = buildScenery(this);
     driftClouds(this, { w: WORLD_W, h: WORLD_H }, "strategic");
     this.overlay = this.add.graphics().setDepth(DEPTH.decorBehind + 0.5);
     this.box = this.add.graphics().setDepth(DEPTH.fx + 2);
@@ -523,6 +526,8 @@ export class StrategicScene extends Phaser.Scene {
         this.buildings.delete(id);
       }
     }
+    const under = new Set(Object.values(state.buildings).flatMap((b) => plotCells(b).map(cellKey)));
+    for (const [key, prop] of this.strewn) prop.setVisible(!under.has(key));
   }
 
   /** Make the island show `state`: buildings, units, marks. Snaps, no tweens. */

@@ -12,13 +12,24 @@ Landed on Sep 27, 2026.
 
 - **Engine.** `createSim` steps the island a tick at a time; `battle()` and the new `startRound` / `roundDone` / `finishRound` run a round on it. Real time adds Pawn trips (10 gold a bag, taxed 100% / 70% / 40% by upkeep), queues of up to 5, construction while a Pawn hammers, rally points, healing at home, and the Greying from minute 8. Gold is counted in tens throughout.
 - **Free placement.** `canPlace` allows your own plateau or the lowland, never a ramp, forest, a mine's edge or a spot that walls off a road, a mine or a building; `findPlacement` is what the AI builds on.
-- **Island.** 61x38, mirrored: stepped home plateaus with the ramp outside, the High Pass under the Crown, the Low Road past the watch cliffs to the ford, four mines a side plus the ford, forests and landmarks.
+- **Island.** 61x38, mirrored: home plateaus at mid-height with the ramp outside, the High Pass under the Crown, the Low Road past the watch cliffs to the ford, four mines a side plus the ford, forests and landmarks. Reworked the same day so both lanes get used; see below.
 - **Two knight clans.** Red uses the pack's red knights, faces and buildings everywhere the monster host was.
 - **Map screen.** A mode picker (Rounds, Real time with Space to pause, No pause); orders during a round's battle; a Pawn's build menu with a ghost footprint; training queues with cancel; right click sets a building's rally point; Ctrl+1-9 control groups; speed 1x/2x. The HUD redraws only the parts that changed, so a button is never rebuilt under the pointer.
 - **Checks.** 81 engine tests, including placement, trips, queues, rally, construction, determinism and the real-time deadline; typecheck clean; asset check clean; all three modes driven in headless Chromium.
-- **Numbers, 30 AI seeds.** Rounds: blue 5, red 10, draws 15; 367 of 467 battle phases hit the cap. Real time: blue 4, red 12, draws 14; matches end at 10.8 minutes on average. The High Pass is 48 steps and the Low Road 60.
+- **Numbers, 30 AI seeds.** Rounds: blue 5, red 10, draws 15; 367 of 467 battle phases hit the cap. Real time: blue 4, red 12, draws 14; matches end at 10.8 minutes on average. The High Pass was 48 steps and the Low Road 60, so play kept to the north (93% of fighter time in the middle).
 
 Left for balance and later work: the draw rate and red's edge, the two roads' lengths, the AI's real-time play (it re-plans with its rounds logic every 5 seconds), units drawing over buildings they pass behind, a minimap for the bigger island, and lockstep multiplayer.
+
+## Two lanes, both used
+
+Sep 27, 2026. The bases sat at the top of the island, so the High Pass was 12 steps shorter than the Low Road and the south half went untouched. Melee map guides agree on the fix: attack paths of near-equal rush distance, each with its own reason to take it, and resources placed out between the bases so expanding pulls players into the map.
+
+- **Bases at mid-height.** Each home plateau now spans rows 11-20, its ramp at its east side, so both lanes branch from one yard. Castle to castle is 52 steps over the High Pass and 50 by the Low Road; the pass costs two straight steps on its ramps, the price of its high ground.
+- **A reason for each lane.** North: the Crown's high ground. South: the rich mine at the ford. Each side's expansions sit one toward each lane (north woods, south woods).
+- **The AI picks a lane per push** from the seed and round, so it no longer always takes the shorter. 30 real-time seeds: fighters in the middle spend 43% of their time north, 57% south; blue 5, red 10, draws 15; 11.3 minutes on average.
+- **Texture.** Seeded bushes and rocks strewn thicker along woods, shores and cliffs, hidden under any building placed on them; jittered, sometimes doubled forest trees; rocks in the shallows; a wooded islet in the lake; ragged coasts.
+
+Sources: [SC2 level design: chokepoints and expansions](https://code.tutsplus.com/starcraft-ii-level-design-introduction-and-melee-maps--gamedev-3304t), [Time as a resource: multiplayer map design](https://waywardstrategy.com/2015/06/07/time-as-a-resource-part-2-multiplayer-map-design/), [Choke points in RTS games](https://game-design-snacks.fandom.com/wiki/Choke_points_in_Real_Time_Strategy_games_%E2%80%93_Helps_balance_gameplay).
 
 ## RTS patterns worth taking
 
