@@ -175,24 +175,6 @@ apps/web          the Next.js app: Phaser scenes for the title, the island and
 The engine steps at 10 ticks a second and touches no I/O, so the same code
 can run on a server and keep every player's view in agreement.
 
-## Contributing
-
-The working agreements for people and agents are in [AGENTS.md](AGENTS.md).
-Commits follow [Conventional Commits](https://www.conventionalcommits.org), and
-`pnpm typecheck` and `pnpm test` must pass before a pull request.
-
-## Licensing
-
-### Source code
-
-The code does not have a license yet, so all rights are reserved.
-
-### Content
-
-All art is [Tiny Swords](https://pixelfrog-assets.itch.io/tiny-swords) by
-Pixel Frog. Its license allows commercial use and modification but forbids
-redistribution, which is why the pack is not in this repository.
-
 ## Special thanks
 
 - Pixel Frog, for Tiny Swords.
