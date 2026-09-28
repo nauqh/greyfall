@@ -92,7 +92,7 @@ export function makeMapAnims(scene: Phaser.Scene): void {
 /** Each land level's ground colour: lowland, plateau, the Crown. */
 const SHEET: Record<number, string> = { 1: "tilesetLow", 2: "tileset", 3: "tilesetHigh" };
 
-/** Neutral landmarks, Warcraft's doodads: huts and a cave in the woods, a
+/** Neutral landmarks: huts and a cave in the woods, a
  *  dead tree on the islet, towers and a fish hut in the shallows. Each stands
  *  on forest or water, so none of them sits where a unit can walk. */
 const LANDMARK_SPOTS: { name: BuildingName; col: number; row: number; scale?: number; clears?: [number, number][] }[] = [

@@ -4,7 +4,7 @@
 
 ## Overview
 
-Greyfall is a strategy game with a Dark Souls mood that runs as a Discord Activity. It mixes Warcraft and auto chess: two sides share one island, each builds a town, trains an army from a fixed roster like Warcraft's, and fights for the island in rounds.
+Greyfall is a strategy game that runs as a Discord Activity. It mixes a real-time strategy game and auto chess: two sides share one island, each builds a town, trains an army from a fixed roster, and fights for the island in rounds.
 
 Each round, both sides plan in secret while the world is paused. Then both plans play out at the same time, and fights break out wherever armies meet. Rounds repeat until a main hall falls. A solo match lasts about 15 minutes, a duel about 20, and solo is played against an AI. It is also the showcase project for Wan's skills across the whole stack.
 
@@ -25,17 +25,17 @@ Each round, both sides plan in secret while the world is paused. Then both plans
 
 ## Theme and setting
 
-The world has been drained of colour by the Greying, a curse that hollows everything it touches. The player is the Keeper of the last bonfire, rebuilding a kingdom around its flame and pushing the grey back.
+The world has been drained of colour by the Greying. The player leads a clan of knights, rebuilding a kingdom on a small island and pushing the grey back.
 
-- **Tone:** Sparse, melancholy writing in the style of FromSoft item descriptions, set against cheerful sprites.
-- **Death screen:** "THE GREY TAKES YOU" when the player's main hall falls.
+- **Tone:** Short, plain writing that matches the cheerful sprites.
+- **Defeat screen:** "DEFEAT" when the player's main hall falls.
 - **Victory:** The land is reclaimed when the enemy main hall falls.
 
-**Covenants**
+**Clans**
 
-The player's army is a covenant of knights, and the covenant is its colour. In the MVP the choice is cosmetic: every covenant plays the same. The pack has knights and buildings in all five colours.
+The player's army is a clan of knights, and the clan is its colour. In the MVP the choice is cosmetic: every clan plays the same. The pack has knights and buildings in all five colours.
 
-| Colour | Covenant |
+| Colour | Clan |
 | --- | --- |
 | Blue | Tidewardens |
 | Red | Emberkin |
@@ -45,7 +45,7 @@ The player's army is a covenant of knights, and the covenant is its colour. In t
 
 ## Core gameplay loop
 
-Each round is plan, then watch, as in auto chess, but on a Warcraft map.
+Each round is plan, then watch, as in auto chess, but on an RTS map.
 
 - **Plan:** the world is frozen. The player spends gold, gives orders and picks each unit's stance.
 - **Battle:** when both sides lock in, both plans play out together across the island. Nobody can give orders until the fighting settles.
@@ -85,7 +85,7 @@ In a duel, planning has a timer of 60 seconds. Solo play has no timer. A battle 
 
 ## Game systems
 
-As in Warcraft, the full roster is always available. Strategy comes from economy, supply, tech, position, stances and counters, not from luck in a shop. All numbers below are starting values, kept in one config file for tuning.
+The full roster is always available. Strategy comes from economy, supply, tech, position, stances and counters, not from luck in a shop. All numbers below are starting values, kept in one config file for tuning.
 
 ### Orders
 
@@ -286,7 +286,7 @@ All art comes from the [Tiny Swords](https://pixelfrog-assets.itch.io/tiny-sword
 | Terrain tilesets, water, decorations, gold stones | The island, autotiled from its height map |
 | Skull, Turtle, Gnoll, Hex Shaman, Gnome; Cave and the other Enemy Pack buildings | The monster host |
 | Fire, explosion and dust effects | Deaths and destroyed buildings |
-| Ribbons, banners, bars, buttons, papers, wood table | All UI: the HUD in the style of Warcraft, HP bars, result banners |
+| Ribbons, banners, bars, buttons, papers, wood table | All UI: the HUD, HP bars, result banners |
 | 25 human avatars, each monster's own avatar | Unit portraits in the selection panel |
 | 12 UI icons | Command card buttons, next to their text labels |
 
@@ -400,7 +400,7 @@ Out of Phase 2: the colour choice, monster buildings, duels, Discord, persistenc
 
 These were cut from the MVP to keep it simple, and because the art only partly supports them:
 
-- **Covenant passives** (shield, burn, healing received, dodge). Only burn has an effect in the pack, the fire sprites.
+- **Clan passives** (shield, burn, healing received, dodge). Only burn has an effect in the pack, the fire sprites.
 - **More monster tribes.** The Enemy Pack has one set of buildings for all of them, its other support monsters (Imp, Bomb Fish, Spider) have no heal pose, Giant Bat and Spider have no projectile, and no monster worker can mine.
 - **Level 3 abilities and a castle upgrade.** Guard and Taunt have poses (Warrior guard, Lancer defence); piercing arrows and revive have none.
 - **Region colour:** a greyscale island whose regions regain colour as they are held. Code only, but a lot of it.

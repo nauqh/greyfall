@@ -1,4 +1,4 @@
-// Fog of war over the war map, Warcraft's two layers: black where nobody has
+// Fog of war over the war map, in two layers: black where nobody has
 // been yet, grey where someone has been but nobody looks now. What a side
 // sees is the engine's (visibleCells); what it has explored and which enemy
 // buildings it has spotted are this player's memory, so they live here.

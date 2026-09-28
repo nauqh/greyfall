@@ -5,12 +5,12 @@ import "@fontsource/nunito/600.css";
 import "@fontsource/nunito/700.css";
 import "./globals.css";
 
-// The Souls-style display face, for the title logo and menu only.
+// The display face, for the title logo and menu only.
 const cinzel = Cinzel({ subsets: ["latin"], weight: ["700", "900"], variable: "--display" });
 
 export const metadata: Metadata = {
   title: "Greyfall",
-  description: "A Souls-themed auto-battler. Buy an army, arrange it, watch it fight.",
+  description: "A small real-time strategy game for Discord. Build a town, raise an army, take the island.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

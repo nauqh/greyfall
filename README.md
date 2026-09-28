@@ -2,7 +2,7 @@
 
 # Greyfall
 
-**A small real-time strategy game with a Dark Souls mood, built to run inside Discord.**
+**A small real-time strategy game, built to run inside Discord.**
 
 [![CI](https://github.com/nauqh/greyfall/actions/workflows/ci.yml/badge.svg)](https://github.com/nauqh/greyfall/actions/workflows/ci.yml)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
@@ -13,12 +13,11 @@
 
 </div>
 
-The world has been drained of colour by the Greying. You are the Keeper of the
-last bonfire: raise a town on your plateau, send Pawns to dig gold, train an
-army, and take the island before the grey takes your hall.
+Raise a town on your plateau, send Pawns to dig gold, train an army, and take
+the island before the Greying takes your hall.
 
-Greyfall is Warcraft's town and army on a tiny island, played in the browser
-and drawn entirely with Pixel Frog's
+Greyfall is a town and an army on a tiny island, played in the browser and
+drawn entirely with Pixel Frog's
 [Tiny Swords](https://pixelfrog-assets.itch.io/tiny-swords) pack. It is headed
 for Discord as an Activity that friends launch from a voice call.
 
@@ -27,9 +26,9 @@ for Discord as an Activity that friends launch from a voice call.
 - Real-time war on a mirrored two-lane island, three levels high. The High
   Pass runs under the Crown's high ground; the Low Road leads to the rich mine
   at the ford.
-- Fog of war in Warcraft's two layers, black until explored and grey out of
+- Fog of war in two layers, black until explored and grey out of
   sight. Nobody sees up a cliff.
-- A Warcraft economy: Pawns carry gold from mine to castle, upkeep taxes each
+- Pawns carry gold from mine to castle, upkeep taxes each
   bag as the army grows, and buildings go anywhere legal while a Pawn hammers.
 - Five classes, Pawn, Warrior, Lancer, Archer and Monk, with a counter
   triangle, training queues, rally points and control groups.
@@ -181,4 +180,3 @@ can run on a server and keep every player's view in agreement.
 - [1500 Archers on a 28.8](https://www.gamedeveloper.com/programming/1500-archers-on-a-28-8-network-programming-in-age-of-empires-and-beyond)
   and [Fix Your Timestep!](https://gafferongames.com/post/fix_your_timestep/),
   the models the engine is built on.
-- Warcraft III and StarCraft II, for the economy, fog and control conventions.

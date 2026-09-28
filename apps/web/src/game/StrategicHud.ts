@@ -1,4 +1,4 @@
-// The strategic map's Warcraft-style HUD: a ribbon naming the mode along
+// The strategic map's HUD: a ribbon naming the mode along
 // the top, resources and menu in the corners, and a wooden console along the
 // bottom with the zoom, the selection panel and the command card. Popups sit
 // over it: command tooltips, message toasts, a phase splash and the field
@@ -319,7 +319,7 @@ export class StrategicHud extends Phaser.Scene {
 
   private buildTop(m: HudModel): void {
     const { w } = this.layout;
-    // The mode on a ribbon, centred like a Warcraft objective.
+    // The mode on a ribbon, centred.
     const tone = m.banner.tone;
     const text = label(this, 0, -6, m.banner.text, { fontSize: "19px" });
     const rw = Math.max(240, text.width + 130);
@@ -348,7 +348,7 @@ export class StrategicHud extends Phaser.Scene {
 
   private buildBar(): void {
     const { w, h } = this.layout;
-    // Centred and running off the bottom edge like Warcraft's console; as
+    // Centred and running off the bottom edge; as
     // wide as the screen allows, up to where the parts sit comfortably.
     const half = Math.max(w / 4, Math.min(w / 2 - 8, 320));
     const x0 = w / 2 - half;

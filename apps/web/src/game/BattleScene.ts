@@ -826,7 +826,7 @@ export class BattleScene extends Phaser.Scene {
     this.advise();
   }
 
-  /** What the advisor says for the draft as it stands, WC3-advisor style:
+  /** What the advisor says for the draft as it stands:
    *  one short line for the next step, not the whole manual at once. */
   private advise(): void {
     const next = !this.picked
@@ -981,7 +981,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   /**
-   * WC3 build placement: the picked unit, see-through, on the cell under the
+   * Build placement: the picked unit, see-through, on the cell under the
    * cursor, on a green cell where it can go and a red one where it cannot.
    * A cell that already holds a unit goes red too: clicking it removes.
    */
@@ -1074,7 +1074,7 @@ export class BattleScene extends Phaser.Scene {
       card.name.setColor(picked ? "#f5f2e4" : "#4a3a28");
       for (const t of card.ink) if (t !== card.name) t.setColor(picked ? "#a8b4c4" : "#6b5740");
       card.ability?.setColor(picked ? "#e8c06a" : ABILITY_INK);
-      // Out of reach reads the WC3 way: a greyed face and a red price,
+      // Out of reach reads as a greyed face and a red price,
       // still legible, rather than the whole card fading out.
       const afford = BALANCE.units[cls].cost <= gold;
       card.cost.setColor(!afford ? "#b0443a" : picked ? "#e8c06a" : "#7a4f14");
@@ -1291,7 +1291,7 @@ export class BattleScene extends Phaser.Scene {
     const x = view.sprite.x - w / 2;
     const y = view.sprite.y - this.headHeight(view.snap.class, view.snap.side) - 12;
     const frac = Math.max(0, view.shownHp / view.snap.maxHp);
-    // WC3 colours a bar by health, not by team: green, then yellow, then
+    // A bar is coloured by health, not by team: green, then yellow, then
     // red. The bodies already say whose unit it is.
     const color = frac > 0.6 ? 0x6fcf4f : frac > 0.3 ? 0xe8c547 : 0xd9544a;
     view.pip.clear();
@@ -1495,7 +1495,7 @@ export class BattleScene extends Phaser.Scene {
     if (!view.alive) return;
     const { x, y } = this.spriteXY(ev.col, ev.row);
     // A step straight after a step is one walk: keep the run cycle going and
-    // the pace even, as WC3 units march. Easing and idling every cell made a
+    // the pace even. Easing and idling every cell made a
     // march read as a string of hops.
     const chained = view.settle !== null;
     view.settle?.remove();
@@ -1600,7 +1600,7 @@ export class BattleScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(DEPTH.fx + 1)
       .setResolution(TEXT_RES);
-    // Pop, rise, and only fade on the way out, WC3 floating-text style: a
+    // Pop, rise, and only fade on the way out: a
     // number that starts fading the instant it appears is half-read.
     tag.setScale(1.35);
     this.tweens.add({ targets: tag, scale: 1, duration: 110 / this.speed, ease: "Back.easeOut" });
@@ -1698,7 +1698,7 @@ export class BattleScene extends Phaser.Scene {
     this.refreshHud();
 
     // The PRD beat, split in two: the body greys and sinks into the ground
-    // where it stood, the way WC3 corpses go, while a pale soul lifts off it
+    // where it stood, while a pale soul lifts off it
     // and fades. One sprite doing both read as the whole unit floating away.
     view.settle?.remove();
     this.tweens.killTweensOf(view.sprite);
@@ -1753,13 +1753,12 @@ export class BattleScene extends Phaser.Scene {
     const won = result.winner === this.mySide;
     const lost = result.winner !== this.mySide && result.winner !== "draw";
     const foeName = this.duel?.status().opponent ?? "THE GREY HOST";
-    // Souls verdicts, one per ending, short and flat. The win line names
-    // who fell; the loss line is the game's own verdict on you.
+    // One verdict per ending, short and flat. The win line names the foe.
     const headline = won
-      ? `${foeName.toUpperCase()} FELLED`
+      ? `${foeName.toUpperCase()} DEFEATED`
       : lost
-        ? "YOU DIED"
-        : "NEITHER SIDE YIELDS";
+        ? "DEFEAT"
+        : "DRAW";
     const cx = GAME_W / 2;
     const cy = GAME_H / 2;
 

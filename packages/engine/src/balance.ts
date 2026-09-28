@@ -1,6 +1,6 @@
 /**
  * Every tunable number. Nothing else in the engine hard-codes a stat.
- * Phase 1 uses only the battle half: no economy, buildings or covenants yet.
+ * Phase 1 uses only the battle half: no economy, buildings or clans yet.
  */
 
 export type UnitClass = "pawn" | "warrior" | "lancer" | "archer" | "monk";
@@ -121,13 +121,13 @@ export function damageAgainst(attacker: UnitClass, defender: UnitClass): number 
  * here.
  */
 export const WAR = {
-  /** Gold is counted in Warcraft-sized sums, tens not ones, so upkeep can
+  /** Gold is counted in tens, not ones, so upkeep can
    *  tax a single bag in whole coins. */
   startGold: 100,
   /** A bigger army pays upkeep: the first tier whose fighter count (Pawns
    *  not counted) the side has reached, from the top, applies. In rounds it
    *  sets the base income paid at the start of every round; in real time it
-   *  is Warcraft III's tax on every bag of gold brought home (keep). */
+   *  is a tax on every bag of gold brought home (keep). */
   upkeep: [
     { fighters: 11, income: 40, keep: 0.4, name: "high" },
     { fighters: 7, income: 70, keep: 0.7, name: "low" },

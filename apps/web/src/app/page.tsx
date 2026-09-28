@@ -11,7 +11,7 @@ import { useCloudExit } from "../game/Clouds";
 import { GameCanvas } from "../game/GameCanvas";
 
 const MENU = [
-  { href: "/map", label: "Play", hint: "The War. Raise a town, train a covenant, take the island." },
+  { href: "/map", label: "Play", hint: "The War. Raise a town, train an army, take the island." },
   { href: "/battle", label: "Skirmish", hint: "One board, twenty gold. Draft an army and watch it fight." },
   { href: "/duel", label: "Duel", hint: "Open a room and send the code to a friend." },
 ] as const;
