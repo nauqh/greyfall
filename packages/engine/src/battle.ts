@@ -578,13 +578,10 @@ export function createSim(start: MatchState): Sim {
 
   /** Real time: a tick of the economy and the clock. */
   const tickRealtime = (): void => {
-    // Construction: a build or upgrade moves on while a Pawn hammers beside it.
+    // Construction: a build or upgrade counts down from the moment it is
+    // ordered; its Pawn walks over and hammers, but the clock does not wait.
     for (const b of Object.values(world.buildings)) {
       if (!b.pending) continue;
-      const working = units().some(
-        (u) => live(u) && u.side === b.side && u.order.type === "build" && u.order.plot === b.id && atBuildSlot(b, u),
-      );
-      if (!working) continue;
       b.progress += 1;
       const total = (b.pending === "build" ? WAR.realtime.buildSeconds[b.kind]! : WAR.realtime.upgradeSeconds) * BALANCE.tickRate;
       if (b.progress < total) continue;

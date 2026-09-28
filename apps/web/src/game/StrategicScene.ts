@@ -528,7 +528,7 @@ export class StrategicScene extends Phaser.Scene {
         img = addBuilding(this, cell(b.side, artOf(b), x / CELL, y / CELL));
         this.buildings.set(b.id, img);
       }
-      // Going up: faint at first, then fuller as the Pawn hammers.
+      // Going up: faint at first, then fuller as its clock runs.
       const total = WAR.realtime.buildSeconds[b.kind]! * 10;
       const risen = b.level > 0 ? 1 : state.mode === "realtime" ? 0.3 + (0.6 * b.progress) / Math.max(1, total) : 0.45;
       img.setAlpha(risen);
@@ -1097,7 +1097,7 @@ export class StrategicScene extends Phaser.Scene {
         title: `${name}: going up`,
         portrait,
         hp: null,
-        detail: `A Pawn is building it: ${Math.round((100 * b.progress) / total)}%. It stops while nobody hammers.`,
+        detail: `Going up: ${Math.round((100 * b.progress) / total)}%, ready in ${Math.ceil((total - b.progress) / 10)} s. A Pawn hammers at it until then.`,
         commands,
         queue: null,
       };

@@ -51,7 +51,7 @@ Sep 27, 2026. The match opens on the home plateau alone; the rest of the island 
 | Workers carry resources from mine to town hall | Warcraft III: a Peasant carries 10 gold a trip; 5 workers saturate a mine near its hall | Pawns dig at a mine, carry a bag back to the castle (the pack's Pawn "Run Gold" pose), and go again. A far mine means long, exposed trips |
 | Upkeep as a tax on gathering | Warcraft III: 100% of gathered gold at 0-50 food, 70% at 51-80, 40% at 81-100 | Built, then removed on Sep 28, 2026: in AI-vs-AI runs it took 42% of all gold dug and was never shown to the player. Every bag pays 10, and rounds pay a flat base income |
 | Production queues and train times | Warcraft III (Peasant 15 s), StarCraft | Each building queues up to 5 units, paid when queued, refunded when cancelled |
-| Builders construct from outside | Warcraft III humans: the Peasant stands beside the site; walking away pauses the work | A Pawn walks to the site and hammers; the building rises while it stays |
+| Builders construct from outside | Warcraft III humans: the Peasant stands beside the site; walking away pauses the work | A Pawn walks to the site and hammers, but since Sep 28, 2026 the countdown starts when the building is placed, not when the Pawn arrives |
 | Rally points | StarCraft, Warcraft: right click the ground with a building selected | Trained units walk to their building's rally point |
 | Attack-move, stop, hold, shift-queue | StarCraft II conventions | Attack-move and hold exist; shift-queued waypoints come with the real-time modes |
 | Control groups (Ctrl+number, number to recall) and an idle-worker key | StarCraft, Warcraft | Ctrl+1-9 to set, 1-9 to recall; F1 already picks Pawns |
@@ -66,7 +66,7 @@ Not taken: lumber (the pack supports it, see below; a later choice), navmeshes (
 | --- | --- | --- |
 | Two knight clans | `Units/Blue Units` and `Units/Red Units`: Warrior, Lancer, Archer, Monk, Pawn, same poses; `Buildings/Blue Buildings` and `Red Buildings`, all 8 | Yes. Purple, Yellow and Black clans are there too, for more players later |
 | Worker trips | Pawn `Run Gold`, `Idle Gold`, `Interact Pickaxe` | Yes |
-| Construction | Pawn `Interact Hammer`; no construction-stage building art | The building rises out of the ground, faded, while a Pawn hammers |
+| Construction | Pawn `Interact Hammer`; no construction-stage building art | The building rises out of the ground, faded, as its countdown runs |
 | Mine running low | `Gold Stone 1` to `6` | Yes: the mine shrinks as it empties |
 | Projectiles and effects | `Arrow.png` per clan, Monk `Heal_Effect`, `Dust`, `Explosion`, `Fire` | Yes; fire is a one-shot burst, looped for a burning building |
 | Health and selection | `UI Elements` bars, cursors, buttons, icons | Yes |

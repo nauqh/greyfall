@@ -459,13 +459,14 @@ describe("real time", () => {
     expect(Math.max(Math.abs(w.col - to.col), Math.abs(w.row - to.row))).toBeLessThanOrEqual(1);
   });
 
-  it("raises a building only while a Pawn hammers beside it", () => {
+  it("raises a building on the clock from the moment it is placed", () => {
     const s = newMatch(1, "realtime");
     const spot = findPlacement(s, "a", "house")!;
     const sim = createSim(s);
     expect(sim.issue("a", { type: "build", kind: "house", col: spot.col, row: spot.row })).toBeNull();
     const id = Object.keys(sim.world.buildings).find((k) => k.startsWith("a-house"))!;
-    for (let i = 0; i < seconds(WAR.realtime.buildSeconds.house! + 20); i++) sim.step();
+    // Not a tick longer: the Pawn's walk to the site takes nothing off the clock.
+    for (let i = 0; i < seconds(WAR.realtime.buildSeconds.house!); i++) sim.step();
     expect(sim.world.buildings[id]!.level).toBe(1);
     expect(sim.events.some((e) => e.type === "built" && e.plot === id)).toBe(true);
     expect(supplyCap(sim.world, "a")).toBe(WAR.supply.start + WAR.supply.perHouse);
