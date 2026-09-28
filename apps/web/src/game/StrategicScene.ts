@@ -37,6 +37,7 @@ import {
   type Order,
   type Sim,
   type UnitClass,
+  type UnitSide,
   type WarEvent,
   type WarUnit,
 } from "@greyfall/engine";
@@ -48,7 +49,7 @@ import { HAND } from "./ui";
 import { Fog } from "./fog";
 import { CELL, artOf, buildMap, buildScenery, cell, loadMapArt, makeMapAnims, plotBase, workKey } from "./islandMap";
 import { STRAT_COLS, STRAT_ROWS } from "./stratMap";
-import { BODY_HEIGHT, loadUnits, makeAnims, playPose, unitKey } from "./sprites";
+import { headOf, loadUnits, makeAnims, monsterName, playPose, unitKey } from "./sprites";
 
 import {
   DEPTH,
@@ -131,8 +132,8 @@ function idle(u: WarUnit): boolean {
   return u.class === "pawn" && (u.order.type === "stop" || u.order.type === "hold");
 }
 
-function head(u: { side: "a" | "b"; class: UnitClass }): number {
-  return BODY_HEIGHT[u.class];
+function head(u: { side: UnitSide; class: UnitClass }): number {
+  return headOf(u.side, u.class);
 }
 
 function clockText(ticks: number): string {
@@ -215,7 +216,7 @@ export class StrategicScene extends Phaser.Scene {
 
   preload(): void {
     loadTerrain(this);
-    loadUnits(this);
+    loadUnits(this, true);
     loadWarFx(this);
     const all: Structure[] = [];
     for (const side of ["a", "b"] as const) {
@@ -915,7 +916,7 @@ export class StrategicScene extends Phaser.Scene {
     const strikers = units.filter((u) => u.class !== "monk" && u.class !== "pawn").map((u) => u.id);
     const pawnIds = units.filter((u) => u.class === "pawn").map((u) => u.id);
 
-    if (hit.unit && hit.unit.side === "b") {
+    if (hit.unit && hit.unit.side !== "a") {
       if (strikers.length > 0) this.act({ type: "order", units: strikers, order: { type: "attack", unit: hit.unit.id } });
       return;
     }
@@ -943,12 +944,13 @@ export class StrategicScene extends Phaser.Scene {
 
   private model(): HudModel {
     const s = this.state;
-    const g = WAR.realtime.greying;
-    const greyTicks = g.fromSeconds * 10 - s.tick;
+    const w = WAR.realtime.monsters;
+    const from = w.firstSeconds * 10;
+    const waveTicks = s.tick < from ? from - s.tick : w.everySeconds * 10 - ((s.tick - from) % (w.everySeconds * 10));
     const base: HudModel = {
       gold: s.gold.a,
       supply: [supplyUsed(s, "a"), supplyCap(s, "a")],
-      clock: { text: greyTicks > 0 ? `Greying in ${clockText(greyTicks)}` : "The Greying", warn: greyTicks < 600 },
+      clock: { text: `Monsters in ${clockText(waveTicks)}`, warn: waveTicks < 150 },
       banner: { text: this.paused ? "Paused" : "Two clans, one island", tone: this.paused ? "red" : "blue" },
       title: "",
       detail: "",
@@ -1157,11 +1159,14 @@ export class StrategicScene extends Phaser.Scene {
     if (i.unit !== undefined) {
       const u = this.state.units.find((x) => x.id === i.unit);
       if (u) {
+        const monster = u.side === "m";
         return {
-          title: `Red ${CLASS_NAME[u.class]}`,
+          title: monster ? monsterName(u.class) : `Red ${CLASS_NAME[u.class]}`,
           portrait: portraitKey(u.side, u.class),
           hp: [u.hp, maxHp(this.state, u.side, u.class)],
-          detail: "Of the red clan. Select your fighters, then right click it to go for it.",
+          detail: monster
+            ? `A monster from the Crown, after whoever is nearest. Killing one pays ${WAR.realtime.monsters.bounty} gold.`
+            : "Of the red clan. Select your fighters, then right click it to go for it.",
           commands: none,
         };
       }
@@ -1245,19 +1250,13 @@ export class StrategicScene extends Phaser.Scene {
         }
         return;
       }
-      case "deliver": {
+      case "deliver":
+      case "bounty": {
         if (e.side !== "a") return;
         const v = this.units.get(e.unit);
         if (v) floatText(this, v.root.x, v.root.y - head(v.unit) - 18, `+${e.gold}`, "#ffd66a", this.speed);
         return;
       }
-      case "greying":
-        for (const side of ["a", "b"] as const) {
-          if (side === "b" && !this.fog.knows("b-castle")) continue;
-          const base = plotBase(castlePlot(side));
-          floatText(this, base.x, base.y - 180, `The Greying -${e.hp}`, "#c9c9c9", this.speed);
-        }
-        return;
     }
   }
 

@@ -203,6 +203,8 @@ export function plateauOf(start: Cell): Cell[] {
 }
 
 export type WarSide = "a" | "b";
+/** A unit's side: a player's, or "m", the monsters, hostile to both. */
+export type UnitSide = WarSide | "m";
 
 export type BuildingKind = "castle" | "barracks" | "archery" | "tower" | "monastery" | "house";
 
@@ -280,9 +282,12 @@ const HOME: Record<WarSide, Set<number>> = {
   b: new Set(plateauOf(START.b.castle).map(cellKey)),
 };
 
-export function isHome(side: WarSide, c: Cell): boolean {
-  return HOME[side].has(cellKey(c));
+export function isHome(side: UnitSide, c: Cell): boolean {
+  return side !== "m" && HOME[side].has(cellKey(c));
 }
+
+/** Where monster waves spawn: the middle of the Crown. */
+export const LAIR: Cell = { col: 30, row: 6 };
 
 const MINE_CELLS = new Set<number>(MINES.map(cellKey));
 

@@ -32,6 +32,7 @@ import {
   type Cell,
   type Mine,
   type Plot,
+  type UnitSide,
   type WarSide,
 } from "./island.ts";
 
@@ -52,7 +53,7 @@ export type Stance = "firm" | "fallBack";
 
 export interface WarUnit {
   id: number;
-  side: WarSide;
+  side: UnitSide;
   class: UnitClass;
   hp: number;
   col: number;
@@ -99,7 +100,7 @@ export interface MatchState {
   mines: Record<string, number>;
   /** Per side, so two plans made from the same state never mint the same
    *  id: blue's units are odd, red's even. */
-  nextId: Record<WarSide, number>;
+  nextId: Record<UnitSide, number>;
   /** Per side, for building ids. */
   nextPlot: Record<WarSide, number>;
   winner: WarSide | "draw" | null;
@@ -146,28 +147,28 @@ export function standing(b: Building): boolean {
   return b.level > 0 && b.pending !== "build" && b.hp > 0;
 }
 
-export function ownBuildings(state: MatchState, side: WarSide): Building[] {
+export function ownBuildings(state: MatchState, side: UnitSide): Building[] {
   return Object.values(state.buildings).filter((b) => b.side === side);
 }
 
 /** The highest level a side has of a kind of building, 0 when it has none standing. */
-export function levelOf(state: MatchState, side: WarSide, kind: BuildingKind): number {
+export function levelOf(state: MatchState, side: UnitSide, kind: BuildingKind): number {
   return Math.max(0, ...ownBuildings(state, side).filter((b) => b.kind === kind && standing(b)).map((b) => b.level));
 }
 
-export function maxHp(state: MatchState, side: WarSide, cls: UnitClass): number {
+export function maxHp(state: MatchState, side: UnitSide, cls: UnitClass): number {
   const base = BALANCE.units[cls].hp;
   if (cls === "warrior" && levelOf(state, side, "barracks") >= 2) return Math.round(base * (1 + WAR.level2.warriorHp));
   if (cls === "lancer" && levelOf(state, side, "tower") >= 2) return Math.round(base * (1 + WAR.level2.lancerHp));
   return base;
 }
 
-export function rangeOf(state: MatchState, side: WarSide, cls: UnitClass): number {
+export function rangeOf(state: MatchState, side: UnitSide, cls: UnitClass): number {
   const base = WAR.range[cls];
   return cls === "archer" && levelOf(state, side, "archery") >= 2 ? base + WAR.level2.archerRange : base;
 }
 
-export function healOf(state: MatchState, side: WarSide, cls: UnitClass): number {
+export function healOf(state: MatchState, side: UnitSide, cls: UnitClass): number {
   const base = BALANCE.units[cls].heal;
   return levelOf(state, side, "monastery") >= 2 ? Math.round(base * (1 + WAR.level2.monkHeal)) : base;
 }
@@ -201,7 +202,7 @@ export function freeIn(occ: ReadonlySet<number>): (c: Cell) => boolean {
 }
 
 /** Free tiles in walking order out from `seeds`, skipping any in `skip`. */
-function floodFree(seeds: readonly Cell[], n: number, skip: ReadonlySet<number>, free: (c: Cell) => boolean): Cell[] {
+export function floodFree(seeds: readonly Cell[], n: number, skip: ReadonlySet<number>, free: (c: Cell) => boolean): Cell[] {
   const out: Cell[] = [];
   const seen = new Set(seeds.map(cellKey));
   const queue = [...seeds];
@@ -286,9 +287,10 @@ export function payIncome(state: MatchState): MatchState {
   return next;
 }
 
-export function addUnit(state: MatchState, side: WarSide, cls: UnitClass, at: Cell, order: Order): WarUnit {
+export function addUnit(state: MatchState, side: UnitSide, cls: UnitClass, at: Cell, order: Order): WarUnit {
   const unit: WarUnit = {
-    id: 2 * state.nextId[side]++ + (side === "a" ? 1 : 2),
+    // Monsters count down from -1, clear of both players' odd and even ids.
+    id: side === "m" ? -++state.nextId.m : 2 * state.nextId[side]++ + (side === "a" ? 1 : 2),
     side,
     class: cls,
     hp: maxHp(state, side, cls),
@@ -357,7 +359,7 @@ export function newMatch(seed: number | string = 0, mode: Mode = "rounds"): Matc
     units: [],
     buildings: {},
     mines: { ...WAR.mineGold },
-    nextId: { a: 0, b: 0 },
+    nextId: { a: 0, b: 0, m: 0 },
     nextPlot: { a: 0, b: 0 },
     winner: null,
     income: { a: { base: 0, mines: 0 }, b: { base: 0, mines: 0 } },

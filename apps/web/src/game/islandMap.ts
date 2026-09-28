@@ -1,7 +1,7 @@
 // The war map's island, drawn from the engine's height map. Shared by the map
 // scene and the title screen, which frames a corner of the same island.
 
-import { MINES, castlePlot, findPath, isOpen, makeRng, type BuildingKind, type Cell, type Plot } from "@greyfall/engine";
+import { MINES, castlePlot, findPath, isOpen, makeRng, type BuildingKind, type Cell, type Plot, type UnitSide } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
 import { packUrl, type BuildingName } from "./art";
@@ -20,7 +20,7 @@ export const WORK = {
   carry: { key: "pawnCarry", file: "Units/Blue Units/Pawn/Pawn_Run Gold.png" },
 } as const;
 
-export function workKey(side: "a" | "b", job: keyof typeof WORK): string {
+export function workKey(side: UnitSide, job: keyof typeof WORK): string {
   return side === "a" ? WORK[job].key : `${WORK[job].key}Red`;
 }
 

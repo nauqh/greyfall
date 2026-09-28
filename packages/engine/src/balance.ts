@@ -216,8 +216,8 @@ export const WAR = {
     homeHeal: 0.05,
     /** A round's worth of clock, for the AI's pacing and the HUD. */
     roundSeconds: 45,
-    /** From here the halls lose a growing share of their HP every interval,
-     *  so a match still ends: about four and a half minutes later. */
-    greying: { fromSeconds: 480, everySeconds: 30, step: 0.025 },
+    /** Monster waves from the Crown, each `growth` bigger than the last, so
+     *  a match still ends. A kill pays `bounty` to the side that landed it. */
+    monsters: { firstSeconds: 240, everySeconds: 60, first: 2, growth: 2, bounty: 10 },
   },
 } as const;

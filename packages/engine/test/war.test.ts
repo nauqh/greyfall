@@ -4,6 +4,7 @@ import fc from "fast-check";
 import {
   AI_EVERY_TICKS,
   BALANCE,
+  LAIR,
   MAP,
   MINES,
   START,
@@ -37,6 +38,7 @@ import {
   type Action,
   type BuildingKind,
   type MatchState,
+  type UnitSide,
   type WarSide,
   type WarUnit,
 } from "../src/index.ts";
@@ -61,7 +63,7 @@ function empty(round = 1, mode: "rounds" | "realtime" = "rounds"): MatchState {
   return { ...s, round, units: [] };
 }
 
-function unit(side: WarSide, cls: WarUnit["class"], col: number, row: number, id: number, order: WarUnit["order"] = { type: "stop" }): WarUnit {
+function unit(side: UnitSide, cls: WarUnit["class"], col: number, row: number, id: number, order: WarUnit["order"] = { type: "stop" }): WarUnit {
   return { id, side, class: cls, hp: BALANCE.units[cls].hp, col, row, order, stance: "firm", post: { col, row } };
 }
 
@@ -480,10 +482,44 @@ describe("real time", () => {
     expect(play()).toEqual(play());
   });
 
-  it("ends by the Greying's deadline, AI against AI", () => {
+  it("knocks a building down with unit attacks", () => {
+    const s = empty(1, "realtime");
+    const b = s.buildings["b-barracks"]!;
+    const cells = [{ col: b.col - 1, row: b.row }, { col: b.col - 1, row: b.row + 1 }, { col: b.col + b.w, row: b.row }];
+    s.units = cells.map((c, i) => unit("a", "warrior", c.col, c.row, 2 * i + 1, { type: "attackBuilding", plot: b.id }));
+    const sim = createSim(s);
+    for (let i = 0; i < seconds(120) && sim.world.buildings[b.id]; i++) sim.step();
+    expect(sim.world.buildings[b.id]).toBeUndefined();
+    expect(sim.events.some((e) => e.type === "destroyed" && e.plot === b.id)).toBe(true);
+  });
+
+  it("sends a monster wave from the Crown after the nearest player unit", () => {
+    const m = WAR.realtime.monsters;
+    const s = { ...empty(1, "realtime"), tick: seconds(m.firstSeconds) - 1 };
+    const near = unit("a", "warrior", 19, 11, 1);
+    s.units = [near, unit("b", "warrior", START.b.castle.col, START.b.castle.row + 3, 2)];
+    const sim = createSim(s);
+    for (let i = 0; i < seconds(1) + 1; i++) sim.step();
+    const wave = sim.world.units.filter((u) => u.side === "m");
+    expect(wave).toHaveLength(m.first);
+    expect(wave.every((u) => u.id < 0 && Math.max(Math.abs(u.col - LAIR.col), Math.abs(u.row - LAIR.row)) <= 2)).toBe(true);
+    expect(wave.every((u) => u.order.type === "attack" && u.order.unit === near.id)).toBe(true);
+  });
+
+  it("pays a bounty to the side that kills a monster", () => {
+    const s = empty(1, "realtime");
+    s.units = [unit("a", "warrior", 19, 11, 1), { ...unit("m", "warrior", 20, 11, -1), hp: 1 }];
+    const sim = createSim(s);
+    const gold = sim.world.gold.a;
+    for (let i = 0; i < seconds(5) && sim.world.units.some((u) => u.side === "m"); i++) sim.step();
+    expect(sim.world.units.some((u) => u.side === "m")).toBe(false);
+    expect(sim.world.gold.a).toBe(gold + WAR.realtime.monsters.bounty);
+    expect(sim.events.some((e) => e.type === "bounty" && e.side === "a")).toBe(true);
+  });
+
+  it("ends by the monster waves, AI against AI", () => {
     const sim = createSim(newMatch(7, "realtime"));
-    const g = WAR.realtime.greying;
-    const deadline = seconds(g.fromSeconds + 10 * g.everySeconds);
+    const deadline = seconds(15 * 60);
     while (sim.world.winner === null && sim.t < deadline) {
       if (sim.t % AI_EVERY_TICKS === 0) for (const side of ["a", "b"] as const) runAi(sim, side);
       sim.step();

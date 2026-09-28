@@ -8,11 +8,12 @@
 // It draws whatever the map scene's model says and calls back into it; the
 // war itself lives in the engine and the map scene.
 
-import { BALANCE, WAR, type UnitClass } from "@greyfall/engine";
+import { BALANCE, WAR, type UnitClass, type UnitSide } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
 import { AVATARS, iconKey, iconUrl, packUrl } from "./art";
 import { baseZoom } from "./boot";
+import { monsterAvatar } from "./sprites";
 import { ARROW, HAND, button, label, loadPanels, panel } from "./ui";
 
 export const HUD_KEY = "strategicHud";
@@ -57,7 +58,7 @@ export interface HudCommand {
 export interface HudModel {
   gold: number;
   supply: [used: number, cap: number];
-  /** The Greying's countdown as a clock. */
+  /** The next monster wave's countdown as a clock. */
   clock: { text: string; warn: boolean };
   /** The ribbon along the top, and its colour: red while paused. */
   banner: { text: string; tone: "blue" | "red" };
@@ -113,7 +114,7 @@ const KNIGHT_FACE: Record<"a" | "b", Record<UnitClass, number>> = {
   b: { warrior: 6, lancer: 7, archer: 8, monk: 9, pawn: 10 },
 };
 
-export function portraitKey(side: "a" | "b", cls: UnitClass): string {
+export function portraitKey(side: UnitSide, cls: UnitClass): string {
   return `face_${side}_${cls}`;
 }
 
@@ -202,6 +203,10 @@ export class StrategicHud extends Phaser.Scene {
       for (const [cls, n] of Object.entries(KNIGHT_FACE[side])) {
         this.load.image(portraitKey(side, cls as UnitClass), packUrl(`${AVATARS.file}${String(n).padStart(2, "0")}.png`));
       }
+    }
+    for (const cls of ["warrior", "lancer", "archer"] as const) {
+      const url = monsterAvatar(cls);
+      if (url) this.load.image(portraitKey("m", cls), url);
     }
   }
 
@@ -857,7 +862,7 @@ function guideSections(): GuideSection[] {
         "The world never stops unless you pause it: Space, or open the menu. Orders still go out while paused.",
         "Train at your buildings and have a Pawn put up new ones. Orders go out at once.",
         `Gold: Pawns dig at the mines and carry ${WAR.realtime.carry} home a trip.`,
-        `After ${WAR.realtime.greying.fromSeconds / 60} minutes the Greying eats both castles a little at a time. Break theirs first.`,
+        `From minute ${WAR.realtime.monsters.firstSeconds / 60}, monsters come down from the Crown every minute, more each time, and go for whoever is nearest. Each kill pays ${WAR.realtime.monsters.bounty} gold.`,
       ],
     },
     {

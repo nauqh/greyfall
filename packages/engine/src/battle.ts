@@ -4,12 +4,13 @@
  * battle phase (battle()): until the fighting settles or the cap, then the
  * aftermath: buildings finish, units at home heal, the Greying bites, and the
  * next round's income is paid. Real time runs it without end, and the
- * economy, training, building and the Greying all happen tick by tick.
+ * economy, training, building and the monster waves all happen tick by tick.
  * Pure and seeded, so the same state and actions always give the same match.
  */
 
 import { BALANCE, TICKS_PER_ACTION, WAR, damageAgainst, type UnitClass } from "./balance.ts";
 import {
+  LAIR,
   MINES,
   buildSlots,
   canStep,
@@ -27,6 +28,7 @@ import {
   tileDistance,
   type Cell,
   type Plot,
+  type UnitSide,
   type WarSide,
 } from "./island.ts";
 import { makeRng } from "./rng.ts";
@@ -36,6 +38,7 @@ import {
   applyInPlace,
   applyPlan,
   buildingHp,
+  floodFree,
   gatherers,
   healOf,
   maxHp,
@@ -71,7 +74,7 @@ export type WarEvent =
   | { t: number; type: "built"; plot: string }
   | { t: number; type: "upgraded"; plot: string }
   | { t: number; type: "deliver"; unit: number; side: WarSide; gold: number }
-  | { t: number; type: "greying"; hp: number };
+  | { t: number; type: "bounty"; unit: number; side: WarSide; gold: number };
 
 export interface RoundReport {
   round: number;
@@ -136,6 +139,7 @@ export interface Sim {
 }
 
 const SETTLE_TICKS = WAR.settleSeconds * BALANCE.tickRate;
+const MONSTER_CLASSES: readonly UnitClass[] = ["warrior", "lancer", "archer"];
 const CAP_TICKS = WAR.capSeconds * BALANCE.tickRate;
 /** A blocked unit looks again this often rather than every tick. */
 const RETRY_TICKS = TICKS_PER_ACTION / 2;
@@ -200,7 +204,7 @@ export function createSim(start: MatchState): Sim {
     else crowd.delete(k);
   };
   const on = (c: Cell): SimUnit[] => crowd.get(cellKey(c)) ?? [];
-  const enemyOn = (c: Cell, side: WarSide) => on(c).some((o) => o.side !== side);
+  const enemyOn = (c: Cell, side: UnitSide) => on(c).some((o) => o.side !== side);
   const othersOn = (c: Cell, u: SimUnit) => on(c).some((o) => o !== u);
 
   const byId = new Map<number, SimUnit>();
@@ -302,12 +306,14 @@ export function createSim(start: MatchState): Sim {
 
   /** Real time: a Pawn's round trip, mine to castle and back. */
   const gatherTrip = (u: SimUnit, mineId: string): boolean => {
-    const castle = castlePlot(u.side);
+    // Only players have Pawns.
+    const side = u.side as WarSide;
+    const castle = castlePlot(side);
     if (u.carry) {
       if (plotDistance(castle, u) <= 1) {
-        const gold = Math.round(u.carry * upkeepOf(world, u.side).keep);
-        world.gold[u.side] += gold;
-        events.push({ t, type: "deliver", unit: u.id, side: u.side, gold });
+        const gold = Math.round(u.carry * upkeepOf(world, side).keep);
+        world.gold[side] += gold;
+        events.push({ t, type: "deliver", unit: u.id, side, gold });
         u.carry = 0;
         return true;
       }
@@ -316,7 +322,7 @@ export function createSim(start: MatchState): Sim {
     }
     const mine = mineById(mineId)!;
     if ((world.mines[mine.id] ?? 0) <= 0) {
-      u.order = pawnOrder(world, u.side);
+      u.order = pawnOrder(world, side);
       return false;
     }
     if (tileDistance(u, mine) <= 1 && !othersOn(u, u)) {
@@ -378,7 +384,7 @@ export function createSim(start: MatchState): Sim {
         // behind it when a front tile is free.
         const p = world.buildings[o.plot];
         if (!p || !p.pending) {
-          if (realtime) u.order = pawnOrder(world, u.side);
+          if (realtime) u.order = pawnOrder(world, u.side as WarSide);
           return false;
         }
         const slots = new Set(slotsOf(p).map(cellKey));
@@ -443,7 +449,7 @@ export function createSim(start: MatchState): Sim {
       u.fellBack = true;
       events.push({ t, type: "fallBack", unit: u.id, hp: u.hp });
       report.fellBack.push({
-        side: u.side,
+        side: u.side as WarSide,
         class: u.class,
         hpPercent: Math.round((100 * u.hp) / maxHp(world, u.side, u.class)),
       });
@@ -540,6 +546,8 @@ export function createSim(start: MatchState): Sim {
     }
     delete world.buildings[b.id];
     occ = occupied(world);
+    // A fallen level 2 building takes its bonus HP with it.
+    for (const u of units()) if (u.side === b.side && live(u)) u.hp = Math.min(u.hp, maxHp(world, u.side, u.class));
   };
 
   const checkWinner = (): void => {
@@ -556,6 +564,18 @@ export function createSim(start: MatchState): Sim {
       return pawnOrder(world, b.side);
     }
     return rally ? { type: "attackMove", to: rally } : { type: "stop" };
+  };
+
+  /** A monster goes for the nearest player unit, or a building when one is nearer. */
+  const hunt = (u: SimUnit): Order => {
+    const unit = units()
+      .filter((o) => live(o) && o.side !== "m")
+      .sort((x, y) => tileDistance(u, x) - tileDistance(u, y) || x.id - y.id)[0];
+    const plot = Object.values(world.buildings)
+      .filter(standing)
+      .sort((x, y) => plotDistance(x, u) - plotDistance(y, u) || x.id.localeCompare(y.id))[0];
+    if (plot && (!unit || plotDistance(plot, u) < tileDistance(u, unit))) return { type: "attackBuilding", plot: plot.id };
+    return unit ? { type: "attack", unit: unit.id } : { type: "stop" };
   };
 
   /** Real time: a tick of the economy and the clock. */
@@ -587,7 +607,7 @@ export function createSim(start: MatchState): Sim {
       b.pending = null;
       b.progress = 0;
       for (const u of units()) {
-        if (u.order.type === "build" && u.order.plot === b.id) u.order = pawnOrder(world, u.side);
+        if (u.order.type === "build" && u.order.plot === b.id) u.order = pawnOrder(world, u.side as WarSide);
       }
     }
 
@@ -626,20 +646,19 @@ export function createSim(start: MatchState): Sim {
       }
     }
 
-    // The Greying bites the halls on the clock, harder each time.
-    const g = WAR.realtime.greying;
-    const from = g.fromSeconds * BALANCE.tickRate;
-    const every = g.everySeconds * BALANCE.tickRate;
+    // A monster wave from the Crown, bigger each time.
+    const m = WAR.realtime.monsters;
+    const from = m.firstSeconds * BALANCE.tickRate;
+    const every = m.everySeconds * BALANCE.tickRate;
     if (world.tick >= from && (world.tick - from) % every === 0) {
-      const k = (world.tick - from) / every + 1;
-      const bite = Math.round(WAR.buildingHp.castle * g.step * k);
-      events.push({ t, type: "greying", hp: bite });
-      for (const side of SIDES) {
-        const hall = world.buildings[`${side}-castle`]!;
-        hall.hp -= bite;
-        if (hall.hp <= 0 && hall.level > 0) remove(hall);
-      }
+      const n = m.first + m.growth * ((world.tick - from) / every);
+      const taken = new Set(units().filter(live).map(cellKey));
+      floodFree([LAIR], n, taken, free).forEach((at, i) => {
+        const u = adopt(addUnit(world, "m", MONSTER_CLASSES[i % MONSTER_CLASSES.length]!, at, { type: "stop" }));
+        events.push({ t, type: "spawn", unit: u.id });
+      });
     }
+    if (second) for (const u of units()) if (live(u) && u.side === "m") u.order = hunt(u);
 
     world.tick += 1;
     world.round = 1 + Math.floor(world.tick / (WAR.realtime.roundSeconds * BALANCE.tickRate));
@@ -657,8 +676,13 @@ export function createSim(start: MatchState): Sim {
 
     // Every hit and heal of a tick lands together, so two units that kill
     // each other both connect and the order of the loop grants nothing.
+    // The hit that takes a unit below zero is its killer, for a monster's bounty.
+    const killer = new Map<SimUnit, UnitSide>();
     for (const h of hits) {
-      if (h.unit) h.unit.hp -= h.amount;
+      if (h.unit) {
+        if (h.unit.hp > 0 && h.unit.hp - h.amount <= 0) killer.set(h.unit, h.by.side);
+        h.unit.hp -= h.amount;
+      }
       if (h.plot) h.plot.hp -= h.amount;
     }
     for (const h of heals) h.unit.hp += h.amount;
@@ -680,11 +704,20 @@ export function createSim(start: MatchState): Sim {
       u.dead = true;
       leave(u);
       world.units.splice(world.units.indexOf(u), 1);
-      report.losses[u.side].push(u.class);
       events.push({ t, type: "death", unit: u.id });
+      if (u.side !== "m") {
+        report.losses[u.side].push(u.class);
+        continue;
+      }
+      const by = killer.get(u);
+      if (by && by !== "m") {
+        world.gold[by] += WAR.realtime.monsters.bounty;
+        events.push({ t, type: "bounty", unit: u.id, side: by, gold: WAR.realtime.monsters.bounty });
+      }
     }
     for (const b of Object.values(world.buildings)) {
-      if (standing(b) && b.hp <= 0) remove(b);
+      // Not standing(): that is already false once the HP is gone.
+      if (b.level > 0 && b.hp <= 0) remove(b);
     }
 
     if (realtime) tickRealtime();
@@ -804,7 +837,7 @@ function aftermath(world: MatchState, report: RoundReport): MatchState {
   // Builders go back to digging, home first, once this round's income is in:
   // a builder that finished beside a mine dug nothing this round.
   for (const u of next.units) {
-    if (u.order.type === "build" && !next.buildings[u.order.plot]?.pending) u.order = pawnOrder(next, u.side);
+    if (u.order.type === "build" && !next.buildings[u.order.plot]?.pending) u.order = pawnOrder(next, u.side as WarSide);
   }
   return next;
 }

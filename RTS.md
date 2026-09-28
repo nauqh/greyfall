@@ -10,7 +10,7 @@ Greyfall moves from plan-then-battle rounds to real time, in three modes built o
 
 Landed on Sep 27, 2026.
 
-- **Engine.** `createSim` steps the island a tick at a time; `battle()` and the new `startRound` / `roundDone` / `finishRound` run a round on it. Real time adds Pawn trips (10 gold a bag, taxed 100% / 70% / 40% by upkeep), queues of up to 5, construction while a Pawn hammers, rally points, healing at home, and the Greying from minute 8. Gold is counted in tens throughout.
+- **Engine.** `createSim` steps the island a tick at a time; `battle()` and the new `startRound` / `roundDone` / `finishRound` run a round on it. Real time adds Pawn trips (10 gold a bag, taxed 100% / 70% / 40% by upkeep), queues of up to 5, construction while a Pawn hammers, rally points, healing at home, and monster waves from minute 4. Gold is counted in tens throughout.
 - **Free placement.** `canPlace` allows your own plateau or the lowland, never a ramp, forest, a mine's edge or a spot that walls off a road, a mine or a building; `findPlacement` is what the AI builds on.
 - **Island.** 61x38, mirrored: home plateaus at mid-height with the ramp outside, the High Pass under the Crown, the Low Road past the watch cliffs to the ford, four mines a side plus the ford, forests and landmarks. Reworked the same day so both lanes get used; see below.
 - **Two knight clans.** Red uses the pack's red knights, faces and buildings everywhere the monster host was.
@@ -79,7 +79,7 @@ Not taken: lumber (the pack supports it, see below; a later choice), navmeshes (
 - **A larger island.** Room to build: big home plateaus, several expansion mines, the two roads kept.
 - **Free placement.** Fixed plots go; a building goes wherever its footprint fits on buildable ground, without walling a mine or the castle off.
 - **Real-time economy.** Pawns carry gold per trip, upkeep taxes each bag, units train from queues, buildings take time and a Pawn.
-- **The Greying by the clock.** In real time it starts at minute 8 and bites the halls every 30 seconds, harder each time, so a match still ends.
+- **The Greying by the clock.** In real time it starts at minute 8 and bites the halls every 30 seconds, harder each time, so a match still ends. Since replaced by monster waves from the Crown: from minute 4, one a minute, 2 more monsters each time, after the nearest player unit, 10 gold a kill.
 
 ## Sources
 

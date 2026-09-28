@@ -2,7 +2,7 @@
 // Anchors are the ground contact point in native pixels, read off the art.
 // Every class has exactly one attack pose and is flipped to face its target.
 
-import type { UnitClass } from "@greyfall/engine";
+import type { UnitClass, UnitSide } from "@greyfall/engine";
 
 import { packUrl } from "./art";
 
@@ -13,7 +13,7 @@ export const FRAME_RATE = 10;
  * them. */
 export const ATTACK_FRAME_RATE = 12;
 
-export type Side = "a" | "b";
+export type Side = UnitSide;
 export type AnimName = "idle" | "run" | "attack" | "attack2" | "guard";
 
 interface Body {
@@ -84,7 +84,67 @@ const POSES: Record<UnitClass, Partial<Record<AnimName, string>>> = {
 };
 
 /** Two knight clans, blue and red: one roster in each clan's colour. */
-const SIDE_DIR: Record<Side, string> = { a: "Blue Units", b: "Red Units" };
+const SIDE_DIR: Record<"a" | "b", string> = { a: "Blue Units", b: "Red Units" };
+
+interface Monster {
+  name: string;
+  body: Body;
+  height: number;
+  poses: Partial<Record<AnimName, string>>;
+}
+
+/** The monsters: an Enemy Pack body for each class they field. */
+const MONSTER: Partial<Record<UnitClass, Monster>> = {
+  warrior: {
+    name: "Skull",
+    body: { frame: 192, anchorX: 95, anchorY: 128 },
+    height: 73,
+    poses: { idle: "Skull/Skull_Idle.png", run: "Skull/Skull_Run.png", attack: "Skull/Skull_Attack.png" },
+  },
+  lancer: {
+    name: "Spear Goblin",
+    body: { frame: 256, anchorX: 121, anchorY: 174 },
+    height: 100,
+    poses: {
+      idle: "Spear Goblin/Spear Goblin_Idle.png",
+      run: "Spear Goblin/Spear Goblin_Run.png",
+      attack: "Spear Goblin/Spear Goblin_Attack Fast.png",
+    },
+  },
+  archer: {
+    name: "Gnoll",
+    body: { frame: 192, anchorX: 97, anchorY: 133 },
+    height: 75,
+    poses: { idle: "Gnoll/Gnoll_Idle.png", run: "Gnoll/Gnoll_Walk.png", attack: "Gnoll/Gnoll_Throw.png" },
+  },
+};
+
+export function monsterName(cls: UnitClass): string {
+  return MONSTER[cls]?.name ?? "Monster";
+}
+
+export function monsterAvatar(cls: UnitClass): string | undefined {
+  const name = MONSTER[cls]?.name;
+  return name && packUrl(`Enemy Pack/${name}/${name}_Avatar.png`);
+}
+
+function bodyOf(side: Side, cls: UnitClass): Body {
+  return (side === "m" && MONSTER[cls]?.body) || BODY[cls];
+}
+
+/** Head height above the feet, for either roster. */
+export function headOf(side: Side, cls: UnitClass): number {
+  return (side === "m" && MONSTER[cls]?.height) || BODY_HEIGHT[cls];
+}
+
+function posesOf(side: Side): [UnitClass, Partial<Record<AnimName, string>>][] {
+  if (side === "m") return Object.entries(MONSTER).map(([cls, m]) => [cls as UnitClass, m.poses]);
+  return Object.entries(POSES) as [UnitClass, Partial<Record<AnimName, string>>][];
+}
+
+function sheetUrl(side: Side, file: string): string {
+  return packUrl(side === "m" ? `Enemy Pack/${file}` : `Units/${SIDE_DIR[side]}/${file}`);
+}
 
 /** The Monk's heal burst, played on the unit being healed. */
 export const HEAL_EFFECT = { frame: 192, frames: 11 } as const;
@@ -106,17 +166,15 @@ export function reviveKey(side: Side): string {
   return healKey(side);
 }
 
-export function loadUnits(scene: Phaser.Scene): void {
-  for (const side of ["a", "b"] as const) {
-    for (const cls of Object.keys(POSES) as UnitClass[]) {
-      const size = BODY[cls].frame;
-      for (const anim of Object.keys(POSES[cls]) as AnimName[]) {
-        scene.load.spritesheet(unitKey(side, cls, anim), packUrl(`Units/${SIDE_DIR[side]}/` + POSES[cls][anim]), {
-          frameWidth: size,
-          frameHeight: size,
-        });
+export function loadUnits(scene: Phaser.Scene, withMonsters = false): void {
+  for (const side of withMonsters ? (["a", "b", "m"] as const) : (["a", "b"] as const)) {
+    for (const [cls, poses] of posesOf(side)) {
+      const size = bodyOf(side, cls).frame;
+      for (const [anim, file] of Object.entries(poses) as [AnimName, string][]) {
+        scene.load.spritesheet(unitKey(side, cls, anim), sheetUrl(side, file), { frameWidth: size, frameHeight: size });
       }
     }
+    if (side === "m") continue;
     scene.load.spritesheet(healKey(side), packUrl(`Units/${SIDE_DIR[side]}/Monk/Heal_Effect.png`), {
       frameWidth: HEAL_EFFECT.frame,
       frameHeight: HEAL_EFFECT.frame,
@@ -133,10 +191,11 @@ export function makeAnims(scene: Phaser.Scene): void {
       .getFrameNames()
       .filter((f) => f !== "__BASE").length;
 
-  for (const side of ["a", "b"] as const) {
-    for (const cls of Object.keys(POSES) as UnitClass[]) {
-      for (const anim of Object.keys(POSES[cls]) as AnimName[]) {
+  for (const side of ["a", "b", "m"] as const) {
+    for (const [cls, poses] of posesOf(side)) {
+      for (const anim of Object.keys(poses) as AnimName[]) {
         const key = unitKey(side, cls, anim);
+        if (!scene.textures.exists(key)) continue;
         if (scene.anims.exists(animKey(side, cls, anim))) continue;
         const frames = frameCount(key);
         if (frames === 0) continue;
@@ -150,7 +209,7 @@ export function makeAnims(scene: Phaser.Scene): void {
         });
       }
     }
-    if (scene.anims.exists(`${healKey(side)}_anim`)) continue;
+    if (side === "m" || scene.anims.exists(`${healKey(side)}_anim`)) continue;
     const burst = HEAL_EFFECT;
     scene.anims.create({
       key: `${healKey(side)}_anim`,
@@ -173,7 +232,7 @@ export function playPose(
   anim: AnimName,
   mirrored = false,
 ): void {
-  const body = BODY[cls];
+  const body = bodyOf(side, cls);
   sprite.setOrigin(body.anchorX / body.frame, body.anchorY / body.frame);
   // The art faces right in both colors; side b holds the right half. On a
   // mirrored board - seat B's own view of the duel - it holds the left half

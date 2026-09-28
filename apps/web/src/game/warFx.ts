@@ -2,6 +2,7 @@
 // the death. The same beats the battle board plays, adapted to units that
 // stand in containers on the island; the board's own copies stay with it.
 
+import type { UnitSide } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
 import { FX, packUrl } from "./art";
@@ -81,7 +82,7 @@ export function flash(scene: Phaser.Scene, target: Phaser.GameObjects.Sprite | P
 /** The archer's arcing arrow. */
 export function projectile(
   scene: Phaser.Scene,
-  side: "a" | "b",
+  side: UnitSide,
   from: { x: number; y: number },
   to: { x: number; y: number },
   speed: number,

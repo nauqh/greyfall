@@ -32,6 +32,7 @@ export { generateArmy } from "./army.ts";
 
 export {
   FOOTPRINT,
+  LAIR,
   MAP,
   MINES,
   START,
@@ -64,6 +65,7 @@ export {
   type Cell,
   type Mine,
   type Plot,
+  type UnitSide,
   type WarSide,
 } from "./island.ts";
 

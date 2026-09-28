@@ -14,7 +14,7 @@
 import { AI_EVERY_TICKS, planAi, runAi } from "./ai.ts";
 import { battle, createSim, type WarEvent } from "./battle.ts";
 import { BALANCE, WAR } from "./balance.ts";
-import { MAP, MINES, plotCells } from "./island.ts";
+import { MAP, MINES, plotCells, type UnitSide } from "./island.ts";
 import { newMatch, supplyCap, supplyUsed, upkeepOf, type MatchState } from "./war.ts";
 
 function flag(name: string): string | undefined {
@@ -22,7 +22,7 @@ function flag(name: string): string | undefined {
   return i === -1 ? undefined : process.argv[i + 1];
 }
 
-function army(state: MatchState, side: "a" | "b"): string {
+function army(state: MatchState, side: UnitSide): string {
   const counts = new Map<string, number>();
   for (const u of state.units) if (u.side === side) counts.set(u.class, (counts.get(u.class) ?? 0) + 1);
   return [...counts].map(([cls, n]) => `${n} ${cls}`).join(", ") || "nobody";
@@ -49,8 +49,8 @@ function describe(e: WarEvent, name: (id: number) => string): string | null {
       return `${at} ${e.plot} is built`;
     case "upgraded":
       return `${at} ${e.plot} is upgraded`;
-    case "greying":
-      return `${at} the Greying takes ${e.hp} from each hall`;
+    case "bounty":
+      return `${at} ${e.side} takes ${e.gold} gold for ${name(e.unit)}`;
     case "spawn":
     case "deliver":
       return null;
@@ -79,6 +79,7 @@ function realtime(seed: number | string): void {
       console.log(`${sim.t / minute} min  gold A ${s.gold.a} B ${s.gold.b}  buildings A ${b("a")} B ${b("b")}  halls A ${s.buildings["a-castle"]!.hp} B ${s.buildings["b-castle"]!.hp}`);
       console.log(`  A: ${army(s, "a")}`);
       console.log(`  B: ${army(s, "b")}`);
+      console.log(`  monsters: ${army(s, "m")}`);
     }
   }
   const label = { a: "A WINS", b: "B WINS", draw: "DRAW" };

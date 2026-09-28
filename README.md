@@ -14,7 +14,7 @@
 </div>
 
 Raise a town on your plateau, send Pawns to dig gold, train an army, and take
-the island before the Greying takes your hall.
+the island before the monsters take your hall.
 
 Greyfall is a town and an army on a tiny island, played in the browser and
 drawn entirely with Pixel Frog's
@@ -32,7 +32,9 @@ for Discord as an Activity that friends launch from a voice call.
   bag as the army grows, and buildings go anywhere legal while a Pawn hammers.
 - Five classes, Pawn, Warrior, Lancer, Archer and Monk, with a counter
   triangle, training queues, rally points and control groups.
-- Every match ends: from minute 8 the Greying gnaws at both halls.
+- Every match ends: from minute 4 a monster wave comes down from the Crown
+  every minute, bigger each time, and goes for whoever is nearest. Kills pay
+  a bounty.
 - A deterministic engine. The same state, commands and seed always give the
   same world, so a replay is a seed plus the commands.
 

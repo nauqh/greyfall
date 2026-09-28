@@ -124,7 +124,7 @@ export function planAi(state: MatchState, side: WarSide): Plan {
 
   // Orders.
   const fighters = own().filter((u) => u.class !== "pawn");
-  const enemies = cur.units.filter((u) => u.side !== side && u.class !== "pawn");
+  const enemies = cur.units.filter((u) => u.side === enemyOf(side) && u.class !== "pawn");
   for (const u of own().filter((p) => p.class === "pawn" && p.order.type === "stop")) {
     const order = pawnOrder(cur, side);
     if (order.type === "gather") tryDo({ type: "order", units: [u.id], order });
