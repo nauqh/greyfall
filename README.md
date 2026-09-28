@@ -1,154 +1,202 @@
+<div align="center">
+
 # Greyfall
 
-A Souls-themed auto-battler. You buy an army from a fixed roster, arrange it on
-a board, and watch it fight. See [PRD.md](PRD.md) for the design and
-[AGENTS.md](AGENTS.md) for how work is done in this repo.
+**A small real-time strategy game with a Dark Souls mood, built to run inside Discord.**
 
-Phase 1, the battle prototype, still ships: pick units within a gold budget,
-place them on your half of the board, and watch the engine play the fight back.
+[![CI](https://github.com/nauqh/greyfall/actions/workflows/ci.yml/badge.svg)](https://github.com/nauqh/greyfall/actions/workflows/ci.yml)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs&logoColor=white)
+![Phaser](https://img.shields.io/badge/Phaser-3.90-8B5CF6)
 
-Phase 2, the war on the island, is playable solo at `/map` (Map on the title
-screen): build and train on the strategic map, give orders, fight in rounds
-against the AI until a main hall falls. No server, database or sign-in yet.
+![The Greyfall title screen: a parchment menu beside the blue knights' island](landing.jpg)
 
-## Requirements
+</div>
 
-- Node 24 (developed on 24.14). The engine CLI runs TypeScript directly with no
-  build step, so older versions of Node may not run it.
-- pnpm 10 (developed on 10.28).
+The world has been drained of colour by the Greying. You are the Keeper of the
+last bonfire: raise a town on your plateau, send Pawns to dig gold, train an
+army, and take the island before the grey takes your hall.
 
-## Setup
+Greyfall is Warcraft's town and army on a tiny island, played in the browser
+and drawn entirely with Pixel Frog's
+[Tiny Swords](https://pixelfrog-assets.itch.io/tiny-swords) pack. It is headed
+for Discord as an Activity that friends launch from a voice call.
+
+## Highlights
+
+- Real-time war on a mirrored two-lane island, three levels high. The High
+  Pass runs under the Crown's high ground; the Low Road leads to the rich mine
+  at the ford.
+- Fog of war in Warcraft's two layers, black until explored and grey out of
+  sight. Nobody sees up a cliff.
+- A Warcraft economy: Pawns carry gold from mine to castle, upkeep taxes each
+  bag as the army grows, and buildings go anywhere legal while a Pawn hammers.
+- Five classes, Pawn, Warrior, Lancer, Archer and Monk, with a counter
+  triangle, training queues, rally points and control groups.
+- Every match ends: from minute 8 the Greying gnaws at both halls.
+- A deterministic engine. The same state, commands and seed always give the
+  same world, so a replay is a seed plus the commands.
+
+## Current state
+
+The real-time war is playable solo, blue knights against a red AI clan. It is
+not in Discord yet and has no multiplayer on the island. Red wins more often
+than it should, and the AI still plans with logic written for the older
+rounds mode.
+
+Two earlier modes still ship and will be replaced by multiplayer on the
+island: **Skirmish**, an auto-battler where you draft an army and watch it
+fight, and **Duel**, the same board against a friend.
+
+## Goals
+
+- Balance the war and give the AI real-time play of its own.
+- Lockstep multiplayer on the island. The engine already takes commands
+  between ticks, so this adds networking without touching the rules.
+- Server-authoritative matches, with fog filtered per player and saved games.
+- Launch as a Discord Activity with Discord sign-in, shareable replays and a
+  leaderboard.
+- A minimap, sound and polish.
+
+The design and the reasoning behind it are in [PRD.md](PRD.md) (the original
+rounds design), [RTS.md](RTS.md) (the move to real time) and
+[ENHANCE.md](ENHANCE.md) (the island plan, partly superseded).
+
+## Play
+
+| Mode | Route | |
+| --- | --- | --- |
+| Play | `/map` | The real-time war against the AI |
+| Skirmish | `/battle` | Draft within a gold budget, watch the fight |
+| Duel | `/duel` | Skirmish against a friend via a room code |
+
+Left click selects, right click orders. Space pauses, and **H** opens the
+field guide, which lists every shortcut.
+
+## Getting started
+
+You need Node 24 and pnpm 10, plus AWS credentials that can read the art pack.
+The pack's license forbids redistribution, so it is not in this repository; it
+lives in a private S3 object and each machine fetches its own copy.
 
 ```bash
+git clone https://github.com/nauqh/greyfall.git
+cd greyfall
 pnpm install
+cp apps/web/.env.example apps/web/.env   # TINY_SWORDS_S3 is already set
+pnpm dev                                 # fetches the pack, then starts Next
 ```
 
-### The art pack
+Duel also needs `DATABASE_URL` (a Neon pooled connection string) in
+`apps/web/.env` and `pnpm --filter @greyfall/web db:push` once.
 
-The game draws entirely on [Tiny Swords](https://pixelfrog-assets.itch.io/tiny-swords)
-by Pixel Frog. The license allows commercial use and modification but **forbids
-redistribution**, so the pack is not in this repository. It lives in a private
-S3 object and each machine fetches its own copy.
+Other scripts:
 
-Copy `apps/web/.env.example` to `apps/web/.env` and point it at the object:
-
+```bash
+pnpm test                         # engine unit and property tests
+pnpm typecheck                    # both packages
+pnpm test:assets                  # every sprite path the game asks for exists
+pnpm war -- --realtime --seed 3   # a real-time war, AI against AI, in the terminal
+pnpm war -- --map                 # print the island
+pnpm battle -- --seed 7 --moves   # one Skirmish battle in the terminal
+pnpm assets                       # fetch and unpack the art pack
 ```
-TINY_SWORDS_S3=s3://greyfall-assets/tiny-swords/tiny-swords-v2.zip
-```
 
-That is the whole setup. `pnpm assets` fetches and unpacks it into
-`apps/web/public/tiny-swords`; it runs automatically before `dev` and `build`,
-and does nothing if the pack is already unpacked. AWS credentials and region
-come from the standard chain, so `~/.aws` works locally and `AWS_*` variables
-work on a build host, with no difference in configuration.
+The CLIs need no art, so they are the quickest check that the engine works.
 
-The SDK is used rather than a plain URL on purpose. Neither URL shape S3
-offers is usable: a public object would be a redistributable copy of the pack,
-and a presigned URL expires after at most 7 days so it cannot live in a host's
-environment variables. Signing each request keeps the object private and never
-goes stale.
+## Troubleshooting
 
-The script lives at `apps/web/scripts/fetch-assets.mjs`, inside the app, not
-at the repo root. Vercel's Root Directory sandbox is documented to forbid
-reaching outside it with `..` ("Your app will not be able to access files
-outside of that directory"), which is exactly what a `node ../../scripts/...`
-build script does. That is a real failure mode, not a hypothetical one - it
-shipped a build with no art and no error in the log, because the script never
-ran at all. Nothing in the build now reaches outside `apps/web`.
+**Blank board, 404s for `/tiny-swords/...`.** The art pack is missing. Check
+`TINY_SWORDS_S3` and your AWS credentials, then run `pnpm assets`.
 
-If the pack is missing the script says so and carries on, so `pnpm dev` still
-starts. You get the draft screen without art and a blank blue battle board,
-with 404s for `/tiny-swords/...` in the console. That is the symptom to
-recognise. `pnpm assets --require` fails instead of warning, which is what a
-deploy wants.
+**`Region is missing`.** The SDK found no region. Set `AWS_REGION` or a
+region in `~/.aws/config`.
 
-### Uploading a new version of the pack
+**`Invalid character in header content`.** A placeholder AWS value is set in
+`.env`. Leave those variables unset locally so `~/.aws` is used.
+
+## Deployment
+
+<details>
+<summary>Environment variables and host setup</summary>
+
+Set these in the host's environment (on Vercel, Project Settings >
+Environment Variables), not in a file:
+
+| Variable | Value |
+| --- | --- |
+| `TINY_SWORDS_S3` | `s3://greyfall-assets/tiny-swords/tiny-swords-v2.zip` |
+| `AWS_ACCESS_KEY_ID` | the deploy user's key |
+| `AWS_SECRET_ACCESS_KEY` | its secret |
+| `AWS_REGION` | `ap-southeast-1` |
+| `DATABASE_URL` | for Duel |
+
+- On Vercel, set the Root Directory to `apps/web`. A missing `TINY_SWORDS_S3`
+  fails the build there rather than shipping a game with no art;
+  `pnpm assets --require` does the same anywhere.
+- The fetch script lives in `apps/web/scripts/`, because Vercel's Root
+  Directory forbids reaching outside it with `..`. That once shipped a build
+  with no art and no error.
+- Give the deploy its own IAM user scoped to `s3:GetObject` on that one key.
+- The SDK signs each request on purpose: a public object would be a
+  redistributable copy, and a presigned URL expires within 7 days.
+- CI needs none of this: the build never reads the art.
+- Every pack request goes through `packUrl`, prefixed by
+  `NEXT_PUBLIC_ASSET_BASE` (default `/tiny-swords`). A Discord Activity is
+  proxied and needs `/.proxy/tiny-swords`.
+
+To upload a new pack, give it a new name rather than overwriting, then change
+`TINY_SWORDS_S3`, so builds stay reproducible and a rollback is one variable:
 
 ```bash
 powershell -Command "Compress-Archive -Path tiny-swords\* -DestinationPath tiny-swords-v2.zip"
 aws s3 cp tiny-swords-v2.zip s3://greyfall-assets/tiny-swords/tiny-swords-v2.zip
 ```
 
-Use a new name rather than overwriting, then change `TINY_SWORDS_S3`. Builds
-stay reproducible and a rollback is one variable. Leave the bucket private.
+</details>
 
-### When you deploy
+## Technical foundation
 
-Set `TINY_SWORDS_S3` plus AWS credentials in the host's environment variables,
-since a build container has no `~/.aws`. Set them in the platform - Vercel's
-Project Settings > Environment Variables - not in a file:
-
-| variable | value |
+| | |
 | --- | --- |
-| `TINY_SWORDS_S3` | `s3://greyfall-assets/tiny-swords/tiny-swords-v2.zip` |
-| `AWS_ACCESS_KEY_ID` | the deploy user's key |
-| `AWS_SECRET_ACCESS_KEY` | its secret |
-| `AWS_REGION` | `ap-southeast-1` |
-
-Do not paste a placeholder into `.env` as a reminder: the SDK would build a
-request header out of it and fail with `Invalid character in header content`,
-which says nothing about the cause. Leaving the variables unset falls back on
-`~/.aws`, which is what you want locally.
-
-All three are needed, region included: with no region resolvable the SDK
-fails with `Region is missing` before it reaches S3.
-
-On Vercel, being unconfigured is fatal rather than quiet - `pnpm assets`
-treats a missing `TINY_SWORDS_S3` as an error when `VERCEL` is set, so a
-forgotten variable stops the build instead of deploying a game with no art.
-
-Give the deploy its own IAM user scoped to `s3:GetObject` on that one key.
-Build environment variables are readable by anyone with project access.
-
-The `prebuild` hook runs before `next build`, so the pack is in `public/` by
-the time Next copies it into the output, and is then served as static files.
-On Vercel, set the project's Root Directory to `apps/web`.
-
-CI needs none of this: the build never reads the art, because every reference
-to it is a runtime URL.
-
-### Serving from somewhere other than the root
-
-Everything that asks for a pack file goes through `packUrl`, whose prefix is
-`NEXT_PUBLIC_ASSET_BASE` (default `/tiny-swords`). A host that serves the app
-under a path sets that one variable. This is what a Discord Activity will need,
-since Discord proxies Activity requests behind a `/.proxy/` prefix:
-
-```bash
-NEXT_PUBLIC_ASSET_BASE=/.proxy/tiny-swords
-```
-
-## Running
-
-```bash
-pnpm dev                          # the game; Next prints the port it took
-pnpm test                         # engine unit and property tests
-pnpm typecheck                    # both packages
-pnpm battle                       # print one battle in the terminal
-pnpm battle -- --seed 7 --moves   # a chosen seed, movement included
-pnpm war                          # a whole war on the island, AI against AI
-pnpm war -- --seed 7 --round 3    # a chosen seed, one round's battle in full
-pnpm assets                       # fetch and unpack the art pack
-```
-
-The CLI needs no art, so it is the quickest way to check the engine works
-before setting the pack up.
-
-## Layout
+| Engine | TypeScript with no dependencies, tested with Vitest and fast-check |
+| Client | Next.js 15, React 19, Phaser 3.90 |
+| API and data | tRPC, Zod, Drizzle ORM, Neon Postgres |
+| Tooling | pnpm workspaces, GitHub Actions |
 
 ```
-packages/engine   the simulation: balance tables, seeded rng, simulate(),
-                  generateArmy(), the island war (newMatch, applyAction,
-                  battle, planAi) and two CLIs. Pure TypeScript, no
-                  dependencies.
-apps/web          Next.js app. React for the draft screen, Phaser for the
-                  battle playback.
+packages/engine   the simulation: island, pathing and vision, the tick-stepped
+                  war (createSim, actions, economy, AI), the Skirmish battle,
+                  balance tables, seeded rng, and the two CLIs
+apps/web          the Next.js app: Phaser scenes for the title, the island and
+                  the Skirmish board; React menus; tRPC and Drizzle for Duel
 ```
 
-The engine is a pure function: armies and a seed in, a result and an event log
-out. The client imports it directly for this phase, and because it touches no
-I/O it moves to the server unchanged in Phase 2, which is what keeps a preview
-and an official result in agreement.
+The engine steps at 10 ticks a second and touches no I/O, so the same code
+can run on a server and keep every player's view in agreement.
 
-The same armies and the same seed always produce the same battle, so a replay
-only needs to store two army snapshots and a seed.
+## Contributing
+
+The working agreements for people and agents are in [AGENTS.md](AGENTS.md).
+Commits follow [Conventional Commits](https://www.conventionalcommits.org), and
+`pnpm typecheck` and `pnpm test` must pass before a pull request.
+
+## Licensing
+
+### Source code
+
+The code does not have a license yet, so all rights are reserved.
+
+### Content
+
+All art is [Tiny Swords](https://pixelfrog-assets.itch.io/tiny-swords) by
+Pixel Frog. Its license allows commercial use and modification but forbids
+redistribution, which is why the pack is not in this repository.
+
+## Special thanks
+
+- Pixel Frog, for Tiny Swords.
+- [1500 Archers on a 28.8](https://www.gamedeveloper.com/programming/1500-archers-on-a-28-8-network-programming-in-age-of-empires-and-beyond)
+  and [Fix Your Timestep!](https://gafferongames.com/post/fix_your_timestep/),
+  the models the engine is built on.
+- Warcraft III and StarCraft II, for the economy, fog and control conventions.
