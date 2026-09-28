@@ -31,11 +31,11 @@ describe("fog of war", () => {
   });
 
   it("does not see up a cliff, but sees down one", () => {
-    const below = { ...bare(), units: [pawnAt("a", 21, 11, 1)] };
-    expect(sees(below, "a", 21, 12)).toBe(true);
-    expect(sees(below, "a", 23, 9)).toBe(false);
-    const above = { ...bare(), units: [pawnAt("a", 23, 9, 1)] };
-    expect(sees(above, "a", 21, 12)).toBe(true);
-    expect(sees(above, "a", 23, 9)).toBe(true);
+    const below = { ...bare(), units: [pawnAt("a", 19, 17, 1)] };
+    expect(sees(below, "a", 19, 16)).toBe(true);
+    expect(sees(below, "a", 22, 15)).toBe(false);
+    const above = { ...bare(), units: [pawnAt("a", 22, 15, 1)] };
+    expect(sees(above, "a", 19, 16)).toBe(true);
+    expect(sees(above, "a", 22, 15)).toBe(true);
   });
 });

@@ -23,9 +23,10 @@ for Discord as an Activity that friends launch from a voice call.
 
 ## Highlights
 
-- Real-time war on a mirrored two-lane island, three levels high. The High
-  Pass runs under the Crown's high ground; the Low Road leads to the rich mine
-  at the ford.
+- Real-time war on a three-level island, bases in opposite corners. The High
+  Pass crosses the middle under the Crown, where the rich mine sits below the
+  monsters' Lair; a flank road runs through each of the other two corners,
+  past the expansion mines.
 - Fog of war in two layers, black until explored and grey out of
   sight. Nobody sees up a cliff.
 - Pawns carry gold from mine to castle, 10 a trip, and buildings go

@@ -106,37 +106,45 @@ export function makeMapAnims(scene: Phaser.Scene): void {
 /** Each land level's ground colour: lowland, plateau, the Crown. */
 const SHEET: Record<number, string> = { 1: "tilesetLow", 2: "tilesetMid", 3: "tileset" };
 
-/** Neutral landmarks: huts and a cave in the woods, a
- *  dead tree on the islet, towers and a fish hut in the shallows. Each stands
- *  on forest or water, so none of them sits where a unit can walk. */
+/** Neutral landmarks: huts and a cave in the woods, towers and a fish hut
+ *  in the shallows. Each stands on forest or water, so none of them sits
+ *  where a unit can walk. */
 const LANDMARK_SPOTS: { name: BuildingName; col: number; row: number; scale?: number; clears?: [number, number][] }[] = [
-  { name: "cave", col: 9, row: 33.9, clears: [[8, 33], [9, 33], [10, 33]] },
-  { name: "goblinHut", col: 19, row: 33.9, scale: 0.8, clears: [[18, 33], [19, 33]] },
-  { name: "gnomeHut", col: 14, row: 34.9, clears: [[13, 34], [14, 34]] },
-  { name: "gnomeTower", col: 16, row: 34.9, scale: 0.85, clears: [[15, 34], [16, 34]] },
-  { name: "skullSpike", col: 2.5, row: 22.9, clears: [[2, 22]] },
-  { name: "skullSpike", col: 21.5, row: 12.9, clears: [[21, 12]] },
-  { name: "fishHut", col: 9, row: 35.2 },
-  { name: "waterTower", col: 17.5, row: 4.8 },
+  { name: "cave", col: 54, row: 3.9, clears: [[53, 3], [54, 3], [55, 3]] },
+  { name: "goblinHut", col: 21, row: 3.9, scale: 0.8, clears: [[20, 3], [21, 3]] },
+  { name: "gnomeHut", col: 27, row: 4.9, clears: [[26, 4], [27, 4]] },
+  { name: "gnomeTower", col: 29, row: 4.9, scale: 0.85, clears: [[28, 4], [29, 4]] },
+  { name: "skullSpike", col: 2.5, row: 12.9, clears: [[2, 12]] },
+  { name: "skullSpike", col: 13.5, row: 13.9, clears: [[13, 13]] },
+  { name: "fishHut", col: 17, row: 3.2 },
+  { name: "waterTower", col: 42.5, row: 15.8 },
 ];
-const LANDMARK_LIST = LANDMARK_SPOTS.flatMap((l) => [l, { ...l, col: STRAT_COLS - l.col, mirror: true }]);
+/** The island's other half is this one turned half round: a landmark keeps
+ *  its place within its tile and is drawn facing the other way. */
+const LANDMARK_LIST = LANDMARK_SPOTS.flatMap((l) => [
+  l,
+  {
+    ...l,
+    col: STRAT_COLS - l.col,
+    row: STRAT_ROWS - 1 - Math.floor(l.row) + (l.row % 1),
+    clears: l.clears?.map(([c, r]): [number, number] => [STRAT_COLS - 1 - c, STRAT_ROWS - 1 - r]),
+    mirror: true,
+  },
+]);
 const LANDMARKS: Structure[] = LANDMARK_LIST.map((l) => ({ ...cell("g", l.name, l.col, l.row), scale: l.scale }));
 /** Forest tiles a landmark stands on, left without a tree. */
-const CLEARED = new Set(
-  LANDMARK_LIST.flatMap((l) => (l.clears ?? []).map(([c, r]) => (("mirror" in l) ? STRAT_COLS - 1 - c : c) + r * STRAT_COLS)),
-);
+const CLEARED = new Set(LANDMARK_LIST.flatMap((l) => (l.clears ?? []).map(([c, r]) => c + r * STRAT_COLS)));
 
-/** The two roads across the lowland: the pathfinder's walk from castle to
- *  castle over the High Pass and over the ford, one tile wider, as dirt
- *  tracks. High ground keeps its grass: a patch of road there reads as one
- *  more level. The lake splits the island's middle column, so closing that
- *  column above or below it leaves one lane. */
+/** The two flank roads: the pathfinder's walk from castle to castle through
+ *  the north-east and the south-west corner, one tile wider, as dirt tracks.
+ *  The High Pass between them runs over high ground, which keeps its grass:
+ *  a patch of road there reads as one more level. */
 function roadTiles(): Set<number> {
   const front = (side: "a" | "b"): Cell => ({ col: castlePlot(side).col + 1, row: castlePlot(side).row + 2 });
-  const walk = (north: boolean): Cell[] =>
-    findPath(front("a"), front("b"), (c) => !isOpen(c) || (c.col === (STRAT_COLS - 1) / 2 && c.row > STRAT_ROWS / 2 === north)) ?? [];
+  const blocked = (c: Cell): boolean => !isOpen(c);
+  const walk = (corner: Cell): Cell[] => [...(findPath(front("a"), corner, blocked) ?? []), ...(findPath(corner, front("b"), blocked) ?? [])];
   const out = new Set<number>();
-  for (const c of [...walk(true), ...walk(false)]) {
+  for (const c of [...walk({ col: 53, row: 10 }), ...walk({ col: 7, row: 27 })]) {
     if (level(c.col, c.row) !== 1) continue;
     out.add(c.row * STRAT_COLS + c.col);
     const wider = { col: c.col, row: c.row + 1 };
@@ -236,10 +244,10 @@ export function buildMap(scene: Phaser.Scene): void {
   }
 }
 
-/** Mirrors a spot to the other half, as the island is. */
+/** Turns a spot half round to the other half, as the island is. */
 const both = (spots: [number, number][]): [number, number][] => [
   ...spots,
-  ...spots.map(([c, r]): [number, number] => [STRAT_COLS - c, r]),
+  ...spots.map(([c, r]): [number, number] => [STRAT_COLS - c, STRAT_ROWS - r]),
 ];
 
 /** A tree on every forest tile a landmark does not stand on, the landmarks,
@@ -323,7 +331,7 @@ export function buildScenery(scene: Phaser.Scene): { strewn: Map<number, Phaser.
   put("rock", stones);
 
   const mines = new Map(MINES.map((m) => [m.id, addMine(scene, m)]));
-  for (const [c, r] of both([[10.5, 8.4], [6.5, 24.4], [17.5, 31.3], [20.4, 17.6]])) {
+  for (const [c, r] of both([[8.5, 11.4], [5.5, 20.4], [34.5, 7.3], [51.5, 8.4]])) {
     const sheep = scene.add
       .sprite(c * CELL, r * CELL, "sheep")
       .setOrigin(0.5, 0.66)

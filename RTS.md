@@ -12,7 +12,7 @@ Landed on Sep 27, 2026.
 
 - **Engine.** `createSim` steps the island a tick at a time; `battle()` and the new `startRound` / `roundDone` / `finishRound` run a round on it. Real time adds Pawn trips (10 gold a bag, never taxed), queues of up to 5, construction while a Pawn hammers, rally points, healing at home, and monster waves from minute 4. Gold is counted in tens throughout.
 - **Free placement.** `canPlace` allows your own plateau or the lowland, never a ramp, forest, a mine's edge or a spot that walls off a road, a mine or a building; `findPlacement` is what the AI builds on.
-- **Island.** 61x38, mirrored: home plateaus at mid-height with the ramp outside, the High Pass under the Crown, the Low Road past the watch cliffs to the ford, four mines a side plus the ford, forests and landmarks. Reworked the same day so both lanes get used; see below.
+- **Island.** 61x38, mirrored: home plateaus at mid-height with the ramp outside, the High Pass under the Crown, the Low Road past the watch cliffs to the ford, four mines a side plus the ford, forests and landmarks. Reworked the same day so both lanes get used, and on Sep 29 into bases in opposite corners; see below.
 - **Two knight clans.** Red uses the pack's red knights, faces and buildings everywhere the monster host was.
 - **Map screen.** A mode picker (Rounds, Real time with Space to pause, No pause); orders during a round's battle; a Pawn's build menu with a ghost footprint; training queues with cancel; right click sets a building's rally point; Ctrl+1-9 control groups; speed 1x/2x. The HUD redraws only the parts that changed, so a button is never rebuilt under the pointer.
 - **Checks.** 81 engine tests, including placement, trips, queues, rally, construction, determinism and the real-time deadline; typecheck clean; asset check clean; all three modes driven in headless Chromium.
@@ -30,6 +30,16 @@ Sep 27, 2026. The bases sat at the top of the island, so the High Pass was 12 st
 - **Texture.** Seeded bushes and rocks strewn thicker along woods, shores and cliffs, hidden under any building placed on them; jittered, sometimes doubled forest trees; rocks in the shallows; a wooded islet in the lake; ragged coasts.
 
 Sources: [SC2 level design: chokepoints and expansions](https://code.tutsplus.com/starcraft-ii-level-design-introduction-and-melee-maps--gamedev-3304t), [Time as a resource: multiplayer map design](https://waywardstrategy.com/2015/06/07/time-as-a-resource-part-2-multiplayer-map-design/), [Choke points in RTS games](https://game-design-snacks.fandom.com/wiki/Choke_points_in_Real_Time_Strategy_games_%E2%80%93_Helps_balance_gameplay).
+
+## Bases in opposite corners
+
+Sep 29, 2026. With the bases mirrored left and right, all four corners sat behind someone's castle and led nowhere, so nobody went there. Most modern 1v1 maps (StarCraft II's ladder, most Warcraft III 2-player maps) put the mains on a diagonal instead, and the other two corners become the expansions the attack routes pass.
+
+- **Turned half round, not mirrored.** Red's half is blue's rotated 180 degrees, still 61x38 at 64 px a tile. Cliffs only face south in the pack, so ramps and stairs can't rotate; each stands on its own ground's south edge, and the few cells that differ keep every walk within two steps of even (a test checks the Lair, all mines, and plateau size).
+- **Three roads.** The High Pass over the middle plateau and the Crown, 61 steps front to front, and a flank road through each other corner, 68 and 71. The pass is shortest but runs under the Lair; the flanks carry the gold.
+- **Corners pay.** Each side's near (1000) and far (1000) expansion sit in its flank corner, on the enemy's flank road, with a watch cliff over the near one. The rich mine (2500) moved onto the Crown under the Lair.
+- **Shaped after the pack's terrain sheet** (`Terrain and Decorations_06.gif`): stepped shores, wooded islets in both lakes, small wooded knolls, a stepped middle plateau.
+- **Numbers, 30 real-time AI seeds.** Blue 13, red 17, no draws; 13.1 minutes on average (10.9 to 17.1), up from about 11 because the bases are further apart. Pawns spend 14% of their time in the two flank corners, fighters 12%, and 21% on the pass.
 
 ## Fog of war
 

@@ -15,6 +15,9 @@ import {
   at,
   battle,
   canPlace,
+  findRoute,
+  cellKey,
+  buildSlots,
   canStep,
   castlePlot,
   createSim,
@@ -27,6 +30,7 @@ import {
   maxHp,
   mineSlots,
   newMatch,
+  plateauOf,
   occupied,
   planAi,
   plotCells,
@@ -77,14 +81,21 @@ describe("island", () => {
     expect(new Set(MAP.map((r) => r.length)).size).toBe(1);
   });
 
-  it("is the same island for both sides, mirrored left to right", () => {
-    const flip: Record<string, string> = { "<": ">", ">": "<", "[": "]", "]": "[" };
-    for (const line of MAP) expect([...line].reverse().map((ch) => flip[ch] ?? ch).join("")).toBe(line);
-    expect(START.b.castle.col).toBe(STRAT_COLS - 1 - START.a.castle.col - 2);
-    for (const m of MINES) {
-      const twin = MINES.find((o) => o.col === STRAT_COLS - 1 - m.col && o.row === m.row);
-      expect(twin, m.id).toBeDefined();
+  it("walks the same for both sides, within two steps", () => {
+    // From whichever side of the castle is nearest, as a Pawn leaving it would.
+    const to = (side: WarSide, goal: { col: number; row: number }[]) => {
+      const keys = new Set(goal.map(cellKey));
+      return Math.min(...buildSlots(castlePlot(side)).map((s) => findRoute(s, (c) => keys.has(cellKey(c)), blocked)?.length ?? Infinity));
+    };
+    const toMine = (side: WarSide, id: string) => to(side, mineSlots(MINES.find((m) => m.id === id)!));
+    const even = (a: number, b: number, what: string) => expect(Math.abs(a - b), `${what}: ${a} vs ${b}`).toBeLessThanOrEqual(2);
+    even(to("a", [LAIR]), to("b", [LAIR]), "lair");
+    for (const id of ["mine-", "mine-y", "mine-c", "mine-f"]) {
+      even(toMine("a", `${id}a`), toMine("b", `${id}b`), `own ${id}`);
+      even(toMine("a", `${id}b`), toMine("b", `${id}a`), `enemy ${id}`);
     }
+    even(toMine("a", "mine-mid"), toMine("b", "mine-mid"), "mine-mid");
+    expect(plateauOf(START.a.castle)).toHaveLength(plateauOf(START.b.castle).length);
   });
 
   it("starts each castle and barracks on its own home plateau", () => {
@@ -103,16 +114,19 @@ describe("island", () => {
     }
   });
 
-  it("joins the bases by exactly two roads", () => {
-    const without = (cells: [number, number][]) => (c: { col: number; row: number }) =>
-      blocked(c) || cells.some(([col, row]) => c.col === col && c.row === row);
-    const pass: [number, number][] = [[21, 10], [39, 10]];
-    const ford: [number, number][] = [];
-    for (let row = 19; row < 34; row++) ford.push([30, row]);
-    // Within a few steps of each other, so neither lane is the obvious one.
-    expect(findPath(front("a"), front("b"), without(ford))).toHaveLength(52);
-    expect(findPath(front("a"), front("b"), without(pass))).toHaveLength(50);
-    expect(findPath(front("a"), front("b"), without([...pass, ...ford]))).toBeNull();
+  it("joins the bases by three roads: the High Pass and one through each flank corner", () => {
+    type Area = [number, number, number, number];
+    const without = (...areas: Area[]) => (c: { col: number; row: number }) =>
+      blocked(c) || areas.some(([c0, r0, c1, r1]) => c.col >= c0 && c.col <= c1 && c.row >= r0 && c.row <= r1);
+    const pass: Area = [20, 13, 40, 24];
+    const ne: Area = [45, 0, 60, 19];
+    const sw: Area = [0, 18, 15, 37];
+    // The pass is shortest but runs under the Lair; the flanks pay for their
+    // length with the corner mines.
+    expect(findPath(front("a"), front("b"), without(ne, sw))).toHaveLength(61);
+    expect(findPath(front("a"), front("b"), without(pass, sw))).toHaveLength(71);
+    expect(findPath(front("a"), front("b"), without(pass, ne))).toHaveLength(68);
+    expect(findPath(front("a"), front("b"), without(pass, ne, sw))).toBeNull();
   });
 
   it("puts each home mine on its home plateau, and gives every mine room", () => {
@@ -122,11 +136,11 @@ describe("island", () => {
   });
 
   it("only changes level along a ramp or the Crown's stairs, one level at a time", () => {
-    expect(canStep({ col: 13, row: 15 }, { col: 13, row: 16 })).toBe(true);
-    expect(canStep({ col: 12, row: 12 }, { col: 13, row: 12 })).toBe(false);
-    expect(canStep({ col: 26, row: 9 }, { col: 26, row: 8 })).toBe(true);
-    expect(canStep({ col: 26, row: 8 }, { col: 25, row: 8 })).toBe(false);
-    expect(isWalkable(27, 9)).toBe(false);
+    expect(canStep({ col: 14, row: 9 }, { col: 14, row: 10 })).toBe(true);
+    expect(canStep({ col: 11, row: 5 }, { col: 12, row: 5 })).toBe(false);
+    expect(canStep({ col: 26, row: 17 }, { col: 26, row: 16 })).toBe(true);
+    expect(canStep({ col: 26, row: 16 }, { col: 25, row: 16 })).toBe(false);
+    expect(isWalkable(27, 17)).toBe(false);
   });
 
   it("keeps everyone out of the forest", () => {
@@ -155,14 +169,14 @@ describe("placement", () => {
     const s = newMatch(1);
     const spot = findPlacement(s, "a", "barracks")!;
     expect(canPlace(s, "a", "barracks", spot.col, spot.row)).toBeNull();
-    expect(canPlace(s, "a", "house", 15, 24)).toBeNull();
+    expect(canPlace(s, "a", "house", 8, 20)).toBeNull();
   });
 
   it("refuses the enemy's plateau, high ground, a ramp, forest and a mine's edge", () => {
     const s = newMatch(1);
-    expect(canPlace(s, "a", "house", 50, 12)).not.toBeNull();
-    expect(canPlace(s, "a", "house", 27, 10)).not.toBeNull();
-    expect(canPlace(s, "a", "house", 13, 15)).not.toBeNull();
+    expect(canPlace(s, "a", "house", 50, 32)).not.toBeNull();
+    expect(canPlace(s, "a", "house", 22, 14)).not.toBeNull();
+    expect(canPlace(s, "a", "house", 14, 9)).not.toBeNull();
     expect(canPlace(s, "a", "house", 2, 23)).not.toBeNull();
     const mine = MINES.find((m) => m.id === "mine-ya")!;
     expect(canPlace(s, "a", "house", mine.col + 1, mine.row)).not.toBeNull();
@@ -173,7 +187,7 @@ describe("placement", () => {
     const barracks = s.buildings["a-barracks"]!;
     expect(canPlace(s, "a", "house", barracks.col, barracks.row)).not.toBeNull();
     // The home ramp's foot is the only way down the plateau.
-    expect(canPlace(s, "a", "house", 13, 16)).toBe("that would wall off the road");
+    expect(canPlace(s, "a", "house", 14, 10)).toBe("that would wall off the road");
   });
 });
 
@@ -207,7 +221,7 @@ describe("planning", () => {
     const pawns = s.units.filter((u) => u.side === "a" && u.class === "pawn");
     expect(pawns).toHaveLength(WAR.pawns.max);
     const digging = (id: string) => pawns.filter((u) => u.order.type === "gather" && u.order.mine === id).length;
-    expect([digging("mine-a"), digging("mine-ya"), digging("mine-na")]).toEqual([4, 4, 1]);
+    expect([digging("mine-a"), digging("mine-ya"), digging("mine-ca")]).toEqual([4, 4, 1]);
     expect(applyAction(s, "a", { type: "train", plot: "a-castle" }).ok).toBe(false);
   });
 
@@ -521,7 +535,8 @@ describe("real time", () => {
 
   it("ends by the monster waves, AI against AI", () => {
     const sim = createSim(newMatch(7, "realtime"));
-    const deadline = seconds(15 * 60);
+    // The diagonal island runs 11-17 minutes over 30 seeds; 20 is the CLI's cap.
+    const deadline = seconds(20 * 60);
     while (sim.world.winner === null && sim.t < deadline) {
       if (sim.t % AI_EVERY_TICKS === 0) for (const side of ["a", "b"] as const) runAi(sim, side);
       sim.step();

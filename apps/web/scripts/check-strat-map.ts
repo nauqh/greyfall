@@ -6,16 +6,15 @@ import { canStep, findPath, isWalkable, type Cell } from "../src/game/stratMap.t
 const c = (col: number, row: number): Cell => ({ col, row });
 
 // Off a plateau's side is a drop, not a step.
-assert.equal(canStep(c(14, 4), c(15, 4)), false);
+assert.equal(canStep(c(11, 5), c(12, 5)), false);
 // The ramp works both ways, straight down its slope only.
-assert.equal(canStep(c(13, 5), c(13, 6)), true);
-assert.equal(canStep(c(13, 6), c(13, 5)), true);
-assert.equal(canStep(c(13, 5), c(14, 5)), false);
-// The ramp's head is reached from the plateau above it and beside it.
-assert.equal(canStep(c(13, 4), c(13, 5)), true);
-assert.equal(canStep(c(12, 5), c(13, 5)), true);
+assert.equal(canStep(c(14, 9), c(14, 10)), true);
+assert.equal(canStep(c(14, 10), c(14, 9)), true);
+assert.equal(canStep(c(14, 9), c(15, 9)), false);
+// The ramp's head is reached from the plateau beside it.
+assert.equal(canStep(c(13, 9), c(14, 9)), true);
 // A cliff face is not ground.
-assert.equal(isWalkable(5, 6), false);
+assert.equal(isWalkable(5, 10), false);
 
 function walk(from: Cell, to: Cell): Cell[] {
   const path = findPath(from, to);
@@ -25,12 +24,12 @@ function walk(from: Cell, to: Cell): Cell[] {
 }
 const has = (path: Cell[], col: number, row: number): boolean => path.some((p) => p.col === col && p.row === row);
 
-// Blue plateau down to the lowland goes by its ramp; red's by its own.
-assert.ok(has(walk(c(6, 2), c(14, 7)), 13, 5));
-assert.ok(has(walk(c(26, 15), c(18, 14)), 22, 16));
-// The bases are joined: blue's ramp foot runs east to red's ramp.
-assert.ok(walk(c(8, 4), c(24, 15)));
-// The sea islet is out of reach.
-assert.equal(findPath(c(6, 2), c(3, 18)), null);
+// Blue's plateau down to the lowland goes by its ramp; red's by its own.
+assert.ok(has(walk(c(6, 6), c(20, 12)), 14, 9));
+assert.ok(has(walk(c(54, 33), c(40, 26)), 46, 28));
+// The bases are joined, corner to corner.
+assert.ok(walk(c(6, 6), c(53, 33)));
+// Blue climbs the Crown by its west stairs.
+assert.ok(has(walk(c(6, 6), c(30, 16)), 26, 16));
 
 console.log("strat map ok");

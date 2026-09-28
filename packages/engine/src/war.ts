@@ -299,10 +299,10 @@ export function addUnit(state: MatchState, side: UnitSide, cls: UnitClass, at: C
   return unit;
 }
 
-/** Where a Pawn looking for work goes: home first, then the yard, the north
- *  woods, the south woods and the ford; the first with gold and room. */
+/** Where a Pawn looking for work goes: home first, then the yard, its flank
+ *  corner near and far, and the Crown; the first with gold and room. */
 export function openMine(state: MatchState, side: WarSide): Mine | undefined {
-  return [`mine-${side}`, `mine-y${side}`, `mine-n${side}`, `mine-s${side}`, "mine-mid"]
+  return [`mine-${side}`, `mine-y${side}`, `mine-c${side}`, `mine-f${side}`, "mine-mid"]
     .map((id) => mineById(id)!)
     .find((m) => (state.mines[m.id] ?? 0) > 0 && gatherers(state, m.id, side).length < WAR.pawnsPerMine);
 }
