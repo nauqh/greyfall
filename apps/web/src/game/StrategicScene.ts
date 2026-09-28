@@ -13,6 +13,7 @@ import {
   buildSlots,
   canPlace,
   castlePlot,
+  castsCliff,
   plateauOf,
   cellKey,
   createSim,
@@ -229,7 +230,9 @@ export class StrategicScene extends Phaser.Scene {
 
   create(): void {
     // Open on the middle of the player's own plateau, castle, barracks and mine in view.
-    const home = plateauOf(castlePlot("a"));
+    // The plateau and the cliff face under its south edge, which is drawn a row below it.
+    const top = plateauOf(castlePlot("a"));
+    const home = [...top, ...top.filter((c) => castsCliff(c.col, c.row)).map((c) => ({ col: c.col, row: c.row + 1 }))];
     const mid = (pick: (c: { col: number; row: number }) => number): number =>
       ((Math.min(...home.map(pick)) + Math.max(...home.map(pick)) + 1) / 2) * CELL;
     // Centred in the map's own strip, between the top bar and the command panel.
