@@ -521,8 +521,8 @@ export class StrategicHud extends Phaser.Scene {
       const y = y0 + Math.floor(i / 3) * pitch + pitch / 2;
       const cmd = m.commands[i] ?? null;
       if (!cmd) {
-        // An empty socket in the wood, not a dead button.
-        this.keep(this.add.image(x, y, "hudSlot").setDisplaySize(btn - 8, btn - 8).setAlpha(0.55));
+        // A blank key sunk into the board. Opaque: at partial alpha the plank seams showed through.
+        this.keep(this.add.image(x, y + 2, "sqBlueDown", "ink").setDisplaySize(btn, btn * (SQUARE.h / SQUARE.w)).setTint(0x7a5f52));
         continue;
       }
       this.keep(this.commandButton(x, y, cmd, btn));
