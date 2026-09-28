@@ -969,8 +969,6 @@ export class StrategicScene extends Phaser.Scene {
       queue: null,
       primary: null,
       pawns: {
-        total: pawns.length,
-        building: pawns.filter((u) => u.order.type === "build").length,
         idle: pawns.filter(idle).length,
         onIdle: () => this.selectPawns(),
       },

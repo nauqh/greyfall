@@ -21,8 +21,12 @@ export const HUD_KEY = "strategicHud";
 const BAR_H = 176;
 /** How much of the screen's bottom the HUD covers; the map scrolls up past it. */
 export const HUD_COVER_H = BAR_H;
-/** The header row's height: menu, ribbon and resources. The map keeps sea under it. */
-export const HUD_TOP_H = 72;
+/** The header row's height, flush to the top edge. The map keeps sea under it. */
+export const HUD_TOP_H = 46;
+/** How far the header papers reach above the screen, hiding their top rims. */
+const STRIP_UP = 16;
+/** The paper art's clear margin under its ink, at half scale. */
+const PAPER_FOOT = 10;
 
 /** The pack's icon sheet, by what each stands for on the command card. */
 export const ICON = {
@@ -84,7 +88,7 @@ export interface HudModel {
   /** The sword over the console, only when there is one big thing to do. */
   primary: { label: string; onClick: () => void } | null;
   /** Blue's Pawns; clicking the idle count picks the idle ones. */
-  pawns: { total: number; building: number; idle: number; onIdle: () => void };
+  pawns: { idle: number; onIdle: () => void };
   /** The end of the match, over everything. */
   report: {
     title: string;
@@ -240,7 +244,7 @@ export class StrategicHud extends Phaser.Scene {
     this.toast = { id: -1, box: null };
     this.layout.w = this.scale.width / zoom;
     this.layout.h = this.scale.height / zoom;
-    this.iconButton(34, 34, ICON.menu, () => this.toggleMenu());
+    this.iconButton(34, HUD_TOP_H / 2, ICON.menu, () => this.toggleMenu());
     this.input.keyboard?.on("keydown-H", () => this.toggleGuide());
     this.input.keyboard?.on("keydown-ESC", () => (this.menuOpen ? this.toggleMenu() : this.guideOpen && this.toggleGuide()));
     this.buildBar();
@@ -345,52 +349,57 @@ export class StrategicHud extends Phaser.Scene {
 
   private buildTop(m: HudModel): void {
     const { w } = this.layout;
-    // The mode on a ribbon, centred.
-    const tone = m.banner.tone;
-    const text = label(this, 0, -6, m.banner.text, { fontSize: "19px" });
-    const rw = Math.max(240, text.width + 130);
-    const rib = this.keep(this.strip("bigRibbons", [`${tone}_left`, `${tone}_mid`, `${tone}_right`], w / 2, 34, rw, 0.5));
-    rib.add(text);
+    // Papers run off the top edge, their ink ending at HUD_TOP_H, so the strips hang from it.
+    const y = HUD_TOP_H / 2;
+    const paper = (cx: number, pw: number): Phaser.GameObjects.NineSlice =>
+      this.keep(
+        panel(this, "paper", cx, (HUD_TOP_H + PAPER_FOOT - STRIP_UP) / 2, pw * 2, (HUD_TOP_H + PAPER_FOOT + STRIP_UP) * 2)
+          .setScale(0.5)
+          .setInteractive({ cursor: ARROW }),
+      );
+    if (m.banner.tone === "red") {
+      const t = label(this, w / 2, y, m.banner.text, { ...INK, color: "#a12f2f", fontSize: "17px", fontStyle: "800" });
+      paper(w / 2, t.width + 60);
+      this.keep(t).setDepth(1);
+    }
 
-    // Resources on a strip of paper in the corner. Supply counts what is left:
-    // queued units have taken theirs, so the field can look emptier than it is.
-    const left = Math.max(0, m.supply[1] - m.supply[0]);
-    const items: [string | null, string][] = [
-      [ICON.gold, String(m.gold)],
-      [ICON.meat, `${left}/${m.supply[1]} left`],
-      [null, m.clock.text],
+    // Resources, off the right edge too. Supply is used/cap, as Warcraft's food:
+    // queued units count as used.
+    const [used, cap] = m.supply;
+    const items: [string | null, string, boolean][] = [
+      [ICON.gold, String(m.gold), false],
+      [ICON.meat, `${used}/${cap}`, used >= cap],
+      [null, m.clock.text, m.clock.warn],
     ];
-    const stripW = 390;
-    const x0 = w - 12 - stripW;
-    this.keep(panel(this, "paper", x0 + stripW / 2, 34, stripW * 2, 104).setScale(0.5).setInteractive({ cursor: ARROW }));
-    const at = [x0 + 30, x0 + 112, x0 + 262];
-    items.forEach(([icon, value], i) => {
+    const stripW = 310;
+    const x0 = w - stripW;
+    paper(x0 + (stripW + STRIP_UP) / 2, stripW + STRIP_UP);
+    const at = [x0 + 30, x0 + 120, x0 + 188];
+    items.forEach(([icon, value, warn], i) => {
       const x = at[i]!;
-      if (icon) this.keep(this.add.image(x, 33, iconKey(icon)).setScale(0.48));
-      const tint = (i === 2 && m.clock.warn) || (i === 1 && left === 0) ? "#a12f2f" : INK.color;
-      this.keep(label(this, icon ? x + 20 : x - 10, 34, value, { ...INK, color: tint, fontSize: i === 2 ? "14px" : "17px" }).setOrigin(0, 0.5));
+      if (icon) this.keep(this.add.image(x, y - 1, iconKey(icon)).setScale(0.48));
+      this.keep(label(this, icon ? x + 20 : x, y, value, { ...INK, color: warn ? "#a12f2f" : INK.color, fontSize: i === 2 ? "14px" : "17px" }).setOrigin(0, 0.5));
     });
 
-    // The workforce on a second strip, right of the menu button.
-    const p = m.pawns;
-    const bits: { text: string; color: string; onClick?: () => void }[] = [
-      { text: `${p.total} Pawns`, color: INK.color },
-      ...(p.building ? [{ text: `${p.building} building`, color: INK.color }] : []),
-      ...(p.idle ? [{ text: `${p.idle} idle`, color: "#a12f2f", onClick: p.onIdle }] : []),
-    ];
-    const lx0 = 70;
-    const face = this.add.image(lx0 + 26, 33, portraitKey("a", "pawn")).setDisplaySize(30, 30);
-    let lx = lx0 + 48;
-    const texts = bits.map((b) => {
-      const t = label(this, lx, 34, b.text, { ...INK, color: b.color, fontSize: "15px" }).setOrigin(0, 0.5);
-      if (b.onClick) t.setInteractive({ cursor: HAND }).on("pointerup", b.onClick);
-      lx += t.width + 14;
-      return t;
-    });
-    const lw = lx - lx0 + 8;
-    this.keep(panel(this, "paper", lx0 + lw / 2, 34, lw * 2, 104).setScale(0.5).setInteractive({ cursor: ARROW }));
-    // Made before the paper to be measured, so lifted back over it.
-    for (const o of [face, ...texts]) this.keep(o).setDepth(1);
+    // Warcraft's idle-worker button: only while a Pawn stands idle; a click selects them.
+    const idle = m.pawns.idle;
+    if (!idle) return;
+    const bx = 90;
+    const face = this.add.image(0, 0, "sqBlue", "ink").setDisplaySize(48, 48 * (SQUARE.h / SQUARE.w));
+    const key = portraitKey("a", "pawn");
+    const ink = this.inkOf(key);
+    const art = this.add.image(0, -3, key).setScale(30 / Math.max(ink.w, ink.h));
+    art.setOrigin((ink.x + ink.w / 2) / art.width, (ink.y + ink.h / 2) / art.height);
+    const count = label(this, 14, 10, String(idle), { fontSize: "14px", fontStyle: "800" });
+    const box = this.keep(this.add.container(bx, y, [face, art, count]).setSize(48, 48));
+    box
+      .setInteractive({ cursor: HAND })
+      .on("pointerdown", () => box.setY(y + 2))
+      .on("pointerout", () => box.setY(y))
+      .on("pointerup", () => {
+        box.setY(y);
+        m.pawns.onIdle();
+      });
   }
 
   private buildBar(): void {
@@ -726,7 +735,7 @@ export class StrategicHud extends Phaser.Scene {
     this.tip.parts = [box];
   }
 
-  /** The message on a paper slip under the ribbon, gone after a few seconds. */
+  /** The message on a paper slip under the header, gone after a few seconds. */
   private showToast(m: HudModel): void {
     if (m.messageId === this.toast.id) return;
     if (this.toast.box) {
@@ -739,7 +748,7 @@ export class StrategicHud extends Phaser.Scene {
     const text = label(this, 0, 0, m.message, { ...INK, fontSize: "15px", fontStyle: "700", wordWrap: { width: Math.min(520, w - 80) }, align: "center" });
     const ph = Math.max(64, text.height + 30);
     const paper = panel(this, "paper", 0, 0, (text.width + 60) * 2, ph * 2).setScale(0.5);
-    const y = 72 + ph / 2;
+    const y = HUD_TOP_H + 8 + ph / 2;
     const box = this.add.container(w / 2, y - 8, [paper, text]).setDepth(30).setAlpha(0);
     this.toast.box = box;
     this.tweens.add({ targets: box, alpha: 1, y, duration: 180, ease: "Sine.easeOut" });
