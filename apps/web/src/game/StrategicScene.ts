@@ -258,7 +258,8 @@ export class StrategicScene extends Phaser.Scene {
     this.hud = this.scene.add(HUD_KEY, StrategicHud, true, {
       // The HUD is the top scene, so the cloud cover goes there to sit over
       // its buttons too.
-      onMenu: () => this.toMenu(),
+      onLeave: () => this.toMenu(),
+      onPause: (on: boolean) => this.setPaused(on),
       onZoom: (dir: 1 | -1) => this.zoomStep(dir),
       model: () => this.model(),
     }) as StrategicHud;
@@ -459,8 +460,12 @@ export class StrategicScene extends Phaser.Scene {
   }
 
   private togglePause(): void {
-    if (this.phase !== "live") return;
-    this.paused = !this.paused;
+    this.setPaused(!this.paused);
+  }
+
+  private setPaused(on: boolean): void {
+    if (this.phase !== "live" || this.paused === on) return;
+    this.paused = on;
     this.message = this.paused ? "Paused. Orders still go out; Space to go on." : "";
     this.refresh();
   }
@@ -634,7 +639,7 @@ export class StrategicScene extends Phaser.Scene {
 
     for (const b of Object.values(state.buildings)) {
       if (b.side === "b" && !this.fog.knows(b.id)) continue;
-      // Build and training bars over every building that is busy.
+      // A build bar over every building going up; training shows in the HUD.
       const base = plotBase(b);
       const bar = (fill: number, tone: number, dy: number): void => {
         g.fillStyle(0x1c2634, 0.85).fillRect(base.x - 34, base.y + dy, 68, 7);
@@ -644,8 +649,6 @@ export class StrategicScene extends Phaser.Scene {
         const total = (b.pending === "build" ? WAR.realtime.buildSeconds[b.kind]! : WAR.realtime.upgradeSeconds) * 10;
         bar(b.progress / total, 0xffd66a, 4);
       }
-      const front = b.queue[0];
-      if (front && b.side === "a") bar(1 - front.left / (WAR.realtime.trainSeconds[front.cls] * 10), 0x9cff8a, 14);
       if (b.hp < (b.kind === "castle" ? WAR.buildingHp.castle : WAR.buildingHp.other) && b.level > 0) {
         const max = b.kind === "castle" ? WAR.buildingHp.castle : WAR.buildingHp.other;
         g.fillStyle(0x1c2634, 0.85).fillRect(base.x - 34, base.y - (b.kind === "house" ? 150 : 200), 68, 7);
@@ -954,8 +957,9 @@ export class StrategicScene extends Phaser.Scene {
       message: this.msg.text,
       messageId: this.msg.id,
       commands: [],
+      queue: null,
       primary: null,
-      secondary: [],
+      idlePawns: null,
       report: null,
     };
 
@@ -969,23 +973,20 @@ export class StrategicScene extends Phaser.Scene {
           ? this.inspectPanel()
           : null;
     const r = this.roster();
-    const training = (n: number): string => (n > 0 ? ` +${n}` : "");
     return {
       ...base,
       ...(panel ?? {
         title: "The war",
         detail: `${clockText(s.tick)} played. ${r.summary} Select a Pawn to build; a building to train or set its rally point with a right click.`,
       }),
-      primary: { label: this.paused ? "Resume" : "Pause", onClick: () => this.togglePause() },
-      secondary: [
-        { label: `Army ${r.army}${training(r.armyTraining)}`, onClick: () => this.selectArmy() },
-        { label: r.idle > 0 ? `Pawns ${r.pawns}, ${r.idle} idle` : `Pawns ${r.pawns}${training(r.pawnsTraining)}`, onClick: () => this.selectPawns() },
-      ],
+      // Pausing lives in the menu and on Space; the sword only offers the way back.
+      primary: this.paused ? { label: "Resume", onClick: () => this.setPaused(false) } : null,
+      idlePawns: r.idle > 0 ? { count: r.idle, onClick: () => this.selectPawns() } : null,
     };
   }
 
   /** Blue's units by kind, and what its buildings have queued: "+n" is in training. */
-  private roster(): { army: number; armyTraining: number; pawns: number; pawnsTraining: number; idle: number; summary: string } {
+  private roster(): { idle: number; summary: string } {
     const s = this.state;
     const have = new Map<UnitClass, number>();
     const queued = new Map<UnitClass, number>();
@@ -995,7 +996,6 @@ export class StrategicScene extends Phaser.Scene {
       if (b.side === "a") for (const q of b.queue) queued.set(q.cls, (queued.get(q.cls) ?? 0) + 1);
     }
     const fighters = (Object.keys(CLASS_NAME) as UnitClass[]).filter((c) => c !== "pawn");
-    const sum = (m: Map<UnitClass, number>): number => fighters.reduce((n, c) => n + (m.get(c) ?? 0), 0);
     const kinds = fighters
       .filter((c) => have.get(c) || queued.get(c))
       .map((c) => {
@@ -1005,10 +1005,6 @@ export class StrategicScene extends Phaser.Scene {
     const pawns = have.get("pawn") ?? 0;
     const pawnsTraining = queued.get("pawn") ?? 0;
     return {
-      army: sum(have),
-      armyTraining: sum(queued),
-      pawns,
-      pawnsTraining,
       idle: idlePawns,
       summary: `Army: ${kinds.length > 0 ? kinds.join(", ") : "none yet"}. Pawns: ${pawns}${pawnsTraining ? ` (+${pawnsTraining})` : ""}${idlePawns ? `, ${idlePawns} idle` : ""}.`,
     };
@@ -1073,11 +1069,11 @@ export class StrategicScene extends Phaser.Scene {
     };
   }
 
-  private plotPanel(id: string): Pick<HudModel, "title" | "detail" | "commands" | "portrait" | "hp"> {
+  private plotPanel(id: string): Pick<HudModel, "title" | "detail" | "commands" | "portrait" | "hp" | "queue"> {
     const b = this.state.buildings[id];
     if (!b) {
       this.selectedPlot = null;
-      return { title: "", detail: "", portrait: null, hp: null, commands: [] };
+      return { title: "", detail: "", portrait: null, hp: null, commands: [], queue: null };
     }
     const cls = trainsAt(b);
     const name = NAME[b.kind];
@@ -1091,6 +1087,7 @@ export class StrategicScene extends Phaser.Scene {
         hp: null,
         detail: `A Pawn is building it: ${Math.round((100 * b.progress) / total)}%. It stops while nobody hammers.`,
         commands,
+        queue: null,
       };
     }
     // A Pawn raises every upgrade, so a free one is part of the price.
@@ -1129,25 +1126,28 @@ export class StrategicScene extends Phaser.Scene {
           enabled: pawnFree && b.level < WAR.maxLevel && !b.pending && this.state.gold.a >= WAR.upgradeCost,
         };
       }
-      if (b.queue.length > 0) {
-        commands[3] = {
-          label: "Cancel",
-          hint: "Take the last unit off the queue, gold back.",
-          onClick: () => this.act({ type: "cancel", plot: id }),
-        };
-      }
     }
-    const queue = b.queue.length > 0 ? ` Training: ${b.queue.map((q) => CLASS_NAME[q.cls]).join(", ")}.` : "";
+    const front = b.queue[0];
+    const queue: HudModel["queue"] = front
+      ? {
+          units: b.queue.map((q) => ({ portrait: portraitKey("a", q.cls), name: CLASS_NAME[q.cls] })),
+          progress: 1 - front.left / (WAR.realtime.trainSeconds[front.cls] * 10),
+          cancel: () => this.act({ type: "cancel", plot: id }),
+        }
+      : null;
     return {
       title: `${name}, level ${b.level}`,
       portrait,
       hp: [b.hp, b.kind === "castle" ? WAR.buildingHp.castle : WAR.buildingHp.other],
       detail: cls
-        ? `Trains the ${CLASS_NAME[cls]}.${b.pending === "upgrade" ? " Upgrading." : ""}${queue} Right click the ground to set its rally point.`
+        ? queue
+          ? `${b.pending === "upgrade" ? "Upgrading. " : ""}Right click the ground for its rally point.`
+          : `Trains the ${CLASS_NAME[cls]}.${b.pending === "upgrade" ? " Upgrading." : ""} Right click the ground to set its rally point.`
         : b.kind === "house"
           ? `Adds ${WAR.supply.perHouse} supply.`
           : "Your main hall. If it falls, the war is lost.",
       commands,
+      queue,
     };
   }
 
