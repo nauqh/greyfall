@@ -139,6 +139,8 @@ const RIBBON_ROW = { blue: 0, red: 1 } as const;
 const INK = { color: "#4a3a2a", stroke: "#f3e6c8", strokeThickness: 0 };
 /** Command card cell pitch and button size for a 3x3 card, in HUD units. */
 const CELL = 52;
+/** Warcraft's grid hotkeys: the command card's keys by position, row by row. */
+const GRID = "QWEASDZXC";
 const BTN = 48;
 /** The card's width: a 3x2 card's buttons grow to fill it. */
 const CARD_W = 216;
@@ -177,6 +179,8 @@ export class StrategicHud extends Phaser.Scene {
   private splashed: string | null = null;
   private guideOpen = false;
   private menuOpen = false;
+  /** The command card by hotkey, as last drawn. */
+  private cardKeys = new Map<string, HudCommand>();
   /** Where buildSelection put the training queue's row, for its progress bar. */
   private queueRow: { x: number; y: number; w: number } | null = null;
   private guideTab: "guide" | "keys" = "guide";
@@ -244,7 +248,16 @@ export class StrategicHud extends Phaser.Scene {
     this.toast = { id: -1, box: null };
     this.layout.w = this.scale.width / zoom;
     this.layout.h = this.scale.height / zoom;
-    this.iconButton(34, HUD_TOP_H / 2, ICON.menu, () => this.toggleMenu());
+    this.iconButton(34, HUD_TOP_H / 2, ICON.menu, "F10", () => this.toggleMenu());
+    this.input.keyboard?.on("keydown-F10", (e: KeyboardEvent) => {
+      e.preventDefault();
+      if (!this.hud.model().report) this.toggleMenu();
+    });
+    this.input.keyboard?.on("keydown", (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || this.menuOpen || this.guideOpen) return;
+      const cmd = this.cardKeys.get(e.key.toUpperCase());
+      if (cmd && cmd.enabled !== false && !this.hud.model().report) cmd.onClick();
+    });
     this.input.keyboard?.on("keydown-H", () => this.toggleGuide());
     this.input.keyboard?.on("keydown-ESC", () => (this.menuOpen ? this.toggleMenu() : this.guideOpen && this.toggleGuide()));
     this.buildBar();
@@ -523,7 +536,8 @@ export class StrategicHud extends Phaser.Scene {
     const y0 = this.cy - (rows * pitch) / 2;
     // A big command in the first slot takes the card's top-left 2x2 block.
     const big = rows === 3 && m.commands[0]?.big ? m.commands[0] : null;
-    if (big) this.keep(this.commandButton(x0 + pitch, y0 + pitch, big, 2 * pitch - 4));
+    this.cardKeys.clear();
+    if (big) this.keep(this.commandButton(x0 + pitch, y0 + pitch, big, 2 * pitch - 4, undefined, GRID[0]));
     for (let i = 0; i < rows * 3; i++) {
       if (big && [0, 1, 3, 4].includes(i)) continue;
       const x = x0 + (i % 3) * pitch + pitch / 2;
@@ -534,11 +548,12 @@ export class StrategicHud extends Phaser.Scene {
         this.keep(this.add.image(x, y + 2, "sqBlueDown", "ink").setDisplaySize(btn, btn * (SQUARE.h / SQUARE.w)).setTint(0x7a5f52));
         continue;
       }
-      this.keep(this.commandButton(x, y, cmd, btn));
+      this.keep(this.commandButton(x, y, cmd, btn, undefined, GRID[i]));
     }
   }
 
-  private commandButton(x: number, y: number, cmd: HudCommand, size = BTN, tipAt?: number): Phaser.GameObjects.Container {
+  private commandButton(x: number, y: number, cmd: HudCommand, size = BTN, tipAt?: number, key?: string): Phaser.GameObjects.Container {
+    if (key) this.cardKeys.set(key, cmd);
     const on = cmd.enabled !== false;
     const face = this.add.image(0, 0, "sqBlue", "ink").setDisplaySize(size, size * (SQUARE.h / SQUARE.w));
     const parts: Phaser.GameObjects.GameObject[] = [face];
@@ -547,17 +562,19 @@ export class StrategicHud extends Phaser.Scene {
     const x0 = (FACE.x - SQUARE.w / 2) * px + 2;
     const x1 = (FACE.x + FACE.w - SQUARE.w / 2) * px - 2;
     const y0 = (FACE.y - SQUARE.h / 2) * px + 2;
+    // The hotkey gets its own row at the top, so no label or picture runs under it.
+    const top = key ? y0 + 9 : y0;
     const y1 = (FACE.y + FACE.h - SQUARE.h / 2) * px - 2;
     // A smaller font rather than a scale, which would blur the glyphs.
     const fit = (t: Phaser.GameObjects.Text): Phaser.GameObjects.Text => {
-      for (let px = parseFloat(String(t.style.fontSize)); t.width > x1 - x0 && px > 7; ) t.setFontSize(--px);
+      for (let px = parseFloat(String(t.style.fontSize)); (t.width > x1 - x0 || t.height > y1 - top) && px > 7; ) t.setFontSize(--px);
       return t;
     };
     const k = size / BTN;
     const small = `${Math.round(10 * Math.min(k, 1.3))}px`;
     const picture = cmd.portrait && this.textures.exists(cmd.portrait) ? cmd.portrait : cmd.icon ? iconKey(cmd.icon) : null;
     if (!picture) {
-      parts.push(fit(label(this, 0, (y0 + y1) / 2, cmd.label, { fontSize: cmd.label.length > 6 ? "11px" : "13px", wordWrap: { width: x1 - x0 }, align: "center" })));
+      parts.push(fit(label(this, 0, (top + y1) / 2, cmd.label, { fontSize: cmd.label.length > 6 ? "11px" : "13px", wordWrap: { width: x1 - x0 }, align: "center" })));
     } else {
       // The name, and a troop's price under it, stacked up from the face's bottom.
       const lines = [label(this, 0, 0, cmd.label, { fontSize: cmd.big ? "14px" : small, strokeThickness: 3 })];
@@ -569,11 +586,13 @@ export class StrategicHud extends Phaser.Scene {
       }
       // The picture in what is left, fitted by its ink rather than its padded frame.
       const ink = this.inkOf(picture);
-      const room = Math.min((x1 - x0) / ink.w, (bottom - y0) / ink.h);
-      const art = this.add.image(0, (y0 + bottom) / 2, picture).setScale(cmd.icon && !cmd.portrait ? Math.min(room, 0.4 * k) : room);
+      const room = Math.min((x1 - x0) / ink.w, (bottom - top) / ink.h);
+      const art = this.add.image(0, (top + bottom) / 2, picture).setScale(cmd.icon && !cmd.portrait ? Math.min(room, 0.4 * k) : room);
       art.setOrigin((ink.x + ink.w / 2) / art.width, (ink.y + ink.h / 2) / art.height);
       parts.push(art, ...lines);
     }
+    // The hotkey in the face's top-left corner, gold like Warcraft's.
+    if (key) parts.push(label(this, x0 + 1, y0, key, { fontSize: "10px", fontStyle: "800", color: "#ffe28a", strokeThickness: 2 }).setOrigin(0, 0));
     const box = this.add.container(x, y, parts).setSize(size, size);
     if (!on) {
       face.setTint(0x8a8f96);
@@ -722,7 +741,9 @@ export class StrategicHud extends Phaser.Scene {
   private showTip(cmd: HudCommand, at?: number): void {
     const tw = 290;
     const pad = 18;
-    const title = label(this, 0, 0, cmd.sub ? `${cmd.label} (${cmd.sub})` : cmd.label, { ...INK, fontSize: "16px", fontStyle: "800" }).setOrigin(0, 0);
+    const key = [...this.cardKeys].find(([, c]) => c === cmd)?.[0];
+    const name = `${cmd.label}${key ? ` [${key}]` : ""}`;
+    const title = label(this, 0, 0, cmd.sub ? `${name} (${cmd.sub})` : name, { ...INK, fontSize: "16px", fontStyle: "800" }).setOrigin(0, 0);
     const body = label(this, 0, 0, cmd.hint, { ...INK, fontSize: "13px", fontStyle: "500", wordWrap: { width: tw - 2 * pad }, lineSpacing: 2 }).setOrigin(0, 0);
     const th = Math.max(64, pad + title.height + 6 + body.height + pad);
     const x = at === undefined ? this.barX1 - 10 - tw : Math.max(8, Math.min(this.layout.w - 8 - tw, at - tw / 2));
@@ -845,10 +866,12 @@ export class StrategicHud extends Phaser.Scene {
       });
   }
 
-  private iconButton(x: number, y: number, icon: string, onClick: () => void): void {
+  private iconButton(x: number, y: number, icon: string, key: string, onClick: () => void): void {
     const face = this.add.image(0, 0, "sqBlue", "ink").setDisplaySize(48, 48 * (SQUARE.h / SQUARE.w));
-    const mark = this.add.image(0, -2, iconKey(icon)).setScale(0.5);
-    const box = this.add.container(x, y, [face, mark]).setSize(48, 48);
+    // Nudged down and in to leave the hotkey its corner.
+    const mark = this.add.image(3, 4, iconKey(icon)).setScale(0.38);
+    const hint = label(this, -17, -18, key, { fontSize: "9px", fontStyle: "800", color: "#ffe28a", strokeThickness: 2 }).setOrigin(0, 0);
+    const box = this.add.container(x, y, [face, mark, hint]).setSize(48, 48);
     box
       .setInteractive({ cursor: HAND })
       .on("pointerdown", () => box.setY(y + 2))
@@ -921,12 +944,14 @@ function shortcutSections(): GuideSection[] {
       lines: [
         ["F1", "Select all your Pawns"],
         ["F2", "Select your whole army"],
+        ["Q W E, A S D, Z X C", "The command card's buttons, by position"],
         ["Ctrl + 1-9", "Set a control group"],
         ["1-9", "Recall a control group"],
         ["Space", "Pause and resume"],
         ["Esc", "Cancel placing a building, let go of the selection"],
         ["Arrow keys", "Pan the map (or the screen edge)"],
         ["H", "Open and close this guide"],
+        ["F10", "Open and close the menu"],
       ],
     },
   ];
