@@ -108,6 +108,11 @@ interface SimUnit extends WarUnit {
   dead: boolean;
   /** Real time: seconds a Pawn has dug toward its next bag. */
   dig: number;
+  /** The rest of the route last planned, and the goal it was planned for. */
+  route: Cell[];
+  routeFor: string;
+  /** Plan again once the route is down to this many steps. */
+  routeTill: number;
 }
 
 type Hit = { by: SimUnit; unit?: SimUnit; plot?: Building; amount: number };
@@ -134,6 +139,10 @@ const SETTLE_TICKS = WAR.settleSeconds * BALANCE.tickRate;
 const CAP_TICKS = WAR.capSeconds * BALANCE.tickRate;
 /** A blocked unit looks again this often rather than every tick. */
 const RETRY_TICKS = TICKS_PER_ACTION / 2;
+/** Targets a unit with none in reach tries to route to before walking its order. */
+const CHASE_TRIES = 3;
+/** Steps walked on a planned route before looking again. */
+const REPLAN_STEPS = 4;
 
 /** In reach: ranged units shoot up and down cliffs, melee only strikes on its
  *  own level or along a ramp, never across a cliff's side. */
@@ -208,6 +217,9 @@ export function createSim(start: MatchState): Sim {
     u.lastProgress = t;
     u.dead = false;
     u.dig = 0;
+    u.route = [];
+    u.routeFor = "";
+    u.routeTill = 0;
     byId.set(u.id, u);
     enter(u);
     return u;
@@ -228,20 +240,29 @@ export function createSim(start: MatchState): Sim {
    * stands on. Friends are walked through; enemies block. When enemies wall
    * the way off entirely the unit walks on as if they were not there, so an
    * army meets a held ramp and fights rather than waiting at home. False
-   * when no step was taken.
+   * when no step was taken. `key` names the goal; its route is reused until
+   * the goal changes, the next step is blocked or the end tile is taken.
    */
-  const stepToward = (u: SimUnit, goal: (c: Cell) => boolean): boolean => {
+  const stepToward = (u: SimUnit, key: string, goal: (c: Cell) => boolean): boolean => {
     const clear = (c: Cell) => goal(c) && !othersOn(c, u);
-    const route =
-      findRoute(u, clear, (c) => !free(c) || enemyOn(c, u.side)) ?? findRoute(u, clear, (c) => !free(c));
-    const step = route?.[0];
+    const next = u.route[0];
+    const end = u.route.at(-1);
+    if (u.routeFor !== key || !next || !end || u.route.length <= u.routeTill || !free(next) || enemyOn(next, u.side) || !clear(end)) {
+      u.route =
+        findRoute(u, clear, (c) => !free(c) || enemyOn(c, u.side)) ?? findRoute(u, clear, (c) => !free(c)) ?? [];
+      u.routeFor = key;
+      u.routeTill = Math.max(0, u.route.length - REPLAN_STEPS);
+    }
+    const step = u.route[0];
     if (!step || enemyOn(step, u.side)) return false;
+    u.route.shift();
     place(u, step);
     return true;
   };
 
   const slotsOf = (p: Plot): Cell[] => buildSlots(p, (c) => !free(c));
-  const atBuildSlot = (p: Plot, c: Cell): boolean => slotsOf(p).some((s) => sameCell(s, c));
+  // Slots are never more than 3 tiles out, so the far tiles skip the search.
+  const atBuildSlot = (p: Plot, c: Cell): boolean => plotDistance(p, c) <= 3 && slotsOf(p).some((s) => sameCell(s, c));
 
   /** The tile an order walks to, or a free one beside it when a friend
    *  already stands there. */
@@ -291,7 +312,7 @@ export function createSim(start: MatchState): Sim {
         return true;
       }
       const slots = new Set(slotsOf(castle).map(cellKey));
-      return stepToward(u, (c) => slots.has(cellKey(c)));
+      return stepToward(u, "castle", (c) => slots.has(cellKey(c)));
     }
     const mine = mineById(mineId)!;
     if ((world.mines[mine.id] ?? 0) <= 0) {
@@ -309,7 +330,7 @@ export function createSim(start: MatchState): Sim {
       return true;
     }
     const slots = new Set(mineSlots(mine).map(cellKey));
-    return stepToward(u, (c) => slots.has(cellKey(c)));
+    return stepToward(u, `mine:${mine.id}`, (c) => slots.has(cellKey(c)));
   };
 
   /** Walk the unit's order when there is nothing to fight. */
@@ -324,7 +345,7 @@ export function createSim(start: MatchState): Sim {
           u.post = { col: u.col, row: u.row };
           return false;
         }
-        const moved = stepToward(u, arrivalGoal(o.to));
+        const moved = stepToward(u, `to:${cellKey(o.to)}`, arrivalGoal(o.to));
         if (moved) u.anchor = { col: u.col, row: u.row };
         return moved;
       }
@@ -335,17 +356,17 @@ export function createSim(start: MatchState): Sim {
           u.post = { col: u.col, row: u.row };
           return false;
         }
-        return stepToward(u, (c) => sameCell(c, u.post) || tileDistance(c, u.post) <= 1);
+        return stepToward(u, `post:${cellKey(u.post)}`, (c) => sameCell(c, u.post) || tileDistance(c, u.post) <= 1);
       case "hold":
         // A hold never corks a ramp or shares a tile: step off first.
         if (!isSlope(u.col, u.row) && !othersOn(u, u)) return false;
-        return stepToward(u, (c) => !isSlope(c.col, c.row));
+        return stepToward(u, "flat", (c) => !isSlope(c.col, c.row));
       case "gather": {
         if (realtime) return gatherTrip(u, o.mine);
         const mine = mineById(o.mine);
         if (!mine || (tileDistance(u, mine) <= 1 && !othersOn(u, u))) return false;
         const slots = new Set(mineSlots(mine).map(cellKey));
-        return stepToward(u, (c) => slots.has(cellKey(c)));
+        return stepToward(u, `mine:${mine.id}`, (c) => slots.has(cellKey(c)));
       }
       case "attack":
       case "attackBuilding":
@@ -360,12 +381,13 @@ export function createSim(start: MatchState): Sim {
           if (realtime) u.order = pawnOrder(world, u.side);
           return false;
         }
-        const slot = (c: Cell) => atBuildSlot(p, c);
+        const slots = new Set(slotsOf(p).map(cellKey));
+        const slot = (c: Cell) => slots.has(cellKey(c));
         const front = (c: Cell) => slot(c) && c.row >= p.row + p.h;
         if (front(u) && !othersOn(u, u)) return false;
-        if (stepToward(u, front)) return true;
+        if (stepToward(u, `front:${p.id}`, front)) return true;
         if (slot(u) && !othersOn(u, u)) return false;
-        return stepToward(u, slot);
+        return stepToward(u, `slot:${p.id}`, slot);
       }
     }
   };
@@ -428,7 +450,7 @@ export function createSim(start: MatchState): Sim {
     }
     if (u.fellBack) {
       const home = isHome(u.side, u) && !othersOn(u, u);
-      if (!home && stepToward(u, (c) => isHome(u.side, c))) done();
+      if (!home && stepToward(u, "home", (c) => isHome(u.side, c))) done();
       else if (home && realtime) u.fellBack = false;
       else wait();
       return;
@@ -456,7 +478,7 @@ export function createSim(start: MatchState): Sim {
         const near = hurt
           .filter(({ o: a }) => tileDistance(from, a) <= WAR.chase + range)
           .sort((x, y) => tileDistance(u, x.o) - tileDistance(u, y.o) || x.o.id - y.o.id)[0];
-        if (near && stepToward(u, (c) => reaches(c, near.o, range))) {
+        if (near && stepToward(u, `heal:${near.o.id}@${cellKey(near.o)}`, (c) => reaches(c, near.o, range))) {
           done();
           return;
         }
@@ -480,6 +502,8 @@ export function createSim(start: MatchState): Sim {
     ];
     const inReach = (c: Cell, r: (typeof ranked)[number]) =>
       "unit" in r ? reaches(c, r.unit, range) : reachesPlot(c, r.plot, range);
+    const chase = (r: (typeof ranked)[number]): boolean =>
+      stepToward(u, "unit" in r ? `unit:${r.unit.id}@${cellKey(r.unit)}` : `plot:${r.plot.id}`, (c) => inReach(c, r));
     const hit = (r: (typeof ranked)[number]): void => {
       if ("unit" in r) hits.push({ by: u, unit: r.unit, amount: damageTo(u, r.unit) });
       else hits.push({ by: u, plot: r.plot, amount: Math.round(BALANCE.units[u.class].damage * WAR.buildingDamage) });
@@ -488,7 +512,7 @@ export function createSim(start: MatchState): Sim {
     const first = ranked[0];
     if (first && inReach(u, first)) return hit(first);
     const hittable = ranked.find((r) => inReach(u, r));
-    if (hittable && ranked.slice(0, ranked.indexOf(hittable)).every((r) => !stepToward(u, (c) => inReach(c, r)))) {
+    if (hittable && ranked.slice(0, ranked.indexOf(hittable)).every((r) => !chase(r))) {
       return hit(hittable);
     }
     if (hittable) {
@@ -496,7 +520,7 @@ export function createSim(start: MatchState): Sim {
       done();
       return;
     }
-    if (ranked.some((r) => stepToward(u, (c) => inReach(c, r)))) {
+    if (ranked.slice(0, CHASE_TRIES).some(chase)) {
       done();
       return;
     }
