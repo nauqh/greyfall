@@ -5,7 +5,7 @@ import { MINES, castlePlot, findPath, isOpen, makeRng, type BuildingKind, type C
 import * as Phaser from "phaser";
 
 import { packUrl, type BuildingName } from "./art";
-import { MAP, STRAT_COLS, STRAT_ROWS, at, isLand, isSlope, level } from "./stratMap";
+import { MAP, STRAT_COLS, STRAT_ROWS, at, isForest, isLand, isSlope, level } from "./stratMap";
 import { DEPTH, addBuilding, addDecor, loadBuildings, standing, type Structure } from "./terrain";
 
 /** The tileset's native tile: nothing is stretched. */
@@ -58,11 +58,10 @@ export function plotBase(p: Plot): { x: number; y: number } {
 /** The map's art beyond terrain and units: lowland grass, the Pawns' work
  *  loops, gold and sheep. */
 export function loadMapArt(scene: Phaser.Scene): void {
-  // Lowland grass in the sheet's deeper green, as the pack's demo map does:
-  // the plateaus keep the sunlit colour1 and the Crown takes the darkest,
-  // colour5, so height reads as colour too.
+  // The higher the ground, the brighter its green: lowland colour3, plateaus
+  // colour2 and the Crown the sunlit colour1, the pack's brightest.
   scene.load.image("tilesetLow", packUrl("Terrain/Tileset/Tilemap_color3.png"));
-  scene.load.image("tilesetHigh", packUrl("Terrain/Tileset/Tilemap_color5.png"));
+  scene.load.image("tilesetMid", packUrl("Terrain/Tileset/Tilemap_color2.png"));
   // The dustiest of the five greens, for the two roads.
   scene.load.image("tilesetRoad", packUrl("Terrain/Tileset/Tilemap_color4.png"));
   loadBuildings(scene, LANDMARKS);
@@ -90,7 +89,7 @@ export function makeMapAnims(scene: Phaser.Scene): void {
 }
 
 /** Each land level's ground colour: lowland, plateau, the Crown. */
-const SHEET: Record<number, string> = { 1: "tilesetLow", 2: "tileset", 3: "tilesetHigh" };
+const SHEET: Record<number, string> = { 1: "tilesetLow", 2: "tilesetMid", 3: "tileset" };
 
 /** Neutral landmarks: huts and a cave in the woods, a
  *  dead tree on the islet, towers and a fish hut in the shallows. Each stands
@@ -238,14 +237,24 @@ export function buildScenery(scene: Phaser.Scene): Map<number, Phaser.GameObject
     spots.map(([c, r], i) => addDecor(scene, kind, c * CELL, r * CELL, 1, `strat-${kind}-${i}`));
   // Jittered and sometimes doubled, so a wood reads as trees and not a grid.
   const forest: [number, number][] = [];
+  const undergrowth: [number, number][] = [];
   MAP.forEach((line, r) =>
     [...line].forEach((ch, c) => {
-      if (ch !== "T" || CLEARED.has(c + r * STRAT_COLS)) return;
-      forest.push([c + 0.3 + rng.next() * 0.4, r + 0.75 + rng.next() * 0.3]);
+      if (!"T%".includes(ch) || CLEARED.has(c + r * STRAT_COLS)) return;
+      const spot: [number, number] = [c + 0.3 + rng.next() * 0.4, r + 0.75 + rng.next() * 0.3];
+      // A terrace keeps its grass and rim in view: trees on under half of it.
+      if (ch === "%") {
+        const roll = rng.next();
+        if (roll < 0.4) forest.push(spot);
+        else if (roll < 0.7) undergrowth.push(spot);
+        return;
+      }
+      forest.push(spot);
       if (rng.next() < 0.25) forest.push([c + rng.next(), r + 0.4 + rng.next() * 0.3]);
     }),
   );
   put("tree", forest);
+  put("bush", undergrowth);
   LANDMARK_LIST.forEach((l, i) => {
     const art = addBuilding(scene, LANDMARKS[i]!);
     if ("mirror" in l) art.setFlipX(true);
@@ -278,12 +287,32 @@ export function buildScenery(scene: Phaser.Scene): Map<number, Phaser.GameObject
   }
   put("waterRock", shallows).forEach((s) => s.setDepth(DEPTH.foam));
 
+  // The foot of every cliff: a cliff face is no ground to stand on, so trees
+  // and bushes there soften the wall without blocking anyone.
+  const foot: [number, number][] = [];
+  const shrubs: [number, number][] = [];
+  const stones: [number, number][] = [];
+  for (let r = 0; r < STRAT_ROWS; r++) {
+    for (let c = 0; c < STRAT_COLS; c++) {
+      const face = isLand(c, r) && !isForest(c, r) && level(c, r - 1) > level(c, r) && !isSlope(c, r - 1);
+      if (!face || [-1, 1].some((d) => isSlope(c + d, r - 1) || isSlope(c + d, r))) continue;
+      const roll = rng.next();
+      const spot: [number, number] = [c + 0.25 + rng.next() * 0.5, r + 0.92];
+      if (roll < 0.3) foot.push(spot);
+      else if (roll < 0.6) shrubs.push(spot);
+      else if (roll < 0.7) stones.push(spot);
+    }
+  }
+  put("tree", foot);
+  put("bush", shrubs);
+  put("rock", stones);
+
   for (const m of MINES) {
     const x = (m.col + 0.5) * CELL;
     const y = (m.row + 0.8) * CELL;
     scene.add.image(x, y, "goldMine").setOrigin(0.5, 0.78).setDepth(standing(y));
   }
-  for (const [c, r] of both([[8.5, 8.4], [6.5, 24.4], [17.5, 31.3], [20.4, 17.6]])) {
+  for (const [c, r] of both([[10.5, 8.4], [6.5, 24.4], [17.5, 31.3], [20.4, 17.6]])) {
     const sheep = scene.add
       .sprite(c * CELL, r * CELL, "sheep")
       .setOrigin(0.5, 0.66)
