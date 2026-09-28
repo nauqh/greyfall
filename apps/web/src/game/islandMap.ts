@@ -67,7 +67,7 @@ export function mineLook(state: MatchState, mine: Mine): string {
 /** A mine on its tile, drawn small enough that the Pawns digging round it stay in view. */
 export function addMine(scene: Phaser.Scene, m: { col: number; row: number }, key: string = MINE_ART.Inactive): Phaser.GameObjects.Image {
   const y = (m.row + 0.85) * CELL;
-  return scene.add.image((m.col + 0.5) * CELL, y, key).setOrigin(0.5, 0.9).setScale(0.6).setDepth(standing(y));
+  return scene.add.image((m.col + 0.5) * CELL, y, key).setOrigin(0.5, 0.9).setScale(0.8).setDepth(standing(y));
 }
 
 /** The map's art beyond terrain and units: lowland grass, the Pawns' work
