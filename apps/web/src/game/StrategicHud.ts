@@ -790,14 +790,19 @@ export class StrategicHud extends Phaser.Scene {
     const rib = this.keep(this.strip("bigRibbons", ["blue_left", "blue_mid", "blue_right"], cx, top + 8, Math.max(260, title.width + 130), 0.5)).setDepth(52);
     rib.add(title);
 
-    // The tabs: the one showing full strength, the other faded.
+    // The tabs: the one showing in full colour, the other a muted key. Opaque:
+    // alpha on the container faded each overlapping slice apart into stripes.
     const tabs = [["guide", "Guide"], ["keys", "Shortcuts"]] as const;
     tabs.forEach(([tab, name], i) => {
       const b = button(this, cx + (i - 0.5) * 140, top + 62, 130, 54, name, "blue", () => {
         this.guideTab = tab;
         this.refresh();
       }, 0.5);
-      this.keep(b).setDepth(52).setAlpha(this.guideTab === tab ? 1 : 0.55);
+      this.keep(b).setDepth(52);
+      if (this.guideTab !== tab) {
+        (b.list[0] as Phaser.GameObjects.NineSlice).setTint(0x9aa4aa);
+        (b.list[1] as Phaser.GameObjects.Text).setColor("#e4e8ea").setStroke("#4a5560", 3);
+      }
     });
 
     const y0 = top + 104;
