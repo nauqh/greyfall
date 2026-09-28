@@ -83,8 +83,8 @@ export interface HudModel {
   } | null;
   /** The sword over the console, only when there is one big thing to do. */
   primary: { label: string; onClick: () => void } | null;
-  /** Shown only while some Pawns stand idle. */
-  idlePawns: { count: number; onClick: () => void } | null;
+  /** Blue's Pawns; clicking the idle count picks the idle ones. */
+  pawns: { total: number; building: number; idle: number; onIdle: () => void };
   /** The end of the match, over everything. */
   report: {
     title: string;
@@ -164,7 +164,6 @@ export class StrategicHud extends Phaser.Scene {
   private selX0 = 0;
   private selX1 = 0;
   private cy = 0;
-  private barX0 = 0;
   private barX1 = 0;
   /** The hovered command's tooltip, and the timer that will show it. */
   private tip: { parts: Phaser.GameObjects.GameObject[]; timer: Phaser.Time.TimerEvent | null } = { parts: [], timer: null };
@@ -301,11 +300,11 @@ export class StrategicHud extends Phaser.Scene {
       draw();
       this.into = "rest";
     };
-    part("top", [m.gold, m.supply, m.clock, m.banner], () => this.buildTop(m));
+    part("top", [m.gold, m.supply, m.clock, m.banner, m.pawns], () => this.buildTop(m));
     part("panel", [m.title, m.detail, m.portrait, m.hp, m.queue?.units], () => this.buildSelection(m));
     // Its own part, so the bar creeping on never redraws the queue under the pointer.
     part("progress", [m.queue?.progress, this.drawn.panel], () => this.buildProgress(m));
-    part("rest", [m.commands, m.primary, m.idlePawns?.count, m.report, this.guideOpen, this.guideTab, this.menuOpen], () => {
+    part("rest", [m.commands, m.primary, m.report, this.guideOpen, this.guideTab, this.menuOpen], () => {
       this.hideTip();
       this.buildCommands(m);
       this.buildButtons(m);
@@ -371,6 +370,27 @@ export class StrategicHud extends Phaser.Scene {
       const tint = (i === 2 && m.clock.warn) || (i === 1 && left === 0) ? "#a12f2f" : INK.color;
       this.keep(label(this, icon ? x + 20 : x - 10, 34, value, { ...INK, color: tint, fontSize: i === 2 ? "14px" : "17px" }).setOrigin(0, 0.5));
     });
+
+    // The workforce on a second strip, right of the menu button.
+    const p = m.pawns;
+    const bits: { text: string; color: string; onClick?: () => void }[] = [
+      { text: `${p.total} Pawns`, color: INK.color },
+      ...(p.building ? [{ text: `${p.building} building`, color: INK.color }] : []),
+      ...(p.idle ? [{ text: `${p.idle} idle`, color: "#a12f2f", onClick: p.onIdle }] : []),
+    ];
+    const lx0 = 70;
+    const face = this.add.image(lx0 + 26, 33, portraitKey("a", "pawn")).setDisplaySize(30, 30);
+    let lx = lx0 + 48;
+    const texts = bits.map((b) => {
+      const t = label(this, lx, 34, b.text, { ...INK, color: b.color, fontSize: "15px" }).setOrigin(0, 0.5);
+      if (b.onClick) t.setInteractive({ cursor: HAND }).on("pointerup", b.onClick);
+      lx += t.width + 14;
+      return t;
+    });
+    const lw = lx - lx0 + 8;
+    this.keep(panel(this, "paper", lx0 + lw / 2, 34, lw * 2, 104).setScale(0.5).setInteractive({ cursor: ARROW }));
+    // Made before the paper to be measured, so lifted back over it.
+    for (const o of [face, ...texts]) this.keep(o).setDepth(1);
   }
 
   private buildBar(): void {
@@ -401,7 +421,6 @@ export class StrategicHud extends Phaser.Scene {
     this.selX1 = this.cardX - 10;
     this.cy = cy;
     this.barX1 = x1;
-    this.barX0 = x0;
     // The resource strip's paper, which reads cleaner than the banner slots.
     panel(this, "paper", (this.selX0 + this.selX1) / 2, cy, (this.selX1 - this.selX0) * 2, 136 * 2).setScale(0.5);
   }
@@ -573,17 +592,6 @@ export class StrategicHud extends Phaser.Scene {
   private buildButtons(m: HudModel): void {
     const y = this.layout.h - BAR_H - 34;
     if (m.primary) this.keep(this.swordButton(this.barX1 - 110, y, 210, m.primary.label, m.primary.onClick));
-    const idle = m.idlePawns;
-    if (idle) {
-      const cmd: HudCommand = {
-        label: `${idle.count} idle`,
-        portrait: portraitKey("a", "pawn"),
-        hint: "Pawns with nothing to do. Click to pick them, again for every Pawn (F1).",
-        onClick: idle.onClick,
-      };
-      const x = this.barX0 + 36;
-      this.keep(this.commandButton(x, y, cmd, 60, x));
-    }
   }
 
   /** The menu over a veil: the war waits while it is open. */

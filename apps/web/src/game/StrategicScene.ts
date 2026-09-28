@@ -947,6 +947,7 @@ export class StrategicScene extends Phaser.Scene {
     const w = WAR.realtime.monsters;
     const from = w.firstSeconds * 10;
     const waveTicks = s.tick < from ? from - s.tick : w.everySeconds * 10 - ((s.tick - from) % (w.everySeconds * 10));
+    const pawns = s.units.filter((u) => u.side === "a" && u.class === "pawn");
     const base: HudModel = {
       gold: s.gold.a,
       supply: [supplyUsed(s, "a"), supplyCap(s, "a")],
@@ -961,7 +962,12 @@ export class StrategicScene extends Phaser.Scene {
       commands: [],
       queue: null,
       primary: null,
-      idlePawns: null,
+      pawns: {
+        total: pawns.length,
+        building: pawns.filter((u) => u.order.type === "build").length,
+        idle: pawns.filter(idle).length,
+        onIdle: () => this.selectPawns(),
+      },
       report: null,
     };
 
@@ -983,12 +989,11 @@ export class StrategicScene extends Phaser.Scene {
       }),
       // Pausing lives in the menu and on Space; the sword only offers the way back.
       primary: this.paused ? { label: "Resume", onClick: () => this.setPaused(false) } : null,
-      idlePawns: r.idle > 0 ? { count: r.idle, onClick: () => this.selectPawns() } : null,
     };
   }
 
   /** Blue's units by kind, and what its buildings have queued: "+n" is in training. */
-  private roster(): { idle: number; summary: string } {
+  private roster(): { summary: string } {
     const s = this.state;
     const have = new Map<UnitClass, number>();
     const queued = new Map<UnitClass, number>();
@@ -1007,7 +1012,6 @@ export class StrategicScene extends Phaser.Scene {
     const pawns = have.get("pawn") ?? 0;
     const pawnsTraining = queued.get("pawn") ?? 0;
     return {
-      idle: idlePawns,
       summary: `Army: ${kinds.length > 0 ? kinds.join(", ") : "none yet"}. Pawns: ${pawns}${pawnsTraining ? ` (+${pawnsTraining})` : ""}${idlePawns ? `, ${idlePawns} idle` : ""}.`,
     };
   }
