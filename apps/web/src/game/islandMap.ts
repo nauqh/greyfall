@@ -73,10 +73,11 @@ export function addMine(scene: Phaser.Scene, m: { col: number; row: number }, ke
 /** The map's art beyond terrain and units: lowland grass, the Pawns' work
  *  loops, gold and sheep. */
 export function loadMapArt(scene: Phaser.Scene): void {
-  // The higher the ground, the brighter its green: lowland colour3, plateaus
-  // colour2 and the Crown the sunlit colour1, the pack's brightest.
-  scene.load.image("tilesetLow", packUrl("Terrain/Tileset/Tilemap_color3.png"));
-  scene.load.image("tilesetMid", packUrl("Terrain/Tileset/Tilemap_color2.png"));
+  // The higher the ground, the brighter its green, as in the pack's terrain
+  // sheet: lowland the teal colour5, plateaus colour3 and the Crown the sunlit
+  // colour1. Only south edges draw a cliff, so colour carries the other sides.
+  scene.load.image("tilesetLow", packUrl("Terrain/Tileset/Tilemap_color5.png"));
+  scene.load.image("tilesetMid", packUrl("Terrain/Tileset/Tilemap_color3.png"));
   // The dustiest of the five greens, for the two roads.
   scene.load.image("tilesetRoad", packUrl("Terrain/Tileset/Tilemap_color4.png"));
   loadBuildings(scene, LANDMARKS);

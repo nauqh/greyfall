@@ -6,13 +6,13 @@ import { canStep, findPath, isWalkable, type Cell } from "../src/game/stratMap.t
 const c = (col: number, row: number): Cell => ({ col, row });
 
 // Off a plateau's side is a drop, not a step.
-assert.equal(canStep(c(11, 5), c(12, 5)), false);
+assert.equal(canStep(c(10, 7), c(11, 7)), false);
 // The ramp works both ways, straight down its slope only.
-assert.equal(canStep(c(14, 9), c(14, 10)), true);
-assert.equal(canStep(c(14, 10), c(14, 9)), true);
-assert.equal(canStep(c(14, 9), c(15, 9)), false);
+assert.equal(canStep(c(12, 5), c(12, 6)), true);
+assert.equal(canStep(c(12, 6), c(12, 5)), true);
+assert.equal(canStep(c(12, 5), c(13, 5)), false);
 // The ramp's head is reached from the plateau beside it.
-assert.equal(canStep(c(13, 9), c(14, 9)), true);
+assert.equal(canStep(c(11, 5), c(12, 5)), true);
 // A cliff face is not ground.
 assert.equal(isWalkable(5, 10), false);
 
@@ -25,11 +25,11 @@ function walk(from: Cell, to: Cell): Cell[] {
 const has = (path: Cell[], col: number, row: number): boolean => path.some((p) => p.col === col && p.row === row);
 
 // Blue's plateau down to the lowland goes by its ramp; red's by its own.
-assert.ok(has(walk(c(6, 6), c(20, 12)), 14, 9));
-assert.ok(has(walk(c(54, 33), c(40, 26)), 46, 28));
+assert.ok(has(walk(c(6, 6), c(17, 11)), 12, 5));
+assert.ok(has(walk(c(54, 34), c(40, 26)), 47, 29));
 // The bases are joined, corner to corner.
-assert.ok(walk(c(6, 6), c(53, 33)));
+assert.ok(walk(c(6, 6), c(54, 34)));
 // Blue climbs the Crown by its west stairs.
-assert.ok(has(walk(c(6, 6), c(30, 16)), 26, 16));
+assert.ok(has(walk(c(6, 6), c(30, 18)), 26, 19));
 
 console.log("strat map ok");

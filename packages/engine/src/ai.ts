@@ -30,13 +30,13 @@ import {
 } from "./war.ts";
 
 /** Where each side's army waits: its plateau, above its own ramp. */
-const RALLY: Record<WarSide, Cell> = { a: { col: 11, row: 8 }, b: { col: 49, row: 29 } };
+const RALLY: Record<WarSide, Cell> = { a: { col: 10, row: 5 }, b: { col: 49, row: 28 } };
 /** The Crown, beside the rich mine. */
-const MID: Cell = { col: 32, row: 16 };
+const MID: Cell = { col: 32, row: 19 };
 /** Each road's middle: the High Pass under the Crown and the two flank
  *  corners. An attack heads for one of them first, so the AI does not always
  *  take the shortest. */
-const LANES: readonly Cell[] = [{ col: 30, row: 22 }, { col: 53, row: 10 }, { col: 7, row: 27 }];
+const LANES: readonly Cell[] = [{ col: 30, row: 23 }, { col: 53, row: 10 }, { col: 7, row: 27 }];
 
 /** How much stronger it must be before it marches on the enemy castle. */
 const ATTACK_EDGE = 1.3;

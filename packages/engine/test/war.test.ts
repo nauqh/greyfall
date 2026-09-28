@@ -118,14 +118,14 @@ describe("island", () => {
     type Area = [number, number, number, number];
     const without = (...areas: Area[]) => (c: { col: number; row: number }) =>
       blocked(c) || areas.some(([c0, r0, c1, r1]) => c.col >= c0 && c.col <= c1 && c.row >= r0 && c.row <= r1);
-    const pass: Area = [20, 13, 40, 24];
-    const ne: Area = [45, 0, 60, 19];
-    const sw: Area = [0, 18, 15, 37];
+    const pass: Area = [21, 17, 39, 24];
+    const ne: Area = [46, 0, 60, 19];
+    const sw: Area = [0, 19, 14, 37];
     // The pass is shortest but runs under the Lair; the flanks pay for their
     // length with the corner mines.
-    expect(findPath(front("a"), front("b"), without(ne, sw))).toHaveLength(61);
+    expect(findPath(front("a"), front("b"), without(ne, sw))).toHaveLength(62);
     expect(findPath(front("a"), front("b"), without(pass, sw))).toHaveLength(71);
-    expect(findPath(front("a"), front("b"), without(pass, ne))).toHaveLength(68);
+    expect(findPath(front("a"), front("b"), without(pass, ne))).toHaveLength(70);
     expect(findPath(front("a"), front("b"), without(pass, ne, sw))).toBeNull();
   });
 
@@ -136,11 +136,11 @@ describe("island", () => {
   });
 
   it("only changes level along a ramp or the Crown's stairs, one level at a time", () => {
-    expect(canStep({ col: 14, row: 9 }, { col: 14, row: 10 })).toBe(true);
-    expect(canStep({ col: 11, row: 5 }, { col: 12, row: 5 })).toBe(false);
-    expect(canStep({ col: 26, row: 17 }, { col: 26, row: 16 })).toBe(true);
-    expect(canStep({ col: 26, row: 16 }, { col: 25, row: 16 })).toBe(false);
-    expect(isWalkable(27, 17)).toBe(false);
+    expect(canStep({ col: 12, row: 5 }, { col: 12, row: 6 })).toBe(true);
+    expect(canStep({ col: 10, row: 7 }, { col: 11, row: 7 })).toBe(false);
+    expect(canStep({ col: 26, row: 20 }, { col: 26, row: 19 })).toBe(true);
+    expect(canStep({ col: 26, row: 19 }, { col: 25, row: 19 })).toBe(false);
+    expect(isWalkable(27, 20)).toBe(false);
   });
 
   it("keeps everyone out of the forest", () => {
@@ -175,8 +175,8 @@ describe("placement", () => {
   it("refuses the enemy's plateau, high ground, a ramp, forest and a mine's edge", () => {
     const s = newMatch(1);
     expect(canPlace(s, "a", "house", 50, 32)).not.toBeNull();
-    expect(canPlace(s, "a", "house", 22, 14)).not.toBeNull();
-    expect(canPlace(s, "a", "house", 14, 9)).not.toBeNull();
+    expect(canPlace(s, "a", "house", 24, 22)).not.toBeNull();
+    expect(canPlace(s, "a", "house", 12, 5)).not.toBeNull();
     expect(canPlace(s, "a", "house", 2, 23)).not.toBeNull();
     const mine = MINES.find((m) => m.id === "mine-ya")!;
     expect(canPlace(s, "a", "house", mine.col + 1, mine.row)).not.toBeNull();
@@ -187,7 +187,7 @@ describe("placement", () => {
     const barracks = s.buildings["a-barracks"]!;
     expect(canPlace(s, "a", "house", barracks.col, barracks.row)).not.toBeNull();
     // The home ramp's foot is the only way down the plateau.
-    expect(canPlace(s, "a", "house", 14, 10)).toBe("that would wall off the road");
+    expect(canPlace(s, "a", "house", 12, 6)).toBe("that would wall off the road");
   });
 });
 
@@ -535,7 +535,7 @@ describe("real time", () => {
 
   it("ends by the monster waves, AI against AI", () => {
     const sim = createSim(newMatch(7, "realtime"));
-    // The diagonal island runs 11-17 minutes over 30 seeds; 20 is the CLI's cap.
+    // The diagonal island runs 10-16 minutes over 30 seeds; 20 is the CLI's cap.
     const deadline = seconds(20 * 60);
     while (sim.world.winner === null && sim.t < deadline) {
       if (sim.t % AI_EVERY_TICKS === 0) for (const side of ["a", "b"] as const) runAi(sim, side);

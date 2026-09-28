@@ -36,10 +36,11 @@ Sources: [SC2 level design: chokepoints and expansions](https://code.tutsplus.co
 Sep 29, 2026. With the bases mirrored left and right, all four corners sat behind someone's castle and led nowhere, so nobody went there. Most modern 1v1 maps (StarCraft II's ladder, most Warcraft III 2-player maps) put the mains on a diagonal instead, and the other two corners become the expansions the attack routes pass.
 
 - **Turned half round, not mirrored.** Red's half is blue's rotated 180 degrees, still 61x38 at 64 px a tile. Cliffs only face south in the pack, so ramps and stairs can't rotate; each stands on its own ground's south edge, and the few cells that differ keep every walk within two steps of even (a test checks the Lair, all mines, and plateau size).
-- **Three roads.** The High Pass over the middle plateau and the Crown, 61 steps front to front, and a flank road through each other corner, 68 and 71. The pass is shortest but runs under the Lair; the flanks carry the gold.
+- **Three roads.** The High Pass over the middle plateau and the Crown, 62 steps front to front, and a flank road through each other corner, 70 and 71. The pass is shortest but runs under the Lair; the flanks carry the gold.
 - **Corners pay.** Each side's near (1000) and far (1000) expansion sit in its flank corner, on the enemy's flank road, with a watch cliff over the near one. The rich mine (2500) moved onto the Crown under the Lair.
-- **Shaped after the pack's terrain sheet** (`Terrain and Decorations_06.gif`): stepped shores, wooded islets in both lakes, small wooded knolls, a stepped middle plateau.
-- **Numbers, 30 real-time AI seeds.** Blue 13, red 17, no draws; 13.1 minutes on average (10.9 to 17.1), up from about 11 because the bases are further apart. Pawns spend 14% of their time in the two flank corners, fighters 12%, and 21% on the pass.
+- **Shaped after the pack's terrain sheet** (`Terrain and Decorations_06.gif`): stepped shores, wooded islets in both lakes, small wooded knolls.
+- **High ground reads as high.** The pack draws only a south cliff; a plateau's east and west edges are a grass outline, so a tall block looks flat. Every plateau is now wide on top and a tile narrower each side every two rows, so its sides show as short cliffs, as in the pack's own sheet. The ground colours follow the sheet too: teal lowland (`color5`), green plateaus (`color3`), the sunlit Crown (`color1`), so every level is its own colour.
+- **Numbers, 30 real-time AI seeds.** Blue 14, red 16, no draws; 13.3 minutes on average (10.3 to 15.7), up from about 11 because the bases are further apart. Pawns spend 11% of their time in the two flank corners, fighters 13%, and 18% on the pass.
 
 ## Fog of war
 
