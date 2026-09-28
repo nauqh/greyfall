@@ -47,7 +47,7 @@ import { baseZoom, fitCamera, startGame } from "./boot";
 import { HUD_COVER_H, HUD_KEY, HUD_TOP_H, ICON, StrategicHud, portraitKey, type HudCommand, type HudModel } from "./StrategicHud";
 import { HAND } from "./ui";
 import { Fog } from "./fog";
-import { CELL, artOf, buildMap, buildScenery, cell, loadMapArt, makeMapAnims, plotBase, workKey } from "./islandMap";
+import { CELL, artOf, buildMap, buildScenery, cell, loadMapArt, makeMapAnims, mineLook, plotBase, workKey } from "./islandMap";
 import { STRAT_COLS, STRAT_ROWS } from "./stratMap";
 import { headOf, loadUnits, makeAnims, monsterName, playPose, unitKey } from "./sprites";
 
@@ -196,6 +196,7 @@ export class StrategicScene extends Phaser.Scene {
   private buildings = new Map<string, Phaser.GameObjects.Image>();
   /** Bushes and rocks by cell, hidden where a building stands. */
   private strewn = new Map<number, Phaser.GameObjects.Sprite>();
+  private mineArt = new Map<string, Phaser.GameObjects.Image>();
   /** What blue sees and remembers; red's AI sees the whole island. */
   private fog!: Fog;
   private overlay!: Phaser.GameObjects.Graphics;
@@ -246,7 +247,7 @@ export class StrategicScene extends Phaser.Scene {
 
     buildWater(this);
     buildMap(this);
-    this.strewn = buildScenery(this);
+    ({ strewn: this.strewn, mines: this.mineArt } = buildScenery(this));
     driftClouds(this, { w: WORLD_W, h: WORLD_H }, "strategic");
     // Over units and buildings, so bars and order lines never hide behind them.
     this.overlay = this.add.graphics().setDepth(DEPTH.fx - 2);
@@ -501,6 +502,11 @@ export class StrategicScene extends Phaser.Scene {
     }
     this.syncBuildings(world);
     this.applyFog(world);
+    // Out of sight a mine keeps the look it had when last seen.
+    for (const [id, img] of this.mineArt) {
+      const m = mineById(id)!;
+      if (this.fog.sees(m.col, m.row)) img.setTexture(mineLook(world, m));
+    }
     this.drawMarks();
   }
 

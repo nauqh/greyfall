@@ -1,7 +1,7 @@
 // The war map's island, drawn from the engine's height map. Shared by the map
 // scene and the title screen, which frames a corner of the same island.
 
-import { MINES, castlePlot, findPath, isOpen, makeRng, type BuildingKind, type Cell, type Plot, type UnitSide } from "@greyfall/engine";
+import { MINES, castlePlot, findPath, gatherers, isOpen, makeRng, type BuildingKind, type Cell, type MatchState, type Mine, type Plot, type UnitSide } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
 import { packUrl, type BuildingName } from "./art";
@@ -55,6 +55,21 @@ export function plotBase(p: Plot): { x: number; y: number } {
   return { x: (p.col + p.w / 2) * CELL, y: (p.row + p.h) * CELL };
 }
 
+/** A gold mine's three looks, by the pack's file suffix. */
+const MINE_ART = { Active: "mineActive", Inactive: "mineIdle", Destroyed: "mineEmpty" } as const;
+
+/** Worked while any Pawn is sent to dig it, idle otherwise, caved in once empty. */
+export function mineLook(state: MatchState, mine: Mine): string {
+  if ((state.mines[mine.id] ?? 0) <= 0) return MINE_ART.Destroyed;
+  return gatherers(state, mine.id).length > 0 ? MINE_ART.Active : MINE_ART.Inactive;
+}
+
+/** A mine on its tile, drawn small enough that the Pawns digging round it stay in view. */
+export function addMine(scene: Phaser.Scene, m: { col: number; row: number }, key: string = MINE_ART.Inactive): Phaser.GameObjects.Image {
+  const y = (m.row + 0.85) * CELL;
+  return scene.add.image((m.col + 0.5) * CELL, y, key).setOrigin(0.5, 0.9).setScale(0.6).setDepth(standing(y));
+}
+
 /** The map's art beyond terrain and units: lowland grass, the Pawns' work
  *  loops, gold and sheep. */
 export function loadMapArt(scene: Phaser.Scene): void {
@@ -69,7 +84,7 @@ export function loadMapArt(scene: Phaser.Scene): void {
     scene.load.spritesheet(w.key, packUrl(w.file), { frameWidth: 192, frameHeight: 192 });
     scene.load.spritesheet(workKey("b", job), packUrl(w.file.replace("Blue Units", "Red Units")), { frameWidth: 192, frameHeight: 192 });
   }
-  scene.load.image("goldMine", packUrl("Terrain/Resources/Gold/Gold Stones/Gold Stone 6.png"));
+  for (const [look, key] of Object.entries(MINE_ART)) scene.load.image(key, packUrl(`Resources/Gold Mine/GoldMine_${look}.png`));
   scene.load.spritesheet("sheep", packUrl("Terrain/Resources/Meat/Sheep/Sheep_Idle.png"), {
     frameWidth: 128,
     frameHeight: 128,
@@ -230,8 +245,8 @@ const both = (spots: [number, number][]): [number, number][] => [
 /** A tree on every forest tile a landmark does not stand on, the landmarks,
  *  gold where the engine's mines are, bushes and rocks strewn over open
  *  ground off the roads, sheep, and rocks in the shallows. Returns the strewn
- *  props by cell, for the map to hide under a building. */
-export function buildScenery(scene: Phaser.Scene): Map<number, Phaser.GameObjects.Sprite> {
+ *  props by cell, for the map to hide under a building, and the mines by id. */
+export function buildScenery(scene: Phaser.Scene): { strewn: Map<number, Phaser.GameObjects.Sprite>; mines: Map<string, Phaser.GameObjects.Image> } {
   const rng = makeRng("strat-scenery");
   const put = (kind: "tree" | "bush" | "rock" | "waterRock", spots: [number, number][]): Phaser.GameObjects.Sprite[] =>
     spots.map(([c, r], i) => addDecor(scene, kind, c * CELL, r * CELL, 1, `strat-${kind}-${i}`));
@@ -307,11 +322,7 @@ export function buildScenery(scene: Phaser.Scene): Map<number, Phaser.GameObject
   put("bush", shrubs);
   put("rock", stones);
 
-  for (const m of MINES) {
-    const x = (m.col + 0.5) * CELL;
-    const y = (m.row + 0.8) * CELL;
-    scene.add.image(x, y, "goldMine").setOrigin(0.5, 0.78).setDepth(standing(y));
-  }
+  const mines = new Map(MINES.map((m) => [m.id, addMine(scene, m)]));
   for (const [c, r] of both([[10.5, 8.4], [6.5, 24.4], [17.5, 31.3], [20.4, 17.6]])) {
     const sheep = scene.add
       .sprite(c * CELL, r * CELL, "sheep")
@@ -321,5 +332,5 @@ export function buildScenery(scene: Phaser.Scene): Map<number, Phaser.GameObject
       .play("sheep_anim");
     if (sheep.anims.currentAnim) sheep.anims.setProgress(Math.random());
   }
-  return strewn;
+  return { strewn, mines };
 }
