@@ -324,7 +324,7 @@ export const ICON = {
 
 /** Icons that live outside the numbered sheet. */
 export const ICON_FILES: Record<string, string> = {
-  arrow: "Red Units/Archer/Arrow.png",
+  arrow: "Units/Red Units/Archer/Arrow.png",
 };
 
 export function iconUrl(n: string): string {

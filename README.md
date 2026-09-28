@@ -126,7 +126,7 @@ Environment Variables), not in a file:
 
 | Variable | Value |
 | --- | --- |
-| `TINY_SWORDS_S3` | `s3://greyfall-assets/tiny-swords/tiny-swords-v2.zip` |
+| `TINY_SWORDS_S3` | `s3://greyfall-assets/tiny-swords/tiny-swords.zip` |
 | `AWS_ACCESS_KEY_ID` | the deploy user's key |
 | `AWS_SECRET_ACCESS_KEY` | its secret |
 | `AWS_REGION` | `ap-southeast-1` |
@@ -146,12 +146,13 @@ Environment Variables), not in a file:
   `NEXT_PUBLIC_ASSET_BASE` (default `/tiny-swords`). A Discord Activity is
   proxied and needs `/.proxy/tiny-swords`.
 
-To upload a new pack, give it a new name rather than overwriting, then change
-`TINY_SWORDS_S3`, so builds stay reproducible and a rollback is one variable:
+There is one pack, `tiny-swords.zip`, zipped from the `tiny-swords/` folder at
+the repo root. To change it, overwrite that object; `pnpm assets` (and so
+`pnpm dev`) notices the new ETag and fetches it again:
 
 ```bash
-powershell -Command "Compress-Archive -Path tiny-swords\* -DestinationPath tiny-swords-v2.zip"
-aws s3 cp tiny-swords-v2.zip s3://greyfall-assets/tiny-swords/tiny-swords-v2.zip
+powershell -Command "Compress-Archive -Force -Path tiny-swords\* -DestinationPath tiny-swords.zip"
+aws s3 cp tiny-swords.zip s3://greyfall-assets/tiny-swords/tiny-swords.zip
 ```
 
 </details>

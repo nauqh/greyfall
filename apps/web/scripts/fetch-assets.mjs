@@ -9,9 +9,11 @@ import {
   mkdirSync,
   mkdtempSync,
   readdirSync,
+  readFileSync,
   renameSync,
   rmSync,
   statSync,
+  writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -19,6 +21,8 @@ import { fileURLToPath } from "node:url";
 
 const APP_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DEST = join(APP_ROOT, "public", "tiny-swords");
+// The S3 ETag of the zip the local pack came from, so a re-uploaded pack is fetched again.
+const TAG = join(DEST, ".etag");
 
 try {
   process.loadEnvFile(join(APP_ROOT, ".env"));
@@ -70,9 +74,16 @@ async function fromS3(uri) {
     }
   }
 
-  say(`fetching s3://${bucket}/${key}`);
+  const have = isPack(DEST) && existsSync(TAG) ? readFileSync(TAG, "utf8") : undefined;
   const client = new S3Client({});
-  const res = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+  let res;
+  try {
+    res = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key, IfNoneMatch: have }));
+  } catch (err) {
+    if (err.$metadata?.httpStatusCode === 304) return say("pack matches S3");
+    throw err;
+  }
+  say(`fetching s3://${bucket}/${key}`);
   const zip = Buffer.from(await res.Body.transformToByteArray());
 
   const work = mkdtempSync(join(tmpdir(), "greyfall-assets-"));
@@ -92,6 +103,7 @@ async function fromS3(uri) {
     if (err.code !== "EXDEV") throw err;
     cpSync(pack, DEST, { recursive: true });
   }
+  writeFileSync(TAG, res.ETag);
   rmSync(work, { recursive: true, force: true });
   say(`unpacked the pack to ${DEST}`);
 }
@@ -101,7 +113,7 @@ function missing() {
     "The Tiny Swords pack is not in place, so the game will render unpainted.",
     "",
     "Point TINY_SWORDS_S3 at the object holding it, in .env or the environment:",
-    "  TINY_SWORDS_S3=s3://greyfall-assets/tiny-swords/tiny-swords-v1.zip",
+    "  TINY_SWORDS_S3=s3://greyfall-assets/tiny-swords/tiny-swords.zip",
     "",
     "AWS credentials come from the usual places (~/.aws, or AWS_* variables).",
     "See the README. The pack forbids redistribution, which is why it is not",
@@ -115,16 +127,18 @@ function missing() {
 }
 
 async function main() {
-  if (isPack(DEST)) {
-    say("pack already in place");
-    return;
-  }
   const uri = process.env.TINY_SWORDS_S3;
   if (!uri) {
-    missing();
+    if (isPack(DEST)) say("pack already in place, not checked against S3");
+    else missing();
     return;
   }
-  await fromS3(uri);
+  try {
+    await fromS3(uri);
+  } catch (err) {
+    if (!isPack(DEST)) throw err;
+    say(`could not check the pack against S3, keeping the local copy: ${err.message}`);
+  }
 }
 
 main().catch((err) => {
