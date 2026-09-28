@@ -10,7 +10,7 @@ Greyfall moves from plan-then-battle rounds to real time, in three modes built o
 
 Landed on Sep 27, 2026.
 
-- **Engine.** `createSim` steps the island a tick at a time; `battle()` and the new `startRound` / `roundDone` / `finishRound` run a round on it. Real time adds Pawn trips (10 gold a bag, taxed 100% / 70% / 40% by upkeep), queues of up to 5, construction while a Pawn hammers, rally points, healing at home, and monster waves from minute 4. Gold is counted in tens throughout.
+- **Engine.** `createSim` steps the island a tick at a time; `battle()` and the new `startRound` / `roundDone` / `finishRound` run a round on it. Real time adds Pawn trips (10 gold a bag, never taxed), queues of up to 5, construction while a Pawn hammers, rally points, healing at home, and monster waves from minute 4. Gold is counted in tens throughout.
 - **Free placement.** `canPlace` allows your own plateau or the lowland, never a ramp, forest, a mine's edge or a spot that walls off a road, a mine or a building; `findPlacement` is what the AI builds on.
 - **Island.** 61x38, mirrored: home plateaus at mid-height with the ramp outside, the High Pass under the Crown, the Low Road past the watch cliffs to the ford, four mines a side plus the ford, forests and landmarks. Reworked the same day so both lanes get used; see below.
 - **Two knight clans.** Red uses the pack's red knights, faces and buildings everywhere the monster host was.
@@ -49,7 +49,7 @@ Sep 27, 2026. The match opens on the home plateau alone; the rest of the island 
 | Deterministic lockstep: every machine runs the same simulation from the same commands, and only commands cross the network | Age of Empires, "1500 Archers on a 28.8" (GDC 2001): commands scheduled 2 turns ahead, 200 ms turns, seeded random numbers, checksums to catch desync | The engine already is one: seeded, integer grid, pure. Commands carry the tick they apply on, so lockstep can be added later without touching the rules |
 | Fixed timestep, render interpolated | Glenn Fiedler, "Fix Your Timestep!" | The simulation steps at 10 ticks a second; the map scene slides sprites between ticks, so play looks smooth at any frame rate |
 | Workers carry resources from mine to town hall | Warcraft III: a Peasant carries 10 gold a trip; 5 workers saturate a mine near its hall | Pawns dig at a mine, carry a bag back to the castle (the pack's Pawn "Run Gold" pose), and go again. A far mine means long, exposed trips |
-| Upkeep as a tax on gathering | Warcraft III: 100% of gathered gold at 0-50 food, 70% at 51-80, 40% at 81-100 | Real-time modes tax each bag: 100% / 70% / 40% by fighters (0-6 / 7-10 / 11+). Rounds keep today's base-income tiers |
+| Upkeep as a tax on gathering | Warcraft III: 100% of gathered gold at 0-50 food, 70% at 51-80, 40% at 81-100 | Built, then removed on Sep 28, 2026: in AI-vs-AI runs it took 42% of all gold dug and was never shown to the player. Every bag pays 10, and rounds pay a flat base income |
 | Production queues and train times | Warcraft III (Peasant 15 s), StarCraft | Each building queues up to 5 units, paid when queued, refunded when cancelled |
 | Builders construct from outside | Warcraft III humans: the Peasant stands beside the site; walking away pauses the work | A Pawn walks to the site and hammers; the building rises while it stays |
 | Rally points | StarCraft, Warcraft: right click the ground with a building selected | Trained units walk to their building's rally point |
@@ -78,7 +78,7 @@ Not taken: lumber (the pack supports it, see below; a later choice), navmeshes (
 - **Two knight clans.** Blue against red, both knights, everywhere the monster host appeared.
 - **A larger island.** Room to build: big home plateaus, several expansion mines, the two roads kept.
 - **Free placement.** Fixed plots go; a building goes wherever its footprint fits on buildable ground, without walling a mine or the castle off.
-- **Real-time economy.** Pawns carry gold per trip, upkeep taxes each bag, units train from queues, buildings take time and a Pawn.
+- **Real-time economy.** Pawns carry gold per trip, units train from queues, buildings take time and a Pawn.
 - **The Greying by the clock.** In real time it starts at minute 8 and bites the halls every 30 seconds, harder each time, so a match still ends. Since replaced by monster waves from the Crown: from minute 4, one a minute, 2 more monsters each time, after the nearest player unit, 10 gold a kill.
 
 ## Sources

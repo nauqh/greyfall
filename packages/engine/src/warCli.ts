@@ -15,7 +15,7 @@ import { AI_EVERY_TICKS, planAi, runAi } from "./ai.ts";
 import { battle, createSim, type WarEvent } from "./battle.ts";
 import { BALANCE, WAR } from "./balance.ts";
 import { MAP, MINES, plotCells, type UnitSide } from "./island.ts";
-import { newMatch, supplyCap, supplyUsed, upkeepOf, type MatchState } from "./war.ts";
+import { newMatch, supplyCap, supplyUsed, type MatchState } from "./war.ts";
 
 function flag(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -100,7 +100,7 @@ function main(): void {
     const out = battle(s, planAi(s, "a"), planAi(s, "b"));
     const r = out.report;
     console.log(
-      `Round ${r.round}  gold A ${s.gold.a} B ${s.gold.b}  supply A ${supplyUsed(s, "a")}/${supplyCap(s, "a")} B ${supplyUsed(s, "b")}/${supplyCap(s, "b")}  upkeep A ${upkeepOf(s, "a").name} B ${upkeepOf(s, "b").name}`,
+      `Round ${r.round}  gold A ${s.gold.a} B ${s.gold.b}  supply A ${supplyUsed(s, "a")}/${supplyCap(s, "a")} B ${supplyUsed(s, "b")}/${supplyCap(s, "b")}`,
     );
     console.log(`  A: ${army(out.start, "a")}`);
     console.log(`  B: ${army(out.start, "b")}`);

@@ -121,18 +121,10 @@ export function damageAgainst(attacker: UnitClass, defender: UnitClass): number 
  * here.
  */
 export const WAR = {
-  /** Gold is counted in tens, not ones, so upkeep can
-   *  tax a single bag in whole coins. */
+  /** Gold is counted in tens, not ones. */
   startGold: 100,
-  /** A bigger army pays upkeep: the first tier whose fighter count (Pawns
-   *  not counted) the side has reached, from the top, applies. In rounds it
-   *  sets the base income paid at the start of every round; in real time it
-   *  is a tax on every bag of gold brought home (keep). */
-  upkeep: [
-    { fighters: 11, income: 40, keep: 0.4, name: "high" },
-    { fighters: 7, income: 70, keep: 0.7, name: "low" },
-    { fighters: 0, income: 100, keep: 1, name: "none" },
-  ],
+  /** Rounds: the base income paid at the start of every round. */
+  income: 100,
   /** Per Pawn digging at a mine, while the mine holds gold. */
   pawnIncome: 20,
   /** Each side starts with `start` Pawns and the castle trains more up to

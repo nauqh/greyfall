@@ -34,7 +34,7 @@ import {
   runAi,
   supplyCap,
   supplyUsed,
-  upkeepOf,
+  tilesBeside,
   type Action,
   type BuildingKind,
   type MatchState,
@@ -181,7 +181,7 @@ describe("planning", () => {
   it("opens with a castle, a barracks, three Pawns and 260 gold", () => {
     const s = newMatch(1);
     for (const side of ["a", "b"] as const) {
-      expect(s.gold[side]).toBe(WAR.startGold + upkeepOf(s, side).income + WAR.pawns.start * WAR.pawnIncome);
+      expect(s.gold[side]).toBe(WAR.startGold + WAR.income + WAR.pawns.start * WAR.pawnIncome);
       expect(s.gold[side]).toBe(260);
       expect(supplyUsed(s, side)).toBe(WAR.pawns.start);
       expect(supplyCap(s, side)).toBe(WAR.supply.start);
@@ -260,7 +260,7 @@ describe("rounds", () => {
     expect(out.report.settled).toBe(true);
     expect(out.report.seconds).toBeLessThanOrEqual(WAR.settleSeconds + 0.5);
     expect(out.end.round).toBe(2);
-    expect(out.end.gold.a).toBe(s.gold.a + upkeepOf(s, "a").income + WAR.pawns.start * WAR.pawnIncome);
+    expect(out.end.gold.a).toBe(s.gold.a + WAR.income + WAR.pawns.start * WAR.pawnIncome);
     expect(out.end.mines["mine-a"]).toBe(WAR.mineGold["mine-a"]! - 2 * WAR.pawns.start * WAR.pawnIncome);
   });
 
@@ -371,10 +371,10 @@ describe("rounds", () => {
     expect(isHome("a", back[0]!)).toBe(true);
   });
 
-  it("lowers base income as the army grows", () => {
+  it("pays the same base income however big the army", () => {
     const s = empty();
     const army = (n: number): MatchState => ({ ...s, units: Array.from({ length: n }, (_, i) => unit("a", "warrior", 0, 0, 2 * i + 1)) });
-    expect([0, 6, 7, 10, 11].map((n) => upkeepOf(army(n), "a").income)).toEqual([100, 100, 70, 70, 40]);
+    expect([0, 7, 11, 20].map((n) => incomeFor(army(n), "a").base)).toEqual([100, 100, 100, 100]);
   });
 
   it("takes orders during a battle, but nothing else", () => {
@@ -421,8 +421,9 @@ describe("rounds", () => {
 describe("real time", () => {
   const seconds = (n: number) => n * BALANCE.tickRate;
 
-  it("carries gold home a bag at a time, taxed by upkeep", () => {
+  it("carries gold home a full bag at a time, however big the army", () => {
     const s = newMatch(1, "realtime");
+    tilesBeside(s, s.buildings["a-barracks"]!, 12).forEach((c, i) => s.units.push(unit("a", "warrior", c.col, c.row, 1001 + 2 * i)));
     const sim = createSim(s);
     const before = sim.world.gold.a;
     for (let i = 0; i < seconds(60); i++) sim.step();

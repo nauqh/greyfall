@@ -244,11 +244,6 @@ export function gatherers(state: MatchState, mineId: string, side?: WarSide): Wa
   );
 }
 
-export function upkeepOf(state: MatchState, side: WarSide): (typeof WAR.upkeep)[number] {
-  const fighters = state.units.filter((u) => u.side === side && u.class !== "pawn").length;
-  return WAR.upkeep.find((t) => fighters >= t.fighters)!;
-}
-
 /**
  * Rounds: income for the round about to start. The base, plus each Pawn
  * standing at a mine it gathers from, unless an enemy fighter is near it.
@@ -272,7 +267,7 @@ export function incomeFor(state: MatchState, side: WarSide): { base: number; min
       mines += take;
     }
   }
-  return { base: upkeepOf(state, side).income, mines, drawn };
+  return { base: WAR.income, mines, drawn };
 }
 
 /** Rounds: pay a new round's income into both purses and draw it from the mines. */

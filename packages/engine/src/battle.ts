@@ -52,7 +52,6 @@ import {
   standing,
   tilesBeside,
   trainsAt,
-  upkeepOf,
   type Action,
   type Building,
   type MatchState,
@@ -311,9 +310,8 @@ export function createSim(start: MatchState): Sim {
     const castle = castlePlot(side);
     if (u.carry) {
       if (plotDistance(castle, u) <= 1) {
-        const gold = Math.round(u.carry * upkeepOf(world, side).keep);
-        world.gold[side] += gold;
-        events.push({ t, type: "deliver", unit: u.id, side, gold });
+        world.gold[side] += u.carry;
+        events.push({ t, type: "deliver", unit: u.id, side, gold: u.carry });
         u.carry = 0;
         return true;
       }

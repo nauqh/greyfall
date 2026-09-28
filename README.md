@@ -28,8 +28,8 @@ for Discord as an Activity that friends launch from a voice call.
   at the ford.
 - Fog of war in two layers, black until explored and grey out of
   sight. Nobody sees up a cliff.
-- Pawns carry gold from mine to castle, upkeep taxes each
-  bag as the army grows, and buildings go anywhere legal while a Pawn hammers.
+- Pawns carry gold from mine to castle, 10 a trip, and buildings go
+  anywhere legal while a Pawn hammers.
 - Five classes, Pawn, Warrior, Lancer, Archer and Monk, with a counter
   triangle, training queues, rally points and control groups.
 - Every match ends: from minute 4 a monster wave comes down from the Crown

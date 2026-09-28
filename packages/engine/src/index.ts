@@ -100,7 +100,6 @@ export {
   supplyUsed,
   tilesBeside,
   trainsAt,
-  upkeepOf,
   type Action,
   type ActionResult,
   type Building,
