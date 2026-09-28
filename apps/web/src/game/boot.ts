@@ -19,7 +19,7 @@ export const WATER = "#47aba9";
 
 // Phaser 3.90 has no HiDPI support, so the backing store is sized in device
 // pixels by hand and shown at 1 / DPR, its CSS size.
-export const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+export const DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
 
 /** Canvas px per world unit: the whole 1200x720 world, fitted on one axis.
  *  Not a whole number on most screens, so pixel art lands on uneven screen

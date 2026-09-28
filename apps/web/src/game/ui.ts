@@ -187,7 +187,7 @@ export const FONT: Phaser.Types.GameObjects.Text.TextStyle = {
  */
 export const TEXT_RES = Math.min(
   4,
-  Math.max(2, Math.ceil((window.screen.width * Math.min(2, window.devicePixelRatio || 1)) / 1200)),
+  Math.max(2, Math.ceil((window.screen.width * Math.min(3, window.devicePixelRatio || 1)) / 1200)),
 );
 
 export function label(
