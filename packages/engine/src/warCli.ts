@@ -37,6 +37,8 @@ function describe(e: WarEvent, name: (id: number) => string): string | null {
       return `${at} ${name(e.unit)} hits ${name(e.target)} for ${e.damage} (${e.hpAfter} hp left)`;
     case "hitBuilding":
       return `${at} ${name(e.unit)} hits ${e.plot} for ${e.damage} (${e.hpAfter} hp left)`;
+    case "shoot":
+      return `${at} ${e.plot} shoots ${name(e.target)} for ${e.damage} (${e.hpAfter} hp left)`;
     case "heal":
       return `${at} ${name(e.unit)} heals ${name(e.target)} for ${e.amount} (${e.hpAfter} hp)`;
     case "fallBack":

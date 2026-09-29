@@ -213,6 +213,28 @@ describe("planning", () => {
     for (const w of warriors) expect(plotDistance(s.buildings["a-barracks"]!, w)).toBeLessThanOrEqual(3);
   });
 
+  it("trains every soldier class at the barracks, and only there", () => {
+    let s = { ...newMatch(1), gold: { a: 1000, b: 1000 } };
+    for (const cls of ["warrior", "lancer", "archer", "monk"] as const) s = act(s, "a", { type: "train", plot: "a-barracks", cls });
+    expect(s.units.filter((u) => u.side === "a" && u.class !== "pawn").map((u) => u.class)).toEqual(["warrior", "lancer", "archer", "monk"]);
+    expect(applyAction(s, "a", { type: "train", plot: "a-castle", cls: "warrior" }).ok).toBe(false);
+    expect(applyAction(s, "a", { type: "train", plot: "a-barracks", cls: "pawn" }).ok).toBe(false);
+  });
+
+  it("gives every class its level 2 bonus from one barracks upgrade", () => {
+    let s = { ...newMatch(1), gold: { a: 1000, b: 1000 } };
+    s = act(s, "a", { type: "train", plot: "a-barracks", cls: "lancer" });
+    s = act(s, "a", { type: "upgrade", plot: "a-barracks" });
+    const end = battle(s, [], []).end;
+    expect(end.buildings["a-barracks"]!.level).toBe(2);
+    expect(maxHp(end, "a", "warrior")).toBeGreaterThan(BALANCE.units.warrior.hp);
+    expect(maxHp(end, "a", "lancer")).toBeGreaterThan(BALANCE.units.lancer.hp);
+    expect(end.units.find((u) => u.class === "lancer")!.hp).toBe(maxHp(end, "a", "lancer"));
+    const second = battle(build(end, "a", "barracks").state, [], []).end;
+    const other = Object.values(second.buildings).find((b) => b.kind === "barracks" && b.id !== "a-barracks")!;
+    expect(applyAction(second, "a", { type: "upgrade", plot: other.id }).ok).toBe(false);
+  });
+
   it("trains Pawns at the castle up to the limit, each sent to the next mine with room", () => {
     let s = { ...newMatch(1), gold: { a: 1000, b: 1000 } };
     s = build(s, "a", "house").state;
@@ -317,8 +339,8 @@ describe("rounds", () => {
     }
     const builders = s.units.filter((u) => u.side === "a" && u.order.type === "build");
     expect(builders).toHaveLength(WAR.pawns.start);
-    const spot = findPlacement(s, "a", "archery")!;
-    expect(applyAction(s, "a", { type: "build", kind: "archery", col: spot.col, row: spot.row }).ok).toBe(false);
+    const spot = findPlacement(s, "a", "barracks")!;
+    expect(applyAction(s, "a", { type: "build", kind: "barracks", col: spot.col, row: spot.row }).ok).toBe(false);
     expect(applyAction(s, "a", { type: "order", units: [builders[0]!.id], order: { type: "gather", mine: "mine-a" } }).ok).toBe(false);
     const out = battle(s, [], []);
     for (const id of ids) expect(out.end.buildings[id]!.level).toBe(1);
@@ -341,8 +363,23 @@ describe("rounds", () => {
     expect(out.events.some((e) => e.type === "move")).toBe(true);
   });
 
+  it("has a tower shoot an enemy in its range, and nobody beyond it", () => {
+    const { state, id } = build({ ...empty(), gold: { a: 1000, b: 1000 }, units: [unit("a", "pawn", 5, 5, 1)] }, "a", "tower");
+    const tower = { ...state.buildings[id]!, level: 1, hp: WAR.buildingHp.tower, pending: null };
+    const s = { ...state, units: [], buildings: { ...state.buildings, [id]: tower } };
+    const free = freeIn(occupied(s));
+    const cells = MAP.flatMap((line, row) => [...line].map((_, col) => ({ col, row }))).filter(free);
+    const near = cells.find((c) => plotDistance(tower, c) === WAR.tower.range)!;
+    const far = cells.find((c) => plotDistance(tower, c) === WAR.tower.range + 3)!;
+    const hold = { type: "hold" } as const;
+    const out = battle({ ...s, units: [unit("b", "warrior", near.col, near.row, 2, hold), unit("b", "warrior", far.col, far.row, 4, hold)] }, [], []);
+    const shots = out.events.filter((e) => e.type === "shoot");
+    expect(shots.length).toBeGreaterThan(0);
+    expect(shots.every((e) => e.type === "shoot" && e.plot === id && e.target === 2)).toBe(true);
+  });
+
   it("builds from the site's own level, never from the ground below its cliff", () => {
-    const { state, id } = build(newMatch(1), "a", "archery");
+    const { state, id } = build(newMatch(1), "a", "barracks");
     const builder = state.units.find((u) => u.order.type === "build")!;
     const out = battle(state, [], []);
     const last = out.end.units.find((u) => u.id === builder.id)!;

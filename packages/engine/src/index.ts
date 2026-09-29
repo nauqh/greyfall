@@ -74,6 +74,7 @@ export {
   applyAction,
   applyInPlace,
   applyPlan,
+  barracksUpgraded,
   buildingHp,
   canPlace,
   enemyOf,

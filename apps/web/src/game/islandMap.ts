@@ -38,9 +38,7 @@ export function cell(side: Structure["side"], name: Structure["name"], col: numb
 const ART: Record<BuildingKind, BuildingName> = {
   castle: "castle",
   barracks: "barracks",
-  archery: "archery",
   tower: "tower",
-  monastery: "monastery",
   house: "house1",
 };
 

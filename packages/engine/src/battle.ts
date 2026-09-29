@@ -47,11 +47,11 @@ import {
   ownBuildings,
   payIncome,
   pawnOrder,
+  raiseLevel,
   rangeOf,
   restorePawns,
   standing,
   tilesBeside,
-  trainsAt,
   type Action,
   type Building,
   type MatchState,
@@ -64,6 +64,8 @@ export type WarEvent =
   | { t: number; type: "move"; unit: number; col: number; row: number }
   | { t: number; type: "attack"; unit: number; target: number; damage: number; hpAfter: number }
   | { t: number; type: "hitBuilding"; unit: number; plot: string; damage: number; hpAfter: number }
+  /** A tower's archer shooting a unit. */
+  | { t: number; type: "shoot"; plot: string; target: number; damage: number; hpAfter: number }
   | { t: number; type: "heal"; unit: number; target: number; amount: number; hpAfter: number }
   | { t: number; type: "fallBack"; unit: number; hp: number }
   | { t: number; type: "death"; unit: number }
@@ -117,7 +119,7 @@ interface SimUnit extends WarUnit {
   routeTill: number;
 }
 
-type Hit = { by: SimUnit; unit?: SimUnit; plot?: Building; amount: number };
+type Hit = { by: SimUnit; unit?: SimUnit; plot?: Building; amount: number } | { tower: Building; unit: SimUnit; amount: number };
 
 export interface Sim {
   /** The live world. Its units carry the simulation's own bookkeeping; use
@@ -532,6 +534,21 @@ export function createSim(start: MatchState): Sim {
     else wait();
   };
 
+  /** When each tower's archer next shoots. */
+  const towerNext = new Map<string, number>();
+
+  /** A standing tower's archer shoots the nearest enemy in range. */
+  const shoot = (b: Building, hits: Hit[]): void => {
+    if (b.kind !== "tower" || !standing(b) || t < (towerNext.get(b.id) ?? 0)) return;
+    const target = units()
+      .filter((o) => live(o) && o.side !== b.side && plotDistance(b, o) <= WAR.tower.range)
+      .sort((x, y) => plotDistance(b, x) - plotDistance(b, y) || x.hp - y.hp || x.id - y.id)[0];
+    if (!target) return;
+    const uphill = level(b.col, b.row) < level(target.col, target.row);
+    hits.push({ tower: b, unit: target, amount: Math.round(damageAgainst("archer", target.class) * (uphill ? WAR.highGround : 1)) });
+    towerNext.set(b.id, t + TICKS_PER_ACTION);
+  };
+
   const remove = (b: Building): void => {
     report.destroyed.push(b.id);
     events.push({ t, type: "destroyed", plot: b.id });
@@ -590,13 +607,7 @@ export function createSim(start: MatchState): Sim {
         b.hp = buildingHp(b.kind);
         events.push({ t, type: "built", plot: b.id });
       } else {
-        const cls = trainsAt(b);
-        const before = cls ? maxHp(world, b.side, cls) : 0;
-        b.level += 1;
-        if (cls) {
-          const gain = maxHp(world, b.side, cls) - before;
-          for (const u of units()) if (u.side === b.side && u.class === cls && live(u)) u.hp += gain;
-        }
+        raiseLevel(world, b);
         events.push({ t, type: "upgraded", plot: b.id });
       }
       b.pending = null;
@@ -668,6 +679,7 @@ export function createSim(start: MatchState): Sim {
       if (u.dead || t < u.nextAt) continue;
       act(u, hits, heals);
     }
+    for (const b of Object.values(world.buildings)) shoot(b, hits);
 
     // Every hit and heal of a tick lands together, so two units that kill
     // each other both connect and the order of the loop grants nothing.
@@ -675,14 +687,16 @@ export function createSim(start: MatchState): Sim {
     const killer = new Map<SimUnit, UnitSide>();
     for (const h of hits) {
       if (h.unit) {
-        if (h.unit.hp > 0 && h.unit.hp - h.amount <= 0) killer.set(h.unit, h.by.side);
+        if (h.unit.hp > 0 && h.unit.hp - h.amount <= 0) killer.set(h.unit, "tower" in h ? h.tower.side : h.by.side);
         h.unit.hp -= h.amount;
       }
-      if (h.plot) h.plot.hp -= h.amount;
+      if ("plot" in h && h.plot) h.plot.hp -= h.amount;
     }
     for (const h of heals) h.unit.hp += h.amount;
     for (const h of hits) {
-      if (h.unit) {
+      if ("tower" in h) {
+        events.push({ t, type: "shoot", plot: h.tower.id, target: h.unit.id, damage: h.amount, hpAfter: Math.max(0, h.unit.hp) });
+      } else if (h.unit) {
         events.push({ t, type: "attack", unit: h.by.id, target: h.unit.id, damage: h.amount, hpAfter: Math.max(0, h.unit.hp) });
       } else if (h.plot) {
         events.push({ t, type: "hitBuilding", unit: h.by.id, plot: h.plot.id, damage: h.amount, hpAfter: Math.max(0, h.plot.hp) });
@@ -791,13 +805,7 @@ function aftermath(world: MatchState, report: RoundReport): MatchState {
       b.hp = buildingHp(b.kind);
       report.built.push(b.id);
     } else if (b.pending === "upgrade" && b.level > 0) {
-      const cls = trainsAt(b);
-      const before = cls ? maxHp(world, b.side, cls) : 0;
-      b.level += 1;
-      if (cls) {
-        const gain = maxHp(world, b.side, cls) - before;
-        for (const u of world.units) if (u.side === b.side && u.class === cls) u.hp += gain;
-      }
+      raiseLevel(world, b);
       report.upgraded.push(b.id);
     }
     b.pending = null;

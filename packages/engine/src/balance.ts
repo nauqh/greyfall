@@ -152,31 +152,32 @@ export const WAR = {
   /** The board's archer range was set for a 10-wide board; the island uses the PRD's 3. */
   range: { pawn: 1, warrior: 1, lancer: 1, archer: 3, monk: 2 } as Record<UnitClass, number>,
 
-  /** What each building trains. Houses train nothing. */
+  /** What each building trains. Houses and towers train nothing. */
   trains: {
-    castle: "pawn",
-    barracks: "warrior",
-    archery: "archer",
-    tower: "lancer",
-    monastery: "monk",
-  } as Partial<Record<string, UnitClass>>,
+    castle: ["pawn"],
+    barracks: ["warrior", "lancer", "archer", "monk"],
+  } as Partial<Record<string, readonly UnitClass[]>>,
   /** Barracks and castle start built. */
-  buildCost: { castle: 0, barracks: 40, archery: 40, tower: 40, monastery: 50, house: 40 } as Record<string, number>,
+  buildCost: { castle: 0, barracks: 40, tower: 60, house: 40 } as Record<string, number>,
   upgradeCost: 60,
   /** Level 3 and the castle upgrade land with abilities, after Phase 2. */
   maxLevel: 2,
   /** A castle outlasts one battle phase against a small army that marched
    *  from home, so a siege always leaves its defender a plan to answer it. */
-  buildingHp: { castle: 1000, other: 300 },
+  buildingHp: { castle: 1000, tower: 400, other: 300 },
 
-  /** What a level 2 production building gives its class. */
+  /** What a level 2 barracks gives every class it trains. */
   level2: { warriorHp: 0.2, archerRange: 1, lancerHp: 0.2, monkHeal: 0.3 },
+
+  /** A tower's archer: shoots as an Archer does, further, and cannot be hit
+   *  apart from the tower. */
+  tower: { range: 4 },
 
   /** Tiles a unit or building sees, round it. Pawns see least, so scouting
    *  costs a worker's trips; a tower on the high ground sees farthest. */
   sight: {
     units: { pawn: 4, warrior: 4, lancer: 5, archer: 6, monk: 5 } as Record<UnitClass, number>,
-    buildings: { castle: 7, barracks: 4, archery: 4, tower: 8, monastery: 4, house: 3 } as Record<string, number>,
+    buildings: { castle: 7, barracks: 4, tower: 8, house: 3 } as Record<string, number>,
   },
 
   /** Units deal this share of their damage to buildings. */
@@ -200,7 +201,7 @@ export const WAR = {
     carry: 10,
     digSeconds: 2,
     trainSeconds: { pawn: 8, warrior: 10, archer: 10, lancer: 12, monk: 14 } as Record<UnitClass, number>,
-    buildSeconds: { castle: 0, house: 10, barracks: 20, archery: 20, tower: 20, monastery: 25 } as Record<string, number>,
+    buildSeconds: { castle: 0, house: 10, barracks: 20, tower: 20 } as Record<string, number>,
     upgradeSeconds: 25,
     /** Units a building can have waiting to be trained, paid when queued. */
     queue: 5,

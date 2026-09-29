@@ -884,21 +884,20 @@ export class StrategicHud extends Phaser.Scene {
 }
 
 const TROOP: Record<UnitClass, string> = { pawn: "Pawn", warrior: "Warrior", lancer: "Lancer", archer: "Archer", monk: "Monk" };
-const TRAINED_AT: Record<string, string> = { castle: "castle", barracks: "barracks", archery: "archery range", tower: "tower", monastery: "monastery" };
 
 type GuideSection = { head: string; lines: (string | [keys: string, does: string])[] };
 
 /** The guide tab's columns, its numbers read off the balance so they never drift. */
 function guideSections(): GuideSection[] {
-  const troops = Object.entries(WAR.trains).filter(([, cls]) => cls !== "pawn").map(([at, cls]) => {
-    const beats = BALANCE.counters[cls!];
+  const troops = (WAR.trains.barracks ?? []).map((cls) => {
+    const beats = BALANCE.counters[cls];
     const does =
       cls === "monk"
         ? "heals the troops around it."
         : cls === "archer"
           ? `shoots ${WAR.range.archer} tiles, up and down cliffs, and beats ${TROOP[beats!]}s.`
           : `beats ${TROOP[beats!]}s.`;
-    return `${TROOP[cls!]}, from the ${TRAINED_AT[at]}: ${does}`;
+    return `${TROOP[cls]}, from the barracks: ${does}`;
   });
   return [
     {
@@ -917,6 +916,7 @@ function guideSections(): GuideSection[] {
         `Pawns, from the castle, dig gold and build, up to ${WAR.pawns.max}. They never fight, and the dead stay dead.`,
         `A counter deals ${Math.round(BALANCE.counterBonus * 100)}% more damage. Troops on the lowland deal ${Math.round(WAR.highGround * 100)}% to a plateau.`,
         `Each house adds ${WAR.supply.perHouse} supply; every unit takes 1.`,
+        `A tower's Archer shoots the nearest enemy within ${WAR.tower.range} tiles, until the tower falls.`,
       ],
     },
   ];

@@ -8,9 +8,11 @@
 import {
   AI_EVERY_TICKS,
   FOOTPRINT,
+  barracksUpgraded,
   MINES,
   WAR,
   buildSlots,
+  buildingHp,
   canPlace,
   castlePlot,
   castsCliff,
@@ -49,7 +51,7 @@ import { HAND } from "./ui";
 import { Fog } from "./fog";
 import { CELL, artOf, buildMap, buildScenery, cell, loadMapArt, makeMapAnims, mineLook, plotBase, workKey } from "./islandMap";
 import { STRAT_COLS, STRAT_ROWS } from "./stratMap";
-import { headOf, loadUnits, makeAnims, monsterName, playPose, unitKey } from "./sprites";
+import { animKey, headOf, loadUnits, makeAnims, monsterName, playPose, unitKey } from "./sprites";
 
 import {
   DEPTH,
@@ -99,13 +101,13 @@ const STEP_MS = 880;
 const TICK_MS = 1000 / 10;
 /** The HUD is rebuilt this often while the world runs, not every tick. */
 const HUD_EVERY_TICKS = 5;
+/** How far above a tower's base its Archer stands: the floor inside the battlements. */
+const TOWER_TOP = 96;
 
 const NAME: Record<BuildingKind, string> = {
   castle: "Castle",
   barracks: "Barracks",
-  archery: "Archery range",
   tower: "Tower",
-  monastery: "Monastery",
   house: "House",
 };
 
@@ -117,11 +119,8 @@ const CLASS_NAME: Record<UnitClass, string> = {
   monk: "Monk",
 };
 
-/** Names short enough for a command button. */
-const SHORT: Record<BuildingKind, string> = { ...NAME, archery: "Archery" };
-
 /** What a Pawn can put up, in the order its card lists them. */
-const BUILDABLE: readonly BuildingKind[] = ["house", "barracks", "archery", "tower", "monastery"];
+const BUILDABLE: readonly BuildingKind[] = ["house", "barracks", "tower"];
 
 function cellXY(col: number, row: number): { x: number; y: number } {
   return { x: STRAT.x0 + col * CELL + CELL / 2, y: STRAT.y0 + row * CELL + CELL / 2 };
@@ -194,6 +193,8 @@ export class StrategicScene extends Phaser.Scene {
 
   private units = new Map<number, UnitView>();
   private buildings = new Map<string, Phaser.GameObjects.Image>();
+  /** The Archer on each standing tower. */
+  private towerArchers = new Map<string, Phaser.GameObjects.Sprite>();
   /** Bushes and rocks by cell, hidden where a building stands. */
   private strewn = new Map<number, Phaser.GameObjects.Sprite>();
   private mineArt = new Map<string, Phaser.GameObjects.Image>();
@@ -221,7 +222,7 @@ export class StrategicScene extends Phaser.Scene {
     loadWarFx(this);
     const all: Structure[] = [];
     for (const side of ["a", "b"] as const) {
-      for (const kind of ["castle", "barracks", "archery", "tower", "monastery"] as const) {
+      for (const kind of ["castle", "barracks", "tower"] as const) {
         all.push(cell(side, artOf({ id: kind, side, kind, col: 0, row: 0, w: 1, h: 1 }), 0, 0));
       }
       for (const n of [1, 2, 3] as const) all.push(cell(side, `house${n}`, 0, 0));
@@ -518,6 +519,7 @@ export class StrategicScene extends Phaser.Scene {
     this.fog.update(state);
     for (const v of this.units.values()) v.root.setVisible(v.unit.side === "a" || this.fog.sees(v.unit.col, v.unit.row));
     for (const [id, img] of this.buildings) img.setVisible(state.buildings[id]?.side !== "b" || this.fog.knows(id));
+    for (const [id, archer] of this.towerArchers) archer.setVisible(this.buildings.get(id)?.visible ?? false);
     if (this.inspected?.unit !== undefined && !this.units.get(this.inspected.unit)?.root.visible) this.inspected = null;
   }
 
@@ -536,11 +538,23 @@ export class StrategicScene extends Phaser.Scene {
       const risen = b.level > 0 ? 1 : state.mode === "realtime" ? 0.3 + (0.6 * b.progress) / Math.max(1, total) : 0.45;
       img.setAlpha(risen);
       if (b.hp <= 0 && b.level === 0 && b.kind === "castle") img.setTint(0x6f6f6f);
+      if (b.kind === "tower" && b.level > 0 && !this.towerArchers.has(b.id)) {
+        const { x, y } = plotBase(b);
+        const archer = this.add.sprite(x, y - TOWER_TOP, unitKey(b.side, "archer", "idle")).setDepth(img.depth + 1);
+        playPose(archer, b.side, "archer", "idle");
+        this.towerArchers.set(b.id, archer);
+      }
     }
     for (const [id, img] of this.buildings) {
       if (!state.buildings[id]) {
         img.destroy();
         this.buildings.delete(id);
+      }
+    }
+    for (const [id, archer] of this.towerArchers) {
+      if (!state.buildings[id]) {
+        archer.destroy();
+        this.towerArchers.delete(id);
       }
     }
     const under = new Set(Object.values(state.buildings).flatMap((b) => plotCells(b).map(cellKey)));
@@ -659,8 +673,8 @@ export class StrategicScene extends Phaser.Scene {
         const total = (b.pending === "build" ? WAR.realtime.buildSeconds[b.kind]! : WAR.realtime.upgradeSeconds) * 10;
         bar(b.progress / total, 0xffd66a, 4);
       }
-      if (b.hp < (b.kind === "castle" ? WAR.buildingHp.castle : WAR.buildingHp.other) && b.level > 0) {
-        const max = b.kind === "castle" ? WAR.buildingHp.castle : WAR.buildingHp.other;
+      const max = buildingHp(b.kind);
+      if (b.hp < max && b.level > 0) {
         g.fillStyle(0x1c2634, 0.85).fillRect(base.x - 34, base.y - (b.kind === "house" ? 150 : 200), 68, 7);
         g.fillStyle(b.side === "a" ? 0x7ad35a : 0xe0533e).fillRect(base.x - 33, base.y - (b.kind === "house" ? 149 : 199), Math.max(1, 66 * (b.hp / max)), 5);
       }
@@ -908,7 +922,7 @@ export class StrategicScene extends Phaser.Scene {
    *  sends new Pawns to dig there. */
   private rally(hit: ReturnType<StrategicScene["hitTest"]>): void {
     const b = this.state.buildings[this.selectedPlot!];
-    if (!b || !trainsAt(b)) return;
+    if (!b || trainsAt(b).length === 0) return;
     const m = hit.mine ? mineById(hit.mine) : undefined;
     const to = m ? { col: m.col, row: m.row } : hit.cell;
     if (this.act({ type: "rally", plot: b.id, to })) this.message = m ? "New Pawns will dig there." : "New units will gather there.";
@@ -1042,12 +1056,16 @@ export class StrategicScene extends Phaser.Scene {
       // A Pawn's card is Warcraft's build menu, six to a 3x2 grid.
       commands = BUILDABLE.map((kind) => {
         const cost = WAR.buildCost[kind]!;
-        const cls = WAR.trains[kind];
+        const does = kind === "house"
+          ? `+${WAR.supply.perHouse} supply`
+          : kind === "tower"
+            ? `an Archer on top shoots enemies within ${WAR.tower.range} tiles`
+            : "trains every soldier";
         return {
-          label: SHORT[kind],
+          label: NAME[kind],
           sub: `${cost} gold`,
           portrait: buildingKey("a", artOf({ id: `${kind}-1`, side: "a", kind, col: 0, row: 0, w: 1, h: 1 })),
-          hint: `${NAME[kind]}, ${cost} gold: ${cls ? `trains the ${CLASS_NAME[cls]}` : `+${WAR.supply.perHouse} supply`}. Then click where it goes; a free Pawn walks over and builds it.`,
+          hint: `${NAME[kind]}, ${cost} gold: ${does}. Then click where it goes; a free Pawn walks over and builds it.`,
           onClick: () => this.startPlacing(kind),
           enabled: this.state.gold.a >= cost,
         };
@@ -1088,7 +1106,7 @@ export class StrategicScene extends Phaser.Scene {
       this.selectedPlot = null;
       return { title: "", detail: "", portrait: null, hp: null, commands: [], queue: null };
     }
-    const cls = trainsAt(b);
+    const classes = trainsAt(b);
     const name = NAME[b.kind];
     const portrait = buildingKey(b.side, artOf(b));
     const commands: (HudCommand | null)[] = [null, null, null, null, null, null, null, null, this.close()];
@@ -1105,17 +1123,17 @@ export class StrategicScene extends Phaser.Scene {
     }
     // A Pawn raises every upgrade, so a free one is part of the price.
     const pawnFree = freeBuilders(this.state, "a").length > 0;
-    if (cls) {
+    const room = supplyUsed(this.state, "a") < supplyCap(this.state, "a");
+    const pawns = this.state.units.filter((u) => u.side === "a" && u.class === "pawn").length;
+    const full = b.queue.length >= WAR.realtime.queue;
+    classes.forEach((cls, i) => {
       const cost = WAR.unitCost[cls];
-      const room = supplyUsed(this.state, "a") < supplyCap(this.state, "a");
-      const pawns = this.state.units.filter((u) => u.side === "a" && u.class === "pawn").length;
       const pawnsFull = cls === "pawn" && pawns >= WAR.pawns.max;
-      const full = b.queue.length >= WAR.realtime.queue;
-      commands[0] = {
+      commands[i] = {
         label: CLASS_NAME[cls],
         sub: `${cost} gold, 1 supply`,
         portrait: portraitKey("a", cls),
-        big: true,
+        big: classes.length === 1,
         hint: pawnsFull
           ? `You keep at most ${WAR.pawns.max} Pawns.`
           : !room
@@ -1123,22 +1141,25 @@ export class StrategicScene extends Phaser.Scene {
             : full
               ? `The queue holds ${WAR.realtime.queue}.`
               : `Queue a ${CLASS_NAME[cls]} for ${cost} gold: out in ${WAR.realtime.trainSeconds[cls]} s, to the rally point.`,
-        onClick: () => this.act({ type: "train", plot: id }),
+        onClick: () => this.act({ type: "train", plot: id, cls }),
         enabled: room && !pawnsFull && !full && this.state.gold.a >= cost,
       };
-      if (b.kind !== "castle") {
-        commands[2] = {
-          label: b.level >= WAR.maxLevel ? "Level 2" : `Upgrade ${WAR.upgradeCost}g`,
-          hint:
-            b.level >= WAR.maxLevel
-              ? "Already at its highest level."
-              : b.pending === "upgrade"
-                ? "Upgrading: a Pawn is at it."
-                : `Upgrade for ${WAR.upgradeCost} gold: ${upgradeText(b.kind)}. A Pawn leaves its mine to do it.`,
-          onClick: () => this.act({ type: "upgrade", plot: id }),
-          enabled: pawnFree && b.level < WAR.maxLevel && !b.pending && this.state.gold.a >= WAR.upgradeCost,
-        };
-      }
+    });
+    if (b.kind === "barracks") {
+      const served = b.level < WAR.maxLevel && !b.pending && barracksUpgraded(this.state, "a");
+      commands[6] = {
+        label: b.level >= WAR.maxLevel ? "Level 2" : `Upgrade ${WAR.upgradeCost}g`,
+        hint:
+          b.level >= WAR.maxLevel
+            ? "Already at its highest level."
+            : b.pending === "upgrade"
+              ? "Upgrading: a Pawn is at it."
+              : served
+                ? "Another barracks has the upgrade, and it serves them all."
+                : `Upgrade for ${WAR.upgradeCost} gold: ${upgradeText()}. A Pawn leaves its mine to do it.`,
+        onClick: () => this.act({ type: "upgrade", plot: id }),
+        enabled: pawnFree && !served && b.level < WAR.maxLevel && !b.pending && this.state.gold.a >= WAR.upgradeCost,
+      };
     }
     const front = b.queue[0];
     const queue: HudModel["queue"] = front
@@ -1151,14 +1172,16 @@ export class StrategicScene extends Phaser.Scene {
     return {
       title: `${name}, level ${b.level}`,
       portrait,
-      hp: [b.hp, b.kind === "castle" ? WAR.buildingHp.castle : WAR.buildingHp.other],
-      detail: cls
+      hp: [b.hp, buildingHp(b.kind)],
+      detail: classes.length > 0
         ? queue
           ? `${b.pending === "upgrade" ? "Upgrading. " : ""}Right click the ground for its rally point.`
-          : `Trains the ${CLASS_NAME[cls]}.${b.pending === "upgrade" ? " Upgrading." : ""} Right click the ground to set its rally point.`
+          : `Trains the ${classes.map((c) => CLASS_NAME[c]).join(", ")}.${b.pending === "upgrade" ? " Upgrading." : ""} Right click the ground to set its rally point.`
         : b.kind === "house"
           ? `Adds ${WAR.supply.perHouse} supply.`
-          : "Your main hall. If it falls, the war is lost.",
+          : b.kind === "tower"
+            ? `Its Archer shoots the nearest enemy within ${WAR.tower.range} tiles.`
+            : "Your main hall. If it falls, the war is lost.",
       commands,
       queue,
     };
@@ -1187,7 +1210,7 @@ export class StrategicScene extends Phaser.Scene {
       return {
         title: `Red ${NAME[p.kind].toLowerCase()}, level ${p.level}`,
         portrait: buildingKey(p.side, artOf(p)),
-        hp: [p.hp, p.kind === "castle" ? WAR.buildingHp.castle : WAR.buildingHp.other],
+        hp: [p.hp, buildingHp(p.kind)],
         detail: "Select your fighters, then right click it to go for it.",
         commands: none,
       };
@@ -1236,6 +1259,8 @@ export class StrategicScene extends Phaser.Scene {
         return this.onAttack(e.unit, e.target, e.damage);
       case "hitBuilding":
         return this.onHitBuilding(e.unit, e.plot, e.damage);
+      case "shoot":
+        return this.onShoot(e.plot, e.target, e.damage);
       case "heal":
         return this.onHeal(e.unit, e.target, e.amount);
       case "fallBack": {
@@ -1361,6 +1386,25 @@ export class StrategicScene extends Phaser.Scene {
     this.time.delayedCall(a ? this.impactDelay(a) : IMPACT_MS, () => {
       if (img?.active) flash(this, img, this.speed);
       floatText(this, base.x, base.y - 110, `-${damage}`, "#ff8f7a", this.speed);
+    });
+  }
+
+  /** A tower's Archer draws, looses, and the arrow lands. */
+  private onShoot(plotId: string, target: number, damage: number): void {
+    const archer = this.towerArchers.get(plotId);
+    const t = this.units.get(target);
+    if (!archer || !t || (!archer.visible && !t.root.visible)) return;
+    const side = this.state.buildings[plotId]?.side ?? "a";
+    if (Math.abs(t.root.x - archer.x) > 0.5) archer.setFlipX(t.root.x < archer.x);
+    archer.play(animKey(side, "archer", "attack"), true);
+    archer.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => archer.active && playPose(archer, side, "archer", "idle"));
+    this.time.delayedCall(ARROW_RELEASE_MS / this.speed, () => {
+      if (archer.active && t.root.active) projectile(this, side, { x: archer.x, y: archer.y - 46 }, { x: t.root.x, y: t.root.y - 40 }, this.speed);
+    });
+    this.time.delayedCall((ARROW_RELEASE_MS + FLIGHT_MS) / this.speed, () => {
+      if (!t.root.active) return;
+      flash(this, t.sprite, this.speed);
+      floatText(this, t.root.x, t.root.y - head(t.unit) - 20, `-${damage}`, "#ff8f7a", this.speed);
     });
   }
 
@@ -1513,19 +1557,10 @@ function describeOrder(u: WarUnit, state: MatchState): string {
   }
 }
 
-function upgradeText(kind: BuildingKind): string {
-  switch (kind) {
-    case "barracks":
-      return "Warriors +20% HP";
-    case "archery":
-      return "Archers +1 range";
-    case "tower":
-      return "Lancers +20% HP";
-    case "monastery":
-      return "Monks heal 30% more";
-    default:
-      return "";
-  }
+function upgradeText(): string {
+  const pct = (n: number) => `${Math.round(n * 100)}%`;
+  const l = WAR.level2;
+  return `Warriors +${pct(l.warriorHp)} HP, Lancers +${pct(l.lancerHp)} HP, Archers +${l.archerRange} range, Monks heal ${pct(l.monkHeal)} more`;
 }
 
 /** What the page hands the map. Nothing for now but the way back. */

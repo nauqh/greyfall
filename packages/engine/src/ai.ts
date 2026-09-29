@@ -5,7 +5,7 @@
  * attacks when it is clearly the stronger side.
  */
 
-import { WAR, type UnitClass } from "./balance.ts";
+import { UNIT_CLASSES, WAR, type UnitClass } from "./balance.ts";
 import { castlePlot, isHome, plotDistance, tileDistance, type BuildingKind, type Cell, type WarSide } from "./island.ts";
 import type { Sim } from "./battle.ts";
 import { makeRng } from "./rng.ts";
@@ -76,7 +76,7 @@ export function planAi(state: MatchState, side: WarSide): Plan {
     return true;
   };
   const own = (): WarUnit[] => cur.units.filter((u) => u.side === side);
-  const has = (kind: BuildingKind) => ownBuildings(cur, side).some((b) => b.kind === kind);
+  const count = (kind: BuildingKind) => ownBuildings(cur, side).filter((b) => b.kind === kind).length;
   const build = (kind: BuildingKind): boolean => {
     const at = findPlacement(cur, side, kind);
     return at !== null && tryDo({ type: "build", kind, col: at.col, row: at.row });
@@ -99,20 +99,21 @@ export function planAi(state: MatchState, side: WarSide): Plan {
     tryDo({ type: "train", plot: `${side}-castle` });
   }
 
-  // Buildings, in an order the seed shuffles a little.
-  const wanted: BuildingKind[] = rng.next() < 0.5 ? ["archery", "tower"] : ["tower", "archery"];
-  if (state.round >= 4) wanted.push("monastery");
-  const next = wanted.find((kind) => !has(kind));
+  // Buildings: a second barracks, then a tower by the castle, then a third barracks.
+  const next: BuildingKind | undefined =
+    count("barracks") < 2 ? "barracks" : state.round < 4 ? undefined : count("tower") < 1 ? "tower" : count("barracks") < 3 ? "barracks" : undefined;
   if (next) build(next);
 
-  // Army: fill every standing production building, weighted toward a mix.
+  // Army: fill every standing barracks, weighted toward a mix.
   const weights: Partial<Record<UnitClass, number>> = { warrior: 3, archer: 3, lancer: 3, monk: 1 };
-  const producers = () => ownBuildings(cur, side).filter((b) => b.kind !== "castle" && WAR.trains[b.kind] && standing(b));
+  const producers = () => ownBuildings(cur, side).filter((b) => b.kind === "barracks" && standing(b));
   for (let guard = 0; guard < 12; guard++) {
-    const open = producers().filter((b) => cur.gold[side] >= WAR.unitCost[WAR.trains[b.kind]!]);
-    if (open.length === 0 || supplyUsed(cur, side) >= supplyCap(cur, side)) break;
-    const pick = rng.weighted(open.map((b) => ({ item: b, weight: weights[WAR.trains[b.kind]!] ?? 1 })));
-    if (!tryDo({ type: "train", plot: pick.id })) break;
+    const open = producers().filter((b) => b.queue.length < WAR.realtime.queue || cur.mode === "rounds");
+    const classes = UNIT_CLASSES.filter((c) => (weights[c] ?? 0) > 0 && cur.gold[side] >= WAR.unitCost[c]);
+    if (open.length === 0 || classes.length === 0 || supplyUsed(cur, side) >= supplyCap(cur, side)) break;
+    const cls = rng.weighted(classes.map((c) => ({ item: c, weight: weights[c]! })));
+    const pick = [...open].sort((x, y) => x.queue.length - y.queue.length || x.id.localeCompare(y.id))[0]!;
+    if (!tryDo({ type: "train", plot: pick.id, cls })) break;
   }
 
   // Spare gold with a full army goes into upgrades.

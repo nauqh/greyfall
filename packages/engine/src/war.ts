@@ -109,7 +109,8 @@ export interface MatchState {
 }
 
 export type Action =
-  | { type: "train"; plot: string }
+  /** `cls`: one of the classes the building trains; its first when left out. */
+  | { type: "train"; plot: string; cls?: UnitClass }
   /** `by`: the Pawns the player picked, the nearest of them builds; without it, the nearest free Pawn. */
   | { type: "build"; kind: BuildingKind; col: number; row: number; by?: number[] }
   | { type: "upgrade"; plot: string }
@@ -139,7 +140,7 @@ export function mineById(id: string): Mine | undefined {
 }
 
 export function buildingHp(kind: BuildingKind): number {
-  return kind === "castle" ? WAR.buildingHp.castle : WAR.buildingHp.other;
+  return kind === "castle" || kind === "tower" ? WAR.buildingHp[kind] : WAR.buildingHp.other;
 }
 
 /** Built, not still going up, and not knocked down. */
@@ -159,18 +160,23 @@ export function levelOf(state: MatchState, side: UnitSide, kind: BuildingKind): 
 export function maxHp(state: MatchState, side: UnitSide, cls: UnitClass): number {
   const base = BALANCE.units[cls].hp;
   if (cls === "warrior" && levelOf(state, side, "barracks") >= 2) return Math.round(base * (1 + WAR.level2.warriorHp));
-  if (cls === "lancer" && levelOf(state, side, "tower") >= 2) return Math.round(base * (1 + WAR.level2.lancerHp));
+  if (cls === "lancer" && levelOf(state, side, "barracks") >= 2) return Math.round(base * (1 + WAR.level2.lancerHp));
   return base;
 }
 
 export function rangeOf(state: MatchState, side: UnitSide, cls: UnitClass): number {
   const base = WAR.range[cls];
-  return cls === "archer" && levelOf(state, side, "archery") >= 2 ? base + WAR.level2.archerRange : base;
+  return cls === "archer" && levelOf(state, side, "barracks") >= 2 ? base + WAR.level2.archerRange : base;
 }
 
 export function healOf(state: MatchState, side: UnitSide, cls: UnitClass): number {
   const base = BALANCE.units[cls].heal;
-  return levelOf(state, side, "monastery") >= 2 ? Math.round(base * (1 + WAR.level2.monkHeal)) : base;
+  return levelOf(state, side, "barracks") >= 2 ? Math.round(base * (1 + WAR.level2.monkHeal)) : base;
+}
+
+/** A barracks already at level 2 or on its way: its bonus covers every barracks. */
+export function barracksUpgraded(state: MatchState, side: WarSide): boolean {
+  return levelOf(state, side, "barracks") >= WAR.maxLevel || ownBuildings(state, side).some((b) => b.kind === "barracks" && b.pending === "upgrade");
 }
 
 /** Units on the field plus those waiting in queues: a queued unit has its supply. */
@@ -184,9 +190,16 @@ export function supplyCap(state: MatchState, side: WarSide): number {
   return Math.min(WAR.supply.max, WAR.supply.start + houses * WAR.supply.perHouse);
 }
 
-/** A building's class, when it trains one. */
-export function trainsAt(plot: Plot): UnitClass | undefined {
-  return WAR.trains[plot.kind];
+/** The classes a building trains, the first by default; none for a house or tower. */
+export function trainsAt(plot: Plot): readonly UnitClass[] {
+  return WAR.trains[plot.kind] ?? [];
+}
+
+/** A finished upgrade: one level up, and every unit it makes tougher gains the HP now. */
+export function raiseLevel(state: MatchState, b: Building): void {
+  const before = new Map(state.units.map((u) => [u, maxHp(state, u.side, u.class)]));
+  b.level += 1;
+  for (const u of state.units) if (u.side === b.side) u.hp += maxHp(state, u.side, u.class) - before.get(u)!;
 }
 
 /** Every tile a building or a mine stands on. */
@@ -483,8 +496,10 @@ export function applyInPlace(next: MatchState, side: WarSide, action: Action): s
     case "train": {
       const plot = own(action.plot);
       if (!plot) return "not your building";
-      const cls = trainsAt(plot);
+      const classes = trainsAt(plot);
+      const cls = action.cls ?? classes[0];
       if (!cls) return `a ${plot.kind} trains nothing`;
+      if (!classes.includes(cls)) return `a ${plot.kind} does not train a ${cls}`;
       if (!standing(plot)) return `the ${plot.kind} is not built`;
       const cost = WAR.unitCost[cls];
       if (next.gold[side] < cost) return `a ${cls} costs ${cost} gold`;
@@ -526,9 +541,10 @@ export function applyInPlace(next: MatchState, side: WarSide, action: Action): s
     case "upgrade": {
       const plot = own(action.plot);
       if (!plot) return "not your building";
-      if (!trainsAt(plot) || plot.kind === "castle") return `a ${plot.kind} has no upgrade yet`;
+      if (plot.kind !== "barracks") return `a ${plot.kind} has no upgrade yet`;
       if (!standing(plot) || plot.pending) return `the ${plot.kind} is not ready`;
       if (plot.level >= WAR.maxLevel) return `the ${plot.kind} is at its highest level`;
+      if (barracksUpgraded(next, side)) return "one upgraded barracks serves them all";
       if (next.gold[side] < WAR.upgradeCost) return `an upgrade costs ${WAR.upgradeCost} gold`;
       if (!sendBuilder(next, side, plot)) return "every Pawn is already building";
       next.gold[side] -= WAR.upgradeCost;

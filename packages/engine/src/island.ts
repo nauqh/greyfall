@@ -210,7 +210,7 @@ export type WarSide = "a" | "b";
 /** A unit's side: a player's, or "m", the monsters, hostile to both. */
 export type UnitSide = WarSide | "m";
 
-export type BuildingKind = "castle" | "barracks" | "archery" | "tower" | "monastery" | "house";
+export type BuildingKind = "castle" | "barracks" | "tower" | "house";
 
 /** A building's footprint: the base the art stands on, not the art itself.
  *  Nobody walks through one. */
@@ -227,9 +227,7 @@ export interface Plot {
 export const FOOTPRINT: Record<BuildingKind, { w: number; h: number }> = {
   castle: { w: 3, h: 2 },
   barracks: { w: 2, h: 1 },
-  archery: { w: 2, h: 1 },
   tower: { w: 2, h: 1 },
-  monastery: { w: 2, h: 1 },
   house: { w: 1, h: 1 },
 };
 
