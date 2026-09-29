@@ -160,9 +160,13 @@ function roadTiles(): Set<number> {
  *  level above it, shadow, elevated tops, cliffs and stairs: the tilemap
  *  guide's layer order. */
 export function buildMap(scene: Phaser.Scene): void {
-  const tile = (c: number, r: number, tc: number, tr: number, z: number, sheet: string): void => {
-    scene.add.image(c * CELL, r * CELL, sheet, `tile_${tc}_${tr}`).setOrigin(0).setDepth(z);
+  // Baked into one texture in layer order: as ~2000 images Phaser redrew every tile each frame, on screen or not.
+  const rt = scene.add.renderTexture(0, 0, STRAT_COLS * CELL, (STRAT_ROWS + 1) * CELL).setOrigin(0).setDepth(DEPTH.island);
+  rt.beginDraw();
+  const tile = (c: number, r: number, tc: number, tr: number, sheet: string): void => {
+    rt.batchDrawFrame(sheet, `tile_${tc}_${tr}`, c * CELL, r * CELL);
   };
+  const shade = scene.textures.getFrame("shadow_src");
 
   for (let r = 0; r < STRAT_ROWS; r++) {
     for (let c = 0; c < STRAT_COLS; c++) {
@@ -180,7 +184,7 @@ export function buildMap(scene: Phaser.Scene): void {
       }
       if (isLand(c, r)) {
         const tc = edge(isLand(c - 1, r), isLand(c + 1, r));
-        tile(c, r, tc, edge(isLand(c, r - 1), isLand(c, r + 1)), DEPTH.island, SHEET[1]!);
+        tile(c, r, tc, edge(isLand(c, r - 1), isLand(c, r + 1)), SHEET[1]!);
       }
     }
   }
@@ -191,12 +195,11 @@ export function buildMap(scene: Phaser.Scene): void {
   const road = (c: number, r: number): boolean => roads.has(r * STRAT_COLS + c);
   for (let r = 0; r < STRAT_ROWS; r++) {
     for (let c = 0; c < STRAT_COLS; c++) {
-      if (road(c, r)) tile(c, r, edge(road(c - 1, r), road(c + 1, r)), edge(road(c, r - 1), road(c, r + 1)), DEPTH.island + 0.05, "tilesetRoad");
+      if (road(c, r)) tile(c, r, edge(road(c - 1, r), road(c + 1, r)), edge(road(c, r - 1), road(c, r + 1)), "tilesetRoad");
     }
   }
 
   for (const lv of [2, 3]) {
-    const z = DEPTH.island + (lv - 1) * 0.3;
     const slope = (c: number, r: number): boolean => isSlope(c, r) && level(c, r) === lv;
     // Ground at this level or above: a higher level, and the stairs up to it,
     // stand on this level's centre pieces.
@@ -211,7 +214,7 @@ export function buildMap(scene: Phaser.Scene): void {
     // pools at the cliff foot and rims the sides.
     for (let r = 0; r < STRAT_ROWS; r++) {
       for (let c = 0; c < STRAT_COLS; c++) {
-        if (top(c, r)) scene.add.image(c * CELL + CELL / 2, (r + 1) * CELL + CELL / 2, "shadow_src").setDepth(z);
+        if (top(c, r)) rt.batchDrawFrame("shadow_src", undefined, (c + 0.5) * CELL - shade.width / 2, (r + 1.5) * CELL - shade.height / 2);
       }
     }
     // Tops, then walls, then ramps. Beside a ramp a top runs on without a
@@ -223,7 +226,7 @@ export function buildMap(scene: Phaser.Scene): void {
       for (let c = 0; c < STRAT_COLS; c++) {
         if (!top(c, r)) continue;
         const side = (dc: number): boolean => top(c + dc, r) || slope(c + dc, r);
-        tile(c, r, 5 + edge(side(-1), side(1)), edge(top(c, r - 1), top(c, r + 1)), z + 0.1, SHEET[lv]!);
+        tile(c, r, 5 + edge(side(-1), side(1)), edge(top(c, r - 1), top(c, r + 1)), SHEET[lv]!);
       }
     }
     for (let r = 0; r < STRAT_ROWS; r++) {
@@ -231,18 +234,19 @@ export function buildMap(scene: Phaser.Scene): void {
         if (!wall(c, r)) continue;
         const below = isLand(c, r) ? SHEET[Math.max(1, level(c, r))]! : SHEET[1]!;
         const joins = (dc: number): boolean => wall(c + dc, r) || rampFoot(c + dc, r);
-        tile(c, r, 5 + edge(joins(-1), joins(1)), isLand(c, r) ? 4 : 5, z + 0.1, below);
+        tile(c, r, 5 + edge(joins(-1), joins(1)), isLand(c, r) ? 4 : 5, below);
       }
     }
     for (let r = 0; r < STRAT_ROWS; r++) {
       for (let c = 0; c < STRAT_COLS; c++) {
         if (!slope(c, r)) continue;
         const col = "<[".includes(at(c, r)) ? 0 : 3;
-        tile(c, r, col, 4, z + 0.2, SHEET[lv]!);
-        tile(c, r + 1, col, 5, z + 0.2, SHEET[lv]!);
+        tile(c, r, col, 4, SHEET[lv]!);
+        tile(c, r + 1, col, 5, SHEET[lv]!);
       }
     }
   }
+  rt.endDraw();
 }
 
 /** Turns a spot half round to the other half, as the island is. */
