@@ -102,7 +102,7 @@ const TICK_MS = 1000 / 10;
 /** The HUD is rebuilt this often while the world runs, not every tick. */
 const HUD_EVERY_TICKS = 5;
 /** How far above a tower's base its Archer stands: the floor inside the battlements. */
-const TOWER_TOP = 96;
+const TOWER_TOP = 124;
 
 const NAME: Record<BuildingKind, string> = {
   castle: "Castle",
