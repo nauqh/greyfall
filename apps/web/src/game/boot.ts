@@ -17,9 +17,9 @@ export const GAME_H = 720;
 /** = Terrain/Tileset/Water Background color.png, and the page's own body. */
 export const WATER = "#47aba9";
 
-// Phaser 3.90 has no HiDPI support, so the backing store is sized in device
-// pixels by hand and shown at 1 / DPR, its CSS size.
-export const DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+// Pinned to 1x: device-pixel backing stores cost too much fill rate on laptop
+// GPUs. Raise it (e.g. Math.min(3, window.devicePixelRatio)) for sharper text.
+export const DPR = 1;
 
 /** Canvas px per world unit: the whole 1200x720 world, fitted on one axis.
  *  Not a whole number on most screens, so pixel art lands on uneven screen
