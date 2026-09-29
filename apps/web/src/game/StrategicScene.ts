@@ -89,9 +89,9 @@ const STRAT: Rect = { x0: 0, y0: 0, x1: WORLD_W, y1: WORLD_H };
 /** How close to the screen edge the pointer pans, and how fast, in world
  *  px/s. Screen-edge scrolling, exactly as Warcraft did it. */
 const EDGE = 28;
-const PAN_PX_S = 840;
-/** Zoom steps: native, halfway, and all of the world in view. */
-const ZOOM_STEPS = 3;
+const PAN_PX_S = 1300;
+/** Zoom steps, evenly spaced from native to all of the world in view. */
+const ZOOM_STEPS = 5;
 
 /** A step's walk takes most of the second it is given, so a march reads as
  *  one walk rather than a string of hops. */
@@ -1419,8 +1419,8 @@ export class StrategicScene extends Phaser.Scene {
     this.zoomLevel = next;
     this.cameras.main.zoomTo(this.zoomScale(next) * baseZoom(this), 180, "Sine.easeOut", true);
   }
-  /** One step out from the closest: the home plateau with room around it. */
-  private zoomLevel = 1;
+  /** Halfway out: the home plateau with room around it. */
+  private zoomLevel = 2;
   /** Set by the first mouse move and kept when it leaves: a push past the window's edge is the pan. */
   private pointerIn = false;
 
@@ -1432,7 +1432,7 @@ export class StrategicScene extends Phaser.Scene {
     const base = baseZoom(this);
     const fit = Math.min(cam.width / WORLD_W, (cam.height - (HUD_COVER_H + HUD_TOP_H) * base) / (TOP_SEA + WORLD_H)) / base;
     const out = Math.min(1, fit);
-    return [1, (1 + out) / 2, out][level]!;
+    return 1 - ((1 - out) * level) / (ZOOM_STEPS - 1);
   }
 
   /** Scroll with the world clamps shared by edge-pan, drag and zoom. A view
