@@ -280,7 +280,10 @@ export class StrategicScene extends Phaser.Scene {
     // The pointer reads (0,0) until the mouse first moves over the canvas,
     // which edge-pan took for the top-left corner: the opening view slid away.
     // Only a move counts: mouseover arrives before the pointer has a position.
-    this.input.on(Phaser.Input.Events.POINTER_MOVE, () => (this.pointerIn = true));
+    // Off when the pointer leaves or the window blurs, or its last spot drifts the camera for good.
+    this.input.on(Phaser.Input.Events.POINTER_MOVE, (p: Phaser.Input.Pointer) => (this.pointerIn = !p.wasTouch));
+    this.input.on(Phaser.Input.Events.GAME_OUT, () => (this.pointerIn = false));
+    this.game.events.on(Phaser.Core.Events.BLUR, () => (this.pointerIn = false));
     this.input.keyboard?.on("keydown", (e: KeyboardEvent) => this.hotkey(e));
 
     // Warcraft's mouse: a left drag boxes units, a click selects, a right
@@ -1421,7 +1424,7 @@ export class StrategicScene extends Phaser.Scene {
   }
   /** Halfway out: the home plateau with room around it. */
   private zoomLevel = 2;
-  /** Set by the first mouse move and kept when it leaves: a push past the window's edge is the pan. */
+  /** Whether a mouse is over the canvas, the only time edge-pan reads the pointer. */
   private pointerIn = false;
 
   /** A step as a multiple of baseZoom. The last fits the whole world, top
