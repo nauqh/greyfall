@@ -158,7 +158,7 @@ export const WAR = {
     barracks: ["warrior", "lancer", "archer", "monk"],
   } as Partial<Record<string, readonly UnitClass[]>>,
   /** Barracks and castle start built. */
-  buildCost: { castle: 0, barracks: 40, tower: 60, house: 40 } as Record<string, number>,
+  buildCost: { castle: 0, barracks: 40, tower: 60, cannon: 80, house: 40 } as Record<string, number>,
   upgradeCost: 60,
   /** Level 3 and the castle upgrade land with abilities, after Phase 2. */
   maxLevel: 2,
@@ -172,12 +172,15 @@ export const WAR = {
   /** A tower's archer: shoots as an Archer does, further, and cannot be hit
    *  apart from the tower. */
   tower: { range: 4 },
+  /** A cannon: slow, and the blast also hits the enemies round its target,
+   *  but nothing closer than `minRange`, so melee that reaches it wins. */
+  cannon: { range: 4, minRange: 2, damage: 30, seconds: 3, blast: 1 },
 
   /** Tiles a unit or building sees, round it. Pawns see least, so scouting
    *  costs a worker's trips; a tower on the high ground sees farthest. */
   sight: {
     units: { pawn: 4, warrior: 4, lancer: 5, archer: 6, monk: 5 } as Record<UnitClass, number>,
-    buildings: { castle: 7, barracks: 4, tower: 8, house: 3 } as Record<string, number>,
+    buildings: { castle: 7, barracks: 4, tower: 8, cannon: 4, house: 3 } as Record<string, number>,
   },
 
   /** Units deal this share of their damage to buildings. */
@@ -201,7 +204,7 @@ export const WAR = {
     carry: 10,
     digSeconds: 2,
     trainSeconds: { pawn: 8, warrior: 10, archer: 10, lancer: 12, monk: 14 } as Record<UnitClass, number>,
-    buildSeconds: { castle: 0, house: 10, barracks: 20, tower: 20 } as Record<string, number>,
+    buildSeconds: { castle: 0, house: 10, barracks: 20, tower: 20, cannon: 25 } as Record<string, number>,
     upgradeSeconds: 25,
     /** Units a building can have waiting to be trained, paid when queued. */
     queue: 5,

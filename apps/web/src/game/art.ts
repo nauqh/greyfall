@@ -189,6 +189,8 @@ export interface BuildingSpec {
 export const BUILDINGS = {
   castle: { file: "Castle.png", w: 320, h: 256, anchorY: 249 },
   tower: { file: "Tower.png", w: 128, h: 256, anchorY: 230 },
+  // One colour only, facing right; the map tints red's and turns it with CANNON_ART.
+  cannon: { file: "Enemy Pack/Extra/Cannon/Cannon_Right.png", w: 128, h: 128, anchorY: 88 },
   // Enemy Pack extras, for the far shore. The hut PNG is 16 hut variants of
   // 192px laid end to end; the dead tree and the towers are single images.
   goblinHut: { file: "Enemy Pack/Extra/Goblin Hut/Goblin Hut.png", w: 192, h: 256, anchorY: 240, frame: 192 },
@@ -299,6 +301,13 @@ export const CLOUD_SKY = 0xf0f4f9;
 export const FX = {
   dust: { file: "Particle FX/Dust_01.png", frame: 64, frames: 8 },
   explosion: { file: "Particle FX/Explosion_01.png", frame: 192, frames: 8 },
+} as const;
+
+/** The cannon's facings; left, down-left and up-left are these mirrored. */
+export const CANNON_ART = {
+  dir: "Enemy Pack/Extra/Cannon/Cannon_",
+  facings: ["Right", "DownRight", "Down", "UpRight", "Up"],
+  ball: "Enemy Pack/Extra/Cannon/Cannon_Ball.png",
 } as const;
 
 /** 25 portraits, 256px each. */

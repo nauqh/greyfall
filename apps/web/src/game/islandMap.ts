@@ -39,6 +39,7 @@ const ART: Record<BuildingKind, BuildingName> = {
   castle: "castle",
   barracks: "barracks",
   tower: "tower",
+  cannon: "cannon",
   house: "house1",
 };
 

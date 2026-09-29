@@ -38,6 +38,7 @@ import {
   runAi,
   supplyCap,
   supplyUsed,
+  tileDistance,
   tilesBeside,
   type Action,
   type BuildingKind,
@@ -376,6 +377,26 @@ describe("rounds", () => {
     const shots = out.events.filter((e) => e.type === "shoot");
     expect(shots.length).toBeGreaterThan(0);
     expect(shots.every((e) => e.type === "shoot" && e.plot === id && e.target === 2)).toBe(true);
+  });
+
+  it("has a cannon blast its target and the enemies round it, never friends or anyone beside it", () => {
+    const { state, id } = build({ ...empty(), gold: { a: 1000, b: 1000 }, units: [unit("a", "pawn", 5, 5, 1)] }, "a", "cannon");
+    const cannon = { ...state.buildings[id]!, level: 1, hp: WAR.buildingHp.other, pending: null };
+    const s = { ...state, units: [], buildings: { ...state.buildings, [id]: cannon } };
+    const free = freeIn(occupied(s));
+    const cells = MAP.flatMap((line, row) => [...line].map((_, col) => ({ col, row }))).filter(free);
+    const target = cells.find((c) => plotDistance(cannon, c) === 3)!;
+    const [near, friend] = cells.filter((c) => plotDistance(cannon, c) >= 3 && tileDistance(target, c) === 1);
+    const beside = cells.find((c) => plotDistance(cannon, c) === 1 && tileDistance(target, c) >= 3)!;
+    const hold = { type: "hold" } as const;
+    const units = [
+      unit("b", "warrior", target.col, target.row, 2, hold),
+      unit("b", "warrior", near!.col, near!.row, 4, hold),
+      unit("b", "warrior", beside.col, beside.row, 6, hold),
+      unit("a", "warrior", friend!.col, friend!.row, 3, hold),
+    ];
+    const volley = battle({ ...s, units }, [], []).events.filter((e) => e.type === "shoot" && e.t === 0);
+    expect(volley.map((e) => e.type === "shoot" && [e.target, e.blast ?? false])).toEqual([[2, false], [4, true]]);
   });
 
   it("builds from the site's own level, never from the ground below its cliff", () => {

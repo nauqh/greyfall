@@ -5,7 +5,7 @@
 import type { UnitSide } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
-import { FX, packUrl } from "./art";
+import { CANNON_ART, FX, packUrl } from "./art";
 import { DEPTH } from "./terrain";
 import { TEXT_RES } from "./ui";
 
@@ -34,6 +34,9 @@ export function clearFx(scene: Phaser.Scene): void {
 export function loadWarFx(scene: Phaser.Scene): void {
   scene.load.spritesheet("arrow", packUrl("Units/Blue Units/Archer/Arrow.png"), { frameWidth: 64, frameHeight: 64 });
   scene.load.spritesheet("dust", packUrl(FX.dust.file), { frameWidth: FX.dust.frame, frameHeight: FX.dust.frame });
+  scene.load.spritesheet("explosion", packUrl(FX.explosion.file), { frameWidth: FX.explosion.frame, frameHeight: FX.explosion.frame });
+  scene.load.image("cannonball", packUrl(CANNON_ART.ball));
+  for (const f of CANNON_ART.facings) scene.load.image(`cannon_${f}`, packUrl(`${CANNON_ART.dir}${f}.png`));
 }
 
 export function makeWarFxAnims(scene: Phaser.Scene): void {
@@ -41,6 +44,15 @@ export function makeWarFxAnims(scene: Phaser.Scene): void {
     scene.anims.create({
       key: "dust_anim",
       frames: scene.anims.generateFrameNumbers("dust", { start: 0, end: FX.dust.frames - 1 }),
+      frameRate: 16,
+      repeat: 0,
+      hideOnComplete: true,
+    });
+  }
+  if (!scene.anims.exists("explosion_anim")) {
+    scene.anims.create({
+      key: "explosion_anim",
+      frames: scene.anims.generateFrameNumbers("explosion", { start: 0, end: FX.explosion.frames - 1 }),
       frameRate: 16,
       repeat: 0,
       hideOnComplete: true,
@@ -74,7 +86,11 @@ export function flash(scene: Phaser.Scene, target: Phaser.GameObjects.Sprite | P
     if (!target.active) return;
     target.setTint(0xff8a80);
     scene.time.delayedCall(110 / speed, () => {
-      if (target.active) target.clearTint();
+      if (!target.active) return;
+      // A tinted building (red's cannon) goes back to its tint, not to white.
+      const rest = target.getData("tint") as number | undefined;
+      if (rest === undefined) target.clearTint();
+      else target.setTint(rest);
     });
   });
 }
@@ -110,6 +126,29 @@ export function projectile(
       shot.setPosition(x, y);
     },
     onComplete: () => shot.destroy(),
+  });
+}
+
+/** A cannonball lobbed high over `ms`, bursting where it lands. */
+export function cannonball(scene: Phaser.Scene, from: { x: number; y: number }, to: { x: number; y: number }, ms: number): void {
+  const ball = trackFx(scene, scene.add.image(from.x, from.y, "cannonball").setScale(0.6).setDepth(DEPTH.fx));
+  const apexY = Math.min(from.y, to.y) - Math.min(140, Math.abs(to.x - from.x) / 3 + 50);
+  const midX = (from.x + to.x) / 2;
+  scene.tweens.addCounter({
+    from: 0,
+    to: 1,
+    duration: ms,
+    onUpdate: (tw) => {
+      const t = tw.progress;
+      ball.setPosition(
+        (1 - t) * (1 - t) * from.x + 2 * (1 - t) * t * midX + t * t * to.x,
+        (1 - t) * (1 - t) * from.y + 2 * (1 - t) * t * apexY + t * t * to.y,
+      );
+    },
+    onComplete: () => {
+      ball.destroy();
+      trackFx(scene, scene.add.sprite(to.x, to.y, "explosion").setOrigin(0.5, 0.6).setDepth(DEPTH.fx).play("explosion_anim"));
+    },
   });
 }
 

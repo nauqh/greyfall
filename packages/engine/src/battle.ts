@@ -64,8 +64,8 @@ export type WarEvent =
   | { t: number; type: "move"; unit: number; col: number; row: number }
   | { t: number; type: "attack"; unit: number; target: number; damage: number; hpAfter: number }
   | { t: number; type: "hitBuilding"; unit: number; plot: string; damage: number; hpAfter: number }
-  /** A tower's archer shooting a unit. */
-  | { t: number; type: "shoot"; plot: string; target: number; damage: number; hpAfter: number }
+  /** A tower's archer or a cannon hitting a unit; `blast` for those round a cannon's target. */
+  | { t: number; type: "shoot"; plot: string; target: number; damage: number; hpAfter: number; blast?: true }
   | { t: number; type: "heal"; unit: number; target: number; amount: number; hpAfter: number }
   | { t: number; type: "fallBack"; unit: number; hp: number }
   | { t: number; type: "death"; unit: number }
@@ -119,7 +119,7 @@ interface SimUnit extends WarUnit {
   routeTill: number;
 }
 
-type Hit = { by: SimUnit; unit?: SimUnit; plot?: Building; amount: number } | { tower: Building; unit: SimUnit; amount: number };
+type Hit = { by: SimUnit; unit?: SimUnit; plot?: Building; amount: number } | { gun: Building; unit: SimUnit; amount: number; blast?: true };
 
 export interface Sim {
   /** The live world. Its units carry the simulation's own bookkeeping; use
@@ -534,19 +534,31 @@ export function createSim(start: MatchState): Sim {
     else wait();
   };
 
-  /** When each tower's archer next shoots. */
-  const towerNext = new Map<string, number>();
+  /** When each tower or cannon next fires. */
+  const gunNext = new Map<string, number>();
 
-  /** A standing tower's archer shoots the nearest enemy in range. */
+  /** A standing tower's archer shoots the nearest enemy in range; a cannon
+   *  fires on the nearest past its dead ground, and the blast hits the
+   *  enemies round the target too, never friends. */
   const shoot = (b: Building, hits: Hit[]): void => {
-    if (b.kind !== "tower" || !standing(b) || t < (towerNext.get(b.id) ?? 0)) return;
-    const target = units()
-      .filter((o) => live(o) && o.side !== b.side && plotDistance(b, o) <= WAR.tower.range)
+    if ((b.kind !== "tower" && b.kind !== "cannon") || !standing(b) || t < (gunNext.get(b.id) ?? 0)) return;
+    const cannon = b.kind === "cannon";
+    const [min, max] = cannon ? [WAR.cannon.minRange, WAR.cannon.range] : [0, WAR.tower.range];
+    const enemies = units().filter((o) => live(o) && o.side !== b.side);
+    const target = enemies
+      .filter((o) => plotDistance(b, o) >= min && plotDistance(b, o) <= max)
       .sort((x, y) => plotDistance(b, x) - plotDistance(b, y) || x.hp - y.hp || x.id - y.id)[0];
     if (!target) return;
-    const uphill = level(b.col, b.row) < level(target.col, target.row);
-    hits.push({ tower: b, unit: target, amount: Math.round(damageAgainst("archer", target.class) * (uphill ? WAR.highGround : 1)) });
-    towerNext.set(b.id, t + TICKS_PER_ACTION);
+    const scale = (o: SimUnit) => (level(b.col, b.row) < level(o.col, o.row) ? WAR.highGround : 1);
+    if (cannon) {
+      hits.push({ gun: b, unit: target, amount: Math.round(WAR.cannon.damage * scale(target)) });
+      for (const o of enemies) {
+        if (o !== target && tileDistance(o, target) <= WAR.cannon.blast) hits.push({ gun: b, unit: o, amount: Math.round(WAR.cannon.damage * scale(o)), blast: true });
+      }
+    } else {
+      hits.push({ gun: b, unit: target, amount: Math.round(damageAgainst("archer", target.class) * scale(target)) });
+    }
+    gunNext.set(b.id, t + (cannon ? WAR.cannon.seconds * BALANCE.tickRate : TICKS_PER_ACTION));
   };
 
   const remove = (b: Building): void => {
@@ -687,15 +699,15 @@ export function createSim(start: MatchState): Sim {
     const killer = new Map<SimUnit, UnitSide>();
     for (const h of hits) {
       if (h.unit) {
-        if (h.unit.hp > 0 && h.unit.hp - h.amount <= 0) killer.set(h.unit, "tower" in h ? h.tower.side : h.by.side);
+        if (h.unit.hp > 0 && h.unit.hp - h.amount <= 0) killer.set(h.unit, "gun" in h ? h.gun.side : h.by.side);
         h.unit.hp -= h.amount;
       }
       if ("plot" in h && h.plot) h.plot.hp -= h.amount;
     }
     for (const h of heals) h.unit.hp += h.amount;
     for (const h of hits) {
-      if ("tower" in h) {
-        events.push({ t, type: "shoot", plot: h.tower.id, target: h.unit.id, damage: h.amount, hpAfter: Math.max(0, h.unit.hp) });
+      if ("gun" in h) {
+        events.push({ t, type: "shoot", plot: h.gun.id, target: h.unit.id, damage: h.amount, hpAfter: Math.max(0, h.unit.hp), ...(h.blast && { blast: true as const }) });
       } else if (h.unit) {
         events.push({ t, type: "attack", unit: h.by.id, target: h.unit.id, damage: h.amount, hpAfter: Math.max(0, h.unit.hp) });
       } else if (h.plot) {

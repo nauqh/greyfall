@@ -50,6 +50,8 @@ for (const b of Object.values(art.BUILDINGS)) {
 }
 wanted.add(art.FX.dust.file);
 wanted.add(art.FX.explosion.file);
+wanted.add(art.CANNON_ART.ball);
+for (const f of art.CANNON_ART.facings) wanted.add(`${art.CANNON_ART.dir}${f}.png`);
 const seq = (prefix, count, pad) =>
   [...Array(count).keys()].forEach((i) =>
     wanted.add(`${prefix}${pad ? String(i + 1).padStart(2, "0") : i + 1}.png`),

@@ -99,9 +99,19 @@ export function planAi(state: MatchState, side: WarSide): Plan {
     tryDo({ type: "train", plot: `${side}-castle` });
   }
 
-  // Buildings: a second barracks, then a tower by the castle, then a third barracks.
+  // Buildings: a second barracks, a tower by the castle, a third barracks, then a cannon.
   const next: BuildingKind | undefined =
-    count("barracks") < 2 ? "barracks" : state.round < 4 ? undefined : count("tower") < 1 ? "tower" : count("barracks") < 3 ? "barracks" : undefined;
+    count("barracks") < 2
+      ? "barracks"
+      : state.round < 4
+        ? undefined
+        : count("tower") < 1
+          ? "tower"
+          : count("barracks") < 3
+            ? "barracks"
+            : state.round >= 5 && count("cannon") < 1
+              ? "cannon"
+              : undefined;
   if (next) build(next);
 
   // Army: fill every standing barracks, weighted toward a mix.

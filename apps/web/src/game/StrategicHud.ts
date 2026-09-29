@@ -917,6 +917,7 @@ function guideSections(): GuideSection[] {
         `A counter deals ${Math.round(BALANCE.counterBonus * 100)}% more damage. Troops on the lowland deal ${Math.round(WAR.highGround * 100)}% to a plateau.`,
         `Each house adds ${WAR.supply.perHouse} supply; every unit takes 1.`,
         `A tower's Archer shoots the nearest enemy within ${WAR.tower.range} tiles, until the tower falls.`,
+        `A cannon fires every ${WAR.cannon.seconds} s at enemies ${WAR.cannon.minRange} to ${WAR.cannon.range} tiles away, and its blast hits those round the target. It cannot hit anyone beside it.`,
       ],
     },
   ];

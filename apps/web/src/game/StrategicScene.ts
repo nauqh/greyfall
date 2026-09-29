@@ -70,6 +70,7 @@ import {
 import {
   ARROW_RELEASE_MS,
   FLIGHT_MS,
+  cannonball,
   IMPACT_MS,
   clearFx,
   deathFx,
@@ -108,8 +109,20 @@ const NAME: Record<BuildingKind, string> = {
   castle: "Castle",
   barracks: "Barracks",
   tower: "Tower",
+  cannon: "Cannon",
   house: "House",
 };
+
+/** Art drawn larger than the pack draws it: the cannon is a unit-sized prop. */
+const ART_SCALE: Partial<Record<BuildingKind, number>> = { cannon: 1.4 };
+/** Red's cannon: the pack has it in blue only. */
+const RED_TINT = 0xff9a8a;
+const CANNON_FLIGHT_MS = 700;
+/** The cannon's art for each eighth of a turn, clockwise from facing right, and whether it is mirrored. */
+const CANNON_FACING: readonly [string, boolean][] = [
+  ["Right", false], ["DownRight", false], ["Down", false], ["DownRight", true],
+  ["Right", true], ["UpRight", true], ["Up", false], ["UpRight", false],
+];
 
 const CLASS_NAME: Record<UnitClass, string> = {
   pawn: "Pawn",
@@ -120,7 +133,7 @@ const CLASS_NAME: Record<UnitClass, string> = {
 };
 
 /** What a Pawn can put up, in the order its card lists them. */
-const BUILDABLE: readonly BuildingKind[] = ["house", "barracks", "tower"];
+const BUILDABLE: readonly BuildingKind[] = ["house", "barracks", "tower", "cannon"];
 
 function cellXY(col: number, row: number): { x: number; y: number } {
   return { x: STRAT.x0 + col * CELL + CELL / 2, y: STRAT.y0 + row * CELL + CELL / 2 };
@@ -222,7 +235,7 @@ export class StrategicScene extends Phaser.Scene {
     loadWarFx(this);
     const all: Structure[] = [];
     for (const side of ["a", "b"] as const) {
-      for (const kind of ["castle", "barracks", "tower"] as const) {
+      for (const kind of ["castle", "barracks", "tower", "cannon"] as const) {
         all.push(cell(side, artOf({ id: kind, side, kind, col: 0, row: 0, w: 1, h: 1 }), 0, 0));
       }
       for (const n of [1, 2, 3] as const) all.push(cell(side, `house${n}`, 0, 0));
@@ -530,7 +543,8 @@ export class StrategicScene extends Phaser.Scene {
       let img = this.buildings.get(b.id);
       if (!img) {
         const { x, y } = plotBase(b);
-        img = addBuilding(this, cell(b.side, artOf(b), x / CELL, y / CELL));
+        img = addBuilding(this, cell(b.side, artOf(b), x / CELL, y / CELL, ART_SCALE[b.kind]));
+        if (b.kind === "cannon" && b.side === "b") img.setData("tint", RED_TINT).setTint(RED_TINT);
         this.buildings.set(b.id, img);
       }
       // Going up: faint at first, then fuller as its clock runs.
@@ -761,7 +775,7 @@ export class StrategicScene extends Phaser.Scene {
     const plot = { id: `ghost-house-${this.state.nextPlot.a}`, side: "a" as const, kind, ...at, ...f };
     if (this.ghost.kind !== kind) {
       this.ghost.img?.destroy();
-      this.ghost = { img: addBuilding(this, cell("a", artOf(plot), 0, 0)).setAlpha(0.55), kind };
+      this.ghost = { img: addBuilding(this, cell("a", artOf(plot), 0, 0, ART_SCALE[kind])).setAlpha(0.55), kind };
     }
     const base = plotBase(plot);
     this.ghost.img!.setPosition(base.x, base.y).setDepth(DEPTH.fx + 1).setTint(why ? 0xff8a7a : 0xffffff);
@@ -1060,7 +1074,9 @@ export class StrategicScene extends Phaser.Scene {
           ? `+${WAR.supply.perHouse} supply`
           : kind === "tower"
             ? `an Archer on top shoots enemies within ${WAR.tower.range} tiles`
-            : "trains every soldier";
+            : kind === "cannon"
+              ? cannonText()
+              : "trains every soldier";
         return {
           label: NAME[kind],
           sub: `${cost} gold`,
@@ -1181,7 +1197,9 @@ export class StrategicScene extends Phaser.Scene {
           ? `Adds ${WAR.supply.perHouse} supply.`
           : b.kind === "tower"
             ? `Its Archer shoots the nearest enemy within ${WAR.tower.range} tiles.`
-            : "Your main hall. If it falls, the war is lost.",
+            : b.kind === "cannon"
+              ? `${cannonText().charAt(0).toUpperCase()}${cannonText().slice(1)}.`
+              : "Your main hall. If it falls, the war is lost.",
       commands,
       queue,
     };
@@ -1260,7 +1278,9 @@ export class StrategicScene extends Phaser.Scene {
       case "hitBuilding":
         return this.onHitBuilding(e.unit, e.plot, e.damage);
       case "shoot":
-        return this.onShoot(e.plot, e.target, e.damage);
+        return this.state.buildings[e.plot]?.kind === "cannon"
+          ? this.onCannon(e.plot, e.target, e.damage, e.blast ?? false)
+          : this.onShoot(e.plot, e.target, e.damage);
       case "heal":
         return this.onHeal(e.unit, e.target, e.amount);
       case "fallBack": {
@@ -1402,6 +1422,27 @@ export class StrategicScene extends Phaser.Scene {
       if (archer.active && t.root.active) projectile(this, side, { x: archer.x, y: archer.y - 46 }, { x: t.root.x, y: t.root.y - 40 }, this.speed);
     });
     this.time.delayedCall((ARROW_RELEASE_MS + FLIGHT_MS) / this.speed, () => {
+      if (!t.root.active) return;
+      flash(this, t.sprite, this.speed);
+      floatText(this, t.root.x, t.root.y - head(t.unit) - 20, `-${damage}`, "#ff8f7a", this.speed);
+    });
+  }
+
+  /** The cannon turns, kicks back and lobs a ball; the blast lands on everyone it hit together. */
+  private onCannon(plotId: string, target: number, damage: number, blast: boolean): void {
+    const img = this.buildings.get(plotId);
+    const t = this.units.get(target);
+    if (!img || !t || (!img.visible && !t.root.visible)) return;
+    const land = CANNON_FLIGHT_MS / this.speed;
+    if (!blast) {
+      const eighth = Math.round(Math.atan2(t.root.y - img.y, t.root.x - img.x) / (Math.PI / 4));
+      const [facing, mirrored] = CANNON_FACING[(eighth + 8) % 8]!;
+      img.setTexture(`cannon_${facing}`).setFlipX(mirrored);
+      const x = img.x;
+      this.tweens.add({ targets: img, x: x + (t.root.x < x ? 5 : -5), duration: 70 / this.speed, yoyo: true, onComplete: () => img.setX(x) });
+      cannonball(this, { x, y: img.y - 30 }, { x: t.root.x, y: t.root.y - 20 }, land);
+    }
+    this.time.delayedCall(land, () => {
       if (!t.root.active) return;
       flash(this, t.sprite, this.speed);
       floatText(this, t.root.x, t.root.y - head(t.unit) - 20, `-${damage}`, "#ff8f7a", this.speed);
@@ -1555,6 +1596,11 @@ function describeOrder(u: WarUnit, state: MatchState): string {
       return b ? `Building the ${NAME[b.kind].toLowerCase()}; back to digging once it stands.` : "Building.";
     }
   }
+}
+
+function cannonText(): string {
+  const c = WAR.cannon;
+  return `fires every ${c.seconds} s at enemies ${c.minRange} to ${c.range} tiles away, and the blast hits the enemies round the target; it cannot hit anyone beside it`;
 }
 
 function upgradeText(): string {
