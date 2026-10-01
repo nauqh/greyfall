@@ -210,6 +210,9 @@ export class StrategicScene extends Phaser.Scene {
   private towerArchers = new Map<string, Phaser.GameObjects.Sprite>();
   /** Bushes and rocks by cell, hidden where a building stands. */
   private strewn = new Map<number, Phaser.GameObjects.Sprite>();
+  /** Foam, trees, bushes, rocks and sheep, with their fixed bounds, for cullScenery(). */
+  private scenery: { s: Phaser.GameObjects.Sprite; b: Phaser.Geom.Rectangle }[] = [];
+  private culledAt = "";
   private mineArt = new Map<string, Phaser.GameObjects.Image>();
   /** What blue sees and remembers; red's AI sees the whole island. */
   private fog!: Fog;
@@ -260,8 +263,13 @@ export class StrategicScene extends Phaser.Scene {
     makeMapAnims(this);
 
     buildWater(this);
+    const before = this.children.length;
     buildMap(this);
     ({ strewn: this.strewn, mines: this.mineArt } = buildScenery(this));
+    this.scenery = this.children.list
+      .slice(before)
+      .filter((o): o is Phaser.GameObjects.Sprite => o instanceof Phaser.GameObjects.Sprite)
+      .map((s) => ({ s, b: s.getBounds() }));
     driftClouds(this, { w: WORLD_W, h: WORLD_H }, "strategic");
     // Over units and buildings, so bars and order lines never hide behind them.
     this.overlay = this.add.graphics().setDepth(DEPTH.fx - 2);
@@ -1575,6 +1583,27 @@ export class StrategicScene extends Phaser.Scene {
     const step = (PAN_PX_S * baseZoom(this) * delta) / 1000 / cam.zoom;
     this.setScroll(cam.scrollX + dx * step, cam.scrollY + dy * step);
     this.drag(p);
+    this.cullScenery();
+  }
+
+  /** Phaser draws and animates every sprite, in view or not, and ~800 of
+   *  them are scenery. Off screen they skip both; cameraFilter and active,
+   *  not visible, which strewn props already use to hide under buildings. */
+  private cullScenery(): void {
+    const cam = this.cameras.main;
+    // The view as scroll and zoom have it now: worldView updates only at render.
+    const w = cam.width / cam.zoom;
+    const h = cam.height / cam.zoom;
+    const x = cam.scrollX + (cam.width - w) / 2;
+    const y = cam.scrollY + (cam.height - h) / 2;
+    const at = `${x}|${y}|${w}|${h}`;
+    if (at === this.culledAt) return;
+    this.culledAt = at;
+    for (const { s, b } of this.scenery) {
+      const on = b.right > x && b.x < x + w && b.bottom > y && b.y < y + h;
+      s.cameraFilter = on ? 0 : cam.id;
+      s.active = on;
+    }
   }
 }
 
