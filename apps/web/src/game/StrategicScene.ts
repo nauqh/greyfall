@@ -257,6 +257,8 @@ export class StrategicScene extends Phaser.Scene {
     // Centred in the map's own strip, between the top bar and the command panel.
     const clear = (): number => ((HUD_COVER_H - HUD_TOP_H) * baseZoom(this)) / (2 * this.cameras.main.zoom);
     fitCamera(this, mid((c) => c.col), () => mid((c) => c.row) + clear(), () => this.zoomScale(this.zoomLevel));
+    // roundPixels floors scroll every frame at a fractional zoom, and pans build on that floor: the view crept up and left.
+    this.cameras.main.setRoundPixels(false);
     prepareTerrain(this);
     makeAnims(this);
     makeWarFxAnims(this);
