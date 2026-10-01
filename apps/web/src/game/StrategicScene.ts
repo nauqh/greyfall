@@ -316,25 +316,6 @@ export class StrategicScene extends Phaser.Scene {
         touch,
       };
     });
-    this.input.on("pointermove", (p: Phaser.Input.Pointer) => {
-      const d = this.dragStart;
-      if (!d) return;
-      // Released over the HUD, which eats the pointerup this scene would hear.
-      if (!p.isDown) {
-        this.dragStart = null;
-        this.box.clear();
-        return;
-      }
-      if (Math.abs(p.x - d.x) > 6 || Math.abs(p.y - d.y) > 6) d.moved = true;
-      if (!d.moved) return;
-      if (d.pan) {
-        // Canvas px to world px.
-        const zoom = this.cameras.main.zoom;
-        this.setScroll(d.camX - (p.x - d.x) / zoom, d.camY - (p.y - d.y) / zoom);
-      } else if (this.commanding() && p.leftButtonDown() && !this.placing) {
-        this.drawBox(d, p);
-      }
-    });
     this.input.on("pointerup", (p: Phaser.Input.Pointer) => {
       const d = this.dragStart;
       this.dragStart = null;
@@ -346,6 +327,28 @@ export class StrategicScene extends Phaser.Scene {
       }
       if (!d.moved) this.tap(p, d.touch);
     });
+  }
+
+  /** A drag in progress, read from the pointer each frame: the HUD scene
+   *  eats pointermove over its panels, which froze a pan crossing the bar. */
+  private drag(p: Phaser.Input.Pointer): void {
+    const d = this.dragStart;
+    if (!d) return;
+    // Released over the HUD, which eats the pointerup this scene would hear.
+    if (!p.isDown) {
+      this.dragStart = null;
+      this.box.clear();
+      return;
+    }
+    if (Math.abs(p.x - d.x) > 6 || Math.abs(p.y - d.y) > 6) d.moved = true;
+    if (!d.moved) return;
+    if (d.pan) {
+      // Canvas px to world px.
+      const zoom = this.cameras.main.zoom;
+      this.setScroll(d.camX - (p.x - d.x) / zoom, d.camY - (p.y - d.y) / zoom);
+    } else if (this.commanding() && p.leftButtonDown() && !this.placing) {
+      this.drawBox(d, p);
+    }
   }
 
   /** Whether the player can select and command right now. */
@@ -1571,6 +1574,7 @@ export class StrategicScene extends Phaser.Scene {
     const dy = p.y < e || k?.up.isDown ? -1 : p.y > cam.height - e || k?.down.isDown ? 1 : 0;
     const step = (PAN_PX_S * baseZoom(this) * delta) / 1000 / cam.zoom;
     this.setScroll(cam.scrollX + dx * step, cam.scrollY + dy * step);
+    this.drag(p);
   }
 }
 
