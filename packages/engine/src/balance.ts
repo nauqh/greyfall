@@ -13,6 +13,16 @@ export const UNIT_CLASSES: readonly UnitClass[] = [
   "monk",
 ];
 
+/** Skirmish's monsters, from the Enemy Pack. The war and Duel field knights only. */
+export type MonsterClass = "skull" | "torch" | "gnoll" | "thief" | "shaman" | "troll" | "minotaur";
+
+export const MONSTER_CLASSES: readonly MonsterClass[] = ["skull", "torch", "gnoll", "thief", "shaman", "troll", "minotaur"];
+
+/** Anything that can stand on the Skirmish board. */
+export type Champion = UnitClass | MonsterClass;
+
+export const CHAMPIONS: readonly Champion[] = [...UNIT_CLASSES, ...MONSTER_CLASSES];
+
 export interface UnitStats {
   /** Gold cost. */
   cost: number;
@@ -66,7 +76,15 @@ export const BALANCE = {
     // the enemy's own back column is left.
     archer: { cost: 3, hp: 60, damage: 10, range: 5, heal: 0 },
     monk: { cost: 4, hp: 70, damage: 0, range: 2, heal: 8 },
-  } as Record<UnitClass, UnitStats>,
+    // Skirmish only; the cost is the auto chess tier.
+    skull: { cost: 1, hp: 90, damage: 9, range: 1, heal: 0 },
+    torch: { cost: 2, hp: 100, damage: 11, range: 1, heal: 0 },
+    gnoll: { cost: 2, hp: 75, damage: 11, range: 4, heal: 0 },
+    thief: { cost: 3, hp: 110, damage: 20, range: 1, heal: 0 },
+    shaman: { cost: 3, hp: 80, damage: 14, range: 3, heal: 0 },
+    troll: { cost: 4, hp: 360, damage: 20, range: 1, heal: 0 },
+    minotaur: { cost: 4, hp: 280, damage: 23, range: 1, heal: 0 },
+  } as Record<Champion, UnitStats>,
 
   /**
    * One ability per class. The PRD sells these as level 3 building upgrades;
@@ -82,6 +100,20 @@ export const BALANCE = {
     pierce: { enabled: true, every: 3, damage: 0.5 },
     /** Monk, once a battle: spends an action raising the first fallen ally at this HP fraction. */
     revive: { enabled: true, hp: 0.5 },
+    /** Skull, once a battle: the blow that would kill it leaves it at this HP fraction instead. */
+    reassemble: { enabled: true, hp: 0.4 },
+    /** Torch Goblin: every hit also burns the target's neighbours for this share. */
+    splash: { enabled: true, damage: 0.5 },
+    /** Gnoll: this much more damage against targets below the HP fraction. */
+    hunter: { enabled: true, below: 0.5, bonus: 0.5 },
+    /** Thief, at the start of a battle: leaps beside the enemy furthest back. */
+    ambush: { enabled: true },
+    /** Hex Shaman, every `every`th bolt: the target loses this long before its next action. */
+    hex: { enabled: true, every: 3, seconds: 1.5 },
+    /** Troll: regains this share of its max HP every second. */
+    regenerate: { enabled: true, perSecond: 0.02 },
+    /** Minotaur: every swing also hits each other enemy beside it for this share. */
+    cleave: { enabled: true, damage: 0.5 },
   },
 
   /**
@@ -104,15 +136,128 @@ export const BALANCE = {
   } as Partial<Record<UnitClass, number>>,
 } as const;
 
+export type TraitEffect = "damageTaken" | "hp" | "attackSeconds" | "heal" | "gold" | "damage";
+
+/** A class trait for each knight, and the monsters' shared one. */
+export type TraitKey = UnitClass | "horde";
+
+export interface Trait {
+  name: string;
+  /** Who it counts and who it helps. */
+  members: readonly Champion[];
+  /** Counts different classes among the members rather than units. */
+  kinds: boolean;
+  /** Members on the board, units or kinds, that switch each tier on. */
+  at: readonly number[];
+  effect: TraitEffect;
+  /** One per tier: a multiplier, or for gold the coins paid after a round. */
+  values: readonly number[];
+}
+
+/** Tier is also the price. */
+const TIER: Record<Champion, number> = {
+  pawn: 1,
+  lancer: 1,
+  skull: 1,
+  warrior: 2,
+  archer: 2,
+  torch: 2,
+  gnoll: 2,
+  monk: 3,
+  thief: 3,
+  shaman: 3,
+  troll: 4,
+  minotaur: 4,
+};
+/** Copies of each unit in the shared pool, by tier. Nine make a 3-star. */
+const POOL_BY_TIER = [0, 29, 22, 16, 10];
+
+const knight = (cls: UnitClass, name: string, at: number[], effect: TraitEffect, values: number[]): Trait => ({
+  name,
+  members: [cls],
+  kinds: false,
+  at,
+  effect,
+  values,
+});
+
+/**
+ * Skirmish's auto chess run: a lobby of four drafting from one shared pool.
+ * The economy follows Teamfight Tactics (interest per 10 held, streak pay,
+ * XP bought in fours), cut to five classes and a 5x3 half board.
+ */
+export const AUTO = {
+  seats: 4,
+  startHp: 70,
+  startGold: 4,
+  startLevel: 2,
+  maxLevel: BALANCE.board.maxUnits,
+  /** XP from level L to L+1, indexed by L. */
+  xpToNext: [0, 2, 2, 6, 10, 20, 36, 48] as readonly number[],
+  xpPerRound: 2,
+  xpBuy: { gold: 4, xp: 4 },
+  income: 5,
+  winGold: 1,
+  /** One coin per 10 held at the end of a round, up to this many. */
+  interestMax: 5,
+  /** Streak pay by streak length, wins or losses alike: 2-3 +1, 4-5 +2, 6+ +3. */
+  streakGold: [0, 0, 1, 1, 2, 2, 3] as readonly number[],
+  reroll: 2,
+  shopSlots: 5,
+  benchSlots: 8,
+  tier: TIER,
+  pool: Object.fromEntries(CHAMPIONS.map((c) => [c, POOL_BY_TIER[TIER[c]]!])) as Record<Champion, number>,
+  /** Chance of each tier per shop slot, in percent, indexed by level. */
+  odds: [
+    [100, 0, 0, 0],
+    [75, 25, 0, 0],
+    [75, 25, 0, 0],
+    [55, 35, 10, 0],
+    [45, 38, 15, 2],
+    [35, 40, 20, 5],
+    [25, 40, 27, 8],
+    [18, 35, 32, 15],
+    [12, 30, 35, 23],
+  ] as readonly (readonly number[])[],
+  /** HP, damage and healing by star level, indexed by stars. */
+  starPower: [0, 1, 1.8, 3.2] as readonly number[],
+  /** A loss costs this plus a point per star still standing on the winner's side. */
+  damage: { base: 3, perRounds: 3 },
+  traits: {
+    warrior: knight("warrior", "Shieldwall", [2, 4], "damageTaken", [0.85, 0.7]),
+    lancer: knight("lancer", "Vanguard", [2, 4], "hp", [1.2, 1.45]),
+    archer: knight("archer", "Volley", [2, 4], "attackSeconds", [0.7, 0.5]),
+    monk: knight("monk", "Chorus", [2, 3], "heal", [1.5, 2.2]),
+    pawn: knight("pawn", "Prospectors", [2, 4], "gold", [1, 3]),
+    // TFT counts unique champions toward an origin; the Horde counts kinds of monster.
+    horde: {
+      name: "Horde",
+      members: MONSTER_CLASSES,
+      kinds: true,
+      at: [2, 4, 6],
+      effect: "damage",
+      values: [1.12, 1.25, 1.45],
+    },
+  } as Record<TraitKey, Trait>,
+} as const;
+
 export const TICKS_PER_ACTION = BALANCE.actionSeconds * BALANCE.tickRate;
 export const MAX_TICKS = BALANCE.timeoutSeconds * BALANCE.tickRate;
 
 /** Damage `attacker` deals to `defender`, counter bonus included. */
-export function damageAgainst(attacker: UnitClass, defender: UnitClass): number {
+export function damageAgainst(attacker: Champion, defender: Champion): number {
   const base = BALANCE.units[attacker].damage;
-  const bonus = BALANCE.counters[attacker] === defender ? BALANCE.counterBonus : 0;
+  const counters: Partial<Record<Champion, Champion>> = BALANCE.counters;
+  const bonus = counters[attacker] === defender ? BALANCE.counterBonus : 0;
   return Math.round(base * (1 + bonus));
 }
+
+/** Highest trait tier `count` units reach, or -1 for none. */
+export function traitTier(key: TraitKey, count: number): number {
+  return AUTO.traits[key].at.filter((n) => count >= n).length - 1;
+}
+
+export const TRAIT_KEYS = Object.keys(AUTO.traits) as TraitKey[];
 
 /**
  * The war on the island. Kept apart from BALANCE so the battle prototype,

@@ -7,16 +7,23 @@
  * Flags: --seed <n|string>, --budget <n>, --moves (include movement).
  */
 
-import { BALANCE, type UnitClass } from "./balance.ts";
+import { BALANCE, type Champion } from "./balance.ts";
 import { generateArmy } from "./army.ts";
 import { armyCost, simulate, type Army, type BattleResult, type Side } from "./simulate.ts";
 
-const GLYPH: Record<UnitClass, string> = {
+const GLYPH: Record<Champion, string> = {
   pawn: "Paw",
   warrior: "War",
   lancer: "Lan",
   archer: "Arc",
   monk: "Mnk",
+  skull: "Sku",
+  torch: "Tor",
+  gnoll: "Gno",
+  thief: "Thf",
+  shaman: "Sha",
+  troll: "Trl",
+  minotaur: "Min",
 };
 
 function flag(name: string): string | undefined {
@@ -25,7 +32,7 @@ function flag(name: string): string | undefined {
 }
 
 function roster(army: Army): string {
-  const counts = new Map<UnitClass, number>();
+  const counts = new Map<Champion, number>();
   for (const p of army) counts.set(p.class, (counts.get(p.class) ?? 0) + 1);
   return [...counts].map(([cls, n]) => `${n}x ${cls}`).join(", ");
 }

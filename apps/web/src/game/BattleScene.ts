@@ -14,12 +14,15 @@
 
 import {
   BALANCE,
+  CHAMPIONS,
   UNIT_CLASSES,
   armyCost,
   battleCol,
   validateArmy,
   type BattleEvent,
   type BattleResult,
+  type Champion,
+  type LobbyRound,
   type Placement,
   type Side,
   type UnitClass,
@@ -27,14 +30,18 @@ import {
 } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
-import { AVATARS, FX, ICON, iconKey, iconUrl, packUrl } from "./art";
+import { FX, ICON, iconKey, iconUrl, packUrl } from "./art";
+import { ABILITY, AutoPlan, CLASS_NAME, PORTRAIT_INK, drawStars, portraitUrl, roundCard, teamShadow, type AutoHooks } from "./autoPlan";
 import { GAME_H, GAME_W, WATER_SPAN, fitCamera, startGame } from "./boot";
+import { Handbook } from "./handbook";
 import {
   ATTACK_FRAME_RATE,
   BODY_HEIGHT,
   SPRITE_NUDGE,
   animKey,
   healKey,
+  bodyScale,
+  loadChampions,
   loadUnits,
   makeAnims,
   playPose,
@@ -84,7 +91,22 @@ const STEP_MS = 880;
 /** The frame of each attack sheet where the weapon leaves the hand. The
  * archer's bow is fully back on frame 5; the projectile spawns then, not at
  * frame 0. */
-const RELEASE_FRAME = { archer: 5 } as const;
+const RELEASE_FRAME: Partial<Record<Champion, number>> = { archer: 5, gnoll: 5, shaman: 6 };
+
+/** What each ranged attacker throws: sheet key, scale, and whether it tumbles rather than flies point first. */
+const MISSILE: Partial<Record<Champion, { key: string; scale: number; spin: boolean }>> = {
+  archer: { key: "arrow", scale: 1, spin: false },
+  gnoll: { key: "bone", scale: 0.9, spin: true },
+  shaman: { key: "hexbolt", scale: 0.55, spin: false },
+};
+
+/** Ability callouts over the unit, in the colour of what happened. */
+const CALLOUT: Partial<Record<string, [text: string, color: string]>> = {
+  splash: ["SPLASH", "#ffb35c"],
+  cleave: ["CLEAVE", "#ffd36b"],
+  ambush: ["AMBUSH", "#cfd6e0"],
+  reassemble: ["REASSEMBLE", "#e8e2cf"],
+};
 
 /** Airtime of a ranged projectile, release to impact. */
 const FLIGHT_MS = 320;
@@ -106,26 +128,7 @@ function timeLeft(elapsedMs: number): string {
   return `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
 }
 
-const CLASS_NAME: Record<UnitClass, string> = {
-  pawn: "Pawn",
-  warrior: "Warrior",
-  lancer: "Lancer",
-  archer: "Archer",
-  monk: "Monk",
-};
-
 const ROSTER = UNIT_CLASSES.filter((c) => c !== "pawn");
-/** A portrait per class, from the pack's 25 avatars. */
-const PORTRAIT: Record<UnitClass, number> = { warrior: 1, lancer: 2, archer: 3, monk: 4, pawn: 1 };
-
-/** Ink bounds [x0, y0, x1, y1] of each 256px avatar, measured off the art:
- *  the padding differs per face, so one scale drew them at different sizes. */
-const PORTRAIT_INK: Partial<Record<UnitClass, [number, number, number, number]>> = {
-  warrior: [22, 31, 219, 213],
-  lancer: [52, 58, 201, 187],
-  archer: [64, 29, 204, 189],
-  monk: [57, 44, 201, 199],
-};
 /** Every card portrait's ink fits this square. */
 const PORTRAIT_BOX = 62;
 
@@ -142,35 +145,10 @@ const BLURB: Record<UnitClass, string> = {
   monk: "Mends what still lives.",
 };
 
-const AB = BALANCE.abilities;
 const ABILITY_INK = "#2f5d8a";
 /** Draft card grid: content edges either side of centre, and the text column beside the portrait. */
 const CARD_EDGE = 84;
 const COLUMN = -4;
-const pct = (f: number): string => `${Math.round(f * 100)}%`;
-/** Each class's ability line on its card, and the tooltip that explains it. */
-const ABILITY: Partial<Record<UnitClass, { name: string; tip: string; on: boolean }>> = {
-  warrior: {
-    name: "Guard",
-    tip: `Guard: once a battle, below ${pct(AB.guard.hpBelow)} health, takes ${pct(1 - AB.guard.damageTaken)} less damage for ${AB.guard.seconds}s`,
-    on: AB.guard.enabled,
-  },
-  lancer: {
-    name: "Taunt",
-    tip: `Taunt: enemies within ${AB.taunt.radius} tiles must attack it`,
-    on: AB.taunt.enabled,
-  },
-  archer: {
-    name: "Piercing shot",
-    tip: `Piercing shot: one arrow in ${AB.pierce.every} also hits the enemy behind for ${pct(AB.pierce.damage)} damage`,
-    on: AB.pierce.enabled,
-  },
-  monk: {
-    name: "Revive",
-    tip: `Revive: once a battle, raises the first fallen ally at ${pct(AB.revive.hp)} health`,
-    on: AB.revive.enabled,
-  },
-};
 
 /** The Monk deals no damage, so his card shows what he does instead. */
 const STAT_TIP = {
@@ -248,7 +226,13 @@ export interface BattleLauncher {
   mySide?: Side;
   /** Present only in a duel: the server owns the army and the result. */
   duel?: DuelHooks;
-  onDraft: (army: Placement[], seed: number | string) => BattleResult;
+  /** Present only in Skirmish's auto chess lobby, which plans instead of drafting. */
+  auto?: AutoHooks;
+  /** The opponent's name on the HUD. */
+  foe?: string;
+  /** The round just fought, for its card after playback. */
+  round?: LobbyRound | null;
+  onDraft?: (army: Placement[], seed: number | string) => BattleResult;
   /**
    * Hover tooltip requests, with the native pointer position so React can
    * draw the box over the canvas. Absent when nobody is listening.
@@ -261,8 +245,8 @@ export interface BattleLauncher {
    * already loaded, so the board is clear and the draft is back in a frame or
    * two instead of half a second.
    */
-  onRematch: () => { result: BattleResult; seed: number | string };
-  onNewArmy: () => { seed: number | string };
+  onRematch?: () => { result: BattleResult; seed: number | string };
+  onNewArmy?: () => { seed: number | string };
   /** Leave the battle for the title screen; the page tears the canvas down. */
   onMenu: () => void;
 }
@@ -311,6 +295,9 @@ export class BattleScene extends Phaser.Scene {
   /** Seat B's view of the board is flipped, so drafting and battle agree. */
   private mirrored = false;
   private duel: DuelHooks | null = null;
+  private auto: AutoHooks | null = null;
+  private handbook: Handbook | null = null;
+  private plan: AutoPlan | null = null;
   private lockBtn: Phaser.GameObjects.Container | null = null;
   private duelText: Phaser.GameObjects.Text | null = null;
   private bars: Record<Side, PackBar | null> = { a: null, b: null };
@@ -330,6 +317,9 @@ export class BattleScene extends Phaser.Scene {
     this.mySide = data.mySide ?? "a";
     this.mirrored = this.mySide === "b";
     this.duel = data.duel ?? null;
+    this.auto = data.auto ?? null;
+    this.handbook = null;
+    this.plan = null;
     this.lockBtn = null;
     this.duelText = null;
     this.units = new Map();
@@ -364,6 +354,14 @@ export class BattleScene extends Phaser.Scene {
   preload(): void {
     loadTerrain(this);
     loadUnits(this);
+    if (this.auto) {
+      loadChampions(this);
+      this.load.spritesheet("bone", packUrl("Enemy Pack/Gnoll/Gnoll_Bone.png"), { frameWidth: 64, frameHeight: 64 });
+      this.load.spritesheet("hexbolt", packUrl("Enemy Pack/Hex Shaman/Hex Shaman_Projectile.png"), {
+        frameWidth: 128,
+        frameHeight: 128,
+      });
+    }
     loadPanels(this, ["paper", "specialPaper", "blueButton", "redButton"]);
     this.load.image(
       "smallButton",
@@ -377,16 +375,13 @@ export class BattleScene extends Phaser.Scene {
       frameWidth: FX.dust.frame,
       frameHeight: FX.dust.frame,
     });
-    for (const cls of ROSTER) {
-      this.load.image(
-        `avatar_${cls}`,
-        packUrl(`${AVATARS.file}${String(PORTRAIT[cls]).padStart(2, "0")}.png`),
-      );
-    }
+    for (const cls of this.auto ? CHAMPIONS : UNIT_CLASSES) this.load.image(`avatar_${cls}`, portraitUrl(cls));
     for (const n of Object.values(ICON)) this.load.image(iconKey(n), iconUrl(n));
   }
 
   create(): void {
+    // Leaving the plan phase switches input off for its slide-out.
+    this.input.enabled = true;
     fitCamera(this);
     prepareTerrain(this);
     makeAnims(this);
@@ -414,23 +409,222 @@ export class BattleScene extends Phaser.Scene {
     this.drawGrid();
     driftClouds(this, { w: GAME_W, h: GAME_H }, this.launcher.seed);
     this.buildAdvisor();
+    if (this.auto) this.buildHandbook();
 
     if (this.result) {
       this.beginBattle();
+    } else if (this.auto && this.launcher.round) {
+      // A round nobody could fight (an empty board) skips straight to its card.
+      this.showRoundCard();
+    } else if (this.auto) {
+      this.buildPlan();
     } else {
       this.buildDraft();
     }
   }
 
+  /** The handbook's button, beside the menu's while planning and in its place in a fight. A fight holds still while it is open. */
+  private buildHandbook(): void {
+    const auto = this.auto!;
+    this.data.set("handbook", false);
+    this.time.paused = false;
+    this.handbook = new Handbook(this, () => auto.run().pool, (open) => {
+      this.time.paused = open;
+      if (open) this.tweens.pauseAll();
+      else this.tweens.resumeAll();
+    }, this.launcher.onTip);
+    const x = this.result ? 58 : 130;
+    const y = 52;
+    const slideIn = this.result !== null;
+    const face = this.add.image(0, 0, "smallButton").setScale(0.8);
+    const mark = label(this, 0, -4, "?", { fontSize: "26px" });
+    const btn = this.add.container(x, y, [face, mark]).setDepth(DEPTH.hud + 6);
+    btn.setSize(face.displayWidth, face.displayHeight);
+    if (slideIn) {
+      btn.setX(130);
+      this.tweens.add({ targets: btn, x, duration: 300, ease: "Quint.easeOut" });
+    }
+    // The menu gear's hover: sink, and the mark tips over the way the gear turns.
+    // Only the sink is stopped, so a hover never strands the slide into the corner.
+    let sinking: Phaser.Tweens.Tween | null = null;
+    const sink = (on: number): void => {
+      sinking?.stop();
+      sinking = this.tweens.add({ targets: btn, y: y + on, duration: 140, ease: "Sine.easeInOut" });
+    };
+    const tilt = (angle: number): void => {
+      this.tweens.killTweensOf(mark);
+      this.tweens.add({ targets: mark, angle, duration: 240, ease: "Sine.easeOut" });
+    };
+    btn
+      .setInteractive({ cursor: HAND })
+      .on("pointerover", () => {
+        sink(2);
+        tilt(-14);
+      })
+      .on("pointerout", () => {
+        sink(0);
+        tilt(0);
+      })
+      .on("pointerdown", () => sink(3))
+      .on("pointerup", () => {
+        sink(0);
+        tilt(0);
+        this.handbook?.toggle();
+      });
+  }
+
+  /** Skirmish's plan phase over the left half; the panel covers the enemy's. */
+  private buildPlan(): void {
+    const auto = this.auto!;
+    this.drafting = true;
+    this.draftBox = this.add.container(0, 0).setDepth(DEPTH.hud + 5);
+    const zx = ORIGIN_X - TILE / 2;
+    const zy = ORIGIN_Y - TILE / 2;
+    this.plan = new AutoPlan({
+      scene: this,
+      box: this.draftBox,
+      hooks: auto,
+      cellAt: (x, y) => {
+        const col = Math.floor((x - zx) / TILE);
+        const row = Math.floor((y - zy) / TILE);
+        return col >= 0 && col < COLS / 2 && row >= 0 && row < ROWS ? { col, row } : null;
+      },
+      standAt: (col, row) => this.spriteXY(col, row),
+      say: (line) => this.say(line),
+      remark: (line) => this.remark(line),
+      onTip: this.launcher.onTip,
+      fight: () => this.fightFromPlan(),
+    });
+    this.buildMenuButton();
+    this.draftBox.setX(GAME_W);
+    this.opening(() =>
+      this.tweens.add({
+        targets: this.draftBox,
+        x: 0,
+        duration: 460,
+        ease: "Sine.easeOut",
+        onComplete: () =>
+          this.summonAdvisor(() => {
+            const seat = auto.run().seats[0]!;
+            this.say(
+              seat.board.length === 0 && seat.bench.every((p) => p === null)
+                ? "Buy units from the shop. Three of a kind make a 2-star."
+                : "Set your line, then Fight.",
+            );
+          }),
+      }),
+    );
+  }
+
+  private fightFromPlan(): void {
+    if (!this.drafting) return;
+    const seat = this.auto!.run().seats[0]!;
+    if (seat.board.length === 0 && seat.bench.some((p) => p !== null))
+      return this.remark("Put someone on the board first.");
+    this.drafting = false;
+    this.input.enabled = false;
+    this.launcher.onTip?.(null, 0, 0);
+    const { result, foe, round } = this.auto!.fight();
+    // Everything that belongs to planning leaves together; the board's units stay.
+    const exit = 360;
+    this.plan?.leave(exit * 0.6);
+    const advisor = this.advisor;
+    const fading = [this.menuBtn, this.bubble, advisor?.sprite, advisor?.shadow].filter((o) => o != null);
+    this.tweens.add({ targets: fading, alpha: 0, duration: exit * 0.6, ease: "Quint.easeOut" });
+    this.tweens.add({
+      targets: this.draftBox,
+      x: GAME_W,
+      duration: exit,
+      ease: "Quint.easeOut",
+      onComplete: () => this.restart({ result, foe, round }),
+    });
+  }
+
+  private showRoundCard(): void {
+    const auto = this.auto!;
+    roundCard(
+      this,
+      auto.run(),
+      this.launcher.round!,
+      () => this.restart({ result: null, round: null }),
+      () => {
+        auto.again();
+        this.restart({ result: null, round: null });
+      },
+      () => {
+        this.input.enabled = false;
+        cloudCover(this, "close", () => this.launcher.onMenu());
+      },
+    );
+  }
+
   /** Armies placed, HUD up, event log queued, count down. */
   private beginBattle(): void {
+    const before = new Set(this.children.list);
     this.spawnArmies();
     this.buildHud();
     this.queue = [...this.result!.events].sort((x, y) => x.t - y.t);
+    if (this.auto) {
+      this.revealFoe(before, () => {
+        this.summonAdvisor(() => {});
+        this.runIntro();
+      });
+      return;
+    }
     this.opening(() => {
       this.summonAdvisor(() => {});
       this.runIntro();
     });
+  }
+
+  /**
+   * Skirmish arrives from its plan, where your line already stands: the enemy
+   * rises in front line first, the HUD settles in from the edges, and only once
+   * all of it can be read does the count begin.
+   */
+  private revealFoe(before: Set<Phaser.GameObjects.GameObject>, then: () => void): void {
+    const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    const step = still ? 0 : 60;
+    const rise = 280;
+    const foes = [...this.units.values()]
+      .filter((v) => v.snap.side !== this.mySide)
+      .sort((a, b) => a.snap.col - b.snap.col || a.snap.row - b.snap.row);
+    const mine = new Set<Phaser.GameObjects.GameObject>();
+    for (const v of this.units.values()) if (v.snap.side === this.mySide) mine.add(v.sprite).add(v.shadow);
+    const foeParts = new Set<Phaser.GameObjects.GameObject>();
+    for (const v of foes) foeParts.add(v.sprite).add(v.shadow).add(v.pip);
+
+    foes.forEach((v, i) => {
+      const delay = 120 + i * step;
+      const scale = v.sprite.scale;
+      const shadowAlpha = v.shadow.alpha;
+      v.sprite.setAlpha(0).setScale(still ? scale : scale * 0.94);
+      v.shadow.setAlpha(0);
+      v.pip.setAlpha(0);
+      this.tweens.add({ targets: v.sprite, alpha: 1, scale, delay, duration: rise, ease: "Quint.easeOut" });
+      this.tweens.add({ targets: v.pip, alpha: 1, delay, duration: rise, ease: "Quint.easeOut" });
+      this.tweens.add({ targets: v.shadow, alpha: shadowAlpha, delay, duration: rise, ease: "Quint.easeOut" });
+      if (still) return;
+      this.time.delayedCall(delay, () => {
+        const dust = this.add.sprite(v.sprite.x, v.sprite.y, "dust").setOrigin(0.5, 0.85).setScale(2.2).setAlpha(0.6);
+        dust.setDepth(DEPTH.unit + v.sprite.y + 2).play("dust_anim");
+      });
+    });
+
+    // The HUD, and your own pips, settle in from the edge they live on.
+    const hud = this.children.list.filter((o) => !before.has(o) && !foeParts.has(o) && !mine.has(o));
+    for (const o of hud) {
+      const go = o as Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.AlphaSingle & { y: number };
+      const alpha = go.alpha;
+      const y = go.y;
+      go.setAlpha(0);
+      if (!still) go.y = y + (y < GAME_H / 2 ? -12 : 12);
+      this.tweens.add({ targets: go, alpha, y, delay: 60, duration: 300, ease: "Quint.easeOut" });
+    }
+
+    // A beat to read the enemy army before the count.
+    const done = 120 + Math.max(0, foes.length - 1) * step + rise;
+    this.time.delayedCall(done + 300, then);
   }
 
   /**
@@ -616,7 +810,7 @@ export class BattleScene extends Phaser.Scene {
     }).setOrigin(1, 0.5);
     const coin = this.add.image(CARD_EDGE - cost.width - 14, -50, iconKey(ICON.gold)).setScale(0.42);
 
-    const [x0, y0, x1, y1] = PORTRAIT_INK[cls] ?? [0, 0, 256, 256];
+    const [x0, y0, x1, y1] = PORTRAIT_INK[cls];
     const portrait = this.add
       .image(-CARD_EDGE + PORTRAIT_BOX / 2, 2, `avatar_${cls}`)
       .setOrigin((x0 + x1) / 2 / 256, (y0 + y1) / 2 / 256)
@@ -1089,7 +1283,7 @@ export class BattleScene extends Phaser.Scene {
   private startFromDraft(): void {
     if (validateArmy(this.draftArmy).length > 0) return;
     this.drafting = false;
-    this.result = this.launcher.onDraft(this.draftArmy, this.launcher.seed);
+    this.result = this.launcher.onDraft!(this.draftArmy, this.launcher.seed);
 
     for (const { sprite, shadow } of this.placed.values()) {
       sprite.destroy();
@@ -1190,7 +1384,7 @@ export class BattleScene extends Phaser.Scene {
       this.refreshDuel();
       return;
     }
-    if (!this.started || this.finished) return;
+    if (!this.started || this.finished || this.handbook?.open) return;
     this.simTime += delta * this.speed;
     const tick = Math.floor(this.simTime / TICK_MS);
     this.clockText?.setText(timeLeft(this.simTime));
@@ -1254,10 +1448,11 @@ export class BattleScene extends Phaser.Scene {
   private spawnArmies(): void {
     for (const snap of this.result!.units) {
       const { x, y } = this.spriteXY(snap.col, snap.row);
-      const shadow = addShadow(this, x, y, snap.class === "lancer" ? 0.8 : 0.62);
+      const scale = this.starScale(snap.stars);
+      const shadow = teamShadow(addShadow(this, x, y, (snap.class === "lancer" ? 0.8 : 0.62) * scale), snap.side, snap.class);
       const sprite = this.add.sprite(x, y, unitKey(snap.side, snap.class, "idle"));
       playPose(sprite, snap.side, snap.class, "idle", this.mirrored);
-      sprite.setDepth(DEPTH.unit + y);
+      sprite.setDepth(DEPTH.unit + y).setScale(scale * bodyScale(snap.class));
 
       const pip = this.add.graphics().setDepth(DEPTH.unit + y + 1);
       const view: UnitView = {
@@ -1285,11 +1480,16 @@ export class BattleScene extends Phaser.Scene {
    * Hand-drawn: the pack bar needs two 64px caps, so it cannot go narrower
    * than ~128px, far too wide for an 84px cell.
    */
+  /** Skirmish's stars show as size too, a tenth bigger a star. */
+  private starScale(stars: number | undefined): number {
+    return this.auto ? 1 + 0.1 * ((stars ?? 1) - 1) : 1;
+  }
+
   private drawPip(view: UnitView): void {
     const w = 38;
     const h = 5;
     const x = view.sprite.x - w / 2;
-    const y = view.sprite.y - this.headHeight(view.snap.class, view.snap.side) - 12;
+    const y = view.sprite.y - this.headHeight(view.snap.class, view.snap.side) * this.starScale(view.snap.stars) - 12;
     const frac = Math.max(0, view.shownHp / view.snap.maxHp);
     // A bar is coloured by health, not by team: green, then yellow, then
     // red. The bodies already say whose unit it is.
@@ -1298,6 +1498,7 @@ export class BattleScene extends Phaser.Scene {
     view.pip.fillStyle(0x1a1208, 0.85).fillRect(x - 1, y - 1, w + 2, h + 2);
     view.pip.fillStyle(color, 1).fillRect(x, y, Math.max(0, w * frac), h);
     view.pip.fillStyle(0xffffff, 0.25).fillRect(x, y, Math.max(0, w * frac), 1);
+    if (this.auto) drawStars(view.pip, view.sprite.x, y - 9, view.snap.stars, 4);
     view.pip.setDepth(DEPTH.unit + view.sprite.y + 1);
   }
 
@@ -1327,7 +1528,7 @@ export class BattleScene extends Phaser.Scene {
 
   private buildHud(): void {
     const roster = (side: Side): string => {
-      const counts = new Map<UnitClass, number>();
+      const counts = new Map<Champion, number>();
       for (const v of this.units.values()) {
         if (v.snap.side !== side) continue;
         counts.set(v.snap.class, (counts.get(v.snap.class) ?? 0) + 1);
@@ -1340,7 +1541,7 @@ export class BattleScene extends Phaser.Scene {
     const BAR_W = 650;
     const mine = this.mySide;
     const foe: Side = mine === "a" ? "b" : "a";
-    const foeName = this.duel?.status().opponent ?? "THE GREY HOST";
+    const foeName = this.launcher.foe ?? this.duel?.status().opponent ?? "THE GREY HOST";
 
     const topY = 58;
     const foeX = ISLAND.x1 - BAR_W / 2;
@@ -1380,7 +1581,7 @@ export class BattleScene extends Phaser.Scene {
     this.refreshHud();
   }
 
-  private headHeight(cls: UnitClass, _side: Side): number {
+  private headHeight(cls: Champion, _side: Side): number {
     return BODY_HEIGHT[cls];
   }
 
@@ -1423,10 +1624,32 @@ export class BattleScene extends Phaser.Scene {
     if (!view.alive) return;
     const { side, class: cls } = view.snap;
 
+    if (ev.ability === "reassemble") {
+      view.hp = ev.hpAfter ?? view.hp;
+      this.refreshHud();
+      const dust = this.add.sprite(view.sprite.x, view.sprite.y, "dust").setOrigin(0.5, 0.8).setDepth(DEPTH.unit + view.sprite.y + 2);
+      dust.play("dust_anim");
+    }
+    if (ev.ability === "hex") {
+      const target = this.view(ev.target!);
+      this.time.delayedCall(this.impactMs(view) / this.speed, () => {
+        if (!target.alive) return;
+        target.sprite.setTint(0xc89cff);
+        this.time.delayedCall(700 / this.speed, () => target.alive && target.sprite.clearTint());
+        this.floatText(target, "HEXED", "#d6b8ff");
+      });
+      return;
+    }
+    const callout = CALLOUT[ev.ability];
+    if (callout) {
+      this.floatText(view, ...callout);
+      return;
+    }
+
     if (ev.ability === "pierce") {
       // The same arrow flies on: a second one released with the first reads as it.
       const target = this.view(ev.target!);
-      const release = (RELEASE_FRAME.archer / ATTACK_FRAME_RATE) * 1000;
+      const release = (RELEASE_FRAME.archer! / ATTACK_FRAME_RATE) * 1000;
       this.time.delayedCall(release / this.speed, () => {
         if (view.alive && target.alive) this.flyProjectile(view, target);
       });
@@ -1473,7 +1696,7 @@ export class BattleScene extends Phaser.Scene {
     view.hp = ev.hpAfter;
     view.shownHp = ev.hpAfter;
     this.tweens.killTweensOf([view.sprite, view.shadow]);
-    view.sprite.setVisible(true).setAlpha(1).setScale(1).clearTint();
+    view.sprite.setVisible(true).setAlpha(1).setScale(this.starScale(view.snap.stars) * bodyScale(view.snap.class)).clearTint();
     view.shadow.setVisible(true).setAlpha(0.35);
     // Death paused the anim; replaying the same idle key would stay paused.
     view.sprite.anims.stop();
@@ -1497,6 +1720,7 @@ export class BattleScene extends Phaser.Scene {
     // A step straight after a step is one walk: keep the run cycle going and
     // the pace even. Easing and idling every cell made a
     // march read as a string of hops.
+    if (Math.hypot(x - view.sprite.x, y - view.sprite.y) > TILE * 1.6) return this.leap(view, x, y);
     const chained = view.settle !== null;
     view.settle?.remove();
     view.settle = null;
@@ -1519,6 +1743,41 @@ export class BattleScene extends Phaser.Scene {
     });
   }
 
+  /** A long jump in an arc, dust where it left and where it lands. */
+  private leap(view: UnitView, x: number, y: number): void {
+    const from = { x: view.sprite.x, y: view.sprite.y };
+    const puff = (px: number, py: number): void => {
+      this.add.sprite(px, py, "dust").setOrigin(0.5, 0.8).setDepth(DEPTH.unit + py + 2).play("dust_anim");
+    };
+    puff(from.x, from.y);
+    view.sprite.setFlipX(x < from.x);
+    playPose(view.sprite, view.snap.side, view.snap.class, "run");
+    this.tweens.addCounter({
+      from: 0,
+      to: 1,
+      duration: 520 / this.speed,
+      ease: "Sine.easeInOut",
+      onUpdate: (tw) => {
+        const k = tw.getValue() ?? 0;
+        view.sprite.setPosition(from.x + (x - from.x) * k, from.y + (y - from.y) * k - Math.sin(Math.PI * k) * 70);
+        view.sprite.setDepth(DEPTH.unit + view.sprite.y);
+      },
+      onComplete: () => {
+        view.sprite.setPosition(x, y);
+        puff(x, y);
+        if (view.alive) playPose(view.sprite, view.snap.side, view.snap.class, "idle", this.mirrored);
+      },
+    });
+  }
+
+  /** When a blow lands after its attack starts: a missile's release and flight, or a melee swing's reach. */
+  private impactMs(attacker: UnitView): number {
+    const release = RELEASE_FRAME[attacker.snap.class];
+    return MISSILE[attacker.snap.class] && release !== undefined
+      ? (release / ATTACK_FRAME_RATE) * 1000 + FLIGHT_MS
+      : 280;
+  }
+
   private onAttack(ev: Extract<BattleEvent, { type: "attack" }>): void {
     const attacker = this.view(ev.unit);
     const target = this.view(ev.target);
@@ -1533,11 +1792,12 @@ export class BattleScene extends Phaser.Scene {
     attacker.slash = attacker.slash === 1 ? 2 : 1;
     playPose(attacker.sprite, attacker.snap.side, attacker.snap.class, anim);
 
-    if (attacker.snap.class === "archer") {
+    const release = RELEASE_FRAME[attacker.snap.class];
+    if (MISSILE[attacker.snap.class] && release !== undefined) {
       // The projectile waits for the anim's release frame - spawning it at
       // frame 0 had the arrow leaving before the bow was drawn.
-      const release = (RELEASE_FRAME.archer / ATTACK_FRAME_RATE) * 1000;
-      this.time.delayedCall(release / this.speed, () => {
+      const releaseMs = (release / ATTACK_FRAME_RATE) * 1000;
+      this.time.delayedCall(releaseMs / this.speed, () => {
         if (!attacker.alive || !target.alive) return;
         this.flyProjectile(attacker, target);
       });
@@ -1550,7 +1810,8 @@ export class BattleScene extends Phaser.Scene {
   private flyProjectile(attacker: UnitView, target: UnitView): void {
     const from = { x: attacker.sprite.x, y: attacker.sprite.y - 46 };
     const to = { x: target.sprite.x, y: target.sprite.y - 40 };
-    const projectile = this.add.sprite(from.x, from.y, "arrow");
+    const missile = MISSILE[attacker.snap.class] ?? MISSILE.archer!;
+    const projectile = this.add.sprite(from.x, from.y, missile.key).setScale(missile.scale);
     projectile.setDepth(DEPTH.fx);
 
     // Quadratic bezier: start, apex above the midpoint, target. The arrow's
@@ -1572,7 +1833,7 @@ export class BattleScene extends Phaser.Scene {
       onUpdate: (tw) => {
         const p = curve(tw.progress);
         projectile.setPosition(p.x, p.y);
-        projectile.setRotation(p.angle);
+        projectile.setRotation(missile.spin ? tw.progress * Math.PI * 4 : p.angle);
       },
       onComplete: () => projectile.destroy(),
     });
@@ -1627,10 +1888,7 @@ export class BattleScene extends Phaser.Scene {
     // Impact lands when the blow would connect: melee at the thrust's reach,
     // ranged when the projectile arrives. Attack and hit share a tick, so
     // firing both at once hid the windup under the flash.
-    const delay =
-      attacker.snap.class === "archer"
-        ? ((RELEASE_FRAME.archer / ATTACK_FRAME_RATE) * 1000 + FLIGHT_MS) / this.speed
-        : 280 / this.speed;
+    const delay = this.impactMs(attacker) / this.speed;
 
     // The PRD's white flash, cut to a blink and handed to a red blush: a
     // full-body white silhouette for 80ms was the loudest thing on screen.
@@ -1665,6 +1923,12 @@ export class BattleScene extends Phaser.Scene {
     const caster = this.view(ev.unit);
     target.hp = ev.hpAfter;
     this.refreshHud();
+
+    // A Troll mending itself every second: a quiet number, no cast and no burst.
+    if (caster === target) {
+      this.floatText(target, `+${ev.amount}`, "#a9e88a");
+      return;
+    }
 
     // The Monk casts; heal events skip onAttack, so pose the healer here.
     if (caster.alive) {
@@ -1746,6 +2010,7 @@ export class BattleScene extends Phaser.Scene {
   // --- result --------------------------------------------------------------
 
   private showResult(): void {
+    if (this.auto) return this.showRoundCard();
     this.duel?.onPlayed();
     const result = this.result!;
     // The engine names sides, the player names players: winner is read
@@ -1814,12 +2079,12 @@ export class BattleScene extends Phaser.Scene {
       ? [menu]
       : [
           button(this, cx - 100, cy + 42, 208, 136, "Rematch", "blue", () =>
-            this.restart(this.launcher.onRematch()),
+            this.restart(this.launcher.onRematch!()),
           )
             .setScale(0.85)
             .setDepth(DEPTH.hud + 11),
           button(this, cx + 100, cy + 42, 208, 136, "New army", "red", () =>
-            this.restart({ ...this.launcher.onNewArmy(), result: null }),
+            this.restart({ ...this.launcher.onNewArmy!(), result: null }),
           )
             .setScale(0.85)
             .setDepth(DEPTH.hud + 11),

@@ -10,11 +10,16 @@
  */
 
 import {
+  AUTO,
   BALANCE,
   MAX_TICKS,
+  CHAMPIONS,
   TICKS_PER_ACTION,
+  TRAIT_KEYS,
   damageAgainst,
-  type UnitClass,
+  traitTier,
+  type Champion,
+  type TraitKey,
 } from "./balance.ts";
 import { makeRng } from "./rng.ts";
 
@@ -22,9 +27,11 @@ export type Side = "a" | "b";
 
 /** A unit on its own 5x3 half. Row 0 is the back line, row 2 the front. */
 export interface Placement {
-  class: UnitClass;
+  class: Champion;
   col: number;
   row: number;
+  /** Auto chess star level, 1 to 3. Absent is 1. */
+  stars?: number;
 }
 
 export type Army = Placement[];
@@ -35,18 +42,37 @@ export type BattleEvent =
   | { t: number; type: "hit"; unit: string; target: string; damage: number; hpAfter: number }
   | { t: number; type: "heal"; unit: string; target: string; amount: number; hpAfter: number }
   | { t: number; type: "death"; unit: string }
-  /** Guard and taunt name only the unit; pierce names the second target, whose hit follows. */
-  | { t: number; type: "ability"; unit: string; ability: "guard" | "taunt" | "pierce"; target?: string }
+  /**
+   * Guard and taunt name only the unit; pierce, ambush and hex name a target.
+   * Splash and cleave come before the extra hits they cause. Reassemble carries
+   * the HP the Skull gets up with.
+   */
+  | {
+      t: number;
+      type: "ability";
+      unit: string;
+      ability: "guard" | "taunt" | "pierce" | "splash" | "cleave" | "ambush" | "hex" | "reassemble";
+      target?: string;
+      hpAfter?: number;
+    }
   | { t: number; type: "revive"; unit: string; target: string; hpAfter: number };
 
 /** A unit as it stood when the battle began, for playback and the CLI. */
 export interface UnitSnapshot {
   id: string;
   side: Side;
-  class: UnitClass;
+  class: Champion;
+  stars: number;
   maxHp: number;
   col: number;
   row: number;
+}
+
+/** Skirmish's auto chess passes these; Duel leaves them off and plays the old rules. */
+export interface SimOptions {
+  budget?: number;
+  /** Class traits by how many of a class each side fields. */
+  traits?: boolean;
 }
 
 export interface BattleResult {
@@ -56,12 +82,19 @@ export interface BattleResult {
   ticks: number;
   hpRemaining: Record<Side, number>;
   survivors: Record<Side, number>;
+  /** Ids of the units still alive at the end. */
+  standing: string[];
   units: UnitSnapshot[];
   events: BattleEvent[];
 }
 
 interface SimUnit extends UnitSnapshot {
   hp: number;
+  /** Multipliers from stars and traits; all 1 under the old rules. */
+  power: number;
+  healPower: number;
+  damageTaken: number;
+  attackTicks: number;
   /** The tick this unit may next act on. */
   nextAt: number;
   /** Guard cuts damage for ticks in [guardFrom, guardUntil). */
@@ -71,6 +104,7 @@ interface SimUnit extends UnitSnapshot {
   shots: number;
   reviveUsed: boolean;
   revived: boolean;
+  reassembled: boolean;
   diedAt: number;
 }
 
@@ -122,6 +156,8 @@ export function validateArmy(army: Army, budget: number = BALANCE.budget): strin
       errors.push(`unit ${i}: col ${p.col} is off the board`);
     if (!Number.isInteger(p.row) || p.row < 0 || p.row >= rows)
       errors.push(`unit ${i}: row ${p.row} is off the board`);
+    if (p.stars !== undefined && ![1, 2, 3].includes(p.stars))
+      errors.push(`unit ${i}: ${p.stars} is not a star level`);
     const tile = `${p.col},${p.row}`;
     if (seen.has(tile)) errors.push(`unit ${i}: tile ${tile} is taken`);
     seen.add(tile);
@@ -133,15 +169,49 @@ export function validateArmy(army: Army, budget: number = BALANCE.budget): strin
   return errors;
 }
 
-function build(army: Army, side: Side): SimUnit[] {
+/** Class counts on a board. */
+export function classCounts(army: readonly Placement[]): Record<Champion, number> {
+  const counts = Object.fromEntries(CHAMPIONS.map((c) => [c, 0])) as Record<Champion, number>;
+  for (const p of army) counts[p.class] += 1;
+  return counts;
+}
+
+/** What each trait counts on a board: its members' units, or their kinds. */
+export function traitCounts(army: readonly Placement[]): Record<TraitKey, number> {
+  const counts = classCounts(army);
+  return Object.fromEntries(
+    TRAIT_KEYS.map((k) => {
+      const { members, kinds } = AUTO.traits[k];
+      return [k, members.reduce((n, c) => n + (kinds ? Math.min(1, counts[c]) : counts[c]), 0)];
+    }),
+  ) as Record<TraitKey, number>;
+}
+
+function build(army: Army, side: Side, traits: boolean): SimUnit[] {
+  const counts = traitCounts(army);
+  const live = traits ? TRAIT_KEYS.map((k) => ({ trait: AUTO.traits[k], tier: traitTier(k, counts[k]) })) : [];
   return army.map((p, i) => {
     const stats = BALANCE.units[p.class];
+    const stars = p.stars ?? 1;
+    const star = AUTO.starPower[stars]!;
+    const boost = (effect: string): number =>
+      live.reduce(
+        (m, { trait, tier }) =>
+          tier >= 0 && trait.effect === effect && trait.members.includes(p.class) ? m * trait.values[tier]! : m,
+        1,
+      );
+    const maxHp = Math.round(stats.hp * star * boost("hp"));
     return {
       id: `${side}${i}`,
       side,
       class: p.class,
-      maxHp: stats.hp,
-      hp: stats.hp,
+      stars,
+      maxHp,
+      hp: maxHp,
+      power: star * boost("damage"),
+      healPower: star * boost("heal"),
+      damageTaken: boost("damageTaken"),
+      attackTicks: Math.round(TICKS_PER_ACTION * boost("attackSeconds")),
       col: battleCol(side, p.col),
       row: battleRow(side, p.row),
       nextAt: 0,
@@ -151,6 +221,7 @@ function build(army: Army, side: Side): SimUnit[] {
       shots: 0,
       reviveUsed: false,
       revived: false,
+      reassembled: false,
       diedAt: 0,
     };
   });
@@ -271,15 +342,21 @@ export function pathSteps(
   return [best, ...rest];
 }
 
-export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): BattleResult {
+export function simulate(
+  armyA: Army,
+  armyB: Army,
+  seed: number | string = 0,
+  opts: SimOptions = {},
+): BattleResult {
   for (const [side, army] of [["a", armyA], ["b", armyB]] as const) {
-    const errors = validateArmy(army);
+    const errors = validateArmy(army, opts.budget);
     if (errors.length > 0) throw new Error(`army ${side} is invalid: ${errors.join("; ")}`);
   }
 
   const rng = makeRng(seed);
 
-  const units = [...build(armyA, "a"), ...build(armyB, "b")];
+  const traits = opts.traits ?? false;
+  const units = [...build(armyA, "a", traits), ...build(armyB, "b", traits)];
 
   // A random first-action delay breaks the one-second lockstep that made every
   // unit swing on the same tick and pile overkill onto dying targets. Offsets
@@ -290,6 +367,7 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
     id: u.id,
     side: u.side,
     class: u.class,
+    stars: u.stars,
     maxHp: u.maxHp,
     col: u.col,
     row: u.row,
@@ -303,12 +381,43 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
   const ability = BALANCE.abilities;
   // Guard starts the tick after it is raised, so a hit landing in the same
   // tick does not depend on whether the attacker or the Warrior came first.
-  const dealt = (target: SimUnit, raw: number, t: number) =>
-    t >= target.guardFrom && t < target.guardUntil ? Math.round(raw * ability.guard.damageTaken) : raw;
+  const dealt = (target: SimUnit, rawIn: number, t: number) => {
+    const raw = Math.round(rawIn * target.damageTaken);
+    return t >= target.guardFrom && t < target.guardUntil ? Math.round(raw * ability.guard.damageTaken) : raw;
+  };
+  // The Gnoll's bonus reads the target's HP as the tick began, like every other decision.
+  const strike = (unit: SimUnit, target: SimUnit, targetHp: number) => {
+    const hunting =
+      ability.hunter.enabled && unit.class === "gnoll" && targetHp < target.maxHp * ability.hunter.below;
+    return Math.round(damageAgainst(unit.class, target.class) * unit.power * (hunting ? 1 + ability.hunter.bonus : 1));
+  };
 
   if (ability.taunt.enabled) {
     for (const u of units) {
       if (u.class === "lancer") events.push({ t: 0, type: "ability", unit: u.id, ability: "taunt" });
+    }
+  }
+
+  // Thieves open by leaping beside the enemy furthest back, behind it where there is room.
+  if (ability.ambush.enabled) {
+    const taken = new Set(units.map(tileKey));
+    for (const u of units.filter((x) => x.class === "thief")) {
+      // How deep into the enemy half a column is, seen from this Thief's side.
+      const back = (col: number) => (u.side === "a" ? col : -col);
+      const prey = units
+        .filter((x) => x.side !== u.side)
+        .sort((x, y) => back(y.col) - back(x.col) || Math.abs(x.row - u.row) - Math.abs(y.row - u.row))[0];
+      if (!prey) continue;
+      const spot = neighbors(prey.col, prey.row)
+        .filter((c) => onBoard(c) && !taken.has(tileKey(c)))
+        .sort((x, y) => back(y.col) - back(x.col) || Math.abs(x.row - prey.row) - Math.abs(y.row - prey.row))[0];
+      if (!spot) continue;
+      taken.delete(tileKey(u));
+      taken.add(tileKey(spot));
+      u.col = spot.col;
+      u.row = spot.row;
+      events.push({ t: 0, type: "ability", unit: u.id, ability: "ambush", target: prey.id });
+      events.push({ t: 0, type: "move", unit: u.id, col: spot.col, row: spot.row });
     }
   }
 
@@ -328,6 +437,8 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
     const intents: { i: number; steps: { col: number; row: number }[] }[] = [];
     // Tiles a Monk is raising someone on this tick; nobody may step into them.
     const raising = new Set<string>();
+    // Hexed this tick, applied once every unit has acted so order cannot matter.
+    const hexed: number[] = [];
 
     for (let i = 0; i < units.length; i++) {
       const unit = units[i]!;
@@ -418,11 +529,11 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
         const hit = tier.find((c) => c.dist <= stats.range);
         if (hit) {
           const target = units[hit.j]!;
-          unit.nextAt = t + TICKS_PER_ACTION;
+          unit.nextAt = t + unit.attackTicks;
           // Unclamped until the tick ends: clamping as each lands would make
           // the total depend on whether the hit or the heal came first.
           if (healer) {
-            const amount = Math.min(stats.heal, target.maxHp - hpAtStart[hit.j]!);
+            const amount = Math.min(Math.round(stats.heal * unit.healPower), target.maxHp - hpAtStart[hit.j]!);
             target.hp += amount;
             events.push({
               t,
@@ -435,7 +546,7 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
             break;
           }
 
-          const damage = dealt(target, damageAgainst(unit.class, target.class), t);
+          const damage = dealt(target, strike(unit, target, hpAtStart[hit.j]!), t);
           target.hp -= damage;
           events.push({ t, type: "attack", unit: unit.id, target: target.id });
           events.push({
@@ -460,7 +571,7 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
             );
             if (dir !== 0 && behind !== -1) {
               const second = units[behind]!;
-              const raw = Math.round(damageAgainst(unit.class, second.class) * ability.pierce.damage);
+              const raw = Math.round(strike(unit, second, hpAtStart[behind]!) * ability.pierce.damage);
               const damage2 = dealt(second, raw, t);
               second.hp -= damage2;
               events.push({ t, type: "ability", unit: unit.id, ability: "pierce", target: second.id });
@@ -473,6 +584,30 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
                 hpAfter: clamp(second),
               });
             }
+          }
+
+          // Splash burns round the target, cleave sweeps round the Minotaur.
+          const sweep =
+            ability.splash.enabled && unit.class === "torch"
+              ? { name: "splash" as const, around: startPos[hit.j]!, share: ability.splash.damage }
+              : ability.cleave.enabled && unit.class === "minotaur"
+                ? { name: "cleave" as const, around: startPos[i]!, share: ability.cleave.damage }
+                : null;
+          if (sweep) {
+            const caught = units
+              .map((u, j) => ({ u, j }))
+              .filter(({ u, j }) => j !== hit.j && aliveAtStart[j] && u.side === target.side && chebyshev(startPos[j]!, sweep.around) === 1);
+            if (caught.length > 0) events.push({ t, type: "ability", unit: unit.id, ability: sweep.name });
+            for (const { u, j } of caught) {
+              const extra = dealt(u, Math.round(strike(unit, u, hpAtStart[j]!) * sweep.share), t);
+              u.hp -= extra;
+              events.push({ t, type: "hit", unit: unit.id, target: u.id, damage: extra, hpAfter: clamp(u) });
+            }
+          }
+
+          if (ability.hex.enabled && unit.class === "shaman" && unit.shots % ability.hex.every === 0) {
+            hexed.push(hit.j);
+            events.push({ t, type: "ability", unit: unit.id, ability: "hex", target: target.id });
           }
           break;
         }
@@ -490,6 +625,21 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
           }
         }
         if (routed) break;
+      }
+    }
+
+    for (const j of hexed) {
+      const u = units[j]!;
+      u.nextAt = Math.max(u.nextAt, t + 1) + ability.hex.seconds * BALANCE.tickRate;
+    }
+
+    if (ability.regenerate.enabled && t > 0 && t % TICKS_PER_ACTION === 0) {
+      for (const [i, u] of units.entries()) {
+        if (u.class !== "troll" || !aliveAtStart[i]) continue;
+        const amount = Math.min(Math.round(u.maxHp * ability.regenerate.perSecond), u.maxHp - hpAtStart[i]!);
+        if (amount <= 0) continue;
+        u.hp += amount;
+        events.push({ t, type: "heal", unit: u.id, target: u.id, amount, hpAfter: clamp(u) });
       }
     }
 
@@ -531,6 +681,13 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
     for (const u of units) u.hp = clamp(u);
 
     for (let i = 0; i < units.length; i++) {
+      const u = units[i]!;
+      if (aliveAtStart[i] && !alive(u) && ability.reassemble.enabled && u.class === "skull" && !u.reassembled) {
+        u.reassembled = true;
+        u.hp = Math.round(u.maxHp * ability.reassemble.hp);
+        events.push({ t, type: "ability", unit: u.id, ability: "reassemble", hpAfter: u.hp });
+        continue;
+      }
       if (aliveAtStart[i] && !alive(units[i]!)) {
         units[i]!.diedAt = t;
         events.push({ t, type: "death", unit: units[i]!.id });
@@ -557,5 +714,6 @@ export function simulate(armyA: Army, armyB: Army, seed: number | string = 0): B
   const winner: BattleResult["winner"] =
     hpRemaining.a === hpRemaining.b ? "draw" : hpRemaining.a > hpRemaining.b ? "a" : "b";
 
-  return { winner, reason, ticks, hpRemaining, survivors, units: snapshots, events };
+  const standing = units.filter(alive).map((u) => u.id);
+  return { winner, reason, ticks, hpRemaining, survivors, standing, units: snapshots, events };
 }

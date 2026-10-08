@@ -9,7 +9,7 @@ import { makeRng, type Rng } from "./rng.ts";
 import type { Army, Placement } from "./simulate.ts";
 
 /** Cells a role wants, best first: melee front and centre lane, ranged held back. */
-function tilePreference(melee: boolean): { col: number; row: number }[] {
+export function tilePreference(melee: boolean): { col: number; row: number }[] {
   const cols = melee ? [4, 3, 2, 1, 0] : [0, 1, 2, 3, 4];
   const rows = [1, 0, 2];
   return cols.flatMap((col) => rows.map((row) => ({ col, row })));

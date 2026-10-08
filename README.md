@@ -46,9 +46,11 @@ not in Discord yet and has no multiplayer on the island. Red wins more often
 than it should, and the AI still plans with logic written for the older
 rounds mode.
 
-Two earlier modes still ship and will be replaced by multiplayer on the
-island: **Skirmish**, an auto-battler where you draft an army and watch it
-fight, and **Duel**, the same board against a friend.
+**Skirmish** is now auto chess: a lobby of four clans, you and three AI,
+buying from one shared pool, merging three copies into a star level and
+fighting a paired rival each round until one clan is left. Its design and
+numbers are in [AUTOCHESS.md](AUTOCHESS.md). **Duel**, the older 20-gold
+draft against a friend, still ships unchanged.
 
 ## Goals
 
@@ -69,8 +71,8 @@ rounds design), [RTS.md](RTS.md) (the move to real time) and
 | Mode | Route | |
 | --- | --- | --- |
 | Play | `/map` | The real-time war against the AI |
-| Skirmish | `/battle` | Draft within a gold budget, watch the fight |
-| Duel | `/duel` | Skirmish against a friend via a room code |
+| Skirmish | `/battle` | Auto chess against three AI clans: five knights and seven monsters, star-ups and traits |
+| Duel | `/duel` | A 20-gold draft against a friend via a room code |
 
 Left click selects, right click orders. Space pauses, and **H** opens the
 field guide, which lists every shortcut.

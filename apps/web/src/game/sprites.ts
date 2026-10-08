@@ -2,7 +2,7 @@
 // Anchors are the ground contact point in native pixels, read off the art.
 // Every class has exactly one attack pose and is flipped to face its target.
 
-import type { UnitClass, UnitSide } from "@greyfall/engine";
+import type { Champion, MonsterClass, UnitClass, UnitSide } from "@greyfall/engine";
 
 import { packUrl } from "./art";
 
@@ -23,7 +23,7 @@ interface Body {
 }
 
 /** Frame size and ground anchor per class. */
-export const BODY: Record<UnitClass, Body> = {
+const KNIGHT_BODY: Record<UnitClass, Body> = {
   warrior: { frame: 192, anchorX: 94, anchorY: 136 },
   archer: { frame: 192, anchorX: 95, anchorY: 135 },
   monk: { frame: 192, anchorX: 96, anchorY: 133 },
@@ -32,14 +32,92 @@ export const BODY: Record<UnitClass, Body> = {
   pawn: { frame: 192, anchorX: 96, anchorY: 134 },
 };
 
-/** Head height above the feet, for pips and floating numbers. */
-export const BODY_HEIGHT: Record<UnitClass, number> = {
+/** Skirmish's monsters, one look for both teams. Anchors are the feet, read off
+ *  the idle sheet's bottom rows of ink; the two big ones are drawn smaller so a
+ *  Troll stands in its cell rather than over three. */
+const CHAMPION: Record<MonsterClass, { dir: string; body: Body; height: number; scale: number; poses: Partial<Record<AnimName, string>> }> = {
+  skull: {
+    dir: "Skull",
+    body: { frame: 192, anchorX: 95, anchorY: 128 },
+    height: 73,
+    scale: 1,
+    poses: { idle: "Skull_Idle.png", run: "Skull_Run.png", attack: "Skull_Attack.png" },
+  },
+  torch: {
+    dir: "Torch Goblin",
+    body: { frame: 192, anchorX: 93, anchorY: 132 },
+    height: 68,
+    scale: 1,
+    poses: { idle: "Torch Goblin_Idle.png", run: "Torch Goblin_Run.png", attack: "Torch Goblin_Attack.png" },
+  },
+  gnoll: {
+    dir: "Gnoll",
+    body: { frame: 192, anchorX: 97, anchorY: 133 },
+    height: 75,
+    scale: 1,
+    poses: { idle: "Gnoll_Idle.png", run: "Gnoll_Walk.png", attack: "Gnoll_Throw.png" },
+  },
+  thief: {
+    dir: "Thief",
+    body: { frame: 192, anchorX: 94, anchorY: 131 },
+    height: 73,
+    scale: 1,
+    poses: { idle: "Thief_Idle.png", run: "Thief_Run.png", attack: "Thief_Attack.png" },
+  },
+  // Its tail trails right of its feet, so the anchor is the robe, not the ink.
+  shaman: {
+    dir: "Hex Shaman",
+    body: { frame: 192, anchorX: 100, anchorY: 136 },
+    height: 82,
+    scale: 1,
+    poses: { idle: "Hex Shaman_Idle.png", run: "Hex Shaman_Run.png", attack: "Hex Shaman_Attack.png" },
+  },
+  troll: {
+    dir: "Troll",
+    body: { frame: 384, anchorX: 193, anchorY: 296 },
+    height: 211,
+    scale: 0.7,
+    poses: { idle: "Troll_Idle.png", run: "Troll_Walk.png", attack: "Troll_Attack.png" },
+  },
+  minotaur: {
+    dir: "Minotaur",
+    body: { frame: 320, anchorX: 160, anchorY: 213 },
+    height: 129,
+    scale: 0.85,
+    poses: { idle: "Minotaur_Idle.png", run: "Minotaur_Walk.png", attack: "Minotaur_Attack.png" },
+  },
+};
+
+const isChampion = (cls: Champion): cls is MonsterClass => cls in CHAMPION;
+
+export const BODY: Record<Champion, Body> = {
+  ...KNIGHT_BODY,
+  ...(Object.fromEntries(Object.entries(CHAMPION).map(([c, m]) => [c, m.body])) as Record<MonsterClass, Body>),
+};
+
+/** Head height above the feet, for pips and floating numbers, at the drawn scale. */
+export const BODY_HEIGHT: Record<Champion, number> = {
   warrior: 89,
   archer: 88,
   monk: 69,
   lancer: 74,
   pawn: 71,
+  ...(Object.fromEntries(Object.entries(CHAMPION).map(([c, m]) => [c, Math.round(m.height * m.scale)])) as Record<
+    MonsterClass,
+    number
+  >),
 };
+
+/** How much smaller a class is drawn than its art. */
+export function bodyScale(cls: Champion): number {
+  return isChampion(cls) ? CHAMPION[cls].scale : 1;
+}
+
+/** A Skirmish monster's portrait. Minotaur's file has a double underscore in the pack. */
+export function championAvatar(cls: MonsterClass): string {
+  const dir = CHAMPION[cls].dir;
+  return packUrl(`Enemy Pack/${dir}/${dir}_${cls === "minotaur" ? "_" : ""}Avatar.png`);
+}
 
 /**
  * A body is taller than an 84px cell (up to 89px), so feet-at-centre leaves
@@ -128,8 +206,8 @@ export function monsterAvatar(cls: UnitClass): string | undefined {
   return name && packUrl(`Enemy Pack/${name}/${name}_Avatar.png`);
 }
 
-function bodyOf(side: Side, cls: UnitClass): Body {
-  return (side === "m" && MONSTER[cls]?.body) || BODY[cls];
+function bodyOf(side: Side, cls: Champion): Body {
+  return (side === "m" && !isChampion(cls) && MONSTER[cls]?.body) || BODY[cls];
 }
 
 /** Head height above the feet, for either roster. */
@@ -149,11 +227,12 @@ function sheetUrl(side: Side, file: string): string {
 /** The Monk's heal burst, played on the unit being healed. */
 export const HEAL_EFFECT = { frame: 192, frames: 11 } as const;
 
-export function unitKey(side: Side, cls: UnitClass, anim: AnimName): string {
-  return `${cls}_${side}_${anim}`;
+/** A monster looks the same on either team, so its sheets load once, keyed without a side. */
+export function unitKey(side: Side, cls: Champion, anim: AnimName): string {
+  return isChampion(cls) ? `${cls}_${anim}` : `${cls}_${side}_${anim}`;
 }
 
-export function animKey(side: Side, cls: UnitClass, anim: AnimName): string {
+export function animKey(side: Side, cls: Champion, anim: AnimName): string {
   return `${unitKey(side, cls, anim)}_anim`;
 }
 
@@ -182,6 +261,17 @@ export function loadUnits(scene: Phaser.Scene, withMonsters = false): void {
   }
 }
 
+/** Skirmish's monster sheets, loaded once for both teams. */
+export function loadChampions(scene: Phaser.Scene): void {
+  for (const [cls, m] of Object.entries(CHAMPION) as [MonsterClass, (typeof CHAMPION)[MonsterClass]][]) {
+    for (const [anim, file] of Object.entries(m.poses) as [AnimName, string][]) {
+      const key = unitKey("a", cls, anim);
+      if (scene.textures.exists(key)) continue;
+      scene.load.spritesheet(key, packUrl(`Enemy Pack/${m.dir}/${file}`), { frameWidth: m.body.frame, frameHeight: m.body.frame });
+    }
+  }
+}
+
 /** Attacks play once; idle and run loop. Animations outlive a scene
  * restart, so every one of these is a no-op the second time round. */
 export function makeAnims(scene: Phaser.Scene): void {
@@ -191,23 +281,28 @@ export function makeAnims(scene: Phaser.Scene): void {
       .getFrameNames()
       .filter((f) => f !== "__BASE").length;
 
+  const make = (side: Side, cls: Champion, anim: AnimName): void => {
+    const key = unitKey(side, cls, anim);
+    if (!scene.textures.exists(key)) return;
+    if (scene.anims.exists(animKey(side, cls, anim))) return;
+    const frames = frameCount(key);
+    if (frames === 0) return;
+    scene.anims.create({
+      key: animKey(side, cls, anim),
+      frames: scene.anims.generateFrameNumbers(key, { start: 0, end: frames - 1 }),
+      // Attacks run faster than the loop poses: at 10fps a 7-frame
+      // thrust spends its visible frames while the eye is elsewhere.
+      frameRate: anim.startsWith("attack") ? ATTACK_FRAME_RATE : FRAME_RATE,
+      repeat: anim === "idle" || anim === "run" ? -1 : 0,
+    });
+  };
+  for (const [cls, m] of Object.entries(CHAMPION) as [MonsterClass, (typeof CHAMPION)[MonsterClass]][]) {
+    for (const anim of Object.keys(m.poses) as AnimName[]) make("a", cls, anim);
+  }
+
   for (const side of ["a", "b", "m"] as const) {
     for (const [cls, poses] of posesOf(side)) {
-      for (const anim of Object.keys(poses) as AnimName[]) {
-        const key = unitKey(side, cls, anim);
-        if (!scene.textures.exists(key)) continue;
-        if (scene.anims.exists(animKey(side, cls, anim))) continue;
-        const frames = frameCount(key);
-        if (frames === 0) continue;
-        scene.anims.create({
-          key: animKey(side, cls, anim),
-          frames: scene.anims.generateFrameNumbers(key, { start: 0, end: frames - 1 }),
-          // Attacks run faster than the loop poses: at 10fps a 7-frame
-          // thrust spends its visible frames while the eye is elsewhere.
-          frameRate: anim.startsWith("attack") ? ATTACK_FRAME_RATE : FRAME_RATE,
-          repeat: anim === "idle" || anim === "run" ? -1 : 0,
-        });
-      }
+      for (const anim of Object.keys(poses) as AnimName[]) make(side, cls, anim);
     }
     if (side === "m" || scene.anims.exists(`${healKey(side)}_anim`)) continue;
     const burst = HEAL_EFFECT;
@@ -228,7 +323,7 @@ export function makeAnims(scene: Phaser.Scene): void {
 export function playPose(
   sprite: Phaser.GameObjects.Sprite,
   side: Side,
-  cls: UnitClass,
+  cls: Champion,
   anim: AnimName,
   mirrored = false,
 ): void {

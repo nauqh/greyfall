@@ -1,11 +1,21 @@
 export {
+  AUTO,
   BALANCE,
+  CHAMPIONS,
+  MONSTER_CLASSES,
+  TRAIT_KEYS,
   WAR,
   MAX_TICKS,
   TICKS_PER_ACTION,
   UNIT_CLASSES,
   damageAgainst,
+  traitTier,
   type UnitClass,
+  type Champion,
+  type MonsterClass,
+  type Trait,
+  type TraitKey,
+  type TraitEffect,
   type UnitStats,
 } from "./balance.ts";
 
@@ -15,6 +25,8 @@ export {
   armyCost,
   battleCol,
   battleRow,
+  classCounts,
+  traitCounts,
   chebyshev,
   neighbors,
   pathSteps,
@@ -25,6 +37,7 @@ export {
   type BattleResult,
   type Placement,
   type Side,
+  type SimOptions,
   type UnitSnapshot,
 } from "./simulate.ts";
 
@@ -116,3 +129,24 @@ export {
 export { battle, concede, createSim, finishRound, roundDone, startRound, type BattleOutcome, type RoundReport, type Sim, type WarEvent } from "./battle.ts";
 export { AI_EVERY_TICKS, planAi, runAi } from "./ai.ts";
 export { reaches, sightsOf, visibleCells, type Sight } from "./vision.ts";
+
+export {
+  CLANS,
+  act,
+  armyOf,
+  copies,
+  fightRound,
+  newRun,
+  sellValue,
+  traitsOf,
+  xpToNext,
+  type BoardPiece,
+  type Fight,
+  type Income,
+  type Piece,
+  type LobbyRound,
+  type Run,
+  type RunAction,
+  type Seat,
+  type Spot,
+} from "./autochess.ts";
