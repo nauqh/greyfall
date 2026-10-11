@@ -252,7 +252,7 @@ function move(seat: Seat, id: number, to: Spot): string | null {
   const found = findPiece(seat, id);
   if (!found) return "No such unit.";
   if (onBoard(to)) {
-    if (!Number.isInteger(to.col) || !Number.isInteger(to.row) || to.col < 0 || to.col > 4 || to.row < 0 || to.row > 2)
+    if (!Number.isInteger(to.col) || !Number.isInteger(to.row) || to.col < 0 || to.col >= AUTO.board.cols || to.row < 0 || to.row >= AUTO.board.rows)
       return "Off the board.";
   } else if (!Number.isInteger(to.bench) || to.bench < 0 || to.bench >= AUTO.benchSlots) return "Off the bench.";
 
@@ -353,7 +353,7 @@ function planAiSeat(run: Run, i: number): void {
   const taken = new Set<string>();
   const fighting = all.slice(0, seat.level).sort((x, y) => (x.class === "monk" ? 1 : 0) - (y.class === "monk" ? 1 : 0));
   for (const p of fighting) {
-    const tile = tilePreference(BALANCE.units[p.class].range <= 1).find((t) => !taken.has(`${t.col},${t.row}`))!;
+    const tile = tilePreference(BALANCE.units[p.class].range <= 1, AUTO.board).find((t) => !taken.has(`${t.col},${t.row}`))!;
     taken.add(`${tile.col},${tile.row}`);
     seat.board.push({ ...p, col: tile.col, row: tile.row });
   }
@@ -412,7 +412,7 @@ export function fightRound(prev: Run): { run: Run; report: LobbyRound } {
     let winner: number | null = null;
     let damage = 0;
     if (armyA.length > 0 && armyB.length > 0) {
-      result = simulate(armyA, armyB, `${run.seed}:r${run.round}:${k}`, { budget: Infinity, traits: true });
+      result = simulate(armyA, armyB, `${run.seed}:r${run.round}:${k}`, { budget: Infinity, traits: true, board: AUTO.board });
       if (result.winner !== "draw") {
         winner = result.winner === "a" ? a : b;
         damage = base + survivingStars(result, result.winner);

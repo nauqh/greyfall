@@ -72,6 +72,16 @@ describe("auto chess run", () => {
     expect(run.seats[0]!.bench).toContainEqual({ id: 900, class: "pawn", stars: 1 });
   });
 
+  it("plays on its own 6x4 half, wider and deeper than Duel's", () => {
+    let run = newRun(1);
+    run.seats[0]!.bench[0] = { id: 900, class: "pawn", stars: 1 };
+    run = act(run, 0, { type: "move", piece: 900, to: { col: 5, row: 3 } }).run;
+    expect(run.seats[0]!.board).toContainEqual({ id: 900, class: "pawn", stars: 1, col: 5, row: 3 });
+    expect(act(run, 0, { type: "move", piece: 900, to: { col: 6, row: 0 } }).error).not.toBeNull();
+    const r = simulate([{ class: "pawn", col: 0, row: 3 }], [{ class: "pawn", col: 0, row: 3 }], 1, { board: AUTO.board });
+    expect(r.units.map((u) => u.col)).toEqual([0, 2 * AUTO.board.cols - 1]);
+  });
+
   it("never changes the run it is given", () => {
     const run = newRun(1);
     const before = structuredClone(run);

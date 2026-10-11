@@ -35,6 +35,7 @@ export {
   type Army,
   type BattleEvent,
   type BattleResult,
+  type Board,
   type Placement,
   type Side,
   type SimOptions,

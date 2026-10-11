@@ -10,6 +10,7 @@ import {
   traitsOf,
   xpToNext,
   type BattleResult,
+  type BoardPiece,
   type LobbyRound,
   type Piece,
   type Run,
@@ -92,11 +93,15 @@ export interface PlanHost {
   fight: () => void;
 }
 
-const BENCH = { x0: 204, y: 574, size: 54, scale: 0.6 } as const;
+const BENCH = { x0: 127, y: 646, size: 62, scale: 0.7 } as const;
 /** The plan panel's left edge: a unit dropped past it is sold. */
 const PANEL_X0 = 612;
 const STAR_INK = [0, 0xc7884a, 0xdfe6ee, 0xf4cf6b];
 const TIER_INK = [0, 0x8a8a8a, 0x4c9a4c, 0x3d6fc4, 0x9a4fc4];
+/** A trait's emblem by tier: bronze, then silver, and gold at its last. */
+const traitInk = (key: TraitKey, tier: number): number =>
+  tier < 0 ? 0xd8cbb0 : tier === AUTO.traits[key].at.length - 1 ? STAR_INK[3]! : STAR_INK[tier + 1]!;
+const still = (): boolean => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 const pct = (f: number): string => `${Math.round(f * 100)}%`;
 const AB = BALANCE.abilities;
 
@@ -195,6 +200,13 @@ export function drawStars(g: Phaser.GameObjects.Graphics, x: number, y: number, 
   }
 }
 
+function hexPoints(x: number, y: number, r: number): { x: number; y: number }[] {
+  return Array.from({ length: 6 }, (_, i) => {
+    const a = -Math.PI / 2 + (i * Math.PI) / 3;
+    return { x: x + Math.cos(a) * r, y: y + Math.sin(a) * r };
+  });
+}
+
 /** Who a trait helps, in a phrase. */
 export function traitWho(key: TraitKey): string {
   return key === "horde" ? "Monsters" : `${CLASS_NAME[key]}s`;
@@ -224,6 +236,12 @@ export function traitLine(key: TraitKey, count: number, tier: number): string {
   const t = AUTO.traits[key];
   const unit = t.kinds ? " kinds" : "";
   return `${t.name} ${count}/${t.at[Math.min(tier + 1, t.at.length - 1)]}${unit}  ${traitEffect(key, Math.max(0, tier))}`;
+}
+
+function traitTip(key: TraitKey): string {
+  const t = AUTO.traits[key];
+  const tiers = t.at.map((n, i) => `${n}: ${traitEffect(key, i)}`).join(". ");
+  return `${t.name}${t.kinds ? ", counting kinds of monster" : ""}. ${tiers}.`;
 }
 
 function unitTip(cls: Champion): string {
@@ -260,6 +278,12 @@ export class AutoPlan {
   private selected: number | null = null;
   private ground!: Phaser.GameObjects.Graphics;
   private benchLabel!: Phaser.GameObjects.Text;
+  /** Shop cards, kept apart so a reroll can flip the old ones out. */
+  private cards: Phaser.GameObjects.Container[] = [];
+  private outgoing!: Phaser.GameObjects.Container;
+  private rolled = false;
+  /** Each trait's tier at the last draw, null before the first: a rise gets its flourish. */
+  private tiers: Map<TraitKey, number> | null = null;
 
   constructor(private readonly host: PlanHost) {
     this.scene = host.scene;
@@ -276,6 +300,7 @@ export class AutoPlan {
   private act(a: RunAction): boolean {
     const error = this.host.hooks.act(a);
     if (error) this.host.remark(error);
+    this.rolled = error === null && a.type === "reroll";
     this.refresh();
     return error === null;
   }
@@ -293,7 +318,8 @@ export class AutoPlan {
     const coin = s.add.image(1032, 96, iconKey(ICON.gold)).setScale(0.4);
     this.gold = label(s, 1048, 96, "", { ...ink, color: "#7a4f14" }).setOrigin(0, 0.5);
     this.dyn = s.add.container(0, 0);
-    box.add([this.title, this.stats, coin, this.gold, this.dyn]);
+    this.outgoing = s.add.container(0, 0);
+    box.add([this.title, this.stats, coin, this.gold, this.dyn, this.outgoing]);
 
     this.buttons = {
       reroll: button(s, 714, 566, 176, 104, `Reroll  ${AUTO.reroll}g`, "blue", () => this.act({ type: "reroll" })),
@@ -319,8 +345,10 @@ export class AutoPlan {
   private buildBench(): void {
     const s = this.scene;
     this.ground = s.add.graphics().setDepth(DEPTH.ground + 1);
-    this.boardCount = label(s, 390, 492, "", { fontSize: "14px" }).setDepth(DEPTH.hud);
-    this.benchLabel = label(s, BENCH.x0 - 2, BENCH.y - 42, "BENCH", { fontSize: "13px" }).setOrigin(0, 0.5);
+    const edge = BENCH.size / 2 - 2;
+    const right = this.benchXY(AUTO.benchSlots - 1).x + edge;
+    this.boardCount = label(s, right, BENCH.y - 42, "", { fontSize: "14px" }).setOrigin(1, 0.5).setDepth(DEPTH.hud);
+    this.benchLabel = label(s, BENCH.x0 - edge, BENCH.y - 42, "Bench", { fontSize: "14px" }).setOrigin(0, 0.5);
     this.benchLabel.setDepth(DEPTH.hud);
     this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.host.onTip?.(null, 0, 0));
   }
@@ -435,10 +463,13 @@ export class AutoPlan {
     dimButton(this.buttons.reroll, seat.gold < AUTO.reroll);
     dimButton(this.buttons.xp, seat.gold < AUTO.xpBuy.gold || seat.level >= AUTO.maxLevel);
 
+    if (this.rolled) this.flipOut();
+    this.cards = [];
     this.dyn.removeAll(true);
     this.drawLobby(run);
     this.drawTraits(run);
-    this.drawShop(run);
+    this.drawShop(run, this.rolled);
+    this.rolled = false;
     this.drawGround(run);
     this.drawPieces(run);
   }
@@ -472,11 +503,20 @@ export class AutoPlan {
     }
   }
 
+  /**
+   * The trait tracker, TFT's left rail in two columns: an emblem in the tier's
+   * metal with the count in it, the breakpoints, and what the trait does now or
+   * what the next one more buys. Hover one to light its units.
+   */
   private drawTraits(run: Run): void {
-    const lines = traitsOf(armyOf(run.seats[0]!));
+    const s = this.scene;
+    const seat = run.seats[0]!;
+    const lines = traitsOf(armyOf(seat)).sort((a, b) => b.tier - a.tier || b.count - a.count);
+    const was = this.tiers;
+    this.tiers = new Map(lines.map((t) => [t.key, t.tier]));
     if (lines.length === 0) {
       this.dyn.add(
-        label(this.scene, 900, 262, "Two or more of a class on the board switch on its trait.", {
+        label(s, 900, 276, "Two or more of a class on the board switch on its trait.", {
           fontSize: "13px",
           color: "#9a8a70",
           strokeThickness: 0,
@@ -484,21 +524,122 @@ export class AutoPlan {
       );
       return;
     }
+    const W = 256;
     for (const [k, t] of lines.entries()) {
+      const trait = AUTO.traits[t.key];
       const on = t.tier >= 0;
-      this.dyn.add(
-        label(this.scene, 652, 238 + k * 19, traitLine(t.key, t.count, t.tier), {
+      const x = 652 + (k % 2) * 268 + W / 2;
+      const y = 240 + Math.floor(k / 2) * 36;
+      const L = -W / 2;
+      const g = s.add.graphics();
+      g.fillStyle(traitInk(t.key, t.tier), 1).fillPoints(hexPoints(L + 14, 0, 15), true);
+      g.lineStyle(1.5, on ? 0x4a3a28 : 0xa8987c, 1).strokePoints(hexPoints(L + 14, 0, 15), true);
+      const dark = "#2e2417";
+      const faint = "#a8987c";
+      const count = label(s, L + 14, 0, `${t.count}`, { fontSize: "15px", color: on ? dark : faint, strokeThickness: 0 });
+      const name = label(s, L + 36, -8, trait.name, { fontSize: "14px", color: on ? dark : "#8a7a60", strokeThickness: 0 })
+        .setOrigin(0, 0.5);
+      const row = s.add.container(x, y, [g, count, name]);
+      // Breakpoints: the ones reached in ink, the rest faint.
+      let bx = L + 36 + name.width + 10;
+      for (const [i, n] of trait.at.entries()) {
+        if (i > 0) {
+          const sep = label(s, bx, -8, "›", { fontSize: "13px", color: faint, strokeThickness: 0 }).setOrigin(0, 0.5);
+          row.add(sep);
+          bx += sep.width + 4;
+        }
+        const bp = label(s, bx, -8, `${n}`, {
           fontSize: "13px",
-          color: on ? "#2f5d8a" : "#9a8a70",
+          color: t.count >= n ? dark : faint,
           strokeThickness: 0,
-        }).setOrigin(0, 0.5),
+        }).setOrigin(0, 0.5);
+        row.add(bp);
+        bx += bp.width + 4;
+      }
+      const need = trait.at[0]! - t.count;
+      const effect = on
+        ? traitEffect(t.key, t.tier)
+        : `${need} more${trait.kinds ? (need > 1 ? " kinds" : " kind") : ""} to switch on`;
+      row.add(
+        label(s, L + 36, 9, effect, { fontSize: "12px", color: on ? "#2f5d8a" : "#9a8a70", strokeThickness: 0 }).setOrigin(0, 0.5),
       );
+      row
+        .setSize(W, 34)
+        .setInteractive()
+        .on("pointerover", (p: Phaser.Input.Pointer) => {
+          const e = p.event as MouseEvent | undefined;
+          this.host.onTip?.(traitTip(t.key), e?.clientX ?? 0, e?.clientY ?? 0);
+          this.light(t.key);
+        })
+        .on("pointerout", () => {
+          this.host.onTip?.(null, 0, 0);
+          this.light(null);
+        });
+      this.dyn.add(row);
+
+      if (was && t.tier > (was.get(t.key) ?? -1)) this.flourish(row, L + 14, t.key, t.tier, seat.board);
     }
   }
 
-  private drawShop(run: Run): void {
+  /** A trait just switched on or went up: its emblem rings out, and so does each unit it counts. */
+  private flourish(row: Phaser.GameObjects.Container, hx: number, key: TraitKey, tier: number, board: readonly BoardPiece[]): void {
+    const s = this.scene;
+    const ink = traitInk(key, tier);
+    const name = AUTO.traits[key].name;
+    this.host.remark(`${name} ${tier === 0 ? "is on" : "is stronger"}: ${traitEffect(key, tier)}.`);
+    if (still()) return;
+    row.setScale(1.08);
+    s.tweens.add({ targets: row, scale: 1, duration: 360, ease: "Back.easeOut" });
+    const ring = s.add.graphics({ x: row.x + hx, y: row.y });
+    ring.lineStyle(3, ink, 1).strokePoints(hexPoints(0, 0, 15), true);
+    this.dyn.add(ring);
+    s.tweens.add({ targets: ring, scale: 2, alpha: 0, duration: 560, ease: "Quint.easeOut", onComplete: () => ring.destroy() });
+    for (const p of board) {
+      if (traitOf(p.class) !== key) continue;
+      const { x, y } = this.host.standAt(p.col, p.row);
+      const halo = s.add.graphics({ x, y }).setDepth(DEPTH.ground + 2);
+      halo.lineStyle(4, ink, 1).strokeEllipse(0, 0, 70, 30);
+      halo.setScale(0.5);
+      s.tweens.add({ targets: halo, scale: 1.3, alpha: 0, duration: 640, ease: "Quint.easeOut", onComplete: () => halo.destroy() });
+    }
+  }
+
+  /** Tints every owned unit that counts toward `key`, or clears it. */
+  private light(key: TraitKey | null): void {
+    const seat = this.run().seats[0]!;
+    for (const p of [...seat.board, ...seat.bench]) {
+      const v = p && this.views.get(p.id);
+      if (!v) continue;
+      if (key !== null && traitOf(p.class) === key) v.sprite.setTint(0xfff1a8);
+      else if (p.id === this.selected) v.sprite.setTint(0xfff1a8);
+      else v.sprite.clearTint();
+    }
+  }
+
+  /** The reroll's first half: the old cards turn edge-on and go. */
+  private flipOut(): void {
+    const old = this.cards;
+    if (still()) return;
+    this.dyn.remove(old);
+    this.outgoing.add(old);
+    for (const [slot, card] of old.entries()) {
+      this.scene.tweens.killTweensOf(card);
+      card.disableInteractive();
+      this.scene.tweens.add({
+        targets: card,
+        scaleX: 0,
+        delay: slot * 25,
+        duration: 110,
+        ease: "Quad.easeIn",
+        onComplete: () => card.destroy(),
+      });
+    }
+  }
+
+  private drawShop(run: Run, rolled: boolean): void {
     const s = this.scene;
     const seat = run.seats[0]!;
+    const active = new Set(traitsOf(armyOf(seat)).flatMap((t) => (t.tier >= 0 ? [t.key] : [])));
     const ones = (cls: Champion): number =>
       [...seat.board, ...seat.bench].filter((p) => p?.class === cls && p?.stars === 1).length;
     for (const [slot, cls] of seat.shop.entries()) {
@@ -507,6 +648,12 @@ export class AutoPlan {
       const g = s.add.graphics();
       const card = s.add.container(cx, cy, [g]);
       this.dyn.add(card);
+      this.cards.push(card);
+      // The reroll's second half: the new hand turns face-up, left to right.
+      if (rolled && !still()) {
+        card.setScale(0, 1);
+        s.tweens.add({ targets: card, scaleX: 1, delay: 120 + slot * 45, duration: 220, ease: "Back.easeOut" });
+      }
       if (!cls) {
         g.fillStyle(0x3d3123, 0.12).fillRoundedRect(-48, -72, 96, 144, 10);
         continue;
@@ -516,18 +663,24 @@ export class AutoPlan {
       g.lineStyle(4, TIER_INK[AUTO.tier[cls]]!, 1).strokeRoundedRect(-48, -72, 96, 144, 10);
       const [x0, y0, x1, y1] = PORTRAIT_INK[cls];
       const face = s.add
-        .image(0, -22, `avatar_${cls}`)
+        .image(0, -28, `avatar_${cls}`)
         .setOrigin((x0 + x1) / 2 / 256, (y0 + y1) / 2 / 256)
         .setScale(58 / Math.max(x1 - x0, y1 - y0));
       if (!afford) face.setTint(0x8a8a8a);
-      const name = label(s, 0, 30, CLASS_NAME[cls], { fontSize: "15px", color: "#4a3a28", strokeThickness: 0 });
-      const cost = label(s, 6, 54, `${AUTO.tier[cls]}`, {
+      const name = label(s, 0, 20, CLASS_NAME[cls], { fontSize: "15px", color: "#4a3a28", strokeThickness: 0 });
+      const key = traitOf(cls);
+      const trait = label(s, 0, 37, AUTO.traits[key].name, {
+        fontSize: "12px",
+        color: active.has(key) ? "#2f5d8a" : "#9a8a70",
+        strokeThickness: 0,
+      });
+      const cost = label(s, 6, 57, `${AUTO.tier[cls]}`, {
         fontSize: "16px",
         color: afford ? "#7a4f14" : "#b0443a",
         strokeThickness: 0,
       }).setOrigin(0, 0.5);
-      const coin = s.add.image(-8, 54, iconKey(ICON.gold)).setScale(0.36);
-      card.add([face, name, cost, coin]);
+      const coin = s.add.image(-8, 57, iconKey(ICON.gold)).setScale(0.36);
+      card.add([face, name, trait, cost, coin]);
       // Copies already owned: at two, this buy makes a 2-star.
       const have = ones(cls);
       if (have > 0) {
@@ -583,7 +736,11 @@ export class AutoPlan {
     }
     this.views.clear();
     const placed: { piece: Piece; x: number; y: number; scale: number }[] = [
-      ...seat.board.map((p) => ({ piece: p, ...this.host.standAt(p.col, p.row), scale: 1 + 0.1 * (p.stars - 1) })),
+      ...seat.board.map((p) => ({
+        piece: p,
+        ...this.host.standAt(p.col, p.row),
+        scale: 1 + 0.1 * (p.stars - 1),
+      })),
       ...seat.bench.flatMap((p, i) =>
         p ? [{ piece: p, x: this.benchXY(i).x, y: this.benchXY(i).y + 16, scale: BENCH.scale }] : [],
       ),

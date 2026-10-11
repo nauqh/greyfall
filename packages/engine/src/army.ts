@@ -6,12 +6,15 @@
 
 import { BALANCE, type UnitClass } from "./balance.ts";
 import { makeRng, type Rng } from "./rng.ts";
-import type { Army, Placement } from "./simulate.ts";
+import type { Army, Board, Placement } from "./simulate.ts";
 
 /** Cells a role wants, best first: melee front and centre lane, ranged held back. */
-export function tilePreference(melee: boolean): { col: number; row: number }[] {
-  const cols = melee ? [4, 3, 2, 1, 0] : [0, 1, 2, 3, 4];
-  const rows = [1, 0, 2];
+export function tilePreference(melee: boolean, board: Board = BALANCE.board): { col: number; row: number }[] {
+  const front = Array.from({ length: board.cols }, (_, c) => board.cols - 1 - c);
+  const cols = melee ? front : front.reverse();
+  // Middle rows first.
+  const mid = (board.rows - 1) / 2;
+  const rows = Array.from({ length: board.rows }, (_, r) => r).sort((x, y) => Math.abs(x - mid) - Math.abs(y - mid));
   return cols.flatMap((col) => rows.map((row) => ({ col, row })));
 }
 

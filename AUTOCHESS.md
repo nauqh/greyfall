@@ -31,8 +31,10 @@ Five knights and seven monsters from the Enemy Pack. With only the knights,
 a shop of five slots drawn from five classes kept repeating itself and the
 traits mostly rewarded stacking one class; the monsters add roles the
 knights lack and a fourth, 4-gold tier that makes levelling worth more.
-A bigger board was the alternative and was turned down: the 5x3 half holds
-the level cap of 8, which no board reaches before round 15.
+Each clan plays on a 6x4 half, a 12x4 battle grid, against Duel's 5x3. The
+level cap stays 8, so the extra cells are room to position, not more units:
+TFT's half is 7x4, and 6x4 is what fits beside the shop. Over 80 AI lobbies
+it moved nothing: still 12 to 20 rounds, median 15, and no fight timed out.
 
 | Unit | Tier, cost | Health | Damage | Range | Ability |
 | --- | --- | --- | --- | --- | --- |

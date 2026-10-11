@@ -13,6 +13,7 @@
 // Playback waits for a 3-2-1 count, so both armies can be read first.
 
 import {
+  AUTO,
   BALANCE,
   CHAMPIONS,
   UNIT_CLASSES,
@@ -20,6 +21,7 @@ import {
   battleCol,
   validateArmy,
   type BattleEvent,
+  type Board,
   type BattleResult,
   type Champion,
   type LobbyRound,
@@ -63,23 +65,42 @@ import {
 } from "./terrain";
 import { HAND, PackBar, TEXT_RES, button, label, loadPanels, panel, ribbon } from "./ui";
 
-const COLS = BALANCE.board.battleCols;
-const ROWS = BALANCE.board.battleRows;
 
 /** A 192px unit frame carries an ~80px body, so 84 fills a cell. */
 const TILE = 84;
 
+// Duel's 10x3 board until init() lays out Skirmish's 12x4 one. One scene runs at a time.
+let COLS = 0;
+let ROWS = 0;
 /** Whole 64px terrain tiles. The margins hold the scenery and clear the HUD plates. */
-const ISLAND: Rect = { x0: 90, y0: 178, x1: 1110, y1: 510 };
-
-const BOARD_W = COLS * TILE;
-const BOARD_H = ROWS * TILE;
+let ISLAND: Rect = { x0: 0, y0: 0, x1: 0, y1: 0 };
+let BOARD_W = 0;
+let BOARD_H = 0;
 /** Centre of cell (0, 0), the true grid position - drawGrid and movement use this. */
-const ORIGIN_X = (GAME_W - BOARD_W) / 2 + TILE / 2;
-const ORIGIN_Y = ISLAND.y0 + (ISLAND.y1 - ISLAND.y0 - BOARD_H) / 2 + TILE / 2;
+let ORIGIN_X = 0;
+let ORIGIN_Y = 0;
 /** Where the two front columns meet - the clash point, and the countdown's home. */
-const MID_X = ORIGIN_X + (COLS / 2 - 0.5) * TILE;
-const MID_Y = ORIGIN_Y + ((ROWS - 1) / 2) * TILE;
+let MID_X = 0;
+let MID_Y = 0;
+/** The advisor's strip, left of the board. */
+let ADVISOR_HOME = { x: 0, y: 252 };
+let ADVISOR_AREA = { x0: 0, x1: 0, y0: 236, y1: 302 };
+
+function layout(board: Board, island: Rect): void {
+  COLS = board.cols * 2;
+  ROWS = board.rows;
+  ISLAND = island;
+  BOARD_W = COLS * TILE;
+  BOARD_H = ROWS * TILE;
+  ORIGIN_X = (GAME_W - BOARD_W) / 2 + TILE / 2;
+  ORIGIN_Y = ISLAND.y0 + (ISLAND.y1 - ISLAND.y0 - BOARD_H) / 2 + TILE / 2;
+  MID_X = ORIGIN_X + (COLS / 2 - 0.5) * TILE;
+  MID_Y = ORIGIN_Y + ((ROWS - 1) / 2) * TILE;
+  const left = ORIGIN_X - TILE / 2;
+  ADVISOR_HOME = { x: left - 35, y: 252 };
+  ADVISOR_AREA = { x0: Math.max(26, left - 102), x1: left - 12, y0: 236, y1: 302 };
+}
+layout(BALANCE.board, { x0: 90, y0: 178, x1: 1110, y1: 510 });
 
 const TICK_MS = 1000 / BALANCE.tickRate;
 /**
@@ -113,8 +134,6 @@ const FLIGHT_MS = 320;
 
 /** The advisor's corner. Its amble never leaves this rect, which keeps it
  *  clear of the placement grid at x 180 and the HUD plates at y 58. */
-const ADVISOR_HOME = { x: 145, y: 252 };
-const ADVISOR_AREA = { x0: 78, x1: 168, y0: 236, y1: 302 };
 /** An amble, not a march. */
 const ADVISOR_SPEED = 46;
 
@@ -318,6 +337,9 @@ export class BattleScene extends Phaser.Scene {
     this.mirrored = this.mySide === "b";
     this.duel = data.duel ?? null;
     this.auto = data.auto ?? null;
+    // Skirmish's board is two tiles wider and a row deeper, so its island runs edge to edge.
+    if (this.auto) layout(AUTO.board, { x0: 0, y0: 150, x1: 1200, y1: 540 });
+    else layout(BALANCE.board, { x0: 90, y0: 178, x1: 1110, y1: 510 });
     this.handbook = null;
     this.plan = null;
     this.lockBtn = null;
@@ -1410,7 +1432,7 @@ export class BattleScene extends Phaser.Scene {
 
   /** Your own half's column, in the shared board's coordinates. */
   private myCol(col: number): number {
-    return battleCol(this.mySide, col);
+    return battleCol(this.mySide, col, COLS / 2);
   }
 
   /** Where a sprite actually renders: the cell centre, nudged down to balance its height. */
@@ -1544,7 +1566,9 @@ export class BattleScene extends Phaser.Scene {
     const foeName = this.launcher.foe ?? this.duel?.status().opponent ?? "THE GREY HOST";
 
     const topY = 58;
-    const foeX = ISLAND.x1 - BAR_W / 2;
+    // Fixed, not off the island: Skirmish's runs to the screen edge.
+    const EDGE = 90;
+    const foeX = GAME_W - EDGE - BAR_W / 2;
     ribbon(this, foeX, topY, BAR_W, 0.8).setDepth(DEPTH.hud);
     label(this, foeX, topY - 2, `${foeName.toUpperCase()}   ${roster(foe)}`, {
       fontSize: "17px",
@@ -1552,7 +1576,7 @@ export class BattleScene extends Phaser.Scene {
     this.bars[foe] = new PackBar(this, foeX, topY + 44, BAR_W, 0.75, 0xd9544a, DEPTH.hud + 1);
 
     const bottomY = 606;
-    const myX = ISLAND.x0 + BAR_W / 2;
+    const myX = EDGE + BAR_W / 2;
     ribbon(this, myX, bottomY - 34, BAR_W, 0.8).setDepth(DEPTH.hud);
     label(this, myX, bottomY - 36, `YOUR WARBAND   ${roster(mine)}`, {
       fontSize: "17px",

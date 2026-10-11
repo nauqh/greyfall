@@ -69,8 +69,16 @@ export interface UnitSnapshot {
 }
 
 /** Skirmish's auto chess passes these; Duel leaves them off and plays the old rules. */
+/** One side's half of the board; the battle grid is two of them side by side. */
+export interface Board {
+  cols: number;
+  rows: number;
+}
+
 export interface SimOptions {
   budget?: number;
+  /** Skirmish's half is bigger than Duel's. */
+  board?: Board;
   /** Class traits by how many of a class each side fields. */
   traits?: boolean;
 }
@@ -114,8 +122,8 @@ export function battleRow(_side: Side, row: number): number {
 }
 
 /** Column is the forward axis: side A keeps its own, side B mirrors. */
-export function battleCol(side: Side, col: number): number {
-  return side === "a" ? col : BALANCE.board.battleCols - 1 - col;
+export function battleCol(side: Side, col: number, cols: number = BALANCE.board.cols): number {
+  return side === "a" ? col : 2 * cols - 1 - col;
 }
 
 /** The eight neighbours of a square cell: orthogonal and diagonal alike. */
@@ -142,9 +150,10 @@ export function armyCost(army: Army): number {
 }
 
 /** Trust boundary: armies arrive from a client. Empty result means legal. */
-export function validateArmy(army: Army, budget: number = BALANCE.budget): string[] {
+export function validateArmy(army: Army, budget: number = BALANCE.budget, board: Board = BALANCE.board): string[] {
   const errors: string[] = [];
-  const { cols, rows, maxUnits } = BALANCE.board;
+  const { cols, rows } = board;
+  const { maxUnits } = BALANCE.board;
 
   if (army.length === 0) errors.push("army is empty");
   if (army.length > maxUnits) errors.push(`army has ${army.length} units, max is ${maxUnits}`);
@@ -187,7 +196,7 @@ export function traitCounts(army: readonly Placement[]): Record<TraitKey, number
   ) as Record<TraitKey, number>;
 }
 
-function build(army: Army, side: Side, traits: boolean): SimUnit[] {
+function build(army: Army, side: Side, traits: boolean, cols: number): SimUnit[] {
   const counts = traitCounts(army);
   const live = traits ? TRAIT_KEYS.map((k) => ({ trait: AUTO.traits[k], tier: traitTier(k, counts[k]) })) : [];
   return army.map((p, i) => {
@@ -212,7 +221,7 @@ function build(army: Army, side: Side, traits: boolean): SimUnit[] {
       healPower: star * boost("heal"),
       damageTaken: boost("damageTaken"),
       attackTicks: Math.round(TICKS_PER_ACTION * boost("attackSeconds")),
-      col: battleCol(side, p.col),
+      col: battleCol(side, p.col, cols),
       row: battleRow(side, p.row),
       nextAt: 0,
       guardFrom: 0,
@@ -257,9 +266,8 @@ function pickClaim(idxs: readonly number[], units: SimUnit[], col: number): numb
   return Math.min(...(preferred.length > 0 ? preferred : idxs));
 }
 
-function onBoard(p: { col: number; row: number }): boolean {
-  const { battleCols, battleRows } = BALANCE.board;
-  return p.col >= 0 && p.col < battleCols && p.row >= 0 && p.row < battleRows;
+function onBoard(p: { col: number; row: number }, board: Board): boolean {
+  return p.col >= 0 && p.col < 2 * board.cols && p.row >= 0 && p.row < board.rows;
 }
 
 /**
@@ -284,11 +292,12 @@ export function pathSteps(
   range: number,
   occupied: ReadonlySet<string>,
   flip: number,
+  board: Board = BALANCE.board,
 ): { col: number; row: number }[] {
   const key = (p: { col: number; row: number }) => `${p.col},${p.row}`;
   const order = (a: { col: number; row: number }, b: { col: number; row: number }) =>
     flip * (a.col - b.col) || a.row - b.row;
-  const free = (p: { col: number; row: number }) => onBoard(p) && !occupied.has(key(p));
+  const free = (p: { col: number; row: number }) => onBoard(p, board) && !occupied.has(key(p));
   const open = (p: { col: number; row: number }) =>
     neighbors(p.col, p.row).filter(free).sort(order);
 
@@ -348,15 +357,16 @@ export function simulate(
   seed: number | string = 0,
   opts: SimOptions = {},
 ): BattleResult {
+  const board = opts.board ?? BALANCE.board;
   for (const [side, army] of [["a", armyA], ["b", armyB]] as const) {
-    const errors = validateArmy(army, opts.budget);
+    const errors = validateArmy(army, opts.budget, board);
     if (errors.length > 0) throw new Error(`army ${side} is invalid: ${errors.join("; ")}`);
   }
 
   const rng = makeRng(seed);
 
   const traits = opts.traits ?? false;
-  const units = [...build(armyA, "a", traits), ...build(armyB, "b", traits)];
+  const units = [...build(armyA, "a", traits, board.cols), ...build(armyB, "b", traits, board.cols)];
 
   // A random first-action delay breaks the one-second lockstep that made every
   // unit swing on the same tick and pile overkill onto dying targets. Offsets
@@ -409,7 +419,7 @@ export function simulate(
         .sort((x, y) => back(y.col) - back(x.col) || Math.abs(x.row - u.row) - Math.abs(y.row - u.row))[0];
       if (!prey) continue;
       const spot = neighbors(prey.col, prey.row)
-        .filter((c) => onBoard(c) && !taken.has(tileKey(c)))
+        .filter((c) => onBoard(c, board) && !taken.has(tileKey(c)))
         .sort((x, y) => back(y.col) - back(x.col) || Math.abs(x.row - prey.row) - Math.abs(y.row - prey.row))[0];
       if (!spot) continue;
       taken.delete(tileKey(u));
@@ -617,7 +627,7 @@ export function simulate(
         // from the nearest enemy standing and staring at one it cannot get to.
         let routed = false;
         for (const cand of tier) {
-          const steps = pathSteps(unit, startPos[cand.j]!, stats.range, occupied, flip);
+          const steps = pathSteps(unit, startPos[cand.j]!, stats.range, occupied, flip, board);
           if (steps.length > 0) {
             intents.push({ i, steps });
             routed = true;

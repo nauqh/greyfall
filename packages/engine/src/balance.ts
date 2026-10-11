@@ -192,6 +192,8 @@ export const AUTO = {
   startGold: 4,
   startLevel: 2,
   maxLevel: BALANCE.board.maxUnits,
+  /** TFT's half is 7x4; 6x4 is what the screen holds beside the shop. */
+  board: { cols: 6, rows: 4 },
   /** XP from level L to L+1, indexed by L. */
   xpToNext: [0, 2, 2, 6, 10, 20, 36, 48] as readonly number[],
   xpPerRound: 2,
