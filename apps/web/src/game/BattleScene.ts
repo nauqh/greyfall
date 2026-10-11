@@ -127,6 +127,9 @@ const CALLOUT: Partial<Record<string, [text: string, color: string]>> = {
   cleave: ["CLEAVE", "#ffd36b"],
   ambush: ["AMBUSH", "#cfd6e0"],
   reassemble: ["REASSEMBLE", "#e8e2cf"],
+  smash: ["SMASH", "#ffd36b"],
+  hunter: ["HUNTER", "#ffb35c"],
+  regenerate: ["REGENERATE", "#9be38a"],
 };
 
 /** Airtime of a ranged projectile, release to impact. */
@@ -207,6 +210,9 @@ interface UnitView {
   settle: Phaser.Time.TimerEvent | null;
   /** Floating numbers still in the air over this unit. */
   floats: number;
+  /** Skirmish: the tick the skill's countdown runs out, and the length of the one under way. */
+  skillAt: number;
+  skillSpan: number;
 }
 
 /** What the scene needs from a room it does not itself own. */
@@ -1488,6 +1494,8 @@ export class BattleScene extends Phaser.Scene {
         slash: 1,
         settle: null,
         floats: 0,
+        skillAt: AUTO.skills[snap.class].first * BALANCE.tickRate,
+        skillSpan: (AUTO.skills[snap.class].first || AUTO.skills[snap.class].cooldown) * BALANCE.tickRate,
       };
 
       // Attacks are one-shots; back to idle when they finish.
@@ -1520,7 +1528,15 @@ export class BattleScene extends Phaser.Scene {
     view.pip.fillStyle(0x1a1208, 0.85).fillRect(x - 1, y - 1, w + 2, h + 2);
     view.pip.fillStyle(color, 1).fillRect(x, y, Math.max(0, w * frac), h);
     view.pip.fillStyle(0xffffff, 0.25).fillRect(x, y, Math.max(0, w * frac), 1);
-    if (this.auto) drawStars(view.pip, view.sprite.x, y - 9, view.snap.stars, 4);
+    if (this.auto) {
+      // The skill's countdown under the health: it drains, and empty means armed.
+      const sy = y + h + 2;
+      const left = Math.max(0, view.skillAt * TICK_MS - this.simTime) / (view.skillSpan * TICK_MS);
+      view.pip.fillStyle(0x1a1208, 0.85).fillRect(x - 1, sy - 1, w + 2, 5);
+      if (left > 0) view.pip.fillStyle(0x5fa8ff, 1).fillRect(x, sy, w * Math.min(1, left), 3);
+      else view.pip.fillStyle(0xbfe0ff, 0.45 + 0.35 * Math.sin(this.time.now / 140)).fillRect(x, sy, w, 3);
+      drawStars(view.pip, view.sprite.x, y - 9, view.snap.stars, 4);
+    }
     view.pip.setDepth(DEPTH.unit + view.sprite.y + 1);
   }
 
@@ -1643,7 +1659,15 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
+  /** A cast: the caster's countdown starts over. */
+  private recharge(id: string, t: number): void {
+    const view = this.view(id);
+    view.skillSpan = AUTO.skills[view.snap.class].cooldown * BALANCE.tickRate;
+    view.skillAt = t + view.skillSpan;
+  }
+
   private onAbility(ev: Extract<BattleEvent, { type: "ability" }>): void {
+    if (this.auto) this.recharge(ev.unit, ev.t);
     const view = this.view(ev.unit);
     if (!view.alive) return;
     const { side, class: cls } = view.snap;
@@ -1707,6 +1731,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private onRevive(ev: Extract<BattleEvent, { type: "revive" }>): void {
+    if (this.auto) this.recharge(ev.unit, ev.t);
     const caster = this.view(ev.unit);
     const view = this.view(ev.target);
     if (caster.alive) {

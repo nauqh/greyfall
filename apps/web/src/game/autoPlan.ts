@@ -105,7 +105,7 @@ const still = (): boolean => window.matchMedia?.("(prefers-reduced-motion: reduc
 const pct = (f: number): string => `${Math.round(f * 100)}%`;
 const AB = BALANCE.abilities;
 
-/** Each class's ability line on its card, and the tooltip that explains it. */
+/** Duel's knights: each ability line on its draft card, and the tooltip that explains it. */
 export const ABILITY: Partial<Record<Champion, { name: string; tip: string; on: boolean }>> = {
   warrior: {
     name: "Guard",
@@ -127,42 +127,34 @@ export const ABILITY: Partial<Record<Champion, { name: string; tip: string; on: 
     tip: `Revive: once a battle, raises the first fallen ally at ${pct(AB.revive.hp)} health`,
     on: AB.revive.enabled,
   },
-  skull: {
-    name: "Reassemble",
-    tip: `Reassemble: once a battle, the blow that would kill it leaves it at ${pct(AB.reassemble.hp)} health`,
-    on: AB.reassemble.enabled,
-  },
-  torch: {
-    name: "Splash",
-    tip: `Splash: every hit also burns the enemies beside its target for ${pct(AB.splash.damage)} damage`,
-    on: AB.splash.enabled,
-  },
-  gnoll: {
-    name: "Hunter",
-    tip: `Hunter: ${pct(AB.hunter.bonus)} more damage to targets below ${pct(AB.hunter.below)} health`,
-    on: AB.hunter.enabled,
-  },
-  thief: {
-    name: "Ambush",
-    tip: "Ambush: opens the battle by leaping beside the enemy furthest back",
-    on: AB.ambush.enabled,
-  },
-  shaman: {
-    name: "Hex",
-    tip: `Hex: one bolt in ${AB.hex.every} costs its target ${AB.hex.seconds}s before its next action`,
-    on: AB.hex.enabled,
-  },
-  troll: {
-    name: "Regenerate",
-    tip: `Regenerate: regains ${pct(AB.regenerate.perSecond)} of its health every second`,
-    on: AB.regenerate.enabled,
-  },
-  minotaur: {
-    name: "Cleave",
-    tip: `Cleave: every swing also hits each other enemy beside it for ${pct(AB.cleave.damage)} damage`,
-    on: AB.cleave.enabled,
-  },
 };
+
+/** What each Skirmish skill does when its countdown runs out. */
+const SKILL_RULE: Record<Champion, [name: string, rule: string]> = {
+  pawn: ["Smash", `hits its target for ${pct(AB.smash.damage)} damage`],
+  lancer: ["Taunt", `for ${AB.taunt.seconds}s, enemies within ${AB.taunt.radius} tiles must attack it`],
+  skull: ["Reassemble", `the blow that would kill it leaves it at ${pct(AB.reassemble.hp)} health`],
+  warrior: ["Guard", `below ${pct(AB.guard.hpBelow)} health, takes ${pct(1 - AB.guard.damageTaken)} less damage for ${AB.guard.seconds}s`],
+  archer: ["Piercing shot", `an arrow that also hits the enemy behind for ${pct(AB.pierce.damage)} damage`],
+  torch: ["Splash", `a hit that also burns the enemies beside its target for ${pct(AB.splash.damage)} damage`],
+  gnoll: ["Hunter", `a throw at a target below ${pct(AB.hunter.below)} health for ${pct(AB.hunter.bonus)} more damage`],
+  monk: ["Revive", `raises the first fallen ally at ${pct(AB.revive.hp)} health`],
+  thief: ["Ambush", "leaps beside the enemy furthest back"],
+  shaman: ["Hex", `a bolt that costs its target ${AB.hex.seconds}s before its next action`],
+  troll: ["Regenerate", `regains ${pct(AB.regenerate.hp)} of its health`],
+  minotaur: ["Cleave", `a swing that also hits each other enemy beside it for ${pct(AB.cleave.damage)} damage`],
+};
+
+export function skillName(cls: Champion): string {
+  return SKILL_RULE[cls][0];
+}
+
+/** A skill's rule and countdown, the way the shop, the board and the handbook explain it. */
+export function skillTip(cls: Champion): string {
+  const [name, rule] = SKILL_RULE[cls];
+  const { cooldown, first } = AUTO.skills[cls];
+  return `${name}, every ${cooldown}s${first === 0 ? " and ready from the start" : ""}: ${rule}.`;
+}
 
 /**
  * An unaffordable button stays solid, greyed like the handbook's idle tabs:
@@ -248,7 +240,7 @@ function unitTip(cls: Champion): string {
   const s = BALANCE.units[cls];
   const t = AUTO.traits[traitOf(cls)];
   const main = s.heal > 0 ? `heals ${s.heal}` : `${s.damage} damage`;
-  return `${CLASS_NAME[cls]}: ${AUTO.tier[cls]} gold, ${s.hp} health, ${main}, range ${s.range}. ${t.name} at ${t.at.join(", ")}${t.kinds ? " kinds" : ""}.`;
+  return `${CLASS_NAME[cls]}: ${AUTO.tier[cls]} gold, ${s.hp} health, ${main}, range ${s.range}. ${t.name} at ${t.at.join(", ")}${t.kinds ? " kinds" : ""}. ${skillTip(cls)}`;
 }
 
 function ordinal(n: number): string {
@@ -282,6 +274,7 @@ export class AutoPlan {
   private cards: Phaser.GameObjects.Container[] = [];
   private outgoing!: Phaser.GameObjects.Container;
   private rolled = false;
+  private pieceTip = false;
   /** Each trait's tier at the last draw, null before the first: a rise gets its flourish. */
   private tiers: Map<TraitKey, number> | null = null;
 
@@ -391,9 +384,21 @@ export class AutoPlan {
         this.refresh();
       }
     });
-    input.on("pointermove", (p: Phaser.Input.Pointer) => {
+    input.on("pointermove", (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
       const d = this.drag;
-      if (!d) return;
+      if (!d) {
+        const spot = over.length === 0 ? this.spotAt(p.worldX, p.worldY) : null;
+        const piece = spot && this.pieceAt(spot);
+        if (piece) {
+          const e = p.event as MouseEvent | undefined;
+          this.host.onTip?.(unitTip(piece.class), e?.clientX ?? 0, e?.clientY ?? 0);
+          this.pieceTip = true;
+        } else if (this.pieceTip) {
+          this.host.onTip?.(null, 0, 0);
+          this.pieceTip = false;
+        }
+        return;
+      }
       if (Math.hypot(p.worldX - d.x, p.worldY - d.y) > 8) d.moved = true;
       if (!d.moved) return;
       const v = this.views.get(d.id);
@@ -663,13 +668,13 @@ export class AutoPlan {
       g.lineStyle(4, TIER_INK[AUTO.tier[cls]]!, 1).strokeRoundedRect(-48, -72, 96, 144, 10);
       const [x0, y0, x1, y1] = PORTRAIT_INK[cls];
       const face = s.add
-        .image(0, -28, `avatar_${cls}`)
+        .image(0, -34, `avatar_${cls}`)
         .setOrigin((x0 + x1) / 2 / 256, (y0 + y1) / 2 / 256)
-        .setScale(58 / Math.max(x1 - x0, y1 - y0));
+        .setScale(52 / Math.max(x1 - x0, y1 - y0));
       if (!afford) face.setTint(0x8a8a8a);
-      const name = label(s, 0, 20, CLASS_NAME[cls], { fontSize: "15px", color: "#4a3a28", strokeThickness: 0 });
+      const name = label(s, 0, 8, CLASS_NAME[cls], { fontSize: "15px", color: "#4a3a28", strokeThickness: 0 });
       const key = traitOf(cls);
-      const trait = label(s, 0, 37, AUTO.traits[key].name, {
+      const trait = label(s, 0, 24, AUTO.traits[key].name, {
         fontSize: "12px",
         color: active.has(key) ? "#2f5d8a" : "#9a8a70",
         strokeThickness: 0,
@@ -680,7 +685,12 @@ export class AutoPlan {
         strokeThickness: 0,
       }).setOrigin(0, 0.5);
       const coin = s.add.image(-8, 57, iconKey(ICON.gold)).setScale(0.36);
-      card.add([face, name, trait, cost, coin]);
+      const skill = label(s, 5, 40, skillName(cls), { fontSize: "12px", color: "#7a4f14", strokeThickness: 0 });
+      const gem = s.add
+        .rectangle(5 - skill.width / 2 - 8, 40, 6, 6, 0xe0b64f)
+        .setStrokeStyle(1.2, 0x7a4f14)
+        .setAngle(45);
+      card.add([face, name, trait, skill, gem, cost, coin]);
       // Copies already owned: at two, this buy makes a 2-star.
       const have = ones(cls);
       if (have > 0) {

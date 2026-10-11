@@ -14,11 +14,14 @@ import {
   BALANCE,
   MAX_TICKS,
   CHAMPIONS,
+  MONSTER_CLASSES,
   TICKS_PER_ACTION,
   TRAIT_KEYS,
   damageAgainst,
   traitTier,
   type Champion,
+  type MonsterClass,
+  type Skill,
   type TraitKey,
 } from "./balance.ts";
 import { makeRng } from "./rng.ts";
@@ -51,7 +54,7 @@ export type BattleEvent =
       t: number;
       type: "ability";
       unit: string;
-      ability: "guard" | "taunt" | "pierce" | "splash" | "cleave" | "ambush" | "hex" | "reassemble";
+      ability: Exclude<Skill, "revive">;
       target?: string;
       hpAfter?: number;
     }
@@ -79,6 +82,8 @@ export interface SimOptions {
   budget?: number;
   /** Skirmish's half is bigger than Duel's. */
   board?: Board;
+  /** Skirmish: every class's skill recurs on its countdown (AUTO.skills), not once a battle. */
+  skills?: boolean;
   /** Class traits by how many of a class each side fields. */
   traits?: boolean;
 }
@@ -112,8 +117,10 @@ interface SimUnit extends UnitSnapshot {
   shots: number;
   reviveUsed: boolean;
   revived: boolean;
-  reassembled: boolean;
   diedAt: number;
+  /** The tick the skill's countdown runs out; it stays armed from then until cast. */
+  skillAt: number;
+  tauntUntil: number;
 }
 
 /** Row is a lane: the same meaning for both sides, no reflection. */
@@ -230,8 +237,9 @@ function build(army: Army, side: Side, traits: boolean, cols: number): SimUnit[]
       shots: 0,
       reviveUsed: false,
       revived: false,
-      reassembled: false,
       diedAt: 0,
+      skillAt: AUTO.skills[p.class].first * BALANCE.tickRate,
+      tauntUntil: 0,
     };
   });
 }
@@ -395,39 +403,19 @@ export function simulate(
     const raw = Math.round(rawIn * target.damageTaken);
     return t >= target.guardFrom && t < target.guardUntil ? Math.round(raw * ability.guard.damageTaken) : raw;
   };
-  // The Gnoll's bonus reads the target's HP as the tick began, like every other decision.
-  const strike = (unit: SimUnit, target: SimUnit, targetHp: number) => {
-    const hunting =
-      ability.hunter.enabled && unit.class === "gnoll" && targetHp < target.maxHp * ability.hunter.below;
-    return Math.round(damageAgainst(unit.class, target.class) * unit.power * (hunting ? 1 + ability.hunter.bonus : 1));
+  const strike = (unit: SimUnit, target: SimUnit) => damageAgainst(unit.class, target.class) * unit.power;
+
+  // Monsters only ever play Skirmish, so theirs always run on the countdown.
+  const skills = opts.skills ?? false;
+  const timed = (u: SimUnit) => skills || MONSTER_CLASSES.includes(u.class as MonsterClass);
+  const armed = (u: SimUnit, t: number) => t >= u.skillAt;
+  const spend = (u: SimUnit, t: number) => {
+    u.skillAt = t + AUTO.skills[u.class].cooldown * BALANCE.tickRate;
   };
 
-  if (ability.taunt.enabled) {
+  if (ability.taunt.enabled && !skills) {
     for (const u of units) {
       if (u.class === "lancer") events.push({ t: 0, type: "ability", unit: u.id, ability: "taunt" });
-    }
-  }
-
-  // Thieves open by leaping beside the enemy furthest back, behind it where there is room.
-  if (ability.ambush.enabled) {
-    const taken = new Set(units.map(tileKey));
-    for (const u of units.filter((x) => x.class === "thief")) {
-      // How deep into the enemy half a column is, seen from this Thief's side.
-      const back = (col: number) => (u.side === "a" ? col : -col);
-      const prey = units
-        .filter((x) => x.side !== u.side)
-        .sort((x, y) => back(y.col) - back(x.col) || Math.abs(x.row - u.row) - Math.abs(y.row - u.row))[0];
-      if (!prey) continue;
-      const spot = neighbors(prey.col, prey.row)
-        .filter((c) => onBoard(c, board) && !taken.has(tileKey(c)))
-        .sort((x, y) => back(y.col) - back(x.col) || Math.abs(x.row - prey.row) - Math.abs(y.row - prey.row))[0];
-      if (!spot) continue;
-      taken.delete(tileKey(u));
-      taken.add(tileKey(spot));
-      u.col = spot.col;
-      u.row = spot.row;
-      events.push({ t: 0, type: "ability", unit: u.id, ability: "ambush", target: prey.id });
-      events.push({ t: 0, type: "move", unit: u.id, col: spot.col, row: spot.row });
     }
   }
 
@@ -450,6 +438,16 @@ export function simulate(
     // Hexed this tick, applied once every unit has acted so order cannot matter.
     const hexed: number[] = [];
 
+    // Taunts go up before anyone acts, so whether one holds this tick never depends on order.
+    if (ability.taunt.enabled && skills) {
+      for (const [i, u] of units.entries()) {
+        if (u.class !== "lancer" || !aliveAtStart[i] || !armed(u, t)) continue;
+        u.tauntUntil = t + ability.taunt.seconds * BALANCE.tickRate;
+        spend(u, t);
+        events.push({ t, type: "ability", unit: u.id, ability: "taunt" });
+      }
+    }
+
     for (let i = 0; i < units.length; i++) {
       const unit = units[i]!;
       if (!aliveAtStart[i] || t < unit.nextAt) continue;
@@ -457,12 +455,40 @@ export function simulate(
       const stats = BALANCE.units[unit.class];
       const healer = stats.heal > 0;
 
+      // A Thief leaps beside the enemy furthest back, behind it where there is room.
+      if (ability.ambush.enabled && unit.class === "thief" && armed(unit, t)) {
+        // How deep into the enemy half a column is, seen from this Thief's side.
+        const back = (col: number) => (unit.side === "a" ? col : -col);
+        const prey = units
+          .map((u, j) => ({ u, pos: startPos[j]!, j }))
+          .filter(({ u, j }) => u.side !== unit.side && aliveAtStart[j])
+          .sort((x, y) => back(y.pos.col) - back(x.pos.col) || Math.abs(x.pos.row - unit.row) - Math.abs(y.pos.row - unit.row))[0];
+        const spot =
+          prey && chebyshev(unit, prey.pos) > 1
+            ? neighbors(prey.pos.col, prey.pos.row)
+                .filter((c) => onBoard(c, board) && !occupied.has(tileKey(c)) && !raising.has(tileKey(c)))
+                .sort((x, y) => back(y.col) - back(x.col) || Math.abs(x.row - prey.pos.row) - Math.abs(y.row - prey.pos.row))[0]
+            : undefined;
+        if (prey && spot) {
+          // Held like a tile a Monk is raising someone on, so nobody steps into it this tick.
+          raising.add(tileKey(spot));
+          unit.col = spot.col;
+          unit.row = spot.row;
+          unit.nextAt = t + TICKS_PER_ACTION;
+          spend(unit, t);
+          events.push({ t, type: "ability", unit: unit.id, ability: "ambush", target: prey.u.id });
+          events.push({ t, type: "move", unit: unit.id, col: spot.col, row: spot.row });
+          continue;
+        }
+      }
+
       if (
         ability.guard.enabled &&
         unit.class === "warrior" &&
-        !unit.guardUsed &&
+        (timed(unit) ? armed(unit, t) : !unit.guardUsed) &&
         hpAtStart[i]! < unit.maxHp * ability.guard.hpBelow
       ) {
+        if (timed(unit)) spend(unit, t);
         unit.guardUsed = true;
         unit.guardFrom = t + 1;
         unit.guardUntil = t + 1 + ability.guard.seconds * BALANCE.tickRate;
@@ -471,7 +497,7 @@ export function simulate(
         continue;
       }
 
-      if (ability.revive.enabled && unit.class === "monk" && !unit.reviveUsed) {
+      if (ability.revive.enabled && unit.class === "monk" && (timed(unit) ? armed(unit, t) : !unit.reviveUsed)) {
         // The first ally to fall whose tile is still free. Index order is the
         // same on both sides, so a mirror match raises the mirror unit.
         // A cell holding a corpse from each side goes by column parity, as
@@ -485,6 +511,7 @@ export function simulate(
           .filter((u) => !occupied.has(tileKey(u)) && !raising.has(tileKey(u)) && !contested(u))
           .sort((x, y) => x.diedAt - y.diedAt)[0];
         if (fallen) {
+          if (timed(unit)) spend(unit, t);
           unit.reviveUsed = true;
           unit.nextAt = t + TICKS_PER_ACTION;
           fallen.revived = true;
@@ -526,7 +553,12 @@ export function simulate(
       // only once there is no way to hit or reach any of them.
       const taunting =
         !healer && ability.taunt.enabled
-          ? ranked.filter((c) => units[c.j]!.class === "lancer" && c.dist <= ability.taunt.radius)
+          ? ranked.filter(
+              (c) =>
+                units[c.j]!.class === "lancer" &&
+                c.dist <= ability.taunt.radius &&
+                (!skills || t < units[c.j]!.tauntUntil),
+            )
           : [];
       const tiers = taunting.length > 0 ? [taunting, ranked] : [ranked];
 
@@ -556,9 +588,23 @@ export function simulate(
             break;
           }
 
-          const damage = dealt(target, strike(unit, target, hpAtStart[hit.j]!), t);
+          // A blow that is itself the skill: the Pawn's Smash, the Gnoll's throw at a wounded target.
+          const empowered =
+            ability.smash.enabled && unit.class === "pawn" && timed(unit) && armed(unit, t)
+              ? { name: "smash" as const, boost: ability.smash.damage }
+              : ability.hunter.enabled &&
+                  unit.class === "gnoll" &&
+                  armed(unit, t) &&
+                  hpAtStart[hit.j]! < target.maxHp * ability.hunter.below
+                ? { name: "hunter" as const, boost: 1 + ability.hunter.bonus }
+                : null;
+          const damage = dealt(target, Math.round(strike(unit, target) * (empowered?.boost ?? 1)), t);
           target.hp -= damage;
           events.push({ t, type: "attack", unit: unit.id, target: target.id });
+          if (empowered) {
+            spend(unit, t);
+            events.push({ t, type: "ability", unit: unit.id, ability: empowered.name, target: target.id });
+          }
           events.push({
             t,
             type: "hit",
@@ -569,7 +615,11 @@ export function simulate(
           });
 
           unit.shots += 1;
-          if (ability.pierce.enabled && unit.class === "archer" && unit.shots % ability.pierce.every === 0) {
+          if (
+            ability.pierce.enabled &&
+            unit.class === "archer" &&
+            (timed(unit) ? armed(unit, t) : unit.shots % ability.pierce.every === 0)
+          ) {
             const tpos = startPos[hit.j]!;
             const dir = Math.sign(tpos.col - unit.col);
             const behind = units.findIndex(
@@ -580,8 +630,9 @@ export function simulate(
                 startPos[j]!.row === tpos.row,
             );
             if (dir !== 0 && behind !== -1) {
+              if (timed(unit)) spend(unit, t);
               const second = units[behind]!;
-              const raw = Math.round(strike(unit, second, hpAtStart[behind]!) * ability.pierce.damage);
+              const raw = Math.round(strike(unit, second) * ability.pierce.damage);
               const damage2 = dealt(second, raw, t);
               second.hp -= damage2;
               events.push({ t, type: "ability", unit: unit.id, ability: "pierce", target: second.id });
@@ -597,8 +648,9 @@ export function simulate(
           }
 
           // Splash burns round the target, cleave sweeps round the Minotaur.
-          const sweep =
-            ability.splash.enabled && unit.class === "torch"
+          const sweep = !armed(unit, t)
+            ? null
+            : ability.splash.enabled && unit.class === "torch"
               ? { name: "splash" as const, around: startPos[hit.j]!, share: ability.splash.damage }
               : ability.cleave.enabled && unit.class === "minotaur"
                 ? { name: "cleave" as const, around: startPos[i]!, share: ability.cleave.damage }
@@ -607,15 +659,19 @@ export function simulate(
             const caught = units
               .map((u, j) => ({ u, j }))
               .filter(({ u, j }) => j !== hit.j && aliveAtStart[j] && u.side === target.side && chebyshev(startPos[j]!, sweep.around) === 1);
-            if (caught.length > 0) events.push({ t, type: "ability", unit: unit.id, ability: sweep.name });
-            for (const { u, j } of caught) {
-              const extra = dealt(u, Math.round(strike(unit, u, hpAtStart[j]!) * sweep.share), t);
+            if (caught.length > 0) {
+              spend(unit, t);
+              events.push({ t, type: "ability", unit: unit.id, ability: sweep.name });
+            }
+            for (const { u } of caught) {
+              const extra = dealt(u, Math.round(strike(unit, u) * sweep.share), t);
               u.hp -= extra;
               events.push({ t, type: "hit", unit: unit.id, target: u.id, damage: extra, hpAfter: clamp(u) });
             }
           }
 
-          if (ability.hex.enabled && unit.class === "shaman" && unit.shots % ability.hex.every === 0) {
+          if (ability.hex.enabled && unit.class === "shaman" && armed(unit, t)) {
+            spend(unit, t);
             hexed.push(hit.j);
             events.push({ t, type: "ability", unit: unit.id, ability: "hex", target: target.id });
           }
@@ -643,12 +699,14 @@ export function simulate(
       u.nextAt = Math.max(u.nextAt, t + 1) + ability.hex.seconds * BALANCE.tickRate;
     }
 
-    if (ability.regenerate.enabled && t > 0 && t % TICKS_PER_ACTION === 0) {
+    if (ability.regenerate.enabled) {
       for (const [i, u] of units.entries()) {
-        if (u.class !== "troll" || !aliveAtStart[i]) continue;
-        const amount = Math.min(Math.round(u.maxHp * ability.regenerate.perSecond), u.maxHp - hpAtStart[i]!);
+        if (u.class !== "troll" || !aliveAtStart[i] || !armed(u, t)) continue;
+        const amount = Math.min(Math.round(u.maxHp * ability.regenerate.hp), u.maxHp - hpAtStart[i]!);
         if (amount <= 0) continue;
+        spend(u, t);
         u.hp += amount;
+        events.push({ t, type: "ability", unit: u.id, ability: "regenerate" });
         events.push({ t, type: "heal", unit: u.id, target: u.id, amount, hpAfter: clamp(u) });
       }
     }
@@ -692,8 +750,8 @@ export function simulate(
 
     for (let i = 0; i < units.length; i++) {
       const u = units[i]!;
-      if (aliveAtStart[i] && !alive(u) && ability.reassemble.enabled && u.class === "skull" && !u.reassembled) {
-        u.reassembled = true;
+      if (aliveAtStart[i] && !alive(u) && ability.reassemble.enabled && u.class === "skull" && armed(u, t)) {
+        spend(u, t);
         u.hp = Math.round(u.maxHp * ability.reassemble.hp);
         events.push({ t, type: "ability", unit: u.id, ability: "reassemble", hpAfter: u.hp });
         continue;

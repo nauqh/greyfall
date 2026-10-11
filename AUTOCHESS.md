@@ -36,24 +36,50 @@ level cap stays 8, so the extra cells are room to position, not more units:
 TFT's half is 7x4, and 6x4 is what fits beside the shop. Over 80 AI lobbies
 it moved nothing: still 12 to 20 rounds, median 15, and no fight timed out.
 
-| Unit | Tier, cost | Health | Damage | Range | Ability |
-| --- | --- | --- | --- | --- | --- |
-| Pawn | 1 | 40 | 4 | 1 | - |
-| Lancer | 1 | 140 | 10 | 1 | Taunt: enemies within 2 tiles must attack it |
-| Skull | 1 | 90 | 9 | 1 | Reassemble: once a battle, the blow that would kill it leaves it at 40% |
-| Warrior | 2 | 120 | 14 | 1 | Guard: once, below 50%, takes 50% less damage for 3s |
-| Archer | 2 | 60 | 10 | 5 | Piercing shot: one arrow in 3 also hits the enemy behind for 50% |
-| Torch Goblin | 2 | 100 | 11 | 1 | Splash: hits also burn the target's neighbours for 50% |
-| Gnoll | 2 | 75 | 11 | 4 | Hunter: 50% more damage to targets below 50% health |
-| Monk | 3 | 70 | heals 8 | 2 | Revive: once, raises the first fallen ally at 50% |
-| Thief | 3 | 110 | 20 | 1 | Ambush: opens by leaping beside the enemy furthest back |
-| Hex Shaman | 3 | 80 | 14 | 3 | Hex: one bolt in 3 costs its target 1.5s before its next action |
-| Troll | 4 | 360 | 20 | 1 | Regenerate: regains 2% of its health every second |
-| Minotaur | 4 | 280 | 23 | 1 | Cleave: each swing also hits every other enemy beside it for 50% |
+| Unit | Tier, cost | Health | Damage | Range | Skill, every | Skill |
+| --- | --- | --- | --- | --- | --- | --- |
+| Pawn | 1 | 40 | 4 | 1 | 5s | Smash: hits its target for 250% |
+| Lancer | 1 | 140 | 10 | 1 | 8s, from the start | Taunt: for 4s, enemies within 2 tiles must attack it |
+| Skull | 1 | 90 | 9 | 1 | 12s, from the start | Reassemble: the blow that would kill it leaves it at 40% |
+| Warrior | 2 | 120 | 14 | 1 | 8s, from the start | Guard: below 50%, takes 50% less damage for 3s |
+| Archer | 2 | 60 | 10 | 5 | 3s | Piercing shot: also hits the enemy behind for 50% |
+| Torch Goblin | 2 | 100 | 11 | 1 | 4s | Splash: also burns the target's neighbours for 100% |
+| Gnoll | 2 | 75 | 11 | 4 | 3s | Hunter: 100% more damage to a target below 50% |
+| Monk | 3 | 70 | heals 8 | 2 | 12s, from the start | Revive: raises the first fallen ally at 50% |
+| Thief | 3 | 110 | 20 | 1 | 8s, from the start | Ambush: leaps beside the enemy furthest back |
+| Hex Shaman | 3 | 80 | 14 | 3 | 3s | Hex: costs its target 1.5s before its next action |
+| Troll | 4 | 360 | 20 | 1 | 5s | Regenerate: regains 12% of its health |
+| Minotaur | 4 | 280 | 23 | 1 | 4s | Cleave: also hits every other enemy beside it for 100% |
 
 Stats are at 1 star. Every unit acts once a second; the Archer's Volley is
 the only thing that changes that. Monsters look the same on both teams, so
 each stands on a disc in its team's colour.
+
+## Skills
+
+TFT and Dota Auto Chess give every unit an active ability, cast from a
+second bar under the health bar. Both fill that bar with mana and cast
+when it is full. TFT sets the rate by role: 10 a basic attack for
+Fighters, Assassins and Marksmen, 7 plus 2 a second for Casters, and 5 for
+Tanks, which alone also gain mana from damage taken. Dota Auto Chess casts
+at 100 mana, earned from dealing damage and from taking it. Skirmish runs the
+bar as a countdown instead: it drains, the unit casts when it is empty, and
+the countdown starts over, so every skill recurs through a fight. A timer
+is easier to read and to balance than mana income, and the mana model is
+still open if the fights want more back-and-forth. Two rules come from TFT:
+
+- Every champion has one. The Pawn, which had none, gained Smash.
+- A skill with nothing to do waits, armed, at an empty bar: a Gnoll holds
+  Hunter until a target drops below half, a Monk holds Revive until
+  someone falls. Reactive skills (Taunt, Guard, Reassemble, Revive,
+  Ambush) start armed; the rest count down from the first second.
+
+Duel keeps its once-a-battle knight abilities: the countdown is the
+`skills` option on the simulation, and only Skirmish passes it. Over 80
+all-AI lobbies, against the run before skills: 12 to 19 rounds (median
+14, was 15), 1 timeout in 2,159 fights. Win rates when fielded moved by 5
+points or fewer, except the Minotaur, 75% to 64%, since Cleave became a
+cast and not every swing.
 
 ## Traits
 
@@ -118,6 +144,10 @@ These measure the AI against itself, not people.
 
 Left out for now: shop locking, a sell value that discounts 2-stars, shop
 copies reserved from the pool, and a carousel.
+
+Skills: [TFT roles and mana (Riot)](https://teamfighttactics.leagueoflegends.com/en-us/news/game-updates/roles-revamped-and-item-changes/),
+[Mana in Dota Auto Chess (Fandom wiki)](https://dotaautochess.fandom.com/wiki/Mana).
+Read Oct 11, 2026.
 
 Sources: [TFT economy: interest, streaks and gold (TFT Ninja)](https://tft.ninja/guides/game-mechanics/economy),
 [TFT shop odds and pool sizes (MetaTFT)](https://www.metatft.com/tables/shop-odds),

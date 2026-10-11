@@ -4,7 +4,7 @@
 import { AUTO, BALANCE, CHAMPIONS, TRAIT_KEYS, type Champion } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
-import { ABILITY, CLASS_NAME, PORTRAIT_INK, traitEffect, traitOf, traitWho } from "./autoPlan";
+import { CLASS_NAME, PORTRAIT_INK, skillName, skillTip, traitEffect, traitOf, traitWho } from "./autoPlan";
 import { WATER_SPAN } from "./boot";
 import { DEPTH } from "./terrain";
 import { ARROW, HAND, button, label, panel, ribbon } from "./ui";
@@ -124,7 +124,7 @@ export class Handbook {
     this.text(cols.dmg, 156, "Damage", head);
     this.text(cols.range, 156, "Range", head);
     this.text(cols.vs, 156, "Beats", head);
-    this.text(cols.ability, 156, "Ability", head);
+    this.text(cols.ability, 156, "Skill", head);
     this.text(cols.trait, 156, "Trait", head);
     this.text(cols.hp, 172, "at 1 / 2 / 3 stars", { ...SOFT, fontSize: "11px" });
     this.text(cols.ability, 172, "hover for the rule", { ...SOFT, fontSize: "11px" });
@@ -150,11 +150,8 @@ export class Handbook {
       const beats = counters[cls];
       this.text(cols.vs, y + 4, beats ? `${CLASS_NAME[beats]}s +${pct(BALANCE.counterBonus)}` : "-");
 
-      const ab = ABILITY[cls];
-      if (ab?.on) {
-        const rule = ab.tip.slice(ab.tip.indexOf(": ") + 2);
-        this.tipped(this.text(cols.ability, y + 4, ab.name, { ...BLUE, fontStyle: "800" }), `${ab.name}: ${rule}.`);
-      } else this.text(cols.ability, y + 4, "-");
+      this.tipped(this.text(cols.ability, y, skillName(cls), { ...BLUE, fontStyle: "800" }), skillTip(cls));
+      this.text(cols.ability, y + 17, `every ${AUTO.skills[cls].cooldown}s`, { ...SOFT, fontSize: "11px" });
 
       const t = AUTO.traits[traitOf(cls)];
       this.text(cols.trait, y + 4, t.name, { ...BLUE, fontStyle: "800" });

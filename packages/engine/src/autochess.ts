@@ -412,7 +412,7 @@ export function fightRound(prev: Run): { run: Run; report: LobbyRound } {
     let winner: number | null = null;
     let damage = 0;
     if (armyA.length > 0 && armyB.length > 0) {
-      result = simulate(armyA, armyB, `${run.seed}:r${run.round}:${k}`, { budget: Infinity, traits: true, board: AUTO.board });
+      result = simulate(armyA, armyB, `${run.seed}:r${run.round}:${k}`, { budget: Infinity, traits: true, board: AUTO.board, skills: true });
       if (result.winner !== "draw") {
         winner = result.winner === "a" ? a : b;
         damage = base + survivingStars(result, result.winner);

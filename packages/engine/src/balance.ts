@@ -92,28 +92,31 @@ export const BALANCE = {
    * switch the upgrade will flip.
    */
   abilities: {
+    /** Pawn, Skirmish only: one blow for this much of its damage. */
+    smash: { enabled: true, damage: 2.5 },
     /** Warrior, once a battle below the HP threshold: spends an action to halve damage taken. */
     guard: { enabled: true, hpBelow: 0.5, damageTaken: 0.5, seconds: 3 },
-    /** Lancer, always on: enemies within `radius` must attack the nearest Lancer. */
-    taunt: { enabled: true, radius: 2 },
+    /** Lancer, always on: enemies within `radius` must attack the nearest Lancer. In Skirmish, for `seconds` a cast. */
+    taunt: { enabled: true, radius: 2, seconds: 4 },
     /** Archer, every `every`th shot: also hits the enemy straight behind the target. */
     pierce: { enabled: true, every: 3, damage: 0.5 },
     /** Monk, once a battle: spends an action raising the first fallen ally at this HP fraction. */
     revive: { enabled: true, hp: 0.5 },
-    /** Skull, once a battle: the blow that would kill it leaves it at this HP fraction instead. */
+    // The monsters' are Skirmish's only, so each is a skill on a cooldown (AUTO.skills).
+    /** Skull: the blow that would kill it leaves it at this HP fraction instead. */
     reassemble: { enabled: true, hp: 0.4 },
-    /** Torch Goblin: every hit also burns the target's neighbours for this share. */
-    splash: { enabled: true, damage: 0.5 },
-    /** Gnoll: this much more damage against targets below the HP fraction. */
-    hunter: { enabled: true, below: 0.5, bonus: 0.5 },
-    /** Thief, at the start of a battle: leaps beside the enemy furthest back. */
+    /** Torch Goblin: a hit that also burns the target's neighbours for this share. */
+    splash: { enabled: true, damage: 1 },
+    /** Gnoll: a throw at a target below the HP fraction, for this much more damage. */
+    hunter: { enabled: true, below: 0.5, bonus: 1 },
+    /** Thief: leaps beside the enemy furthest back. */
     ambush: { enabled: true },
-    /** Hex Shaman, every `every`th bolt: the target loses this long before its next action. */
-    hex: { enabled: true, every: 3, seconds: 1.5 },
-    /** Troll: regains this share of its max HP every second. */
-    regenerate: { enabled: true, perSecond: 0.02 },
-    /** Minotaur: every swing also hits each other enemy beside it for this share. */
-    cleave: { enabled: true, damage: 0.5 },
+    /** Hex Shaman: a bolt that costs the target this long before its next action. */
+    hex: { enabled: true, seconds: 1.5 },
+    /** Troll: regains this share of its max HP. */
+    regenerate: { enabled: true, hp: 0.12 },
+    /** Minotaur: a swing that also hits each other enemy beside it for this share. */
+    cleave: { enabled: true, damage: 1 },
   },
 
   /**
@@ -135,6 +138,8 @@ export const BALANCE = {
     monk: 1,
   } as Partial<Record<UnitClass, number>>,
 } as const;
+
+export type Skill = keyof typeof BALANCE.abilities;
 
 export type TraitEffect = "damageTaken" | "hp" | "attackSeconds" | "heal" | "gold" | "damage";
 
@@ -194,6 +199,25 @@ export const AUTO = {
   maxLevel: BALANCE.board.maxUnits,
   /** TFT's half is 7x4; 6x4 is what the screen holds beside the shop. */
   board: { cols: 6, rows: 4 },
+  /**
+   * Every champion's skill, recast each time its countdown runs out, where TFT
+   * fills a mana bar instead. `first` is the opening countdown: 0 arms a
+   * reactive skill from the start. A skill with nothing to do waits, armed.
+   */
+  skills: {
+    pawn: { ability: "smash", cooldown: 5, first: 5 },
+    lancer: { ability: "taunt", cooldown: 8, first: 0 },
+    skull: { ability: "reassemble", cooldown: 12, first: 0 },
+    warrior: { ability: "guard", cooldown: 8, first: 0 },
+    archer: { ability: "pierce", cooldown: 3, first: 3 },
+    torch: { ability: "splash", cooldown: 4, first: 4 },
+    gnoll: { ability: "hunter", cooldown: 3, first: 3 },
+    monk: { ability: "revive", cooldown: 12, first: 0 },
+    thief: { ability: "ambush", cooldown: 8, first: 0 },
+    shaman: { ability: "hex", cooldown: 3, first: 3 },
+    troll: { ability: "regenerate", cooldown: 5, first: 5 },
+    minotaur: { ability: "cleave", cooldown: 4, first: 4 },
+  } as Record<Champion, { ability: Skill; cooldown: number; first: number }>,
   /** XP from level L to L+1, indexed by L. */
   xpToNext: [0, 2, 2, 6, 10, 20, 36, 48] as readonly number[],
   xpPerRound: 2,

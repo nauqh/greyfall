@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { AUTO, BALANCE, CHAMPIONS, act, copies, fightRound, newRun, simulate, traitCounts, type Placement, type Run } from "../src/index.ts";
+import { AUTO, BALANCE, CHAMPIONS, TICKS_PER_ACTION, act, copies, fightRound, newRun, simulate, traitCounts, type Placement, type Run } from "../src/index.ts";
 
 /** Copies in shops are not reserved, so the pool plus every owned copy is the whole pool. */
 function poolIntact(run: Run): boolean {
@@ -131,20 +131,35 @@ describe("monsters", () => {
     expect(up && "hpAfter" in up ? up.hpAfter : 0).toBe(Math.round(BALANCE.units.skull.hp * BALANCE.abilities.reassemble.hp));
   });
 
-  it("sends a Thief beside the enemy furthest back before anything else moves", () => {
+  it("sends a Thief beside the enemy furthest back on its first action", () => {
     const r = simulate([at("thief", 4, 1)], [at("lancer", 4, 1), at("archer", 0, 2)], 1, opts);
     const leap = r.events.find((e) => e.type === "move" && e.unit === "a0")!;
-    expect(leap.t).toBe(0);
+    expect(leap.t).toBeLessThan(TICKS_PER_ACTION);
     expect(leap.type === "move" && Math.max(Math.abs(leap.col - 9), Math.abs(leap.row - 2))).toBe(1);
   });
 
   it("lets a Troll regain health and a Minotaur cleave everyone beside it", () => {
-    const m = simulate([at("minotaur", 4, 1)], [at("pawn", 4, 0), at("pawn", 4, 1), at("pawn", 4, 2)], 1, opts);
+    const m = simulate([at("minotaur", 4, 1)], [at("warrior", 4, 0), at("warrior", 4, 1), at("warrior", 4, 2)], 1, opts);
     expect(abilities(m, "cleave").length).toBeGreaterThan(0);
     const hurt = new Set(m.events.flatMap((e) => (e.type === "hit" && e.unit === "a0" ? [e.target] : [])));
     expect(hurt).toEqual(new Set(["b0", "b1", "b2"]));
     const t = simulate([at("troll", 4, 1)], [at("warrior", 4, 1), at("warrior", 4, 0)], 2, opts);
     expect(t.events.some((e) => e.type === "heal" && e.unit === "a0" && e.target === "a0")).toBe(true);
+  });
+
+  it("recasts a skill each time its countdown runs out, and only then", () => {
+    const r = simulate([{ class: "lancer", col: 4, row: 1, stars: 3 }], [at("troll", 4, 1)], 1, { ...opts, skills: true });
+    for (const [name, cls] of [["taunt", "lancer"], ["regenerate", "troll"]] as const) {
+      const casts = abilities(r, name).map((e) => e.t);
+      expect(casts.length).toBeGreaterThan(1);
+      for (let k = 1; k < casts.length; k++)
+        expect(casts[k]! - casts[k - 1]!).toBeGreaterThanOrEqual(AUTO.skills[cls].cooldown * BALANCE.tickRate);
+    }
+  });
+
+  it("keeps Duel's knights to one taunt a battle without skills", () => {
+    const r = simulate([{ class: "lancer", col: 4, row: 1, stars: 3 }], [at("troll", 4, 1)], 1, opts);
+    expect(abilities(r, "taunt").map((e) => e.t)).toEqual([0]);
   });
 
   it("delays a hexed unit's next action", () => {
