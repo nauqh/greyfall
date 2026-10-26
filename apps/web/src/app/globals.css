@@ -497,7 +497,8 @@ textarea {
 	padding: 4px 14px 10px;
 	color: #4a3a28;
 	border: 34px solid transparent;
-	border-image: url("/tiny-swords/ui/paper.png") 64 fill / 34px stretch;
+	/* The sheet is 135x127 with a clear margin; a 64 slice left no middle row to fill. */
+	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 34px stretch;
 }
 
 .paper .fieldLabel,
