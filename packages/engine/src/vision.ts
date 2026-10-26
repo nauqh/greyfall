@@ -19,10 +19,9 @@ export interface Sight {
 
 /** The middle of a side's home plateau, where its castle looks out from, so
  *  the castle lights its plateau evenly rather than mostly north of it. */
-const HALL_EYE: Record<WarSide, Cell> = {
-  a: middle(plateauOf(castlePlot("a"))),
-  b: middle(plateauOf(castlePlot("b"))),
-};
+function hallEye(side: WarSide): Cell {
+  return middle(plateauOf(castlePlot(side)));
+}
 
 function middle(cells: Cell[]): Cell {
   const span = (pick: (c: Cell) => number) => (Math.min(...cells.map(pick)) + Math.max(...cells.map(pick))) / 2;
@@ -36,7 +35,7 @@ export function sightsOf(state: MatchState, side: WarSide): Sight[] {
   }
   for (const b of Object.values(state.buildings)) {
     if (b.side !== side) continue;
-    const mid: Cell = b.kind === "castle" ? HALL_EYE[b.side] : { col: b.col + (b.w - 1) / 2, row: b.row + (b.h - 1) / 2 };
+    const mid: Cell = b.kind === "castle" ? hallEye(b.side) : { col: b.col + (b.w - 1) / 2, row: b.row + (b.h - 1) / 2 };
     out.push({ ...mid, radius: (WAR.sight.buildings[b.kind] ?? 4) + (b.w - 1) / 2, eye: level(b.col, b.row) });
   }
   return out;

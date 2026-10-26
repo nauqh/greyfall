@@ -42,6 +42,8 @@ import {
   type UnitSide,
   type WarEvent,
   type WarUnit,
+  WAR_ISLAND,
+  useIsland,
 } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
@@ -64,7 +66,6 @@ import {
   loadBuildings,
   loadTerrain,
   prepareTerrain,
-  type Rect,
   type Structure,
 } from "./terrain";
 import {
@@ -83,11 +84,11 @@ import {
 } from "./warFx";
 
 /** The map carries its own sea margin, so the world is the grid, plus open
- *  sea above it that the view may scroll into (y runs negative there). */
-const WORLD_W = STRAT_COLS * CELL;
-const WORLD_H = STRAT_ROWS * CELL;
+ *  sea above it that the view may scroll into (y runs negative there). Read
+ *  live: the atlas swaps the island in use, and the war swaps its own back. */
+const worldW = (): number => STRAT_COLS * CELL;
+const worldH = (): number => STRAT_ROWS * CELL;
 const TOP_SEA = 2 * CELL;
-const STRAT: Rect = { x0: 0, y0: 0, x1: WORLD_W, y1: WORLD_H };
 
 /** How close to the screen edge the pointer pans, and how fast, in world
  *  px/s. Screen-edge scrolling, exactly as Warcraft did it. */
@@ -136,7 +137,7 @@ const CLASS_NAME: Record<UnitClass, string> = {
 const BUILDABLE: readonly BuildingKind[] = ["house", "barracks", "tower", "cannon"];
 
 function cellXY(col: number, row: number): { x: number; y: number } {
-  return { x: STRAT.x0 + col * CELL + CELL / 2, y: STRAT.y0 + row * CELL + CELL / 2 };
+  return { x: col * CELL + CELL / 2, y: row * CELL + CELL / 2 };
 }
 
 /** A Pawn with nothing to do: not digging, building or walking anywhere. */
@@ -248,6 +249,7 @@ export class StrategicScene extends Phaser.Scene {
   }
 
   create(): void {
+    useIsland(WAR_ISLAND);
     // Open on the middle of the player's own plateau, castle, barracks and mine in view.
     // The plateau and the cliff face under its south edge, which is drawn a row below it.
     const top = plateauOf(castlePlot("a"));
@@ -272,7 +274,7 @@ export class StrategicScene extends Phaser.Scene {
       .slice(before)
       .filter((o): o is Phaser.GameObjects.Sprite => o instanceof Phaser.GameObjects.Sprite)
       .map((s) => ({ s, b: s.getBounds() }));
-    driftClouds(this, { w: WORLD_W, h: WORLD_H }, "strategic");
+    driftClouds(this, { w: worldW(), h: worldH() }, "strategic");
     // Over units and buildings, so bars and order lines never hide behind them.
     this.overlay = this.add.graphics().setDepth(DEPTH.fx - 2);
     this.box = this.add.graphics().setDepth(DEPTH.fx + 2);
@@ -1531,7 +1533,7 @@ export class StrategicScene extends Phaser.Scene {
   private zoomScale(level: number): number {
     const cam = this.cameras.main;
     const base = baseZoom(this);
-    const fit = Math.min(cam.width / WORLD_W, (cam.height - (HUD_COVER_H + HUD_TOP_H) * base) / (TOP_SEA + WORLD_H)) / base;
+    const fit = Math.min(cam.width / worldW(), (cam.height - (HUD_COVER_H + HUD_TOP_H) * base) / (TOP_SEA + worldH())) / base;
     const out = Math.min(1, fit);
     return 1 - ((1 - out) * level) / (ZOOM_STEPS - 1);
   }
@@ -1550,8 +1552,8 @@ export class StrategicScene extends Phaser.Scene {
     const under = (HUD_COVER_H * baseZoom(this)) / cam.zoom;
     const top = TOP_SEA + (HUD_TOP_H * baseZoom(this)) / cam.zoom;
     const fit = (v: number, max: number): number => (max < 0 ? max / 2 : Math.max(0, Math.min(max, v)));
-    cam.scrollX = fit(x + shiftX, WORLD_W - viewW) - shiftX;
-    cam.scrollY = fit(y + shiftY + top, top + WORLD_H + under - viewH) - shiftY - top;
+    cam.scrollX = fit(x + shiftX, worldW() - viewW) - shiftX;
+    cam.scrollY = fit(y + shiftY + top, top + worldH() + under - viewH) - shiftY - top;
   }
 
   /** The world's ticks, then screen-edge pan, Warcraft-style, at the same

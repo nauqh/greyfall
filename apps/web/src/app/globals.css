@@ -724,3 +724,149 @@ textarea {
 		transform: translate(-50%, calc(-100% - 12px));
 	}
 }
+
+/* --- atlas --------------------------------------------------------------
+   The whole world as one map; the index, the area card and the gate key sit
+   in three corners, the title ribbon in the fourth. */
+
+.worldHud {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+.worldHud > * {
+	pointer-events: auto;
+}
+
+.worldLinks {
+	display: flex;
+	gap: 18px;
+	text-shadow: 0 1px 2px #1c2634;
+}
+
+.atlasTop {
+	position: absolute;
+	top: 8px;
+	left: 50%;
+	transform: translateX(-50%);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.atlasTop .banner {
+	white-space: nowrap;
+	font-size: clamp(20px, 2.6vw, 30px);
+}
+
+.atlasTop .worldLinks {
+	margin-top: -2px;
+}
+
+.atlasIndex {
+	position: absolute;
+	top: 14px;
+	left: 14px;
+	align-items: stretch;
+	gap: 2px;
+	min-width: 190px;
+}
+
+.atlasArea {
+	padding: 3px 8px;
+	border: 0;
+	border-radius: 4px;
+	background: none;
+	color: #4a3a28;
+	font: inherit;
+	font-weight: 700;
+	text-align: left;
+}
+
+.atlasArea:hover,
+.atlasArea.on {
+	background: rgba(74, 58, 40, 0.14);
+}
+
+.atlasToggle {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: 6px;
+	font-size: 14px;
+}
+
+.atlasCard {
+	position: absolute;
+	right: 14px;
+	bottom: 14px;
+	width: min(400px, calc(100vw - 260px));
+	align-items: stretch;
+	font-size: 15px;
+}
+
+.atlasCard h2 {
+	margin: 0;
+	text-align: center;
+	font-size: 22px;
+}
+
+.atlasCard p {
+	margin: 0;
+	line-height: 1.45;
+}
+
+.atlasCard .lore {
+	font-style: italic;
+	color: #5a4630;
+}
+
+.atlasGates,
+.atlasLegend {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.atlasGates li,
+.atlasLegend li {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	line-height: 1.35;
+}
+
+.dot {
+	flex: none;
+	width: 11px;
+	height: 11px;
+	border-radius: 50%;
+	border: 2px solid #1c2634;
+	transform: translateY(1px);
+}
+
+.atlasLegend {
+	position: absolute;
+	left: 14px;
+	bottom: 14px;
+	align-items: flex-start;
+	font-size: 14px;
+}
+
+@media (max-width: 720px) {
+	.atlasIndex,
+	.atlasLegend {
+		display: none;
+	}
+
+	.atlasCard {
+		left: 8px;
+		right: 8px;
+		bottom: 8px;
+		width: auto;
+	}
+}

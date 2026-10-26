@@ -1,7 +1,7 @@
 // The war map's island, drawn from the engine's height map. Shared by the map
 // scene and the title screen, which frames a corner of the same island.
 
-import { MINES, castlePlot, findPath, gatherers, isOpen, makeRng, type BuildingKind, type Cell, type MatchState, type Mine, type Plot, type UnitSide } from "@greyfall/engine";
+import { MINES, WAR_ISLAND, castlePlot, findPath, gatherers, isOpen, makeRng, type BuildingKind, type Cell, type MatchState, type Mine, type Plot, type UnitSide } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
 import { packUrl, type BuildingName } from "./art";
@@ -91,6 +91,11 @@ export function loadMapArt(scene: Phaser.Scene): void {
   });
 }
 
+/** All five ground colours as `tilesetC1`..`tilesetC5`, for a map in several biomes. */
+export function loadGroundColours(scene: Phaser.Scene): void {
+  for (let i = 1; i <= 5; i++) scene.load.image(`tilesetC${i}`, packUrl(`Terrain/Tileset/Tilemap_color${i}.png`));
+}
+
 export function makeMapAnims(scene: Phaser.Scene): void {
   for (const job of Object.keys(WORK) as (keyof typeof WORK)[]) {
     for (const side of ["a", "b"] as const) {
@@ -102,6 +107,9 @@ export function makeMapAnims(scene: Phaser.Scene): void {
     scene.anims.create({ key: "sheep_anim", frames: scene.anims.generateFrameNumbers("sheep"), frameRate: 8, repeat: -1 });
   }
 }
+
+/** A baked map band's width: well inside any GPU's texture limit. */
+const BAND_PX = 2048;
 
 /** Each land level's ground colour: lowland, plateau, the Crown. */
 const SHEET: Record<number, string> = { 1: "tilesetLow", 2: "tilesetMid", 3: "tileset" };
@@ -119,21 +127,25 @@ const LANDMARK_SPOTS: { name: BuildingName; col: number; row: number; scale?: nu
   { name: "fishHut", col: 17, row: 3.2 },
   { name: "waterTower", col: 42.5, row: 15.8 },
 ];
+/** The war island's size: the landmarks are its, whatever island is in use. */
+const WAR_COLS = WAR_ISLAND.rows[0]!.length;
+const WAR_ROWS = WAR_ISLAND.rows.length;
+
 /** The island's other half is this one turned half round: a landmark keeps
  *  its place within its tile and is drawn facing the other way. */
 const LANDMARK_LIST = LANDMARK_SPOTS.flatMap((l) => [
   l,
   {
     ...l,
-    col: STRAT_COLS - l.col,
-    row: STRAT_ROWS - 1 - Math.floor(l.row) + (l.row % 1),
-    clears: l.clears?.map(([c, r]): [number, number] => [STRAT_COLS - 1 - c, STRAT_ROWS - 1 - r]),
+    col: WAR_COLS - l.col,
+    row: WAR_ROWS - 1 - Math.floor(l.row) + (l.row % 1),
+    clears: l.clears?.map(([c, r]): [number, number] => [WAR_COLS - 1 - c, WAR_ROWS - 1 - r]),
     mirror: true,
   },
 ]);
 const LANDMARKS: Structure[] = LANDMARK_LIST.map((l) => ({ ...cell("g", l.name, l.col, l.row), scale: l.scale }));
 /** Forest tiles a landmark stands on, left without a tree. */
-const CLEARED = new Set(LANDMARK_LIST.flatMap((l) => (l.clears ?? []).map(([c, r]) => c + r * STRAT_COLS)));
+const CLEARED = new Set(LANDMARK_LIST.flatMap((l) => (l.clears ?? []).map(([c, r]) => c + r * WAR_COLS)));
 
 /** The two flank roads: the pathfinder's walk from castle to castle through
  *  the north-east and the south-west corner, one tile wider, as dirt tracks.
@@ -143,8 +155,13 @@ function roadTiles(): Set<number> {
   const front = (side: "a" | "b"): Cell => ({ col: castlePlot(side).col + 1, row: castlePlot(side).row + 2 });
   const blocked = (c: Cell): boolean => !isOpen(c);
   const walk = (corner: Cell): Cell[] => [...(findPath(front("a"), corner, blocked) ?? []), ...(findPath(corner, front("b"), blocked) ?? [])];
+  return trailTiles([...walk({ col: 53, row: 10 }), ...walk({ col: 7, row: 27 })]);
+}
+
+/** A walk as a dirt track, one tile wider, on lowland only. */
+export function trailTiles(walk: readonly Cell[]): Set<number> {
   const out = new Set<number>();
-  for (const c of [...walk({ col: 53, row: 10 }), ...walk({ col: 7, row: 27 })]) {
+  for (const c of walk) {
     if (level(c.col, c.row) !== 1) continue;
     out.add(c.row * STRAT_COLS + c.col);
     const wider = { col: c.col, row: c.row + 1 };
@@ -158,12 +175,30 @@ function roadTiles(): Set<number> {
 /** Foam under the shore and flat ground everywhere on land, then, once per
  *  level above it, shadow, elevated tops, cliffs and stairs: the tilemap
  *  guide's layer order. */
-export function buildMap(scene: Phaser.Scene): void {
-  // Baked into one texture in layer order: as ~2000 images Phaser redrew every tile each frame, on screen or not.
-  const rt = scene.add.renderTexture(0, 0, STRAT_COLS * CELL, (STRAT_ROWS + 1) * CELL).setOrigin(0).setDepth(DEPTH.island);
-  rt.beginDraw();
+export function buildMap(
+  scene: Phaser.Scene,
+  roads: ReadonlySet<number> = roadTiles(),
+  /** The sheet for ground of level `lv` at a tile; the world map colours each region its own. */
+  sheetAt: (c: number, r: number, lv: number) => string = (_c, _r, lv) => SHEET[lv]!,
+): void {
+  // Baked in layer order: as ~2000 images Phaser redrew every tile each frame,
+  // on screen or not. In tiles of the bake, as one texture past the GPU's limit is blank.
+  const W = STRAT_COLS * CELL;
+  const H = (STRAT_ROWS + 1) * CELL;
+  const bands: { rt: Phaser.GameObjects.RenderTexture; x: number; y: number }[] = [];
+  for (let y = 0; y < H; y += BAND_PX) {
+    for (let x = 0; x < W; x += BAND_PX) {
+      const rt = scene.add.renderTexture(x, y, Math.min(BAND_PX, W - x), Math.min(BAND_PX, H - y)).setOrigin(0).setDepth(DEPTH.island);
+      bands.push({ rt, x, y });
+    }
+  }
+  // Queued, then painted a band at a time: a render texture draws only while it alone is begun.
+  const ops: [key: string, frame: string | undefined, x: number, y: number, w: number][] = [];
+  const draw = (key: string, frame: string | undefined, x: number, y: number, w: number): void => {
+    ops.push([key, frame, x, y, w]);
+  };
   const tile = (c: number, r: number, tc: number, tr: number, sheet: string): void => {
-    rt.batchDrawFrame(sheet, `tile_${tc}_${tr}`, c * CELL, r * CELL);
+    draw(sheet, `tile_${tc}_${tr}`, c * CELL, r * CELL, CELL);
   };
   const shade = scene.textures.getFrame("shadow_src");
 
@@ -183,14 +218,13 @@ export function buildMap(scene: Phaser.Scene): void {
       }
       if (isLand(c, r)) {
         const tc = edge(isLand(c - 1, r), isLand(c + 1, r));
-        tile(c, r, tc, edge(isLand(c, r - 1), isLand(c, r + 1)), SHEET[1]!);
+        tile(c, r, tc, edge(isLand(c, r - 1), isLand(c, r + 1)), sheetAt(c, r, 1));
       }
     }
   }
 
   // A road is a patch of flat ground in the road colour, edged where it ends
   // like any other patch of ground.
-  const roads = roadTiles();
   const road = (c: number, r: number): boolean => roads.has(r * STRAT_COLS + c);
   for (let r = 0; r < STRAT_ROWS; r++) {
     for (let c = 0; c < STRAT_COLS; c++) {
@@ -213,7 +247,7 @@ export function buildMap(scene: Phaser.Scene): void {
     // pools at the cliff foot and rims the sides.
     for (let r = 0; r < STRAT_ROWS; r++) {
       for (let c = 0; c < STRAT_COLS; c++) {
-        if (top(c, r)) rt.batchDrawFrame("shadow_src", undefined, (c + 0.5) * CELL - shade.width / 2, (r + 1.5) * CELL - shade.height / 2);
+        if (top(c, r)) draw("shadow_src", undefined, (c + 0.5) * CELL - shade.width / 2, (r + 1.5) * CELL - shade.height / 2, shade.width);
       }
     }
     // Tops, then walls, then ramps. Beside a ramp a top runs on without a
@@ -225,13 +259,13 @@ export function buildMap(scene: Phaser.Scene): void {
       for (let c = 0; c < STRAT_COLS; c++) {
         if (!top(c, r)) continue;
         const side = (dc: number): boolean => top(c + dc, r) || slope(c + dc, r);
-        tile(c, r, 5 + edge(side(-1), side(1)), edge(top(c, r - 1), top(c, r + 1)), SHEET[lv]!);
+        tile(c, r, 5 + edge(side(-1), side(1)), edge(top(c, r - 1), top(c, r + 1)), sheetAt(c, r, lv));
       }
     }
     for (let r = 0; r < STRAT_ROWS; r++) {
       for (let c = 0; c < STRAT_COLS; c++) {
         if (!wall(c, r)) continue;
-        const below = isLand(c, r) ? SHEET[Math.max(1, level(c, r))]! : SHEET[1]!;
+        const below = sheetAt(c, r, isLand(c, r) ? Math.max(1, level(c, r)) : 1);
         const joins = (dc: number): boolean => wall(c + dc, r) || rampFoot(c + dc, r);
         tile(c, r, 5 + edge(joins(-1), joins(1)), isLand(c, r) ? 4 : 5, below);
       }
@@ -240,12 +274,19 @@ export function buildMap(scene: Phaser.Scene): void {
       for (let c = 0; c < STRAT_COLS; c++) {
         if (!slope(c, r)) continue;
         const col = "<[".includes(at(c, r)) ? 0 : 3;
-        tile(c, r, col, 4, SHEET[lv]!);
-        tile(c, r + 1, col, 5, SHEET[lv]!);
+        tile(c, r, col, 4, sheetAt(c, r, lv));
+        tile(c, r + 1, col, 5, sheetAt(c, r, lv));
       }
     }
   }
-  rt.endDraw();
+  for (const band of bands) {
+    band.rt.beginDraw();
+    // Art is never taller than two tiles plus the shadow's reach.
+    for (const [key, frame, x, y, w] of ops) {
+      if (x < band.x + BAND_PX && x + w > band.x && y < band.y + BAND_PX && y + 3 * CELL > band.y) band.rt.batchDrawFrame(key, frame, x - band.x, y - band.y);
+    }
+    band.rt.endDraw();
+  }
 }
 
 /** Turns a spot half round to the other half, as the island is. */
@@ -267,7 +308,7 @@ export function buildScenery(scene: Phaser.Scene): { strewn: Map<number, Phaser.
   const undergrowth: [number, number][] = [];
   MAP.forEach((line, r) =>
     [...line].forEach((ch, c) => {
-      if (!"T%".includes(ch) || CLEARED.has(c + r * STRAT_COLS)) return;
+      if (!"T%".includes(ch) || CLEARED.has(c + r * WAR_COLS)) return;
       const spot: [number, number] = [c + 0.3 + rng.next() * 0.4, r + 0.75 + rng.next() * 0.3];
       // A terrace keeps its grass and rim in view: trees on under half of it.
       if (ch === "%") {

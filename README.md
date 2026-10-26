@@ -46,6 +46,11 @@ not in Discord yet and has no multiplayer on the island. Red wins more often
 than it should, and the AI still plans with logic written for the older
 rounds mode.
 
+**The Atlas** is the whole Shattered Reach on one map: seven areas, each its
+own landmass, joined only at gates the way a Souls map is, and full of the
+pack's buildings and creatures. It is the world, not a game yet; see
+[ATLAS.md](ATLAS.md).
+
 **Skirmish** is now auto chess: a lobby of four clans, you and three AI,
 buying from one shared pool, merging three copies into a star level and
 fighting a paired rival each round until one clan is left. Its design and
@@ -71,6 +76,7 @@ rounds design), [RTS.md](RTS.md) (the move to real time) and
 | Mode | Route | |
 | --- | --- | --- |
 | Play | `/map` | The real-time war against the AI |
+| Atlas | `/atlas` | The whole world on one map, to look round |
 | Skirmish | `/battle` | Auto chess against three AI clans: five knights and seven monsters, star-ups and traits |
 | Duel | `/duel` | A 20-gold draft against a friend via a room code |
 

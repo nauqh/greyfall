@@ -18,7 +18,7 @@
  *  on top and a tile narrower each side every two rows, which shows its
  *  sides as short cliffs, and each ramp and stair stands on its own south
  *  edge. Walks stay within two steps of even. */
-export const MAP = [
+const WAR_MAP = [
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
   "~~~%%########....~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~..TTTT~~~~~",
@@ -58,8 +58,20 @@ export const MAP = [
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
 ];
-export const STRAT_COLS = MAP[0]!.length;
-export const STRAT_ROWS = MAP.length;
+
+/** The ground one match is fought on. The war's island is the default; the
+ *  atlas swaps in its own with useIsland(). */
+export interface Island {
+  rows: readonly string[];
+  start: Record<WarSide, { castle: Cell; barracks: Cell }>;
+  mines: readonly Mine[];
+  lair: Cell;
+}
+
+// ponytail: one island per process, live `let` bindings swapped by useIsland(); thread an Island through if a server ever runs two at once.
+export let MAP: readonly string[] = WAR_MAP;
+export let STRAT_COLS = MAP[0]!.length;
+export let STRAT_ROWS = MAP.length;
 
 export interface Cell {
   col: number;
@@ -247,7 +259,7 @@ export function plotDistance(p: { col: number; row: number; w: number; h: number
 
 /** Where each clan's castle and first barracks stand; the castle's plateau
  *  is that side's home. Blue holds the north-west corner, red the south-east. */
-export const START: Record<WarSide, { castle: Cell; barracks: Cell }> = {
+export let START: Record<WarSide, { castle: Cell; barracks: Cell }> = {
   a: { castle: { col: 5, row: 4 }, barracks: { col: 8, row: 7 } },
   b: { castle: { col: 53, row: 32 }, barracks: { col: 51, row: 30 } },
 };
@@ -268,7 +280,7 @@ export interface Mine {
  *  yard below its ramp, then the two expansions in the side's own flank
  *  corner, near and far, which the enemy's flank road passes. The rich mine
  *  under the Lair, on the Crown, belongs to nobody. */
-export const MINES: readonly Mine[] = [
+export let MINES: readonly Mine[] = [
   { id: "mine-a", col: 5, row: 8 },
   { id: "mine-b", col: 55, row: 29 },
   { id: "mine-ya", col: 17, row: 12 },
@@ -280,19 +292,34 @@ export const MINES: readonly Mine[] = [
   { id: "mine-mid", col: 30, row: 21 },
 ];
 
-const HOME: Record<WarSide, Set<number>> = {
-  a: new Set(plateauOf(START.a.castle).map(cellKey)),
-  b: new Set(plateauOf(START.b.castle).map(cellKey)),
-};
+/** Where monster waves spawn: the middle of the Crown. */
+export let LAIR: Cell = { col: 30, row: 18 };
+
+export const WAR_ISLAND: Island = { rows: WAR_MAP, start: START, mines: MINES, lair: LAIR };
+
+let HOME: Record<WarSide, Set<number>>;
+let MINE_CELLS: Set<number>;
+
+/** Make `island` the ground every rule reads. The war's is in use until then. */
+export function useIsland(island: Island): void {
+  MAP = island.rows;
+  STRAT_COLS = MAP[0]!.length;
+  STRAT_ROWS = MAP.length;
+  START = island.start;
+  MINES = island.mines;
+  LAIR = island.lair;
+  STEPS.clear();
+  HOME = {
+    a: new Set(plateauOf(START.a.castle).map(cellKey)),
+    b: new Set(plateauOf(START.b.castle).map(cellKey)),
+  };
+  MINE_CELLS = new Set(MINES.map(cellKey));
+}
+useIsland(WAR_ISLAND);
 
 export function isHome(side: UnitSide, c: Cell): boolean {
   return side !== "m" && HOME[side].has(cellKey(c));
 }
-
-/** Where monster waves spawn: the middle of the Crown. */
-export const LAIR: Cell = { col: 30, row: 18 };
-
-const MINE_CELLS = new Set<number>(MINES.map(cellKey));
 
 /** Terrain that is walkable and holds no mine. Buildings come and go, so the
  *  war's own checks add theirs on top (war.ts isFree). */

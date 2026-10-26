@@ -10,8 +10,6 @@ import { CELL } from "./islandMap";
 
 /** Tiles of fog past each edge of the map, to reach any edge the camera shows. */
 const PAD = 30;
-const W = STRAT_COLS + 2 * PAD;
-const H = STRAT_ROWS + 2 * PAD;
 /** The pack's deep water, darkened: fog reads as dusk over the sea, not a hole. */
 const SHADE = [12, 30, 40] as const;
 const ALPHA = { unexplored: 235, explored: 120, visible: 0 } as const;
@@ -19,14 +17,20 @@ const ALPHA = { unexplored: 235, explored: 120, visible: 0 } as const;
 export class Fog {
   private seen = new Set<number>();
   private explored = new Set<number>();
-  /** The sea past the map's edge, explored or not, by texel. */
-  private exploredOff = new Uint8Array(W * H);
   /** Enemy buildings this side has spotted: shown, as last seen, in the grey. */
   private spotted = new Set<string>();
   private readonly tex: Phaser.Textures.CanvasTexture;
   private readonly pixels: ImageData;
+  /** The island in use when the fog was laid, with its margin of sea. */
+  private readonly cols = STRAT_COLS;
+  private readonly rows = STRAT_ROWS;
+  private readonly W = STRAT_COLS + 2 * PAD;
+  private readonly H = STRAT_ROWS + 2 * PAD;
+  /** The sea past the map's edge, explored or not, by texel. */
+  private exploredOff = new Uint8Array(this.W * this.H);
 
   constructor(scene: Phaser.Scene, private readonly side: WarSide, depth: number) {
+    const { W, H } = this;
     const key = `fog-${side}`;
     if (scene.textures.exists(key)) scene.textures.remove(key);
     this.tex = scene.textures.createCanvas(key, W, H)!;
@@ -43,6 +47,7 @@ export class Fog {
     for (const b of Object.values(state.buildings)) {
       if (b.side !== this.side && plotCells(b).some((c) => this.seen.has(cellKey(c)))) this.spotted.add(b.id);
     }
+    const { W, H } = this;
     const data = this.pixels.data;
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < W; x++) {
@@ -50,8 +55,8 @@ export class Fog {
         const r = y - PAD;
         let seen: boolean;
         let been: boolean;
-        if (c >= 0 && r >= 0 && c < STRAT_COLS && r < STRAT_ROWS) {
-          const k = r * STRAT_COLS + c;
+        if (c >= 0 && r >= 0 && c < this.cols && r < this.rows) {
+          const k = r * this.cols + c;
           seen = this.seen.has(k);
           been = this.explored.has(k);
         } else {

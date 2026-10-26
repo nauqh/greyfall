@@ -51,6 +51,7 @@ export {
   MINES,
   START,
   STRAT_COLS,
+  WAR_ISLAND,
   STRAT_ROWS,
   at,
   canStep,
@@ -75,8 +76,10 @@ export {
   sameCell,
   stepsFrom,
   tileDistance,
+  useIsland,
   type BuildingKind,
   type Cell,
+  type Island,
   type Mine,
   type Plot,
   type UnitSide,
@@ -151,3 +154,5 @@ export {
   type Seat,
   type Spot,
 } from "./autochess.ts";
+
+export { AREAS, ATLAS_SIZE, atlasMap, type AreaId, type AtlasArea, type AtlasGate, type AtlasMap, type Dweller, type GateKind, type Placed } from "./atlas.ts";
