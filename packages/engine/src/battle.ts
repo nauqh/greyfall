@@ -422,7 +422,10 @@ export function createSim(start: MatchState): Sim {
       return { units: [], plots: p && standing(p) ? [p] : [] };
     }
     const from = o.type === "hold" ? (u as Cell) : o.type === "stop" ? u.post : u.anchor;
-    const reach = o.type === "hold" ? range : WAR.chase + range;
+    // A guard already drawn off its post keeps a tile more of leash, or at the
+    // leash's edge it turns for home and back each second and never strikes.
+    const leash = o.type === "stop" && !sameCell(u, u.post) ? 1 : 0;
+    const reach = o.type === "hold" ? range : WAR.chase + range + leash;
     return {
       units: enemyUnits(u).filter((e) => tileDistance(from, e) <= reach),
       // On the march only troops stop it; a building beside the road would
