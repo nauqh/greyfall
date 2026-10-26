@@ -155,4 +155,25 @@ export {
   type Spot,
 } from "./autochess.ts";
 
-export { AREAS, ATLAS_SIZE, atlasMap, type AreaId, type AtlasArea, type AtlasGate, type AtlasMap, type Dweller, type GateKind, type Placed } from "./atlas.ts";
+export {
+  AREAS,
+  AREA_CODE,
+  ATLAS_SIZE,
+  LIFTS,
+  TIERS,
+  TIER_INFO,
+  atlasMap,
+  type AreaId,
+  type AtlasArea,
+  type AtlasGate,
+  type AtlasLift,
+  type AtlasMap,
+  type AtlasTier,
+  type Dweller,
+  type GateKind,
+  type LiftEnd,
+  type LiftKind,
+  type Placed,
+  type TierBase,
+  type TierId,
+} from "./atlas.ts";

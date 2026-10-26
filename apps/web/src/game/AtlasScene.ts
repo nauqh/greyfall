@@ -1,25 +1,49 @@
-// The Atlas: the whole Shattered Reach on one map, drawn with the war map's
-// autotiler and dressed area by area. Every building, creature and knight the
-// engine's atlas places stands here, most of them alive: knights and beasts
-// walk their beats, pawns chop, dig and carry, bats and bees hover, sharks
-// cruise the channels. A light over each area sets its mood. Nothing here is
-// a game yet; the page lets you look round it.
+// The Atlas: the Shattered Reach in three tiers, drawn with the war map's
+// autotiler and dressed area by area. Each tier renders to its own camera and
+// shows alone: the sky over its cloud bank, the Surface on the sea, the
+// Underneath as rock with its caverns lit. Lifts join the tiers where they
+// stand, and a click on one rides it. Nothing here is a game yet.
 
-import { atlasMap, type AtlasMap, type AreaId, type Cell, type Dweller, type GateKind, type Placed, useIsland } from "@greyfall/engine";
+import {
+  AREAS,
+  AREA_CODE,
+  atlasMap,
+  useIsland,
+  type AreaId,
+  type AtlasLift,
+  type AtlasMap,
+  type AtlasTier,
+  type Cell,
+  type Dweller,
+  type GateKind,
+  type LiftKind,
+  type Placed,
+  type TierId,
+} from "@greyfall/engine";
 import * as Phaser from "phaser";
 
 import { BUILDINGS, packUrl } from "./art";
 import { DPR, startGame } from "./boot";
 import { CELL, buildMap, loadGroundColours, trailTiles } from "./islandMap";
-import { STRAT_COLS, STRAT_ROWS, isForest, isLand, isSlope, isWalkable, level } from "./stratMap";
-import { DEPTH, addDecor, cloudCover, driftClouds, loadTerrain, prepareTerrain, standing } from "./terrain";
+import { STRAT_COLS, STRAT_ROWS, at, isForest, isLand, isSlope, isWalkable, level } from "./stratMap";
+import { DEPTH, addDecor, cloudCover, loadTerrain, prepareTerrain, standing } from "./terrain";
 import { HAND } from "./ui";
+
+export interface AtlasApi {
+  /** Fly to an area, on its own tier. */
+  focus: (id: AreaId) => void;
+  /** Show a tier from its own height. */
+  tier: (id: TierId) => void;
+  /** Draw the Souls map over the tier in view. */
+  routes: (on: boolean) => void;
+}
 
 export interface AtlasHooks {
   /** Asks the page to show an area's card. */
   onArea: (id: AreaId) => void;
-  /** Called with a function the page uses to fly the camera to an area, and to show the routes. */
-  ready: (api: { focus: (id: AreaId) => void; routes: (on: boolean) => void }) => void;
+  /** Tells the page which tier is in view, after a lift or a tab. */
+  onTier: (id: TierId) => void;
+  ready: (api: AtlasApi) => void;
 }
 
 /** A sheet: its file, frame width (and height, when not square), and the ground's height in the frame, 0 to 1. */
@@ -92,6 +116,7 @@ const BEAST: Record<string, Beast> = {
   panda: { idle: `${EP}Panda/Panda_Idle.png`, move: `${EP}Panda/Panda_Run.png`, frame: 256, anchor: 0.68 },
   pandaGuard: { idle: `${EP}Extra/Panda Guard/Panda_Guard.png`, frame: 256, anchor: 0.68, scale: 1.2 },
   minotaurGuard: { idle: `${EP}Extra/Minotaur Guard/Minotaur_Guard.png`, frame: 320, anchor: 213 / 320, scale: 1.1 },
+  turtleGuard: { idle: `${EP}Extra/Turtle Guard/Turtle_Guard_In.png`, frame: 320, anchor: 0.66 },
   gnome: { idle: `${EP}Gnome/Gnome_Idle.png`, move: `${EP}Gnome/Gnome_Run.png`, frame: 192, anchor: 0.68 },
   slingshot: { idle: `${EP}Slingshot Gnome/Slingshot Gnome_Idle.png`, move: `${EP}Slingshot Gnome/Slingshot Gnome_Run.png`, frame: 192, anchor: 0.68 },
   turtle: { idle: `${EP}Turtle/Turtle_Idle.png`, move: `${EP}Turtle/Turtle_Walk.png`, frame: 320, anchor: 0.66, scale: 0.8 },
@@ -139,14 +164,28 @@ const FONT = '"Nunito", "Segoe UI", sans-serif';
 /** The area a sea tile takes its light from: the nearest within this many tiles. */
 const MOOD_REACH = 6;
 
+const LIFT_TONE: Record<LiftKind, string> = { lift: "#ffe9a8", drop: "#d6b8ff", shortcut: "#8fd3ff" };
+
+/** Ground under the rock of the Underneath: dark, and darker than the caverns. */
+const ROCK_MOOD = 0x1e1e2a;
+
+interface Tracked {
+  s: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image;
+  b: Phaser.Geom.Rectangle;
+  tier: TierId;
+}
+
 export class AtlasScene extends Phaser.Scene {
   private hooks!: AtlasHooks;
   private map!: AtlasMap;
-  private names: { text: Phaser.GameObjects.Text; px: number }[] = [];
-  private live: { s: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image; b: Phaser.Geom.Rectangle }[] = [];
-  private culledAt = "";
-  private routes!: Phaser.GameObjects.Graphics;
-  private glows: Phaser.GameObjects.Image[] = [];
+  /** The tier being built, while it is. */
+  private building: TierId = "surface";
+  private view: TierId = "surface";
+  private cams!: Record<TierId, Phaser.Cameras.Scene2D.Camera>;
+  private names: { text: Phaser.GameObjects.Text; px: number; tier: TierId }[] = [];
+  private live: Tracked[] = [];
+  private routes: Partial<Record<TierId, Phaser.GameObjects.Graphics>> = {};
+  private showRoutes = false;
   private drag: { x: number; y: number; sx: number; sy: number; moved: boolean } | null = null;
 
   constructor() {
@@ -166,19 +205,21 @@ export class AtlasScene extends Phaser.Scene {
       if (this.textures.exists(key)) return;
       this.load.spritesheet(key, packUrl(s.file), { frameWidth: s.frame, frameHeight: s.frameH ?? s.frame });
     };
-    for (const p of this.map.props) {
-      if (p.color) this.load.image(this.buildingKey(p), packUrl(`Buildings/${COLOR_DIR[p.color]} Buildings/${BUILDING_FILE[p.art]}`));
-      else sheet(`prop_${p.art}`, PROP[p.art]!);
+    for (const tier of Object.values(this.map.tiers)) {
+      for (const p of tier.props) {
+        if (p.color) this.load.image(this.buildingKey(p), packUrl(`Buildings/${COLOR_DIR[p.color]} Buildings/${BUILDING_FILE[p.art]}`));
+        else sheet(`prop_${p.art}`, PROP[p.art]!);
+      }
+      for (const d of tier.dwellers) {
+        const { idle, move, frame } = this.look(d);
+        sheet(idle.key, { file: idle.file, frame, anchor: 0 });
+        if (move) sheet(move.key, { file: move.file, frame, anchor: 0 });
+      }
     }
-    for (const k of ["deadTree", "stump", "bones", "skullSpike"]) sheet(`prop_${k}`, PROP[k]!);
+    for (const k of ["deadTree", "stump", "bones", "skullSpike", "goldStone"]) sheet(`prop_${k}`, PROP[k]!);
     BIG_TREE.forEach((t, i) => sheet(`bigTree${i}`, t));
     sheet("fire", FIRE);
     this.load.spritesheet("fence", packUrl(FENCE), { frameWidth: 64, frameHeight: 64 });
-    for (const d of this.map.dwellers) {
-      const { idle, move, frame } = this.look(d);
-      sheet(idle.key, { file: idle.file, frame, anchor: 0 });
-      if (move) sheet(move.key, { file: move.file, frame, anchor: 0 });
-    }
   }
 
   /** The sheets a dweller plays, keyed so a colour and a job load once. */
@@ -194,7 +235,7 @@ export class AtlasScene extends Phaser.Scene {
         move: { key: `${d.color}_${move}`, file: dir + move },
         frame: k.frame,
         anchor: k.anchor,
-        scale: 1,
+        scale: d.scale ?? 1,
         fly: false,
         swim: false,
       };
@@ -205,7 +246,7 @@ export class AtlasScene extends Phaser.Scene {
       move: b.move ? { key: `beast_${d.kind}_move`, file: b.move } : undefined,
       frame: b.frame,
       anchor: b.anchor,
-      scale: b.scale ?? 1,
+      scale: (b.scale ?? 1) * (d.scale ?? 1),
       fly: b.fly ?? false,
       swim: b.swim ?? false,
     };
@@ -216,69 +257,134 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   create(): void {
-    useIsland(this.map.island);
-    const W = STRAT_COLS * CELL;
-    const H = STRAT_ROWS * CELL;
     prepareTerrain(this);
     this.makeAnims();
+    this.glowTextures();
 
-    const roads = trailTiles(this.map.roads);
-    buildMap(this, roads, (c, r, lv) => {
-      const a = this.map.areas[Number(this.map.areaAt[r]?.[c] ?? "0") || 0]!;
-      const i = this.map.areaAt[r]?.[c];
-      const p = i && i !== "-" ? this.map.areas[Number(i)]!.palette : a.palette;
-      return `tilesetC${p[Math.min(2, lv - 1)]}`;
-    });
-    this.dress(roads);
-    for (const p of this.map.props) this.addProp(p);
-    for (const f of this.map.fences) this.fence(f.col, f.row, f.w, f.h);
-    for (const g of this.map.gates) this.gatehouse(g.kind, g.cells);
-    for (const f of this.map.fires) this.bonfire(f);
-    for (const d of this.map.dwellers) this.addDweller(d);
-    this.mood();
-    driftClouds(this, { w: W, h: H }, "atlas");
-    this.ambience();
-    this.labels();
-    this.routes = this.add.graphics().setDepth(DEPTH.fx + 2).setVisible(false);
-    this.drawRoutes();
+    // A tier at a time, each built on its own island and kept to its own camera.
+    const made: Record<TierId, Phaser.GameObjects.GameObject[]> = { sky: [], surface: [], below: [] };
+    for (const id of ["below", "surface", "sky"] as const) made[id] = this.buildTier(this.map.tiers[id]);
 
-    const cam = this.cameras.main;
-    cam.setBounds(-4 * CELL, -4 * CELL, W + 8 * CELL, H + 8 * CELL);
-    cam.setZoom(this.zoomFor(22));
-    const hub = this.map.areas.find((a) => a.id === "harbour")!.label;
-    cam.centerOn(hub.col * CELL, (hub.row - 4) * CELL);
-    this.input.setDefaultCursor(HAND);
-    this.input.on("wheel", (_p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
-      cam.zoomTo(Phaser.Math.Clamp(cam.zoom * (dy > 0 ? 0.85 : 1.18), this.zoomFor(STRAT_ROWS + 6), this.zoomFor(9)), 160, "Sine.easeOut", true);
+    const main = this.cameras.main;
+    this.cams = {
+      surface: main,
+      below: this.cameras.add(0, 0, main.width, main.height).setBackgroundColor(0x101018),
+      sky: this.cameras.add(0, 0, main.width, main.height),
+    };
+    for (const id of ["sky", "surface", "below"] as const) {
+      for (const other of ["sky", "surface", "below"] as const) if (other !== id) this.cams[other].ignore(made[id]);
+    }
+    this.scale.on(Phaser.Scale.Events.RESIZE, (size: Phaser.Structs.Size) => {
+      for (const c of Object.values(this.cams)) c.setSize(size.width, size.height);
     });
-    this.input.on("pointerdown", (p: Phaser.Input.Pointer) => (this.drag = { x: p.x, y: p.y, sx: cam.scrollX, sy: cam.scrollY, moved: false }));
-    this.input.on("pointermove", (p: Phaser.Input.Pointer) => {
-      const d = this.drag;
-      if (!d || !p.isDown) return;
-      if (Math.abs(p.x - d.x) + Math.abs(p.y - d.y) > 8) d.moved = true;
-      if (d.moved) cam.setScroll(d.sx - (p.x - d.x) / cam.zoom, d.sy - (p.y - d.y) / cam.zoom);
-    });
-    this.input.on("pointerup", (p: Phaser.Input.Pointer) => {
-      const d = this.drag;
-      this.drag = null;
-      if (!d || d.moved) return;
-      const at = cam.getWorldPoint(p.x, p.y);
-      const i = this.map.areaAt[Math.floor(at.y / CELL)]?.[Math.floor(at.x / CELL)];
-      if (i && i !== "-") this.hooks.onArea(this.map.areas[Number(i)]!.id);
-    });
+
+    const hub = AREAS.find((a) => a.id === "harbour")!.label;
+    main.setZoom(this.zoomFor(22));
+    main.centerOn(hub.col * CELL, (hub.row - 4) * CELL);
+    this.show("surface");
+    this.controls();
     this.hooks.ready({
       focus: (id) => {
-        const a = this.map.areas.find((x) => x.id === id)!;
-        cam.pan(a.label.col * CELL, (a.label.row - 5) * CELL, 900, "Sine.easeInOut");
-        cam.zoomTo(this.zoomFor(24), 900, "Sine.easeInOut");
+        const a = AREAS.find((x) => x.id === id)!;
+        this.show(a.tier);
+        // The middle of the area's own ground: a label can sit on its shore.
+        const ch = AREA_CODE[AREAS.indexOf(a)];
+        const tiles = this.map.tiers[a.tier].areaAt.flatMap((line, r) => [...line].flatMap((x, c) => (x === ch ? [{ c, r }] : [])));
+        const mid = (k: "c" | "r") => tiles.reduce((n, t) => n + t[k], 0) / Math.max(1, tiles.length);
+        this.flyTo({ col: mid("c"), row: mid("r") }, 24);
       },
-      routes: (on) => this.routes.setVisible(on),
+      tier: (id) => {
+        this.show(id);
+        // Onto the tier's ground, when the view would otherwise be open sky or solid rock.
+        const cam = this.active;
+        const ch = this.map.tiers[id].areaAt[Math.floor((cam.scrollY + cam.height / 2) / CELL)]?.[Math.floor((cam.scrollX + cam.width / 2) / CELL)];
+        if (!ch || ch === "-") {
+          const first = AREAS.find((a) => a.tier === id)!;
+          this.flyTo({ col: first.label.col, row: first.label.row - 5 }, 24);
+        }
+      },
+      routes: (on) => {
+        this.showRoutes = on;
+        for (const [id, g] of Object.entries(this.routes)) g.setVisible(on && id === this.view);
+      },
     });
     cloudCover(this, "open", () => {});
   }
 
   private zoomFor(rows: number): number {
     return this.cameras.main.height / (rows * CELL);
+  }
+
+  /** The camera of the tier in view drives; the others follow, nearer or further. */
+  private get active(): Phaser.Cameras.Scene2D.Camera {
+    return this.cams[this.view];
+  }
+
+  /**
+   * One tier in view, alone, its camera taking over where the last one looked.
+   */
+  private show(id: TierId): void {
+    const from = this.active;
+    const centre = { x: from.scrollX + from.width / 2, y: from.scrollY + from.height / 2 };
+    const zoom = from.zoom;
+    this.view = id;
+    for (const t of ["sky", "surface", "below"] as const) this.cams[t].setVisible(t === id);
+    const to = this.active;
+    to.setZoom(zoom);
+    to.centerOn(centre.x, centre.y);
+    for (const [t, g] of Object.entries(this.routes)) g.setVisible(this.showRoutes && t === id);
+    this.hooks.onTier(id);
+  }
+
+  private flyTo(c: Cell, rows: number): void {
+    const cam = this.active;
+    cam.pan(c.col * CELL, c.row * CELL, 900, "Sine.easeInOut", true);
+    cam.zoomTo(this.zoomFor(rows), 900, "Sine.easeInOut", true);
+  }
+
+  /** Ride a lift: the view changes tier, and lands on the lift's other end. */
+  private ride(l: AtlasLift, from: TierId): void {
+    const end = l.up.tier === from ? l.down : l.up;
+    const cam = this.active;
+    this.show(end.tier);
+    const to = this.active;
+    to.setZoom(cam.zoom * (end.tier === l.up.tier ? 0.8 : 1.25));
+    to.centerOn(end.at.col * CELL, end.at.row * CELL);
+    to.zoomTo(cam.zoom, 700, "Sine.easeOut", true);
+  }
+
+  private controls(): void {
+    this.input.setDefaultCursor(HAND);
+    this.input.on("wheel", (_p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
+      const cam = this.active;
+      cam.zoomTo(Phaser.Math.Clamp(cam.zoom * (dy > 0 ? 0.85 : 1.18), this.zoomFor(STRAT_ROWS + 6), this.zoomFor(9)), 160, "Sine.easeOut", true);
+    });
+    this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
+      const cam = this.active;
+      this.drag = { x: p.x, y: p.y, sx: cam.scrollX, sy: cam.scrollY, moved: false };
+    });
+    this.input.on("pointermove", (p: Phaser.Input.Pointer) => {
+      const d = this.drag;
+      if (!d || !p.isDown) return;
+      if (Math.abs(p.x - d.x) + Math.abs(p.y - d.y) > 8) d.moved = true;
+      const cam = this.active;
+      if (d.moved) cam.setScroll(d.sx - (p.x - d.x) / cam.zoom, d.sy - (p.y - d.y) / cam.zoom);
+    });
+    this.input.on("pointerup", (p: Phaser.Input.Pointer) => {
+      const d = this.drag;
+      this.drag = null;
+      if (!d || d.moved) return;
+      const w = this.active.getWorldPoint(p.x, p.y);
+      const cell = { col: Math.floor(w.x / CELL), row: Math.floor(w.y / CELL) };
+      // A lift's end first, then the area under the pointer.
+      for (const l of this.map.lifts) {
+        for (const end of [l.up, l.down]) {
+          if (end.tier === this.view && Math.abs(end.at.col - cell.col) <= 2 && Math.abs(end.at.row - cell.row) <= 2) return this.ride(l, this.view);
+        }
+      }
+      const ch = this.map.tiers[this.view].areaAt[cell.row]?.[cell.col];
+      if (ch && ch !== "-") this.hooks.onArea(AREAS[AREA_CODE.indexOf(ch)]!.id);
+    });
   }
 
   /** Loops for every sheet with more than one frame: props, beasts, knights. */
@@ -288,6 +394,33 @@ export class AtlasScene extends Phaser.Scene {
       if (frames < 2 || this.anims.exists(`${key}_loop`) || key.startsWith("tileset")) continue;
       this.anims.create({ key: `${key}_loop`, frames: this.anims.generateFrameNumbers(key), frameRate: 9, repeat: -1 });
     }
+  }
+
+  /** A soft round light, and a shaft of it for lifts going up. */
+  private glowTextures(): void {
+    const t = this.textures.createCanvas("glow", 256, 256)!;
+    const g = t.context.createRadialGradient(128, 128, 0, 128, 128, 128);
+    g.addColorStop(0, "rgba(255, 200, 110, 0.9)");
+    g.addColorStop(0.35, "rgba(255, 170, 80, 0.4)");
+    g.addColorStop(1, "rgba(255, 150, 60, 0)");
+    t.context.fillStyle = g;
+    t.context.fillRect(0, 0, 256, 256);
+    t.refresh();
+    const b = this.textures.createCanvas("beam", 64, 256)!;
+    const v = b.context.createLinearGradient(0, 0, 0, 256);
+    v.addColorStop(0, "rgba(255, 245, 200, 0)");
+    v.addColorStop(0.6, "rgba(255, 240, 190, 0.55)");
+    v.addColorStop(1, "rgba(255, 235, 180, 0.9)");
+    const h = b.context.createLinearGradient(0, 0, 64, 0);
+    h.addColorStop(0, "rgba(0, 0, 0, 1)");
+    h.addColorStop(0.5, "rgba(0, 0, 0, 0)");
+    h.addColorStop(1, "rgba(0, 0, 0, 1)");
+    b.context.fillStyle = v;
+    b.context.fillRect(0, 0, 64, 256);
+    b.context.globalCompositeOperation = "destination-out";
+    b.context.fillStyle = h;
+    b.context.fillRect(0, 0, 64, 256);
+    b.refresh();
   }
 
   private loop(s: Phaser.GameObjects.Sprite, key: string): void {
@@ -301,21 +434,68 @@ export class AtlasScene extends Phaser.Scene {
     const b = s.getBounds();
     // Movers wander off their bounds; give them room.
     if (wide) b.setTo(b.x - wide, b.y - wide, b.width + 2 * wide, b.height + 2 * wide);
-    this.live.push({ s, b });
+    this.live.push({ s, b, tier: this.building });
     return s;
   }
 
+  /** Everything one tier draws, on its own island; returns what it made. */
+  private buildTier(tier: AtlasTier): Phaser.GameObjects.GameObject[] {
+    this.building = tier.id;
+    useIsland(tier.island);
+    const before = new Set(this.children.list);
+    const roads = trailTiles(tier.roads);
+    buildMap(this, roads, (c, r, lv) => {
+      const ch = tier.areaAt[r]?.[c];
+      // The rock of the Underneath, and anything outside an area, in the dustiest green.
+      const p = ch && ch !== "-" ? AREAS[AREA_CODE.indexOf(ch)]!.palette : [4, 4, 4];
+      return `tilesetC${p[Math.min(2, lv - 1)]}`;
+    });
+    if (tier.base === "sky") this.skyBeneath();
+    // Under the rock, black water: the Underneath's lakes.
+    if (tier.base === "rock") this.add.rectangle(0, 0, STRAT_COLS * CELL, STRAT_ROWS * CELL, 0x1f4656).setOrigin(0).setDepth(DEPTH.water);
+    this.dress(tier, roads);
+    for (const p of tier.props) this.addProp(p, tier.base);
+    for (const f of tier.fences) this.fence(f.col, f.row, f.w, f.h);
+    for (const g of tier.gates) this.gatehouse(g.kind, g.cells);
+    for (const f of tier.fires) this.bonfire(f);
+    for (const d of tier.dwellers) this.addDweller(d);
+    for (const l of this.map.lifts) for (const end of [l.up, l.down]) if (end.tier === tier.id) this.liftMark(l, end === l.up);
+    this.mood(tier);
+    this.ambience(tier);
+    this.labels(tier);
+    this.routes[tier.id] = this.drawRoutes(tier);
+    const made = this.children.list.filter((o) => !before.has(o));
+    if (tier.base === "sky") {
+      // Foam round a sky isle is cloud clinging to its rim.
+      for (const o of made) if (o instanceof Phaser.GameObjects.Sprite && o.texture.key === "foam") o.setTint(0xf4f8ff).setAlpha(0.85);
+    }
+    return made;
+  }
+
+  /** In the sky: open blue, and a bank of cloud under the isles. */
+  private skyBeneath(): void {
+    const W = STRAT_COLS * CELL;
+    const H = STRAT_ROWS * CELL;
+    this.add.rectangle(W / 2, H / 2, W * 3, H * 3, 0xbfe0f0).setDepth(DEPTH.water);
+    for (let i = 0; i < 40; i++) {
+      const x = ((i * 977) % 100) / 100 * W;
+      const y = ((i * 613) % 100) / 100 * H;
+      const cloud = this.add.image(x, y, `cloud${1 + (i % 8)}`).setAlpha(0.55).setScale(2 + (i % 3)).setDepth(DEPTH.water + 1);
+      this.tweens.add({ targets: cloud, x: x + 400, duration: 40000 + (i % 7) * 6000, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    }
+  }
+
   /** Trees, undergrowth, rocks, bones and stumps, by each area's own taste. */
-  private dress(roads: ReadonlySet<number>): void {
-    let seed = 0;
+  private dress(tier: AtlasTier, roads: ReadonlySet<number>): void {
+    let seed = tier.id.length * 7919;
     const r01 = (): number => {
       // A fixed sequence, so the atlas is dressed the same every visit.
       seed = (seed * 1664525 + 1013904223) >>> 0;
       return seed / 4294967296;
     };
     const areaId = (c: number, r: number): AreaId | null => {
-      const i = this.map.areaAt[r]?.[c];
-      return i && i !== "-" ? this.map.areas[Number(i)]!.id : null;
+      const ch = tier.areaAt[r]?.[c];
+      return ch && ch !== "-" ? AREAS[AREA_CODE.indexOf(ch)]!.id : null;
     };
     const spot = (c: number, r: number, k: string, sheet: Sheet, frame?: number): void => {
       const x = (c + 0.25 + r01() * 0.5) * CELL;
@@ -326,24 +506,27 @@ export class AtlasScene extends Phaser.Scene {
       this.track(s);
     };
     const decor = (kind: "tree" | "bush" | "rock" | "waterRock", x: number, y: number, scale = 1): void => {
-      this.track(addDecor(this, kind, x, y, scale, `${Math.round(x)},${Math.round(y)}`));
+      this.track(addDecor(this, kind, x, y, scale, `${tier.id}${Math.round(x)},${Math.round(y)}`));
     };
     for (let r = 0; r < STRAT_ROWS; r++) {
       for (let c = 0; c < STRAT_COLS; c++) {
         const id = areaId(c, r);
+        // The rock of the Underneath is bare: its dark is the point.
+        if (at(c, r) === "%") continue;
         if (!isLand(c, r)) {
-          // Rocks in the shallows, thicker off Saltreach.
+          if (tier.base === "sky") continue;
           let coast = false;
           for (let d = -2; d <= 2; d++) coast ||= isLand(c + d, r) || isLand(c, r + d);
-          if (coast && r01() < (c < 30 ? 0.1 : 0.05)) decor("waterRock", (c + r01()) * CELL, (r + r01()) * CELL);
+          if (coast && r01() < (c < 30 && tier.base === "sea" ? 0.1 : 0.05)) decor("waterRock", (c + r01()) * CELL, (r + r01()) * CELL);
           continue;
         }
         if (isForest(c, r)) {
           if (id === "emberwood") {
             const pick = r01() < 0.55 ? 0 : 1;
-            spot(c, r, `bigTree${pick}`, BIG_TREE[pick]!);
+            // Still, not swaying: the first frame of the sheet.
+            spot(c, r, `bigTree${pick}`, BIG_TREE[pick]!, 0);
             if (r01() < 0.3) decor("tree", (c + r01()) * CELL, (r + 0.5) * CELL);
-          } else if (id === "barrowmoor" || id === "greyfall") {
+          } else if (id === "barrowmoor" || id === "greyfall" || tier.base === "rock") {
             if (r01() < 0.45) spot(c, r, "prop_deadTree", { ...PROP.deadTree!, scale: 0.42 }, 0);
             else decor("bush", (c + 0.5) * CELL, (r + 0.8) * CELL, 0.8);
           } else if (id === "fen") {
@@ -358,7 +541,7 @@ export class AtlasScene extends Phaser.Scene {
         }
         if (!isWalkable(c, r) || isSlope(c, r) || isSlope(c, r - 1) || roads.has(r * STRAT_COLS + c)) {
           // A cliff's foot: shrubs and stones soften the wall.
-          if (!isWalkable(c, r) && level(c, r - 1) > level(c, r) && r01() < 0.45) decor(r01() < 0.6 ? "bush" : "rock", (c + 0.25 + r01() * 0.5) * CELL, (r + 0.92) * CELL);
+          if (!isWalkable(c, r) && level(c, r - 1) > level(c, r) && r01() < 0.45) decor(r01() < 0.6 && tier.base !== "rock" ? "bush" : "rock", (c + 0.25 + r01() * 0.5) * CELL, (r + 0.92) * CELL);
           continue;
         }
         let edgy = false;
@@ -368,15 +551,15 @@ export class AtlasScene extends Phaser.Scene {
         if (roll < chance) {
           const x = (c + 0.2 + r01() * 0.6) * CELL;
           const y = (r + 0.5 + r01() * 0.35) * CELL;
-          if (id === "barrowmoor" && r01() < 0.5) spot(c, r, "prop_bones", PROP.bones!, 0);
+          if ((id === "barrowmoor" || tier.base === "rock") && r01() < 0.5) spot(c, r, "prop_bones", PROP.bones!, 0);
           else if (id === "emberwood" && r01() < 0.35) spot(c, r, "prop_stump", PROP.stump!, 0);
-          else decor(roll < chance * 0.6 ? "bush" : "rock", x, y, roll < chance * 0.6 ? 0.75 : 1);
+          else decor(roll < chance * 0.6 && tier.base !== "rock" ? "bush" : "rock", x, y, roll < chance * 0.6 ? 0.75 : 1);
         }
       }
     }
   }
 
-  private addProp(p: Placed): void {
+  private addProp(p: Placed, base: AtlasTier["base"]): void {
     const x = (p.col + 0.5) * CELL;
     const y = (p.row + 0.95) * CELL;
     if (p.color) {
@@ -395,6 +578,8 @@ export class AtlasScene extends Phaser.Scene {
     // A dead troll lies as his last frame; a hut keeps its variant; the rest move.
     if (p.art === "trollDead") s.setFrame(this.textures.get(key).frameTotal - 2);
     else if (p.frame === undefined && ["cave", "fishHut", "pirateTowerWater", "boat", "goldMine"].includes(p.art)) this.loop(s, key);
+    // Gold in the rock of the Underneath glows.
+    if (p.art === "goldStone" && base === "rock") this.add.image(x, y - 20, "glow").setBlendMode(Phaser.BlendModes.ADD).setTint(0xffe27a).setAlpha(0.5).setScale(0.9).setDepth(DEPTH.clouds - 2);
     this.track(s);
   }
 
@@ -437,20 +622,8 @@ export class AtlasScene extends Phaser.Scene {
   private bonfire(f: Cell): void {
     const x = (f.col + 0.5) * CELL;
     const y = (f.row + 0.8) * CELL;
-    if (!this.textures.exists("glow")) {
-      // A soft round light, bright in the middle and gone at the rim.
-      const t = this.textures.createCanvas("glow", 256, 256)!;
-      const g = t.context.createRadialGradient(128, 128, 0, 128, 128, 128);
-      g.addColorStop(0, "rgba(255, 200, 110, 0.9)");
-      g.addColorStop(0.35, "rgba(255, 170, 80, 0.4)");
-      g.addColorStop(1, "rgba(255, 150, 60, 0)");
-      t.context.fillStyle = g;
-      t.context.fillRect(0, 0, 256, 256);
-      t.refresh();
-    }
     const glow = this.add.image(x, y - 24, "glow").setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.55).setScale(1.3).setDepth(DEPTH.clouds - 2);
     this.tweens.add({ targets: glow, scale: 1.5, alpha: 0.75, duration: 900 + Math.random() * 400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
-    this.glows.push(glow);
     for (let i = 0; i < 5; i++) {
       const a = (i / 5) * Math.PI * 2;
       this.add.ellipse(x + Math.cos(a) * 26, y + Math.sin(a) * 12, 16, 10, 0x8b8f99).setStrokeStyle(2, 0x3a3f4a).setDepth(standing(y) - 1);
@@ -458,6 +631,32 @@ export class AtlasScene extends Phaser.Scene {
     const fire = this.add.sprite(x, y, "fire").setOrigin(0.5, FIRE.anchor).setScale(0.7).setDepth(standing(y));
     this.loop(fire, "fire");
     this.track(fire);
+  }
+
+  /**
+   * A lift's end: going up, a shaft of light; going down, a dark mouth in
+   * the ground. Its name says where it goes and which way it runs.
+   */
+  private liftMark(l: AtlasLift, upper: boolean): void {
+    const end = upper ? l.up : l.down;
+    const x = (end.at.col + 0.5) * CELL;
+    const y = (end.at.row + 0.8) * CELL;
+    if (upper) {
+      this.add.ellipse(x, y, 110, 52, 0x05050a, 0.85).setStrokeStyle(5, 0x3a3f4a).setDepth(DEPTH.ground + 1);
+      this.add.ellipse(x, y + 4, 70, 30, 0x000000, 0.9).setDepth(DEPTH.ground + 2);
+    } else {
+      const beam = this.add.image(x, y, "beam").setOrigin(0.5, 1).setScale(1.6, 2.4).setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.clouds - 2);
+      this.tweens.add({ targets: beam, alpha: 0.55, duration: 1400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+      this.add.ellipse(x, y, 90, 40, 0xfff2c0, 0.5).setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.ground + 1);
+    }
+    const other = upper ? l.down : l.up;
+    const where = AREAS.find((a) => a.id === other.area)!.name;
+    const way = upper ? "down" : l.kind === "drop" ? "from above" : l.kind === "shortcut" ? "up, once opened" : "up";
+    const t = this.add
+      .text(x, y - 2.4 * CELL, `${l.name} (${way})\n${where}`, { fontFamily: FONT, fontSize: "24px", fontStyle: "bold", color: LIFT_TONE[l.kind], stroke: "#1c2634", strokeThickness: 5, align: "center" })
+      .setOrigin(0.5)
+      .setDepth(DEPTH.fx + 3);
+    this.names.push({ text: t, px: 12, tier: this.building });
   }
 
   /** Creatures and knights, idle at their spot or walking their beat. */
@@ -500,28 +699,30 @@ export class AtlasScene extends Phaser.Scene {
     this.time.delayedCall(Math.random() * 3000, () => walk(1));
   }
 
-  /** The light over each area, soft across the water between: one texel a tile, multiplied in. */
-  private mood(): void {
+  /** The light over each area, soft across the water between: one texel a tile, multiplied in. Rock is near black. */
+  private mood(tier: AtlasTier): void {
     const pad = 6;
     const w = STRAT_COLS + 2 * pad;
     const h = STRAT_ROWS + 2 * pad;
-    const tex = this.textures.createCanvas("atlasMood", w, h)!;
+    const tex = this.textures.createCanvas(`atlasMood-${tier.id}`, w, h)!;
     const img = tex.context.createImageData(w, h);
+    const rows = tier.island.rows;
     // Over the water the light fades to plain day with distance from the shore.
     const tone = (c: number, r: number): number => {
+      if (tier.base === "rock" && (rows[r]?.[c] ?? "%") === "%") return ROCK_MOOD;
       for (let d = 0; d <= MOOD_REACH; d++) {
         for (let dr = -d; dr <= d; dr++) {
           for (let dc = -d; dc <= d; dc++) {
-            const i = this.map.areaAt[r + dr]?.[c + dc];
-            if (!i || i === "-") continue;
-            const m = this.map.areas[Number(i)]!.mood;
-            const k = d / (MOOD_REACH + 1);
+            const ch = tier.areaAt[r + dr]?.[c + dc];
+            if (!ch || ch === "-") continue;
+            const m = AREAS[AREA_CODE.indexOf(ch)]!.mood;
+            const k = tier.base === "rock" ? 0 : d / (MOOD_REACH + 1);
             const mix = (shift: number) => Math.round(((m >> shift) & 255) + (255 - ((m >> shift) & 255)) * k);
             return (mix(16) << 16) | (mix(8) << 8) | mix(0);
           }
         }
       }
-      return 0xffffff;
+      return tier.base === "rock" ? ROCK_MOOD : 0xffffff;
     };
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
@@ -536,79 +737,91 @@ export class AtlasScene extends Phaser.Scene {
     tex.context.putImageData(img, 0, 0);
     tex.refresh();
     tex.setFilter(Phaser.Textures.FilterMode.LINEAR);
-    this.add.image(-pad * CELL, -pad * CELL, "atlasMood").setOrigin(0).setScale(CELL).setBlendMode(Phaser.BlendModes.MULTIPLY).setDepth(DEPTH.clouds - 3);
+    this.add.image(-pad * CELL, -pad * CELL, `atlasMood-${tier.id}`).setOrigin(0).setScale(CELL).setBlendMode(Phaser.BlendModes.MULTIPLY).setDepth(DEPTH.clouds - 3);
   }
 
-  /** Weather by area: grey murk rolling over the Greyfall, mist on the fen and the moor. */
-  private ambience(): void {
+  /** Weather by area: grey murk over the Greyfall, mist on the fen, the moor and in the deeps. */
+  private ambience(tier: AtlasTier): void {
     const drift = (area: AreaId, n: number, tint: number, alpha: number): void => {
-      const cells = [...this.map.areaAt.entries()].flatMap(([r, line]) => [...line].flatMap((ch, c) => (ch !== "-" && this.map.areas[Number(ch)]!.id === area ? [{ c, r }] : [])));
+      const ch = AREA_CODE[AREAS.findIndex((a) => a.id === area)];
+      const cells = [...tier.areaAt.entries()].flatMap(([r, line]) => [...line].flatMap((x, c) => (x === ch ? [{ c, r }] : [])));
+      if (cells.length === 0) return;
       for (let i = 0; i < n; i++) {
-        const at = cells[Math.floor((i / n) * cells.length + (i * 37) % 11)] ?? cells[0]!;
-        const cloud = this.add
-          .image(at.c * CELL, at.r * CELL, `cloud${1 + (i % 8)}`)
-          .setTint(tint)
-          .setAlpha(alpha)
-          .setScale(1.2 + (i % 3) * 0.4)
-          .setDepth(DEPTH.clouds + 1);
+        const at = cells[Math.floor((i / n) * cells.length + ((i * 37) % 11))] ?? cells[0]!;
+        const cloud = this.add.image(at.c * CELL, at.r * CELL, `cloud${1 + (i % 8)}`).setTint(tint).setAlpha(alpha).setScale(1.2 + (i % 3) * 0.4).setDepth(DEPTH.clouds + 1);
         this.tweens.add({ targets: cloud, x: cloud.x + 260, alpha: alpha * 0.4, duration: 9000 + (i % 5) * 2000, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
         this.track(cloud, 300);
       }
     };
-    drift("greyfall", 22, 0x9a9ea8, 0.38);
-    drift("barrowmoor", 10, 0xb8bce0, 0.3);
-    drift("fen", 9, 0xd8f0d8, 0.3);
+    if (tier.id === "surface") {
+      drift("greyfall", 22, 0x9a9ea8, 0.38);
+      drift("barrowmoor", 10, 0xb8bce0, 0.3);
+      drift("fen", 9, 0xd8f0d8, 0.3);
+    } else if (tier.id === "below") {
+      drift("deeps", 8, 0x6a6080, 0.3);
+      drift("hollow", 12, 0x9ab8d0, 0.3);
+    } else {
+      drift("gilded", 6, 0xffffff, 0.35);
+    }
   }
 
   /** Area names large, gates and bosses small; all grow back to readable when zoomed out. */
-  private labels(): void {
-    const text = (x: number, y: number, s: string, size: number, color: string, min: number, alpha = 1): Phaser.GameObjects.Text => {
+  private labels(tier: AtlasTier): void {
+    const text = (x: number, y: number, s: string, size: number, color: string, min: number): Phaser.GameObjects.Text => {
       const t = this.add
         .text(x, y, s, { fontFamily: FONT, fontSize: `${size}px`, fontStyle: "bold", color, stroke: "#1c2634", strokeThickness: Math.round(size / 5) })
         .setOrigin(0.5)
-        .setAlpha(alpha)
         .setDepth(DEPTH.fx + 3);
-      this.names.push({ text: t, px: min });
+      this.names.push({ text: t, px: min, tier: this.building });
       return t;
     };
-    for (const a of this.map.areas) text(a.label.col * CELL, a.label.row * CELL, a.name.toUpperCase(), 64, "#fdfaf0", 22).setLetterSpacing(10);
-    for (const g of this.map.gates) {
+    for (const a of AREAS) if (a.tier === tier.id) text(a.label.col * CELL, a.label.row * CELL, a.name.toUpperCase(), 64, "#fdfaf0", 22).setLetterSpacing(10);
+    for (const g of tier.gates) {
       const word = GATE_WORD[g.kind];
       text((g.at.col + 0.5) * CELL, (g.at.row - 1.2) * CELL, word ? `${g.name} (${word})` : g.name, 26, GATE_TONE[g.kind], 12);
     }
-    for (const b of this.map.bosses) text((b.col + 0.5) * CELL, (b.row - 2.4) * CELL, b.name, 28, "#ff8f7a", 13);
+    for (const b of tier.bosses) text((b.col + 0.5) * CELL, (b.row - 2.6) * CELL, b.name, 28, "#ff8f7a", 13);
   }
 
-  /** The Souls map underneath: each area joined to its neighbours through its gates. */
-  private drawRoutes(): void {
-    const g = this.routes;
-    const centre = (id: AreaId) => this.map.areas.find((a) => a.id === id)!.label;
-    for (const gate of this.map.gates) {
+  /** The Souls map underneath: each area joined to its neighbours through its gates and lifts. */
+  private drawRoutes(tier: AtlasTier): Phaser.GameObjects.Graphics {
+    const g = this.add.graphics().setDepth(DEPTH.fx + 2).setVisible(false);
+    const centre = (id: AreaId) => AREAS.find((a) => a.id === id)!.label;
+    const dots = (x0: number, y0: number, x1: number, y1: number, tone: number): void => {
+      const n = Math.floor(Phaser.Math.Distance.Between(x0, y0, x1, y1) / 48);
+      for (let i = 1; i < n; i++) g.fillStyle(tone, 0.95).fillCircle(x0 + ((x1 - x0) * i) / n, y0 + ((y1 - y0) * i) / n, 10);
+    };
+    for (const gate of tier.gates) {
       const tone = Phaser.Display.Color.HexStringToColor(GATE_TONE[gate.kind]).color;
-      for (const end of [gate.from, gate.to]) {
-        const a = centre(end);
-        const [x0, y0, x1, y1] = [a.col * CELL, a.row * CELL, (gate.at.col + 0.5) * CELL, (gate.at.row + 0.5) * CELL];
-        const n = Math.floor(Phaser.Math.Distance.Between(x0, y0, x1, y1) / 48);
-        for (let i = 1; i < n; i++) g.fillStyle(tone, 0.95).fillCircle(x0 + ((x1 - x0) * i) / n, y0 + ((y1 - y0) * i) / n, 10);
-      }
-      g.lineStyle(6, 0x1c2634).fillStyle(tone).fillCircle((gate.at.col + 0.5) * CELL, (gate.at.row + 0.5) * CELL, 22).strokeCircle((gate.at.col + 0.5) * CELL, (gate.at.row + 0.5) * CELL, 22);
+      const [gx, gy] = [(gate.at.col + 0.5) * CELL, (gate.at.row + 0.5) * CELL];
+      for (const end of [gate.from, gate.to]) dots(centre(end).col * CELL, centre(end).row * CELL, gx, gy, tone);
+      g.lineStyle(6, 0x1c2634).fillStyle(tone).fillCircle(gx, gy, 22).strokeCircle(gx, gy, 22);
     }
+    for (const l of this.map.lifts) {
+      const end = l.up.tier === tier.id ? l.up : l.down.tier === tier.id ? l.down : null;
+      if (!end) continue;
+      const tone = Phaser.Display.Color.HexStringToColor(LIFT_TONE[l.kind]).color;
+      const [x, y] = [(end.at.col + 0.5) * CELL, (end.at.row + 0.5) * CELL];
+      dots(centre(end.area).col * CELL, centre(end.area).row * CELL, x, y, tone);
+      g.lineStyle(6, 0x1c2634).fillStyle(tone).fillRect(x - 20, y - 20, 40, 40).strokeRect(x - 20, y - 20, 40, 40);
+    }
+    return g;
   }
 
   update(): void {
-    const cam = this.cameras.main;
-    for (const { text, px } of this.names) text.setScale(Math.max(1, (px * DPR) / (Number.parseInt(String(text.style.fontSize)) * cam.zoom)));
-    // Off screen, sprites skip drawing and animating.
-    const w = cam.width / cam.zoom;
-    const h = cam.height / cam.zoom;
-    const x = cam.scrollX + (cam.width - w) / 2;
-    const y = cam.scrollY + (cam.height - h) / 2;
-    const at = `${Math.round(x)}|${Math.round(y)}|${Math.round(w)}`;
-    if (at === this.culledAt) return;
-    this.culledAt = at;
-    for (const { s, b } of this.live) {
-      const on = b.right > x && b.x < x + w && b.bottom > y && b.y < y + h;
-      s.cameraFilter = on ? 0 : cam.id;
+    const act = this.active;
+    for (const { text, px, tier } of this.names) {
+      text.setVisible(tier === this.view);
+      text.setScale(Math.max(1, (px * DPR) / (Number.parseInt(String(text.style.fontSize)) * act.zoom)));
+    }
+    // Off screen, and on the tiers not in view, sprites skip drawing and animating.
+    const w = act.width / act.zoom;
+    const h = act.height / act.zoom;
+    const x = act.scrollX + (act.width - w) / 2;
+    const y = act.scrollY + (act.height - h) / 2;
+    for (const { s, b, tier } of this.live) {
+      const on = tier === this.view && b.right > x && b.x < x + w && b.bottom > y && b.y < y + h;
+      s.setVisible(on);
       s.active = on;
     }
   }

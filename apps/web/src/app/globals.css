@@ -764,13 +764,63 @@ textarea {
 	margin-top: -2px;
 }
 
-.atlasIndex {
+/* The index above the key, in one column that never overlaps itself: the index scrolls when the screen is short. */
+.atlasLeft {
 	position: absolute;
 	top: 14px;
 	left: 14px;
+	bottom: 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	pointer-events: none;
+}
+
+.atlasLeft > * {
+	pointer-events: auto;
+}
+
+.atlasIndex {
+	flex: 0 1 auto;
+	min-height: 0;
+	overflow-y: auto;
 	align-items: stretch;
 	gap: 2px;
 	min-width: 190px;
+}
+
+.atlasTiers {
+	display: flex;
+	gap: 4px;
+	margin-top: -4px;
+}
+
+.atlasGroup {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+}
+
+.atlasTier {
+	margin: 4px 0 1px;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #8a6a3a;
+}
+
+.atlasWhere {
+	margin-top: -6px !important;
+	text-align: center;
+	font-size: 13px;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #8a6a3a;
+}
+
+.dot.square {
+	border-radius: 2px;
 }
 
 .atlasArea {
@@ -850,16 +900,13 @@ textarea {
 }
 
 .atlasLegend {
-	position: absolute;
-	left: 14px;
-	bottom: 14px;
+	flex: none;
 	align-items: flex-start;
 	font-size: 14px;
 }
 
 @media (max-width: 720px) {
-	.atlasIndex,
-	.atlasLegend {
+	.atlasLeft {
 		display: none;
 	}
 

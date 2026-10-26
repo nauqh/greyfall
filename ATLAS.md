@@ -1,104 +1,139 @@
 # The Atlas
 
-Oct 26, 2026
+Oct 26, 2026 · revised Oct 26: three tiers, lifts between them, and heights to five
 
 ## Summary
 
-The Shattered Reach on one map, at `/atlas`. It isn't a game yet: it's the
-world to build one in. Seven areas, each its own landmass in its own colours
-and light, are joined only at named gates, the way a Souls map joins its
-areas. Every building and creature the pack has a use for stands somewhere
-on it, and most of them move.
+The Shattered Reach as one world, at `/atlas`. It isn't a game yet: it's the
+world to build one in. It stands in three tiers on one grid:
 
-The map is the war island's height-map format (`island.ts`), so the war's
-autotiler draws it (foam, south cliffs, stepped plateaus, the Crown, roads)
-and its pathing walks it. The data is `packages/engine/src/atlas.ts`; the
-dressing is `apps/web/src/game/AtlasScene.ts`.
+- **The Gilded Reach (sky):** a sky city overhead.
+- **The Surface:** seven lands on the sea.
+- **The Underneath:** caverns cut from the rock below.
 
-## The areas
+Within a tier, areas are joined only at named gates, the way a Souls map
+joins them. Between tiers, lifts, wells, a sinkhole and a stair join them at
+the same spot on the grid, so what is above a place is really above it.
 
-| Area | Ground | Who's there | Keeper |
+Each tier is the war island's height-map format (`island.ts`), so the war's
+autotiler draws it (foam, south cliffs, stepped plateaus, five heights,
+roads) and its pathing walks it. The data is
+`packages/engine/src/atlas.ts`; the dressing is
+`apps/web/src/game/AtlasScene.ts`.
+
+## From Dark Souls
+
+| Dark Souls | Here |
+| --- | --- |
+| Areas stacked over each other: Anor Londo over Blighttown, the Depths under the Burg ([TheGamer](https://www.thegamer.com/dark-souls-1-fromsoftwares-magnum-opus-of-interconnected-level-design/), [James Roha](https://medium.com/@Jamesroha/world-design-lessons-from-fromsoftware-78cadc8982df)) | The Gilded Reach floats over the Crags and the citadel; the Undercroft lies under the town, the Deeps under the moor, the Hollow under the fen |
+| Firelink as the hub every road returns to | Last Harbour: the Old Bridge, the Ember Gate, the Moor Gate, the Old Well down and the Watch Lift up all start in it |
+| Elevators that open as shortcuts home | The Moor Gate opens from the moor; the Watch Lift opens from the sky and drops you on the castle |
+| Ash Lake: a quiet wonder at the very bottom ([Medium](https://medium.com/@bramasolejm030206/preface-ec08bc1459d0)) | The Drowned Hollow: a still lake under the fen, stone trees, gold in the rock, and the Shell Below asleep |
+| One-way drops that commit you | The Old Well and the Fen Sinkhole go down only. The Underneath has its own way back up: the Barrow Cave. |
+
+## The tiers and areas
+
+| Tier | Area | Who's there | Keeper |
 | --- | --- | --- | --- |
-| Saltreach | teal shore, a lighthouse bluff | yellow militia, fishing villages, turtles, sharks and a seahorse boat offshore, pirate towers in the shallows | |
-| Last Harbour (hub) | lush green, the castle hill | the blue castle and town round the bonfire square, monastery, barracks, gold mine, a sheep pen, pawns chopping, mining, carrying and hammering | |
-| Emberwood | dusty olive under the big pines | three goblin warrens with fires, torch and spear goblins, a thief, gnolls on Smoke Ridge, a pig pen, logging stumps | Cinder Troll |
-| Tinker Crags | bright lime rock to the Crown | gnome huts on a stepped plateau, a gnome tower on the Crown, gnomes and slingshot gnomes, bears, bees, pandas | Old Bamboo (panda guard) |
-| Barrowmoor | olive moor under a dusk light | three barrows, the cave, dead trees, skull spikes and bones, skulls, skull guards, hex shamans, spiders, a snake, giant bats | The Barrow King (minotaur guard) |
-| Lizard Fen | teal reeds and black pools in a pale mist | the purple chapel and its monks, lizards, snakes, a turtle, and a rubber duck | |
-| The Greyfall | dusty grey under rolling murk | the walled citadel, the black castle on its Crown, the black legion drilling, imps, a troll, a burned village, bomb fish in the moat | The Grey Warlord |
+| Sky | Skyward Steps | drifting isles with watch posts, a lift down onto the castle | |
+| Sky | The Gilded Reach | the gnome-kings' golden hall on its own height, yellow guard, a monastery, bees, the warlord's throne isle with imps | The Sun Sentinel |
+| Surface | Saltreach | yellow militia, fishing villages, turtles, sharks offshore, pirate towers | |
+| Surface | Last Harbour (hub) | the blue castle on its own height above the town, the bonfire square, the Old Well, pawns at work | |
+| Surface | Emberwood | goblin warrens, the big pines (standing still), gnolls on Smoke Ridge | Cinder Troll |
+| Surface | Tinker Crags | a rock that climbs in five steps to the Tinker Peak, gnomes, bears, pandas, the Gnome Lift up | Old Bamboo |
+| Surface | Barrowmoor | barrows, bones, the cave down to the Deeps | The Barrow King |
+| Surface | Lizard Fen | the purple chapel, lizards, the sinkhole | |
+| Surface | The Greyfall | the citadel, its keep on the fourth height, the black legion, the Throne Stair up | The Grey Warlord |
+| Below | The Undercroft | cisterns and pillars under the well, a crypt, spiders, a thief | |
+| Below | Barrow Deeps | tomb daises, skull guards, a dead troll's bones | The Weaver (a giant spider) |
+| Below | The Drowned Hollow | the underground lake, stone trees, turtles, glowing gold | The Shell Below (a giant turtle) |
 
-## The gates
+## Gates and lifts
 
 ```
-        Emberwood ──Crag Stair── Tinker Crags ──Sky Bridge (high road)──┐
-            │                                                     The Greyfall
-      Ember Gate (barred)                                               │
-            │                                                           │
-Saltreach ─Old Bridge─ Last Harbour ─Moor Gate (shortcut)─ Barrowmoor ─Grey Gate (locked)┘
-    │                     (hub)                                │
-    └──────────── Fen Causeway ──── Lizard Fen ──Barrow Path───┘
+SKY       Skyward Steps ──Cloud Bridge── The Gilded Reach
+               │ Watch Lift (shortcut)       │ Gnome Lift      │ Throne Stair
+SURFACE   Last Harbour ...(gates as before)... Tinker Crags ... The Greyfall
+               │ Old Well (drop)      │ Barrow Cave (lift)  │ Fen Sinkhole (drop)
+BELOW     The Undercroft ──Cistern Run── Barrow Deeps ──Sinking Stair── The Drowned Hollow
 ```
 
-- **Open:** the Old Bridge, Crag Stair, Fen Causeway and Barrow Path.
-- **Barred:** the Ember Gate, a palisade across the causeway north.
-- **Shortcut:** the Moor Gate, barred from the moor side. You first reach
-  Barrowmoor the long way round, through the Fen. Opening it from there
-  makes a one-step way home to the hub.
-- **Locked:** the Grey Gate, needing the Troll's and the Minotaur's keys.
-- **High road:** the Sky Bridge runs off the top of the Crags straight onto
-  the citadel's wall, the other way into the Greyfall.
+- **Surface gates:**
+  - Open: Old Bridge, Crag Stair, Fen Causeway, Barrow Path.
+  - Barred: the Ember Gate.
+  - Shortcut: the Moor Gate.
+  - Locked: the Grey Gate.
+  - High road: the Sky Bridge.
+- **Lifts:**
+  - **Both ways:** the Gnome Lift off the Tinker Peak, the Throne Stair from
+    the keep, the Barrow Cave.
+  - **Down only:** the Old Well and the Fen Sinkhole.
+  - **Shortcut:** the Watch Lift, opened from the Steps, after which it is
+    the road home.
+
+## Heights
+
+The engine now reads five heights:
+
+| Height | Tops | Stairs |
+| --- | --- | --- |
+| Lowland | `.` | |
+| 2 | `#` | `<` `>` |
+| 3, the Crown | `^` | `[` `]` |
+| 4 | `4` | `{` `}` |
+| 5 | `5` | `(` `)` |
+
+The renderer draws every height the map has. To stack a height on another,
+make it one tile narrower than the ring below it on each side, so its stairs
+land beside the ring rather than on it.
 
 ## What the tests guarantee
 
 `packages/engine/test/atlas.test.ts`:
 
-- Every area reaches every other.
-- **Bar every gate and no area reaches another.** Each area is a sealed
-  room, and the gates are its only doors.
-- Each gate, on its own, joins exactly the two areas it names.
-- The loops are real. The moor is reachable without the shortcut, and the
-  Greyfall without either of its two ways in.
-- Every building stands on ground and every boat in the sea. Walkers stand
-  on open ground, and each one's patrol is a walk it can make.
-- Every plateau and Crown tile can be climbed to from the hub.
-- The forest never seals a clearing off. Any pocket gets a path cut out of
-  it when the woods are planted.
+- **The grid:** the three tiers lie on one grid, a tile for a tile.
+- **Gates:** in each tier, bar every gate and no area reaches another, and
+  each gate alone joins exactly its two areas.
+- **Lifts:** every end stands on walkable ground in the area it names, the
+  two ends sit within five tiles of each other on the grid, and the up end
+  is always the higher tier.
+- **One world:** from the Harbour, walking and riding lifts only the way
+  they go, you reach every area of every tier.
+- **The loops:** the sky is reached the long way before the Watch Lift is
+  opened. The Underneath has its own way up. The Hollow is reached both by
+  the drop and by the stair. The moor and the citadel each have two ways in.
+- **Placements:** every building stands on ground, every boat at sea, and
+  every walker's patrol is walkable, on every tier.
+- **Heights:** every height on every tier can be climbed to, and the Surface
+  reaches the fifth.
 
 ## Dressing
 
-- **Ground:** each area's palette, tile by tile. Ramps and bridge ends take
-  the nearest area's colours.
-- **Woods by area:**
-  - Emberwood: the big animated pines.
-  - Barrowmoor and the Greyfall: dead trees.
-  - The Fen: reed-thick bushes.
-  - Elsewhere: the slim trees.
-- **Ground clutter by area:** bones on the moor, stumps in Emberwood, more
-  undergrowth in the Fen, less in the grey. Shrubs and stones at the foot
-  of every cliff, and rocks in the shallows.
-- **Buildings:** each in its faction's colours: blue for the Harbour, yellow
-  for the militia, purple for the cult, black for the legion.
-- **Bonfires** with a soft light that breathes.
-- **Fences** round the pens, and across every barred, shortcut and locked
-  gate.
-- **Life:** knights and beasts walk their beats, pawns work, flyers hover,
-  and sharks and boats cruise.
-- **Light:** a light per area multiplied over everything, fading out across
-  the water. Grey murk rolls over the Greyfall, with mist on the moor and
-  the fen.
-- **The page:** click an area, or pick one from the index, to fly there and
-  read its card: what it is, its keeper, and where each of its gates leads.
-  "Show the routes" overlays the Souls map.
+- **The Surface** is as before: per-area ground, woods, clutter, faction
+  buildings, bonfires, fenced gates, life, and light.
+- **Each tier shows alone.** The sky gets sunlit gold ground, cloud clinging
+  to the isles' rims, and a cloud bank over open blue beneath them.
+- **The Underneath** is bare rock in near-black, with its caverns lit by
+  their area's light. Its lakes are dark water, and the gold in the walls
+  and the bonfires glow.
+- **Lift ends:** an up end is a shaft of light, a down end a dark mouth in
+  the ground. Each is labelled with where it goes and which way it runs.
+  Click one to ride it.
+- **The page:** tabs for Sky, Surface and Below, an area index by tier, and
+  cards that list each area's gates and lifts.
 
 ## Adding to it
 
-- **Places** go in `atlasMap()`. Every place is a line: `prop("goblinHut",
-  col, row)`, or `who("bear", col, row, { to: { col, row } })` for a walker.
+- **Places:** each tier is built in its own function (`sky`, `surface` or
+  `below` in `atlas.ts`). Every place is a line: `prop("goblinHut", col,
+  row)`, or `who("bear", col, row, { to: { col, row } })` for a walker.
+- **Lifts** go in `LIFTS`, with an up end and a down end.
 - **Art** for a new name goes in `PROP` or `BEAST` in the scene.
 - **Then run the tests:** they name any building in the sea, any walker on a
-  tree, and any gate that leaks.
+  cliff face, any gate that leaks, and any lift that lands nowhere.
 
 ## Not done yet
 
-- Nothing is playable on it: no warband, no keys, no gates that open.
-- No minimap. Zoom out with the wheel to see it all.
+- Nothing is playable on it: no warband, no keys, no gates or lifts that
+  open.
+- No minimap. Zoom out with the wheel, and switch tiers with the tabs.

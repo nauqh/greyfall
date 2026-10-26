@@ -7,8 +7,8 @@
 /** `~` water, `.` lowland (level 1), `T` forest (lowland no one walks
  *  through; arrows fly over), `#` plateau (level 2), `%` wooded high ground
  *  (level 2, a terrace no one walks on), `^` the Crown (level
- *  3). `<` / `>` are ramps up to a plateau and `[` / `]` stairs up to the
- *  Crown. As in the pack's tilemap guide, a ramp stands just outside the
+ *  3), `4` and `5` the heights above it. `<` / `>` are ramps up to a plateau,
+ *  `[` / `]` stairs up to the Crown, `{` / `}` to 4 and `(` / `)` to 5. As in the pack's tilemap guide, a ramp stands just outside the
  *  higher ground, beside its bottom row: that ground on one side (right of
  *  `<`, left of `>`), lower ground above it and on the other side. It runs
  *  down into the row below, beside the cliff. The row under higher ground's
@@ -86,21 +86,21 @@ export function isLand(col: number, row: number): boolean {
 }
 export function level(col: number, row: number): number {
   const ch = at(col, row);
-  return "^[]".includes(ch) ? 3 : "#<>%".includes(ch) ? 2 : ch === "~" ? 0 : 1;
+  return "5()".includes(ch) ? 5 : "4{}".includes(ch) ? 4 : "^[]".includes(ch) ? 3 : "#<>%".includes(ch) ? 2 : ch === "~" ? 0 : 1;
 }
 /** Any ground above the lowland: a plateau, the Crown, or a ramp onto either. */
 export function isHigh(col: number, row: number): boolean {
   return level(col, row) >= 2;
 }
 export function isSlope(col: number, row: number): boolean {
-  return "<>[]".includes(at(col, row));
+  return "<>[]{}()".includes(at(col, row));
 }
 export function isForest(col: number, row: number): boolean {
   return "T%".includes(at(col, row));
 }
 /** High ground, not a ramp, whose south side drops. */
 export function castsCliff(col: number, row: number): boolean {
-  return "#^%".includes(at(col, row)) && level(col, row + 1) < level(col, row);
+  return "#^%45".includes(at(col, row)) && level(col, row + 1) < level(col, row);
 }
 /** Land that is neither forest nor a cliff face. A slope's lower half is the
  *  ramp, so it stays walkable. */

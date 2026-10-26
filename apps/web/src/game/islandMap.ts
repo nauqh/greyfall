@@ -232,7 +232,9 @@ export function buildMap(
     }
   }
 
-  for (const lv of [2, 3]) {
+  // Every height the map has, lowest first: the war's goes to the Crown, the atlas's peaks higher.
+  const highest = Math.max(2, ...MAP.flatMap((line, r) => [...line].map((_, c) => level(c, r))));
+  for (let lv = 2; lv <= highest; lv++) {
     const slope = (c: number, r: number): boolean => isSlope(c, r) && level(c, r) === lv;
     // Ground at this level or above: a higher level, and the stairs up to it,
     // stand on this level's centre pieces.
@@ -273,7 +275,7 @@ export function buildMap(
     for (let r = 0; r < STRAT_ROWS; r++) {
       for (let c = 0; c < STRAT_COLS; c++) {
         if (!slope(c, r)) continue;
-        const col = "<[".includes(at(c, r)) ? 0 : 3;
+        const col = "<[{(".includes(at(c, r)) ? 0 : 3;
         tile(c, r, col, 4, sheetAt(c, r, lv));
         tile(c, r + 1, col, 5, sheetAt(c, r, lv));
       }
