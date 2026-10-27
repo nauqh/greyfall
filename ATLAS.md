@@ -186,8 +186,68 @@ so they never wall a ledge off.
 - **Then run the tests:** they name any building in the sea, any walker on a
   cliff face, any gate that leaks, and any lift that lands nowhere.
 
+## Area maps
+
+Each area also gets its own large map (`areas.ts`, 112 x 72 tiles), built
+with the same `tierBuilder`. "Enter" on an area's card opens it, and the
+camera stays inside that map. An exit at its edge, or a lift or well inside
+it, takes you to the next area. If that area has no map yet, you go back to
+the atlas, focused on it.
+
+- `block(level, x, y, w, h)` lays out exact terraces. A castle is nested
+  blocks, each with its own cliff faces. `block(1, ...)` cuts a notch back to
+  the ground, as for a gatehouse.
+- `stair(level, col, row, side)` puts in an authored stair. Terraces built
+  from blocks only get the stairs you author, so the way up is designed.
+- `span(level, x, y, w, h)` raises a bridge deck between two tables of that
+  height, over water or a ravine. A deck joins tables of its own height only:
+  the hills at each end keep their own stairs. Over the sea, give it
+  `stair()`s at its ends. The deck is drawn in a tileset colour its district
+  never uses, so it stands out above the ground below.
+- `grove(cx, cy, rx, ry, density)` plants woods on lowland.
+- **Districts** split a big area into quarters. Each has its own name on the
+  land, its own tileset colour per height (lowland first, following the
+  Tiny Swords tilemap guide's advice to colour each level differently) and
+  the decor style of an atlas area it borrows (`dress`). Land goes to a
+  district's `box` if it has one, otherwise to the nearest seed, with borders
+  bent by noise.
+- Only the Harbour is mapped so far, in eight districts: the Citadel (three
+  terraces up to the keep), Old Town (two raised streets round the square),
+  the Docks (the Sea Wall across the bay), West Fields, the Northwood and the
+  Keepwood, the Mine Hills and the Moor Watch. Three raised bridges: the Knoll
+  Bridge, the Sky Bridge (upper bailey to the hills) and the Sea Wall.
+  `test/areas.test.ts` checks every mapped area: every exit and height can be
+  reached from the entry, every bridge deck stays raised, all land belongs to
+  a district, and every building sits wholly on its ground.
+
 ## Not done yet
 
 - Nothing is playable on it: no warband, no keys, no gates or lifts that
   open.
 - No minimap. Zoom out with the wheel, and switch tiers with the tabs.
+
+## Planned: a blacksmith
+
+The pack has no smithy, forge or anvil, but it has enough to compose one.
+
+| Piece | Asset | Use |
+| --- | --- | --- |
+| Workshop | `Buildings/<Colour> Buildings/House3.png`, open-fronted and timber-framed | The forge shed |
+| Armoury look | `Barracks.png`, crossed swords over the door | A bigger weapon smith |
+| The smith | `Units/<Colour> Units/Pawn/Pawn_Interact Hammer.png`, 6 frames (plus `Idle Hammer`, `Run Hammer`) | A pawn hammering at the forge |
+| Forge fire | `Effects/Fire/Fire.png`, 7 frames; `Particle FX/Fire_01..03` | The glow, and sparks |
+| Smoke | `Particle FX/Dust_01`, `Dust_02` | Smoke from the chimney |
+| Tools | `Terrain/Resources/Tools/Tool_01..04`: hammer, axe, knife, pickaxe (64px) | A tool rack beside the shed |
+| Ore and stock | `Terrain/Resources/Gold/Gold Stones/Gold Stone 1..6`, the wood and meat piles | Stockpiles |
+| Swords | `UI Elements/UI Elements/Swords/Swords.png` | A UI icon for a smith's menu, not world art |
+
+Missing:
+- **An anvil.** The one piece that says "blacksmith" at a glance. Use a
+  decor rock as a stand-in, or draw a 32x32 anvil in the pack's style.
+- **A forge, furnace, chimney or bellows.**
+- **A smith character.** The hammering pawn is a builder; it reads as a
+  smith only beside a forge.
+
+Plan: compose it in Last Harbour from `House3` as the shed, a hammering pawn
+at an anvil out front, a looping fire with sparks and chimney smoke, and the
+tool icons and ore laid out beside it.

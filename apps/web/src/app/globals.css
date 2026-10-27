@@ -764,7 +764,7 @@ textarea {
 	margin-top: -2px;
 }
 
-/* The index above the key, in one column that never overlaps itself: the index scrolls when the screen is short. */
+/* The key, top left. */
 .atlasLeft {
 	position: absolute;
 	top: 14px;
@@ -780,34 +780,10 @@ textarea {
 	pointer-events: auto;
 }
 
-.atlasIndex {
-	flex: 0 1 auto;
-	min-height: 0;
-	overflow-y: auto;
-	align-items: stretch;
-	gap: 2px;
-	min-width: 190px;
-}
-
 .atlasTiers {
 	display: flex;
 	gap: 4px;
 	margin-top: -4px;
-}
-
-.atlasGroup {
-	display: flex;
-	flex-direction: column;
-	align-items: stretch;
-}
-
-.atlasTier {
-	margin: 4px 0 1px;
-	font-size: 12px;
-	font-weight: 700;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	color: #8a6a3a;
 }
 
 .atlasWhere {
@@ -821,22 +797,6 @@ textarea {
 
 .dot.square {
 	border-radius: 2px;
-}
-
-.atlasArea {
-	padding: 3px 8px;
-	border: 0;
-	border-radius: 4px;
-	background: none;
-	color: #4a3a28;
-	font: inherit;
-	font-weight: 700;
-	text-align: left;
-}
-
-.atlasArea:hover,
-.atlasArea.on {
-	background: rgba(74, 58, 40, 0.14);
 }
 
 .atlasToggle {

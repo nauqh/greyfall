@@ -268,6 +268,9 @@ const line = (a: Cell, b: Cell, each: (c: Cell) => void): void => {
   for (let i = 0; i <= n; i++) each({ col: Math.round(a.col + ((b.col - a.col) * i) / Math.max(1, n)), row: Math.round(a.row + ((b.row - a.row) * i) / Math.max(1, n)) });
 };
 
+/** What an area map is built from: the tier builder, sized for one area. */
+export type TierBuilder = ReturnType<typeof tierBuilder>;
+
 export interface Relief {
   area: AreaId;
   at: Cell;
@@ -278,7 +281,7 @@ export interface Relief {
 }
 
 /** Value noise in -1..1, smooth over `scale` tiles, the same for the same seed. */
-function noise(seed: string, scale: number): (c: number, r: number) => number {
+export function noise(seed: string, scale: number): (c: number, r: number) => number {
   const v = (x: number, y: number) => (hashSeed(`${seed}:${x}:${y}`) / 4294967296) * 2 - 1;
   const ease = (k: number) => k * k * (3 - 2 * k);
   return (c, r) => {
@@ -396,7 +399,23 @@ function terrain(t: Builder, rows: number, cols: number): void {
   }
   const road = (c: number, r: number) => at(c, r) === "#" || landing.has(`${c},${r}`);
   for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) if (road(c, r)) height[r]![c] = 2;
-  const top = Math.max(1, ...height.flat());
+  // Authored ground: the highest block over a tile sets it exactly.
+  const authored = new Map<string, number>();
+  for (const b of t.blocks) {
+    for (let r = b.y; r < b.y + b.h; r++) {
+      for (let c = b.x; c < b.x + b.w; c++) {
+        if (!".T".includes(at(c, r))) continue;
+        const k = `${c},${r}`;
+        authored.set(k, Math.max(authored.get(k) ?? 1, b.level));
+        height[r]![c] = Math.max(height[r]![c]!, b.level);
+      }
+    }
+  }
+  // A bridge deck and the height it stands at: it joins tables of that height only, not those under it.
+  const spanned = new Map(t.blocks.filter((b) => b.span).flatMap((b) => Array.from({ length: b.w * b.h }, (_, i): [string, number] => [`${b.x + (i % b.w)},${b.y + Math.floor(i / b.w)}`, b.level])));
+  // A notch cut back to the lowland under authored ground: a block of level 1.
+  for (const b of t.blocks) if (b.level === 1) for (let r = b.y; r < b.y + b.h; r++) for (let c = b.x; c < b.x + b.w; c++) authored.set(`${c},${r}`, 1);
+  const top = Math.max(1, ...height.flat(), ...t.blocks.map((b) => b.level));
   if (top < 2) return;
 
   type Mask = boolean[][];
@@ -481,6 +500,11 @@ function terrain(t: Builder, rows: number, cols: number): void {
         }
       }
     }
+    // Authored ground is exactly as drawn.
+    for (const [key, lv] of authored) {
+      const [c, r] = key.split(",").map(Number) as [number, number];
+      m[r]![c] = lv >= k;
+    }
     masks.push(m);
   }
 
@@ -499,7 +523,7 @@ function terrain(t: Builder, rows: number, cols: number): void {
     const seen = blank();
     for (let r0 = 0; r0 < rows; r0++) {
       for (let c0 = 0; c0 < cols; c0++) {
-        if (!m[r0]![c0] || seen[r0]![c0]) continue;
+        if (!m[r0]![c0] || seen[r0]![c0] || (spanned.get(`${c0},${r0}`) ?? k) > k) continue;
         const comp: Cell[] = [];
         const queue: Cell[] = [{ col: c0, row: r0 }];
         seen[r0]![c0] = true;
@@ -508,7 +532,7 @@ function terrain(t: Builder, rows: number, cols: number): void {
           comp.push(p);
           for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
             const q = { col: p.col + dc, row: p.row + dr };
-            if (get(m, q.col, q.row) && !seen[q.row]![q.col]) {
+            if (get(m, q.col, q.row) && !seen[q.row]![q.col] && (spanned.get(`${q.col},${q.row}`) ?? k) <= k) {
               seen[q.row]![q.col] = true;
               queue.push(q);
             }
@@ -525,7 +549,11 @@ function terrain(t: Builder, rows: number, cols: number): void {
             if (lower(c, r) && lower(c, r - 1) && lower(c, r + 1) && levelAt(c, r + 2) >= 1) found.push({ c, r, side: s });
           }
         }
-        if (found.length === 0) {
+        // Authored ground takes only its authored stairs.
+        if (comp.some((p) => authored.has(`${p.col},${p.row}`) && !spanned.has(`${p.col},${p.row}`))) continue;
+        // An authored stair onto it keeps it, though no stair of its own fits.
+        const kept = t.ways.some((w) => w.level === k && comp.some((p) => p.row === w.row && p.col === w.col + (w.side === "L" ? 1 : -1)));
+        if (found.length === 0 && !kept) {
           for (const p of comp) for (let j = k - 2; j < masks.length; j++) masks[j]![p.row]![p.col] = false;
           continue;
         }
@@ -538,6 +566,8 @@ function terrain(t: Builder, rows: number, cols: number): void {
       }
     }
   }
+
+  for (const w of t.ways) stairs.set(`${w.col},${w.row}`, w.side === "L" ? HEIGHT[w.level]!.left : HEIGHT[w.level]!.right);
 
   // Write the ground: tops, then stairs, with open ground at each stair's head and foot.
   for (let r = 0; r < rows; r++) {
@@ -650,12 +680,29 @@ function settleAll(t: Builder): void {
   };
   // Flyers hover where they are put; swimmers stay in the sea.
   t.dwellers = t.dwellers.map((d) => (FLYING.has(d.kind) ? d : { ...settle(d, SEA_KINDS.has(d.kind)), ...(d.to && { to: settle(d.to, SEA_KINDS.has(d.kind)) }) }));
+  // A walker whose beat the terrain cut keeps to its spot.
+  const walks = (a: Cell, b: Cell): boolean => {
+    const seen = new Set([key(a)]);
+    const queue = [a];
+    for (let i = 0; i < queue.length && i < 4000; i++) {
+      for (const n of stepsFrom(queue[i]!)) {
+        if (n.col === b.col && n.row === b.row) return true;
+        if (!seen.has(key(n))) (seen.add(key(n)), queue.push(n));
+      }
+    }
+    return false;
+  };
+  t.dwellers = t.dwellers.map((d) => {
+    if (!d.to || FLYING.has(d.kind) || SEA_KINDS.has(d.kind) || walks(d, d.to)) return d;
+    const { to: _cut, ...rest } = d;
+    return rest;
+  });
   t.bosses = t.bosses.map((b) => settle(b));
 }
 
 /** One tier under construction: its grid, and the tools that shape and fill it. */
-function tierBuilder(id: TierId, rng: Rng) {
-  const { cols, rows } = ATLAS_SIZE;
+export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: number } = ATLAS_SIZE) {
+  const { cols, rows } = size;
   const base = TIER_INFO[id].base;
   /** What parts two areas: water round land, solid rock round caverns. */
   const wall = base === "rock" ? "%" : "~";
@@ -680,6 +727,10 @@ function tierBuilder(id: TierId, rng: Rng) {
     fences: [] as AtlasTier["fences"],
     bosses: [] as AtlasTier["bosses"],
     reliefs: [] as Relief[],
+    /** Authored high ground: exact rectangles at a height, for a fortress's terraces. */
+    blocks: [] as { level: number; x: number; y: number; w: number; h: number; span?: boolean }[],
+    /** Authored stairs onto authored ground; a table of authored ground takes no others. */
+    ways: [] as { level: number; col: number; row: number; side: "L" | "R" }[],
     /** Ways the high ground keeps clear of, drawn or not: roads, and the bridges between isles. */
     paths: new Set<string>(),
 
@@ -720,6 +771,36 @@ function tierBuilder(id: TierId, rng: Rng) {
      */
     relief(spec: Relief): void {
       t.reliefs.push(spec);
+    },
+    /** Ground set to exactly `level` over a rectangle, past anything the reliefs make there; 1 cuts a notch back to the lowland. */
+    block(level: 1 | 2 | 3 | 4 | 5, x: number, y: number, w: number, h: number): void {
+      t.blocks.push({ level, x, y, w, h });
+    },
+    /** A raised bridge deck between two tables of `level`, over low ground or water; the tables keep their own stairs. */
+    span(level: 2 | 3 | 4 | 5, x: number, y: number, w: number, h: number): Cell[] {
+      const deck: Cell[] = [];
+      for (let r = y; r < y + h; r++) for (let c = x; c < x + w; c++) deck.push({ col: c, row: r });
+      // Over water the deck belongs to the area of the land it leaves from.
+      const own = deck.map((c) => area[c.row]?.[c.col] ?? -1).find((a) => a >= 0) ?? -1;
+      for (const c of deck) {
+        if (at(c.col, c.row) !== "~") continue;
+        put(c.col, c.row, ".");
+        area[c.row]![c.col] = own;
+      }
+      t.blocks.push({ level, x, y, w, h, span: true });
+      return deck;
+    },
+    /** A stair onto `level` at a tile beside a table's bottom row: L with the table to its right, R to its left. */
+    stair(level: 2 | 3 | 4 | 5, col: number, row: number, side: "L" | "R"): void {
+      t.ways.push({ level, col, row, side });
+    },
+    /** A grove: lowland woods over an ellipse, `density` of its open ground. */
+    grove(cx: number, cy: number, rx: number, ry: number, density: number): void {
+      for (let r = Math.floor(cy - ry); r <= cy + ry; r++) {
+        for (let c = Math.floor(cx - rx); c <= cx + rx; c++) {
+          if (((c - cx) / rx) ** 2 + ((r - cy) / ry) ** 2 <= 1 && at(c, r) === "." && rng.next() < density) put(c, r, "T");
+        }
+      }
     },
     pond(x0: number, y0: number, w: number, h: number): void {
       for (let r = y0; r < y0 + h; r++) for (let c = x0; c < x0 + w; c++) put(c, r, "~");
@@ -787,7 +868,7 @@ function tierBuilder(id: TierId, rng: Rng) {
       for (const f of t.fires) clear(f.col, f.row, 2);
       for (const b of t.bosses) clear(b.col, b.row, 3);
       for (const f of t.fences) for (let r = f.row - 1; r <= f.row + f.h; r++) for (let c = f.col - 1; c <= f.col + f.w; c++) keep.add(`${c},${r}`);
-      for (const k of t.roadSet) {
+      for (const k of [...t.roadSet, ...t.paths]) {
         const [c, r] = k.split(",").map(Number) as [number, number];
         clear(c, r, 1);
       }

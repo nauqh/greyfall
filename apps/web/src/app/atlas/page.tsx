@@ -4,7 +4,7 @@
 // the canvas; the tier tabs, the area index, the selected area's card and the
 // key float over it on the kit's paper.
 
-import { AREAS, TIERS, TIER_INFO, atlasMap, type AreaId, type GateKind, type LiftKind, type TierId } from "@greyfall/engine";
+import { AREAS, MAPPED_AREAS, TIERS, TIER_INFO, atlasMap, type AreaId, type GateKind, type LiftKind, type TierId } from "@greyfall/engine";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 
@@ -25,17 +25,44 @@ const LIFT_KINDS: { kind: LiftKind; label: string; tone: string }[] = [
 ];
 const TIER_TAB: Record<TierId, string> = { sky: "Sky", surface: "Surface", below: "Below" };
 
+/** One area's own map, the camera kept inside it; its exits walk to the next. */
+function AreaView({ area, onExit, onLeave }: { area: AreaId; onExit: (to: AreaId) => void; onLeave: () => void }) {
+  const hooks = useRef<AtlasHooks>({ area, onExit, onArea: () => {}, onTier: () => {}, ready: () => {} }).current;
+  return (
+    <main className="stage">
+      <GameCanvas start={(el) => import("../../game/AtlasScene").then(({ startAtlas }) => startAtlas(el, hooks))}>
+        <div className="worldHud">
+          <header className="atlasTop">
+            <h1 className="banner">{AREAS.find((a) => a.id === area)!.name}</h1>
+            <div className="worldLinks">
+              <button className="linkBtn" type="button" onClick={onLeave}>
+                Back to the atlas
+              </button>
+            </div>
+          </header>
+        </div>
+      </GameCanvas>
+    </main>
+  );
+}
+
 export default function AtlasPage() {
   const router = useRouter();
+  const [walk, setWalk] = useState<AreaId | null>(null);
   const [area, setArea] = useState<AreaId>("harbour");
   const [tier, setTier] = useState<TierId>("surface");
   const [routes, setRoutes] = useState(false);
   const api = useRef<AtlasApi | null>(null);
+  // The area to fly to when the atlas comes back from an area's map.
+  const back = useRef<AreaId | null>(null);
   const map = useMemo(() => atlasMap(), []);
   const hooks = useRef<AtlasHooks>({
     onArea: (id) => setArea(id),
     onTier: (id) => setTier(id),
-    ready: (a) => (api.current = a),
+    ready: (a) => {
+      api.current = a;
+      if (back.current) a.focus(back.current);
+    },
   }).current;
 
   const shown = AREAS.find((a) => a.id === area)!;
@@ -44,6 +71,13 @@ export default function AtlasPage() {
   const lifts = map.lifts.filter((l) => l.up.area === area || l.down.area === area);
   const bosses = home.bosses.filter((b) => b.area === area);
   const name = (id: AreaId) => AREAS.find((a) => a.id === id)!.name;
+
+  if (walk) {
+    // An exit to an area not yet mapped returns to the atlas, on that area's card.
+    const leave = (to: AreaId) => ((back.current = to), setArea(to), setWalk(null));
+    const go = (to: AreaId) => (MAPPED_AREAS.includes(to) ? setWalk(to) : leave(to));
+    return <AreaView key={walk} area={walk} onExit={go} onLeave={() => leave(walk)} />;
+  }
 
   return (
     <main className="stage">
@@ -74,26 +108,6 @@ export default function AtlasPage() {
           </header>
 
           <div className="atlasLeft">
-          <nav className="paper atlasIndex" aria-label="Areas">
-            {TIERS.map((t) => (
-              <div key={t} className="atlasGroup">
-                <span className="atlasTier">{TIER_INFO[t].name}</span>
-                {AREAS.filter((a) => a.tier === t).map((a) => (
-                  <button
-                    key={a.id}
-                    type="button"
-                    className={`atlasArea${a.id === area ? " on" : ""}`}
-                    onClick={() => {
-                      setArea(a.id);
-                      api.current?.focus(a.id);
-                    }}
-                  >
-                    {a.name}
-                  </button>
-                ))}
-              </div>
-            ))}
-          </nav>
 
           <ul className="paper atlasLegend" aria-label="Key">
             <li>
@@ -128,6 +142,11 @@ export default function AtlasPage() {
             <h2>{shown.name}</h2>
             <p className="atlasWhere">{TIER_INFO[shown.tier].name}</p>
             <p className="lore">{shown.blurb}</p>
+            {MAPPED_AREAS.includes(area) && (
+              <button className="btn small" type="button" onClick={() => setWalk(area)}>
+                Enter
+              </button>
+            )}
             {bosses.length > 0 && (
               <p>
                 <b>Keeper:</b> {bosses.map((b) => b.name).join(", ")}

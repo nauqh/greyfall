@@ -7,10 +7,13 @@
 import {
   AREAS,
   AREA_CODE,
+  TIERS,
+  areaMap,
   atlasMap,
   footprint,
   useIsland,
   type AreaId,
+  type AreaMap,
   type AtlasLift,
   type AtlasMap,
   type AtlasTier,
@@ -40,6 +43,10 @@ export interface AtlasApi {
 }
 
 export interface AtlasHooks {
+  /** An area's own map instead of the atlas: the camera kept inside it. */
+  area?: AreaId;
+  /** Asks the page to travel through an exit to another area. */
+  onExit?: (to: AreaId) => void;
   /** Asks the page to show an area's card. */
   onArea: (id: AreaId) => void;
   /** Tells the page which tier is in view, after a lift or a tab. */
@@ -188,6 +195,8 @@ export class AtlasScene extends Phaser.Scene {
   private routes: Partial<Record<TierId, Phaser.GameObjects.Graphics>> = {};
   private showRoutes = false;
   private drag: { x: number; y: number; sx: number; sy: number; moved: boolean } | null = null;
+  /** In an area's own map: that map. */
+  private local: AreaMap | null = null;
 
   constructor() {
     super("atlas");
@@ -198,7 +207,11 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   preload(): void {
-    this.map = atlasMap();
+    if (this.hooks.area) {
+      // One area's map stands in for every tier; only its own is built.
+      this.local = areaMap(this.hooks.area);
+      this.map = { tiers: { sky: this.local, surface: this.local, below: this.local }, areas: [...AREAS], lifts: [] };
+    } else this.map = atlasMap();
     loadTerrain(this);
     loadGroundColours(this);
     this.load.image("tilesetRoad", packUrl("Terrain/Tileset/Tilemap_color4.png"));
@@ -206,7 +219,7 @@ export class AtlasScene extends Phaser.Scene {
       if (this.textures.exists(key)) return;
       this.load.spritesheet(key, packUrl(s.file), { frameWidth: s.frame, frameHeight: s.frameH ?? s.frame });
     };
-    for (const tier of Object.values(this.map.tiers)) {
+    for (const tier of new Set(Object.values(this.map.tiers))) {
       for (const p of tier.props) {
         if (p.color) this.load.image(this.buildingKey(p), packUrl(`Buildings/${COLOR_DIR[p.color]} Buildings/${BUILDING_FILE[p.art]}`));
         else sheet(`prop_${p.art}`, PROP[p.art]!);
@@ -264,7 +277,7 @@ export class AtlasScene extends Phaser.Scene {
 
     // A tier at a time, each built on its own island and kept to its own camera.
     const made: Record<TierId, Phaser.GameObjects.GameObject[]> = { sky: [], surface: [], below: [] };
-    for (const id of ["below", "surface", "sky"] as const) made[id] = this.buildTier(this.map.tiers[id]);
+    for (const id of ["below", "surface", "sky"] as const) if (!this.local || this.local.id === id) made[id] = this.buildTier(this.map.tiers[id]);
 
     const main = this.cameras.main;
     this.cams = {
@@ -279,10 +292,20 @@ export class AtlasScene extends Phaser.Scene {
       for (const c of Object.values(this.cams)) c.setSize(size.width, size.height);
     });
 
-    const hub = AREAS.find((a) => a.id === "harbour")!.label;
-    main.setZoom(this.zoomFor(22));
-    main.centerOn(hub.col * CELL, (hub.row - 4) * CELL);
-    this.show("surface");
+    if (this.local) {
+      // The camera stays inside the area, and opens on where a traveller arrives.
+      const local = this.local;
+      const cam = this.cams[local.id];
+      for (const c of Object.values(this.cams)) c.setBounds(0, 0, STRAT_COLS * CELL, STRAT_ROWS * CELL);
+      this.show(local.id);
+      cam.setZoom(this.zoomFor(22));
+      cam.centerOn((local.entry.col + 0.5) * CELL, (local.entry.row + 0.5) * CELL);
+    } else {
+      const hub = AREAS.find((a) => a.id === "harbour")!.label;
+      main.setZoom(this.zoomFor(22));
+      main.centerOn(hub.col * CELL, (hub.row - 4) * CELL);
+      this.show("surface");
+    }
     this.controls();
     this.hooks.ready({
       focus: (id) => {
@@ -358,7 +381,8 @@ export class AtlasScene extends Phaser.Scene {
     this.input.setDefaultCursor(HAND);
     this.input.on("wheel", (_p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
       const cam = this.active;
-      cam.zoomTo(Phaser.Math.Clamp(cam.zoom * (dy > 0 ? 0.85 : 1.18), this.zoomFor(STRAT_ROWS + 6), this.zoomFor(9)), 160, "Sine.easeOut", true);
+      const widest = this.local ? Math.max(this.zoomFor(STRAT_ROWS), cam.width / (STRAT_COLS * CELL)) : this.zoomFor(STRAT_ROWS + 6);
+      cam.zoomTo(Phaser.Math.Clamp(cam.zoom * (dy > 0 ? 0.85 : 1.18), widest, this.zoomFor(9)), 160, "Sine.easeOut", true);
     });
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
       const cam = this.active;
@@ -377,7 +401,10 @@ export class AtlasScene extends Phaser.Scene {
       if (!d || d.moved) return;
       const w = this.active.getWorldPoint(p.x, p.y);
       const cell = { col: Math.floor(w.x / CELL), row: Math.floor(w.y / CELL) };
-      // A lift's end first, then the area under the pointer.
+      // An exit travels, a lift's end rides it, else the area under the pointer.
+      for (const e of this.local?.exits ?? []) {
+        if (Math.abs(e.at.col - cell.col) <= 2 && Math.abs(e.at.row - cell.row) <= 2) return this.hooks.onExit?.(e.to);
+      }
       for (const l of this.map.lifts) {
         for (const end of [l.up, l.down]) {
           if (end.tier === this.view && Math.abs(end.at.col - cell.col) <= 2 && Math.abs(end.at.row - cell.row) <= 2) return this.ride(l, this.view);
@@ -445,7 +472,16 @@ export class AtlasScene extends Phaser.Scene {
     useIsland(tier.island);
     const before = new Set(this.children.list);
     const roads = trailTiles(tier.roads);
+    const local = this.local;
+    const decks = new Set(local?.decks.map((d) => d.row * STRAT_COLS + d.col));
     buildMap(this, roads, (c, r, lv) => {
+      if (local) {
+        const d = local.districts[Number(local.districtAt[r]?.[c])];
+        if (!d) return "tilesetC4";
+        // A bridge deck in a colour its district's ground never uses, so it reads above it.
+        if (decks.has(r * STRAT_COLS + c)) return `tilesetC${[1, 4, 5, 2, 3].find((x) => !d.palette.includes(x)) ?? 1}`;
+        return `tilesetC${d.palette[Math.min(d.palette.length - 1, lv - 1)]}`;
+      }
       const ch = tier.areaAt[r]?.[c];
       // The rock of the Underneath, and anything outside an area, in the dustiest green.
       const p = ch && ch !== "-" ? AREAS[AREA_CODE.indexOf(ch)]!.palette : [4, 4, 4];
@@ -461,6 +497,7 @@ export class AtlasScene extends Phaser.Scene {
     for (const f of tier.fires) this.bonfire(f);
     for (const d of tier.dwellers) this.addDweller(d);
     for (const l of this.map.lifts) for (const end of [l.up, l.down]) if (end.tier === tier.id) this.liftMark(l, end === l.up);
+    for (const e of this.local?.exits ?? []) this.exitMark(e);
     this.mood(tier);
     this.ambience(tier);
     this.labels(tier);
@@ -495,6 +532,7 @@ export class AtlasScene extends Phaser.Scene {
       return seed / 4294967296;
     };
     const areaId = (c: number, r: number): AreaId | null => {
+      if (this.local) return this.local.districts[Number(this.local.districtAt[r]?.[c])]?.dress ?? null;
       const ch = tier.areaAt[r]?.[c];
       return ch && ch !== "-" ? AREAS[AREA_CODE.indexOf(ch)]!.id : null;
     };
@@ -678,6 +716,34 @@ export class AtlasScene extends Phaser.Scene {
     this.names.push({ text: t, px: 12, tier: this.building });
   }
 
+  /**
+   * An area map's exit: a lift's shaft of light or a well's dark mouth when it
+   * goes up or down a tier, else a sign at the map's edge naming where the road goes.
+   */
+  private exitMark(e: AreaMap["exits"][number]): void {
+    const x = (e.at.col + 0.5) * CELL;
+    const y = (e.at.row + 0.8) * CELL;
+    const here = this.local!.id;
+    const there = AREAS.find((a) => a.id === e.to)!;
+    const up = TIERS.indexOf(there.tier) < TIERS.indexOf(here);
+    const down = TIERS.indexOf(there.tier) > TIERS.indexOf(here);
+    if (down) {
+      this.add.ellipse(x, y, 110, 52, 0x05050a, 0.85).setStrokeStyle(5, 0x3a3f4a).setDepth(DEPTH.ground + 1);
+      this.add.ellipse(x, y + 4, 70, 30, 0x000000, 0.9).setDepth(DEPTH.ground + 2);
+    } else if (up) {
+      const beam = this.add.image(x, y, "beam").setOrigin(0.5, 1).setScale(1.6, 2.4).setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.clouds - 2);
+      this.tweens.add({ targets: beam, alpha: 0.55, duration: 1400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    }
+    const tone = e.kind in GATE_TONE ? GATE_TONE[e.kind as GateKind] : LIFT_TONE[e.kind as LiftKind];
+    const word = up ? "up to " : down ? "down to " : "to ";
+    const t = this.add
+      // Kept a few tiles inside the map so an edge exit's sign is never cut off.
+      .text(Phaser.Math.Clamp(x, 4 * CELL, (STRAT_COLS - 4) * CELL), Math.max(y - (up || down ? 2.4 : 1.2) * CELL, 3 * CELL), `${e.name}\n${word}${there.name}`, { fontFamily: FONT, fontSize: "26px", fontStyle: "bold", color: tone, stroke: "#1c2634", strokeThickness: 6, align: "center" })
+      .setOrigin(0.5)
+      .setDepth(DEPTH.fx + 3);
+    this.names.push({ text: t, px: 13, tier: this.building });
+  }
+
   /** Creatures and knights, idle at their spot or walking their beat. */
   private addDweller(d: Dweller): void {
     const look = this.look(d);
@@ -794,7 +860,8 @@ export class AtlasScene extends Phaser.Scene {
       this.names.push({ text: t, px: min, tier: this.building });
       return t;
     };
-    for (const a of AREAS) if (a.tier === tier.id) text(a.label.col * CELL, a.label.row * CELL, a.name.toUpperCase(), 64, "#fdfaf0", 22).setLetterSpacing(10);
+    for (const d of this.local?.districts ?? []) text((d.at.col + 0.5) * CELL, d.at.row * CELL, d.name.toUpperCase(), 44, "#fdfaf0", 16).setLetterSpacing(6);
+    if (!this.local) for (const a of AREAS) if (a.tier === tier.id) text(a.label.col * CELL, a.label.row * CELL, a.name.toUpperCase(), 64, "#fdfaf0", 22).setLetterSpacing(10);
     for (const g of tier.gates) {
       const word = GATE_WORD[g.kind];
       text((g.at.col + 0.5) * CELL, (g.at.row - 1.2) * CELL, word ? `${g.name} (${word})` : g.name, 26, GATE_TONE[g.kind], 12);

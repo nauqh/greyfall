@@ -181,3 +181,4 @@ export {
   type TierBase,
   type TierId,
 } from "./atlas.ts";
+export { AREA_SIZE, MAPPED_AREAS, areaMap, type AreaExit, type AreaMap, type District } from "./areas.ts";
