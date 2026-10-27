@@ -29,7 +29,7 @@ import * as Phaser from "phaser";
 import { BUILDINGS, packUrl } from "./art";
 import { DPR, startGame } from "./boot";
 import { CELL, buildMap, loadGroundColours, trailTiles } from "./islandMap";
-import { STRAT_COLS, STRAT_ROWS, at, isForest, isLand, isSlope, isWalkable, level } from "./stratMap";
+import { STRAT_COLS, STRAT_ROWS, at, findPath, isForest, isLand, isSlope, isWalkable, level } from "./stratMap";
 import { DEPTH, addDecor, cloudCover, loadTerrain, prepareTerrain, standing } from "./terrain";
 import { HAND } from "./ui";
 
@@ -158,8 +158,8 @@ const PAWN_ACT: Record<string, { idle: string; move?: string }> = {
 
 /** Trees by area: the big animated pines in Emberwood, dead wood on the moor and in the grey. */
 const BIG_TREE: Sheet[] = [
-  { file: "Terrain/Resources/Wood/Trees/Tree1.png", frame: 256, anchor: 0.87, scale: 0.85 },
-  { file: "Terrain/Resources/Wood/Trees/Tree2.png", frame: 256, anchor: 0.87, scale: 0.85 },
+  { file: "Terrain/Resources/Wood/Trees/Tree1.png", frame: 192, frameH: 256, anchor: 0.87, scale: 0.85 },
+  { file: "Terrain/Resources/Wood/Trees/Tree2.png", frame: 192, frameH: 256, anchor: 0.87, scale: 0.85 },
 ];
 
 const FIRE: Sheet = { file: "Effects/Fire/Fire.png", frame: 128, anchor: 0.8 };
@@ -197,6 +197,8 @@ export class AtlasScene extends Phaser.Scene {
   private drag: { x: number; y: number; sx: number; sy: number; moved: boolean } | null = null;
   /** In an area's own map: that map. */
   private local: AreaMap | null = null;
+  /** Each exit's sign: clicking it travels, as the exit's own tile does. */
+  private signs: { to: AreaId; text: Phaser.GameObjects.Text }[] = [];
 
   constructor() {
     super("atlas");
@@ -405,6 +407,7 @@ export class AtlasScene extends Phaser.Scene {
       for (const e of this.local?.exits ?? []) {
         if (Math.abs(e.at.col - cell.col) <= 2 && Math.abs(e.at.row - cell.row) <= 2) return this.hooks.onExit?.(e.to);
       }
+      for (const s of this.signs) if (s.text.getBounds().contains(w.x, w.y)) return this.hooks.onExit?.(s.to);
       for (const l of this.map.lifts) {
         for (const end of [l.up, l.down]) {
           if (end.tier === this.view && Math.abs(end.at.col - cell.col) <= 2 && Math.abs(end.at.row - cell.row) <= 2) return this.ride(l, this.view);
@@ -742,6 +745,7 @@ export class AtlasScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(DEPTH.fx + 3);
     this.names.push({ text: t, px: 13, tier: this.building });
+    this.signs.push({ to: e.to, text: t });
   }
 
   /** Creatures and knights, idle at their spot or walking their beat. */
@@ -760,28 +764,34 @@ export class AtlasScene extends Phaser.Scene {
       this.track(s, 160);
       return;
     }
-    this.track(s, d.to ? Math.max(Math.abs((d.to.col - d.col) * CELL), Math.abs((d.to.row - d.row) * CELL)) + 64 : 0);
-    if (!d.to) return;
-    const ends = [{ x, y }, { x: (d.to.col + 0.5) * CELL, y: (d.to.row + 0.75) * CELL }];
+    // A walker keeps to the ground it can walk: round the cliffs, and up and down only by the stairs.
+    const found = d.to && !look.swim ? findPath({ col: d.col, row: d.row }, d.to) : null;
+    // A beat that only goes the long way round, down one stair and up another, is not walked: it stays at its post.
+    const route = found && d.to && found.length <= 2 * (Math.abs(d.to.col - d.col) + Math.abs(d.to.row - d.row)) + 8 ? found : null;
+    const cells = route ? [{ col: d.col, row: d.row }, ...route] : d.to && look.swim ? [{ col: d.col, row: d.row }, d.to] : [];
+    const points = cells.map((c) => ({ x: (c.col + 0.5) * CELL, y: (c.row + 0.75) * CELL }));
+    const reach = points.reduce((m, p) => Math.max(m, Math.abs(p.x - x), Math.abs(p.y - y)), 0);
+    this.track(s, points.length > 1 ? reach + 64 : 0);
+    if (points.length < 2) return;
     const speed = look.swim ? 45 : 80;
-    const walk = (i: number): void => {
-      const from = ends[1 - i]!;
-      const to = ends[i]!;
-      s.setFlipX(to.x < from.x);
+    const walk = (way: { x: number; y: number }[]): void => {
       if (look.move) this.loop(s, look.move.key);
-      this.tweens.add({
+      this.tweens.chain({
         targets: s,
-        x: to.x,
-        y: to.y,
-        duration: (Phaser.Math.Distance.Between(from.x, from.y, to.x, to.y) / speed) * 1000,
-        onUpdate: () => !look.swim && s.setDepth(standing(s.y)),
+        tweens: way.slice(1).map((to, i) => ({
+          x: to.x,
+          y: to.y,
+          duration: (Phaser.Math.Distance.Between(way[i]!.x, way[i]!.y, to.x, to.y) / speed) * 1000,
+          onStart: () => to.x !== way[i]!.x && s.setFlipX(to.x < way[i]!.x),
+          onUpdate: () => !look.swim && s.setDepth(standing(s.y)),
+        })),
         onComplete: () => {
           this.loop(s, look.idle.key);
-          this.time.delayedCall(1500 + Math.random() * 3000, () => walk(1 - i));
+          this.time.delayedCall(1500 + Math.random() * 3000, () => walk([...way].reverse()));
         },
       });
     };
-    this.time.delayedCall(Math.random() * 3000, () => walk(1));
+    this.time.delayedCall(Math.random() * 3000, () => walk(points));
   }
 
   /** The light over each area, soft across the water between: one texel a tile, multiplied in. Rock is near black. */

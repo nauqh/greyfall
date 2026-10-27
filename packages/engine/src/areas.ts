@@ -30,6 +30,8 @@ export interface District {
   palette: readonly number[];
   /** The atlas area whose trees, rocks and bones it is dressed like. */
   dress: AreaId;
+  /** Radius of the open clearing round its seed in a maze; 6 when unset. */
+  clearing?: number;
   /** Ground it owns outright, instead of growing from its seed. */
   box?: { x: number; y: number; w: number; h: number };
 }
@@ -44,6 +46,77 @@ export interface AreaMap extends AtlasTier {
   districtAt: string[];
   /** Raised bridge decks, drawn in their own colour. */
   decks: Cell[];
+}
+
+/**
+ * Diablo-style ground for finish(): woods everywhere but winding corridors,
+ * a randomized depth-first tree over a jittered grid of waypoints with a few
+ * extra links for loops, small clearings at some waypoints, and the rooms.
+ */
+function maze(t: Builder, rng: Rng, rooms: readonly { at: Cell; r: number }[], cell = 11): (c: number, r: number) => boolean {
+  const { cols, rows } = AREA_SIZE;
+  const open = new Set<number>();
+  const ragged = noise(`maze:${rng.int(1_000_000)}`, 3);
+  const stamp = (x: number, y: number, rad: number): void => {
+    for (let dr = -Math.ceil(rad); dr <= rad; dr++) for (let dc = -Math.ceil(rad); dc <= rad; dc++) if (dc * dc + dr * dr <= rad * rad) open.add((y + dr) * cols + x + dc);
+  };
+  const gw = Math.floor(cols / cell);
+  const gh = Math.floor(rows / cell);
+  const node: (Cell | null)[] = [];
+  for (let j = 0; j < gh; j++) {
+    for (let i = 0; i < gw; i++) {
+      const p = { col: i * cell + 2 + rng.int(cell - 3), row: j * cell + 2 + rng.int(cell - 3) };
+      node.push(t.at(p.col, p.row) === "~" ? null : p);
+    }
+  }
+  const near = (k: number): number[] =>
+    [k % gw > 0 ? k - 1 : -1, k % gw < gw - 1 ? k + 1 : -1, k - gw, k + gw].filter((n) => n >= 0 && n < node.length && node[n]);
+  const linked = new Set<number>();
+  const edges: [number, number][] = [];
+  node.forEach((p, k0) => {
+    if (!p || linked.has(k0)) return;
+    const stack = [k0];
+    linked.add(k0);
+    while (stack.length > 0) {
+      const k = stack[stack.length - 1]!;
+      const free = near(k).filter((n) => !linked.has(n));
+      if (free.length === 0) {
+        stack.pop();
+        continue;
+      }
+      const n = free[rng.int(free.length)]!;
+      linked.add(n);
+      edges.push([k, n]);
+      stack.push(n);
+    }
+  });
+  node.forEach((p, k) => p && near(k).forEach((n) => n > k && rng.next() < 0.12 && edges.push([k, n])));
+  for (const [ka, kb] of edges) {
+    const [a, b] = [node[ka]!, node[kb]!];
+    const steps = Math.ceil(Math.hypot(b.col - a.col, b.row - a.row) * 2);
+    for (let i = 0; i <= steps; i++) {
+      const x = Math.round(a.col + ((b.col - a.col) * i) / steps);
+      const y = Math.round(a.row + ((b.row - a.row) * i) / steps);
+      stamp(x, y, 1.2 + ragged(x, y) * 0.6);
+    }
+  }
+  for (const p of node) if (p && rng.next() < 0.3) stamp(p.col, p.row, 2.2 + rng.next() * 1.4);
+  for (const room of rooms) {
+    for (let r = Math.floor(room.at.row - room.r); r <= room.at.row + room.r; r++) {
+      for (let c = Math.floor(room.at.col - room.r - 3); c <= room.at.col + room.r + 3; c++) {
+        if (Math.hypot(c - room.at.col, (r - room.at.row) * 1.3) < room.r + ragged(c, r) * 2.5) open.add(r * cols + c);
+      }
+    }
+  }
+  return (c, r) => open.has(r * cols + c);
+}
+
+/** A river: water `width` wide along a line of points. */
+function river(t: Builder, points: readonly (readonly [number, number])[], width: number): void {
+  for (let i = 1; i < points.length; i++) {
+    const [a, b] = [points[i - 1]!, points[i]!];
+    t.cut({ col: a[0], row: a[1] }, { col: b[0], row: b[1] }, width, (c) => t.pond(c.col, c.row, 1, 1));
+  }
 }
 
 /** Land to its district: a box first, else the nearest seed, the border wandered by noise. */
@@ -241,7 +314,18 @@ function harbour(): AreaMap {
   who("skull", 98, 52, { to: { col: 102, row: 54 } });
   who("monk", 92, 49, { color: "blue" });
 
-  const tier = t.finish({ harbour: 0.06 }, [{ col: 56, row: 44 }]);
+  const districts: District[] = [
+    { name: "The Citadel", at: { col: 57, row: 33 }, palette: [3, 4, 1, 5], dress: "harbour", box: { x: 36, y: 12, w: 42, h: 19 } },
+    { name: "Old Town", at: { col: 56, row: 46 }, palette: [3, 2, 2], dress: "harbour", clearing: 11 },
+    { name: "The Docks", at: { col: 56, row: 64 }, palette: [4, 3], dress: "saltreach", clearing: 8 },
+    { name: "West Fields", at: { col: 16, row: 52 }, palette: [1, 2, 2], dress: "harbour", clearing: 10 },
+    { name: "The Northwood", at: { col: 22, row: 12 }, palette: [2, 3, 3], dress: "emberwood" },
+    { name: "The Keepwood", at: { col: 44, row: 8 }, palette: [2, 2, 2], dress: "emberwood" },
+    { name: "Mine Hills", at: { col: 93, row: 24 }, palette: [4, 1, 3], dress: "crags" },
+    { name: "Moor Watch", at: { col: 102, row: 56 }, palette: [5, 4, 3], dress: "barrowmoor" },
+  ];
+  const rooms = districts.map((d) => ({ at: d.at, r: d.clearing ?? 6 }));
+  const tier = t.finish({}, [{ col: 56, row: 44 }], maze(t, rng, rooms));
   const exits: AreaExit[] = [
     { to: "saltreach", name: "Old Bridge", kind: "open", at: { col: 1, row: 42 } },
     { to: "barrowmoor", name: "Moor Gate", kind: "shortcut", at: { col: 110, row: 44 } },
@@ -249,20 +333,138 @@ function harbour(): AreaMap {
     { to: "undercroft", name: "Old Well", kind: "drop", at: { col: 56, row: 43 } },
     { to: "steps", name: "Watch Lift", kind: "shortcut", at: { col: 62, row: 15 } },
   ];
-  const districts: District[] = [
-    { name: "The Citadel", at: { col: 57, row: 33 }, palette: [3, 4, 1, 5], dress: "harbour", box: { x: 36, y: 12, w: 42, h: 19 } },
-    { name: "Old Town", at: { col: 56, row: 46 }, palette: [3, 2, 2], dress: "harbour" },
-    { name: "The Docks", at: { col: 56, row: 64 }, palette: [4, 3], dress: "saltreach" },
-    { name: "West Fields", at: { col: 16, row: 52 }, palette: [1, 2, 2], dress: "harbour" },
-    { name: "The Northwood", at: { col: 22, row: 12 }, palette: [2, 3, 3], dress: "emberwood" },
-    { name: "The Keepwood", at: { col: 44, row: 8 }, palette: [2, 2, 2], dress: "emberwood" },
-    { name: "Mine Hills", at: { col: 93, row: 24 }, palette: [4, 1, 3], dress: "crags" },
-    { name: "Moor Watch", at: { col: 102, row: 56 }, palette: [5, 4, 3], dress: "barrowmoor" },
-  ];
   return { ...tier, area: "harbour", entry: { col: 56, row: 44 }, exits, districts, districtAt: districtGrid(tier, districts), decks };
 }
 
-const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour };
+function emberwood(): AreaMap {
+  const rng = makeRng("area:emberwood");
+  const t = tierBuilder("surface", rng, AREA_SIZE);
+  const { prop, who } = t;
+
+  t.blob("emberwood", 56, 36, 52, 31);
+  t.blob("emberwood", 22, 52, 18, 14);
+  t.blob("emberwood", 96, 16, 14, 12);
+  // The Ember Run: a river across the wood, west to east, so every way north picks its crossing.
+  river(t, [[2, 42], [18, 38], [34, 37], [50, 40], [66, 38], [82, 32], [98, 34], [110, 30]], 3);
+  t.pond(10, 57, 7, 4);
+
+  // Warren Hill: the goblins' hill, its warrens stacked up three heights.
+  t.relief({ area: "emberwood", at: { col: 25, row: 23 }, rx: 12, ry: 10, levels: 3, core: { at: { col: 28, row: 29 }, r: 1.6 } });
+  // Smoke Bluff across the river from it, and the Treetop Walk between them over the water.
+  t.relief({ area: "emberwood", at: { col: 26, row: 46 }, rx: 8, ry: 5, levels: 2, core: { at: { col: 28, row: 43 }, r: 1.8 } });
+  const decks = t.span(2, 27, 32, 2, 10);
+
+  // Troll's Hollow: the biggest clearing, walled by a ring of rock, one gap in its south side.
+  t.block(2, 52, 6, 22, 3);
+  t.block(2, 52, 6, 3, 18);
+  t.block(2, 71, 6, 3, 18);
+  t.block(2, 52, 21, 9, 3);
+  t.block(2, 65, 21, 9, 3);
+  t.stair(2, 51, 23, "L");
+  t.stair(2, 74, 23, "R");
+
+  // Crag Foot: the rock rising in the north-east, and an ash mound in the Burn.
+  t.relief({ area: "emberwood", at: { col: 92, row: 12 }, rx: 11, ry: 7, levels: 3 });
+  t.relief({ area: "emberwood", at: { col: 80, row: 58 }, rx: 7, ry: 5, levels: 2 });
+
+  // Woods: the Old Pines in the west, the north wood, copses in the east.
+  t.grove(16, 52, 13, 13, 0.75);
+  t.grove(36, 8, 16, 4, 0.6);
+  t.grove(84, 44, 9, 5, 0.45);
+  t.grove(100, 50, 6, 8, 0.5);
+  t.grove(44, 52, 6, 5, 0.4);
+
+  // Roads: north from the gate over the Cinder Ford to the Hollow, on to the Crag Stair,
+  // and round through the Burn and the east bridge: a loop back to the gate.
+  t.road([40, 64], [40, 56], [44, 44], [44, 34], [52, 28], [62, 25], [62, 18]);
+  t.road([52, 28], [76, 24], [88, 26], [100, 20], [110, 18]);
+  t.road([40, 56], [62, 54], [76, 48], [88, 40], [88, 26]);
+  t.bridge({ col: 44, row: 35 }, { col: 44, row: 43 }, 3);
+  // The Pine Ford: stepping stones from the Old Pines into the wood behind Warren Hill.
+  t.bridge({ col: 13, row: 34 }, { col: 13, row: 41 }, 2);
+  t.bridge({ col: 88, row: 28 }, { col: 88, row: 37 }, 3);
+  t.bridge({ col: 40, row: 64 }, { col: 40, row: 70 }, 3);
+  t.bridge({ col: 104, row: 18 }, { col: 110, row: 18 }, 3);
+
+  // The Palisade: the Harbour's side of the gate, woodcutters and a watch fire.
+  t.fires.push({ col: 43, row: 61 });
+  t.fences.push({ col: 32, row: 60, w: 6, h: 2 }, { col: 45, row: 60, w: 6, h: 2 });
+  prop("tower", 36, 64, { color: "blue" });
+  prop("house1", 47, 65, { color: "blue" });
+  for (const [c, r] of [[34, 56], [37, 53], [48, 57], [51, 62]] as const) prop("stump", c, r);
+  crowd(t, rng, "pawn", { col: 40, row: 58 }, 4, 5, { color: "blue", act: "axe" });
+  who("archer", 36, 62, { color: "blue" });
+  who("lancer", 42, 66, { color: "blue", to: { col: 42, row: 58 } });
+
+  // Old Pines: the deep wood the goblins have not burnt yet, a hermit's hut by the pool.
+  prop("house3", 18, 60, { color: "purple" });
+  who("monk", 20, 61, { color: "purple" });
+  who("bear", 10, 48, { to: { col: 20, row: 44 } });
+  who("bear", 24, 56);
+  who("turtle", 13, 59);
+  for (const [c, r] of [[8, 52], [26, 50]] as const) who("bee", c, r, { to: { col: c + 4, row: r - 2 } });
+
+  // Smoke Bluff and Warren Hill: goblin warrens on every height, slingers on the Treetop Walk.
+  for (const [c, r] of [[24, 45], [30, 46]] as const) prop("goblinHut", c, r);
+  for (const [c, r] of [[18, 26], [24, 30], [32, 26], [20, 20], [30, 20], [25, 16]] as const) prop("goblinHut", c, r);
+  t.fires.push({ col: 26, row: 24 });
+  crowd(t, rng, "torch", { col: 25, row: 24 }, 5, 6);
+  crowd(t, rng, "spear", { col: 26, row: 44 }, 3, 3);
+  who("slingshot", 27, 34, { to: { col: 28, row: 40 } });
+  who("shaman", 27, 21);
+  prop("skullSpike", 22, 31);
+  prop("skullSpike", 31, 31);
+
+  // Troll's Hollow: the Cinder Troll in the ash, bones of everything it caught, goblins on the rim.
+  t.bosses.push({ name: "Cinder Troll", area: "emberwood", col: 62, row: 13 });
+  who("troll", 62, 13, { to: { col: 66, row: 15 } });
+  for (const [c, r] of [[57, 11], [68, 12], [59, 17], [66, 18], [63, 10]] as const) prop("bones", c, r);
+  for (const [c, r] of [[56, 15], [69, 16]] as const) prop("deadTree", c, r, { scale: 0.7 });
+  for (const [c, r] of [[54, 8], [72, 8], [53, 22], [72, 22]] as const) who("spear", c, r);
+  prop("skullSpike", 60, 24);
+  prop("skullSpike", 65, 24);
+
+  // The Burn: the goblins' cleared ground, huts and fires in the ash, the mound their chief holds.
+  for (const [c, r] of [[64, 50], [70, 47], [66, 57], [74, 52], [80, 57]] as const) prop("goblinHut", c, r);
+  for (const [c, r] of [[60, 46], [72, 60], [86, 52], [58, 58], [76, 44]] as const) prop("deadTree", c, r, { scale: 0.7 });
+  for (const [c, r] of [[62, 60], [68, 44], [84, 56], [78, 50]] as const) prop("stump", c, r);
+  t.fires.push({ col: 70, row: 53 });
+  crowd(t, rng, "torch", { col: 70, row: 52 }, 6, 7);
+  crowd(t, rng, "thief", { col: 66, row: 56 }, 2, 4);
+  who("shaman", 80, 56);
+  who("gnoll", 76, 49, { to: { col: 86, row: 46 } });
+
+  // Crag Foot: the gnomes' path up out of the smoke, their hut on the rock.
+  prop("gnomeHut", 92, 10);
+  prop("gnomeTower", 98, 14);
+  crowd(t, rng, "gnome", { col: 94, row: 12 }, 3, 3);
+  who("gnome", 104, 19, { to: { col: 96, row: 22 } });
+  for (const [c, r] of [[86, 8], [100, 8]] as const) prop("goldStone", c, r);
+
+  // The Cinder Ford: where the road crosses the Run.
+  who("lizard", 50, 39, { to: { col: 60, row: 38 } });
+  who("thief", 46, 30, { to: { col: 40, row: 28 } });
+
+  const districts: District[] = [
+    { name: "The Palisade", at: { col: 40, row: 61 }, palette: [3, 2], dress: "harbour" },
+    { name: "Old Pines", at: { col: 13, row: 50 }, palette: [2, 3], dress: "emberwood" },
+    { name: "Smoke Bluff", at: { col: 26, row: 41 }, palette: [3, 4], dress: "emberwood" },
+    { name: "Warren Hill", at: { col: 24, row: 17 }, palette: [4, 5, 1], dress: "emberwood" },
+    { name: "Cinder Ford", at: { col: 46, row: 32 }, palette: [3, 2], dress: "fen" },
+    { name: "Troll's Hollow", at: { col: 63, row: 19 }, palette: [4, 1], dress: "barrowmoor", box: { x: 52, y: 6, w: 22, h: 18 } },
+    { name: "The Burn", at: { col: 72, row: 54 }, palette: [4, 1], dress: "greyfall" },
+    { name: "Crag Foot", at: { col: 94, row: 22 }, palette: [2, 3, 1], dress: "crags" },
+  ];
+  const rooms = districts.map((d) => ({ at: d.at, r: d.clearing ?? 6 }));
+  const tier = t.finish({}, [{ col: 40, row: 64 }], maze(t, rng, rooms));
+  const exits: AreaExit[] = [
+    { to: "harbour", name: "Ember Gate", kind: "gate", at: { col: 40, row: 70 } },
+    { to: "crags", name: "Crag Stair", kind: "open", at: { col: 110, row: 18 } },
+  ];
+  return { ...tier, area: "emberwood", entry: { col: 40, row: 64 }, exits, districts, districtAt: districtGrid(tier, districts), decks };
+}
+
+const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour, emberwood };
 
 /** The areas that have a map of their own so far. */
 export const MAPPED_AREAS = Object.keys(BUILT) as AreaId[];

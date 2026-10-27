@@ -205,6 +205,17 @@ the atlas, focused on it.
   `stair()`s at its ends. The deck is drawn in a tileset colour its district
   never uses, so it stands out above the ground below.
 - `grove(cx, cy, rx, ry, density)` plants woods on lowland.
+- **Mazes, not fields.** An area map's lowland is woods unless carved
+  open, as in Diablo: `maze()` links a jittered grid of waypoints (one per
+  11 tiles) with a randomized depth-first tree plus a few extra links for
+  loops, carves those corridors about 3 tiles wide with ragged edges, opens
+  small clearings at some waypoints and a room round each district's seed
+  (its `clearing`, 6 by default; the Harbour's town and fields are wider).
+  Roads, buildings, fires and stairs stay clear. Woods block, so the trees
+  are the walls; cliffs wall the high ground.
+- After the woods, every pocket nobody can reach gets a path cut to the rest,
+  all pockets in one pass and never along a cliff's face, and a pocket with
+  no way out at all goes to woods whole.
 - **Districts** split a big area into quarters. Each has its own name on the
   land, its own tileset colour per height (lowland first, following the
   Tiny Swords tilemap guide's advice to colour each level differently) and
@@ -216,6 +227,12 @@ the atlas, focused on it.
   the Docks (the Sea Wall across the bay), West Fields, the Northwood and the
   Keepwood, the Mine Hills and the Moor Watch. Three raised bridges: the Knoll
   Bridge, the Sky Bridge (upper bailey to the hills) and the Sea Wall.
+  Emberwood is the second: the Ember Run (a river, cut with `river()`) splits
+  it, crossed at the Cinder Ford, an east bridge, the Pine Ford, and the
+  Treetop Walk raised from Smoke Bluff to the goblins' Warren Hill. The Cinder
+  Troll waits in Troll's Hollow, a ring of rock with one gap. An exit's sign
+  is clickable as well as its tile, since an exit on the map's edge can sit
+  off-screen.
   `test/areas.test.ts` checks every mapped area: every exit and height can be
   reached from the entry, every bridge deck stays raised, all land belongs to
   a district, and every building sits wholly on its ground.

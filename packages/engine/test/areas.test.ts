@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { AREA_SIZE, MAPPED_AREAS, WATER_ART, areaMap, castsCliff, cellKey, footprint, isSlope, isWalkable, level, stepsFrom, useIsland, type Cell } from "../src/index.ts";
+import { AREA_SIZE, FLYING, MAPPED_AREAS, SEA_KINDS, WATER_ART, areaMap, castsCliff, cellKey, footprint, isSlope, isWalkable, level, stepsFrom, useIsland, type Cell } from "../src/index.ts";
 
 function reach(from: Cell): Set<number> {
   const seen = new Set([cellKey(from)]);
@@ -35,6 +35,11 @@ describe.each(MAPPED_AREAS)("the %s area map", (id) => {
     useIsland(m.island);
     for (const d of m.decks) expect(level(d.col, d.row) >= 2 || isSlope(d.col, d.row), `deck at ${d.col},${d.row}`).toBe(true);
     m.island.rows.forEach((line, r) => [...line].forEach((ch, c) => ch !== "~" && expect(m.districtAt[r]![c], `${c},${r}`).not.toBe("-")));
+  });
+
+  it("walks every walker's beat on foot, round the cliffs and by the stairs", () => {
+    useIsland(m.island);
+    for (const d of m.dwellers) if (d.to && !SEA_KINDS.has(d.kind) && !FLYING.has(d.kind)) expect(reach(d).has(cellKey(d.to)), `${d.kind} at ${d.col},${d.row}`).toBe(true);
   });
 
   it("stands every building wholly on its ground, clear of edges and of each other", () => {

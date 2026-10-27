@@ -856,7 +856,8 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
      * any pocket they sealed off; then every tile given its area. `from` is
      * where the walkable world starts, for the pocket check.
      */
-    finish(density: Partial<Record<AreaId, number>>, from: readonly Cell[]): AtlasTier {
+    /** With `open`, a maze: every lowland tile it leaves shut is woods, walling the clearings and lanes it opens. */
+    finish(density: Partial<Record<AreaId, number>>, from: readonly Cell[], open?: (c: number, r: number) => boolean): AtlasTier {
       terrain(t, rows, cols);
       const keep = new Set<string>();
       const clear = (c: number, r: number, rad: number): void => {
@@ -882,7 +883,7 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
           // Never on a cliff face, by a stair, or where a slope's head or foot is.
           const slope = (x: number, y: number) => "<>[]{}()".includes(at(x, y));
           if ("#^%45".includes(at(c, r - 1)) || slope(c, r - 1) || slope(c, r + 1) || slope(c - 1, r) || slope(c + 1, r)) continue;
-          if (rng.next() < (density[AREAS[a]!.id] ?? 0)) put(c, r, "T");
+          if (open ? !open(c, r) : rng.next() < (density[AREAS[a]!.id] ?? 0)) put(c, r, "T");
         }
       }
 
@@ -899,27 +900,42 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
         const seen = new Set(from.map(cellKey));
         const queue = [...from];
         for (let i = 0; i < queue.length; i++) for (const n of stepsFrom(queue[i]!)) if (!seen.has(cellKey(n))) (seen.add(cellKey(n)), queue.push(n));
-        let pocket: Cell | null = null;
-        for (let r = 0; r < rows && !pocket; r++) for (let c = 0; c < cols && !pocket; c++) if (at(c, r) === "." && isWalkable(c, r) && !seen.has(cellKey({ col: c, row: r }))) pocket = { col: c, row: r };
-        if (!pocket) break;
-        const prev = new Map<number, Cell | null>([[cellKey(pocket), null]]);
-        const q = [pocket];
-        let found: Cell | null = null;
-        for (let i = 0; i < q.length && !found; i++) {
-          for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
-            const n = { col: q[i]!.col + dc, row: q[i]!.row + dr };
-            if (prev.has(cellKey(n)) || !".T".includes(at(n.col, n.row))) continue;
-            prev.set(cellKey(n), q[i]!);
-            if (seen.has(cellKey(n))) {
-              found = n;
-              break;
-            }
-            q.push(n);
+        // Every pocket this pass: one tile of each, its own ground marked so it is linked once.
+        const pockets: Cell[][] = [];
+        const mine = new Set<number>();
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const p = { col: c, row: r };
+            if (at(c, r) !== "." || !isWalkable(c, r) || seen.has(cellKey(p)) || mine.has(cellKey(p))) continue;
+            const flood = [p];
+            pockets.push(flood);
+            mine.add(cellKey(p));
+            for (let i = 0; i < flood.length; i++) for (const n of stepsFrom(flood[i]!)) if (!seen.has(cellKey(n)) && !mine.has(cellKey(n))) (mine.add(cellKey(n)), flood.push(n));
           }
         }
-        // Out through the trees to the rest; an islet with no way out goes to the woods.
-        if (!found) put(pocket.col, pocket.row, "T");
-        else for (let c: Cell | null = found; c; c = prev.get(cellKey(c)) ?? null) if (at(c.col, c.row) === "T") put(c.col, c.row, ".");
+        if (pockets.length === 0) break;
+        for (const flood of pockets) {
+          const pocket = flood[0]!;
+          const prev = new Map<number, Cell | null>([[cellKey(pocket), null]]);
+          const q = [pocket];
+          let found: Cell | null = null;
+          for (let i = 0; i < q.length && !found; i++) {
+            for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+              const n = { col: q[i]!.col + dc, row: q[i]!.row + dr };
+              // Never along a cliff's face: a path there walks nowhere.
+              if (prev.has(cellKey(n)) || !".T".includes(at(n.col, n.row)) || castsCliff(n.col, n.row - 1)) continue;
+              prev.set(cellKey(n), q[i]!);
+              if (seen.has(cellKey(n))) {
+                found = n;
+                break;
+              }
+              q.push(n);
+            }
+          }
+          // Out through the trees to the rest; an islet with no way out goes to the woods, all of it.
+          if (!found) for (const c of flood) put(c.col, c.row, "T");
+          else for (let c: Cell | null = found; c; c = prev.get(cellKey(c)) ?? null) if (at(c.col, c.row) === "T") put(c.col, c.row, ".");
+        }
       }
       // High ground no stair reaches, cut off by a terrace's cliff or the woods on it, comes down a height.
       const lower: Record<string, string> = { "#": ".", "%": ".", "^": "#", "4": "^", "5": "4" };
