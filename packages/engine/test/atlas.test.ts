@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { AREAS, AREA_CODE, TIERS, atlasMap, cellKey, isWalkable, stepsFrom, useIsland, type AreaId, type AtlasTier, type Cell, type TierId } from "../src/index.ts";
+import { AREAS, AREA_CODE, FLYING, SEA_KINDS, TIERS, WATER_ART, atlasMap, castsCliff, footprint, isSlope, level, cellKey, isWalkable, stepsFrom, useIsland, type AreaId, type AtlasTier, type Cell, type TierId } from "../src/index.ts";
 
 const map = atlasMap();
 const code = Object.fromEntries(AREAS.map((a, i) => [a.id, AREA_CODE[i]])) as Record<AreaId, string>;
@@ -65,9 +65,6 @@ function world(start: AreaId, opened = false): Set<AreaId> {
   return got;
 }
 
-const WATER_ART = new Set(["boat", "pirateTowerWater"]);
-const SEA_KINDS = new Set(["harpoonShark", "paddleShark", "seahorseBoat", "bombFish", "rubberDuck"]);
-const FLYING = new Set(["bat", "bee", "imp"]);
 
 describe("the atlas's tiers", () => {
   it("lie on one grid, a tile for a tile", () => {
@@ -142,7 +139,48 @@ describe("the atlas's tiers", () => {
     }
   });
 
-  it.each(TIERS)("%s: every height can be climbed to, up to the fifth", (id) => {
+  it.each(TIERS)("%s: stands every building wholly on its ground, clear of edges and of each other", (id) => {
+    const t = map.tiers[id];
+    useIsland(t.island);
+    const under = new Map<string, string>();
+    for (const p of t.props) {
+      const name = `${p.art} at ${p.col},${p.row}`;
+      const wet = WATER_ART.has(p.art);
+      const base = level(p.col, p.row);
+      for (const c of footprint(p)) {
+        const ch = t.island.rows[c.row]![c.col]!;
+        if (wet) expect(ch, `${name}: hull over ${c.col},${c.row}`).toBe("~");
+        else {
+          expect(isWalkable(c.col, c.row) && !isSlope(c.col, c.row), `${name}: base over ${c.col},${c.row}`).toBe(true);
+          expect(level(c.col, c.row), `${name}: base over two heights`).toBe(base);
+        }
+        expect(under.get(`${c.col},${c.row}`), `${name} overlaps`).toBeUndefined();
+        under.set(`${c.col},${c.row}`, name);
+      }
+      if (wet) continue;
+      // A tile of its own ground round it: no cliff's lip, stair or shore.
+      for (const c of footprint(p, true)) {
+        const ch = t.island.rows[c.row]![c.col]!;
+        expect(ch !== "~" && !isSlope(c.col, c.row) && level(c.col, c.row) === base && !castsCliff(c.col, c.row - 1), `${name}: edge at ${c.col},${c.row}`).toBe(true);
+      }
+    }
+  });
+
+  it.each(TIERS)("%s: lights every bonfire on its own level ground, off any edge", (id) => {
+    const t = map.tiers[id];
+    useIsland(t.island);
+    for (const f of t.fires) {
+      const base = level(f.col, f.row);
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          const [c, r] = [f.col + dc, f.row + dr];
+          expect(t.island.rows[r]![c] !== "~" && !isSlope(c, r) && level(c, r) === base && !castsCliff(c, r - 1), `fire at ${f.col},${f.row}: edge at ${c},${r}`).toBe(true);
+        }
+      }
+    }
+  });
+
+  it.each(TIERS)("%s: every height can be climbed to", (id) => {
     const t = map.tiers[id];
     const starts = AREAS.filter((a) => a.tier === id).map((a) => heart(a.id));
     useIsland(t.island);
@@ -152,6 +190,6 @@ describe("the atlas's tiers", () => {
         if ("#^45".includes(ch) && isWalkable(c, r)) expect(all.has(cellKey({ col: c, row: r })), `${ch} at ${c},${r}`).toBe(true);
       }),
     );
-    if (id === "surface") expect(t.island.rows.some((l) => l.includes("5"))).toBe(true);
+    if (id === "surface") expect(t.island.rows.some((l) => l.includes("^"))).toBe(true);
   });
 });

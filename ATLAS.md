@@ -1,6 +1,6 @@
 # The Atlas
 
-Oct 26, 2026 · revised Oct 26: three tiers, lifts between them, and heights to five
+Oct 26, 2026 · revised Oct 26: three tiers, lifts between them, and heights to five · Oct 27: natural terrain
 
 ## Summary
 
@@ -16,7 +16,7 @@ joins them. Between tiers, lifts, wells, a sinkhole and a stair join them at
 the same spot on the grid, so what is above a place is really above it.
 
 Each tier is the war island's height-map format (`island.ts`), so the war's
-autotiler draws it (foam, south cliffs, stepped plateaus, five heights,
+autotiler draws it (foam, south cliffs, irregular plateaus, up to five heights,
 roads) and its pathing walks it. The data is
 `packages/engine/src/atlas.ts`; the dressing is
 `apps/web/src/game/AtlasScene.ts`.
@@ -40,7 +40,7 @@ roads) and its pathing walks it. The data is
 | Surface | Saltreach | yellow militia, fishing villages, turtles, sharks offshore, pirate towers | |
 | Surface | Last Harbour (hub) | the blue castle on its own height above the town, the bonfire square, the Old Well, pawns at work | |
 | Surface | Emberwood | goblin warrens, the big pines (standing still), gnolls on Smoke Ridge | Cinder Troll |
-| Surface | Tinker Crags | a rock that climbs in five steps to the Tinker Peak, gnomes, bears, pandas, the Gnome Lift up | Old Bamboo |
+| Surface | Tinker Crags | a mesa that steps up three heights to the Tinker Peak, gnomes, bears, pandas, the Gnome Lift up | Old Bamboo |
 | Surface | Barrowmoor | barrows, bones, the cave down to the Deeps | The Barrow King |
 | Surface | Lizard Fen | the purple chapel, lizards, the sinkhole | |
 | Surface | The Greyfall | the citadel, its keep on the fourth height, the black legion, the Throne Stair up | The Grey Warlord |
@@ -83,9 +83,63 @@ The engine now reads five heights:
 | 4 | `4` | `{` `}` |
 | 5 | `5` | `(` `)` |
 
-The renderer draws every height the map has. To stack a height on another,
-make it one tile narrower than the ring below it on each side, so its stairs
-land beside the ring rather than on it.
+The renderer draws every height the map has.
+
+### Terrain
+
+High ground is generated, not drawn as rectangles, after the pack's own map
+art (the Tiny Swords banner):
+- **Shape:** broad, irregular tables whose cliffs run straight and notch in
+  and out, can drop straight into the sea, and share the lowland's green,
+  so the cliff and its shadow alone show the height.
+- **Placing it:** an area asks for it with `t.relief({ area, at, rx, ry,
+  levels, core })`: a summit at `at`, falling away over `rx` by `ry` tiles,
+  in up to `levels` heights. `core` holds the top height round a lift or a
+  keep.
+
+How `terrain()` in `atlas.ts` lays it down:
+
+1. **Outlines:** each height gets its own outline from a falloff plus two
+   octaves of value noise. Higher heights drift north, because cliffs face
+   south and so stack into one face, and shrink, so they read as terraces,
+   not rings.
+2. **Smoothing:** a majority filter, then a straightening pass that fills
+   and drops one- and two-tile runs in every row and column, so edges step
+   in notches, not zigzags.
+3. **Nesting:** each height stands two tiles inside the one below, so its
+   cliff, its stairs and a walk past its foot all stand on that height.
+   Slivers under two tiles wide go.
+4. **Valleys:** roads, gates and bridges are kept a tile clear, so they run
+   through the high ground as valleys. A high road's two ends are forced to
+   the second height, where it lands.
+5. **Stairs:** each table gets a stair at both ends of its bottom row in
+   every area it spans. A table that can take none is levelled.
+6. **Repairs:** after the woods are planted, any high ground no stair
+   reaches comes down a height, and anything standing on a cliff face or a
+   stair steps off it onto open ground.
+
+### Placing buildings
+
+Every building has a footprint measured off its art (`FOOT` and
+`footprint()` in `atlas.ts`): its width in tiles and its depth back from its
+base row.
+
+- **Its base:** every tile of it is open, walkable ground of one height in
+  the building's own area.
+- **The ring round it:** a tile of that same ground all round. Woods may
+  stand at its side, but not the sea, a cliff face, a stair or another
+  height, so nothing sits on a cliff's lip or the shore.
+- **Neighbours:** no two buildings touch.
+- **Boats:** a boat sits wholly in open water.
+- **Bonfires:** follow the same ring rule.
+
+A building that doesn't fit where it's written moves to the nearest spot that
+does, on the height meant for it when there is one. The scene keeps every
+footprint clear of bushes, rocks and trees. A test checks all of this on
+every tier.
+
+Woods are lowland only. Trees on the high ground are the scene's dressing,
+so they never wall a ledge off.
 
 ## What the tests guarantee
 
@@ -105,7 +159,7 @@ land beside the ring rather than on it.
 - **Placements:** every building stands on ground, every boat at sea, and
   every walker's patrol is walkable, on every tier.
 - **Heights:** every height on every tier can be climbed to, and the Surface
-  reaches the fifth.
+  has a third.
 
 ## Dressing
 

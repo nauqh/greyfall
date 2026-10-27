@@ -8,6 +8,7 @@ import {
   AREAS,
   AREA_CODE,
   atlasMap,
+  footprint,
   useIsland,
   type AreaId,
   type AtlasLift,
@@ -508,9 +509,12 @@ export class AtlasScene extends Phaser.Scene {
     const decor = (kind: "tree" | "bush" | "rock" | "waterRock", x: number, y: number, scale = 1): void => {
       this.track(addDecor(this, kind, x, y, scale, `${tier.id}${Math.round(x)},${Math.round(y)}`));
     };
+    // Nothing grows in a building's base or the ground round it.
+    const built = new Set(tier.props.flatMap((p) => footprint(p, true).map((c) => c.row * STRAT_COLS + c.col)));
     for (let r = 0; r < STRAT_ROWS; r++) {
       for (let c = 0; c < STRAT_COLS; c++) {
         const id = areaId(c, r);
+        if (built.has(r * STRAT_COLS + c) && isLand(c, r)) continue;
         // The rock of the Underneath is bare: its dark is the point.
         if (at(c, r) === "%") continue;
         if (!isLand(c, r)) {
@@ -538,6 +542,21 @@ export class AtlasScene extends Phaser.Scene {
             if (r01() < 0.25) decor("tree", (c + r01()) * CELL, (r + 0.45) * CELL);
           }
           continue;
+        }
+        // Trees on the high ground, back from its rim: the engine leaves it open, so they are only dressing.
+        const byLift = this.map.lifts.some((l) => [l.up, l.down].some((e) => e.tier === tier.id && Math.abs(e.at.col - c) <= 1 && Math.abs(e.at.row - r) <= 2));
+        if (level(c, r) >= 2 && isWalkable(c, r) && !isSlope(c, r) && tier.base !== "rock" && !byLift) {
+          let rim = false;
+          for (let dr = -1; dr <= 2; dr++) for (let dc = -1; dc <= 1; dc++) rim ||= level(c + dc, r + dr) !== level(c, r) || isSlope(c + dc, r + dr);
+          const odds = id === "emberwood" ? 0.3 : id === "crags" || id === "saltreach" ? 0.08 : 0.03;
+          if (!rim && r01() < odds) {
+            if (id === "emberwood") {
+              const pick = r01() < 0.55 ? 0 : 1;
+              spot(c, r, `bigTree${pick}`, BIG_TREE[pick]!, 0);
+            } else if (id === "barrowmoor" || id === "greyfall") spot(c, r, "prop_deadTree", { ...PROP.deadTree!, scale: 0.42 }, 0);
+            else decor("tree", (c + 0.3 + r01() * 0.4) * CELL, (r + 0.75) * CELL);
+            continue;
+          }
         }
         if (!isWalkable(c, r) || isSlope(c, r) || isSlope(c, r - 1) || roads.has(r * STRAT_COLS + c)) {
           // A cliff's foot: shrubs and stones soften the wall.

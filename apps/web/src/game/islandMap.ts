@@ -188,7 +188,8 @@ export function buildMap(
   const bands: { rt: Phaser.GameObjects.RenderTexture; x: number; y: number }[] = [];
   for (let y = 0; y < H; y += BAND_PX) {
     for (let x = 0; x < W; x += BAND_PX) {
-      const rt = scene.add.renderTexture(x, y, Math.min(BAND_PX, W - x), Math.min(BAND_PX, H - y)).setOrigin(0).setDepth(DEPTH.island);
+      // A cell wider and taller than its share: at a fractional zoom abutting textures leave a seam.
+      const rt = scene.add.renderTexture(x, y, Math.min(BAND_PX + CELL, W - x), Math.min(BAND_PX + CELL, H - y)).setOrigin(0).setDepth(DEPTH.island);
       bands.push({ rt, x, y });
     }
   }
@@ -285,7 +286,7 @@ export function buildMap(
     band.rt.beginDraw();
     // Art is never taller than two tiles plus the shadow's reach.
     for (const [key, frame, x, y, w] of ops) {
-      if (x < band.x + BAND_PX && x + w > band.x && y < band.y + BAND_PX && y + 3 * CELL > band.y) band.rt.batchDrawFrame(key, frame, x - band.x, y - band.y);
+      if (x < band.x + BAND_PX + CELL && x + w > band.x && y < band.y + BAND_PX + CELL && y + 3 * CELL > band.y) band.rt.batchDrawFrame(key, frame, x - band.x, y - band.y);
     }
     band.rt.endDraw();
   }
