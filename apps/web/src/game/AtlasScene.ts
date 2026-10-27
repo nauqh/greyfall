@@ -90,6 +90,12 @@ const PROP: Record<string, Sheet> = {
   trollDead: { file: "Enemy Pack/Extra/Troll Dead/Troll_Dead.png", frame: 384, anchor: 0.77 },
   goldMine: { file: "Resources/Gold Mine/GoldMine_Active.png", frame: 192, frameH: 128, anchor: 0.9, scale: 0.9 },
   goldStone: { file: "Terrain/Resources/Gold/Gold Stones/Gold Stone 4.png", frame: 128, anchor: 0.75, scale: 0.6 },
+  cannon: { file: "Enemy Pack/Extra/Cannon/Cannon_Down.png", frame: 128, anchor: 93 / 128, scale: 1.5 },
+  cannonSide: { file: "Enemy Pack/Extra/Cannon/Cannon_Right.png", frame: 128, anchor: 85 / 128, scale: 1.5 },
+  watchtower: { file: "Enemy Pack/Extra/Pirate Tower/Pirate Tower_Ground.png", frame: 128, frameH: 192, anchor: 179 / 192, scale: 0.9 },
+  woodPile: { file: "Terrain/Resources/Wood/Wood Resource/Wood Resource.png", frame: 64, anchor: 46 / 64, scale: 1.2 },
+  tools: { file: "Terrain/Resources/Tools/Tool_01.png", frame: 64, anchor: 45 / 64 },
+  meat: { file: "Terrain/Resources/Meat/Meat Resource/Meat Resource.png", frame: 64, anchor: 52 / 64 },
   stump: { file: "Terrain/Resources/Wood/Trees/Stump 2.png", frame: 192, frameH: 256, anchor: 0.62, scale: 0.6 },
   boat: { file: "Enemy Pack/Extra/Boat/Boat_Idle.png", frame: 256, anchor: 0.7, scale: 0.7 },
 };
@@ -475,6 +481,13 @@ export class AtlasScene extends Phaser.Scene {
     useIsland(tier.island);
     const before = new Set(this.children.list);
     const roads = trailTiles(tier.roads);
+    // Trails up on the high ground too: a climb's path along its ledges.
+    for (const c of tier.roads) {
+      const lv = level(c.col, c.row);
+      if (lv < 2 || isSlope(c.col, c.row)) continue;
+      // Two tiles deep, as on the lowland, so a diagonal stretch joins up instead of stepping.
+      for (const r of [c.row, c.row + 1]) if (level(c.col, r) === lv && !isSlope(c.col, r)) roads.add(r * STRAT_COLS + c.col);
+    }
     const local = this.local;
     const decks = new Set(local?.decks.map((d) => d.row * STRAT_COLS + d.col));
     buildMap(this, roads, (c, r, lv) => {

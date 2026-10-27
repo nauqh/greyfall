@@ -233,6 +233,16 @@ the atlas, focused on it.
   Troll waits in Troll's Hollow, a ring of rock with one gap. An exit's sign
   is clickable as well as its tile, since an exit on the map's edge can sit
   off-screen.
+  Tinker Crags is the third: the Tinker Rock climbs in five gnome-built
+  steps, each two overlapping blocks so no ledge runs an even width, with
+  every stair at the far end from the last, so the climb walks each ledge
+  (on at the south-west, up at the east, the west, the east again). Old
+  Bamboo holds the fourth step where the climb arrives; the Gnome Lift
+  rises off the summit, and the Sky Bridge runs off it east, raised, to the
+  map's edge toward the Greyfall. Its terraces carry the climb's worn trail
+  (roads now draw on high ground too, two tiles deep so diagonals join),
+  cannon batteries on every rim, watchtowers, a raised Gun Platform with
+  its own stair, and fenced workshop yards with wood, tools and stores.
   `test/areas.test.ts` checks every mapped area: every exit and height can be
   reached from the entry, every bridge deck stays raised, all land belongs to
   a district, and every building sits wholly on its ground.

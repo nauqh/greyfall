@@ -229,7 +229,7 @@ export function buildMap(
   const road = (c: number, r: number): boolean => roads.has(r * STRAT_COLS + c);
   for (let r = 0; r < STRAT_ROWS; r++) {
     for (let c = 0; c < STRAT_COLS; c++) {
-      if (road(c, r)) tile(c, r, edge(road(c - 1, r), road(c + 1, r)), edge(road(c, r - 1), road(c, r + 1)), "tilesetRoad");
+      if (road(c, r) && level(c, r) <= 1) tile(c, r, edge(road(c - 1, r), road(c + 1, r)), edge(road(c, r - 1), road(c, r + 1)), "tilesetRoad");
     }
   }
 
@@ -263,6 +263,13 @@ export function buildMap(
         if (!top(c, r)) continue;
         const side = (dc: number): boolean => top(c + dc, r) || slope(c + dc, r);
         tile(c, r, 5 + edge(side(-1), side(1)), edge(top(c, r - 1), top(c, r + 1)), sheetAt(c, r, lv));
+      }
+    }
+    // A trail along a ledge, on its own height's ground.
+    const trail = (c: number, r: number): boolean => road(c, r) && level(c, r) === lv && !isSlope(c, r);
+    for (let r = 0; r < STRAT_ROWS; r++) {
+      for (let c = 0; c < STRAT_COLS; c++) {
+        if (trail(c, r)) tile(c, r, edge(trail(c - 1, r), trail(c + 1, r)), edge(trail(c, r - 1), trail(c, r + 1)), "tilesetRoad");
       }
     }
     for (let r = 0; r < STRAT_ROWS; r++) {

@@ -464,7 +464,151 @@ function emberwood(): AreaMap {
   return { ...tier, area: "emberwood", entry: { col: 40, row: 64 }, exits, districts, districtAt: districtGrid(tier, districts), decks };
 }
 
-const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour, emberwood };
+function crags(): AreaMap {
+  const rng = makeRng("area:crags");
+  const t = tierBuilder("surface", rng, AREA_SIZE);
+  const { prop, who } = t;
+
+  t.blob("crags", 72, 33, 40, 34);
+  t.blob("crags", 24, 42, 22, 24);
+  t.blob("crags", 56, 60, 40, 10);
+  t.pond(100, 30, 10, 14);
+
+  // The Tinker Rock: five gnome-built steps, each leaving only a ledge round the next,
+  // and each stair at the far end from the last, so the climb walks every ledge.
+  // Each step is two blocks overlapping, so no ledge runs an even width round a box.
+  t.block(2, 46, 10, 52, 46);
+  t.block(3, 52, 10, 30, 37);
+  t.block(3, 60, 10, 36, 40);
+  t.block(4, 54, 10, 30, 34);
+  t.block(4, 54, 10, 36, 24);
+  t.block(5, 64, 10, 18, 16);
+  // On at the south-west and the south-east; up at the east, the west, the east again.
+  t.stair(2, 45, 55, "L");
+  t.stair(2, 98, 55, "R");
+  t.stair(3, 96, 49, "R");
+  t.stair(4, 53, 43, "L");
+  t.stair(5, 82, 25, "R");
+  // The Gun Platform: a raised battery on the Cog Terrace, its own stair up, apart from the peak.
+  t.block(5, 70, 32, 10, 6);
+  t.stair(5, 69, 37, "L");
+  // The Sky Bridge: the gnomes' high road off the peak, east over the ledges to the map's edge.
+  const decks = t.span(5, 82, 10, 29, 2);
+
+  // The foothills south-east, a knoll in the grove.
+  t.relief({ area: "crags", at: { col: 80, row: 64 }, rx: 9, ry: 4, levels: 2 });
+  t.relief({ area: "crags", at: { col: 12, row: 30 }, rx: 6, ry: 5, levels: 2 });
+
+  // Roads: in from the Crag Stair to the foot of the climb, Tinker Town, the grove and round to the far stair.
+  t.road([2, 46], [20, 46], [36, 56], [45, 57]);
+  t.road([36, 56], [36, 63], [70, 63], [98, 57]);
+  t.road([20, 46], [20, 26]);
+  // The climb's trail, worn along each ledge from one stair to the next.
+  t.road([47, 53], [95, 53], [96, 51]);
+  t.road([94, 47], [60, 47], [56, 45], [53, 45]);
+  t.road([55, 42], [66, 40], [82, 30], [82, 27]);
+  t.road([57, 40], [57, 33]);
+  t.road([80, 23], [76, 16]);
+  t.bridge({ col: 6, row: 46 }, { col: 1, row: 46 }, 3);
+
+  // Crag Gate: where the path from the Emberwood comes up out of the trees.
+  t.fires.push({ col: 10, row: 49 });
+  prop("gnomeTower", 8, 42);
+  who("gnome", 9, 44, { to: { col: 16, row: 46 } });
+
+  // The Bamboo Grove: pandas in the thicket, their old one's cubs.
+  for (const [c, r] of [[16, 22], [24, 24], [19, 30]] as const) who("panda", c, r, { to: { col: c + 3, row: r + 2 } });
+  for (const [c, r] of [[10, 36], [28, 34]] as const) who("bee", c, r, { to: { col: c + 3, row: r - 2 } });
+  for (const [c, r] of [[14, 26], [26, 28]] as const) prop("bones", c, r);
+
+  // Tinker Town at the rock's foot: gnome huts and towers, the tinkers at work.
+  for (const [c, r] of [[28, 60], [34, 66], [44, 62], [52, 66], [60, 62], [66, 66]] as const) prop("gnomeHut", c, r);
+  for (const [c, r] of [[40, 66], [58, 66]] as const) prop("gnomeTower", c, r);
+  t.fires.push({ col: 48, row: 63 });
+  t.fences.push({ col: 30, row: 63, w: 5, h: 2 });
+  crowd(t, rng, "gnome", { col: 48, row: 62 }, 7, 9);
+  who("slingshot", 42, 58, { to: { col: 54, row: 58 } });
+
+  // The Lower Works on the first step: the gnomes' gold mine and their ore.
+  prop("goldMine", 62, 51);
+  for (const [c, r] of [[50, 53], [74, 53], [84, 52], [48, 30], [49, 40]] as const) prop("goldStone", c, r);
+  crowd(t, rng, "gnome", { col: 66, row: 53 }, 3, 3, { walk: false });
+  who("gnome", 52, 54, { to: { col: 90, row: 54 } });
+
+  // The Ledges of the second step: slingers on the wind.
+  who("slingshot", 60, 47, { to: { col: 92, row: 47 } });
+  who("slingshot", 94, 20, { to: { col: 94, row: 40 } });
+  prop("gnomeTower", 92, 46);
+
+  // The Cog Terrace on the third step: Old Bamboo waits where the climb arrives, before the last stair.
+  t.bosses.push({ name: "Old Bamboo", area: "crags", col: 58, row: 30 });
+  who("pandaGuard", 58, 30);
+  who("panda", 56, 26, { flip: true });
+  who("panda", 60, 35);
+  prop("gnomeHut", 58, 18);
+  prop("gnomeHut", 76, 40);
+  who("slingshot", 66, 41, { to: { col: 86, row: 41 } });
+
+  // Tinker Peak: the gnomes' towers, the fire at the top, the lift into the clouds.
+  t.fires.push({ col: 74, row: 22 });
+  for (const [c, r] of [[67, 13], [79, 19]] as const) prop("gnomeTower", c, r);
+  prop("gnomeHut", 68, 22);
+  crowd(t, rng, "gnome", { col: 74, row: 18 }, 4, 4);
+  prop("goldStone", 80, 13);
+  // The Cog Terrace's far side: the tinkers' sheds, their gold, and the stair to the peak.
+  for (const [c, r] of [[72, 32], [80, 38], [66, 40]] as const) prop("gnomeHut", c, r);
+  prop("gnomeTower", 86, 20);
+  for (const [c, r] of [[84, 28], [62, 36]] as const) prop("goldStone", c, r);
+  crowd(t, rng, "gnome", { col: 76, row: 35 }, 3, 4);
+
+  // The Foothills and the Windward Shore.
+  for (const [c, r] of [[78, 60], [86, 63]] as const) who("lizard", c, r, { to: { col: c - 6, row: r + 2 } });
+  who("snake", 92, 64);
+  prop("fishHut", 104, 50);
+  prop("boat", 104, 34, {});
+  who("turtle", 101, 46);
+
+  // Batteries on every rim, aimed down the climb, and guns on the flanks.
+  for (const c of [52, 58, 68, 76, 84, 92]) prop("cannon", c, 55);
+  for (const c of [64, 72, 80, 88]) prop("cannon", c, 49);
+  for (const c of [58, 66, 76]) prop("cannon", c, 43);
+  for (const c of [66, 72, 78]) prop("cannon", c, 25);
+  for (const r of [20, 30, 40]) prop("cannonSide", 46, r, { flip: true });
+  for (const r of [20, 30, 40]) prop("cannonSide", 97, r);
+  // Watchtowers on the corners of the climb, and one over the Gun Platform.
+  for (const [c, r] of [[48, 50], [93, 52], [92, 36], [86, 14]] as const) prop("watchtower", c, r);
+  prop("watchtower", 74, 35);
+  prop("cannon", 71, 37);
+  prop("cannon", 78, 37);
+  who("slingshot", 76, 33, { to: { col: 72, row: 33 } });
+  // Workshop yards: the tinkers' fenced sheds, wood, tools and stores.
+  t.fences.push({ col: 55, row: 13, w: 8, h: 6 }, { col: 84, row: 40, w: 8, h: 5 });
+  for (const [c, r] of [[56, 14], [61, 14], [86, 41], [90, 43]] as const) prop("woodPile", c, r);
+  for (const [c, r] of [[57, 17], [88, 41], [70, 52], [55, 52]] as const) prop("tools", c, r);
+  for (const [c, r] of [[60, 17], [89, 43]] as const) prop("meat", c, r);
+  who("gnome", 58, 15, { to: { col: 61, row: 16 } });
+  who("gnome", 87, 42);
+
+  const exits: AreaExit[] = [
+    { to: "emberwood", name: "Crag Stair", kind: "open", at: { col: 1, row: 46 } },
+    { to: "gilded", name: "Gnome Lift", kind: "lift", at: { col: 76, row: 14 } },
+    { to: "greyfall", name: "Sky Bridge", kind: "high", at: { col: 110, row: 10 } },
+  ];
+  const districts: District[] = [
+    { name: "Tinker Peak", at: { col: 73, row: 24 }, palette: [3, 4, 1, 5, 2], dress: "crags", box: { x: 64, y: 10, w: 18, h: 16 } },
+    { name: "The Climb", at: { col: 70, row: 47 }, palette: [3, 4, 1, 5, 2], dress: "crags", box: { x: 46, y: 10, w: 52, h: 46 } },
+    { name: "Crag Gate", at: { col: 8, row: 48 }, palette: [3, 2], dress: "crags" },
+    { name: "Bamboo Grove", at: { col: 20, row: 26 }, palette: [2, 3], dress: "emberwood", clearing: 7 },
+    { name: "Tinker Town", at: { col: 48, row: 63 }, palette: [1, 2], dress: "harbour", clearing: 9 },
+    { name: "Foothills", at: { col: 82, row: 63 }, palette: [4, 3], dress: "crags" },
+    { name: "Windward Shore", at: { col: 104, row: 47 }, palette: [5, 4], dress: "saltreach" },
+  ];
+  const rooms = districts.filter((d) => !d.box).map((d) => ({ at: d.at, r: d.clearing ?? 6 }));
+  const tier = t.finish({}, [{ col: 6, row: 46 }], maze(t, rng, rooms));
+  return { ...tier, area: "crags", entry: { col: 6, row: 46 }, exits, districts, districtAt: districtGrid(tier, districts), decks };
+}
+
+const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour, emberwood, crags };
 
 /** The areas that have a map of their own so far. */
 export const MAPPED_AREAS = Object.keys(BUILT) as AreaId[];

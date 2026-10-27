@@ -323,6 +323,7 @@ const FOOT: Record<string, { w: number; d: number; clear: boolean }> = {
   fire: { w: 1, d: 1, clear: true },
   boat: { w: 3, d: 1, clear: true },
   pirateTowerWater: { w: 2, d: 1, clear: true },
+  watchtower: { w: 2, d: 1, clear: true },
 };
 
 /** The tiles under a prop's base, and with `ring` the open ground it wants round them. */
@@ -990,7 +991,7 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
         island: islandOf(),
         areaAt: owned.map((l, r) => l.map((a, c) => (a >= 0 && grid[r]![c] !== wall && grid[r]![c] !== "~" ? AREA_CODE[a]! : "-")).join("")),
         gates: t.gates,
-        roads: [...t.roadSet].map((k) => ({ col: Number(k.split(",")[0]), row: Number(k.split(",")[1]) })).filter((c) => at(c.col, c.row) === "."),
+        roads: [...t.roadSet].map((k) => ({ col: Number(k.split(",")[0]), row: Number(k.split(",")[1]) })).filter((c) => ".#^45".includes(at(c.col, c.row))),
         props: t.props,
         dwellers: t.dwellers,
         fires: t.fires,
