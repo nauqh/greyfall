@@ -749,6 +749,15 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
         }
       }
     },
+    /** Land in an exact rectangle, for a fortress whose walls must stand on ground to their corners. */
+    ground(a: AreaId, x0: number, y0: number, w: number, h: number): void {
+      for (let r = Math.max(2, y0); r < Math.min(rows - 2, y0 + h); r++) {
+        for (let c = Math.max(2, x0); c < Math.min(cols - 2, x0 + w); c++) {
+          grid[r]![c] = ".";
+          area[r]![c] = AREA_INDEX[a];
+        }
+      }
+    },
     /** Channels: land within two tiles of another area's goes back to sea, sky or rock. */
     separate(): void {
       const owner = area.map((l) => [...l]);
@@ -1412,9 +1421,12 @@ function below(rng: Rng): AtlasTier {
 }
 
 /** The atlas, the same every time: three tiers and the lifts between them. */
+let atlas: AtlasMap | null = null;
+
+/** Built once: the page and the scene both want it, and each build is a quarter of a second. */
 export function atlasMap(): AtlasMap {
   // A seed a tier, so reshaping one never moves another; the surface keeps the atlas's first.
-  const tiers: Record<TierId, AtlasTier> = { sky: sky(makeRng("atlas:sky")), surface: surface(makeRng("atlas")), below: below(makeRng("atlas:below")) };
-  useIsland(tiers.surface.island);
-  return { tiers, areas: [...AREAS], lifts: [...LIFTS] };
+  atlas ??= { tiers: { sky: sky(makeRng("atlas:sky")), surface: surface(makeRng("atlas")), below: below(makeRng("atlas:below")) }, areas: [...AREAS], lifts: [...LIFTS] };
+  useIsland(atlas.tiers.surface.island);
+  return atlas;
 }

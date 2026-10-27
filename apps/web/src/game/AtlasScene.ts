@@ -203,6 +203,7 @@ export class AtlasScene extends Phaser.Scene {
   private drag: { x: number; y: number; sx: number; sy: number; moved: boolean } | null = null;
   /** In an area's own map: that map. */
   private local: AreaMap | null = null;
+  private built = new Set<TierId>();
   /** Each exit's sign: clicking it travels, as the exit's own tile does. */
   private signs: { to: AreaId; text: Phaser.GameObjects.Text }[] = [];
 
@@ -283,19 +284,13 @@ export class AtlasScene extends Phaser.Scene {
     this.makeAnims();
     this.glowTextures();
 
-    // A tier at a time, each built on its own island and kept to its own camera.
-    const made: Record<TierId, Phaser.GameObjects.GameObject[]> = { sky: [], surface: [], below: [] };
-    for (const id of ["below", "surface", "sky"] as const) if (!this.local || this.local.id === id) made[id] = this.buildTier(this.map.tiers[id]);
-
+    // Each tier is built on its own island and kept to its own camera, the first time it is shown.
     const main = this.cameras.main;
     this.cams = {
       surface: main,
       below: this.cameras.add(0, 0, main.width, main.height).setBackgroundColor(0x101018),
       sky: this.cameras.add(0, 0, main.width, main.height),
     };
-    for (const id of ["sky", "surface", "below"] as const) {
-      for (const other of ["sky", "surface", "below"] as const) if (other !== id) this.cams[other].ignore(made[id]);
-    }
     this.scale.on(Phaser.Scale.Events.RESIZE, (size: Phaser.Structs.Size) => {
       for (const c of Object.values(this.cams)) c.setSize(size.width, size.height);
     });
@@ -355,7 +350,16 @@ export class AtlasScene extends Phaser.Scene {
   /**
    * One tier in view, alone, its camera taking over where the last one looked.
    */
+  /** Builds a tier on first sight: baking all three up front was most of the load. */
+  private ensure(id: TierId): void {
+    if (this.built.has(id)) return;
+    this.built.add(id);
+    const made = this.buildTier(this.map.tiers[id]);
+    for (const other of TIERS) if (other !== id) this.cams[other].ignore(made);
+  }
+
   private show(id: TierId): void {
+    this.ensure(id);
     const from = this.active;
     const centre = { x: from.scrollX + from.width / 2, y: from.scrollY + from.height / 2 };
     const zoom = from.zoom;
@@ -815,22 +819,42 @@ export class AtlasScene extends Phaser.Scene {
     const tex = this.textures.createCanvas(`atlasMood-${tier.id}`, w, h)!;
     const img = tex.context.createImageData(w, h);
     const rows = tier.island.rows;
-    // Over the water the light fades to plain day with distance from the shore.
-    const tone = (c: number, r: number): number => {
-      if (tier.base === "rock" && (rows[r]?.[c] ?? "%") === "%") return ROCK_MOOD;
-      for (let d = 0; d <= MOOD_REACH; d++) {
-        for (let dr = -d; dr <= d; dr++) {
-          for (let dc = -d; dc <= d; dc++) {
-            const ch = tier.areaAt[r + dr]?.[c + dc];
-            if (!ch || ch === "-") continue;
-            const m = AREAS[AREA_CODE.indexOf(ch)]!.mood;
-            const k = tier.base === "rock" ? 0 : d / (MOOD_REACH + 1);
-            const mix = (shift: number) => Math.round(((m >> shift) & 255) + (255 - ((m >> shift) & 255)) * k);
-            return (mix(16) << 16) | (mix(8) << 8) | mix(0);
-          }
+    // Over the water the light fades to plain day with distance from the shore:
+    // one pass outward from the land, eight ways, carries each area's light up to MOOD_REACH tiles.
+    const near = new Int32Array(w * h).fill(-1);
+    const dist = new Uint8Array(w * h);
+    const queue: number[] = [];
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const ch = tier.areaAt[y - pad]?.[x - pad];
+        if (!ch || ch === "-") continue;
+        near[y * w + x] = AREAS[AREA_CODE.indexOf(ch)]!.mood;
+        queue.push(y * w + x);
+      }
+    }
+    for (let i = 0; i < queue.length; i++) {
+      const k = queue[i]!;
+      if (dist[k]! >= MOOD_REACH) continue;
+      const [x, y] = [k % w, Math.floor(k / w)];
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const [nx, ny] = [x + dx, y + dy];
+          const n = ny * w + nx;
+          if (nx < 0 || ny < 0 || nx >= w || ny >= h || near[n] !== -1) continue;
+          near[n] = near[k]!;
+          dist[n] = dist[k]! + 1;
+          queue.push(n);
         }
       }
-      return tier.base === "rock" ? ROCK_MOOD : 0xffffff;
+    }
+    const tone = (c: number, r: number): number => {
+      if (tier.base === "rock" && (rows[r]?.[c] ?? "%") === "%") return ROCK_MOOD;
+      const k = (r + pad) * w + c + pad;
+      const m = near[k]!;
+      if (m === -1) return tier.base === "rock" ? ROCK_MOOD : 0xffffff;
+      const f = tier.base === "rock" ? 0 : dist[k]! / (MOOD_REACH + 1);
+      const mix = (shift: number) => Math.round(((m >> shift) & 255) + (255 - ((m >> shift) & 255)) * f);
+      return (mix(16) << 16) | (mix(8) << 8) | mix(0);
     };
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {

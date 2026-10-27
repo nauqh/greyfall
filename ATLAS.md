@@ -243,6 +243,22 @@ the atlas, focused on it.
   (roads now draw on high ground too, two tiles deep so diagonals join),
   cannon batteries on every rim, watchtowers, a raised Gun Platform with
   its own stair, and fenced workshop yards with wood, tools and stores.
+  The Greyfall is the fourth, a castle that is the level, after Stormveil:
+  a walkable curtain wall with a bastion on each corner, the locked Grey
+  Gate a gap in its west side over the Ashen Approach, and the Sky Bridge
+  landing on the north rampart, which runs straight into the Middle Ward:
+  the other way in, past the bailey. Inside, the ruined Outer Bailey, the
+  Ruined Chapel and the Gallows Yard (the Harbour's folk penned); then the
+  Middle Ward, the Upper Ward with the Warlord's hall, and the Keep on the
+  fourth height, its stairs changing sides each step. `ground()` lays exact
+  rectangles of land, so walls stand on ground to their corners.
+  Reworked after Caelid and Sellia: a river of rot down the bailey into the Crater, a lake (`lake()`) with a
+  shrine and bonfire on its isle, crags standing out of the rot, gnolls for
+  its dogs; and the wards are now the High City, six raised blocks with
+  paved streets between, each with its own stair, a rooftop bridge, two
+  upper tiers (the Warlord's hall, the keep's) and the Keep above.
+  The Harbour's citadel and Old Town and Emberwood's warrens got the same
+  furnishing as the Crags: trails, guns on the walls, stores and trophies.
   `test/areas.test.ts` checks every mapped area: every exit and height can be
   reached from the entry, every bridge deck stays raised, all land belongs to
   a district, and every building sits wholly on its ground.
