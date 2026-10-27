@@ -259,6 +259,13 @@ the atlas, focused on it.
   upper tiers (the Warlord's hall, the keep's) and the Keep above.
   The Harbour's citadel and Old Town and Emberwood's warrens got the same
   furnishing as the Crags: trails, guns on the walls, stores and trophies.
+  The Gilded Reach is the fifth, a city of isles in the sky after Anor
+  Londo and Leyndell: each quarter its own isle (Cloud Landing, the Gold
+  Market, the Bee Gardens, Gnome Landing, the Gilded Gate, the Sun Chapel)
+  joined by narrow bridges over open sky, and the capital climbing the Sun
+  Steps in three terraces to the Sun Hall, where the Sun Sentinel stands.
+  The Throne Isle hangs off the east end, reached only by the raised
+  Gilded Span.
   `test/areas.test.ts` checks every mapped area: every exit and height can be
   reached from the entry, every bridge deck stays raised, all land belongs to
   a district, and every building sits wholly on its ground.

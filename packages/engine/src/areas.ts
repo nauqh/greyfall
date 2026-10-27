@@ -818,7 +818,139 @@ function greyfall(): AreaMap {
   return { ...tier, area: "greyfall", entry: { col: 6, row: 44 }, exits, districts, districtAt: districtGrid(tier, districts), decks };
 }
 
-const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour, emberwood, crags, greyfall };
+function gilded(): AreaMap {
+  const rng = makeRng("area:gilded");
+  const t = tierBuilder("sky", rng, AREA_SIZE);
+  const { prop, who } = t;
+  const gold = { color: "yellow" } as const;
+  const black = { color: "black" } as const;
+
+  // A city of isles in the sky, after Anor Londo and Leyndell: each quarter its own isle, joined by narrow bridges.
+  t.blob("gilded", 12, 36, 7, 6);
+  t.blob("gilded", 32, 34, 11, 10);
+  t.blob("gilded", 36, 10, 12, 7);
+  t.blob("gilded", 26, 58, 9, 7);
+  t.blob("gilded", 64, 34, 20, 16);
+  t.ground("gilded", 50, 20, 30, 26);
+  t.blob("gilded", 70, 8, 11, 5);
+  t.blob("gilded", 64, 61, 11, 6);
+  // The throne isle: nothing but the warlord's black plaza, hung off the city's east end.
+  t.ground("gilded", 92, 28, 13, 13);
+
+  t.bridge({ col: 17, row: 36 }, { col: 23, row: 35 });
+  t.bridge({ col: 32, row: 26 }, { col: 34, row: 16 });
+  t.bridge({ col: 28, row: 43 }, { col: 26, row: 52 });
+  t.bridge({ col: 42, row: 34 }, { col: 47, row: 34 });
+  t.bridge({ col: 66, row: 19 }, { col: 68, row: 12 });
+  t.bridge({ col: 64, row: 49 }, { col: 64, row: 56 });
+  t.bridge({ col: 47, row: 10 }, { col: 60, row: 9 });
+  t.bridge({ col: 6, row: 36 }, { col: 1, row: 36 }, 3);
+
+  // The Sun Steps: the capital climbs in three terraces to the Sun Hall, a stair either side of each.
+  t.block(2, 52, 22, 26, 22);
+  t.stair(2, 51, 43, "L");
+  t.stair(2, 78, 43, "R");
+  t.block(3, 56, 22, 18, 15);
+  t.stair(3, 55, 36, "L");
+  t.stair(3, 74, 36, "R");
+  t.block(4, 60, 22, 10, 8);
+  t.stair(4, 70, 29, "R");
+  // The throne isle, raised to the lower city's height and reached only by the Gilded Span.
+  t.block(2, 92, 28, 13, 13);
+  const decks = t.span(2, 78, 32, 14, 2);
+
+  // Trails: up the Sun Steps, and along the Span.
+  t.road([50, 43], [53, 41], [54, 37]);
+  t.road([56, 35], [60, 31], [71, 30]);
+  t.road([78, 32], [92, 32]);
+  // The main way through the isles: landing, market, the capital's west stair.
+  t.road([6, 36], [20, 36], [32, 35], [48, 34], [50, 43]);
+
+  // Cloud Landing: where the rope bridge from the Steps comes in.
+  t.fires.push({ col: 11, row: 38 });
+  prop("tower", 14, 33, gold);
+  who("archer", 14, 34, gold);
+  who("bee", 9, 33);
+
+  // The Gold Market: the gnome-kings' traders, their gold in heaps, their stores.
+  for (const [c, r, art] of [[26, 30, "house1"], [30, 28, "house2"], [37, 29, "house3"], [25, 39, "house2"], [36, 40, "house1"]] as const) prop(art, c, r, gold);
+  for (const [c, r] of [[29, 34], [34, 36], [39, 33], [27, 36]] as const) prop("goldStone", c, r);
+  for (const [c, r] of [[32, 31], [24, 34]] as const) prop("meat", c, r);
+  prop("woodPile", 38, 37);
+  t.fences.push({ col: 28, row: 38, w: 5, h: 3 });
+  t.fires.push({ col: 33, row: 33 });
+  crowd(t, rng, "gnome", { col: 32, row: 34 }, 5, 6);
+  crowd(t, rng, "pawn", { col: 31, row: 35 }, 3, 5, { ...gold, act: "gold" });
+
+  // The Bee Gardens: the kings' hives in a hanging grove.
+  t.grove(36, 9, 10, 5, 0.35);
+  prop("house3", 32, 8, gold);
+  prop("house1", 41, 12, gold);
+  crowd(t, rng, "bee", { col: 36, row: 10 }, 6, 6);
+  who("monk", 38, 11, { ...gold, to: { col: 34, row: 12 } });
+
+  // Gnome Landing: where the lift comes up off the Tinker Peak.
+  prop("gnomeTower", 22, 56);
+  prop("gnomeHut", 30, 56);
+  prop("gnomeHut", 24, 61);
+  for (const [c, r] of [[29, 61], [21, 60]] as const) prop("goldStone", c, r);
+  crowd(t, rng, "gnome", { col: 26, row: 59 }, 4, 4);
+
+  // The Gilded Gate, north: the yellow guard's barracks and drill yard.
+  prop("barracks", 66, 7, gold);
+  prop("tower", 60, 8, gold);
+  prop("tower", 78, 8, gold);
+  t.fires.push({ col: 72, row: 9 });
+  for (let i = 0; i < 3; i++) who("lancer", 70 + i * 2, 7, gold);
+  who("warrior", 74, 10, { ...gold, to: { col: 64, row: 10 } });
+
+  // The Sun Steps: the lower city, the guard's terrace, and the Sun Hall where the Sentinel stands.
+  for (const [c, r, art] of [[54, 40, "house2"], [58, 41, "house1"], [71, 41, "house3"], [75, 40, "house2"], [54, 26, "house1"], [76, 26, "house3"]] as const) prop(art, c, r, gold);
+  for (const [c, r] of [[53, 23], [77, 23]] as const) prop("tower", c, r, gold);
+  prop("barracks", 59, 34, gold);
+  prop("archery", 71, 34, gold);
+  prop("monastery", 58, 27, gold);
+  prop("castle", 65, 26, gold);
+  for (const [c, r] of [[57, 33], [72, 31]] as const) prop("goldStone", c, r);
+  t.bosses.push({ name: "The Sun Sentinel", area: "gilded", col: 65, row: 29 });
+  who("lancer", 65, 29, { ...gold, scale: 1.8 });
+  for (const [c, r] of [[57, 23], [73, 23]] as const) who("archer", c, r, gold);
+  who("warrior", 60, 38, { ...gold, to: { col: 70, row: 38 } });
+  who("monk", 66, 33, gold);
+
+  // The Sun Chapel, south: monks at the shrine fire under open sky.
+  prop("monastery", 64, 60, gold);
+  t.fires.push({ col: 64, row: 64 });
+  for (const [c, r] of [[58, 62], [70, 62]] as const) prop("goldStone", c, r);
+  crowd(t, rng, "monk", { col: 64, row: 63 }, 3, 4, gold);
+
+  // The Throne Isle: black stone over the gold, imps round the warlord's empty seat.
+  for (const [c, r] of [[95, 31], [102, 31]] as const) prop("tower", c, r, black);
+  for (const [c, r] of [[94, 37], [98, 38], [102, 37]] as const) prop("skullSpike", c, r);
+  crowd(t, rng, "imp", { col: 98, row: 34 }, 3, 3);
+  who("skullGuard", 93, 33);
+
+  const exits: AreaExit[] = [
+    { to: "steps", name: "Cloud Bridge", kind: "open", at: { col: 1, row: 36 } },
+    { to: "crags", name: "Gnome Lift", kind: "lift", at: { col: 26, row: 58 } },
+    { to: "greyfall", name: "Throne Stair", kind: "lift", at: { col: 99, row: 34 } },
+  ];
+  const districts: District[] = [
+    { name: "The Sun Steps", at: { col: 65, row: 46 }, palette: [1, 2, 4, 5], dress: "gilded", box: { x: 50, y: 20, w: 30, h: 26 } },
+    { name: "The Throne Isle", at: { col: 98, row: 42 }, palette: [4, 4, 5], dress: "greyfall", box: { x: 92, y: 28, w: 13, h: 13 } },
+    { name: "Cloud Landing", at: { col: 12, row: 40 }, palette: [2, 1], dress: "gilded", clearing: 4 },
+    { name: "The Gold Market", at: { col: 32, row: 34 }, palette: [1, 2], dress: "gilded", clearing: 7 },
+    { name: "The Bee Gardens", at: { col: 36, row: 10 }, palette: [2, 3], dress: "emberwood", clearing: 5 },
+    { name: "Gnome Landing", at: { col: 26, row: 63 }, palette: [3, 2], dress: "crags", clearing: 5 },
+    { name: "The Gilded Gate", at: { col: 70, row: 8 }, palette: [1, 4], dress: "gilded", clearing: 5 },
+    { name: "The Sun Chapel", at: { col: 64, row: 61 }, palette: [5, 1], dress: "gilded", clearing: 5 },
+  ];
+  const rooms = districts.filter((d) => !d.box).map((d) => ({ at: d.at, r: d.clearing ?? 6 }));
+  const tier = t.finish({}, [{ col: 6, row: 36 }], maze(t, rng, rooms));
+  return { ...tier, area: "gilded", entry: { col: 6, row: 36 }, exits, districts, districtAt: districtGrid(tier, districts), decks };
+}
+
+const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour, emberwood, crags, greyfall, gilded };
 
 /** The areas that have a map of their own so far. */
 export const MAPPED_AREAS = Object.keys(BUILT) as AreaId[];
