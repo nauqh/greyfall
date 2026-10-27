@@ -950,7 +950,130 @@ function gilded(): AreaMap {
   return { ...tier, area: "gilded", entry: { col: 6, row: 36 }, exits, districts, districtAt: districtGrid(tier, districts), decks };
 }
 
-const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour, emberwood, crags, greyfall, gilded };
+function steps(): AreaMap {
+  const rng = makeRng("area:steps");
+  const t = tierBuilder("sky", rng, AREA_SIZE);
+  const { prop, who } = t;
+  const blue = { color: "blue" } as const;
+  const gold = { color: "yellow" } as const;
+
+  // A chain of drifting isles stepping down westward from the Cloud Bridge to the Harbour's lift,
+  // after the Ringed City's broken stairs: rope bridges between, raised spans across the ruined steps.
+  t.blob("steps", 100, 16, 9, 6);
+  t.blob("steps", 80, 22, 10, 7);
+  t.ground("steps", 72, 16, 16, 12);
+  t.blob("steps", 58, 18, 8, 6);
+  t.ground("steps", 50, 12, 18, 14);
+  t.blob("steps", 58, 40, 11, 8);
+  t.blob("steps", 36, 32, 10, 8);
+  t.blob("steps", 14, 46, 9, 7);
+  // Two side isles, dead ends off the way down: the hermit's rock, and a wreck of gold.
+  t.blob("steps", 26, 10, 6, 5);
+  t.blob("steps", 88, 54, 8, 6);
+
+  // The Broken Stair: the second isle rises in two steps; the Windward Rest stands level with its top.
+  t.block(2, 73, 17, 14, 10);
+  t.stair(2, 72, 26, "L");
+  t.stair(2, 87, 26, "R");
+  t.block(3, 76, 17, 8, 5);
+  t.stair(3, 75, 21, "L");
+  // The Windward Rest steps down too: its top, a ledge round it, then the lowland where the way goes on.
+  t.block(2, 51, 13, 16, 10);
+  t.block(3, 53, 14, 12, 6);
+  t.stair(3, 52, 19, "L");
+  t.stair(2, 50, 22, "L");
+  // The Old Span: across the gap from the Broken Stair's top to the Windward Rest.
+  const decks = t.span(3, 65, 17, 11, 2);
+  // The Bell Isle: a raised ruin with a stair either side.
+  t.block(2, 31, 27, 11, 7);
+  t.stair(2, 30, 33, "L");
+  t.stair(2, 42, 33, "R");
+
+  // Every bridge runs from well inside one isle to a stair's foot or deep into the next: a ragged rim never leaves one short.
+  t.bridge({ col: 100, row: 16 }, { col: 110, row: 16 }, 3);
+  t.bridge({ col: 97, row: 18 }, { col: 88, row: 27 });
+  t.bridge({ col: 60, row: 24 }, { col: 58, row: 38 });
+  t.bridge({ col: 54, row: 41 }, { col: 43, row: 35 });
+  t.bridge({ col: 30, row: 36 }, { col: 15, row: 46 });
+  t.bridge({ col: 36, row: 25 }, { col: 26, row: 11 });
+  t.bridge({ col: 64, row: 43 }, { col: 88, row: 55 });
+
+  // Trails: down the Broken Stair, along the Span, and down the Bell Isle.
+  t.road([88, 26], [80, 25], [77, 22]);
+  t.road([76, 18], [64, 18]);
+  t.road([31, 32], [41, 32]);
+
+  // Cloud Pier: where the rope bridge from the Gilded Reach lands; the guard's last post.
+  t.fires.push({ col: 99, row: 18 });
+  prop("tower", 103, 13, gold);
+  who("archer", 102, 15, gold);
+  who("bee", 96, 13);
+
+  // The Broken Stair: a ruined way-tower on each step, the wind's harpies (bats) about it.
+  prop("tower", 75, 25, blue);
+  prop("watchtower", 80, 19);
+  for (const [c, r] of [[78, 27], [84, 22]] as const) prop("bones", c, r);
+  who("bat", 82, 18);
+  who("bat", 78, 28);
+  who("skull", 84, 25, { to: { col: 76, row: 25 } });
+
+  // The Windward Rest: a fire on the high isle, an old house where the steps' keepers slept.
+  t.fires.push({ col: 58, row: 18 });
+  prop("house3", 55, 15, gold);
+  prop("goldStone", 62, 15);
+  who("monk", 60, 17, { ...gold, to: { col: 56, row: 19 } });
+
+  // The Hanging Graves: the fallen of the Steps, laid out on a drifting field.
+  for (const [c, r] of [[52, 38], [56, 36], [60, 37], [64, 39], [54, 43], [62, 44]] as const) prop("skullSpike", c, r);
+  for (const [c, r] of [[58, 41], [50, 42], [66, 42]] as const) prop("bones", c, r);
+  for (const [c, r] of [[50, 36], [67, 38]] as const) prop("deadTree", c, r, { scale: 0.7 });
+  crowd(t, rng, "skull", { col: 58, row: 40 }, 4, 5);
+  who("skullGuard", 58, 44);
+
+  // The Bell Isle: the ruin of the Steps' bell tower, its warden on the raised floor.
+  prop("monastery", 36, 30, blue);
+  for (const [c, r] of [[33, 29], [40, 29]] as const) prop("tower", c, r, blue);
+  who("warrior", 36, 32, { ...blue, to: { col: 38, row: 32 } });
+  who("bat", 32, 36);
+
+  // Watch Isle: the Harbour castle's old sky-lift, chained from here.
+  t.fires.push({ col: 12, row: 47 });
+  prop("tower", 17, 43, blue);
+  prop("house2", 9, 44, blue);
+  who("archer", 16, 45, blue);
+  who("lancer", 11, 49, { ...blue, to: { col: 18, row: 49 } });
+
+  // The Hermit's Rock: an old monk who never went down, and what he kept.
+  prop("house1", 26, 9, gold);
+  prop("goldStone", 29, 12);
+  who("monk", 24, 11, gold);
+
+  // The Gold Wreck: a gnome barge that fell short, its gold spilt, and what came for it.
+  for (const [c, r] of [[86, 52], [90, 55], [84, 56], [92, 51]] as const) prop("goldStone", c, r);
+  prop("woodPile", 88, 53);
+  prop("trollDead", 90, 58);
+  crowd(t, rng, "imp", { col: 88, row: 55 }, 3, 3);
+
+  const exits: AreaExit[] = [
+    { to: "gilded", name: "Cloud Bridge", kind: "open", at: { col: 110, row: 16 } },
+    { to: "harbour", name: "Watch Lift", kind: "shortcut", at: { col: 14, row: 46 } },
+  ];
+  const districts: District[] = [
+    { name: "The Broken Stair", at: { col: 80, row: 31 }, palette: [2, 4, 1], dress: "crags", box: { x: 72, y: 16, w: 16, h: 12 } },
+    { name: "Windward Rest", at: { col: 58, row: 10 }, palette: [2, 1, 1], dress: "gilded", box: { x: 50, y: 12, w: 18, h: 14 } },
+    { name: "Cloud Pier", at: { col: 100, row: 21 }, palette: [1, 2], dress: "gilded", clearing: 4 },
+    { name: "The Hanging Graves", at: { col: 58, row: 47 }, palette: [4, 5], dress: "barrowmoor", clearing: 5 },
+    { name: "The Bell Isle", at: { col: 36, row: 38 }, palette: [3, 4], dress: "harbour", clearing: 5 },
+    { name: "Watch Isle", at: { col: 14, row: 52 }, palette: [3, 2], dress: "harbour", clearing: 5 },
+    { name: "The Hermit's Rock", at: { col: 26, row: 14 }, palette: [2, 1], dress: "gilded", clearing: 4 },
+    { name: "The Gold Wreck", at: { col: 88, row: 59 }, palette: [1, 4], dress: "saltreach", clearing: 4 },
+  ];
+  const rooms = districts.filter((d) => !d.box).map((d) => ({ at: d.at, r: d.clearing ?? 6 }));
+  const tier = t.finish({}, [{ col: 104, row: 16 }], maze(t, rng, rooms));
+  return { ...tier, area: "steps", entry: { col: 104, row: 16 }, exits, districts, districtAt: districtGrid(tier, districts), decks };
+}
+
+const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour, emberwood, crags, greyfall, gilded, steps };
 
 /** The areas that have a map of their own so far. */
 export const MAPPED_AREAS = Object.keys(BUILT) as AreaId[];
