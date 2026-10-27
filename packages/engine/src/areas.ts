@@ -6,11 +6,10 @@
  * land is wild, authored blocks where it is built, like a fortress.
  */
 
-import { AREAS, noise, tierBuilder, type AreaId, type AtlasTier, type GateKind, type LiftKind } from "./atlas.ts";
+import { AREAS, footprint, noise, tierBuilder, type AreaId, type AtlasTier, type GateKind, type LiftKind } from "./atlas.ts";
 import type { Cell } from "./island.ts";
 import { makeRng, type Rng } from "./rng.ts";
 
-export const AREA_SIZE = { cols: 112, rows: 72 } as const;
 
 /** A way out of an area: off an edge to another area, or a lift up or down. */
 export interface AreaExit {
@@ -54,7 +53,7 @@ export interface AreaMap extends AtlasTier {
  * extra links for loops, small clearings at some waypoints, and the rooms.
  */
 function maze(t: Builder, rng: Rng, rooms: readonly { at: Cell; r: number }[], cell = 11): (c: number, r: number) => boolean {
-  const { cols, rows } = AREA_SIZE;
+  const [cols, rows] = [t.grid[0]!.length, t.grid.length];
   const open = new Set<number>();
   const ragged = noise(`maze:${rng.int(1_000_000)}`, 3);
   const stamp = (x: number, y: number, rad: number): void => {
@@ -121,6 +120,15 @@ function lake(t: Builder, cx: number, cy: number, rx: number, ry: number): void 
   }
 }
 
+/** Underground, the maze's woods are rock: a wall tile becomes standing stone wherever its south face lands on more wall, a fringe of rubble left at its foot. */
+function stone(tier: AtlasTier): AtlasTier {
+  // Never a face on the ground a building keeps round it, though that ground be woods.
+  const kept = new Set(tier.props.flatMap((p) => footprint(p, true).map((c) => `${c.col},${c.row}`)));
+  const shut = (c: number, r: number) => "T%~".includes(tier.island.rows[r]?.[c] ?? "%") && !kept.has(`${c},${r}`);
+  const rows = tier.island.rows.map((l, r) => [...l].map((ch, c) => (ch === "T" && shut(c, r + 1) ? "%" : ch)).join(""));
+  return { ...tier, island: { ...tier.island, rows } };
+}
+
 /** A river: water `width` wide along a line of points. */
 function river(t: Builder, points: readonly (readonly [number, number])[], width: number): void {
   for (let i = 1; i < points.length; i++) {
@@ -171,7 +179,7 @@ function crowd(t: Builder, rng: Rng, kind: string, at: Cell, n: number, spread: 
  */
 function harbour(): AreaMap {
   const rng = makeRng("area:harbour");
-  const t = tierBuilder("surface", rng, AREA_SIZE);
+  const t = tierBuilder("surface", rng, { cols: 112, rows: 80 });
   const { prop, who } = t;
 
   // The land, forest at its back, and the bay cut into its south shore.
@@ -186,6 +194,9 @@ function harbour(): AreaMap {
   // An inlet between the Northwood and the knoll, and a ravine under the Sky Bridge.
   t.pond(10, 21, 15, 8);
   t.pond(78, 11, 8, 5);
+  // Lighthouse Point: a headland curling south-west round the bay's mouth, and rocks offshore.
+  for (const [x, y, rx, ry] of [[100, 64, 8, 6], [92, 71, 9, 4], [80, 75, 8, 3]] as const) t.blob("harbour", x, y, rx, ry);
+  for (const [x, y, rx, ry] of [[8, 72, 5, 4], [106, 6, 4, 3], [30, 76, 4, 2]] as const) t.blob("harbour", x, y, rx, ry);
 
   // The Citadel: terraces rising north, every face a cliff.
   // Lower bailey, the gatehouse cut into its south wall, a stair either side of the gate.
@@ -315,6 +326,11 @@ function harbour(): AreaMap {
   crowd(t, rng, "pawn", { col: 90, row: 34 }, 4, 5, { color: "blue", act: "pickaxe", walk: false });
   who("pawn", 88, 35, { color: "blue", act: "gold", to: { col: 70, row: 44 } });
 
+  // Lighthouse Point: the light at the headland's tip.
+  prop("tower", 80, 74, { color: "blue" });
+  t.fires.push({ col: 86, row: 72 });
+  who("archer", 82, 75, { color: "blue", to: { col: 96, row: 70 } });
+
   // Moor Watch: the old graves on the bluff, a tower over the moor road.
   prop("tower", 104, 41, { color: "blue" });
   who("archer", 104, 42, { color: "blue" });
@@ -347,6 +363,7 @@ function harbour(): AreaMap {
     { name: "The Northwood", at: { col: 22, row: 12 }, palette: [2, 3, 3], dress: "emberwood" },
     { name: "The Keepwood", at: { col: 44, row: 8 }, palette: [2, 2, 2], dress: "emberwood" },
     { name: "Mine Hills", at: { col: 93, row: 24 }, palette: [4, 1, 3], dress: "crags" },
+    { name: "Lighthouse Point", at: { col: 90, row: 76 }, palette: [3, 2], dress: "saltreach", clearing: 4 },
     { name: "Moor Watch", at: { col: 102, row: 56 }, palette: [5, 4, 3], dress: "barrowmoor" },
   ];
   const rooms = districts.map((d) => ({ at: d.at, r: d.clearing ?? 6 }));
@@ -363,12 +380,15 @@ function harbour(): AreaMap {
 
 function emberwood(): AreaMap {
   const rng = makeRng("area:emberwood");
-  const t = tierBuilder("surface", rng, AREA_SIZE);
+  const t = tierBuilder("surface", rng, { cols: 128, rows: 72 });
   const { prop, who } = t;
 
   t.blob("emberwood", 56, 36, 52, 31);
   t.blob("emberwood", 22, 52, 18, 14);
   t.blob("emberwood", 96, 16, 14, 12);
+  t.blob("emberwood", 114, 18, 13, 8);
+  lake(t, 108, 62, 16, 11);
+  lake(t, 6, 6, 12, 9);
   // The Ember Run: a river across the wood, west to east, so every way north picks its crossing.
   river(t, [[2, 42], [18, 38], [34, 37], [50, 40], [66, 38], [82, 32], [98, 34], [110, 30]], 3);
   t.pond(10, 57, 7, 4);
@@ -402,14 +422,14 @@ function emberwood(): AreaMap {
   // Roads: north from the gate over the Cinder Ford to the Hollow, on to the Crag Stair,
   // and round through the Burn and the east bridge: a loop back to the gate.
   t.road([40, 64], [40, 56], [44, 44], [44, 34], [52, 28], [62, 25], [62, 18]);
-  t.road([52, 28], [76, 24], [88, 26], [100, 20], [110, 18]);
+  t.road([52, 28], [76, 24], [88, 26], [100, 20], [126, 18]);
   t.road([40, 56], [62, 54], [76, 48], [88, 40], [88, 26]);
   t.bridge({ col: 44, row: 35 }, { col: 44, row: 43 }, 3);
   // The Pine Ford: stepping stones from the Old Pines into the wood behind Warren Hill.
   t.bridge({ col: 13, row: 34 }, { col: 13, row: 41 }, 2);
   t.bridge({ col: 88, row: 28 }, { col: 88, row: 37 }, 3);
   t.bridge({ col: 40, row: 64 }, { col: 40, row: 70 }, 3);
-  t.bridge({ col: 104, row: 18 }, { col: 110, row: 18 }, 3);
+  t.bridge({ col: 118, row: 18 }, { col: 126, row: 18 }, 3);
 
   // The Palisade: the Harbour's side of the gate, woodcutters and a watch fire.
   t.fires.push({ col: 43, row: 61 });
@@ -493,19 +513,22 @@ function emberwood(): AreaMap {
   const tier = t.finish({}, [{ col: 40, row: 64 }], maze(t, rng, rooms));
   const exits: AreaExit[] = [
     { to: "harbour", name: "Ember Gate", kind: "gate", at: { col: 40, row: 70 } },
-    { to: "crags", name: "Crag Stair", kind: "open", at: { col: 110, row: 18 } },
+    { to: "crags", name: "Crag Stair", kind: "open", at: { col: 126, row: 18 } },
   ];
   return { ...tier, area: "emberwood", entry: { col: 40, row: 64 }, exits, districts, districtAt: districtGrid(tier, districts), decks };
 }
 
 function crags(): AreaMap {
   const rng = makeRng("area:crags");
-  const t = tierBuilder("surface", rng, AREA_SIZE);
+  const t = tierBuilder("surface", rng, { cols: 112, rows: 90 });
   const { prop, who } = t;
 
   t.blob("crags", 72, 33, 40, 34);
   t.blob("crags", 24, 42, 22, 24);
   t.blob("crags", 56, 60, 40, 10);
+  // The Southern Spur: a ridge running down off the town into the sea.
+  for (const [x, y, rx, ry] of [[60, 74, 16, 7], [70, 82, 10, 5]] as const) t.blob("crags", x, y, rx, ry);
+  for (const [x, y, rx, ry] of [[20, 80, 5, 3], [100, 82, 4, 3]] as const) t.blob("crags", x, y, rx, ry);
   t.pond(100, 30, 10, 14);
 
   // The Tinker Rock: five gnome-built steps, each leaving only a ledge round the next,
@@ -595,6 +618,11 @@ function crags(): AreaMap {
   for (const [c, r] of [[84, 28], [62, 36]] as const) prop("goldStone", c, r);
   crowd(t, rng, "gnome", { col: 76, row: 35 }, 3, 4);
 
+  // The Southern Spur: the gnomes' far watch over the sea.
+  prop("watchtower", 70, 83);
+  prop("goldStone", 64, 78);
+  who("gnome", 66, 80, { to: { col: 74, row: 82 } });
+
   // The Foothills and the Windward Shore.
   for (const [c, r] of [[78, 60], [86, 63]] as const) who("lizard", c, r, { to: { col: c - 6, row: r + 2 } });
   who("snake", 92, 64);
@@ -644,7 +672,7 @@ function crags(): AreaMap {
 
 function greyfall(): AreaMap {
   const rng = makeRng("area:greyfall");
-  const t = tierBuilder("surface", rng, AREA_SIZE);
+  const t = tierBuilder("surface", rng, { cols: 124, rows: 72 });
   const { prop, who } = t;
   const black = { color: "black" } as const;
 
@@ -652,6 +680,9 @@ function greyfall(): AreaMap {
   t.ground("greyfall", 19, 4, 89, 63);
   t.blob("greyfall", 62, 36, 52, 36);
   t.blob("greyfall", 11, 44, 12, 18);
+  // The east coast: coves bitten out of it, sea stacks off it.
+  lake(t, 114, 34, 6, 10);
+  for (const [x, y, rx, ry] of [[118, 18, 4, 6], [118, 56, 4, 5], [112, 66, 4, 3]] as const) t.blob("greyfall", x, y, rx, ry);
 
   // Rotfield: a river of rot winding down the bailey into the Crater, a lake with a shrine on its isle.
   river(t, [[27, 14], [33, 24], [29, 34], [34, 44], [36, 50]], 3);
@@ -668,30 +699,33 @@ function greyfall(): AreaMap {
   for (const [x, y] of [[22, 6], [98, 6], [22, 58], [98, 58]] as const) t.block(2, x, y, 7, 7);
   t.stair(2, 25, 41, "R");
 
-  // The High City: six raised blocks with streets between, the way Sellia and Redmane climb.
-  // The top row joins the north rampart; every block has its own stair down to the streets.
-  const blocks: [number, number, number, number][] = [[52, 9, 15, 14], [71, 9, 15, 14], [90, 9, 12, 14], [52, 27, 15, 14], [71, 27, 15, 14], [90, 27, 12, 14]];
-  for (const [x, y, w, h] of blocks) t.block(2, x, y, w, h);
-  t.stair(2, 51, 22, "L");
-  t.stair(2, 86, 22, "R");
-  t.stair(2, 89, 22, "L");
-  t.stair(2, 51, 40, "L");
-  t.stair(2, 67, 40, "R");
-  t.stair(2, 70, 40, "L");
-  t.stair(2, 89, 40, "L");
-  // Two upper tiers, on the north and south middle blocks, and the Keep on the fourth height above the north.
-  t.block(3, 73, 9, 11, 11);
-  t.stair(3, 72, 19, "L");
+  // The High City, after Sellia and Redmane: six raised blocks, a street on every side of each so none fuses
+  // with its neighbour or the walls, every stair at a block's corner with the street at its foot.
+  const blocks: [number, number, number, number][] = [[52, 11, 14, 11], [70, 11, 17, 11], [91, 11, 9, 11], [52, 27, 14, 13], [70, 27, 17, 13], [91, 27, 9, 13]];
+  for (const [x, y, w, h] of blocks) {
+    t.block(2, x, y, w, h);
+    t.stair(2, x - 1, y + h - 1, "L");
+    t.stair(2, x + w, y + h - 1, "R");
+  }
+  // A spur off the north rampart and its stair: the Sky Bridge's way down into the city.
+  t.block(2, 67, 9, 2, 2);
+  t.stair(2, 66, 10, "L");
+  // The Keep's tier, and the Keep on the fourth height with a stair either side.
+  t.block(3, 72, 11, 13, 9);
+  t.stair(3, 71, 19, "L");
+  t.stair(3, 85, 19, "R");
+  t.block(4, 75, 11, 8, 6);
+  t.stair(4, 74, 16, "L");
+  t.stair(4, 83, 16, "R");
+  // The Warlord's Hall's tier.
   t.block(3, 73, 29, 11, 9);
+  t.stair(3, 72, 37, "L");
   t.stair(3, 84, 37, "R");
-  t.block(4, 75, 9, 8, 7);
-  t.stair(4, 83, 15, "R");
-  // Rooftop bridges over the streets: the high way through the city to the keep.
-  // None may seal a stretch of street between two of them, or it goes to wood.
+  // Raised walkways over the streets: Garrison to Keep, the Keep's tier to the Hall's, Archers to Drill.
   const decks = [
-    ...t.span(2, 67, 33, 4, 2),
-    ...t.span(2, 86, 9, 4, 2),
+    ...t.span(2, 66, 15, 4, 2),
     ...t.span(3, 77, 20, 2, 9),
+    ...t.span(2, 94, 22, 2, 5),
     // The Sky Bridge: the gnomes' high road from the west, landing on the north rampart.
     ...t.span(2, 1, 6, 21, 2),
   ];
@@ -708,10 +742,9 @@ function greyfall(): AreaMap {
   t.bridge({ col: 31, row: 44 }, { col: 38, row: 44 }, 3);
   t.bridge({ col: 37, row: 49 }, { col: 37, row: 54 }, 2);
   // The climb's trail over the roofs: block to bridge to tier to the keep.
-  t.road([53, 39], [66, 34]);
-  t.road([71, 34], [83, 36]);
-  t.road([82, 35], [78, 30]);
-  t.road([78, 18], [82, 16]);
+  t.road([70, 38], [86, 38]);
+  t.road([70, 20], [86, 20]);
+  t.road([72, 18], [84, 18]);
 
   // The Ashen Approach: the war dead before the gate, and the dogs that eat them.
   prop("trollDead", 12, 38);
@@ -763,47 +796,68 @@ function greyfall(): AreaMap {
   who("lancer", 23, 30, { ...black, to: { col: 23, row: 16 } });
 
   // The High City's blocks, each its own quarter.
-  // North-west: the garrison, guns over the street.
-  prop("barracks", 57, 13, black);
-  for (const [c, r] of [[63, 12], [63, 17]] as const) prop("house1", c, r, black);
-  for (const [c, r] of [[55, 19], [60, 19]] as const) prop("woodPile", c, r);
-  for (const c of [55, 63]) prop("cannon", c, 22);
-  // North-east: the archers' tower.
-  prop("tower", 95, 12, black);
-  prop("archery", 96, 18, black);
-  for (const c of [92, 99]) prop("cannon", c, 22);
-  who("archer", 93, 16, { ...black, to: { col: 99, row: 16 } });
-  // South-west: the champions' pit.
+  // The Garrison: barracks, stores, the watch drilling, guns over the street.
+  prop("barracks", 58, 14, black);
+  prop("house1", 63, 14, black);
+  prop("house3", 55, 19, black);
+  for (const [c, r] of [[60, 19], [62, 19]] as const) prop("woodPile", c, r);
+  prop("tools", 57, 17);
+  crowd(t, rng, "warrior", { col: 59, row: 17 }, 3, 2, black);
+  for (const c of [54, 63]) prop("cannon", c, 21);
+  prop("tower", 54, 14, black);
+  prop("meat", 64, 17);
+  who("archer", 54, 16, { ...black, to: { col: 54, row: 19 } });
+  // The Archers' Yard: the tower, the butts, guns at its foot.
+  prop("tower", 95, 13, black);
+  prop("archery", 95, 19, black);
+  who("archer", 93, 16, { ...black, to: { col: 98, row: 16 } });
+  for (const c of [92, 98]) prop("cannon", c, 21);
+  prop("house1", 98, 15, black);
+  prop("tools", 92, 16);
+  // The Champions' Pit: the minotaur in its pen, the champions' houses round it.
   t.fences.push({ col: 54, row: 29, w: 8, h: 5 });
   who("minotaurGuard", 57, 31, { to: { col: 59, row: 31 } });
-  for (const [c, r] of [[56, 37], [61, 37], [65, 30]] as const) prop("house2", c, r, black);
-  // South-middle: the Warlord's hall on its tier.
+  for (const [c, r] of [[63, 30], [56, 37], [62, 37]] as const) prop("house2", c, r, black);
+  prop("meat", 64, 35);
+  for (const [c, r] of [[55, 35], [60, 35]] as const) prop("bones", c, r);
+  for (const [c, r] of [[53, 28], [62, 28], [53, 34], [62, 34]] as const) prop("skullSpike", c, r);
+  crowd(t, rng, "warrior", { col: 58, row: 36 }, 3, 2, black);
+  // The Warlord's Hall on its tier, its guard, guns on the block's rim.
   prop("monastery", 78, 33, black);
-  for (const [c, r] of [[74, 31], [82, 31], [74, 35], [82, 35]] as const) prop("skullSpike", c, r);
-  who("skullGuard", 78, 36);
-  // South-east: the drill yard, its guns over the Gallows.
-  prop("barracks", 95, 31, black);
-  t.fires.push({ col: 95, row: 36 });
-  for (let i = 0; i < 3; i++) who("warrior", 92 + i * 3, 38, black);
-  for (const c of [92, 99]) prop("cannon", c, 40);
+  for (const [c, r] of [[74, 30], [82, 30], [73, 36], [83, 36]] as const) prop("skullSpike", c, r);
+  prop("house3", 76, 36, black);
+  prop("house3", 81, 36, black);
+  who("skullGuard", 78, 35);
+  crowd(t, rng, "monk", { col: 78, row: 30 }, 2, 2, { color: "purple" });
+  for (const c of [71, 85]) prop("cannon", c, 39);
+  // The Drill Yard: barracks, the fire, the line, guns over the Gallows.
+  prop("barracks", 95, 30, black);
+  t.fires.push({ col: 95, row: 35 });
+  for (let i = 0; i < 3; i++) who("warrior", 92 + i * 3, 37, black);
+  for (const c of [92, 98]) prop("cannon", c, 39);
+  prop("house2", 98, 34, black);
+  prop("woodPile", 92, 33);
+  prop("tools", 92, 35);
   // The streets: the dead patrol them, a lancer rides the long one.
-  who("skull", 68, 15, { to: { col: 68, row: 38 } });
-  who("skull", 87, 30, { to: { col: 87, row: 38 } });
-  who("lancer", 60, 25, { ...black, to: { col: 75, row: 25 } });
+  who("skull", 68, 14, { to: { col: 68, row: 38 } });
+  who("skull", 88, 24, { to: { col: 88, row: 38 } });
+  who("lancer", 55, 24, { ...black, to: { col: 85, row: 24 } });
 
-  // The Keep: the black castle on the fourth height, the Warlord before it, the Throne Stair behind.
+  // The Keep: the black castle on the fourth height, the Warlord on the tier before it, his guard, guns on the tier.
   prop("castle", 78, 13, black);
-  t.bosses.push({ name: "The Grey Warlord", area: "greyfall", col: 77, row: 17 });
-  who("warrior", 77, 17, black);
-  for (const [c, r] of [[74, 18], [81, 18]] as const) who("skullGuard", c, r);
+  t.bosses.push({ name: "The Grey Warlord", area: "greyfall", col: 78, row: 18 });
+  who("warrior", 78, 18, black);
+  for (const [c, r] of [[75, 18], [81, 18]] as const) who("skullGuard", c, r);
+  for (const [c, r] of [[72, 17], [84, 17], [73, 12], [84, 12]] as const) prop("skullSpike", c, r);
+  for (const c of [70, 86]) prop("cannon", c, 21);
 
   const exits: AreaExit[] = [
     { to: "barrowmoor", name: "Grey Gate", kind: "locked", at: { col: 1, row: 44 } },
     { to: "crags", name: "Sky Bridge", kind: "high", at: { col: 1, row: 6 } },
-    { to: "gilded", name: "Throne Stair", kind: "lift", at: { col: 81, row: 10 } },
+    { to: "gilded", name: "Throne Stair", kind: "lift", at: { col: 81, row: 12 } },
   ];
   const districts: District[] = [
-    { name: "The Keep", at: { col: 79, row: 21 }, palette: [4, 5, 3, 1], dress: "greyfall", box: { x: 75, y: 9, w: 8, h: 7 } },
+    { name: "The Keep", at: { col: 78, row: 8 }, palette: [4, 5, 3, 1], dress: "greyfall", box: { x: 75, y: 11, w: 8, h: 6 } },
     { name: "The High City", at: { col: 88, row: 24 }, palette: [4, 5, 3, 1], dress: "greyfall", box: { x: 52, y: 9, w: 50, h: 32 } },
     { name: "Rotfield", at: { col: 36, row: 32 }, palette: [4, 5], dress: "greyfall", clearing: 7 },
     { name: "The Crater", at: { col: 37, row: 60 }, palette: [5, 4], dress: "barrowmoor", clearing: 4 },
@@ -820,7 +874,7 @@ function greyfall(): AreaMap {
 
 function gilded(): AreaMap {
   const rng = makeRng("area:gilded");
-  const t = tierBuilder("sky", rng, AREA_SIZE);
+  const t = tierBuilder("sky", rng, { cols: 112, rows: 72 });
   const { prop, who } = t;
   const gold = { color: "yellow" } as const;
   const black = { color: "black" } as const;
@@ -952,7 +1006,7 @@ function gilded(): AreaMap {
 
 function steps(): AreaMap {
   const rng = makeRng("area:steps");
-  const t = tierBuilder("sky", rng, AREA_SIZE);
+  const t = tierBuilder("sky", rng, { cols: 112, rows: 64 });
   const { prop, who } = t;
   const blue = { color: "blue" } as const;
   const gold = { color: "yellow" } as const;
@@ -1073,7 +1127,104 @@ function steps(): AreaMap {
   return { ...tier, area: "steps", entry: { col: 104, row: 16 }, exits, districts, districtAt: districtGrid(tier, districts), decks };
 }
 
-const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour, emberwood, crags, greyfall, gilded, steps };
+function undercroft(): AreaMap {
+  const rng = makeRng("area:undercroft");
+  const t = tierBuilder("below", rng, { cols: 124, rows: 72 });
+  const { prop, who } = t;
+  const purple = { color: "purple" } as const;
+
+  // The Harbour's cisterns and catacombs, after the Depths and Diablo's crypts: halls cut from the rock, black water between.
+  for (const [x, y, rx, ry] of [[26, 22, 14, 10], [14, 15, 8, 6], [23, 49, 18, 13], [60, 15, 20, 9], [50, 56, 12, 9], [79, 52, 15, 9], [76, 32, 16, 9], [102, 39, 14, 9]] as const) t.blob("undercroft", x, y, rx, ry);
+  t.ground("undercroft", 104, 37, 19, 7);
+  // Tunnels between the caverns, each from well inside one to well inside the next.
+  const tunnels = [[[26, 22], [56, 16]], [[24, 26], [23, 46]], [[34, 53], [40, 58]], [[60, 58], [79, 60]], [[66, 18], [74, 30]], [[66, 36], [66, 50]], [[88, 34], [100, 39]]] as const;
+  for (const [a, b] of tunnels) t.bridge({ col: a[0], row: a[1] }, { col: b[0], row: b[1] }, 3);
+
+  // The Cisterns: three black channels across the west, walkways over them.
+  t.pond(8, 40, 30, 3);
+  t.pond(8, 48, 30, 3);
+  t.pond(8, 56, 30, 3);
+  for (const c of [14, 30]) t.bridge({ col: c, row: 37 }, { col: c, row: 61 });
+
+  // The Spider Pillars: a hall of standing rock, a grid of pillars to lose the eye in.
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) t.pillar(46 + i * 8, 9 + j * 8, 3, 3);
+
+  // The Ossuary: a raised bone terrace, a stair at each end.
+  t.block(2, 70, 46, 18, 12);
+  t.stair(2, 69, 57, "L");
+  t.stair(2, 88, 57, "R");
+
+  // The Drowned Chapel: a chapel on an isle in a sunken pool, a causeway out to it.
+  lake(t, 50, 57, 7, 4);
+  t.ground("undercroft", 47, 55, 7, 4);
+  t.bridge({ col: 50, row: 50 }, { col: 50, row: 56 }, 2);
+
+  // Roads: from the well's foot through the pillars and the halls to the tunnel east; trails onto the ossuary.
+  t.road([30, 24], [44, 28], [62, 30], [80, 34], [96, 40], [122, 40]);
+  t.road([30, 24], [22, 34], [22, 44]);
+  t.road([62, 30], [64, 44], [69, 58]);
+  t.road([71, 56], [86, 56]);
+  t.bridge({ col: 116, row: 40 }, { col: 122, row: 40 }, 3);
+
+  // The Well Bottom: where the rope comes down, a fire under the shaft of light.
+  t.fires.push({ col: 30, row: 26 });
+  for (const [c, r] of [[26, 22], [34, 28]] as const) prop("bones", c, r);
+  prop("woodPile", 33, 22);
+  who("rubberDuck", 28, 28);
+
+  // The Cisterns: what lives in the black water, and the dead on the walkways.
+  for (const [c, r] of [[10, 41], [26, 49], [18, 57]] as const) who("bombFish", c, r, { to: { col: c + 6, row: r } });
+  who("turtle", 34, 41);
+  crowd(t, rng, "skull", { col: 22, row: 46 }, 3, 5);
+  for (const [c, r] of [[12, 45], [28, 53], [20, 61]] as const) prop("bones", c, r);
+
+  // Smugglers' Nook: the thieves' cache in the north-west, their gold and stores.
+  for (const [c, r] of [[12, 12], [16, 15], [10, 17]] as const) prop("goldStone", c, r);
+  for (const [c, r] of [[14, 10], [18, 18]] as const) prop("meat", c, r);
+  prop("woodPile", 9, 14);
+  crowd(t, rng, "thief", { col: 14, row: 14 }, 3, 3);
+
+  // The Spider Pillars: webs of the rock's spiders, and what they caught.
+  crowd(t, rng, "spider", { col: 58, row: 16 }, 5, 9);
+  for (const [c, r] of [[50, 14], [62, 22], [70, 13], [54, 22]] as const) prop("bones", c, r);
+  who("bat", 66, 18);
+  who("bat", 52, 12);
+
+  // The Ossuary: the Harbour's dead stacked on the terrace, their warden among them.
+  for (const [c, r] of [[72, 48], [76, 47], [80, 48], [84, 47], [74, 53], [82, 53]] as const) prop("skullSpike", c, r);
+  for (const [c, r] of [[78, 50], [86, 50], [72, 51]] as const) prop("bones", c, r);
+  crowd(t, rng, "skull", { col: 78, row: 51 }, 3, 4);
+  who("skullGuard", 79, 54, { scale: 1.4 });
+
+  // The Drowned Chapel: a purple chapel praying to the grey, under the Harbour's own streets.
+  prop("monastery", 50, 56, purple);
+  who("monk", 48, 57, purple);
+  who("shaman", 52, 57);
+
+  // The Dig: the tunnel east that nobody admits to, its diggers, their tools and spoil.
+  prop("cave", 100, 34);
+  for (const [c, r] of [[96, 38], [102, 42]] as const) prop("woodPile", c, r);
+  for (const [c, r] of [[98, 42], [104, 38]] as const) prop("tools", c, r);
+  for (const [c, r] of [[94, 32], [106, 44]] as const) prop("goldStone", c, r);
+  crowd(t, rng, "gnoll", { col: 99, row: 40 }, 4, 4);
+  who("lizard", 92, 44);
+
+  const exits: AreaExit[] = [{ to: "deeps", name: "Cistern Run", kind: "open", at: { col: 122, row: 40 } }];
+  const districts: District[] = [
+    { name: "The Ossuary", at: { col: 79, row: 60 }, palette: [4, 5], dress: "barrowmoor", box: { x: 70, y: 46, w: 18, h: 12 } },
+    { name: "The Well Bottom", at: { col: 30, row: 22 }, palette: [3, 4], dress: "undercroft", clearing: 5 },
+    { name: "The Cisterns", at: { col: 22, row: 52 }, palette: [5, 4], dress: "undercroft", clearing: 8 },
+    { name: "Smugglers' Nook", at: { col: 14, row: 14 }, palette: [4, 1], dress: "undercroft", clearing: 5 },
+    { name: "The Spider Pillars", at: { col: 58, row: 15 }, palette: [4, 5], dress: "undercroft", clearing: 12 },
+    { name: "The Drowned Chapel", at: { col: 50, row: 62 }, palette: [5, 3], dress: "undercroft", clearing: 6 },
+    { name: "The Dig", at: { col: 100, row: 46 }, palette: [4, 1], dress: "undercroft", clearing: 6 },
+  ];
+  const rooms = districts.filter((d) => !d.box).map((d) => ({ at: d.at, r: d.clearing ?? 6 }));
+  const tier = stone(t.finish({}, [{ col: 30, row: 24 }], maze(t, rng, rooms)));
+  return { ...tier, area: "undercroft", entry: { col: 30, row: 24 }, exits, districts, districtAt: districtGrid(tier, districts), decks: [] };
+}
+
+const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour, emberwood, crags, greyfall, gilded, steps, undercroft };
 
 /** The areas that have a map of their own so far. */
 export const MAPPED_AREAS = Object.keys(BUILT) as AreaId[];

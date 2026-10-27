@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { AREA_SIZE, FLYING, MAPPED_AREAS, SEA_KINDS, WATER_ART, areaMap, castsCliff, cellKey, footprint, isSlope, isWalkable, level, stepsFrom, useIsland, type Cell } from "../src/index.ts";
+import { FLYING, MAPPED_AREAS, SEA_KINDS, WATER_ART, areaMap, castsCliff, cellKey, footprint, isSlope, isWalkable, level, stepsFrom, useIsland, type Cell } from "../src/index.ts";
 
 function reach(from: Cell): Set<number> {
   const seen = new Set([cellKey(from)]);
@@ -18,9 +18,8 @@ function reach(from: Cell): Set<number> {
 describe.each(MAPPED_AREAS)("the %s area map", (id) => {
   const m = areaMap(id);
 
-  it("is its full size, every exit and every height walkable from the entry", () => {
-    expect(m.island.rows.length).toBe(AREA_SIZE.rows);
-    expect(m.island.rows.every((l) => l.length === AREA_SIZE.cols)).toBe(true);
+  it("is a whole rectangle of tiles, every exit and every height walkable from the entry", () => {
+    expect(m.island.rows.every((l) => l.length === m.island.rows[0]!.length)).toBe(true);
     useIsland(m.island);
     const all = reach(m.entry);
     for (const e of m.exits) expect(all.has(cellKey(e.at)), `${e.name} at ${e.at.col},${e.at.row}`).toBe(true);
@@ -34,7 +33,7 @@ describe.each(MAPPED_AREAS)("the %s area map", (id) => {
   it("keeps every bridge deck raised, and every tile of land in a district", () => {
     useIsland(m.island);
     for (const d of m.decks) expect(level(d.col, d.row) >= 2 || isSlope(d.col, d.row), `deck at ${d.col},${d.row}`).toBe(true);
-    m.island.rows.forEach((line, r) => [...line].forEach((ch, c) => ch !== "~" && expect(m.districtAt[r]![c], `${c},${r}`).not.toBe("-")));
+    m.areaAt.forEach((line, r) => [...line].forEach((ch, c) => ch !== "-" && expect(m.districtAt[r]![c], `${c},${r}`).not.toBe("-")));
   });
 
   it("walks every walker's beat on foot, round the cliffs and by the stairs", () => {

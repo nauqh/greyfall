@@ -254,9 +254,12 @@ the atlas, focused on it.
   rectangles of land, so walls stand on ground to their corners.
   Reworked after Caelid and Sellia: a river of rot down the bailey into the Crater, a lake (`lake()`) with a
   shrine and bonfire on its isle, crags standing out of the rot, gnolls for
-  its dogs; and the wards are now the High City, six raised blocks with
-  paved streets between, each with its own stair, a rooftop bridge, two
-  upper tiers (the Warlord's hall, the keep's) and the Keep above.
+  its dogs; and the wards are now the High City: six raised blocks, each
+  standing alone with a street on every side and a stair at both front
+  corners (blocks that touched each other or the walls fused into one
+  slab and stranded their stairs), raised walkways over the streets, the
+  Warlord's Hall and the Keep's tier above, and the Keep on the fourth
+  height, each block furnished as its own quarter.
   The Harbour's citadel and Old Town and Emberwood's warrens got the same
   furnishing as the Crags: trails, guns on the walls, stores and trophies.
   The Gilded Reach is the fifth, a city of isles in the sky after Anor
@@ -275,6 +278,18 @@ the atlas, focused on it.
   ground, so a high isle steps down through a ledge to its lowland; and a
   bridge must run from well inside one isle, as a ragged rim leaves one
   that stops at the edge joined to nothing.
+  The Undercroft is the seventh and the first underground: a chain of
+  caverns joined by tunnels (Well Bottom, Cisterns, Spider Pillars,
+  Drowned Chapel, the raised Ossuary, Smugglers' Nook, the Dig), its maze
+  walls turned to standing rock by `stone()`, dressed in rubble, not
+  trees. A tunnel must run from well inside one cavern to well inside the
+  next: one ending at a ragged rim joins nothing, and everything past it
+  goes to wall.
+- **Each area has its own frame and silhouette:** the Harbour taller,
+  with Lighthouse Point curling round the bay; Emberwood a long valley
+  with the sea biting its corners; the Crags tall, with the Southern Spur
+  running into the sea; the Greyfall's coast broken into coves and
+  stacks; the Undercroft a chain of caverns.
   `test/areas.test.ts` checks every mapped area: every exit and height can be
   reached from the entry, every bridge deck stays raised, all land belongs to
   a district, and every building sits wholly on its ground.

@@ -588,6 +588,11 @@ export class AtlasScene extends Phaser.Scene {
             // Still, not swaying: the first frame of the sheet.
             spot(c, r, `bigTree${pick}`, BIG_TREE[pick]!, 0);
             if (r01() < 0.3) decor("tree", (c + r01()) * CELL, (r + 0.5) * CELL);
+          } else if (tier.base === "rock" && this.local) {
+            // An underground map's walls are rock: rubble and old bones at their foot, no trees.
+            if (r01() < 0.6) decor("rock", (c + 0.2 + r01() * 0.6) * CELL, (r + 0.6 + r01() * 0.3) * CELL, 1.1);
+            if (r01() < 0.2) decor("rock", (c + r01()) * CELL, (r + 0.4) * CELL, 0.8);
+            if (r01() < 0.12) spot(c, r, "prop_bones", PROP.bones!, 0);
           } else if (id === "barrowmoor" || id === "greyfall" || tier.base === "rock") {
             if (r01() < 0.45) spot(c, r, "prop_deadTree", { ...PROP.deadTree!, scale: 0.42 }, 0);
             else decor("bush", (c + 0.5) * CELL, (r + 0.8) * CELL, 0.8);
