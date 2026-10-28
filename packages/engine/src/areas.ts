@@ -808,9 +808,9 @@ function greyfall(): AreaMap {
   const { prop, who } = t;
   const black = { color: "black" } as const;
 
-  // The citadel's rock, walled to its corners, and the ashen ground before its gate.
-  t.ground("greyfall", 19, 4, 89, 63);
-  t.blob("greyfall", 62, 36, 52, 36);
+  // The rot-marsh round the citadel's rock, and the ashen ground before its gate.
+  t.blob("greyfall", 62, 36, 58, 34);
+  for (const [x, y, rx, ry] of [[24, 62, 18, 10], [96, 8, 20, 7], [92, 64, 22, 8]] as const) t.blob("greyfall", x, y, rx, ry);
   t.blob("greyfall", 11, 44, 12, 18);
   // The east coast: coves bitten out of it, sea stacks off it.
   lake(t, 114, 34, 6, 10);
@@ -821,50 +821,20 @@ function greyfall(): AreaMap {
   lake(t, 37, 55, 9, 5);
   t.ground("greyfall", 35, 54, 5, 3);
 
-  // The curtain wall: walkable ramparts round the whole castle, a bastion on each corner,
-  // and the Grey Gate a gap in the west wall.
-  t.block(2, 22, 6, 83, 3);
-  t.block(2, 22, 62, 83, 3);
-  t.block(2, 22, 6, 3, 36);
-  t.block(2, 22, 47, 3, 18);
-  t.block(2, 102, 6, 3, 59);
-  for (const [x, y] of [[22, 6], [98, 6], [22, 58], [98, 58]] as const) t.block(2, x, y, 7, 7);
-  t.stair(2, 25, 41, "R");
-
-  // The High City, after Sellia and Redmane: six raised blocks, a street on every side of each so none fuses
-  // with its neighbour or the walls, every stair at a block's corner with the street at its foot.
-  const blocks: [number, number, number, number][] = [[52, 11, 14, 11], [70, 11, 17, 11], [91, 11, 9, 11], [52, 27, 14, 13], [70, 27, 17, 13], [91, 27, 9, 13]];
-  for (const [x, y, w, h] of blocks) {
-    t.block(2, x, y, w, h);
-    t.stair(2, x - 1, y + h - 1, "L");
-    t.stair(2, x + w, y + h - 1, "R");
-  }
-  // A spur off the north rampart and its stair: the Sky Bridge's way down into the city.
-  t.block(2, 67, 9, 2, 2);
-  t.stair(2, 66, 10, "L");
-  // The Keep's tier, and the Keep on the fourth height with a stair either side.
-  t.block(3, 72, 11, 13, 9);
-  t.stair(3, 71, 19, "L");
-  t.stair(3, 85, 19, "R");
-  t.block(4, 75, 11, 8, 6);
-  t.stair(4, 74, 16, "L");
-  t.stair(4, 83, 16, "R");
-  // The Warlord's Hall's tier.
-  t.block(3, 73, 29, 11, 9);
-  t.stair(3, 72, 37, "L");
-  t.stair(3, 84, 37, "R");
-  // Raised walkways over the streets: Garrison to Keep, the Keep's tier to the Hall's, Archers to Drill.
-  const decks = [
-    ...t.span(2, 66, 15, 4, 2),
-    ...t.span(3, 77, 20, 2, 9),
-    ...t.span(2, 94, 22, 2, 5),
-    // The Sky Bridge: the gnomes' high road from the west, landing on the north rampart.
-    ...t.span(2, 1, 6, 21, 2),
-  ];
+  // The citadel-crag, after Stormveil and Sellia: one great rock rising out of the rot in four ragged tiers,
+  // the Lower City on its skirts, the High City, the Warlord's Hall, the Keep on its crown. A spur runs west
+  // from it as a ridge for the gnomes' Sky Bridge to land on.
+  t.shape(2, 78, 33, 30, 24, 0.45, "The Lower City");
+  t.shape(2, 42, 9, 18, 4, 0.35, "The Lower City");
+  t.shape(3, 79, 28, 20, 15, 0.4, "The High City");
+  t.shape(4, 79, 21, 11, 8, 0.35, "The Warlord's Hall");
+  t.shape(5, 79, 15, 6, 3.5, 0.25, "The Keep");
+  // The Sky Bridge: the gnomes' high road from the west, landing on the spur.
+  const decks = t.span(2, 1, 8, 36, 2);
 
   // Crags of the old rock, standing out of the rot.
-  t.relief({ area: "greyfall", at: { col: 44, row: 28 }, rx: 6, ry: 4, levels: 2 });
-  t.relief({ area: "greyfall", at: { col: 15, row: 34 }, rx: 5, ry: 4, levels: 2 });
+  t.shape(2, 44, 28, 6, 4, 0.4, "Rotfield");
+  t.shape(2, 15, 34, 5, 4, 0.4, "The Ashen Approach");
 
   // Roads: in at the Grey Gate over the rot, to the city's stairs and round to the Gallows; the causeway to the shrine.
   t.road([1, 44], [24, 44], [40, 44], [48, 41], [51, 41]);
@@ -873,10 +843,7 @@ function greyfall(): AreaMap {
   t.bridge({ col: 6, row: 44 }, { col: 1, row: 44 }, 3);
   t.bridge({ col: 31, row: 44 }, { col: 38, row: 44 }, 3);
   t.bridge({ col: 37, row: 49 }, { col: 37, row: 54 }, 2);
-  // The climb's trail over the roofs: block to bridge to tier to the keep.
-  t.road([70, 38], [86, 38]);
-  t.road([70, 20], [86, 20]);
-  t.road([72, 18], [84, 18]);
+
 
   // The Ashen Approach: the war dead before the gate, and the dogs that eat them.
   prop("trollDead", 12, 38);
@@ -985,22 +952,25 @@ function greyfall(): AreaMap {
 
   const exits: AreaExit[] = [
     { to: "barrowmoor", name: "Grey Gate", kind: "locked", at: { col: 1, row: 44 } },
-    { to: "crags", name: "Sky Bridge", kind: "high", at: { col: 1, row: 6 } },
+    { to: "crags", name: "Sky Bridge", kind: "high", at: { col: 1, row: 8 } },
     { to: "gilded", name: "Throne Stair", kind: "lift", at: { col: 81, row: 12 } },
   ];
+  // The rock's tiers alternate stone colours so each step reads; the marsh below in its own.
   const districts: District[] = [
-    { name: "The Keep", at: { col: 78, row: 8 }, palette: [4, 5, 3, 1], dress: "greyfall", box: { x: 75, y: 11, w: 8, h: 6 } },
-    { name: "The High City", at: { col: 88, row: 24 }, palette: [4, 5, 3, 1], dress: "greyfall", box: { x: 52, y: 9, w: 50, h: 32 } },
-    { name: "Rotfield", at: { col: 36, row: 32 }, palette: [4, 5], dress: "greyfall", clearing: 7 },
-    { name: "The Crater", at: { col: 37, row: 60 }, palette: [5, 4], dress: "barrowmoor", clearing: 4 },
-    { name: "Ruined Chapel", at: { col: 38, row: 18 }, palette: [3, 5], dress: "barrowmoor", clearing: 6 },
-    { name: "Gallows Yard", at: { col: 72, row: 55 }, palette: [4, 5], dress: "greyfall", clearing: 8 },
-    { name: "The Ashen Approach", at: { col: 12, row: 52 }, palette: [4, 5], dress: "barrowmoor", clearing: 5 },
+    { name: "The Keep", at: { col: 79, row: 8 }, levels: [5], palette: [4], dress: "greyfall", decor: 1.5 },
+    { name: "The Warlord's Hall", at: { col: 92, row: 22 }, levels: [4], palette: [5], dress: "greyfall", decor: 1.5 },
+    { name: "The High City", at: { col: 64, row: 34 }, levels: [3], palette: [4], dress: "greyfall", decor: 2 },
+    { name: "The Lower City", at: { col: 96, row: 48 }, levels: [2], palette: [5], dress: "greyfall", decor: 2 },
+    { name: "Rotfield", at: { col: 34, row: 30 }, levels: [1, 2], palette: [3], dress: "greyfall", decor: 2.5 },
+    { name: "The Crater", at: { col: 37, row: 62 }, levels: [1], palette: [2], dress: "barrowmoor", decor: 2 },
+    { name: "Ruined Chapel", at: { col: 38, row: 18 }, levels: [1], palette: [2], dress: "barrowmoor", decor: 2 },
+    { name: "Gallows Yard", at: { col: 70, row: 64 }, levels: [1], palette: [1], dress: "greyfall", decor: 2 },
+    { name: "The Ashen Approach", at: { col: 12, row: 52 }, levels: [1, 2], palette: [1], dress: "barrowmoor", decor: 2.5 },
   ];
   // A castle, not a maze: open courts and streets, only clumps of dead wood in the bailey and before the gate.
   for (const [x, y, rx, ry, d] of [[40, 30, 5, 7, 0.35], [10, 52, 6, 6, 0.3], [44, 18, 4, 3, 0.3], [92, 56, 7, 4, 0.3], [26, 46, 3, 4, 0.4]] as const) t.grove(x, y, rx, ry, d);
   const tier = t.finish({}, [{ col: 6, row: 44 }]);
-  return { ...tier, area: "greyfall", entry: { col: 6, row: 44 }, exits, districts, districtAt: districtGrid(tier, districts), decks };
+  return { ...tier, area: "greyfall", entry: { col: 6, row: 44 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks };
 }
 
 function gilded(): AreaMap {

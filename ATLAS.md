@@ -355,6 +355,14 @@ the atlas, focused on it.
   Barrow King on its crown and the Barrow Cave at its foot. Ground a
   landform names is never absorbed as a pocket, so a small barrow keeps
   its district's colour.
+- **The Greyfall is a citadel-crag**: no walls or blocks, but one great
+  rock rising out of the rot-marsh in four ragged tiers (the Lower City,
+  the High City, the Warlord's Hall, the Keep on its crown), the tiers
+  alternating stone colours, with a spur west for the gnomes' Sky Bridge
+  to land on. Rotfield, the Crater shrine, the Ruined Chapel, the Gallows
+  Yard and the Ashen Approach lie in the marsh round its foot.
+- **Emberwood** keeps its maze, but its hills and Troll's Hollow (once a
+  rectangular ring of blocks, now a raised arena of ash) are landforms.
 - **Area maps draw no roads.** A road there is open ground in the
   district's own colour: the engine's roads still keep woods and buildings
   off it, but a road tile's other colour read as a stripe painted across
