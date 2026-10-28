@@ -300,6 +300,14 @@ the atlas, focused on it.
   tunnels centre to centre; and underground, rock is high ground, so a
   tile directly under rock is a cliff face: an exit at a map's top edge
   stands a row down.
+  Barrowmoor is the tenth, the old kings' moor after Limgrave's heath and
+  Lordran's graveyards: a broad moor with three tongues out to its gates
+  (the Moor Gate, the Grey Road to the Grey Gate, the Fen Path), grassy
+  barrows rising out of the dead wood of the Heath and Barrow Field,
+  Gibbet Hill, the Dead Mere, and the King's Barrow, two exact steps with
+  the Barrow King on its crown and the Barrow Cave at its foot. A grown
+  relief lost its top step there, so the great mound is built from blocks,
+  with land of its own under it so its back does not stand in the sea.
 - **Each area has its own frame and silhouette:** the Harbour taller,
   with Lighthouse Point curling round the bay; Emberwood a long valley
   with the sea biting its corners; the Crags tall, with the Southern Spur
