@@ -326,14 +326,13 @@ the atlas, focused on it.
   its bailey, the Gilded Reach plazas with tree avenues (`avenue()`) and
   one hanging garden, the Steps bare isles with lone trees, Barrowmoor an
   open heath of barrows and thickets.
-- **Lizard Fen** is the eleventh, the first built from landforms from the
-  start: a marsh packed to the frame's edge after Blighttown and the Valley
-  of Defilement, black pools in the reed crossed by duckboards, the Chapel
-  Mound (two steps, the purple chapel on its crown) over the sinkhole that
-  drops to the Hollow, the Lizard Warren's mound, the Drowned Village, the
-  Black Pools, the Eel Shallows, and the Barrow Rise climbing to the moor.
-  A duckboard must reach shore to shore: one that stops in a pool is a
-  sealed strip the engine fills with trees.
+- **Lizard Fen** is a wheel, unlike any other area: a ring of reed and
+  mud round a great black basin, the Chapel Mound on its isle at the hub
+  (two steps, the purple chapel, the sinkhole down to the Hollow), six
+  duckboard spokes out across hummocks with a stilt hut on each to the
+  rim, where the districts sit: Causeway Landing, the Reedbeds, the
+  Barrow Rise climbing to the moor, the Eel Shallows, the Drowned
+  Village and the Lizard Warren's mound.
 - **Saltreach** is the twelfth and last, and unlike any other area a
   crescent of isles round an open lagoon: Old Bridge Landing where the
   road comes in from the Harbour, the fenced Saltworks, the Shingle Spit
@@ -363,6 +362,8 @@ the atlas, focused on it.
   Yard and the Ashen Approach lie in the marsh round its foot.
 - **Emberwood** keeps its maze, but its hills and Troll's Hollow (once a
   rectangular ring of blocks, now a raised arena of ash) are landforms.
+- **Area maps carry no banner**: an area's name is on its land, and
+  "Back to the atlas" is the one control left at the top.
 - **Area maps draw no roads.** A road there is open ground in the
   district's own colour: the engine's roads still keep woods and buildings
   off it, but a road tile's other colour read as a stripe painted across

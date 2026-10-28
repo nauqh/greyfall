@@ -66,7 +66,6 @@ function AreaView({ area, onExit, onLeave }: { area: AreaId; onExit: (to: AreaId
         <HudToggle shown={hud} toggle={toggleHud} />
         <div className="worldHud" hidden={!hud}>
           <header className="atlasTop">
-            <h1 className="banner">{AREAS.find((a) => a.id === area)!.name}</h1>
             <div className="worldLinks">
               <button className="linkBtn" type="button" onClick={onLeave}>
                 Back to the atlas

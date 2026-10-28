@@ -1620,99 +1620,118 @@ function fen(): AreaMap {
   const purple = { color: "purple" } as const;
   const yellow = { color: "yellow" } as const;
 
-  // A marsh packed to the frame's edge, after Blighttown's swamp and the Valley of Defilement: black pools
-  // in the reed, the Chapel Mound in the middle over the sinkhole, the Barrow Rise climbing north-east to the moor.
-  for (const [x, y, rx, ry] of [[60, 40, 58, 38], [14, 14, 14, 12], [106, 14, 14, 12], [14, 66, 14, 12], [106, 66, 14, 12]] as const) t.blob("fen", x, y, rx, ry);
-  for (const [x, y, rx, ry] of [[32, 20, 9, 5], [52, 66, 10, 5], [88, 36, 7, 6], [86, 62, 9, 5], [18, 48, 6, 4], [40, 40, 5, 3], [102, 46, 5, 4], [70, 14, 6, 3]] as const) lake(t, x, y, rx, ry);
-  // The sinkhole the chapel prays over: a pool off the mound's foot that drinks the fen.
-  lake(t, 72, 46, 3, 2);
+  // A wheel, unlike any other area: a ring of reed and mud round a great black basin, the Chapel Mound on
+  // its isle at the hub over the sinkhole, and duckboard spokes out across hummocks to the rim.
+  t.blob("fen", 60, 40, 58, 37);
+  for (const [x, y, rx, ry] of [[16, 12, 13, 9], [102, 12, 14, 10], [16, 68, 13, 9], [104, 68, 13, 9]] as const) t.blob("fen", x, y, rx, ry);
+  lake(t, 60, 40, 33, 21);
+  t.blob("fen", 60, 40, 12, 8);
+  // Hummocks at each spoke's middle, a stilt hut on each.
+  const hub = [60, 40] as const;
+  const spokes = [[24, 40], [34, 18], [86, 18], [96, 40], [86, 62], [34, 62]] as const;
+  const hummocks = spokes.map(([x, y]) => [Math.round((x + hub[0]) / 2), Math.round((y + hub[1]) / 2)] as const);
+  for (const [x, y] of hummocks) t.blob("fen", x, y, 3, 2);
+  for (let i = 0; i < spokes.length; i++) {
+    t.bridge({ col: hub[0], row: hub[1] }, { col: hummocks[i]![0], row: hummocks[i]![1] });
+    t.bridge({ col: hummocks[i]![0], row: hummocks[i]![1] }, { col: spokes[i]![0], row: spokes[i]![1] });
+  }
+  // Pools in the rim's mud, so even the ring is wet.
+  for (const [x, y, rx, ry] of [[12, 22, 4, 3], [14, 60, 4, 3], [108, 24, 4, 3], [106, 58, 4, 3], [60, 72, 5, 2], [40, 8, 4, 2], [80, 74, 3, 2], [8, 44, 2, 3]] as const) lake(t, x, y, rx, ry);
 
-  // Landforms, each its own district's ground.
-  t.shape(2, 60, 32, 13, 8, 0.45, "The Chapel Mound");
-  t.shape(3, 60, 28, 6, 4, 0.35, "The Chapel Mound");
-  t.shape(2, 22, 64, 10, 6, 0.45, "Lizard Warren");
-  t.shape(2, 104, 22, 13, 10, 0.45, "The Barrow Rise");
-  t.shape(3, 106, 16, 7, 5, 0.4, "The Barrow Rise");
+  // The Chapel Mound: two steps at the hub, the sinkhole at its foot.
+  t.shape(2, 60, 39, 10, 6, 0.35, "The Chapel Mound");
+  t.shape(3, 60, 37, 6, 3.5, 0.25, "The Chapel Mound");
+  // The Barrow Rise in the north-east rim climbing to the moor, the Lizard Warren's mound in the south-west.
+  t.shape(2, 100, 14, 12, 8, 0.45, "The Barrow Rise");
+  t.shape(3, 102, 10, 6, 4, 0.4, "The Barrow Rise");
+  t.shape(2, 18, 66, 9, 6, 0.45, "Lizard Warren");
 
-  // Duckboards: the way in from the shore, across the fen past the chapel's foot, up to the moor.
-  t.road([1, 40], [24, 40], [46, 46], [64, 44], [82, 46], [84, 26], [84, 2]);
-  t.bridge({ col: 6, row: 40 }, { col: 1, row: 40 }, 3);
-  t.bridge({ col: 84, row: 8 }, { col: 84, row: 1 }, 3);
-  for (const [a, b] of [[[40, 34], [40, 46]], [[28, 26], [36, 14]], [[52, 58], [52, 74]], [[82, 36], [94, 36]], [[72, 62], [100, 62]], [[18, 44], [18, 52]], [[100, 46], [108, 46]], [[64, 14], [76, 14]]] as const) t.bridge({ col: a[0], row: a[1] }, { col: b[0], row: b[1] });
+  // Exits: the shingle spit in from Saltreach on the west, the Barrow Path up off the rise to the moor.
+  t.road([1, 40], [24, 40]);
+  t.road([100, 20], [104, 2]);
+  t.bridge({ col: 8, row: 40 }, { col: 1, row: 40 }, 3);
+  t.bridge({ col: 104, row: 6 }, { col: 104, row: 1 }, 3);
 
-  // Causeway Landing: the militia's last post on the fen side of the shingle spit.
-  t.fires.push({ col: 10, row: 42 });
-  prop("tower", 8, 36, yellow);
-  prop("fishHut", 14, 44);
-  who("lancer", 12, 38, { ...yellow, to: { col: 20, row: 38 } });
-  crowd(t, rng, "pawn", { col: 12, row: 41 }, 2, 3, { ...yellow, act: "knife" });
+  // Reed thick round the whole rim: the walls of the fen.
+  for (const [x, y, rx, ry, d] of [[30, 6, 14, 3, 0.55], [80, 6, 12, 3, 0.55], [8, 30, 4, 8, 0.55], [8, 56, 4, 6, 0.55], [112, 40, 4, 10, 0.55], [40, 74, 12, 3, 0.55], [92, 72, 10, 3, 0.5], [22, 14, 6, 4, 0.6], [112, 64, 4, 5, 0.55]] as const) t.grove(x, y, rx, ry, d);
 
-  // The Reedbeds: the north-west reed, what hides in it.
-  for (const [c, r] of [[24, 12], [40, 22], [16, 22]] as const) who("lizard", c, r, { to: { col: c + 4, row: r + 2 } });
-  for (const [c, r] of [[30, 8], [12, 28]] as const) who("snake", c, r);
-  for (const [c, r] of [[20, 16], [36, 28]] as const) who("bee", c, r, { to: { col: c + 3, row: r - 2 } });
-  prop("fishHut", 26, 26);
-  for (const [x, y, rx, ry] of [[18, 14, 8, 6], [42, 12, 6, 4], [10, 30, 4, 4]] as const) t.grove(x, y, rx, ry, 0.5);
+  // More reed and dead wood where the rim lay bare.
+  for (const [x, y, rx, ry, d] of [[54, 10, 8, 3, 0.5], [70, 12, 6, 3, 0.45], [24, 30, 5, 4, 0.5], [40, 24, 4, 3, 0.5], [100, 30, 4, 4, 0.5], [84, 68, 5, 3, 0.5], [30, 52, 4, 3, 0.5], [92, 52, 4, 3, 0.5]] as const) t.grove(x, y, rx, ry, d);
+  for (const [c, r] of [[62, 8], [76, 10], [46, 16], [30, 44], [94, 36], [80, 64], [40, 60], [100, 60]] as const) prop("deadTree", c, r, { scale: 0.6 });
+  for (const [c, r] of [[48, 12], [82, 14]] as const) who("lizard", c, r, { to: { col: c + 5, row: r + 1 } });
 
-  // Lizard Warren: the lizard-folk's huts on their mound, their shaman, their kills.
-  for (const [c, r] of [[18, 62], [26, 62], [22, 66]] as const) prop("goblinHut", c, r);
-  t.fires.push({ col: 22, row: 64 });
-  crowd(t, rng, "lizard", { col: 22, row: 66 }, 5, 5);
-  who("shaman", 22, 61);
-  for (const [c, r] of [[14, 60], [30, 66], [18, 70]] as const) prop("bones", c, r);
-  prop("skullSpike", 16, 66);
-  prop("skullSpike", 28, 64);
+  // The Chapel Mound: the purple chapel on its crown, its priests, the sinkhole the fen drains into.
+  prop("monastery", 60, 36, purple);
+  for (const [c, r] of [[55, 38], [65, 38], [56, 42], [64, 42]] as const) prop("skullSpike", c, r);
+  t.fires.push({ col: 60, row: 42 });
+  crowd(t, rng, "monk", { col: 60, row: 41 }, 3, 3, purple);
+  who("shaman", 63, 40);
+  who("skullGuard", 57, 41);
 
-  // The Drowned Village: houses the fen took, roofs above the water, boats tied to nothing.
-  for (const [c, r] of [[42, 62], [62, 62], [44, 72], [60, 72]] as const) prop("house1", c, r, purple);
-  for (const [c, r] of [[48, 66], [56, 68]] as const) prop("boat", c, r, { flip: c > 52 });
-  for (const [c, r] of [[40, 68], [64, 66]] as const) prop("deadTree", c, r, { scale: 0.7 });
-  crowd(t, rng, "skull", { col: 52, row: 62 }, 3, 5);
-  who("turtle", 50, 70);
-  who("bombFish", 54, 66, { to: { col: 58, row: 66 } });
+  // The hummocks: a stilt hut and a fisher on each, eels and sharks in the black water between.
+  hummocks.forEach(([x, y], i) => {
+    prop("fishHut", x, y);
+    who(i % 2 ? "lizard" : "pawn", x + 1, y + 1, i % 2 ? {} : { ...yellow, act: "knife" });
+  });
+  for (const [c, r] of [[46, 28], [74, 52], [44, 50], [76, 28]] as const) who("harpoonShark", c, r, { to: { col: c + 4, row: r + 2 } });
+  for (const [c, r] of [[38, 34], [82, 46], [52, 56], [68, 24]] as const) who("bombFish", c, r, { to: { col: c + 3, row: r } });
+  for (const [c, r] of [[50, 26], [70, 56]] as const) prop("boat", c, r, { flip: c > 60 });
+  who("turtle", 36, 44);
 
-  // The Chapel Mound: the purple chapel on the crown, its priests, the grey they pray to; the sinkhole at its foot.
-  prop("monastery", 60, 27, purple);
-  for (const [c, r] of [[55, 30], [65, 30], [54, 35], [66, 35]] as const) prop("skullSpike", c, r);
-  t.fires.push({ col: 58, row: 36 });
-  crowd(t, rng, "monk", { col: 60, row: 34 }, 3, 4, purple);
-  who("shaman", 64, 36);
-  who("skullGuard", 62, 38);
-  for (const [c, r] of [[70, 44], [74, 48]] as const) prop("bones", c, r);
+  // Causeway Landing: the militia's last post where the spit comes in, nets and fish.
+  t.fires.push({ col: 14, row: 42 });
+  prop("tower", 12, 36, yellow);
+  for (const [c, r] of [[18, 46], [10, 48]] as const) prop("fishHut", c, r);
+  prop("meat", 16, 38);
+  crowd(t, rng, "pawn", { col: 14, row: 44 }, 4, 3, { ...yellow, act: "knife" });
+  who("lancer", 10, 40, { ...yellow, to: { col: 22, row: 40 } });
 
-  // The Black Pools: still water, dead wood, what drowned in it and still walks.
-  for (const [c, r] of [[80, 32], [96, 40], [92, 30], [78, 40]] as const) prop("deadTree", c, r, { scale: 0.7 });
-  crowd(t, rng, "skull", { col: 88, row: 44 }, 3, 4);
-  who("bombFish", 88, 36, { to: { col: 92, row: 36 } });
-  who("bat", 84, 30);
-
-  // Eel Shallows: the south-east reed, sharks in the deeper pool, a fisher's hut.
-  prop("fishHut", 96, 66);
-  who("harpoonShark", 86, 62, { to: { col: 80, row: 62 } });
-  for (const [c, r] of [[100, 70], [76, 70]] as const) who("turtle", c, r);
-  for (const [x, y, rx, ry] of [[100, 72, 6, 4], [74, 72, 5, 3]] as const) t.grove(x, y, rx, ry, 0.5);
+  // The Reedbeds: the north-west rim, lizards and snakes in the reed, bees over it, a hermit's hut.
+  prop("house3", 24, 18, purple);
+  for (const [c, r] of [[18, 26], [28, 12], [40, 14]] as const) who("lizard", c, r, { to: { col: c + 4, row: r + 2 } });
+  for (const [c, r] of [[14, 18], [34, 10]] as const) who("snake", c, r);
+  for (const [c, r] of [[22, 30], [44, 10]] as const) who("bee", c, r, { to: { col: c + 3, row: r - 2 } });
 
   // The Barrow Rise: the duckboards' end, the ground climbing to the moor, its watch and its dead.
-  prop("watchtower", 106, 15);
-  for (const [c, r] of [[98, 22], [110, 26], [102, 28]] as const) prop("deadTree", c, r, { scale: 0.7 });
-  for (const [c, r] of [[100, 18], [112, 20]] as const) prop("skullSpike", c, r);
-  who("skull", 104, 24, { to: { col: 108, row: 24 } });
-  who("lizard", 96, 28, { to: { col: 90, row: 28 } });
+  prop("watchtower", 102, 9);
+  for (const [c, r] of [[94, 16], [108, 18], [98, 20], [90, 10]] as const) prop("deadTree", c, r, { scale: 0.7 });
+  for (const [c, r] of [[96, 12], [106, 14]] as const) prop("skullSpike", c, r);
+  crowd(t, rng, "skull", { col: 98, row: 16 }, 3, 3);
+  t.fires.push({ col: 92, row: 22 });
+
+  // Eel Shallows: the east rim, the fishers' huts, their catch and their boats.
+  for (const [c, r] of [[104, 36], [108, 46], [100, 50]] as const) prop("fishHut", c, r);
+  for (const [c, r] of [[102, 42], [106, 40]] as const) prop("meat", c, r);
+  crowd(t, rng, "pawn", { col: 104, row: 42 }, 3, 4, { ...yellow, act: "knife" });
+  who("turtle", 110, 52);
+
+  // The Drowned Village: the south rim, houses the fen is taking, roofs and boats, the dead among them.
+  for (const [c, r, art] of [[52, 68, "house1"], [60, 66, "house2"], [68, 68, "house3"], [76, 66, "house1"], [44, 66, "house2"]] as const) prop(art, c, r, purple);
+  for (const [c, r] of [[48, 72], [72, 72], [84, 68]] as const) prop("deadTree", c, r, { scale: 0.7 });
+  crowd(t, rng, "skull", { col: 60, row: 70 }, 4, 6);
+  t.fires.push({ col: 64, row: 70 });
+
+  // Lizard Warren: the lizard-folk's huts on their mound, their shaman, their kills.
+  for (const [c, r] of [[14, 64], [22, 64], [18, 68]] as const) prop("goblinHut", c, r);
+  t.fires.push({ col: 18, row: 66 });
+  crowd(t, rng, "lizard", { col: 18, row: 70 }, 5, 5);
+  who("shaman", 18, 62);
+  for (const [c, r] of [[12, 70], [26, 68], [24, 72]] as const) prop("bones", c, r);
+  for (const [c, r] of [[10, 66], [26, 62]] as const) prop("skullSpike", c, r);
 
   const exits: AreaExit[] = [
     { to: "saltreach", name: "Fen Causeway", kind: "open", at: { col: 1, row: 40 } },
-    { to: "barrowmoor", name: "Barrow Path", kind: "open", at: { col: 84, row: 1 } },
-    { to: "hollow", name: "Fen Sinkhole", kind: "drop", at: { col: 68, row: 46 } },
+    { to: "barrowmoor", name: "Barrow Path", kind: "open", at: { col: 104, row: 1 } },
+    { to: "hollow", name: "Fen Sinkhole", kind: "drop", at: { col: 60, row: 44 } },
   ];
   const districts: District[] = [
-    { name: "Causeway Landing", at: { col: 10, row: 48 }, levels: [1], palette: [3], dress: "saltreach", decor: 2 },
-    { name: "The Reedbeds", at: { col: 26, row: 8 }, levels: [1], palette: [2], dress: "fen", decor: 2 },
-    { name: "Lizard Warren", at: { col: 22, row: 74 }, levels: [1, 2], palette: [4], dress: "fen", decor: 2 },
-    { name: "The Drowned Village", at: { col: 52, row: 76 }, levels: [1], palette: [5], dress: "fen", decor: 2 },
-    { name: "The Chapel Mound", at: { col: 60, row: 21 }, levels: [2, 3], palette: [1], dress: "fen", decor: 1.5 },
-    { name: "The Black Pools", at: { col: 88, row: 48 }, levels: [1], palette: [5], dress: "barrowmoor", decor: 2 },
-    { name: "Eel Shallows", at: { col: 100, row: 60 }, levels: [1], palette: [3], dress: "fen", decor: 2 },
-    { name: "The Barrow Rise", at: { col: 106, row: 34 }, levels: [1, 2, 3], palette: [4], dress: "barrowmoor", decor: 2 },
+    { name: "The Chapel Mound", at: { col: 60, row: 33 }, levels: [1, 2, 3], palette: [1], dress: "fen", decor: 1.5 },
+    { name: "Causeway Landing", at: { col: 12, row: 46 }, levels: [1], palette: [3], dress: "saltreach", decor: 2.5 },
+    { name: "The Reedbeds", at: { col: 26, row: 22 }, levels: [1], palette: [2], dress: "fen", decor: 3 },
+    { name: "The Barrow Rise", at: { col: 98, row: 24 }, levels: [1, 2, 3], palette: [4], dress: "barrowmoor", decor: 2.5 },
+    { name: "Eel Shallows", at: { col: 106, row: 44 }, levels: [1], palette: [3], dress: "fen", decor: 2.5 },
+    { name: "The Drowned Village", at: { col: 56, row: 66 }, levels: [1], palette: [5], dress: "fen", decor: 2.5 },
+    { name: "Lizard Warren", at: { col: 18, row: 74 }, levels: [1, 2], palette: [4], dress: "fen", decor: 2.5 },
   ];
   const tier = t.finish({}, [{ col: 6, row: 40 }]);
   return { ...tier, area: "fen", entry: { col: 6, row: 40 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [] };
