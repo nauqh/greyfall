@@ -326,6 +326,14 @@ the atlas, focused on it.
   its bailey, the Gilded Reach plazas with tree avenues (`avenue()`) and
   one hanging garden, the Steps bare isles with lone trees, Barrowmoor an
   open heath of barrows and thickets.
+- **Lizard Fen** is the eleventh, the first built from landforms from the
+  start: a marsh packed to the frame's edge after Blighttown and the Valley
+  of Defilement, black pools in the reed crossed by duckboards, the Chapel
+  Mound (two steps, the purple chapel on its crown) over the sinkhole that
+  drops to the Hollow, the Lizard Warren's mound, the Drowned Village, the
+  Black Pools, the Eel Shallows, and the Barrow Rise climbing to the moor.
+  A duckboard must reach shore to shore: one that stops in a pool is a
+  sealed strip the engine fills with trees.
 - **Area maps draw no roads.** A road there is open ground in the
   district's own colour: the engine's roads still keep woods and buildings
   off it, but a road tile's other colour read as a stripe painted across
