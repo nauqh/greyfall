@@ -1,12 +1,11 @@
 "use client";
 
 // The Atlas: the Shattered Reach in three tiers, to look round. The map is
-// the canvas; the tier tabs, the area index, the selected area's card and the
-// key float over it on the kit's paper.
+// the canvas; the selected area's card and the key float over it on the
+// kit's paper, and the whole HUD hides with H. Lifts change tier.
 
-import { AREAS, MAPPED_AREAS, TIERS, TIER_INFO, atlasMap, type AreaId, type GateKind, type LiftKind, type TierId } from "@greyfall/engine";
-import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { AREAS, MAPPED_AREAS, TIER_INFO, atlasMap, type AreaId, type GateKind, type LiftKind } from "@greyfall/engine";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { AtlasApi, AtlasHooks } from "../../game/AtlasScene";
 import { GameCanvas } from "../../game/GameCanvas";
@@ -23,15 +22,49 @@ const LIFT_KINDS: { kind: LiftKind; label: string; tone: string }[] = [
   { kind: "drop", label: "Drop, down only", tone: "#d6b8ff" },
   { kind: "shortcut", label: "Lift shortcut, opens from above", tone: "#8fd3ff" },
 ];
-const TIER_TAB: Record<TierId, string> = { sky: "Sky", surface: "Surface", below: "Below" };
+
+/** The HUD shown or hidden: the H key or the corner button, remembered on this browser. */
+function useHud(): [boolean, () => void] {
+  const [shown, setShown] = useState(true);
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("greyfall.hud") === "hidden") setShown(false);
+    } catch {}
+  }, []);
+  const toggle = (): void =>
+    setShown((s) => {
+      try {
+        localStorage.setItem("greyfall.hud", s ? "hidden" : "shown");
+      } catch {}
+      return !s;
+    });
+  useEffect(() => {
+    const key = (e: KeyboardEvent): void => {
+      if (e.key.toLowerCase() === "h" && !(e.target instanceof HTMLInputElement)) toggle();
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, []);
+  return [shown, toggle];
+}
+
+function HudToggle({ shown, toggle }: { shown: boolean; toggle: () => void }) {
+  return (
+    <button className="btn small hudToggle" type="button" onClick={toggle} aria-pressed={!shown} title="Show or hide the HUD (H)">
+      {shown ? "Hide HUD" : "Show HUD"}
+    </button>
+  );
+}
 
 /** One area's own map, the camera kept inside it; its exits walk to the next. */
 function AreaView({ area, onExit, onLeave }: { area: AreaId; onExit: (to: AreaId) => void; onLeave: () => void }) {
   const hooks = useRef<AtlasHooks>({ area, onExit, onArea: () => {}, onTier: () => {}, ready: () => {} }).current;
+  const [hud, toggleHud] = useHud();
   return (
     <main className="stage">
       <GameCanvas start={(el) => import("../../game/AtlasScene").then(({ startAtlas }) => startAtlas(el, hooks))}>
-        <div className="worldHud">
+        <HudToggle shown={hud} toggle={toggleHud} />
+        <div className="worldHud" hidden={!hud}>
           <header className="atlasTop">
             <h1 className="banner">{AREAS.find((a) => a.id === area)!.name}</h1>
             <div className="worldLinks">
@@ -47,10 +80,9 @@ function AreaView({ area, onExit, onLeave }: { area: AreaId; onExit: (to: AreaId
 }
 
 export default function AtlasPage() {
-  const router = useRouter();
+  const [hud, toggleHud] = useHud();
   const [walk, setWalk] = useState<AreaId | null>(null);
   const [area, setArea] = useState<AreaId>("harbour");
-  const [tier, setTier] = useState<TierId>("surface");
   const [routes, setRoutes] = useState(false);
   const api = useRef<AtlasApi | null>(null);
   // The area to fly to when the atlas comes back from an area's map.
@@ -58,7 +90,7 @@ export default function AtlasPage() {
   const map = useMemo(() => atlasMap(), []);
   const hooks = useRef<AtlasHooks>({
     onArea: (id) => setArea(id),
-    onTier: (id) => setTier(id),
+    onTier: () => {},
     ready: (a) => {
       api.current = a;
       if (back.current) a.focus(back.current);
@@ -82,29 +114,10 @@ export default function AtlasPage() {
   return (
     <main className="stage">
       <GameCanvas start={(el) => import("../../game/AtlasScene").then(({ startAtlas }) => startAtlas(el, hooks))}>
-        <div className="worldHud">
+        <HudToggle shown={hud} toggle={toggleHud} />
+        <div className="worldHud" hidden={!hud}>
           <header className="atlasTop">
             <h1 className="banner">The Shattered Reach</h1>
-            <div className="atlasTiers" role="tablist" aria-label="Tiers">
-              {TIERS.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  role="tab"
-                  aria-selected={t === tier}
-                  className={`btn small${t === tier ? "" : " red"}`}
-                  onClick={() => api.current?.tier(t)}
-                  title={TIER_INFO[t].blurb}
-                >
-                  {TIER_TAB[t]}
-                </button>
-              ))}
-            </div>
-            <div className="worldLinks">
-              <button className="linkBtn" type="button" onClick={() => router.push("/")}>
-                Back to the title
-              </button>
-            </div>
           </header>
 
           <div className="atlasLeft">

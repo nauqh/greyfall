@@ -9,6 +9,7 @@ import {
   AREA_CODE,
   TIERS,
   areaMap,
+  districtOf,
   atlasMap,
   footprint,
   useIsland,
@@ -497,7 +498,7 @@ export class AtlasScene extends Phaser.Scene {
     const decks = new Set(local?.decks.map((d) => d.row * STRAT_COLS + d.col));
     buildMap(this, roads, (c, r, lv) => {
       if (local) {
-        const d = local.districts[Number(local.districtAt[r]?.[c])];
+        const d = districtOf(local, c, r);
         if (!d) return "tilesetC4";
         // A bridge deck in a colour its district's ground never uses, so it reads above it.
         if (decks.has(r * STRAT_COLS + c)) return `tilesetC${[1, 4, 5, 2, 3].find((x) => !d.palette.includes(x)) ?? 1}`;
@@ -553,7 +554,7 @@ export class AtlasScene extends Phaser.Scene {
       return seed / 4294967296;
     };
     const areaId = (c: number, r: number): AreaId | null => {
-      if (this.local) return this.local.districts[Number(this.local.districtAt[r]?.[c])]?.dress ?? null;
+      if (this.local) return districtOf(this.local, c, r)?.dress ?? null;
       const ch = tier.areaAt[r]?.[c];
       return ch && ch !== "-" ? AREAS[AREA_CODE.indexOf(ch)]!.id : null;
     };
@@ -612,12 +613,16 @@ export class AtlasScene extends Phaser.Scene {
         if (level(c, r) >= 2 && isWalkable(c, r) && !isSlope(c, r) && tier.base !== "rock" && !byLift) {
           let rim = false;
           for (let dr = -1; dr <= 2; dr++) for (let dc = -1; dc <= 1; dc++) rim ||= level(c + dc, r + dr) !== level(c, r) || isSlope(c + dc, r + dr);
-          const odds = id === "emberwood" ? 0.3 : id === "crags" || id === "saltreach" ? 0.08 : 0.03;
+          const own = (this.local && districtOf(this.local, c, r)?.trees);
+          const odds = own ?? (id === "emberwood" ? 0.3 : id === "crags" && this.local ? 0.16 : id === "crags" || id === "saltreach" ? 0.08 : 0.03);
           if (!rim && r01() < odds) {
             if (id === "emberwood") {
               const pick = r01() < 0.55 ? 0 : 1;
               spot(c, r, `bigTree${pick}`, BIG_TREE[pick]!, 0);
             } else if (id === "barrowmoor" || id === "greyfall") spot(c, r, "prop_deadTree", { ...PROP.deadTree!, scale: 0.42 }, 0);
+            // The gnomes' rock is bare: boulders and scree on its ledges, no trees.
+            // On the mountain, scrub on its lower slopes and boulders above.
+            else if (id === "crags" && this.local) decor(level(c, r) <= 2 ? "tree" : "rock", (c + 0.3 + r01() * 0.4) * CELL, (r + 0.75) * CELL, level(c, r) <= 2 ? 1 : 1.3);
             else decor("tree", (c + 0.3 + r01() * 0.4) * CELL, (r + 0.75) * CELL);
             continue;
           }
@@ -630,7 +635,8 @@ export class AtlasScene extends Phaser.Scene {
         let edgy = false;
         for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) edgy ||= !isWalkable(c + dc, r + dr);
         const roll = r01();
-        const chance = (edgy ? 0.2 : 0.05) * (id === "fen" ? 2 : id === "greyfall" ? 0.6 : 1);
+        const thick = (this.local && districtOf(this.local, c, r)?.decor) ?? 1;
+        const chance = (edgy ? 0.2 : 0.05) * (id === "fen" ? 2 : id === "greyfall" ? 0.6 : 1) * thick;
         if (roll < chance) {
           const x = (c + 0.2 + r01() * 0.6) * CELL;
           const y = (r + 0.5 + r01() * 0.35) * CELL;
@@ -853,8 +859,26 @@ export class AtlasScene extends Phaser.Scene {
         }
       }
     }
+    // Underground in an area's own map, the dark is the point: ground is near black but in pools of light
+    // round its fires, its ways out, and the gold glowing in the rock.
+    const lights = this.local && tier.base === "rock"
+      ? [
+          ...tier.fires.map((f) => ({ c: f.col, r: f.row, reach: 9 })),
+          ...this.local.exits.map((e) => ({ c: e.at.col, r: e.at.row, reach: 7 })),
+          ...tier.props.filter((p) => p.art === "goldStone").map((p) => ({ c: p.col, r: p.row, reach: 4 })),
+        ]
+      : null;
+    const lit = (c: number, r: number): number => Math.max(0, ...lights!.map((l) => 1 - Math.hypot(c - l.c, r - l.r) / l.reach));
     const tone = (c: number, r: number): number => {
       if (tier.base === "rock" && (rows[r]?.[c] ?? "%") === "%") return ROCK_MOOD;
+      if (lights) {
+        // Open water has no area of its own: it takes the map's, a little dimmer, so a lake reads as water in the dark.
+        const own = AREAS[AREA_CODE.indexOf(tier.areaAt[r]![c]!)]?.mood;
+        const m = own ?? AREAS.find((a) => a.id === this.local!.area)!.mood;
+        const k = Math.min(1, (own ? 0.22 : 0.3) + lit(c, r) * 1.1);
+        const mix = (shift: number) => Math.round(((ROCK_MOOD >> shift) & 255) + (((m >> shift) & 255) - ((ROCK_MOOD >> shift) & 255)) * k);
+        return (mix(16) << 16) | (mix(8) << 8) | mix(0);
+      }
       const k = (r + pad) * w + c + pad;
       const m = near[k]!;
       if (m === -1) return tier.base === "rock" ? ROCK_MOOD : 0xffffff;

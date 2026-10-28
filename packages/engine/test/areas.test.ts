@@ -62,9 +62,10 @@ describe.each(MAPPED_AREAS)("the %s area map", (id) => {
   });
 });
 
-it("raises the harbour's citadel in terraces up to its keep", () => {
+it("raises the harbour's town in tiers to the castle on its crown", () => {
   const m = areaMap("harbour");
   useIsland(m.island);
   const castle = m.props.find((p) => p.art === "castle")!;
-  expect(level(castle.col, castle.row)).toBe(4);
+  expect(level(castle.col, castle.row)).toBe(5);
+  expect(level(m.entry.col, m.entry.row)).toBe(1);
 });

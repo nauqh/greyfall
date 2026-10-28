@@ -308,6 +308,57 @@ the atlas, focused on it.
   the Barrow King on its crown and the Barrow Cave at its foot. A grown
   relief lost its top step there, so the great mound is built from blocks,
   with land of its own under it so its back does not stand in the sea.
+- **Underground maps are rooms and passages in the dark**, not mazes:
+  separate chambers cut from solid rock, joined by bending `tunnel()`s
+  three tiles wide (under rock a tile is a cliff face, so a narrower one
+  cannot be walked), fallen rock (`rubble()`) in the larger chambers, and
+  most of the canvas left as rock. The scene lights them near black but in
+  pools round fires, exits and gold, and open water takes the area's own
+  tone, dimmed. The Undercroft branches from the well, the Deeps zig-zag
+  down to the Weaver, the Hollow is a lake with shores on three sides and
+  bare rock on the fourth.
+- **Every area is built its own way, and floats.** Sea and sky maps are
+  padded 10 tiles with open sea or sky (`pad()`, which runs each edge
+  exit out along a causeway to the new edge), so land never fills the
+  frame. Only Emberwood keeps the wooded `maze()`; elsewhere the ground
+  is shaped to its place: the Harbour an open town with hedgerowed fields
+  (`hedge()`), the Crags knolls, outcrops and scrub copses round the
+  mountain's foot, the Greyfall open courts with clumps of dead wood in
+  its bailey, the Gilded Reach plazas with tree avenues (`avenue()`) and
+  one hanging garden, the Steps bare isles with lone trees, Barrowmoor an
+  open heath of barrows and thickets.
+- **Districts are landforms, packed like the atlas.** `shape(level, cx,
+  cy, rx, ry)` lays irregular ground at an exact height, an ellipse whose
+  rim wanders by noise, with a corner squared off on each lower flank so a
+  stair can stand there; each landform finds its own stairs onto the
+  ground under it. The Harbour is built from them: the Keep on the
+  Citadel on the Upper Town on Old Town, the Northwood and the Mine Hills
+  as uplands either side, the Moor Watch's bluff, with land run to the
+  frame's edge (sea and sky maps keep a margin of only 3 tiles). Stacked
+  rectangles and full-width bands both read as slabs and were dropped. A
+  landform names its district (`shape(..., owner)`) and gives it every
+  tile it covers, so one landform is one colour; a district's `levels`
+  names the heights it takes on the lowland and elsewhere. Any patch of a
+  district under 60 tiles that is not its main piece goes to the district
+  round it, so the noise in the borders leaves no islands. `districtAt` is base-36, read with `districtOf()`.
+- **A district is one colour.** A district's `palette` can be a single
+  tileset colour for all its heights; the Harbour's districts each are, in
+  the atlas's family (green town, citadel and docks, gold fields, fresh
+  woods, dusty Mine Hills, teal Moor Watch), and district borders are
+  broad and gentle so the colours meet in curves, not a patchwork. A
+  district's `decor` thickens its bushes and rocks, for the atlas's
+  texture in the grass.
+- **Tinker Crags is a mountain, not a pyramid:** five reliefs of their own
+  shapes grown into each other (the summit massif, a broad west shoulder
+  where Old Bamboo waits, a long thin east ridge, a squat north crag with
+  the workshop yard, a low south spur with the gold mine), outlines
+  wandered by noise, the stairs placed by the terrain. Nested rectangular
+  blocks read as a stepped pyramid and were dropped. The mountain's
+  districts share one ramp by height (`MOUNTAIN`: fresh grass, green
+  slopes, bare rock, a gold summit) so its tiers read without a patchwork;
+  scrub dresses its lower slopes and boulders its upper. A stream runs off
+  its west face under a footbridge, a tarn sits under the outcrops, and the
+  gnomes' Terraces on the southern spur are fenced plots with their stock.
 - **Each area has its own frame and silhouette:** the Harbour taller,
   with Lighthouse Point curling round the bay; Emberwood a long valley
   with the sea biting its corners; the Crags tall, with the Southern Spur

@@ -412,11 +412,22 @@ function terrain(t: Builder, rows: number, cols: number): void {
       }
     }
   }
+  // Landforms: irregular authored ground, each its own shape at its own height, finding its own stairs.
+  const organic = new Map<string, number>();
+  t.shapes.forEach((sh, id) => {
+    for (const k of sh.keys) {
+      const [c, r] = k.split(",").map(Number) as [number, number];
+      if (!".T".includes(at(c, r))) continue;
+      if ((authored.get(k) ?? 0) < sh.level) organic.set(k, id);
+      authored.set(k, Math.max(authored.get(k) ?? 1, sh.level));
+      height[r]![c] = Math.max(height[r]![c]!, sh.level);
+    }
+  });
   // A bridge deck and the height it stands at: it joins tables of that height only, not those under it.
   const spanned = new Map(t.blocks.filter((b) => b.span).flatMap((b) => Array.from({ length: b.w * b.h }, (_, i): [string, number] => [`${b.x + (i % b.w)},${b.y + Math.floor(i / b.w)}`, b.level])));
   // A notch cut back to the lowland under authored ground: a block of level 1.
   for (const b of t.blocks) if (b.level === 1) for (let r = b.y; r < b.y + b.h; r++) for (let c = b.x; c < b.x + b.w; c++) authored.set(`${c},${r}`, 1);
-  const top = Math.max(1, ...height.flat(), ...t.blocks.map((b) => b.level));
+  const top = Math.max(1, ...height.flat(), ...t.blocks.map((b) => b.level), ...t.shapes.map((sh) => sh.level));
   if (top < 2) return;
 
   type Mask = boolean[][];
@@ -541,17 +552,18 @@ function terrain(t: Builder, rows: number, cols: number): void {
         }
         // A stair stands beside the table's bottom row, on open ground of the height below, with that ground above it and below.
         const lower = (c: number, r: number) => levelAt(c, r) === k - 1 && !isStair(c, r) && (k > 2 || ".T".includes(at(c, r)));
-        const found: { c: number; r: number; side: "L" | "R" }[] = [];
+        const found: { c: number; r: number; side: "L" | "R"; own: string }[] = [];
         for (const p of comp) {
           if (get(m, p.col, p.row + 1)) continue;
           for (const s of ["L", "R"] as const) {
             const c = p.col + (s === "L" ? -1 : 1);
             const r = p.row;
-            if (lower(c, r) && lower(c, r - 1) && lower(c, r + 1) && levelAt(c, r + 2) >= 1) found.push({ c, r, side: s });
+            // Grouped by area and by landform: every landform gets its own way up.
+            if (lower(c, r) && lower(c, r - 1) && lower(c, r + 1) && levelAt(c, r + 2) >= 1) found.push({ c, r, side: s, own: `${area[r]![c]}:${organic.get(`${p.col},${p.row}`) ?? ""}` });
           }
         }
         // Authored ground takes only its authored stairs.
-        if (comp.some((p) => authored.has(`${p.col},${p.row}`) && !spanned.has(`${p.col},${p.row}`))) continue;
+        if (comp.some((p) => authored.has(`${p.col},${p.row}`) && !spanned.has(`${p.col},${p.row}`) && !organic.has(`${p.col},${p.row}`))) continue;
         // An authored stair onto it keeps it, though no stair of its own fits.
         const kept = t.ways.some((w) => w.level === k && comp.some((p) => p.row === w.row && p.col === w.col + (w.side === "L" ? 1 : -1)));
         if (found.length === 0 && !kept) {
@@ -560,8 +572,8 @@ function terrain(t: Builder, rows: number, cols: number): void {
         }
         const mid = comp.reduce((n, p) => n + p.col, 0) / comp.length;
         // Both ends, in each area the table spans: a high road joins two areas' tables, and each needs its own way up.
-        for (const own of new Set(found.map((f) => area[f.r]![f.c]!))) {
-          const pick = (s: "L" | "R") => found.filter((f) => f.side === s && area[f.r]![f.c] === own).sort((a, b) => b.r - a.r || Math.abs(a.c - mid) - Math.abs(b.c - mid))[0];
+        for (const own of new Set(found.map((f) => f.own))) {
+          const pick = (s: "L" | "R") => found.filter((f) => f.side === s && f.own === own).sort((a, b) => b.r - a.r || Math.abs(a.c - mid) - Math.abs(b.c - mid))[0];
           for (const st of [pick("L"), pick("R")]) if (st) stairs.set(`${st.c},${st.r}`, st.side === "L" ? HEIGHT[k]!.left : HEIGHT[k]!.right);
         }
       }
@@ -730,6 +742,8 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
     reliefs: [] as Relief[],
     /** Authored high ground: exact rectangles at a height, for a fortress's terraces. */
     blocks: [] as { level: number; x: number; y: number; w: number; h: number; span?: boolean }[],
+    /** Landforms: irregular authored ground at a height, each finding its own stairs. */
+    shapes: [] as { level: number; keys: Set<string>; owner?: string }[],
     /** Authored stairs onto authored ground; a table of authored ground takes no others. */
     ways: [] as { level: number; col: number; row: number; side: "L" | "R" }[],
     /** Ways the high ground keeps clear of, drawn or not: roads, and the bridges between isles. */
@@ -783,6 +797,32 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
       t.reliefs.push(spec);
     },
     /** Ground set to exactly `level` over a rectangle, past anything the reliefs make there; 1 cuts a notch back to the lowland. */
+    /**
+     * A landform: ground of its own shape at `level`, an ellipse whose rim wanders by noise into bays and
+     * headlands. Where it overlaps ground one height lower, it finds stairs onto it.
+     */
+    shape(level: 2 | 3 | 4 | 5, cx: number, cy: number, rx: number, ry: number, wander = 0.45, owner?: string): void {
+      const n = noise(`shape:${cx},${cy},${level}`, Math.max(3, Math.min(rx, ry) * 0.7));
+      const keys = new Set<string>();
+      for (let r = Math.floor(cy - ry * 1.5); r <= cy + ry * 1.5; r++) {
+        for (let c = Math.floor(cx - rx * 1.5); c <= cx + rx * 1.5; c++) {
+          if (((c - cx) / rx) ** 2 + ((r - cy) / ry) ** 2 <= 1 + n(c, r) * wander) keys.add(`${c},${r}`);
+        }
+      }
+      // A smooth rim has no corner a stair can stand in: on each lower flank, square one off,
+      // two rows ending in the same column with the row under them cut back.
+      const rs = Math.round(cy + ry * 0.5);
+      const cols = [...keys].map((k) => k.split(",").map(Number) as [number, number]).filter(([, r]) => r === rs).map(([c]) => c);
+      if (cols.length > 0) {
+        for (const [edge, out] of [[Math.min(...cols), -1], [Math.max(...cols), 1]] as const) {
+          for (const k of [...keys]) {
+            const [c, r] = k.split(",").map(Number) as [number, number];
+            if ((r === rs - 1 && (c - edge) * out > 0) || (r === rs + 1 && (c - edge) * out >= 0)) keys.delete(k);
+          }
+        }
+      }
+      t.shapes.push({ level, keys, owner });
+    },
     block(level: 1 | 2 | 3 | 4 | 5, x: number, y: number, w: number, h: number): void {
       t.blocks.push({ level, x, y, w, h });
     },
