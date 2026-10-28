@@ -1609,13 +1609,50 @@ function fen(): AreaMap {
     return { col: Math.round(p.c), row: Math.round(p.r) };
   };
 
-  // The Chapel Mound at the heart: two steps, the chapel on top, the sinkhole at its foot.
-  t.shape(2, cx, cy, 7, 5, 0.25, "The Chapel Mound");
-  t.shape(3, cx, cy - 1, 5, 3, 0.2, "The Chapel Mound");
-
-  // The ways out: the shingle causeway west to Saltreach, the duckboards north up to the moor.
+  // The ways out, both off the lowest tier: the shingle causeway west to Saltreach, the duckboards north to the moor.
+  const moor = on(0.17);
   t.bridge({ col: 14, row: cy }, { col: 1, row: cy }, 3);
-  t.bridge({ col: cx, row: 10 }, { col: cx, row: 1 }, 3);
+  t.bridge({ col: moor.col, row: moor.row - 2 }, { col: moor.col, row: 1 }, 3);
+
+  // The coil climbs a tier a district, each tier its own landform. A tier ends where the coil runs east-west,
+  // the only place a stair can stand, and its first two columns are cut back off the coil's lower edge so
+  // the stair up has lower ground above and below it.
+  const near = (c: number, r: number) => {
+    let best = coil[0]!;
+    for (const p of coil) if ((p.c - c) ** 2 + (p.r - r) ** 2 < (best.c - c) ** 2 + (best.r - r) ** 2) best = p;
+    return best;
+  };
+  const steps = [
+    { k: 1, a: 1.5 * Math.PI, east: true },
+    { k: 2, a: 2.5 * Math.PI, east: false },
+    { k: 3, a: 3.5 * Math.PI, east: true },
+  ];
+  const heart = (c: number, r: number) => Math.hypot(c - cx, (r - cy) * 1.3) < 9;
+  /** The tier a tile of the coil belongs to, 0 to 3; the mound on the heart is the fifth height. */
+  const tierAt = (c: number, r: number): number => {
+    if (heart(c, r)) return 3;
+    for (const st of steps) {
+      const p = coil.find((q) => q.a >= st.a)!;
+      if (Math.hypot(c - p.c, r - p.r) > 7) continue;
+      const b = Math.round(p.c);
+      const high = st.east ? c >= b : c < b;
+      if (!high) return st.k - 1;
+      // The notch: the higher tier's first two columns give everything below the coil's centre line to the
+      // tier below, a straight cut, as the coil's ragged edge would leave the stair standing over water.
+      const lip = st.east ? c - b < 2 : b - 1 - c < 2;
+      return lip && r > p.r ? st.k - 1 : st.k;
+    }
+    const a = near(c, r).a;
+    return a < 1.5 * Math.PI ? 0 : a < 2.5 * Math.PI ? 1 : a < 3.5 * Math.PI ? 2 : 3;
+  };
+  const tierNames = ["Causeway Landing", "Eel Shallows", "The Drowned Village", "Lizard Warren"];
+  for (let k = 1; k <= 3; k++) {
+    const keys = new Set<string>();
+    t.grid.forEach((line, r) => line.forEach((ch, c) => ch !== "~" && tierAt(c, r) >= k && keys.add(`${c},${r}`)));
+    t.shapes.push({ level: k + 1, keys, owner: tierNames[k] });
+  }
+  // The Chapel Mound: the fifth height on the heart, the chapel on top, the sinkhole at its foot.
+  t.shape(5, cx, cy - 1, 5, 3, 0.2, "The Chapel Mound");
 
   // Reed along the coil's outer edge, thickest where the turns are tight.
   for (const turns of [0.15, 0.4, 0.65, 0.9, 1.15, 1.4, 1.65]) {
@@ -1631,7 +1668,7 @@ function fen(): AreaMap {
   who("lancer", 10, cy, { ...yellow, to: { col: 18, row: cy } });
 
   // The Barrow Rise: the north of the outer turn, dead wood and graves where the moor's path leaves.
-  const rise = on(0.25);
+  const rise = on(0.2);
   for (const [dc, dr] of [[-6, 0], [5, 1], [-2, -2]] as const) prop("deadTree", rise.col + dc, rise.row + dr, { scale: 0.6 });
   for (const dc of [-4, 4]) prop("skullSpike", rise.col + dc, rise.row - 1);
   crowd(t, rng, "skull", rise, 2, 3);
@@ -1643,20 +1680,20 @@ function fen(): AreaMap {
   who("pawn", eel.col + 1, eel.row + 3, { ...yellow, act: "knife" });
 
   // The Drowned Village: the south of the outer turn, houses the fen is taking.
-  const village = on(0.75);
+  const village = on(0.95);
   for (const dc of [-5, 0, 5]) prop("house1", village.col + dc, village.row, purple);
   crowd(t, rng, "skull", village, 3, 4);
   t.fires.push({ col: village.col + 2, row: village.row + 2 });
 
   // Lizard Warren: the west of the inner turn, the lizard-folk's huts, their kills.
-  const warren = on(1.05);
+  const warren = on(1.42);
   prop("goblinHut", warren.col, warren.row - 1);
   for (const dr of [-4, 3]) prop("bones", warren.col + 1, warren.row + dr);
   crowd(t, rng, "lizard", warren, 4, 3);
   who("shaman", warren.col - 1, warren.row + 2);
 
   // The Reedbeds: the inner turn's north and east, the reed closing in, snakes and bees.
-  const reeds = on(1.35);
+  const reeds = on(1.08);
   for (const [dc, dr] of [[-3, 0], [3, 1]] as const) who("snake", reeds.col + dc, reeds.row + dr);
   who("bee", reeds.col, reeds.row - 1, { to: { col: reeds.col + 3, row: reeds.row - 2 } });
   const inner = on(1.6);
@@ -1679,34 +1716,20 @@ function fen(): AreaMap {
 
   const exits: AreaExit[] = [
     { to: "saltreach", name: "Fen Causeway", kind: "open", at: { col: 1, row: cy } },
-    { to: "barrowmoor", name: "Barrow Path", kind: "open", at: { col: cx, row: 1 } },
+    { to: "barrowmoor", name: "Barrow Path", kind: "open", at: { col: moor.col, row: 1 } },
     { to: "hollow", name: "Fen Sinkhole", kind: "drop", at: { col: cx, row: cy + 4 } },
   ];
   const districts: District[] = [
-    // Labels on the coil itself, each at the middle of its stretch.
     { name: "Causeway Landing", at: on(0.08), palette: [3], dress: "saltreach", decor: 2.5 },
-    { name: "The Barrow Rise", at: on(0.27), palette: [4], dress: "barrowmoor", decor: 2.5 },
-    { name: "Eel Shallows", at: on(0.52), palette: [5], dress: "fen", decor: 2.5 },
-    { name: "The Drowned Village", at: on(0.79), palette: [2], dress: "fen", decor: 2.5 },
-    { name: "Lizard Warren", at: on(1.06), palette: [4], dress: "fen", decor: 2.5 },
-    { name: "The Reedbeds", at: on(1.35), palette: [3], dress: "fen", decor: 3 },
+    { name: "Eel Shallows", at: on(0.5), palette: [5], dress: "fen", decor: 2.5 },
+    { name: "The Drowned Village", at: on(1.0), palette: [2], dress: "fen", decor: 2.5 },
+    { name: "Lizard Warren", at: on(1.45), palette: [4], dress: "fen", decor: 2.5 },
     { name: "The Chapel Mound", at: { col: cx, row: cy + 6 }, palette: [1], dress: "fen", decor: 1.5 },
   ];
   const tier = t.finish({}, [{ col: 6, row: cy }]);
-  // Colour follows the coil, not distance: each district a stretch of it, the mound the heart.
-  const stretch = [[1.35, 0], [1.75, 1], [2.3, 2], [2.85, 3], [3.4, 4], [4.0, 5]] as const;
+  // Colour follows the tiers: each district one height of the climb.
   const districtAt = tier.areaAt.map((line, r) =>
-    [...line]
-      .map((ch, c) => {
-        if (ch === "-") return "-";
-        if (Math.hypot(c - cx, (r - cy) * 1.3) < 9) return "6";
-        let best = coil[0]!;
-        for (const p of coil) if ((p.c - c) ** 2 + (p.r - r) ** 2 < (best.c - c) ** 2 + (best.r - r) ** 2) best = p;
-        if (c < 12) return "0";
-        if (r < 10) return "1";
-        return String(stretch.find(([end]) => best.a < end * Math.PI)?.[1] ?? 6);
-      })
-      .join(""),
+    [...line].map((ch, c) => (ch === "-" ? "-" : "5()".includes(tier.island.rows[r]![c]!) || (heart(c, r) && Math.hypot(c - cx, (r - cy + 1) * 1.6) < 6) ? "4" : String(tierAt(c, r)))).join(""),
   );
   return { ...tier, area: "fen", entry: { col: 6, row: cy }, exits, districts, districtAt, decks: [] };
 }

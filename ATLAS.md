@@ -326,13 +326,17 @@ the atlas, focused on it.
   its bailey, the Gilded Reach plazas with tree avenues (`avenue()`) and
   one hanging garden, the Steps bare isles with lone trees, Barrowmoor an
   open heath of barrows and thickets.
-- **Lizard Fen** is a spiral: one narrow causeway of reed coiling two
-  turns inward through black water to the Chapel Mound and the sinkhole
-  at its heart, in from Saltreach at the west, the moor's path off the
-  north. Its districts follow one another along the coil (Causeway
-  Landing, the Barrow Rise, the Eel Shallows, the Drowned Village, the
-  Lizard Warren, the Reedbeds), so colour is set by position along the
-  coil, not by distance, which would bleed across the water between turns.
+- **Lizard Fen** is a spiral that climbs: one causeway of reed coiling two
+  turns inward through black water, each district a tier higher than the
+  last (Causeway Landing on the lowland, the Eel Shallows, the Drowned
+  Village, the Lizard Warren ringing the heart, the Chapel Mound on the
+  fifth height at the centre over the sinkhole). The engine's heights stop
+  at five, so five districts. A tier ends where the coil runs east-west,
+  the only place a stair can stand (stairs sit beside a table's bottom
+  row), and the higher tier's first two columns are cut back below the
+  coil's centre line in a straight notch so the stair has lower ground
+  above and below it; a notch following the ragged edge put the stair
+  over water, and the engine then erased every tier above.
 - **Saltreach** is a stilt town: no land to speak of, a web of a dozen
   small timber platforms on the shallows knotted by boardwalks into short
   ways and loops, each platform a room with one job (the toll landing,
