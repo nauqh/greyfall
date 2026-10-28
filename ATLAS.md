@@ -291,6 +291,15 @@ the atlas, focused on it.
   the Ossuary Galleries, the Drowned Graves, the Robbers' Camp and the
   Collapsed Hall, to the Weaver's Web, a pillared vault where the Weaver
   waits, and the Sinking Stair on toward the Hollow.
+  The Drowned Hollow is the ninth, the bottom of the world after Ash
+  Lake: a great still lake with a ring of shore round it (the Stair Foot,
+  the Stone Grove, the West Shallows, Pilgrims' Rest, Sinkhole Landing),
+  two causeways over the Gold Shoals out to the raised Shell Isle where
+  the Shell Below sleeps. Two rules came out of it: shores that only
+  graze each other count as sealed and go to rock, so join them with
+  tunnels centre to centre; and underground, rock is high ground, so a
+  tile directly under rock is a cliff face: an exit at a map's top edge
+  stands a row down.
 - **Each area has its own frame and silhouette:** the Harbour taller,
   with Lighthouse Point curling round the bay; Emberwood a long valley
   with the sea biting its corners; the Crags tall, with the Southern Spur

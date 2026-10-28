@@ -1333,7 +1333,91 @@ function deeps(): AreaMap {
   return { ...tier, area: "deeps", entry: { col: 12, row: 30 }, exits, districts, districtAt: districtGrid(tier, districts), decks: [] };
 }
 
-const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour, emberwood, crags, greyfall, gilded, steps, undercroft, deeps };
+function hollow(): AreaMap {
+  const rng = makeRng("area:hollow");
+  const t = tierBuilder("below", rng, { cols: 128, rows: 64 });
+  const { prop, who } = t;
+  const purple = { color: "purple" } as const;
+
+  // The bottom of the world, after Ash Lake and the underground rivers: a great still lake,
+  // a ring of shore round it, the Shell Isle in the middle reached by two causeways.
+  lake(t, 64, 36, 42, 19);
+  for (const [x, y, rx, ry] of [[64, 10, 40, 7], [14, 34, 11, 20], [114, 30, 11, 18], [28, 57, 10, 5]] as const) t.blob("hollow", x, y, rx, ry);
+  // The Shell Isle, and the Gold Shoals that carry the causeways out to it.
+  for (const [x, y, rx, ry] of [[64, 40, 10, 7], [38, 38, 4, 3], [91, 37, 4, 3], [50, 52, 3, 2], [80, 24, 3, 2]] as const) t.blob("hollow", x, y, rx, ry);
+
+  // The shore ring: tunnels from the Stair Foot round to the west and east shores, centre to centre.
+  for (const [a, b] of [[[44, 10], [14, 30]], [[86, 10], [114, 26]]] as const) t.bridge({ col: a[0], row: a[1] }, { col: b[0], row: b[1] }, 3);
+  t.bridge({ col: 20, row: 38 }, { col: 60, row: 42 });
+  t.bridge({ col: 110, row: 34 }, { col: 68, row: 42 });
+  t.bridge({ col: 14, row: 46 }, { col: 28, row: 57 }, 3);
+  t.bridge({ col: 64, row: 8 }, { col: 64, row: 1 }, 3);
+
+  // The Shell Isle rises in one step, a stair at each front corner; the Shell Below sleeps on top.
+  t.block(2, 58, 36, 13, 7);
+  t.stair(2, 57, 42, "L");
+  t.stair(2, 71, 42, "R");
+
+  t.road([64, 2], [64, 12], [40, 14], [20, 22], [20, 38]);
+  t.road([64, 12], [96, 12], [110, 22], [110, 34]);
+
+  // The Stair Foot: where the Sinking Stair comes down from the tombs; the last fire before the water.
+  t.fires.push({ col: 60, row: 10 });
+  for (const [c, r] of [[56, 6], [70, 7]] as const) prop("skullSpike", c, r);
+  prop("bones", 66, 12);
+
+  // The Stone Grove: trees turned to stone in the north shallows, and what roots among them.
+  for (const [c, r] of [[86, 6], [92, 9], [98, 6], [82, 12], [100, 12], [34, 7], [40, 12], [28, 11]] as const) prop("deadTree", c, r, { scale: 0.7 });
+  for (const [c, r] of [[90, 12], [36, 10]] as const) who("lizard", c, r, { to: { col: c + 5, row: r } });
+
+  // The West Shallows: gold in the rock, the lake's turtles hauled out on it.
+  for (const [c, r] of [[8, 24], [12, 30], [6, 40], [18, 46], [10, 50]] as const) prop("goldStone", c, r);
+  for (const [c, r] of [[10, 34], [16, 28]] as const) who("turtle", c, r);
+  who("snake", 8, 44);
+
+  // The Gold Shoals: islets on the causeways, gold heaped on them.
+  for (const [c, r] of [[37, 37], [92, 36], [50, 52], [80, 24]] as const) prop("goldStone", c, r);
+
+  // Pilgrims' Rest: those who came down to pray to what sleeps here, their shrine on the east shore.
+  prop("monastery", 116, 26, purple);
+  t.fires.push({ col: 112, row: 32 });
+  crowd(t, rng, "monk", { col: 114, row: 34 }, 3, 3, purple);
+  who("shaman", 118, 36);
+  for (const [c, r] of [[108, 24], [120, 30], [116, 42]] as const) prop("goldStone", c, r);
+
+  // Sinkhole Landing: where the Fen's water falls in, and whatever fell with it.
+  t.fires.push({ col: 26, row: 56 });
+  for (const [c, r] of [[22, 58], [32, 58], [30, 54]] as const) prop("bones", c, r);
+  prop("woodPile", 34, 56);
+  who("rubberDuck", 24, 60);
+  crowd(t, rng, "skull", { col: 28, row: 57 }, 2, 3);
+
+  // The lake: what swims in the still water.
+  for (const [c, r] of [[44, 28], [84, 50], [70, 30]] as const) who("bombFish", c, r, { to: { col: c + 6, row: r } });
+  who("paddleShark", 40, 46, { to: { col: 52, row: 44 } });
+  who("harpoonShark", 96, 44, { to: { col: 86, row: 48 } });
+
+  // The Shell Isle: gold round the sleeper, its young in the shallows, the Shell Below on the height.
+  for (const [c, r] of [[59, 46], [69, 46], [56, 40]] as const) prop("goldStone", c, r);
+  for (const [c, r] of [[62, 45], [66, 46]] as const) who("turtle", c, r);
+  t.bosses.push({ name: "The Shell Below", area: "hollow", col: 64, row: 39 });
+  who("turtleGuard", 64, 39, { scale: 2.4 });
+
+  const exits: AreaExit[] = [{ to: "deeps", name: "Sinking Stair", kind: "open", at: { col: 64, row: 2 } }];
+  const districts: District[] = [
+    { name: "The Shell Isle", at: { col: 64, row: 50 }, palette: [5, 1], dress: "hollow", box: { x: 54, y: 33, w: 21, h: 15 } },
+    { name: "The Stair Foot", at: { col: 64, row: 14 }, palette: [4, 5], dress: "deeps", clearing: 5 },
+    { name: "The Stone Grove", at: { col: 92, row: 15 }, palette: [5, 4], dress: "hollow", clearing: 5 },
+    { name: "The West Shallows", at: { col: 12, row: 36 }, palette: [5, 1], dress: "hollow", clearing: 6 },
+    { name: "Pilgrims' Rest", at: { col: 114, row: 40 }, palette: [3, 5], dress: "hollow", clearing: 6 },
+    { name: "Sinkhole Landing", at: { col: 28, row: 61 }, palette: [4, 5], dress: "undercroft", clearing: 4 },
+  ];
+  const rooms = districts.filter((d) => !d.box).map((d) => ({ at: d.at, r: d.clearing ?? 6 }));
+  const tier = stone(t.finish({}, [{ col: 64, row: 8 }], maze(t, rng, rooms)));
+  return { ...tier, area: "hollow", entry: { col: 64, row: 8 }, exits, districts, districtAt: districtGrid(tier, districts), decks: [] };
+}
+
+const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour, emberwood, crags, greyfall, gilded, steps, undercroft, deeps, hollow };
 
 /** The areas that have a map of their own so far. */
 export const MAPPED_AREAS = Object.keys(BUILT) as AreaId[];

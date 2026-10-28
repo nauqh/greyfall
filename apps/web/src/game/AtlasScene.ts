@@ -299,8 +299,9 @@ export class AtlasScene extends Phaser.Scene {
       // The camera stays inside the area, and opens on where a traveller arrives.
       const local = this.local;
       const cam = this.cams[local.id];
-      for (const c of Object.values(this.cams)) c.setBounds(0, 0, STRAT_COLS * CELL, STRAT_ROWS * CELL);
+      // Bounds after show(): it builds the map, and only then is the grid this area's size.
       this.show(local.id);
+      for (const c of Object.values(this.cams)) c.setBounds(0, 0, STRAT_COLS * CELL, STRAT_ROWS * CELL);
       cam.setZoom(this.zoomFor(22));
       cam.centerOn((local.entry.col + 0.5) * CELL, (local.entry.row + 0.5) * CELL);
     } else {
