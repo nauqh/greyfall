@@ -1588,255 +1588,254 @@ function barrowmoor(): AreaMap {
 
 function fen(): AreaMap {
   const rng = makeRng("area:fen");
-  const t = tierBuilder("surface", rng, { cols: 120, rows: 80 });
+  const t = tierBuilder("surface", rng, { cols: 92, rows: 62 });
   const { prop, who } = t;
   const purple = { color: "purple" } as const;
   const yellow = { color: "yellow" } as const;
 
-  // A wheel, unlike any other area: a ring of reed and mud round a great black basin, the Chapel Mound on
-  // its isle at the hub over the sinkhole, and duckboard spokes out across hummocks to the rim.
-  t.blob("fen", 60, 40, 58, 37);
-  for (const [x, y, rx, ry] of [[16, 12, 13, 9], [102, 12, 14, 10], [16, 68, 13, 9], [104, 68, 13, 9]] as const) t.blob("fen", x, y, rx, ry);
-  lake(t, 60, 40, 33, 21);
-  t.blob("fen", 60, 40, 12, 8);
-  // Hummocks at each spoke's middle, a stilt hut on each.
-  const hub = [60, 40] as const;
-  const spokes = [[24, 40], [34, 18], [86, 18], [96, 40], [86, 62], [34, 62]] as const;
-  const hummocks = spokes.map(([x, y]) => [Math.round((x + hub[0]) / 2), Math.round((y + hub[1]) / 2)] as const);
-  for (const [x, y] of hummocks) t.blob("fen", x, y, 3, 2);
-  for (let i = 0; i < spokes.length; i++) {
-    t.bridge({ col: hub[0], row: hub[1] }, { col: hummocks[i]![0], row: hummocks[i]![1] });
-    t.bridge({ col: hummocks[i]![0], row: hummocks[i]![1] }, { col: spokes[i]![0], row: spokes[i]![1] });
+  // A spiral, unlike any other area: one narrow causeway of reed coiling inward through the black water,
+  // two full turns, to the Chapel Mound and the sinkhole at its heart. In at the west, the moor's path off the north.
+  const [cx, cy] = [46, 31];
+  const coil: { c: number; r: number; a: number }[] = [];
+  for (let a = Math.PI; a <= 4.3 * Math.PI; a += 0.05) {
+    const rad = 30 - 2 * (a - Math.PI);
+    coil.push({ c: cx + rad * Math.cos(a), r: cy + 0.72 * rad * Math.sin(a), a });
   }
-  // Pools in the rim's mud, so even the ring is wet.
-  for (const [x, y, rx, ry] of [[12, 22, 4, 3], [14, 60, 4, 3], [108, 24, 4, 3], [106, 58, 4, 3], [60, 72, 5, 2], [40, 8, 4, 2], [80, 74, 3, 2], [8, 44, 2, 3]] as const) lake(t, x, y, rx, ry);
+  for (const p of coil) t.blob("fen", Math.round(p.c), Math.round(p.r), 4, 3);
+  t.blob("fen", cx, cy, 8, 6);
+  /** A point on the coil, `turns` of a turn past its outer end. */
+  const on = (turns: number): Cell => {
+    const p = coil[Math.min(coil.length - 1, Math.round((turns * 2 * Math.PI) / 0.05))]!;
+    return { col: Math.round(p.c), row: Math.round(p.r) };
+  };
 
-  // The Chapel Mound: two steps at the hub, the sinkhole at its foot.
-  t.shape(2, 60, 39, 10, 6, 0.35, "The Chapel Mound");
-  t.shape(3, 60, 37, 6, 3.5, 0.25, "The Chapel Mound");
-  // The Barrow Rise in the north-east rim climbing to the moor, the Lizard Warren's mound in the south-west.
-  t.shape(2, 100, 14, 12, 8, 0.45, "The Barrow Rise");
-  t.shape(3, 102, 10, 6, 4, 0.4, "The Barrow Rise");
-  t.shape(2, 18, 66, 9, 6, 0.45, "Lizard Warren");
+  // The Chapel Mound at the heart: two steps, the chapel on top, the sinkhole at its foot.
+  t.shape(2, cx, cy, 7, 5, 0.25, "The Chapel Mound");
+  t.shape(3, cx, cy - 1, 5, 3, 0.2, "The Chapel Mound");
 
-  // Exits: the shingle spit in from Saltreach on the west, the Barrow Path up off the rise to the moor.
-  t.road([1, 40], [24, 40]);
-  t.road([100, 20], [104, 2]);
-  t.bridge({ col: 8, row: 40 }, { col: 1, row: 40 }, 3);
-  t.bridge({ col: 104, row: 6 }, { col: 104, row: 1 }, 3);
+  // The ways out: the shingle causeway west to Saltreach, the duckboards north up to the moor.
+  t.bridge({ col: 14, row: cy }, { col: 1, row: cy }, 3);
+  t.bridge({ col: cx, row: 10 }, { col: cx, row: 1 }, 3);
 
-  // Reed thick round the whole rim: the walls of the fen.
-  for (const [x, y, rx, ry, d] of [[30, 6, 14, 3, 0.55], [80, 6, 12, 3, 0.55], [8, 30, 4, 8, 0.55], [8, 56, 4, 6, 0.55], [112, 40, 4, 10, 0.55], [40, 74, 12, 3, 0.55], [92, 72, 10, 3, 0.5], [22, 14, 6, 4, 0.6], [112, 64, 4, 5, 0.55]] as const) t.grove(x, y, rx, ry, d);
+  // Reed along the coil's outer edge, thickest where the turns are tight.
+  for (const turns of [0.15, 0.4, 0.65, 0.9, 1.15, 1.4, 1.65]) {
+    const p = on(turns);
+    t.grove(p.col, p.row, 3, 2, 0.35);
+  }
 
-  // More reed and dead wood where the rim lay bare.
-  for (const [x, y, rx, ry, d] of [[54, 10, 8, 3, 0.5], [70, 12, 6, 3, 0.45], [24, 30, 5, 4, 0.5], [40, 24, 4, 3, 0.5], [100, 30, 4, 4, 0.5], [84, 68, 5, 3, 0.5], [30, 52, 4, 3, 0.5], [92, 52, 4, 3, 0.5]] as const) t.grove(x, y, rx, ry, d);
-  for (const [c, r] of [[62, 8], [76, 10], [46, 16], [30, 44], [94, 36], [80, 64], [40, 60], [100, 60]] as const) prop("deadTree", c, r, { scale: 0.6 });
-  for (const [c, r] of [[48, 12], [82, 14]] as const) who("lizard", c, r, { to: { col: c + 5, row: r + 1 } });
+  // Causeway Landing: the militia's last post where the shingle spit comes in.
+  const landing = on(0.05);
+  prop("tower", landing.col + 1, landing.row - 3, yellow);
+  t.fires.push({ col: landing.col + 2, row: landing.row + 1 });
+  crowd(t, rng, "pawn", landing, 2, 2, { ...yellow, act: "knife" });
+  who("lancer", 10, cy, { ...yellow, to: { col: 18, row: cy } });
 
-  // The Chapel Mound: the purple chapel on its crown, its priests, the sinkhole the fen drains into.
-  prop("monastery", 60, 36, purple);
-  for (const [c, r] of [[55, 38], [65, 38], [56, 42], [64, 42]] as const) prop("skullSpike", c, r);
-  t.fires.push({ col: 60, row: 42 });
-  crowd(t, rng, "monk", { col: 60, row: 41 }, 3, 3, purple);
-  who("shaman", 63, 40);
-  who("skullGuard", 57, 41);
+  // The Barrow Rise: the north of the outer turn, dead wood and graves where the moor's path leaves.
+  const rise = on(0.25);
+  for (const [dc, dr] of [[-6, 0], [5, 1], [-2, -2]] as const) prop("deadTree", rise.col + dc, rise.row + dr, { scale: 0.6 });
+  for (const dc of [-4, 4]) prop("skullSpike", rise.col + dc, rise.row - 1);
+  crowd(t, rng, "skull", rise, 2, 3);
 
-  // The hummocks: a stilt hut and a fisher on each, eels and sharks in the black water between.
-  hummocks.forEach(([x, y], i) => {
-    prop("fishHut", x, y);
-    who(i % 2 ? "lizard" : "pawn", x + 1, y + 1, i % 2 ? {} : { ...yellow, act: "knife" });
-  });
-  for (const [c, r] of [[46, 28], [74, 52], [44, 50], [76, 28]] as const) who("harpoonShark", c, r, { to: { col: c + 4, row: r + 2 } });
-  for (const [c, r] of [[38, 34], [82, 46], [52, 56], [68, 24]] as const) who("bombFish", c, r, { to: { col: c + 3, row: r } });
-  for (const [c, r] of [[50, 26], [70, 56]] as const) prop("boat", c, r, { flip: c > 60 });
-  who("turtle", 36, 44);
+  // Eel Shallows: the east of the outer turn, the fishers' huts and their catch.
+  const eel = on(0.5);
+  prop("fishHut", eel.col, eel.row);
+  prop("meat", eel.col - 1, eel.row - 4);
+  who("pawn", eel.col + 1, eel.row + 3, { ...yellow, act: "knife" });
 
-  // Causeway Landing: the militia's last post where the spit comes in, nets and fish.
-  t.fires.push({ col: 14, row: 42 });
-  prop("tower", 12, 36, yellow);
-  for (const [c, r] of [[18, 46], [10, 48]] as const) prop("fishHut", c, r);
-  prop("meat", 16, 38);
-  crowd(t, rng, "pawn", { col: 14, row: 44 }, 4, 3, { ...yellow, act: "knife" });
-  who("lancer", 10, 40, { ...yellow, to: { col: 22, row: 40 } });
+  // The Drowned Village: the south of the outer turn, houses the fen is taking.
+  const village = on(0.75);
+  for (const dc of [-5, 0, 5]) prop("house1", village.col + dc, village.row, purple);
+  crowd(t, rng, "skull", village, 3, 4);
+  t.fires.push({ col: village.col + 2, row: village.row + 2 });
 
-  // The Reedbeds: the north-west rim, lizards and snakes in the reed, bees over it, a hermit's hut.
-  prop("house3", 24, 18, purple);
-  for (const [c, r] of [[18, 26], [28, 12], [40, 14]] as const) who("lizard", c, r, { to: { col: c + 4, row: r + 2 } });
-  for (const [c, r] of [[14, 18], [34, 10]] as const) who("snake", c, r);
-  for (const [c, r] of [[22, 30], [44, 10]] as const) who("bee", c, r, { to: { col: c + 3, row: r - 2 } });
+  // Lizard Warren: the west of the inner turn, the lizard-folk's huts, their kills.
+  const warren = on(1.05);
+  prop("goblinHut", warren.col, warren.row - 1);
+  for (const dr of [-4, 3]) prop("bones", warren.col + 1, warren.row + dr);
+  crowd(t, rng, "lizard", warren, 4, 3);
+  who("shaman", warren.col - 1, warren.row + 2);
 
-  // The Barrow Rise: the duckboards' end, the ground climbing to the moor, its watch and its dead.
-  prop("watchtower", 102, 9);
-  for (const [c, r] of [[94, 16], [108, 18], [98, 20], [90, 10]] as const) prop("deadTree", c, r, { scale: 0.7 });
-  for (const [c, r] of [[96, 12], [106, 14]] as const) prop("skullSpike", c, r);
-  crowd(t, rng, "skull", { col: 98, row: 16 }, 3, 3);
-  t.fires.push({ col: 92, row: 22 });
+  // The Reedbeds: the inner turn's north and east, the reed closing in, snakes and bees.
+  const reeds = on(1.35);
+  for (const [dc, dr] of [[-3, 0], [3, 1]] as const) who("snake", reeds.col + dc, reeds.row + dr);
+  who("bee", reeds.col, reeds.row - 1, { to: { col: reeds.col + 3, row: reeds.row - 2 } });
+  const inner = on(1.6);
+  prop("house3", inner.col, inner.row, purple);
+  who("monk", inner.col + 1, inner.row + 2, purple);
 
-  // Eel Shallows: the east rim, the fishers' huts, their catch and their boats.
-  for (const [c, r] of [[104, 36], [108, 46], [100, 50]] as const) prop("fishHut", c, r);
-  for (const [c, r] of [[102, 42], [106, 40]] as const) prop("meat", c, r);
-  crowd(t, rng, "pawn", { col: 104, row: 42 }, 3, 4, { ...yellow, act: "knife" });
-  who("turtle", 110, 52);
+  // The Chapel Mound: the purple chapel on its crown, its priests and guard.
+  prop("monastery", cx, cy - 2, purple);
+  t.fires.push({ col: cx - 4, row: cy + 3 });
+  crowd(t, rng, "monk", { col: cx, row: cy + 3 }, 2, 2, purple);
+  who("skullGuard", cx + 4, cy + 3);
 
-  // The Drowned Village: the south rim, houses the fen is taking, roofs and boats, the dead among them.
-  for (const [c, r, art] of [[52, 68, "house1"], [60, 66, "house2"], [68, 68, "house3"], [76, 66, "house1"], [44, 66, "house2"]] as const) prop(art, c, r, purple);
-  for (const [c, r] of [[48, 72], [72, 72], [84, 68]] as const) prop("deadTree", c, r, { scale: 0.7 });
-  crowd(t, rng, "skull", { col: 60, row: 70 }, 4, 6);
-  t.fires.push({ col: 64, row: 70 });
-
-  // Lizard Warren: the lizard-folk's huts on their mound, their shaman, their kills.
-  for (const [c, r] of [[14, 64], [22, 64], [18, 68]] as const) prop("goblinHut", c, r);
-  t.fires.push({ col: 18, row: 66 });
-  crowd(t, rng, "lizard", { col: 18, row: 70 }, 5, 5);
-  who("shaman", 18, 62);
-  for (const [c, r] of [[12, 70], [26, 68], [24, 72]] as const) prop("bones", c, r);
-  for (const [c, r] of [[10, 66], [26, 62]] as const) prop("skullSpike", c, r);
+  // The black water between the turns: sharks and bomb-fish, a drifting boat.
+  for (const turns of [0.3, 0.8, 1.3]) {
+    const p = on(turns);
+    const [dc, dr] = [Math.sign(cx - p.col) * 7, Math.sign(cy - p.row) * 5];
+    who(turns === 0.8 ? "harpoonShark" : "bombFish", p.col + dc, p.row + dr, { to: { col: p.col + dc + 3, row: p.row + dr } });
+  }
+  prop("boat", 30, 20, {});
 
   const exits: AreaExit[] = [
-    { to: "saltreach", name: "Fen Causeway", kind: "open", at: { col: 1, row: 40 } },
-    { to: "barrowmoor", name: "Barrow Path", kind: "open", at: { col: 104, row: 1 } },
-    { to: "hollow", name: "Fen Sinkhole", kind: "drop", at: { col: 60, row: 44 } },
+    { to: "saltreach", name: "Fen Causeway", kind: "open", at: { col: 1, row: cy } },
+    { to: "barrowmoor", name: "Barrow Path", kind: "open", at: { col: cx, row: 1 } },
+    { to: "hollow", name: "Fen Sinkhole", kind: "drop", at: { col: cx, row: cy + 4 } },
   ];
   const districts: District[] = [
-    { name: "The Chapel Mound", at: { col: 60, row: 33 }, levels: [1, 2, 3], palette: [1], dress: "fen", decor: 1.5 },
-    { name: "Causeway Landing", at: { col: 12, row: 46 }, levels: [1], palette: [3], dress: "saltreach", decor: 2.5 },
-    { name: "The Reedbeds", at: { col: 26, row: 22 }, levels: [1], palette: [2], dress: "fen", decor: 3 },
-    { name: "The Barrow Rise", at: { col: 98, row: 24 }, levels: [1, 2, 3], palette: [4], dress: "barrowmoor", decor: 2.5 },
-    { name: "Eel Shallows", at: { col: 106, row: 44 }, levels: [1], palette: [3], dress: "fen", decor: 2.5 },
-    { name: "The Drowned Village", at: { col: 56, row: 66 }, levels: [1], palette: [5], dress: "fen", decor: 2.5 },
-    { name: "Lizard Warren", at: { col: 18, row: 74 }, levels: [1, 2], palette: [4], dress: "fen", decor: 2.5 },
+    // Labels on the coil itself, each at the middle of its stretch.
+    { name: "Causeway Landing", at: on(0.08), palette: [3], dress: "saltreach", decor: 2.5 },
+    { name: "The Barrow Rise", at: on(0.27), palette: [4], dress: "barrowmoor", decor: 2.5 },
+    { name: "Eel Shallows", at: on(0.52), palette: [5], dress: "fen", decor: 2.5 },
+    { name: "The Drowned Village", at: on(0.79), palette: [2], dress: "fen", decor: 2.5 },
+    { name: "Lizard Warren", at: on(1.06), palette: [4], dress: "fen", decor: 2.5 },
+    { name: "The Reedbeds", at: on(1.35), palette: [3], dress: "fen", decor: 3 },
+    { name: "The Chapel Mound", at: { col: cx, row: cy + 6 }, palette: [1], dress: "fen", decor: 1.5 },
   ];
-  const tier = t.finish({}, [{ col: 6, row: 40 }]);
-  return { ...tier, area: "fen", entry: { col: 6, row: 40 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [] };
+  const tier = t.finish({}, [{ col: 6, row: cy }]);
+  // Colour follows the coil, not distance: each district a stretch of it, the mound the heart.
+  const stretch = [[1.35, 0], [1.75, 1], [2.3, 2], [2.85, 3], [3.4, 4], [4.0, 5]] as const;
+  const districtAt = tier.areaAt.map((line, r) =>
+    [...line]
+      .map((ch, c) => {
+        if (ch === "-") return "-";
+        if (Math.hypot(c - cx, (r - cy) * 1.3) < 9) return "6";
+        let best = coil[0]!;
+        for (const p of coil) if ((p.c - c) ** 2 + (p.r - r) ** 2 < (best.c - c) ** 2 + (best.r - r) ** 2) best = p;
+        if (c < 12) return "0";
+        if (r < 10) return "1";
+        return String(stretch.find(([end]) => best.a < end * Math.PI)?.[1] ?? 6);
+      })
+      .join(""),
+  );
+  return { ...tier, area: "fen", entry: { col: 6, row: cy }, exits, districts, districtAt, decks: [] };
 }
 
 function saltreach(): AreaMap {
   const rng = makeRng("area:saltreach");
-  const t = tierBuilder("surface", rng, { cols: 120, rows: 80 });
+  const t = tierBuilder("surface", rng, { cols: 92, rows: 60 });
   const { prop, who } = t;
   const yellow = { color: "yellow" } as const;
 
-  // A crescent of isles round an open lagoon, unlike any other area: from the Harbour's bridge in the
-  // north-east, round the south, up to the lighthouse at the north-west tip. Each isle its own shape and size.
-  t.blob("saltreach", 104, 18, 11, 8);
-  t.blob("saltreach", 100, 42, 8, 9);
-  for (const [x, y, rx, ry] of [[92, 62, 10, 5], [102, 70, 7, 4], [106, 76, 4, 3]] as const) t.blob("saltreach", x, y, rx, ry);
-  t.blob("saltreach", 70, 64, 13, 8);
-  t.blob("saltreach", 42, 62, 10, 10);
-  t.blob("saltreach", 18, 46, 10, 12);
-  t.blob("saltreach", 14, 20, 9, 9);
-  // The lagoon's islets: the drowned shrine, the wreck, the gull rock.
-  t.blob("saltreach", 58, 30, 5, 4);
-  t.blob("saltreach", 82, 30, 3, 3);
-  t.blob("saltreach", 36, 34, 3, 2);
-  // The reef: a broken ring of islets across the lagoon's mouth, gulls and wrecks on them.
-  for (const [x, y, rx, ry] of [[34, 10, 4, 3], [50, 6, 5, 3], [68, 8, 4, 3], [84, 6, 5, 3], [44, 18, 3, 2], [76, 16, 3, 2]] as const) t.blob("saltreach", x, y, rx, ry);
-  lake(t, 18, 48, 4, 4);
+  // A stilt town over the shallows, unlike any other area: no land to speak of, only timber platforms on piles,
+  // each a room of its own, knotted together by boardwalks into a web of short ways and loops.
+  const P = {
+    landing: [80, 14, 6, 4],
+    market: [66, 8, 5, 3],
+    saltworks: [68, 26, 6, 4],
+    lofts: [52, 16, 4, 3],
+    village: [46, 32, 7, 5],
+    gull: [30, 20, 4, 3],
+    fort: [22, 42, 7, 5],
+    cove: [10, 28, 5, 4],
+    light: [12, 10, 6, 5],
+    steps: [40, 48, 5, 3],
+    spit: [58, 48, 6, 4],
+    pens: [78, 40, 5, 3],
+  } as const;
+  for (const [x, y, rx, ry] of Object.values(P)) t.blob("saltreach", x, y, rx, ry);
+  // Boardwalks, centre to centre: two loops round the village, spurs to the lighthouse and the fort.
+  const walk = (a: keyof typeof P, b: keyof typeof P) => t.bridge({ col: P[a][0], row: P[a][1] }, { col: P[b][0], row: P[b][1] });
+  for (const [a, b] of [["landing", "market"], ["landing", "saltworks"], ["market", "lofts"], ["saltworks", "lofts"], ["lofts", "gull"], ["lofts", "village"], ["saltworks", "pens"], ["pens", "spit"], ["village", "spit"], ["village", "steps"], ["steps", "fort"], ["gull", "cove"], ["cove", "light"], ["cove", "fort"]] as const) walk(a, b);
+  t.bridge({ col: 84, row: 14 }, { col: 90, row: 14 }, 3);
+  t.bridge({ col: 58, row: 50 }, { col: 58, row: 58 }, 3);
 
-  // The raised ground: the fort's two steps, the lighthouse's three, the netmakers' little hill.
-  t.shape(2, 42, 62, 7, 7, 0.4, "The Militia Fort");
-  t.shape(3, 42, 59, 4, 3, 0.3, "The Militia Fort");
-  t.shape(2, 14, 19, 6, 6, 0.4, "Lighthouse Rock");
-  t.shape(3, 14, 17, 4, 3, 0.35, "Lighthouse Rock");
-  t.shape(4, 14, 15, 2, 1.6, 0.25, "Lighthouse Rock");
+  // The raised rooms: the militia's fort on its piled rock, the lighthouse on its crag.
+  t.shape(2, 22, 41, 5, 3.5, 0.3, "The Militia Fort");
+  t.shape(3, 22, 40, 3, 2, 0.25, "The Militia Fort");
+  t.shape(2, 12, 9, 4, 3, 0.3, "Lighthouse Rock");
+  t.shape(3, 12, 8, 2.5, 1.6, 0.25, "Lighthouse Rock");
 
-  // Bridges isle to isle round the crescent, and out to the shrine; the exits off each end.
-  for (const [a, b] of [[[102, 24], [100, 36]], [[98, 50], [92, 58]], [[82, 63], [76, 63]], [[58, 63], [50, 63]], [[34, 58], [24, 52]], [[16, 36], [15, 28]], [[64, 58], [60, 33]], [[94, 63], [104, 76]], [[98, 40], [82, 30]], [[24, 40], [36, 34]], [[22, 22], [34, 10]], [[38, 10], [50, 6]], [[54, 6], [68, 8]], [[72, 8], [84, 6]], [[88, 6], [100, 14]], [[44, 18], [50, 8]], [[76, 16], [68, 9]]] as const) t.bridge({ col: a[0], row: a[1] }, { col: b[0], row: b[1] });
-  t.road([110, 18], [118, 18]);
-  t.bridge({ col: 112, row: 18 }, { col: 118, row: 18 }, 3);
-  t.bridge({ col: 106, row: 74 }, { col: 106, row: 78 }, 3);
+  // Old Bridge Landing: the toll post where the road comes in off the Harbour's bridge.
+  prop("tower", 84, 11, yellow);
+  prop("house1", 77, 12, yellow);
+  t.fires.push({ col: 80, row: 15 });
+  crowd(t, rng, "pawn", { col: 80, row: 16 }, 3, 3, { ...yellow, act: "meat" });
+  who("lancer", 82, 14, { ...yellow, to: { col: 88, row: 14 } });
 
-  // Old Bridge Landing: the toll post where the road comes in, fish carts, the market stalls.
-  prop("tower", 110, 14, yellow);
-  for (const [c, r, art] of [[98, 14, "house1"], [102, 22, "house2"], [108, 22, "house3"], [96, 20, "house2"]] as const) prop(art, c, r, yellow);
-  prop("fishHut", 104, 12);
-  for (const [c, r] of [[100, 18], [106, 17]] as const) prop("meat", c, r);
-  t.fires.push({ col: 104, row: 18 });
-  crowd(t, rng, "pawn", { col: 103, row: 19 }, 5, 5, { ...yellow, act: "meat" });
-  who("lancer", 110, 20, { ...yellow, to: { col: 116, row: 18 } });
+  // The Fish Market: stalls on the north platform, the catch laid out.
+  prop("fishHut", 66, 7);
+  for (const [c, r] of [[63, 9], [69, 9]] as const) prop("meat", c, r);
+  crowd(t, rng, "pawn", { col: 66, row: 9 }, 3, 2, { ...yellow, act: "knife" });
 
-  // The Saltworks: pans fenced on a round isle, the salters, their piles.
-  t.fences.push({ col: 96, row: 38, w: 4, h: 3 }, { col: 101, row: 38, w: 4, h: 3 }, { col: 96, row: 44, w: 4, h: 3 }, { col: 101, row: 44, w: 4, h: 3 });
-  for (const [c, r] of [[94, 42], [106, 42], [100, 49]] as const) prop("woodPile", c, r);
-  prop("house3", 100, 35, yellow);
-  crowd(t, rng, "pawn", { col: 100, row: 42 }, 4, 4, { ...yellow, act: "axe" });
+  // The Saltworks: pans fenced on their platform, the salters.
+  t.fences.push({ col: 64, row: 24, w: 4, h: 3 }, { col: 69, row: 24, w: 4, h: 3 });
+  prop("woodPile", 66, 29);
+  crowd(t, rng, "pawn", { col: 68, row: 28 }, 2, 3, { ...yellow, act: "axe" });
 
-  // The Shingle Spit: the long stony tongue to the Fen, a watch at its root, gulls' bones on the stones.
-  prop("watchtower", 90, 61);
-  for (const [c, r] of [[96, 64], [102, 70], [86, 63]] as const) prop("bones", c, r);
-  who("archer", 92, 63, { ...yellow, to: { col: 102, row: 70 } });
-  who("lizard", 104, 74, { to: { col: 100, row: 70 } });
+  // The Net Lofts: a crossroads of boardwalks, nets drying, a loft.
+  prop("house3", 52, 15, yellow);
+  prop("tools", 50, 18);
+  who("pawn", 54, 17, { ...yellow, act: "hammer" });
 
-  // Netmakers' Village: houses crowded on the southern isle, nets drying in pens, boats drawn up.
-  for (const [c, r, art] of [[62, 60, "house1"], [66, 58, "house2"], [72, 58, "house3"], [78, 60, "house1"], [60, 66, "house2"], [66, 68, "house3"], [74, 68, "house1"], [80, 66, "house2"]] as const) prop(art, c, r, yellow);
-  t.fences.push({ col: 68, row: 62, w: 5, h: 2 });
-  for (const [c, r] of [[58, 62], [82, 62], [70, 72]] as const) prop("fishHut", c, r);
-  t.fires.push({ col: 70, row: 65 });
-  crowd(t, rng, "pawn", { col: 70, row: 64 }, 6, 6, { ...yellow, act: "knife" });
-  who("monk", 64, 63, yellow);
+  // Netmakers' Village: the biggest platform, houses crowded round a fire.
+  for (const [c, r, art] of [[42, 30, "house1"], [48, 29, "house2"], [52, 32, "house3"], [42, 35, "house2"], [50, 35, "house1"]] as const) prop(art, c, r, yellow);
+  t.fires.push({ col: 46, row: 33 });
+  crowd(t, rng, "pawn", { col: 46, row: 32 }, 5, 4, { ...yellow, act: "knife" });
+  who("monk", 44, 33, yellow);
 
-  // The Militia Fort: the yellow militia's barracks on a round crown, towers at its foot, guns to the lagoon.
-  prop("barracks", 42, 58, yellow);
-  for (const [c, r] of [[35, 66], [49, 66]] as const) prop("tower", c, r, yellow);
-  for (const c of [38, 46]) prop("cannon", c, 55);
-  crowd(t, rng, "warrior", { col: 42, row: 64 }, 4, 3, yellow);
-  for (const [c, r] of [[35, 68], [49, 68]] as const) who("archer", c, r, yellow);
-  t.fires.push({ col: 42, row: 68 });
+  // Gull Rock: a bare platform, gulls' bones, a watcher.
+  prop("bones", 30, 19);
+  who("archer", 30, 21, { ...yellow, to: { col: 32, row: 20 } });
 
-  // Pirate Cove: a tall isle round its own hidden cove, the thieves' tower in it, their haul on the shore.
-  prop("pirateTowerWater", 18, 48);
-  for (const [c, r] of [[12, 40], [24, 42], [12, 56], [24, 56]] as const) prop("goblinHut", c, r);
-  for (const [c, r] of [[14, 52], [22, 38]] as const) prop("goldStone", c, r);
-  prop("woodPile", 26, 50);
-  t.fires.push({ col: 10, row: 48 });
-  crowd(t, rng, "thief", { col: 18, row: 54 }, 5, 4);
-  who("pawn", 20, 40, { color: "red", act: "knife" });
+  // Pirate Cove: the thieves' platform, their tower in the water beside it, their haul.
+  prop("pirateTowerWater", 4, 34);
+  prop("goblinHut", 10, 27);
+  prop("goldStone", 13, 30);
+  crowd(t, rng, "thief", { col: 10, row: 29 }, 3, 3);
 
-  // Lighthouse Rock: three steps of crag to the light at the crescent's tip, wreckers' plunder below.
-  prop("tower", 14, 14, yellow);
-  t.fires.push({ col: 12, row: 17 });
-  who("monk", 16, 18, yellow);
-  for (const [c, r] of [[8, 24], [20, 26]] as const) prop("goldStone", c, r);
-  prop("boat", 22, 14, {});
+  // Lighthouse Rock: the light on its crag at the town's north-west corner, its keeper.
+  prop("tower", 12, 7, yellow);
+  t.fires.push({ col: 14, row: 10 });
+  who("monk", 10, 11, yellow);
 
-  // The lagoon: boats at anchor, the drowned shrine on its islet, the wreck, sharks and turtles.
-  prop("monastery", 58, 29, { color: "purple" });
-  who("monk", 56, 32, { color: "purple" });
-  prop("trollDead", 82, 30);
-  prop("bones", 36, 34);
-  for (const [c, r] of [[48, 40], [70, 44], [84, 48], [30, 26], [66, 18], [44, 22]] as const) prop("boat", c, r, { flip: c > 60 });
-  for (const [c, r] of [[50, 30], [76, 22]] as const) who("harpoonShark", c, r, { to: { col: c + 8, row: r + 4 } });
-  for (const [c, r] of [[40, 48], [88, 36]] as const) who("turtle", c, r);
-  who("paddleShark", 60, 46, { to: { col: 72, row: 50 } });
-  who("rubberDuck", 64, 40);
+  // The Militia Fort: barracks on the piled rock, archers on the walk round it.
+  prop("barracks", 22, 39, yellow);
+  for (const c of [18, 26]) prop("cannon", c, 44);
+  crowd(t, rng, "warrior", { col: 22, row: 45 }, 3, 3, yellow);
+  who("archer", 16, 42, { ...yellow, to: { col: 28, row: 42 } });
 
-  // The reef: gulls' bones and a wreck on the islets, sharks working the gaps.
-  for (const [c, r] of [[34, 10], [68, 8], [44, 18]] as const) prop("bones", c, r);
-  prop("boat", 50, 6, {});
-  prop("watchtower", 84, 6);
-  for (const [c, r] of [[60, 12], [92, 10]] as const) who("harpoonShark", c, r, { to: { col: c + 6, row: r } });
-  who("bat", 76, 15);
+  // Smugglers' Steps: a low platform under the village, crates and a lookout.
+  prop("woodPile", 38, 48);
+  prop("watchtower", 42, 47);
+  who("thief", 40, 49, { to: { col: 44, row: 49 } });
 
-  // Scrub and palms where the isles are left wild.
-  for (const [x, y, rx, ry, d] of [[110, 26, 3, 2, 0.6], [104, 50, 3, 2, 0.6], [84, 70, 3, 2, 0.6], [52, 70, 3, 3, 0.6], [26, 60, 3, 3, 0.6], [20, 22, 2, 3, 0.6], [10, 30, 2, 2, 0.6]] as const) t.grove(x, y, rx, ry, d);
+  // The Shingle Spit: the way out to the Fen along the causeway, a watch at its root.
+  prop("watchtower", 54, 46);
+  t.fires.push({ col: 60, row: 49 });
+  who("lizard", 62, 50, { to: { col: 58, row: 54 } });
+
+  // The Eel Pens: fenced water-holes off the east boardwalk.
+  t.fences.push({ col: 76, row: 39, w: 5, h: 3 });
+  prop("fishHut", 80, 41);
+  who("pawn", 78, 42, { ...yellow, act: "knife" });
+
+  // The water between: boats, sharks under the boardwalks, turtles.
+  for (const [c, r] of [[60, 18], [36, 38], [72, 34], [20, 20], [50, 54]] as const) prop("boat", c, r, { flip: c > 46 });
+  for (const [c, r] of [[58, 30], [32, 32], [70, 46]] as const) who("harpoonShark", c, r, { to: { col: c + 4, row: r + 2 } });
+  for (const [c, r] of [[24, 30], [86, 28]] as const) who("turtle", c, r);
+  who("rubberDuck", 36, 12);
 
   const exits: AreaExit[] = [
-    { to: "harbour", name: "Old Bridge", kind: "open", at: { col: 118, row: 18 } },
-    { to: "fen", name: "Fen Causeway", kind: "open", at: { col: 106, row: 78 } },
+    { to: "harbour", name: "Old Bridge", kind: "open", at: { col: 90, row: 14 } },
+    { to: "fen", name: "Fen Causeway", kind: "open", at: { col: 58, row: 58 } },
   ];
   const districts: District[] = [
-    { name: "Old Bridge Landing", at: { col: 106, row: 25 }, levels: [1], palette: [3], dress: "harbour", decor: 2 },
-    { name: "The Saltworks", at: { col: 102, row: 47 }, levels: [1], palette: [1], dress: "harbour", decor: 1.5 },
-    { name: "The Shingle Spit", at: { col: 96, row: 66 }, levels: [1], palette: [4], dress: "saltreach", decor: 2.5 },
-    { name: "Netmakers' Village", at: { col: 70, row: 70 }, levels: [1], palette: [2], dress: "harbour", decor: 2 },
-    { name: "The Militia Fort", at: { col: 42, row: 70 }, levels: [1, 2, 3], palette: [1], dress: "harbour", decor: 1.5 },
-    { name: "Pirate Cove", at: { col: 26, row: 46 }, levels: [1], palette: [5], dress: "saltreach", decor: 2 },
-    { name: "Lighthouse Rock", at: { col: 14, row: 31 }, levels: [1, 2, 3, 4], palette: [4], dress: "crags", decor: 2 },
-    { name: "The Drowned Shrine", at: { col: 58, row: 36 }, levels: [1], palette: [5], dress: "saltreach", decor: 1.5 },
-    { name: "The Reef", at: { col: 59, row: 8 }, levels: [1], palette: [4], dress: "saltreach", decor: 2 },
+    { name: "Old Bridge Landing", at: { col: 80, row: 19 }, levels: [1], palette: [3], dress: "harbour", decor: 2 },
+    { name: "The Fish Market", at: { col: 66, row: 4 }, levels: [1], palette: [5], dress: "saltreach", decor: 2 },
+    { name: "The Saltworks", at: { col: 68, row: 30 }, levels: [1], palette: [1], dress: "harbour", decor: 1.5 },
+    { name: "The Net Lofts", at: { col: 52, row: 13 }, levels: [1], palette: [2], dress: "harbour", decor: 2 },
+    { name: "Netmakers' Village", at: { col: 46, row: 38 }, levels: [1], palette: [3], dress: "harbour", decor: 2 },
+    { name: "Gull Rock", at: { col: 30, row: 17 }, levels: [1], palette: [4], dress: "saltreach", decor: 2.5 },
+    { name: "Pirate Cove", at: { col: 10, row: 33 }, levels: [1], palette: [5], dress: "saltreach", decor: 2 },
+    { name: "Lighthouse Rock", at: { col: 12, row: 15 }, levels: [1, 2, 3], palette: [4], dress: "crags", decor: 2 },
+    { name: "The Militia Fort", at: { col: 22, row: 47 }, levels: [1, 2, 3], palette: [1], dress: "harbour", decor: 1.5 },
+    { name: "Smugglers' Steps", at: { col: 40, row: 51 }, levels: [1], palette: [2], dress: "saltreach", decor: 2 },
+    { name: "The Shingle Spit", at: { col: 58, row: 52 }, levels: [1], palette: [4], dress: "saltreach", decor: 2.5 },
+    { name: "The Eel Pens", at: { col: 78, row: 43 }, levels: [1], palette: [2], dress: "fen", decor: 2 },
   ];
-  const tier = t.finish({}, [{ col: 112, row: 18 }]);
-  return { ...tier, area: "saltreach", entry: { col: 112, row: 18 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [] };
+  const tier = t.finish({}, [{ col: 86, row: 14 }]);
+  return { ...tier, area: "saltreach", entry: { col: 86, row: 14 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [] };
 }
 
 const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour, emberwood, crags, greyfall, gilded, steps, undercroft, deeps, hollow, barrowmoor, fen, saltreach };

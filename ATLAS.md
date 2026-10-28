@@ -326,26 +326,20 @@ the atlas, focused on it.
   its bailey, the Gilded Reach plazas with tree avenues (`avenue()`) and
   one hanging garden, the Steps bare isles with lone trees, Barrowmoor an
   open heath of barrows and thickets.
-- **Lizard Fen** is a wheel, unlike any other area: a ring of reed and
-  mud round a great black basin, the Chapel Mound on its isle at the hub
-  (two steps, the purple chapel, the sinkhole down to the Hollow), six
-  duckboard spokes out across hummocks with a stilt hut on each to the
-  rim, where the districts sit: Causeway Landing, the Reedbeds, the
-  Barrow Rise climbing to the moor, the Eel Shallows, the Drowned
-  Village and the Lizard Warren's mound.
-- **Saltreach** is the twelfth and last, and unlike any other area a
-  crescent of isles round an open lagoon: Old Bridge Landing where the
-  road comes in from the Harbour, the fenced Saltworks, the Shingle Spit
-  the Fen Causeway runs out along, Netmakers' Village, the yellow
-  militia's Fort on its two-step crown, Pirate Cove round its hidden cove,
-  Lighthouse Rock at the tip, and the Reef, a broken ring of islets across
-  the lagoon's mouth, with the Drowned Shrine on its islet in the middle.
-  On an isle map, lowland goes only to a district whose seed is on the
-  same isle (bridges do not join isles for this), so the sounds are the
-  colour borders; a bridge takes the colour of the land at each end. A
-  district's seed must stand on its own isle, or the isle takes a
-  neighbour's colour. An exit must not sit on a map's last row, which the
-  builder never writes.
+- **Lizard Fen** is a spiral: one narrow causeway of reed coiling two
+  turns inward through black water to the Chapel Mound and the sinkhole
+  at its heart, in from Saltreach at the west, the moor's path off the
+  north. Its districts follow one another along the coil (Causeway
+  Landing, the Barrow Rise, the Eel Shallows, the Drowned Village, the
+  Lizard Warren, the Reedbeds), so colour is set by position along the
+  coil, not by distance, which would bleed across the water between turns.
+- **Saltreach** is a stilt town: no land to speak of, a web of a dozen
+  small timber platforms on the shallows knotted by boardwalks into short
+  ways and loops, each platform a room with one job (the toll landing,
+  the fish market, the saltworks, the net lofts, the village, Gull Rock,
+  Pirate Cove, the raised Lighthouse Rock and Militia Fort, Smugglers'
+  Steps, the eel pens, the Shingle Spit out to the Fen). Compact, not an
+  open world: the boardwalks are the only ways.
 - **Barrowmoor is a tableland**, unlike any other area: one great plateau
   ringed by cliffs over a skirt of bog (the Moor Gate, the Grey Road, the
   Fen Path), the Heath across its top in dead thickets, lesser barrows and
