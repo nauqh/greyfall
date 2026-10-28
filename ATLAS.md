@@ -334,17 +334,19 @@ the atlas, focused on it.
   Black Pools, the Eel Shallows, and the Barrow Rise climbing to the moor.
   A duckboard must reach shore to shore: one that stops in a pool is a
   sealed strip the engine fills with trees.
-- **Saltreach** is the twelfth and last: fishing isles packed to the
-  frame's edge, split by narrow sounds and joined by bridges, after
-  Tortuga and the Ringed City's docks. Old Bridge Landing where the road
-  comes in from the Harbour, the yellow militia's Fort on the north isle's
-  crown, Lighthouse Rock climbing three steps to its light, Pirate Cove
-  with the thieves' tower in the water, Netmakers' Village round its
-  harbour, the fenced Saltworks, and the Shingle Spit the Fen Causeway
-  runs out along. On an isle map, lowland goes only to a district whose
-  seed is on the same isle (bridges do not join isles for this), so the
-  sounds are the colour borders; a bridge takes the colour of the land at
-  each of its ends.
+- **Saltreach** is the twelfth and last, and unlike any other area a
+  crescent of isles round an open lagoon: Old Bridge Landing where the
+  road comes in from the Harbour, the fenced Saltworks, the Shingle Spit
+  the Fen Causeway runs out along, Netmakers' Village, the yellow
+  militia's Fort on its two-step crown, Pirate Cove round its hidden cove,
+  Lighthouse Rock at the tip, and the Reef, a broken ring of islets across
+  the lagoon's mouth, with the Drowned Shrine on its islet in the middle.
+  On an isle map, lowland goes only to a district whose seed is on the
+  same isle (bridges do not join isles for this), so the sounds are the
+  colour borders; a bridge takes the colour of the land at each end. A
+  district's seed must stand on its own isle, or the isle takes a
+  neighbour's colour. An exit must not sit on a map's last row, which the
+  builder never writes.
 - **Area maps draw no roads.** A road there is open ground in the
   district's own colour: the engine's roads still keep woods and buildings
   off it, but a road tile's other colour read as a stripe painted across
