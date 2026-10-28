@@ -537,24 +537,18 @@ function emberwood(): AreaMap {
   river(t, [[2, 42], [18, 38], [34, 37], [50, 40], [66, 38], [82, 32], [98, 34], [110, 30]], 3);
   t.pond(10, 57, 7, 4);
 
-  // Warren Hill: the goblins' hill, its warrens stacked up three heights.
-  t.relief({ area: "emberwood", at: { col: 25, row: 23 }, rx: 12, ry: 10, levels: 3, core: { at: { col: 28, row: 29 }, r: 1.6 } });
+  // Landforms, each its own district's ground. Warren Hill: the goblins' hill, its warrens stacked in two heights.
+  t.shape(2, 25, 23, 12, 10, 0.45, "Warren Hill");
+  t.shape(3, 25, 20, 7, 5, 0.4, "Warren Hill");
   // Smoke Bluff across the river from it, and the Treetop Walk between them over the water.
-  t.relief({ area: "emberwood", at: { col: 26, row: 46 }, rx: 8, ry: 5, levels: 2, core: { at: { col: 28, row: 43 }, r: 1.8 } });
+  t.shape(2, 26, 46, 8, 5, 0.4, "Smoke Bluff");
   const decks = t.span(2, 27, 32, 2, 10);
-
-  // Troll's Hollow: the biggest clearing, walled by a ring of rock, one gap in its south side.
-  t.block(2, 52, 6, 22, 3);
-  t.block(2, 52, 6, 3, 18);
-  t.block(2, 71, 6, 3, 18);
-  t.block(2, 52, 21, 9, 3);
-  t.block(2, 65, 21, 9, 3);
-  t.stair(2, 51, 23, "L");
-  t.stair(2, 74, 23, "R");
-
-  // Crag Foot: the rock rising in the north-east, and an ash mound in the Burn.
-  t.relief({ area: "emberwood", at: { col: 92, row: 12 }, rx: 11, ry: 7, levels: 3 });
-  t.relief({ area: "emberwood", at: { col: 80, row: 58 }, rx: 7, ry: 5, levels: 2 });
+  // Troll's Hollow: a raised arena of ash in the north wood, the troll's ground.
+  t.shape(2, 63, 14, 11, 8, 0.35, "Troll's Hollow");
+  // Crag Foot: the rock rising in the north-east, two steps toward the Crags; an ash mound in the Burn.
+  t.shape(2, 92, 14, 11, 7, 0.45, "Crag Foot");
+  t.shape(3, 93, 11, 6, 4, 0.4, "Crag Foot");
+  t.shape(2, 80, 58, 7, 5, 0.4, "The Burn");
 
   // Woods: the Old Pines in the west, the north wood, copses in the east.
   t.grove(16, 52, 13, 13, 0.75);
@@ -644,14 +638,15 @@ function emberwood(): AreaMap {
   for (const [c, r] of [[53, 7], [73, 7], [52, 23], [73, 23]] as const) prop("skullSpike", c, r);
 
   const districts: District[] = [
-    { name: "The Palisade", at: { col: 40, row: 61 }, palette: [3, 2], dress: "harbour" },
-    { name: "Old Pines", at: { col: 13, row: 50 }, palette: [2, 3], dress: "emberwood" },
-    { name: "Smoke Bluff", at: { col: 26, row: 41 }, palette: [3, 4], dress: "emberwood" },
-    { name: "Warren Hill", at: { col: 24, row: 17 }, palette: [4, 5, 1], dress: "emberwood" },
-    { name: "Cinder Ford", at: { col: 46, row: 32 }, palette: [3, 2], dress: "fen" },
-    { name: "Troll's Hollow", at: { col: 63, row: 19 }, palette: [4, 1], dress: "barrowmoor", box: { x: 52, y: 6, w: 22, h: 18 } },
-    { name: "The Burn", at: { col: 72, row: 54 }, palette: [4, 1], dress: "greyfall" },
-    { name: "Crag Foot", at: { col: 94, row: 22 }, palette: [2, 3, 1], dress: "crags" },
+    // One colour a district: green woods, the goblins' dusty hills, the river's teal ford, the troll's ash.
+    { name: "The Palisade", at: { col: 40, row: 61 }, levels: [1], palette: [3], dress: "harbour", decor: 2 },
+    { name: "Old Pines", at: { col: 13, row: 50 }, levels: [1], palette: [2], dress: "emberwood", decor: 1.5 },
+    { name: "Smoke Bluff", at: { col: 26, row: 41 }, levels: [2], palette: [4], dress: "emberwood", decor: 2 },
+    { name: "Warren Hill", at: { col: 24, row: 17 }, levels: [2, 3], palette: [4], dress: "emberwood", decor: 2 },
+    { name: "Cinder Ford", at: { col: 46, row: 32 }, levels: [1], palette: [5], dress: "fen", decor: 2 },
+    { name: "Troll's Hollow", at: { col: 63, row: 19 }, levels: [2], palette: [1], dress: "barrowmoor", decor: 2 },
+    { name: "The Burn", at: { col: 72, row: 54 }, levels: [1, 2], palette: [4], dress: "greyfall", decor: 2 },
+    { name: "Crag Foot", at: { col: 94, row: 22 }, levels: [1, 2, 3], palette: [2], dress: "crags", decor: 2 },
   ];
   const rooms = districts.map((d) => ({ at: d.at, r: d.clearing ?? 6 }));
   const tier = t.finish({}, [{ col: 40, row: 64 }], maze(t, rng, rooms));
@@ -659,7 +654,7 @@ function emberwood(): AreaMap {
     { to: "harbour", name: "Ember Gate", kind: "gate", at: { col: 40, row: 70 } },
     { to: "crags", name: "Crag Stair", kind: "open", at: { col: 126, row: 18 } },
   ];
-  return { ...tier, area: "emberwood", entry: { col: 40, row: 64 }, exits, districts, districtAt: districtGrid(tier, districts), decks };
+  return { ...tier, area: "emberwood", entry: { col: 40, row: 64 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks };
 }
 
 const MOUNTAIN = [2, 3, 4, 4, 1] as const;
