@@ -285,6 +285,12 @@ the atlas, focused on it.
   trees. A tunnel must run from well inside one cavern to well inside the
   next: one ending at a ragged rim joins nothing, and everything past it
   goes to wall.
+  Barrow Deeps is the eighth, a tall shaft of tombs after the Catacombs
+  and the Tomb of Giants: the Barrow Cave lift lands on the crown of the
+  Great Barrow, a tomb in two steps, and every way from it goes down, past
+  the Ossuary Galleries, the Drowned Graves, the Robbers' Camp and the
+  Collapsed Hall, to the Weaver's Web, a pillared vault where the Weaver
+  waits, and the Sinking Stair on toward the Hollow.
 - **Each area has its own frame and silhouette:** the Harbour taller,
   with Lighthouse Point curling round the bay; Emberwood a long valley
   with the sea biting its corners; the Crags tall, with the Southern Spur

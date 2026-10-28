@@ -1224,7 +1224,116 @@ function undercroft(): AreaMap {
   return { ...tier, area: "undercroft", entry: { col: 30, row: 24 }, exits, districts, districtAt: districtGrid(tier, districts), decks: [] };
 }
 
-const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour, emberwood, crags, greyfall, gilded, steps, undercroft };
+function deeps(): AreaMap {
+  const rng = makeRng("area:deeps");
+  const t = tierBuilder("below", rng, { cols: 96, rows: 88 });
+  const { prop, who } = t;
+  const purple = { color: "purple" } as const;
+
+  // The tombs under the moor, after the Catacombs and the Tomb of Giants: a tall shaft that goes down.
+  // The Barrow Cave lift lands on top of the Great Barrow; every way from it leads deeper, to the Weaver.
+  t.ground("deeps", 20, 3, 58, 33);
+  for (const [x, y, rx, ry] of [[12, 30, 9, 7], [80, 30, 11, 9], [48, 48, 14, 7], [16, 62, 10, 8], [80, 54, 10, 8], [48, 68, 17, 11]] as const) t.blob("deeps", x, y, rx, ry);
+  // Tunnels, each from the middle of one cavern to the middle of the next.
+  const tunnels = [[[12, 30], [24, 32]], [[48, 34], [48, 47]], [[68, 32], [80, 30]], [[44, 48], [16, 62]], [[80, 32], [80, 54]], [[48, 50], [48, 66]], [[80, 54], [56, 68]], [[16, 62], [40, 70]]] as const;
+  for (const [a, b] of tunnels) t.bridge({ col: a[0], row: a[1] }, { col: b[0], row: b[1] }, 3);
+  t.bridge({ col: 6, row: 30 }, { col: 1, row: 30 }, 3);
+  t.bridge({ col: 48, row: 76 }, { col: 48, row: 86 }, 3);
+
+  // The Great Barrow: a tomb in three steps, the lift on its crown, a stair down each side of each step.
+  t.block(2, 30, 6, 36, 24);
+  t.stair(2, 29, 29, "L");
+  t.stair(2, 66, 29, "R");
+  t.block(3, 36, 6, 24, 14);
+  t.stair(3, 35, 19, "L");
+  t.stair(3, 60, 19, "R");
+
+  // The Drowned Graves: black water over the sunken dead; the Weaver's hall pillared with webbed rock.
+  lake(t, 57, 48, 4, 3);
+  for (const [x, y] of [[40, 62], [55, 62], [38, 72], [57, 72]] as const) t.pillar(x, y, 2, 2);
+
+  // Roads: down the barrow's stairs and on through the tombs to the Sinking Stair.
+  t.road([1, 30], [24, 32], [29, 31]);
+  t.road([36, 22], [48, 22]);
+  t.road([48, 34], [48, 50], [48, 86]);
+
+  // Cistern Mouth: where the Undercroft's tunnel comes up, a fire at the end of it.
+  t.fires.push({ col: 10, row: 32 });
+  for (const [c, r] of [[14, 27], [8, 34]] as const) prop("bones", c, r);
+  who("rubberDuck", 15, 33);
+
+  // The Great Barrow: the old kings laid in rows, their guard still standing.
+  t.fires.push({ col: 44, row: 10 });
+  for (const [c, r] of [[39, 9], [43, 14], [53, 14], [57, 9]] as const) prop("skullSpike", c, r);
+  prop("monastery", 52, 9, purple);
+  for (const [c, r] of [[32, 24], [36, 26], [42, 26], [54, 26], [60, 26], [64, 24]] as const) prop("skullSpike", c, r);
+  for (const [c, r] of [[34, 10], [62, 12], [46, 24]] as const) prop("bones", c, r);
+  crowd(t, rng, "skull", { col: 48, row: 25 }, 4, 6);
+  who("skullGuard", 40, 17);
+  who("skullGuard", 56, 17, { flip: true });
+
+  // The Barrow Ring: the lowland round the barrow, dead roots through the roof.
+  for (const [c, r] of [[24, 8], [72, 10], [24, 20], [74, 22]] as const) prop("deadTree", c, r, { scale: 0.7 });
+  who("bat", 26, 14);
+  who("bat", 70, 16);
+
+  // The Ossuary Galleries: the bones of the common dead, stacked; their keepers.
+  for (const [c, r] of [[74, 26], [78, 24], [84, 26], [86, 32], [76, 34]] as const) prop("skullSpike", c, r);
+  for (const [c, r] of [[80, 28], [82, 34], [74, 30]] as const) prop("bones", c, r);
+  crowd(t, rng, "skull", { col: 80, row: 30 }, 3, 4);
+  who("skullGuard", 84, 30);
+
+  // The Drowned Graves: the shrine on the shore, snakes in the water's edge.
+  prop("tower", 42, 46, purple);
+  who("shaman", 44, 49);
+  for (const [c, r] of [[52, 46], [54, 51]] as const) who("snake", c, r);
+  who("turtle", 58, 50);
+
+  // Robbers' Camp: grave-robbers who came down the cave, their haul, and their fire.
+  t.fires.push({ col: 16, row: 62 });
+  for (const [c, r] of [[12, 60], [20, 64], [14, 66]] as const) prop("goldStone", c, r);
+  prop("woodPile", 19, 59);
+  prop("tools", 12, 64);
+  prop("meat", 20, 61);
+  crowd(t, rng, "thief", { col: 16, row: 63 }, 3, 3);
+
+  // The Collapsed Hall: the roof come down, and what nests in the rubble.
+  prop("cave", 79, 56);
+  crowd(t, rng, "gnoll", { col: 80, row: 59 }, 3, 3);
+  who("lizard", 76, 58);
+
+  // The Weaver's Web: the deepest vault, wrapped bodies and bones, its brood, the Weaver at the heart.
+  for (const [c, r] of [[44, 66], [52, 66], [42, 70], [54, 72], [48, 62], [46, 74]] as const) prop("bones", c, r);
+  for (const [c, r] of [[36, 66], [60, 66]] as const) prop("deadTree", c, r, { scale: 0.7 });
+  crowd(t, rng, "spider", { col: 48, row: 68 }, 5, 7);
+  t.bosses.push({ name: "The Weaver", area: "deeps", col: 48, row: 68 });
+  who("spider", 48, 68, { scale: 2.2 });
+
+  // The Sinking Stair: steps cut on down toward the Hollow, a skull at the top.
+  prop("skullSpike", 46, 80);
+  prop("skullSpike", 50, 80);
+
+  const exits: AreaExit[] = [
+    { to: "undercroft", name: "Cistern Run", kind: "open", at: { col: 1, row: 30 } },
+    { to: "barrowmoor", name: "Barrow Cave", kind: "lift", at: { col: 48, row: 8 } },
+    { to: "hollow", name: "Sinking Stair", kind: "open", at: { col: 48, row: 86 } },
+  ];
+  const districts: District[] = [
+    { name: "The Great Barrow", at: { col: 48, row: 32 }, palette: [4, 5, 3], dress: "deeps", box: { x: 30, y: 6, w: 36, h: 24 } },
+    { name: "The Barrow Ring", at: { col: 24, row: 14 }, palette: [5, 4], dress: "deeps", clearing: 5 },
+    { name: "Cistern Mouth", at: { col: 12, row: 36 }, palette: [5, 3], dress: "undercroft", clearing: 5 },
+    { name: "Ossuary Galleries", at: { col: 80, row: 38 }, palette: [4, 1], dress: "deeps", clearing: 6 },
+    { name: "The Drowned Graves", at: { col: 44, row: 54 }, palette: [5, 4], dress: "deeps", clearing: 6 },
+    { name: "Robbers' Camp", at: { col: 16, row: 69 }, palette: [4, 1], dress: "undercroft", clearing: 5 },
+    { name: "The Collapsed Hall", at: { col: 80, row: 61 }, palette: [4, 5], dress: "deeps", clearing: 5 },
+    { name: "The Weaver's Web", at: { col: 48, row: 78 }, palette: [5, 4], dress: "deeps", clearing: 9 },
+  ];
+  const rooms = districts.filter((d) => !d.box).map((d) => ({ at: d.at, r: d.clearing ?? 6 }));
+  const tier = stone(t.finish({}, [{ col: 12, row: 30 }], maze(t, rng, rooms)));
+  return { ...tier, area: "deeps", entry: { col: 12, row: 30 }, exits, districts, districtAt: districtGrid(tier, districts), decks: [] };
+}
+
+const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour, emberwood, crags, greyfall, gilded, steps, undercroft, deeps };
 
 /** The areas that have a map of their own so far. */
 export const MAPPED_AREAS = Object.keys(BUILT) as AreaId[];
