@@ -386,11 +386,18 @@ the atlas, focused on it.
   round it, so the noise in the borders leaves no islands. `districtAt` is base-36, read with `districtOf()`.
 - **A district is one colour.** A district's `palette` can be a single
   tileset colour for all its heights; the Harbour's districts each are, in
-  the atlas's family (green town, citadel and docks, gold fields, fresh
-  woods, dusty Mine Hills, teal Moor Watch), and district borders are
+  the atlas's family (an olive lower town climbing to a gold citadel,
+  fresh-green fields), and district borders are
   broad and gentle so the colours meet in curves, not a patchwork. A
   district's `decor` thickens its bushes and rocks, for the atlas's
   texture in the grass.
+- **Each height a shade lighter.** `groundColours()` paints an area map:
+  each shelf is at least one shade lighter than the ground just below it
+  (teal, olive, green, fresh green, gold, darkest to lightest), so every
+  cliff reads as a step up; only gold over gold is allowed, at the
+  Harbour's Keep and the Crags' summit, five heights with no teal lowland
+  (teal ground reads as the sea). Palettes start dark enough to climb, so
+  the lift rarely changes a tile; a test holds every area to it.
 - **Tinker Crags is a mountain, not a pyramid:** five reliefs of their own
   shapes grown into each other (the summit massif, a broad west shoulder
   where Old Bamboo waits, a long thin east ridge, a squat north crag with

@@ -234,6 +234,63 @@ function river(t: Builder, points: readonly (readonly [number, number])[], width
   }
 }
 
+/** Tileset colours by lightness, darkest first: teal, olive, green, fresh green, gold. */
+const LIGHT: Record<number, number> = { 5: 0, 4: 1, 3: 2, 2: 3, 1: 4 };
+const SHADES = [5, 4, 3, 2, 1];
+const heightOf = (g: string): number => ("5()".includes(g) ? 5 : "4{}".includes(g) ? 4 : "^[]".includes(g) ? 3 : "#<>".includes(g) ? 2 : g === "~" ? 0 : 1);
+
+/**
+ * The tileset colour of every tile of an area map: its district's colour at its height, except that ground
+ * reads lighter as it climbs. Each shelf (a district's ground at one height) resolved lowest first is at least
+ * a shade lighter than any lower ground it stands over, gold being the lightest.
+ */
+export function groundColours(m: AreaMap): (number | null)[][] {
+  const rows = m.island.rows;
+  const [W, H] = [rows[0]!.length, rows.length];
+  const out: (number | null)[][] = rows.map((l, r) =>
+    [...l].map((g, c) => {
+      const d = districtOf(m, c, r);
+      return d ? d.palette[Math.min(d.palette.length - 1, Math.max(1, heightOf(g)) - 1)]! : null;
+    }),
+  );
+  const seen = rows.map((l) => [...l].map(() => false));
+  const shelves: { lv: number; tiles: [number, number][] }[] = [];
+  for (let r = 0; r < H; r++) {
+    for (let c = 0; c < W; c++) {
+      if (seen[r]![c] || out[r]![c] === null) continue;
+      const lv = heightOf(rows[r]![c]!);
+      const id = m.districtAt[r]![c];
+      const tiles: [number, number][] = [[c, r]];
+      seen[r]![c] = true;
+      for (let i = 0; i < tiles.length; i++) {
+        const [x, y] = tiles[i]!;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+          const [nx, ny] = [x + dx, y + dy];
+          if (nx < 0 || ny < 0 || nx >= W || ny >= H || seen[ny]![nx] || out[ny]![nx] === null) continue;
+          if (heightOf(rows[ny]![nx]!) !== lv || m.districtAt[ny]![nx] !== id) continue;
+          seen[ny]![nx] = true;
+          tiles.push([nx, ny]);
+        }
+      }
+      shelves.push({ lv, tiles });
+    }
+  }
+  shelves.sort((a, b) => a.lv - b.lv);
+  for (const { lv, tiles } of shelves) {
+    let best = out[tiles[0]![1]]![tiles[0]![0]]!;
+    for (const [x, y] of tiles) {
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+        const n = out[y + dy]?.[x + dx];
+        if (n == null || heightOf(rows[y + dy]![x + dx]!) >= lv) continue;
+        const up = SHADES[Math.min(4, LIGHT[n]! + 1)]!;
+        if (LIGHT[up]! > LIGHT[best]!) best = up;
+      }
+    }
+    for (const [x, y] of tiles) out[y]![x] = best;
+  }
+  return out;
+}
+
 /** The district a tile of an area map belongs to, if any. */
 export function districtOf(m: AreaMap, c: number, r: number): District | undefined {
   const ch = m.districtAt[r]?.[c];
@@ -506,17 +563,17 @@ function harbour(): AreaMap {
   ];
   // One colour a district; a district's heights share it, so the landforms' own cliffs carry the steps.
   const districts: District[] = [
-    { name: "The Keep", at: { col: 58, row: 4 }, levels: [5], palette: [4], dress: "harbour", decor: 1.5 },
-    { name: "The Citadel", at: { col: 58, row: 20 }, levels: [4], palette: [4], dress: "harbour", decor: 1.5 },
+    { name: "The Keep", at: { col: 58, row: 4 }, levels: [5], palette: [1], dress: "harbour", decor: 1.5 },
+    { name: "The Citadel", at: { col: 58, row: 20 }, levels: [4], palette: [1], dress: "harbour", decor: 1.5 },
     { name: "The Upper Town", at: { col: 70, row: 30 }, levels: [3], palette: [2], dress: "harbour", decor: 2 },
     { name: "Old Town", at: { col: 40, row: 40 }, levels: [2], palette: [3], dress: "harbour", decor: 2 },
-    { name: "The Lower Town", at: { col: 56, row: 52 }, levels: [1], palette: [3], dress: "harbour", decor: 2 },
+    { name: "The Lower Town", at: { col: 56, row: 52 }, levels: [1], palette: [4], dress: "harbour", decor: 2 },
     { name: "The Docks", at: { col: 56, row: 75 }, levels: [1], palette: [5], dress: "saltreach", decor: 2 },
-    { name: "West Fields", at: { col: 16, row: 62 }, levels: [1, 2], palette: [1], dress: "harbour", decor: 2.5 },
-    { name: "The Northwood", at: { col: 18, row: 30 }, levels: [1, 2, 3], palette: [2], dress: "emberwood", decor: 1.5, trees: 0.4 },
-    { name: "Mine Hills", at: { col: 96, row: 34 }, levels: [1, 2, 3, 4], palette: [4], dress: "crags", decor: 2.5, trees: 0.06 },
+    { name: "West Fields", at: { col: 16, row: 62 }, levels: [1, 2], palette: [2], dress: "harbour", decor: 2.5 },
+    { name: "The Northwood", at: { col: 18, row: 30 }, levels: [1, 2, 3], palette: [4, 3, 2], dress: "emberwood", decor: 1.5, trees: 0.4 },
+    { name: "Mine Hills", at: { col: 96, row: 34 }, levels: [1, 2, 3, 4], palette: [4, 3, 2, 1], dress: "crags", decor: 2.5, trees: 0.06 },
     { name: "Lighthouse Point", at: { col: 92, row: 77 }, levels: [1], palette: [3], dress: "saltreach", decor: 2 },
-    { name: "Moor Watch", at: { col: 98, row: 66 }, levels: [1, 2, 3], palette: [5], dress: "barrowmoor", decor: 1.5 },
+    { name: "Moor Watch", at: { col: 98, row: 66 }, levels: [1, 2, 3], palette: [4, 3, 2], dress: "barrowmoor", decor: 1.5 },
   ];
   const tier = t.finish({}, [{ col: 56, row: 46 }]);
   return { ...tier, area: "harbour", entry: { col: 56, row: 46 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [] };
@@ -640,13 +697,13 @@ function emberwood(): AreaMap {
   const districts: District[] = [
     // One colour a district: green woods, the goblins' dusty hills, the river's teal ford, the troll's ash.
     { name: "The Palisade", at: { col: 40, row: 61 }, levels: [1], palette: [3], dress: "harbour", decor: 2 },
-    { name: "Old Pines", at: { col: 13, row: 50 }, levels: [1], palette: [2], dress: "emberwood", decor: 1.5 },
-    { name: "Smoke Bluff", at: { col: 26, row: 41 }, levels: [2], palette: [4], dress: "emberwood", decor: 2 },
-    { name: "Warren Hill", at: { col: 24, row: 17 }, levels: [2, 3], palette: [4], dress: "emberwood", decor: 2 },
+    { name: "Old Pines", at: { col: 13, row: 50 }, levels: [1], palette: [4], dress: "emberwood", decor: 1.5 },
+    { name: "Smoke Bluff", at: { col: 26, row: 41 }, levels: [2], palette: [1], dress: "emberwood", decor: 2 },
+    { name: "Warren Hill", at: { col: 24, row: 17 }, levels: [2, 3], palette: [4, 3, 2], dress: "emberwood", decor: 2 },
     { name: "Cinder Ford", at: { col: 46, row: 32 }, levels: [1], palette: [5], dress: "fen", decor: 2 },
     { name: "Troll's Hollow", at: { col: 63, row: 19 }, levels: [2], palette: [1], dress: "barrowmoor", decor: 2 },
     { name: "The Burn", at: { col: 72, row: 54 }, levels: [1, 2], palette: [4], dress: "greyfall", decor: 2 },
-    { name: "Crag Foot", at: { col: 94, row: 22 }, levels: [1, 2, 3], palette: [2], dress: "crags", decor: 2 },
+    { name: "Crag Foot", at: { col: 94, row: 22 }, levels: [1, 2, 3], palette: [3], dress: "crags", decor: 2 },
   ];
   const rooms = districts.map((d) => ({ at: d.at, r: d.clearing ?? 6 }));
   const tier = t.finish({}, [{ col: 40, row: 64 }], maze(t, rng, rooms));
@@ -657,7 +714,7 @@ function emberwood(): AreaMap {
   return { ...tier, area: "emberwood", entry: { col: 40, row: 64 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks };
 }
 
-const MOUNTAIN = [2, 3, 4, 4, 1] as const;
+const MOUNTAIN = [4, 3, 2, 1, 1] as const;
 
 function crags(): AreaMap {
   const rng = makeRng("area:crags");
@@ -771,9 +828,9 @@ function crags(): AreaMap {
     { name: "Tinker Peak", at: { col: 74, row: 11 }, palette: MOUNTAIN, dress: "crags", decor: 2 },
     { name: "The Climb", at: { col: 68, row: 34 }, palette: MOUNTAIN, dress: "crags", decor: 3 },
     { name: "The East Ridge", at: { col: 93, row: 30 }, palette: MOUNTAIN, dress: "crags", decor: 3 },
-    { name: "Crag Gate", at: { col: 8, row: 48 }, palette: [2], dress: "crags", decor: 2 },
-    { name: "Bamboo Grove", at: { col: 20, row: 22 }, palette: [3], dress: "emberwood", decor: 2, clearing: 7 },
-    { name: "Tinker Town", at: { col: 48, row: 63 }, palette: [2], dress: "harbour", decor: 2, clearing: 9 },
+    { name: "Crag Gate", at: { col: 8, row: 48 }, palette: [4], dress: "crags", decor: 2 },
+    { name: "Bamboo Grove", at: { col: 20, row: 22 }, palette: [4, 3, 2], dress: "emberwood", decor: 2, clearing: 7 },
+    { name: "Tinker Town", at: { col: 48, row: 63 }, palette: [4, 3, 2], dress: "harbour", decor: 2, clearing: 9 },
     { name: "Foothills", at: { col: 82, row: 63 }, palette: [4], dress: "crags", decor: 2.5 },
     { name: "The Terraces", at: { col: 58, row: 79 }, palette: [1], dress: "harbour", decor: 1.5 },
     { name: "Windward Shore", at: { col: 104, row: 47 }, palette: [5], dress: "saltreach", decor: 2 },
@@ -957,15 +1014,15 @@ function greyfall(): AreaMap {
   ];
   // The rock's tiers alternate stone colours so each step reads; the marsh below in its own.
   const districts: District[] = [
-    { name: "The Keep", at: { col: 79, row: 8 }, levels: [5], palette: [4], dress: "greyfall", decor: 1.5 },
-    { name: "The Warlord's Hall", at: { col: 92, row: 22 }, levels: [4], palette: [5], dress: "greyfall", decor: 1.5 },
-    { name: "The High City", at: { col: 64, row: 34 }, levels: [3], palette: [4], dress: "greyfall", decor: 2 },
-    { name: "The Lower City", at: { col: 96, row: 48 }, levels: [2], palette: [5], dress: "greyfall", decor: 2 },
-    { name: "Rotfield", at: { col: 34, row: 30 }, levels: [1, 2], palette: [3], dress: "greyfall", decor: 2.5 },
-    { name: "The Crater", at: { col: 37, row: 62 }, levels: [1], palette: [2], dress: "barrowmoor", decor: 2 },
-    { name: "Ruined Chapel", at: { col: 38, row: 18 }, levels: [1], palette: [2], dress: "barrowmoor", decor: 2 },
-    { name: "Gallows Yard", at: { col: 70, row: 64 }, levels: [1], palette: [1], dress: "greyfall", decor: 2 },
-    { name: "The Ashen Approach", at: { col: 12, row: 52 }, levels: [1, 2], palette: [1], dress: "barrowmoor", decor: 2.5 },
+    { name: "The Keep", at: { col: 79, row: 8 }, levels: [5], palette: [1], dress: "greyfall", decor: 1.5 },
+    { name: "The Warlord's Hall", at: { col: 92, row: 22 }, levels: [4], palette: [2], dress: "greyfall", decor: 1.5 },
+    { name: "The High City", at: { col: 64, row: 34 }, levels: [3], palette: [3], dress: "greyfall", decor: 2 },
+    { name: "The Lower City", at: { col: 96, row: 48 }, levels: [2], palette: [5, 4], dress: "greyfall", decor: 2 },
+    { name: "Rotfield", at: { col: 34, row: 30 }, levels: [1, 2], palette: [4, 3], dress: "greyfall", decor: 2.5 },
+    { name: "The Crater", at: { col: 37, row: 62 }, levels: [1], palette: [5], dress: "barrowmoor", decor: 2 },
+    { name: "Ruined Chapel", at: { col: 38, row: 18 }, levels: [1], palette: [5], dress: "barrowmoor", decor: 2 },
+    { name: "Gallows Yard", at: { col: 70, row: 64 }, levels: [1], palette: [5], dress: "greyfall", decor: 2 },
+    { name: "The Ashen Approach", at: { col: 12, row: 52 }, levels: [1, 2], palette: [5, 4], dress: "barrowmoor", decor: 2.5 },
   ];
   // A castle, not a maze: open courts and streets, only clumps of dead wood in the bailey and before the gate.
   for (const [x, y, rx, ry, d] of [[40, 30, 5, 7, 0.35], [10, 52, 6, 6, 0.3], [44, 18, 4, 3, 0.3], [92, 56, 7, 4, 0.3], [26, 46, 3, 4, 0.4]] as const) t.grove(x, y, rx, ry, d);
@@ -1082,7 +1139,7 @@ function gilded(): AreaMap {
   ];
   const districts: District[] = [
     // The Sun Steps' tiers share a gold ramp to the white-gold summit; the throne isle is the warlord's black-teal.
-    { name: "The Sun Steps", at: { col: 64, row: 48 }, levels: [1, 2, 3, 4], palette: [1, 1, 2, 4], dress: "gilded", decor: 2 },
+    { name: "The Sun Steps", at: { col: 64, row: 48 }, levels: [1, 2, 3, 4], palette: [4, 3, 2, 1], dress: "gilded", decor: 2 },
     { name: "The Throne Isle", at: { col: 98, row: 43 }, levels: [1, 2], palette: [5], dress: "greyfall", decor: 2 },
     { name: "Cloud Landing", at: { col: 12, row: 40 }, palette: [2, 1], dress: "gilded", clearing: 4 },
     { name: "The Gold Market", at: { col: 32, row: 34 }, palette: [1, 2], dress: "gilded", clearing: 7 },
@@ -1198,9 +1255,9 @@ function steps(): AreaMap {
   ];
   const districts: District[] = [
     // One colour an isle; the isles step from gold at the pier down to the Harbour's green.
-    { name: "The Broken Stair", at: { col: 80, row: 30 }, levels: [1, 2, 3], palette: [4], dress: "crags", decor: 2.5 },
-    { name: "Windward Rest", at: { col: 58, row: 8 }, levels: [1, 2, 3], palette: [1], dress: "gilded", decor: 2 },
-    { name: "Cloud Pier", at: { col: 100, row: 21 }, levels: [1], palette: [1], dress: "gilded", decor: 2 },
+    { name: "The Broken Stair", at: { col: 80, row: 30 }, levels: [1, 2, 3], palette: [4, 2, 1], dress: "crags", decor: 2.5 },
+    { name: "Windward Rest", at: { col: 58, row: 8 }, levels: [1, 2, 3], palette: [3, 2, 1], dress: "gilded", decor: 2 },
+    { name: "Cloud Pier", at: { col: 100, row: 21 }, levels: [1], palette: [3], dress: "gilded", decor: 2 },
     { name: "The Hanging Graves", at: { col: 58, row: 47 }, levels: [1], palette: [5], dress: "barrowmoor", decor: 2.5 },
     { name: "The Bell Isle", at: { col: 36, row: 39 }, levels: [1, 2], palette: [3], dress: "harbour", decor: 2 },
     { name: "Watch Isle", at: { col: 14, row: 52 }, levels: [1], palette: [2], dress: "harbour", decor: 2 },
@@ -1299,7 +1356,7 @@ function undercroft(): AreaMap {
     { name: "Smugglers' Nook", at: { col: 10, row: 5 }, palette: [4, 1], dress: "undercroft" },
     { name: "The Spider Pillars", at: { col: 84, row: 13 }, palette: [4, 5], dress: "undercroft" },
     { name: "The Drowned Chapel", at: { col: 50, row: 55 }, palette: [5, 3], dress: "undercroft" },
-    { name: "The Ossuary", at: { col: 74, row: 68 }, palette: [4, 5], dress: "deeps" },
+    { name: "The Ossuary", at: { col: 74, row: 68 }, palette: [5, 4], dress: "deeps" },
     { name: "The Dig", at: { col: 92, row: 79 }, palette: [4, 1], dress: "undercroft" },
   ];
   const tier = stone(t.finish({}, [{ col: 52, row: 14 }]));
@@ -1387,7 +1444,7 @@ function deeps(): AreaMap {
   ];
   const districts: District[] = [
     { name: "Cistern Mouth", at: { col: 12, row: 29 }, palette: [3, 4], dress: "undercroft" },
-    { name: "The Great Barrow", at: { col: 44, row: 30 }, palette: [1, 4, 5], dress: "deeps" },
+    { name: "The Great Barrow", at: { col: 44, row: 30 }, palette: [3, 2, 1], dress: "deeps" },
     { name: "Ossuary Galleries", at: { col: 66, row: 53 }, palette: [1, 4], dress: "deeps" },
     { name: "The Drowned Graves", at: { col: 24, row: 56 }, palette: [3, 4], dress: "deeps" },
     { name: "Robbers' Camp", at: { col: 8, row: 72 }, palette: [1, 4], dress: "undercroft" },
@@ -1573,14 +1630,14 @@ function barrowmoor(): AreaMap {
   ];
   // The heath one dusky colour, the barrows darker, the skirt of bog green-teal, the King's Barrow gold-brown.
   const districts: District[] = [
-    { name: "The Moor Gate", at: { col: 10, row: 48 }, levels: [1], palette: [3], dress: "harbour", decor: 2 },
+    { name: "The Moor Gate", at: { col: 10, row: 48 }, levels: [1], palette: [5], dress: "harbour", decor: 2 },
     { name: "The Heath", at: { col: 50, row: 46 }, levels: [2], palette: [4], dress: "barrowmoor", decor: 2.5 },
-    { name: "Barrow Field", at: { col: 32, row: 16 }, levels: [3], palette: [5], dress: "barrowmoor", decor: 2 },
-    { name: "Gibbet Hill", at: { col: 40, row: 55 }, levels: [3], palette: [5], dress: "greyfall", decor: 2 },
+    { name: "Barrow Field", at: { col: 32, row: 16 }, levels: [3], palette: [3], dress: "barrowmoor", decor: 2 },
+    { name: "Gibbet Hill", at: { col: 40, row: 55 }, levels: [3], palette: [3], dress: "greyfall", decor: 2 },
     { name: "The Dead Mere", at: { col: 76, row: 52 }, levels: [2], palette: [4], dress: "fen", decor: 2 },
-    { name: "The King's Barrow", at: { col: 64, row: 13 }, levels: [3, 4], palette: [1], dress: "barrowmoor", decor: 1.5 },
+    { name: "The King's Barrow", at: { col: 64, row: 13 }, levels: [3, 4], palette: [2], dress: "barrowmoor", decor: 1.5 },
     { name: "The Grey Road", at: { col: 110, row: 44 }, levels: [1], palette: [5], dress: "greyfall", decor: 2 },
-    { name: "The Fen Path", at: { col: 60, row: 70 }, levels: [1], palette: [3], dress: "fen", decor: 2 },
+    { name: "The Fen Path", at: { col: 60, row: 70 }, levels: [1], palette: [5], dress: "fen", decor: 2 },
   ];
   const tier = t.finish({}, [{ col: 6, row: 40 }]);
   return { ...tier, area: "barrowmoor", entry: { col: 6, row: 40 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [] };
@@ -1719,12 +1776,13 @@ function fen(): AreaMap {
     { to: "barrowmoor", name: "Barrow Path", kind: "open", at: { col: moor.col, row: 1 } },
     { to: "hollow", name: "Fen Sinkhole", kind: "drop", at: { col: cx, row: cy + 4 } },
   ];
+  // Lighter as it climbs: the tileset's teal, olive, green, fresh green and gold, darkest to lightest.
   const districts: District[] = [
-    { name: "Causeway Landing", at: on(0.08), palette: [3], dress: "saltreach", decor: 2.5 },
-    { name: "Eel Shallows", at: on(0.5), palette: [5], dress: "fen", decor: 2.5 },
-    { name: "The Drowned Village", at: on(1.0), palette: [2], dress: "fen", decor: 2.5 },
-    { name: "Lizard Warren", at: on(1.45), palette: [4], dress: "fen", decor: 2.5 },
-    { name: "The Chapel Mound", at: { col: cx, row: cy + 6 }, palette: [1], dress: "fen", decor: 1.5 },
+    { name: "Causeway Landing", at: on(0.08), palette: [5], dress: "saltreach", decor: 2.5 },
+    { name: "Eel Shallows", at: on(0.5), palette: [4], dress: "fen", decor: 2.5 },
+    { name: "The Drowned Village", at: on(1.0), palette: [3], dress: "fen", decor: 2.5 },
+    { name: "Lizard Warren", at: on(1.45), palette: [2], dress: "fen", decor: 2.5 },
+    { name: "The Chapel Mound", at: { col: cx, row: cy + 6 }, palette: [2], dress: "fen", decor: 1.5 },
   ];
   const tier = t.finish({}, [{ col: 6, row: cy }]);
   // Colour follows the tiers: each district one height of the climb.
@@ -1852,7 +1910,7 @@ function saltreach(): AreaMap {
     { name: "Gull Rock", at: { col: 30, row: 17 }, levels: [1], palette: [4], dress: "saltreach", decor: 2.5 },
     { name: "Pirate Cove", at: { col: 10, row: 33 }, levels: [1], palette: [5], dress: "saltreach", decor: 2 },
     { name: "Lighthouse Rock", at: { col: 12, row: 15 }, levels: [1, 2, 3], palette: [4], dress: "crags", decor: 2 },
-    { name: "The Militia Fort", at: { col: 22, row: 47 }, levels: [1, 2, 3], palette: [1], dress: "harbour", decor: 1.5 },
+    { name: "The Militia Fort", at: { col: 22, row: 47 }, levels: [1, 2, 3], palette: [3], dress: "harbour", decor: 1.5 },
     { name: "Smugglers' Steps", at: { col: 40, row: 51 }, levels: [1], palette: [2], dress: "saltreach", decor: 2 },
     { name: "The Shingle Spit", at: { col: 58, row: 52 }, levels: [1], palette: [4], dress: "saltreach", decor: 2.5 },
     { name: "The Eel Pens", at: { col: 78, row: 43 }, levels: [1], palette: [2], dress: "fen", decor: 2 },

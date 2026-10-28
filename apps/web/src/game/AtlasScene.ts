@@ -10,6 +10,7 @@ import {
   TIERS,
   areaMap,
   districtOf,
+  groundColours,
   atlasMap,
   footprint,
   useIsland,
@@ -490,13 +491,10 @@ export class AtlasScene extends Phaser.Scene {
     // other colour read as a stripe painted on. The engine's roads still keep that ground clear.
     const roads = this.local ? new Set<number>() : trailTiles(tier.roads);
     const local = this.local;
+    // An area map's ground reads a shade lighter each height up; the engine works each tile's colour out.
+    const shade = local ? groundColours(local) : null;
     buildMap(this, roads, (c, r, lv) => {
-      if (local) {
-        const d = districtOf(local, c, r);
-        if (!d) return "tilesetC4";
-        // A bridge deck takes its height's colour, the same as the land at either end of it.
-        return `tilesetC${d.palette[Math.min(d.palette.length - 1, lv - 1)]}`;
-      }
+      if (shade) return `tilesetC${shade[r]?.[c] ?? 4}`;
       const ch = tier.areaAt[r]?.[c];
       // The rock of the Underneath, and anything outside an area, in the dustiest green.
       const p = ch && ch !== "-" ? AREAS[AREA_CODE.indexOf(ch)]!.palette : [4, 4, 4];

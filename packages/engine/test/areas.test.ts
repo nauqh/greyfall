@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FLYING, MAPPED_AREAS, SEA_KINDS, WATER_ART, areaMap, castsCliff, cellKey, footprint, isSlope, isWalkable, level, stepsFrom, useIsland, type Cell } from "../src/index.ts";
+import { FLYING, MAPPED_AREAS, groundColours, SEA_KINDS, WATER_ART, areaMap, castsCliff, cellKey, footprint, isSlope, isWalkable, level, stepsFrom, useIsland, type Cell } from "../src/index.ts";
 
 function reach(from: Cell): Set<number> {
   const seen = new Set([cellKey(from)]);
@@ -34,6 +34,21 @@ describe.each(MAPPED_AREAS)("the %s area map", (id) => {
     useIsland(m.island);
     for (const d of m.decks) expect(level(d.col, d.row) >= 2 || isSlope(d.col, d.row), `deck at ${d.col},${d.row}`).toBe(true);
     m.areaAt.forEach((line, r) => [...line].forEach((ch, c) => ch !== "-" && expect(m.districtAt[r]![c], `${c},${r}`).not.toBe("-")));
+  });
+
+  it("reads each height a shade lighter than the ground below", () => {
+    useIsland(m.island);
+    const light: Record<number, number> = { 5: 0, 4: 1, 3: 2, 2: 3, 1: 4 };
+    const g = groundColours(m);
+    g.forEach((line, r) =>
+      line.forEach((a, c) => {
+        for (const [dc, dr] of [[1, 0], [0, 1], [-1, 0], [0, -1]] as const) {
+          const b = g[r + dr]?.[c + dc];
+          if (a == null || b == null || m.island.rows[r]![c] === "%" || level(c, r) <= level(c + dc, r + dr)) continue;
+          expect(light[a]! > light[b]! || a === 1, `${c},${r} colour ${a} over ${b}`).toBe(true);
+        }
+      }),
+    );
   });
 
   it("walks every walker's beat on foot, round the cliffs and by the stairs", () => {
