@@ -131,13 +131,33 @@ function stone(tier: AtlasTier): AtlasTier {
   // Never a face on the ground a building keeps round it, though that ground be woods.
   const kept = new Set(tier.props.flatMap((p) => footprint(p, true).map((c) => `${c.col},${c.row}`)));
   const shut = (c: number, r: number) => "T%~".includes(tier.island.rows[r]?.[c] ?? "%") && !kept.has(`${c},${r}`);
-  const rows = tier.island.rows.map((l, r) => [...l].map((ch, c) => (ch === "T" && shut(c, r + 1) ? "%" : ch)).join(""));
+  // No trees grow down here: the rest of the woods is bare floor.
+  const rows = tier.island.rows.map((l, r) => [...l].map((ch, c) => (ch === "T" ? (shut(c, r + 1) ? "%" : ".") : ch)).join(""));
   return { ...tier, island: { ...tier.island, rows } };
 }
 
 /** A passage through rock along a bending line of points; three wide, as the top row under rock is a cliff face. */
 function tunnel(t: Builder, points: readonly (readonly [number, number])[], width = 3): void {
   for (let i = 1; i < points.length; i++) t.bridge({ col: points[i - 1]![0], row: points[i - 1]![1] }, { col: points[i]![0], row: points[i]![1] }, width);
+}
+
+/** A tunnel with alcoves cut into its walls every few tiles, side to side, the dead laid in some and a torch in one. */
+function passage(t: Builder, rng: Rng, a: AreaId, points: readonly (readonly [number, number])[]): void {
+  tunnel(t, points);
+  let side = rng.next() < 0.5 ? 1 : -1;
+  let lit = false;
+  for (let i = 1; i < points.length; i++) {
+    const [[x0, y0], [x1, y1]] = [points[i - 1]!, points[i]!];
+    const len = Math.hypot(x1 - x0, y1 - y0);
+    const [nx, ny] = [-(y1 - y0) / len, (x1 - x0) / len];
+    for (let d = 4; d < len - 3; d += 6 + Math.floor(rng.next() * 3)) {
+      const [c, r] = [Math.round(x0 + ((x1 - x0) * d) / len + nx * side * 3), Math.round(y0 + ((y1 - y0) * d) / len + ny * side * 3)];
+      t.blob(a, c, r, 2, 2);
+      if (!lit && len > 12 && d > len / 3) (t.fires.push({ col: c, row: r }), (lit = true));
+      else if (rng.next() < 0.6) t.prop(rng.next() < 0.75 ? "bones" : "skullSpike", c, r);
+      side = -side;
+    }
+  }
 }
 
 /** Fallen rock in a chamber: single pillars scattered round its rim, its middle left open. */
@@ -1281,26 +1301,29 @@ function undercroft(): AreaMap {
   for (const [x, y, rx, ry] of chambers) t.blob("undercroft", x, y, rx, ry);
   // Passages: west to the Cisterns and on to the Nook, east to the Pillars, south down to the Chapel,
   // the Pillars on down to the Ossuary, the Ossuary to the Dig, and a long way round from the Cisterns to the Chapel.
-  tunnel(t, [[48, 15], [36, 18], [30, 26], [24, 32]]);
-  tunnel(t, [[14, 32], [12, 24], [10, 14]]);
-  tunnel(t, [[56, 14], [66, 12], [76, 18], [82, 22]]);
-  tunnel(t, [[52, 18], [54, 28], [50, 36], [50, 44]]);
-  tunnel(t, [[86, 26], [90, 38], [82, 48], [76, 56]]);
-  tunnel(t, [[82, 62], [88, 68], [90, 72]]);
-  tunnel(t, [[24, 42], [30, 52], [42, 50], [48, 48]]);
+  for (const way of [
+    [[48, 15], [36, 18], [30, 26], [24, 32]],
+    [[14, 32], [12, 24], [10, 14]],
+    [[56, 14], [66, 12], [76, 18], [82, 22]],
+    [[52, 18], [54, 28], [50, 36], [50, 44]],
+    [[86, 26], [90, 38], [82, 48], [76, 56]],
+    [[82, 62], [88, 68], [90, 72]],
+    [[24, 42], [30, 52], [42, 50], [48, 48]],
+  ] as const) passage(t, rng, "undercroft", way);
   tunnel(t, [[96, 72], [102, 72]], 3);
 
-  // The Cisterns: three black channels with walkways across them.
-  for (const r of [31, 36, 41]) t.pond(10, r, 22, 2);
+  // The Cisterns: three black channels winding across the hall, walkways over them.
+  for (const r of [31, 36, 41]) river(t, [[9, r + 1], [15, r], [21, r + 1], [27, r], [32, r + 1]], 2);
   for (const c of [14, 26]) t.bridge({ col: c, row: 29 }, { col: c, row: 43 });
   // The Spider Pillars: a hall of standing rock.
   for (const [x, y] of [[78, 18], [84, 18], [90, 18], [78, 25], [84, 25], [90, 25]] as const) t.pillar(x, y, 2, 2);
   // The Drowned Chapel: its isle in a sunken pool, a causeway out.
-  lake(t, 50, 48, 6, 3);
-  t.ground("undercroft", 48, 47, 5, 3);
+  lake(t, 50, 48, 8, 4);
+  t.blob("undercroft", 50, 48, 4, 2);
   t.bridge({ col: 50, row: 42 }, { col: 50, row: 47 });
-  // The Ossuary: a raised bone terrace, a stair at each front corner.
-  t.shape(2, 74, 57, 8, 3.5, 0.3, "The Ossuary");
+  // The Ossuary: two lobes of bone heaped against the north wall, a stair down from each.
+  t.shape(2, 70, 56, 5, 3, 0.5, "The Ossuary");
+  t.shape(2, 79, 58, 5, 3, 0.5, "The Ossuary");
   // Fallen rock in the larger chambers.
   rubble(t, rng, 20, 36, 12, 8, 5);
   rubble(t, rng, 74, 58, 13, 8, 6);
@@ -1336,8 +1359,8 @@ function undercroft(): AreaMap {
   prop("goldStone", 44, 48);
 
   // The Ossuary: the Harbour's dead stacked on the terrace, their warden among them.
-  for (const [c, r] of [[68, 55], [72, 55], [76, 55], [80, 55]] as const) prop("skullSpike", c, r);
-  for (const [c, r] of [[70, 57], [78, 57]] as const) prop("bones", c, r);
+  for (const [c, r] of [[68, 55], [72, 54], [78, 57], [81, 58]] as const) prop("skullSpike", c, r);
+  for (const [c, r] of [[70, 57], [79, 59]] as const) prop("bones", c, r);
   crowd(t, rng, "skull", { col: 74, row: 62 }, 3, 4);
   who("skullGuard", 74, 57, { scale: 1.4 });
   t.fires.push({ col: 64, row: 62 });
@@ -1353,11 +1376,11 @@ function undercroft(): AreaMap {
   const districts: District[] = [
     { name: "The Well Bottom", at: { col: 52, row: 7 }, palette: [5, 4], dress: "undercroft" },
     { name: "The Cisterns", at: { col: 20, row: 47 }, palette: [5, 3], dress: "undercroft" },
-    { name: "Smugglers' Nook", at: { col: 10, row: 5 }, palette: [4, 1], dress: "undercroft" },
+    { name: "Smugglers' Nook", at: { col: 10, row: 5 }, palette: [4, 3], dress: "undercroft" },
     { name: "The Spider Pillars", at: { col: 84, row: 13 }, palette: [4, 5], dress: "undercroft" },
     { name: "The Drowned Chapel", at: { col: 50, row: 55 }, palette: [5, 3], dress: "undercroft" },
     { name: "The Ossuary", at: { col: 74, row: 68 }, palette: [5, 4], dress: "deeps" },
-    { name: "The Dig", at: { col: 92, row: 79 }, palette: [4, 1], dress: "undercroft" },
+    { name: "The Dig", at: { col: 92, row: 79 }, palette: [5, 4], dress: "undercroft" },
   ];
   const tier = stone(t.finish({}, [{ col: 52, row: 14 }]));
   return { ...tier, area: "undercroft", entry: { col: 52, row: 14 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [] };
@@ -1374,21 +1397,25 @@ function deeps(): AreaMap {
   const chambers: [number, number, number, number][] = [[12, 22, 6, 4], [44, 16, 18, 10], [66, 40, 8, 10], [24, 46, 11, 7], [8, 64, 6, 5], [62, 62, 8, 6], [38, 78, 14, 9]];
   for (const [x, y, rx, ry] of chambers) t.blob("deeps", x, y, rx, ry);
   tunnel(t, [[8, 22], [1, 22]]);
-  tunnel(t, [[16, 22], [24, 22], [34, 23]]);
-  tunnel(t, [[52, 23], [60, 28], [66, 36]]);
-  tunnel(t, [[38, 23], [32, 32], [26, 42]]);
-  tunnel(t, [[18, 52], [10, 58], [8, 62]]);
-  tunnel(t, [[66, 50], [64, 56], [62, 60]]);
-  tunnel(t, [[26, 52], [30, 64], [34, 72]]);
-  tunnel(t, [[58, 66], [50, 72], [46, 76]]);
+  for (const way of [
+    [[16, 22], [24, 22], [34, 23]],
+    [[52, 23], [60, 28], [66, 36]],
+    [[38, 23], [32, 32], [26, 42]],
+    [[18, 52], [10, 58], [8, 62]],
+    [[66, 50], [64, 56], [62, 60]],
+    [[26, 52], [30, 64], [34, 72]],
+    [[58, 66], [50, 72], [46, 76]],
+  ] as const) passage(t, rng, "deeps", way);
   tunnel(t, [[38, 86], [38, 94]]);
 
   // The Great Barrow: a tomb in two steps, the lift on its crown, a stair at each front corner of each.
-  t.shape(2, 44, 16, 12, 6, 0.35, "The Great Barrow");
-  t.shape(3, 44, 13, 7, 3.5, 0.25, "The Great Barrow");
+  t.shape(2, 44, 16, 12, 6, 0.5, "The Great Barrow");
+  t.shape(3, 46, 13, 6, 3, 0.4, "The Great Barrow");
   // The Drowned Graves' black pool; the Weaver's vault pillared with webbed rock; fallen rock elsewhere.
-  lake(t, 30, 46, 4, 2);
-  for (const [x, y] of [[30, 74], [45, 74], [28, 82], [47, 82]] as const) t.pillar(x, y, 2, 2);
+  lake(t, 29, 46, 6, 3);
+  lake(t, 24, 49, 3, 2);
+  // The Weaver's vault: webbed rock standing in a ragged ring round her.
+  for (const [x, y, w, h] of [[29, 74, 2, 1], [36, 72, 1, 1], [45, 74, 2, 2], [27, 81, 1, 2], [48, 81, 2, 1], [33, 85, 1, 1], [43, 85, 2, 1]] as const) t.pillar(x, y, w, h);
   rubble(t, rng, 66, 40, 8, 10, 4);
   rubble(t, rng, 62, 62, 8, 6, 4);
   rubble(t, rng, 24, 46, 11, 7, 3);
@@ -1443,13 +1470,13 @@ function deeps(): AreaMap {
     { to: "hollow", name: "Sinking Stair", kind: "open", at: { col: 38, row: 94 } },
   ];
   const districts: District[] = [
-    { name: "Cistern Mouth", at: { col: 12, row: 29 }, palette: [3, 4], dress: "undercroft" },
-    { name: "The Great Barrow", at: { col: 44, row: 30 }, palette: [3, 2, 1], dress: "deeps" },
-    { name: "Ossuary Galleries", at: { col: 66, row: 53 }, palette: [1, 4], dress: "deeps" },
-    { name: "The Drowned Graves", at: { col: 24, row: 56 }, palette: [3, 4], dress: "deeps" },
-    { name: "Robbers' Camp", at: { col: 8, row: 72 }, palette: [1, 4], dress: "undercroft" },
-    { name: "The Collapsed Hall", at: { col: 62, row: 71 }, palette: [4, 1], dress: "deeps" },
-    { name: "The Weaver's Web", at: { col: 38, row: 90 }, palette: [4, 3], dress: "deeps" },
+    { name: "Cistern Mouth", at: { col: 12, row: 29 }, palette: [4], dress: "undercroft" },
+    { name: "The Great Barrow", at: { col: 44, row: 4 }, palette: [5, 4, 3], dress: "deeps" },
+    { name: "Ossuary Galleries", at: { col: 66, row: 53 }, palette: [4], dress: "deeps" },
+    { name: "The Drowned Graves", at: { col: 24, row: 56 }, palette: [4], dress: "deeps" },
+    { name: "Robbers' Camp", at: { col: 8, row: 72 }, palette: [4], dress: "undercroft" },
+    { name: "The Collapsed Hall", at: { col: 62, row: 71 }, palette: [5], dress: "deeps" },
+    { name: "The Weaver's Web", at: { col: 38, row: 90 }, palette: [5], dress: "deeps" },
   ];
   const tier = stone(t.finish({}, [{ col: 12, row: 22 }]));
   return { ...tier, area: "deeps", entry: { col: 12, row: 22 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [] };
@@ -1473,15 +1500,17 @@ function hollow(): AreaMap {
 
   tunnel(t, [[50, 8], [50, 1]]);
   tunnel(t, [[50, 10], [52, 18]]);
-  tunnel(t, [[40, 18], [28, 24], [22, 32]]);
-  tunnel(t, [[68, 18], [84, 16]]);
-  tunnel(t, [[86, 20], [92, 30], [92, 40]]);
-  tunnel(t, [[22, 44], [24, 54], [28, 62]]);
+  for (const way of [
+    [[40, 18], [28, 24], [22, 32]],
+    [[68, 18], [84, 16]],
+    [[86, 20], [92, 30], [92, 40]],
+    [[22, 44], [24, 54], [28, 62]],
+  ] as const) passage(t, rng, "hollow", way);
   t.bridge({ col: 24, row: 40 }, { col: 50, row: 42 });
   t.bridge({ col: 90, row: 42 }, { col: 58, row: 42 });
 
   // The Shell Isle rises in one step, a stair at each front corner; the Shell Below sleeps on top.
-  t.shape(2, 54, 39, 7, 3.5, 0.3, "The Shell Isle");
+  t.shape(2, 54, 39, 7, 3.5, 0.55, "The Shell Isle");
 
   // The Stair Foot: where the Sinking Stair comes down from the tombs; the last fire before the water.
   t.fires.push({ col: 52, row: 9 });
@@ -1534,9 +1563,9 @@ function hollow(): AreaMap {
     { name: "The North Shore", at: { col: 54, row: 25 }, palette: [5, 3], dress: "hollow" },
     { name: "The Stone Grove", at: { col: 86, row: 24 }, palette: [5, 4], dress: "hollow" },
     { name: "The West Shallows", at: { col: 22, row: 50 }, palette: [3, 5], dress: "hollow" },
-    { name: "Pilgrims' Rest", at: { col: 92, row: 52 }, palette: [3, 1], dress: "hollow" },
+    { name: "Pilgrims' Rest", at: { col: 92, row: 52 }, palette: [4], dress: "hollow" },
     { name: "Sinkhole Landing", at: { col: 42, row: 62 }, palette: [4, 5], dress: "undercroft" },
-    { name: "The Shell Isle", at: { col: 54, row: 49 }, palette: [5, 1], dress: "hollow", box: { x: 44, y: 34, w: 21, h: 13 } },
+    { name: "The Shell Isle", at: { col: 54, row: 49 }, palette: [5, 3], dress: "hollow", box: { x: 44, y: 34, w: 21, h: 13 } },
   ];
   const tier = stone(t.finish({}, [{ col: 50, row: 8 }]));
   return { ...tier, area: "hollow", entry: { col: 50, row: 8 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [] };

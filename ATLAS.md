@@ -315,7 +315,12 @@ the atlas, focused on it.
   pools round fires, exits and gold, and open water takes the area's own
   tone, dimmed. The Undercroft branches from the well, the Deeps zig-zag
   down to the Weaver, the Hollow is a lake with shores on three sides and
-  bare rock on the fourth.
+  bare rock on the fourth. Passages are `passage()`s: a tunnel with
+  alcoves cut into alternate walls every few tiles, bones or a spike in
+  most and a torch in one. Pools are ragged `lake()`s and winding
+  `river()`s, never `pond()` strips; no trees grow below (`stone()` turns
+  leftover woods to floor); floors stay teal, olive and at most mid green,
+  the light coming from the fires.
 - **Every area is built its own way, and floats.** Sea and sky maps are
   padded 10 tiles with open sea or sky (`pad()`, which runs each edge
   exit out along a causeway to the new edge), so land never fills the
