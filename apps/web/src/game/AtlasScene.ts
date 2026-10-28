@@ -486,22 +486,15 @@ export class AtlasScene extends Phaser.Scene {
     this.building = tier.id;
     useIsland(tier.island);
     const before = new Set(this.children.list);
-    const roads = trailTiles(tier.roads);
-    // Trails up on the high ground too: a climb's path along its ledges.
-    for (const c of tier.roads) {
-      const lv = level(c.col, c.row);
-      if (lv < 2 || isSlope(c.col, c.row)) continue;
-      // Two tiles deep, as on the lowland, so a diagonal stretch joins up instead of stepping.
-      for (const r of [c.row, c.row + 1]) if (level(c.col, r) === lv && !isSlope(c.col, r)) roads.add(r * STRAT_COLS + c.col);
-    }
+    // An area map draws no roads: its ways are open ground in the district's own colour, a road tile's
+    // other colour read as a stripe painted on. The engine's roads still keep that ground clear.
+    const roads = this.local ? new Set<number>() : trailTiles(tier.roads);
     const local = this.local;
-    const decks = new Set(local?.decks.map((d) => d.row * STRAT_COLS + d.col));
     buildMap(this, roads, (c, r, lv) => {
       if (local) {
         const d = districtOf(local, c, r);
         if (!d) return "tilesetC4";
-        // A bridge deck in a colour its district's ground never uses, so it reads above it.
-        if (decks.has(r * STRAT_COLS + c)) return `tilesetC${[1, 4, 5, 2, 3].find((x) => !d.palette.includes(x)) ?? 1}`;
+        // A bridge deck takes its height's colour, the same as the land at either end of it.
         return `tilesetC${d.palette[Math.min(d.palette.length - 1, lv - 1)]}`;
       }
       const ch = tier.areaAt[r]?.[c];

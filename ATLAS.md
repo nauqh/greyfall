@@ -202,8 +202,9 @@ the atlas, focused on it.
 - `span(level, x, y, w, h)` raises a bridge deck between two tables of that
   height, over water or a ravine. A deck joins tables of its own height only:
   the hills at each end keep their own stairs. Over the sea, give it
-  `stair()`s at its ends. The deck is drawn in a tileset colour its district
-  never uses, so it stands out above the ground below.
+  `stair()`s at its ends. The deck takes its height's colour, the same as
+  the land at its ends (a contrasting colour was tried and read as a
+  stripe that did not belong to either side).
 - `grove(cx, cy, rx, ry, density)` plants woods on lowland.
 - **Mazes, not fields.** An area map's lowland is woods unless carved
   open, as in Diablo: `maze()` links a jittered grid of waypoints (one per
@@ -239,9 +240,7 @@ the atlas, focused on it.
   (on at the south-west, up at the east, the west, the east again). Old
   Bamboo holds the fourth step where the climb arrives; the Gnome Lift
   rises off the summit, and the Sky Bridge runs off it east, raised, to the
-  map's edge toward the Greyfall. Its terraces carry the climb's worn trail
-  (roads now draw on high ground too, two tiles deep so diagonals join),
-  cannon batteries on every rim, watchtowers, a raised Gun Platform with
+  map's edge toward the Greyfall. Its terraces carry cannon batteries on every rim, watchtowers, a raised Gun Platform with
   its own stair, and fenced workshop yards with wood, tools and stores.
   The Greyfall is the fourth, a castle that is the level, after Stormveil:
   a walkable curtain wall with a bastion on each corner, the locked Grey
@@ -327,6 +326,10 @@ the atlas, focused on it.
   its bailey, the Gilded Reach plazas with tree avenues (`avenue()`) and
   one hanging garden, the Steps bare isles with lone trees, Barrowmoor an
   open heath of barrows and thickets.
+- **Area maps draw no roads.** A road there is open ground in the
+  district's own colour: the engine's roads still keep woods and buildings
+  off it, but a road tile's other colour read as a stripe painted across
+  the districts. The atlas keeps its drawn roads.
 - **Districts are landforms, packed like the atlas.** `shape(level, cx,
   cy, rx, ry)` lays irregular ground at an exact height, an ellipse whose
   rim wanders by noise, with a corner squared off on each lower flank so a
