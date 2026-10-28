@@ -985,12 +985,11 @@ function gilded(): AreaMap {
   t.blob("gilded", 32, 34, 11, 10);
   t.blob("gilded", 36, 10, 12, 7);
   t.blob("gilded", 26, 58, 9, 7);
-  t.blob("gilded", 64, 34, 20, 16);
-  t.ground("gilded", 50, 20, 30, 26);
+  t.blob("gilded", 64, 34, 22, 17);
   t.blob("gilded", 70, 8, 11, 5);
   t.blob("gilded", 64, 61, 11, 6);
   // The throne isle: nothing but the warlord's black plaza, hung off the city's east end.
-  t.ground("gilded", 92, 28, 13, 13);
+  t.blob("gilded", 98, 34, 8, 7);
 
   t.bridge({ col: 17, row: 36 }, { col: 23, row: 35 });
   t.bridge({ col: 32, row: 26 }, { col: 34, row: 16 });
@@ -1001,23 +1000,14 @@ function gilded(): AreaMap {
   t.bridge({ col: 47, row: 10 }, { col: 60, row: 9 });
   t.bridge({ col: 6, row: 36 }, { col: 1, row: 36 }, 3);
 
-  // The Sun Steps: the capital climbs in three terraces to the Sun Hall, a stair either side of each.
-  t.block(2, 52, 22, 26, 22);
-  t.stair(2, 51, 43, "L");
-  t.stair(2, 78, 43, "R");
-  t.block(3, 56, 22, 18, 15);
-  t.stair(3, 55, 36, "L");
-  t.stair(3, 74, 36, "R");
-  t.block(4, 60, 22, 10, 8);
-  t.stair(4, 70, 29, "R");
+  // The Sun Steps: the capital rises in three ragged tiers to the Sun Hall, each its own landform.
+  t.shape(2, 64, 32, 16, 12, 0.4, "The Sun Steps");
+  t.shape(3, 65, 29, 11, 8, 0.35, "The Sun Steps");
+  t.shape(4, 65, 26, 6, 4, 0.3, "The Sun Steps");
   // The throne isle, raised to the lower city's height and reached only by the Gilded Span.
-  t.block(2, 92, 28, 13, 13);
-  const decks = t.span(2, 78, 32, 14, 2);
+  t.shape(2, 98, 34, 7, 6, 0.3, "The Throne Isle");
+  const decks = t.span(2, 79, 33, 13, 2);
 
-  // Trails: up the Sun Steps, and along the Span.
-  t.road([50, 43], [53, 41], [54, 37]);
-  t.road([56, 35], [60, 31], [71, 30]);
-  t.road([78, 32], [92, 32]);
   // The main way through the isles: landing, market, the capital's west stair.
   t.road([6, 36], [20, 36], [32, 35], [48, 34], [50, 43]);
 
@@ -1091,8 +1081,9 @@ function gilded(): AreaMap {
     { to: "greyfall", name: "Throne Stair", kind: "lift", at: { col: 99, row: 34 } },
   ];
   const districts: District[] = [
-    { name: "The Sun Steps", at: { col: 65, row: 46 }, palette: [1, 2, 4, 5], dress: "gilded", box: { x: 50, y: 20, w: 30, h: 26 } },
-    { name: "The Throne Isle", at: { col: 98, row: 42 }, palette: [4, 4, 5], dress: "greyfall", box: { x: 92, y: 28, w: 13, h: 13 } },
+    // The Sun Steps' tiers share a gold ramp to the white-gold summit; the throne isle is the warlord's black-teal.
+    { name: "The Sun Steps", at: { col: 64, row: 48 }, levels: [1, 2, 3, 4], palette: [1, 1, 2, 4], dress: "gilded", decor: 2 },
+    { name: "The Throne Isle", at: { col: 98, row: 43 }, levels: [1, 2], palette: [5], dress: "greyfall", decor: 2 },
     { name: "Cloud Landing", at: { col: 12, row: 40 }, palette: [2, 1], dress: "gilded", clearing: 4 },
     { name: "The Gold Market", at: { col: 32, row: 34 }, palette: [1, 2], dress: "gilded", clearing: 7 },
     { name: "The Bee Gardens", at: { col: 36, row: 10 }, palette: [2, 3], dress: "emberwood", clearing: 5 },
@@ -1105,7 +1096,7 @@ function gilded(): AreaMap {
   avenue(t, [[52, 45], [78, 45]], 1, 3);
   t.grove(36, 9, 10, 5, 0.6);
   const tier = t.finish({}, [{ col: 6, row: 36 }]);
-  return { ...tier, area: "gilded", entry: { col: 6, row: 36 }, exits, districts, districtAt: districtGrid(tier, districts), decks };
+  return { ...tier, area: "gilded", entry: { col: 6, row: 36 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks };
 }
 
 function steps(): AreaMap {
@@ -1118,10 +1109,8 @@ function steps(): AreaMap {
   // A chain of drifting isles stepping down westward from the Cloud Bridge to the Harbour's lift,
   // after the Ringed City's broken stairs: rope bridges between, raised spans across the ruined steps.
   t.blob("steps", 100, 16, 9, 6);
-  t.blob("steps", 80, 22, 10, 7);
-  t.ground("steps", 72, 16, 16, 12);
-  t.blob("steps", 58, 18, 8, 6);
-  t.ground("steps", 50, 12, 18, 14);
+  t.blob("steps", 80, 21, 11, 8);
+  t.blob("steps", 58, 18, 11, 9);
   t.blob("steps", 58, 40, 11, 8);
   t.blob("steps", 36, 32, 10, 8);
   t.blob("steps", 14, 46, 9, 7);
@@ -1129,23 +1118,14 @@ function steps(): AreaMap {
   t.blob("steps", 26, 10, 6, 5);
   t.blob("steps", 88, 54, 8, 6);
 
-  // The Broken Stair: the second isle rises in two steps; the Windward Rest stands level with its top.
-  t.block(2, 73, 17, 14, 10);
-  t.stair(2, 72, 26, "L");
-  t.stair(2, 87, 26, "R");
-  t.block(3, 76, 17, 8, 5);
-  t.stair(3, 75, 21, "L");
-  // The Windward Rest steps down too: its top, a ledge round it, then the lowland where the way goes on.
-  t.block(2, 51, 13, 16, 10);
-  t.block(3, 53, 14, 12, 6);
-  t.stair(3, 52, 19, "L");
-  t.stair(2, 50, 22, "L");
-  // The Old Span: across the gap from the Broken Stair's top to the Windward Rest.
-  const decks = t.span(3, 65, 17, 11, 2);
-  // The Bell Isle: a raised ruin with a stair either side.
-  t.block(2, 31, 27, 11, 7);
-  t.stair(2, 30, 33, "L");
-  t.stair(2, 42, 33, "R");
+  // The Broken Stair rises in two ragged steps; the Windward Rest stands level with its top, the Old Span between.
+  t.shape(2, 80, 20, 9, 6, 0.4, "The Broken Stair");
+  t.shape(3, 79, 18, 5, 3, 0.3, "The Broken Stair");
+  t.shape(2, 58, 17, 9, 7, 0.4, "Windward Rest");
+  t.shape(3, 59, 16, 5, 3, 0.3, "Windward Rest");
+  const decks = t.span(3, 63, 17, 13, 2);
+  // The Bell Isle: a raised ruin on its own mound.
+  t.shape(2, 36, 30, 6, 4, 0.35, "The Bell Isle");
 
   // Every bridge runs from well inside one isle to a stair's foot or deep into the next: a ragged rim never leaves one short.
   t.bridge({ col: 100, row: 16 }, { col: 110, row: 16 }, 3);
@@ -1217,18 +1197,19 @@ function steps(): AreaMap {
     { to: "harbour", name: "Watch Lift", kind: "shortcut", at: { col: 14, row: 46 } },
   ];
   const districts: District[] = [
-    { name: "The Broken Stair", at: { col: 80, row: 31 }, palette: [2, 4, 1], dress: "crags", box: { x: 72, y: 16, w: 16, h: 12 } },
-    { name: "Windward Rest", at: { col: 58, row: 10 }, palette: [2, 1, 1], dress: "gilded", box: { x: 50, y: 12, w: 18, h: 14 } },
-    { name: "Cloud Pier", at: { col: 100, row: 21 }, palette: [1, 2], dress: "gilded", clearing: 4 },
-    { name: "The Hanging Graves", at: { col: 58, row: 47 }, palette: [4, 5], dress: "barrowmoor", clearing: 5 },
-    { name: "The Bell Isle", at: { col: 36, row: 38 }, palette: [3, 4], dress: "harbour", clearing: 5 },
-    { name: "Watch Isle", at: { col: 14, row: 52 }, palette: [3, 2], dress: "harbour", clearing: 5 },
-    { name: "The Hermit's Rock", at: { col: 26, row: 14 }, palette: [2, 1], dress: "gilded", clearing: 4 },
-    { name: "The Gold Wreck", at: { col: 88, row: 59 }, palette: [1, 4], dress: "saltreach", clearing: 4 },
+    // One colour an isle; the isles step from gold at the pier down to the Harbour's green.
+    { name: "The Broken Stair", at: { col: 80, row: 30 }, levels: [1, 2, 3], palette: [4], dress: "crags", decor: 2.5 },
+    { name: "Windward Rest", at: { col: 58, row: 8 }, levels: [1, 2, 3], palette: [1], dress: "gilded", decor: 2 },
+    { name: "Cloud Pier", at: { col: 100, row: 21 }, levels: [1], palette: [1], dress: "gilded", decor: 2 },
+    { name: "The Hanging Graves", at: { col: 58, row: 47 }, levels: [1], palette: [5], dress: "barrowmoor", decor: 2.5 },
+    { name: "The Bell Isle", at: { col: 36, row: 39 }, levels: [1, 2], palette: [3], dress: "harbour", decor: 2 },
+    { name: "Watch Isle", at: { col: 14, row: 52 }, levels: [1], palette: [2], dress: "harbour", decor: 2 },
+    { name: "The Hermit's Rock", at: { col: 26, row: 14 }, levels: [1], palette: [2], dress: "gilded", decor: 2 },
+    { name: "The Gold Wreck", at: { col: 88, row: 59 }, levels: [1], palette: [4], dress: "saltreach", decor: 2 },
   ];
   // Isles, not a maze: bare and wind-scoured, a lone tree here and there.
   const tier = t.finish({ steps: 0.04 }, [{ col: 104, row: 16 }]);
-  return { ...tier, area: "steps", entry: { col: 104, row: 16 }, exits, districts, districtAt: districtGrid(tier, districts), decks };
+  return { ...tier, area: "steps", entry: { col: 104, row: 16 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks };
 }
 
 function undercroft(): AreaMap {
@@ -1262,9 +1243,7 @@ function undercroft(): AreaMap {
   t.ground("undercroft", 48, 47, 5, 3);
   t.bridge({ col: 50, row: 42 }, { col: 50, row: 47 });
   // The Ossuary: a raised bone terrace, a stair at each front corner.
-  t.block(2, 66, 54, 16, 6);
-  t.stair(2, 65, 59, "L");
-  t.stair(2, 82, 59, "R");
+  t.shape(2, 74, 57, 8, 3.5, 0.3, "The Ossuary");
   // Fallen rock in the larger chambers.
   rubble(t, rng, 20, 36, 12, 8, 5);
   rubble(t, rng, 74, 58, 13, 8, 6);
@@ -1324,7 +1303,7 @@ function undercroft(): AreaMap {
     { name: "The Dig", at: { col: 92, row: 79 }, palette: [4, 1], dress: "undercroft" },
   ];
   const tier = stone(t.finish({}, [{ col: 52, row: 14 }]));
-  return { ...tier, area: "undercroft", entry: { col: 52, row: 14 }, exits, districts, districtAt: districtGrid(tier, districts), decks: [] };
+  return { ...tier, area: "undercroft", entry: { col: 52, row: 14 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [] };
 }
 
 function deeps(): AreaMap {
@@ -1348,12 +1327,8 @@ function deeps(): AreaMap {
   tunnel(t, [[38, 86], [38, 94]]);
 
   // The Great Barrow: a tomb in two steps, the lift on its crown, a stair at each front corner of each.
-  t.block(2, 32, 10, 24, 12);
-  t.stair(2, 31, 21, "L");
-  t.stair(2, 56, 21, "R");
-  t.block(3, 37, 10, 14, 6);
-  t.stair(3, 36, 15, "L");
-  t.stair(3, 51, 15, "R");
+  t.shape(2, 44, 16, 12, 6, 0.35, "The Great Barrow");
+  t.shape(3, 44, 13, 7, 3.5, 0.25, "The Great Barrow");
   // The Drowned Graves' black pool; the Weaver's vault pillared with webbed rock; fallen rock elsewhere.
   lake(t, 30, 46, 4, 2);
   for (const [x, y] of [[30, 74], [45, 74], [28, 82], [47, 82]] as const) t.pillar(x, y, 2, 2);
@@ -1420,7 +1395,7 @@ function deeps(): AreaMap {
     { name: "The Weaver's Web", at: { col: 38, row: 90 }, palette: [4, 3], dress: "deeps" },
   ];
   const tier = stone(t.finish({}, [{ col: 12, row: 22 }]));
-  return { ...tier, area: "deeps", entry: { col: 12, row: 22 }, exits, districts, districtAt: districtGrid(tier, districts), decks: [] };
+  return { ...tier, area: "deeps", entry: { col: 12, row: 22 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [] };
 }
 
 function hollow(): AreaMap {
@@ -1449,9 +1424,7 @@ function hollow(): AreaMap {
   t.bridge({ col: 90, row: 42 }, { col: 58, row: 42 });
 
   // The Shell Isle rises in one step, a stair at each front corner; the Shell Below sleeps on top.
-  t.block(2, 48, 36, 13, 6);
-  t.stair(2, 47, 41, "L");
-  t.stair(2, 61, 41, "R");
+  t.shape(2, 54, 39, 7, 3.5, 0.3, "The Shell Isle");
 
   // The Stair Foot: where the Sinking Stair comes down from the tombs; the last fire before the water.
   t.fires.push({ col: 52, row: 9 });
@@ -1509,7 +1482,7 @@ function hollow(): AreaMap {
     { name: "The Shell Isle", at: { col: 54, row: 49 }, palette: [5, 1], dress: "hollow", box: { x: 44, y: 34, w: 21, h: 13 } },
   ];
   const tier = stone(t.finish({}, [{ col: 50, row: 8 }]));
-  return { ...tier, area: "hollow", entry: { col: 50, row: 8 }, exits, districts, districtAt: districtGrid(tier, districts), decks: [] };
+  return { ...tier, area: "hollow", entry: { col: 50, row: 8 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [] };
 }
 
 function barrowmoor(): AreaMap {

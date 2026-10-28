@@ -362,6 +362,10 @@ the atlas, focused on it.
   Yard and the Ashen Approach lie in the marsh round its foot.
 - **Emberwood** keeps its maze, but its hills and Troll's Hollow (once a
   rectangular ring of blocks, now a raised arena of ash) are landforms.
+- **No rectangles left.** The Gilded Reach's Sun Steps and Throne Isle,
+  the Skyward Steps' Broken Stair, Windward Rest and Bell Isle, the
+  Undercroft's Ossuary, the Deeps' Great Barrow and the Hollow's Shell
+  Isle are landforms now; no area map calls `block()`.
 - **Area maps carry no banner**: an area's name is on its land, and
   "Back to the atlas" is the one control left at the top.
 - **Area maps draw no roads.** A road there is open ground in the
