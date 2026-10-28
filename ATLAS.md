@@ -347,6 +347,14 @@ the atlas, focused on it.
   district's seed must stand on its own isle, or the isle takes a
   neighbour's colour. An exit must not sit on a map's last row, which the
   builder never writes.
+- **Barrowmoor is a tableland**, unlike any other area: one great plateau
+  ringed by cliffs over a skirt of bog (the Moor Gate, the Grey Road, the
+  Fen Path), the Heath across its top in dead thickets, lesser barrows and
+  Gibbet Hill rising out of it as mounds of their own, the Dead Mere sunk
+  into it, and the King's Barrow two steps higher at its heart with the
+  Barrow King on its crown and the Barrow Cave at its foot. Ground a
+  landform names is never absorbed as a pocket, so a small barrow keeps
+  its district's colour.
 - **Area maps draw no roads.** A road there is open ground in the
   district's own colour: the engine's roads still keep woods and buildings
   off it, but a road tile's other colour read as a stripe painted across
