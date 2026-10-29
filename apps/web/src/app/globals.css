@@ -776,22 +776,6 @@ textarea {
 	margin-top: -2px;
 }
 
-/* The key, top left. */
-.atlasLeft {
-	position: absolute;
-	top: 14px;
-	left: 14px;
-	bottom: 14px;
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-	pointer-events: none;
-}
-
-.atlasLeft > * {
-	pointer-events: auto;
-}
-
 .atlasTiers {
 	display: flex;
 	gap: 4px;
@@ -807,23 +791,11 @@ textarea {
 	color: #8a6a3a;
 }
 
-.dot.square {
-	border-radius: 2px;
-}
-
-.atlasToggle {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	margin-top: 6px;
-	font-size: 14px;
-}
-
 .atlasCard {
 	position: absolute;
 	right: 14px;
 	bottom: 14px;
-	width: min(400px, calc(100vw - 260px));
+	width: min(400px, calc(100vw - 28px));
 	align-items: stretch;
 	font-size: 15px;
 }
@@ -844,44 +816,7 @@ textarea {
 	color: #5a4630;
 }
 
-.atlasGates,
-.atlasLegend {
-	margin: 0;
-	padding: 0;
-	list-style: none;
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-}
-
-.atlasGates li,
-.atlasLegend li {
-	display: flex;
-	align-items: baseline;
-	gap: 8px;
-	line-height: 1.35;
-}
-
-.dot {
-	flex: none;
-	width: 11px;
-	height: 11px;
-	border-radius: 50%;
-	border: 2px solid #1c2634;
-	transform: translateY(1px);
-}
-
-.atlasLegend {
-	flex: none;
-	align-items: flex-start;
-	font-size: 14px;
-}
-
 @media (max-width: 720px) {
-	.atlasLeft {
-		display: none;
-	}
-
 	.atlasCard {
 		left: 8px;
 		right: 8px;

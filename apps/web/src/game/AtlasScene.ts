@@ -41,7 +41,6 @@ export interface AtlasApi {
   /** Show a tier from its own height. */
   tier: (id: TierId) => void;
   /** Draw the Souls map over the tier in view. */
-  routes: (on: boolean) => void;
 }
 
 export interface AtlasHooks {
@@ -200,8 +199,6 @@ export class AtlasScene extends Phaser.Scene {
   private cams!: Record<TierId, Phaser.Cameras.Scene2D.Camera>;
   private names: { text: Phaser.GameObjects.Text; px: number; tier: TierId }[] = [];
   private live: Tracked[] = [];
-  private routes: Partial<Record<TierId, Phaser.GameObjects.Graphics>> = {};
-  private showRoutes = false;
   private drag: { x: number; y: number; sx: number; sy: number; moved: boolean } | null = null;
   /** In an area's own map: that map. */
   private local: AreaMap | null = null;
@@ -333,10 +330,6 @@ export class AtlasScene extends Phaser.Scene {
           this.flyTo({ col: first.label.col, row: first.label.row - 5 }, 24);
         }
       },
-      routes: (on) => {
-        this.showRoutes = on;
-        for (const [id, g] of Object.entries(this.routes)) g.setVisible(on && id === this.view);
-      },
     });
     cloudCover(this, "open", () => {});
   }
@@ -371,7 +364,6 @@ export class AtlasScene extends Phaser.Scene {
     const to = this.active;
     to.setZoom(zoom);
     to.centerOn(centre.x, centre.y);
-    for (const [t, g] of Object.entries(this.routes)) g.setVisible(this.showRoutes && t === id);
     this.hooks.onTier(id);
   }
 
@@ -514,7 +506,6 @@ export class AtlasScene extends Phaser.Scene {
     this.mood(tier);
     this.ambience(tier);
     this.labels(tier);
-    this.routes[tier.id] = this.drawRoutes(tier);
     const made = this.children.list.filter((o) => !before.has(o));
     if (tier.base === "sky") {
       // Foam round a sky isle is cloud clinging to its rim.
@@ -935,31 +926,6 @@ export class AtlasScene extends Phaser.Scene {
       text((g.at.col + 0.5) * CELL, (g.at.row - 1.2) * CELL, word ? `${g.name} (${word})` : g.name, 26, GATE_TONE[g.kind], 12);
     }
     for (const b of tier.bosses) text((b.col + 0.5) * CELL, (b.row - 2.6) * CELL, b.name, 28, "#ff8f7a", 13);
-  }
-
-  /** The Souls map underneath: each area joined to its neighbours through its gates and lifts. */
-  private drawRoutes(tier: AtlasTier): Phaser.GameObjects.Graphics {
-    const g = this.add.graphics().setDepth(DEPTH.fx + 2).setVisible(false);
-    const centre = (id: AreaId) => AREAS.find((a) => a.id === id)!.label;
-    const dots = (x0: number, y0: number, x1: number, y1: number, tone: number): void => {
-      const n = Math.floor(Phaser.Math.Distance.Between(x0, y0, x1, y1) / 48);
-      for (let i = 1; i < n; i++) g.fillStyle(tone, 0.95).fillCircle(x0 + ((x1 - x0) * i) / n, y0 + ((y1 - y0) * i) / n, 10);
-    };
-    for (const gate of tier.gates) {
-      const tone = Phaser.Display.Color.HexStringToColor(GATE_TONE[gate.kind]).color;
-      const [gx, gy] = [(gate.at.col + 0.5) * CELL, (gate.at.row + 0.5) * CELL];
-      for (const end of [gate.from, gate.to]) dots(centre(end).col * CELL, centre(end).row * CELL, gx, gy, tone);
-      g.lineStyle(6, 0x1c2634).fillStyle(tone).fillCircle(gx, gy, 22).strokeCircle(gx, gy, 22);
-    }
-    for (const l of this.map.lifts) {
-      const end = l.up.tier === tier.id ? l.up : l.down.tier === tier.id ? l.down : null;
-      if (!end) continue;
-      const tone = Phaser.Display.Color.HexStringToColor(LIFT_TONE[l.kind]).color;
-      const [x, y] = [(end.at.col + 0.5) * CELL, (end.at.row + 0.5) * CELL];
-      dots(centre(end.area).col * CELL, centre(end.area).row * CELL, x, y, tone);
-      g.lineStyle(6, 0x1c2634).fillStyle(tone).fillRect(x - 20, y - 20, 40, 40).strokeRect(x - 20, y - 20, 40, 40);
-    }
-    return g;
   }
 
   update(): void {
