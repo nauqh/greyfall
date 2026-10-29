@@ -404,19 +404,34 @@ function districtGrid(tier: AtlasTier, districts: readonly District[], t?: Build
     return [...n].sort((a, b) => b[1] - a[1])[0]![0];
   };
   // No pockets: a district's patch smaller than a building's plot goes to the district round it.
-  // A bridge takes the colour of the land at its ends, each half its own isle's, spreading in from both.
+  // A bridge or deck takes the colour of the land at its ends, each half its own end's, spreading in along it from
+  // both: over the gap never from the bank beside it, and never from the low ground under a deck.
+  const decks = new Set((t?.blocks ?? []).filter((b) => b.span).flatMap((b) => Array.from({ length: b.w * b.h }, (_, i) => `${b.x + (i % b.w)},${b.y + Math.floor(i / b.w)}`)));
+  const crossing = (c: number, r: number) => bridged(c, r) || decks.has(`${c},${r}`);
+  const along = (x: number, y: number, nx: number, ny: number) =>
+    lvOf(rows[y]![x]!) === lvOf(rows[ny]![nx]!) && (!t?.gaps.has(`${nx},${ny}`) || crossing(x, y));
   const front: [number, number][] = [];
-  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r]![c]! >= 0 && !bridged(c, r)) front.push([c, r]);
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r]![c]! >= 0 && !crossing(c, r)) front.push([c, r]);
   const done = new Set(front.map(([c, r]) => r * W + c));
   for (let i = 0; i < front.length; i++) {
     const [x, y] = front[i]!;
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
       const [nx, ny] = [x + dx, y + dy];
-      if (nx < 0 || ny < 0 || nx >= W || ny >= H || done.has(ny * W + nx) || grid[ny]![nx]! < 0 || !bridged(nx, ny)) continue;
+      if (nx < 0 || ny < 0 || nx >= W || ny >= H || done.has(ny * W + nx) || grid[ny]![nx]! < 0 || !crossing(nx, ny) || !along(x, y, nx, ny)) continue;
       done.add(ny * W + nx);
       grid[ny]![nx] = grid[y]![x]!;
       front.push([nx, ny]);
     }
+  }
+  // Then each cross-section of a bridge one colour, its most common: the seam runs across a bridge, not along it.
+  const sections = new Map<string, [number, number][]>();
+  for (const [k, sec] of t?.across ?? []) {
+    const [c, r] = k.split(",").map(Number) as [number, number];
+    if (grid[r]![c]! >= 0) sections.set(sec, [...(sections.get(sec) ?? []), [c, r]]);
+  }
+  for (const cells of sections.values()) {
+    const own = most(cells.map(([c, r]) => grid[r]![c]!));
+    for (const [c, r] of cells) grid[r]![c] = own;
   }
   const all = pieces(([x, y], [nx, ny]) => grid[y]![x] === grid[ny]![nx]);
   const biggest = new Map<number, number>();
@@ -876,7 +891,7 @@ function crags(): AreaMap {
   }
   for (const [x, y, rx, ry] of [[36, 36, 4, 3], [16, 46, 3, 3], [44, 56, 4, 2], [108, 32, 3, 4], [100, 54, 4, 3], [28, 62, 4, 2], [80, 74, 3, 2]] as const) t.grove(x, y, rx, ry, 0.75);
   const tier = t.finish({}, [{ col: 6, row: 46 }]);
-  return { ...tier, area: "crags", entry: { col: 6, row: 46 }, exits, districts, districtAt: districtGrid(tier, districts), decks };
+  return { ...tier, area: "crags", entry: { col: 6, row: 46 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks };
 }
 
 function greyfall(): AreaMap {

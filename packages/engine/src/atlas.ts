@@ -748,6 +748,10 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
     ways: [] as { level: number; col: number; row: number; side: "L" | "R" }[],
     /** Ways the high ground keeps clear of, drawn or not: roads, and the bridges between isles. */
     paths: new Set<string>(),
+    /** The bridge tiles laid over water, sky or rock: the crossing itself, not the land at its ends. */
+    gaps: new Set<string>(),
+    /** Each bridge tile's cross-section, one bridge and one step along it: a crossing changes colour across, never along. */
+    across: new Map<string, string>(),
 
     /** Land, or a cavern: ragged ellipses of lowland for an area. */
     blob(a: AreaId, cx: number, cy: number, rx: number, ry: number): void {
@@ -861,7 +865,11 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
     },
     /** A strip of ground across water or sky, or through rock, inside one area. */
     bridge(a: Cell, b: Cell, width = 2): void {
+      const id = `${a.col},${a.row}>${b.col},${b.row}`;
+      const horizontal = Math.abs(b.col - a.col) >= Math.abs(b.row - a.row);
       t.cut(a, b, width, (c) => {
+        if (at(c.col, c.row) === wall) t.gaps.add(`${c.col},${c.row}`);
+        t.across.set(`${c.col},${c.row}`, `${id}:${horizontal ? c.col : c.row}`);
         put(c.col, c.row, ".");
         // A path: the high ground keeps clear of it.
         t.paths.add(`${c.col},${c.row}`);
