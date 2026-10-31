@@ -1,6 +1,6 @@
 "use client";
 
-import { MAPPED_AREAS, type AreaId } from "@greyfall/engine";
+import type { AreaId } from "@greyfall/engine";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -43,9 +43,8 @@ export function HudToggle({ shown, toggle }: { shown: boolean; toggle: () => voi
 /** One area's own map, the camera kept inside it; its exits walk to the next. */
 export function AreaView({ area }: { area: AreaId }) {
   const router = useRouter();
-  // An exit to an area not yet mapped returns to the atlas, on that area's card.
   const leave = (to: AreaId): void => router.push(`/atlas?focus=${to}`);
-  const onExit = (to: AreaId): void => (MAPPED_AREAS.includes(to) ? router.push(`/atlas/${to}`) : leave(to));
+  const onExit = (to: AreaId): void => router.push(`/atlas/${to}`);
   const hooks = useRef<AtlasHooks>({ area, onExit, onArea: () => {}, onTier: () => {}, ready: () => {} }).current;
   const [hud, toggleHud] = useHud();
   return (

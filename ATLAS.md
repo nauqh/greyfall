@@ -1,6 +1,6 @@
 # The Atlas
 
-Oct 26, 2026 · revised Oct 26: three tiers, lifts between them, and heights to five · Oct 27: natural terrain
+Oct 26, 2026 · revised Oct 26: three tiers, lifts between them, and heights to five · Oct 27: natural terrain · Oct 31: every area mapped
 
 ## Summary
 
@@ -173,8 +173,9 @@ so they never wall a ledge off.
 - **Lift ends:** an up end is a shaft of light, a down end a dark mouth in
   the ground. Each is labelled with where it goes and which way it runs.
   Click one to ride it.
-- **The page:** tabs for Sky, Surface and Below, an area index by tier, and
-  cards that list each area's gates and lifts.
+- **The page:** the map fills it, and the selected area's card floats over
+  it: name, tier, blurb, keeper, and "Enter" to its own map. H hides the
+  HUD. Lifts are the only way between tiers.
 
 ## Adding to it
 
@@ -188,11 +189,11 @@ so they never wall a ledge off.
 
 ## Area maps
 
-Each area also gets its own large map (`areas.ts`, 112 x 72 tiles), built
-with the same `tierBuilder`. "Enter" on an area's card opens it, and the
-camera stays inside that map. An exit at its edge, or a lift or well inside
-it, takes you to the next area. If that area has no map yet, you go back to
-the atlas, focused on it.
+Every area has its own large map (`areas.ts`, 112 x 72 tiles), built with
+the same `tierBuilder`, at `/atlas/<area>`. "Enter" on an area's card opens
+it, and the camera stays inside that map. An exit at its edge, or a lift or
+well inside it, takes you to the next area's map; "Back to the atlas"
+returns to the atlas, focused on the area.
 
 - `block(level, x, y, w, h)` lays out exact terraces. A castle is nested
   blocks, each with its own cliff faces. `block(1, ...)` cuts a notch back to
@@ -223,7 +224,7 @@ the atlas, focused on it.
   the decor style of an atlas area it borrows (`dress`). Land goes to a
   district's `box` if it has one, otherwise to the nearest seed, with borders
   bent by noise.
-- Only the Harbour is mapped so far, in eight districts: the Citadel (three
+- The Harbour was mapped first, in eight districts: the Citadel (three
   terraces up to the keep), Old Town (two raised streets round the square),
   the Docks (the Sea Wall across the bay), West Fields, the Northwood and the
   Keepwood, the Mine Hills and the Moor Watch. Three raised bridges: the Knoll
@@ -427,7 +428,8 @@ the atlas, focused on it.
 
 - Nothing is playable on it: no warband, no keys, no gates or lifts that
   open.
-- No minimap. Zoom out with the wheel, and switch tiers with the tabs.
+- No minimap. Zoom out with the wheel; ride a lift to change tier.
+- No blacksmith in the Harbour yet: the plan is below.
 
 ## Planned: a blacksmith
 

@@ -4,7 +4,7 @@
 // the canvas; the selected area's card floats over it on the kit's paper,
 // and the whole HUD hides with H. Lifts change tier.
 
-import { AREAS, MAPPED_AREAS, TIER_INFO, atlasMap, type AreaId } from "@greyfall/engine";
+import { AREAS, TIER_INFO, atlasMap, type AreaId } from "@greyfall/engine";
 import Link from "next/link";
 import { use, useMemo, useRef, useState } from "react";
 
@@ -44,11 +44,9 @@ export default function AtlasPage({ searchParams }: { searchParams: Promise<{ fo
             <h2>{shown.name}</h2>
             <p className="atlasWhere">{TIER_INFO[shown.tier].name}</p>
             <p className="lore">{shown.blurb}</p>
-            {MAPPED_AREAS.includes(area) && (
-              <Link className="btn small" href={`/atlas/${area}`}>
-                Enter
-              </Link>
-            )}
+            <Link className="btn small" href={`/atlas/${area}`}>
+              Enter
+            </Link>
             {bosses.length > 0 && (
               <p>
                 <b>Keeper:</b> {bosses.map((b) => b.name).join(", ")}
