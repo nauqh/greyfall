@@ -482,6 +482,8 @@ function harbour(): AreaMap {
   t.pond(50, 70, 8, 8);
   lake(t, 4, 40, 4, 6);
   lake(t, 110, 30, 3, 5);
+  // Open sea behind the castle, so the Keep stands on a sea cliff, not over a strip of empty lowland.
+  lake(t, 58, 2, 24, 4.5);
 
   // Districts as landforms, each its own shape at its own height, nested as the town climbs to its castle.
   // Old Town on the hillside, the Upper Town on it, the Citadel on that, the Keep on the crown.
@@ -546,6 +548,10 @@ function harbour(): AreaMap {
   crowd(t, rng, "pawn", { col: 56, row: 50 }, 3, 7, { color: "yellow", act: "meat" });
   who("pawn", 52, 44, { ...blue, act: "hammer" });
   who("warrior", 46, 47, { ...blue, to: { col: 66, row: 47 } });
+  // The market east of the square: stock in heaps, the traders' houses round it.
+  for (const [c, r, art] of [[66, 44, "woodPile"], [70, 45, "meat"], [74, 44, "tools"], [78, 45, "goldStone"]] as const) prop(art, c, r);
+  for (const [c, r, art] of [[88, 52, "house2"], [92, 48, "house1"], [86, 42, "house3"]] as const) prop(art, c, r, blue);
+  crowd(t, rng, "pawn", { col: 72, row: 47 }, 4, 5, { ...blue, act: "meat" });
 
   // The Docks: fish huts on the bay's shore, piers, boats on the water.
   for (const [c, r] of [[42, 58], [70, 58], [56, 57]] as const) prop("fishHut", c, r);
@@ -598,13 +604,13 @@ function harbour(): AreaMap {
   ];
   // One colour a district; a district's heights share it, so the landforms' own cliffs carry the steps.
   const districts: District[] = [
-    { name: "The Keep", at: { col: 58, row: 4 }, levels: [5], palette: [1], dress: "harbour", decor: 1.5 },
+    { name: "The Keep", at: { col: 58, row: 13 }, levels: [5], palette: [1], dress: "harbour", decor: 1.5 },
     { name: "The Citadel", at: { col: 58, row: 20 }, levels: [4], palette: [1], dress: "harbour", decor: 1.5 },
     { name: "The Upper Town", at: { col: 70, row: 30 }, levels: [3], palette: [2], dress: "harbour", decor: 2 },
     { name: "Old Town", at: { col: 40, row: 40 }, levels: [2], palette: [3], dress: "harbour", decor: 2 },
     { name: "The Lower Town", at: { col: 56, row: 52 }, levels: [1], palette: [4], dress: "harbour", decor: 2 },
     { name: "The Docks", at: { col: 56, row: 75 }, levels: [1], palette: [5], dress: "saltreach", decor: 2 },
-    { name: "West Fields", at: { col: 16, row: 62 }, levels: [1, 2], palette: [2], dress: "harbour", decor: 2.5 },
+    { name: "West Fields", at: { col: 16, row: 62 }, palette: [2], dress: "harbour", decor: 2.5, box: { x: 0, y: 46, w: 29, h: 34 } },
     { name: "The Northwood", at: { col: 18, row: 30 }, levels: [1, 2, 3], palette: [4, 3, 2], dress: "emberwood", decor: 1.5, trees: 0.4 },
     { name: "Mine Hills", at: { col: 96, row: 34 }, levels: [1, 2, 3, 4], palette: [4, 3, 2, 1], dress: "crags", decor: 2.5, trees: 0.06 },
     { name: "Lighthouse Point", at: { col: 92, row: 77 }, levels: [1], palette: [3], dress: "saltreach", decor: 2 },
@@ -716,9 +722,17 @@ function emberwood(): AreaMap {
   who("gnome", 104, 19, { to: { col: 96, row: 22 } });
   for (const [c, r] of [[86, 8], [100, 8]] as const) prop("goldStone", c, r);
 
-  // The Cinder Ford: where the road crosses the Run.
+  // The Cinder Ford: where the road crosses the Run, the last fire before the troll, goblins watching the crossing.
   who("lizard", 50, 39, { to: { col: 60, row: 38 } });
   who("thief", 46, 30, { to: { col: 40, row: 28 } });
+  t.fires.push({ col: 48, row: 31 });
+  prop("goblinHut", 52, 30);
+  crowd(t, rng, "spear", { col: 53, row: 33 }, 3, 2);
+
+  // The climb to Crag Foot: a goblin post where the road leaves the wood.
+  prop("goblinHut", 80, 26);
+  crowd(t, rng, "torch", { col: 82, row: 27 }, 3, 2);
+  prop("skullSpike", 78, 24);
 
   // The goblins' works: planks on the Treetop Walk, a lookout on Warren Hill's crest, their larders and trophies.
   t.road([28, 33], [28, 40]);
@@ -730,15 +744,16 @@ function emberwood(): AreaMap {
   for (const [c, r] of [[53, 7], [73, 7], [52, 23], [73, 23]] as const) prop("skullSpike", c, r);
 
   const districts: District[] = [
-    // One colour a district: green woods, the goblins' dusty hills, the river's teal ford, the troll's ash.
-    { name: "The Palisade", at: { col: 40, row: 61 }, levels: [1], palette: [3], dress: "harbour", decor: 2 },
-    { name: "Old Pines", at: { col: 13, row: 50 }, levels: [1], palette: [4], dress: "emberwood", decor: 1.5 },
+    // One wood floor, so district borders never cut the forest into patches; only raised ground changes colour,
+    // following its cliffs. The Burn is scorched by its dead trees, its mound and the arena are ash.
+    { name: "The Palisade", at: { col: 40, row: 61 }, levels: [1], palette: [3], dress: "emberwood", decor: 2 },
+    { name: "Old Pines", at: { col: 13, row: 50 }, levels: [1], palette: [3], dress: "emberwood", decor: 1.5 },
     { name: "Smoke Bluff", at: { col: 26, row: 41 }, levels: [2], palette: [1], dress: "emberwood", decor: 2 },
-    { name: "Warren Hill", at: { col: 24, row: 17 }, levels: [2, 3], palette: [4, 3, 2], dress: "emberwood", decor: 2 },
-    { name: "Cinder Ford", at: { col: 46, row: 32 }, levels: [1], palette: [5], dress: "fen", decor: 2 },
+    { name: "Warren Hill", at: { col: 24, row: 17 }, levels: [2, 3], palette: [3], dress: "emberwood", decor: 2 },
+    { name: "Cinder Ford", at: { col: 46, row: 32 }, levels: [1], palette: [3], dress: "emberwood", decor: 2 },
     { name: "Troll's Hollow", at: { col: 63, row: 19 }, levels: [2], palette: [1], dress: "barrowmoor", decor: 2 },
-    { name: "The Burn", at: { col: 72, row: 54 }, levels: [1, 2], palette: [4], dress: "greyfall", decor: 2 },
-    { name: "Crag Foot", at: { col: 94, row: 22 }, levels: [1, 2, 3], palette: [3], dress: "crags", decor: 2 },
+    { name: "The Burn", at: { col: 72, row: 54 }, levels: [1, 2], palette: [3, 1], dress: "greyfall", decor: 2 },
+    { name: "Crag Foot", at: { col: 94, row: 22 }, levels: [1, 2, 3], palette: [3], dress: "emberwood", decor: 2 },
   ];
   const rooms = districts.map((d) => ({ at: d.at, r: d.clearing ?? 6 }));
   const tier = t.finish({}, [{ col: 40, row: 64 }], maze(t, rng, rooms));
@@ -867,7 +882,7 @@ function crags(): AreaMap {
     { name: "Bamboo Grove", at: { col: 20, row: 22 }, palette: [4, 3, 2], dress: "emberwood", decor: 2, clearing: 7 },
     { name: "Tinker Town", at: { col: 48, row: 63 }, palette: [4, 3, 2], dress: "harbour", decor: 2, clearing: 9 },
     { name: "Foothills", at: { col: 82, row: 63 }, palette: [4], dress: "crags", decor: 2.5 },
-    { name: "The Terraces", at: { col: 58, row: 79 }, palette: [1], dress: "harbour", decor: 1.5 },
+    { name: "The Terraces", at: { col: 57, row: 73 }, levels: [2], palette: [1], dress: "harbour", decor: 1.5 },
     { name: "Windward Shore", at: { col: 104, row: 47 }, palette: [5], dress: "saltreach", decor: 2 },
   ];
   // The mountain stream: off the rock's west face, down past the bamboo to the sea, a footbridge where the north road crosses.
@@ -875,6 +890,8 @@ function crags(): AreaMap {
   t.bridge({ col: 20, row: 33 }, { col: 20, row: 41 });
   // A tarn under the outcrops, and the gnomes' terraced plots on the southern spur, fenced, with their stock.
   lake(t, 14, 60, 3, 2);
+  // The Terraces stand a step up off the spur, so their gold follows a cliff: as flat ground the colour met its neighbours in straight lines.
+  t.shape(2, 57, 75, 9, 4, 0.4, "The Terraces");
   t.fences.push({ col: 48, row: 70, w: 6, h: 3 }, { col: 56, row: 70, w: 6, h: 3 }, { col: 52, row: 75, w: 6, h: 3 });
   for (const [c, r] of [[50, 71], [52, 72], [58, 71]] as const) who("sheep", c, r);
   for (const [c, r] of [[54, 76], [56, 76]] as const) who("pig", c, r);
@@ -1592,98 +1609,152 @@ function barrowmoor(): AreaMap {
   const { prop, who } = t;
   const black = { color: "black" } as const;
 
-  // The old kings' moor is a tableland, after the Catacombs' hill and Limgrave's Stormhill: one great plateau
-  // ringed by cliffs over a skirt of bog, barrows rising out of it, the King's Barrow two steps higher at its heart.
+  // The old kings' moor, walled by dead thickets into clearings about a screen across, each its own place,
+  // joined by lanes with loops; only the barrows rise out of it.
   for (const [x, y, rx, ry] of [[60, 40, 56, 34], [14, 40, 12, 12], [108, 36, 11, 12], [60, 72, 14, 8]] as const) t.blob("barrowmoor", x, y, rx, ry);
-  t.shape(2, 60, 36, 44, 25, 0.5, "The Heath");
-  // The King's Barrow: two steps over the heath, the cave at its foot down to the tombs.
-  t.shape(3, 64, 24, 13, 8, 0.4, "The King's Barrow");
-  t.shape(4, 64, 21, 6, 4, 0.3, "The King's Barrow");
-  // Lesser barrows across Barrow Field, each a mound of its own.
-  for (const [x, y, rx, ry] of [[32, 22, 5, 3.5], [42, 32, 4, 3], [28, 36, 4, 3], [86, 26, 4, 3], [92, 40, 4, 3]] as const) t.shape(3, x, y, rx, ry, 0.35, "Barrow Field");
-  // Gibbet Hill on the plateau's south-west shoulder.
-  t.shape(3, 40, 48, 6, 4, 0.4, "Gibbet Hill");
-  // The Dead Mere sunk into the moor's top, and bog pools in the skirt below the cliffs.
-  lake(t, 76, 46, 7, 4);
-  for (const [x, y, rx, ry] of [[10, 58, 4, 3], [104, 56, 5, 3], [24, 70, 4, 2], [96, 70, 4, 2]] as const) lake(t, x, y, rx, ry);
+  // Each clearing's centre and half-size, with thicket at least four tiles thick between them.
+  const rooms = [
+    [12, 40, 6, 6], // the Moor Gate
+    [30, 44, 5, 4], // the Wayshrine
+    [26, 20, 10, 7], // Barrow Field
+    [34, 57, 6, 5], // Gibbet Hill
+    [56, 61, 7, 5], // the Burned Hamlet
+    [58, 42, 6, 5], // the Mourners' Way
+    [62, 18, 13, 9], // the King's Barrow
+    [92, 18, 8, 6], // the Robbers' Camp
+    [88, 40, 7, 5], // the Troll's Grave
+    [82, 59, 8, 6], // the Dead Mere
+    [110, 36, 5, 5], // the Grey Road
+    [62, 72, 6, 3], // the Fen Path
+  ] as const;
+  const ragged = noise("barrowmoor:rooms", 3);
+  const open = (c: number, r: number): boolean => rooms.some(([x, y, rx, ry]) => ((c - x) / rx) ** 2 + ((r - y) / ry) ** 2 < 1 + ragged(c, r) * 0.3);
 
-  // The ways: in at the Moor Gate, across the heath, out east to the Grey Gate and south down to the Fen.
-  t.road([1, 40], [16, 40], [36, 40], [60, 40], [96, 36], [118, 36]);
-  t.road([60, 40], [60, 64], [60, 78]);
+  // The barrows: lesser mounds in Barrow Field, Gibbet Hill, and the King's Barrow two steps up.
+  for (const [x, y] of [[20, 16], [30, 15], [21, 24], [32, 24]] as const) t.shape(2, x, y, 3, 2, 0.35, "Barrow Field");
+  t.shape(2, 31, 58, 4, 2.5, 0.4, "Gibbet Hill");
+  t.shape(2, 62, 18, 8, 5, 0.4, "The King's Barrow");
+  t.shape(3, 62, 16, 4, 2.5, 0.3, "The King's Barrow");
+  lake(t, 82, 60, 5, 3);
+  lake(t, 66, 72, 2.5, 1.5);
+
+  // The lanes, stopping at a clearing's edge where it holds a barrow or water.
+  t.road([1, 40], [6, 40], [12, 40], [20, 43], [30, 44]);
+  t.road([30, 44], [30, 36], [28, 28], [26, 20]);
+  t.road([30, 44], [32, 50], [33, 53]);
+  t.road([30, 44], [42, 41], [50, 43], [58, 42]);
+  t.road([26, 20], [38, 18], [51, 18]);
+  t.road([58, 42], [60, 34], [62, 27]);
+  t.road([58, 42], [56, 50], [56, 61]);
+  t.road([38, 58], [44, 60], [56, 61]);
+  t.road([56, 61], [58, 66], [60, 70], [60, 78]);
+  t.road([56, 61], [66, 62], [74, 61]);
+  t.road([58, 42], [68, 38], [76, 41], [88, 40]);
+  t.road([73, 14], [82, 16], [92, 18]);
+  t.road([92, 18], [94, 28], [88, 40]);
+  t.road([88, 40], [98, 38], [110, 36], [118, 36]);
+  t.road([84, 55], [88, 48], [88, 40]);
   t.bridge({ col: 6, row: 40 }, { col: 1, row: 40 }, 3);
   t.bridge({ col: 112, row: 36 }, { col: 118, row: 36 }, 3);
   t.bridge({ col: 60, row: 74 }, { col: 60, row: 78 }, 3);
 
-  // The Moor Gate: the Harbour's barred gate in the western bog, a watch fire under the cliff.
-  t.fires.push({ col: 10, row: 42 });
-  prop("tower", 8, 34, { color: "blue" });
-  t.fences.push({ col: 4, row: 44, w: 4, h: 3 });
-  who("lancer", 12, 38, { color: "blue", to: { col: 16, row: 44 } });
-  for (const [c, r] of [[6, 50], [16, 32]] as const) prop("deadTree", c, r, { scale: 0.7 });
+  // The Moor Gate: the Harbour's barred gate, a watch fire, a blue lancer pacing.
+  t.fires.push({ col: 10, row: 43 });
+  prop("tower", 9, 36, { color: "blue" });
+  t.fences.push({ col: 14, row: 36, w: 4, h: 2 });
+  who("lancer", 13, 38, { color: "blue", to: { col: 16, row: 42 } });
 
-  // The Heath: the open top of the moor, dead thickets, the dead walking it at dusk.
-  for (const [c, r] of [[22, 28], [24, 44], [50, 20], [52, 44], [70, 36], [80, 22], [96, 30], [100, 42], [34, 14], [56, 52], [48, 34], [74, 54], [88, 50], [20, 36], [98, 22]] as const) prop("deadTree", c, r, { scale: 0.7 });
-  crowd(t, rng, "skull", { col: 50, row: 38 }, 5, 10);
-  for (const [c, r] of [[46, 40], [80, 38]] as const) who("bat", c, r);
-  t.fires.push({ col: 54, row: 40 });
+  // The Wayshrine: the first fire past the gate, at the crossroads, bones round it.
+  t.fires.push({ col: 31, row: 46 });
+  for (const [c, r] of [[26, 42], [34, 42], [27, 47]] as const) prop("bones", c, r);
+  prop("deadTree", 34, 46, { scale: 0.9 });
 
-  // Barrow Field: a ring of skulls on every lesser mound, the dead raised round them.
-  for (const [c, r] of [[32, 22], [42, 32], [28, 36], [86, 26], [92, 40]] as const) {
-    for (const [dc, dr] of [[-2, -1], [2, -1], [-2, 1], [2, 1]] as const) prop("skullSpike", c + dc, r + dr);
+  // Barrow Field: skulls staked on every mound, the dead raised round them.
+  for (const [c, r] of [[20, 16], [30, 15], [21, 24], [32, 24]] as const) {
+    for (const dc of [-2, 2]) prop("skullSpike", c + dc, r - 1);
     prop("bones", c, r);
   }
-  who("skullGuard", 42, 31);
-  who("skullGuard", 86, 25);
+  crowd(t, rng, "skull", { col: 26, row: 19 }, 4, 3);
+  who("skullGuard", 29, 21);
 
-  // Gibbet Hill: the moor's hanging mound, the gnolls that pick at it.
-  for (const [c, r] of [[38, 47], [42, 47]] as const) prop("deadTree", c, r, { scale: 0.9 });
-  for (const [c, r] of [[36, 49], [44, 49], [40, 50]] as const) prop("skullSpike", c, r);
-  crowd(t, rng, "gnoll", { col: 40, row: 53 }, 4, 4);
+  // Gibbet Hill: the hanging mound, its gallows trees, the gnolls that pick at it.
+  for (const [c, r] of [[29, 58], [33, 58]] as const) prop("deadTree", c, r, { scale: 0.9 });
+  for (const [c, r] of [[28, 60], [34, 60]] as const) prop("skullSpike", c, r);
+  crowd(t, rng, "gnoll", { col: 38, row: 55 }, 3, 2);
+  for (const [c, r] of [[37, 60], [36, 53]] as const) prop("bones", c, r);
+
+  // The Burned Hamlet: the moor's last village, black with old fire, the dead at its doors.
+  for (const [c, r, art] of [[50, 58, "house1"], [58, 57, "house2"], [61, 61, "house3"], [52, 64, "house2"]] as const) prop(art, c, r, black);
+  for (const [c, r] of [[56, 64], [50, 61]] as const) prop("woodPile", c, r);
+  for (const [c, r] of [[59, 64], [54, 56]] as const) prop("stump", c, r);
+  for (const [c, r] of [[56, 60], [51, 62]] as const) who("skull", c, r, { to: { col: c + 2, row: r } });
+
+  // The Mourners' Way: an avenue of skulls up to the King's Barrow, a fire where the mourners stopped.
+  for (const r of [38, 46]) for (const c of [55, 61]) prop("skullSpike", c, r);
+  t.fires.push({ col: 62, row: 43 });
+  who("bat", 54, 41);
+
+  // The King's Barrow: the dead kings' guard round its steps, the Barrow King on its crown, the cave at its foot.
+  for (const [c, r] of [[52, 15], [72, 15], [54, 24], [70, 24]] as const) prop("skullSpike", c, r);
+  for (const [c, r] of [[58, 14], [66, 14], [62, 21]] as const) prop("bones", c, r);
+  t.bosses.push({ name: "The Barrow King", area: "barrowmoor", col: 62, row: 15 });
+  who("minotaurGuard", 62, 15, { scale: 1.6 });
+  for (const [c, r] of [[52, 20], [72, 20]] as const) who("skullGuard", c, r);
+  prop("cave", 62, 25);
+  t.fires.push({ col: 67, row: 26 });
+
+  // The Robbers' Camp: grave-robbers dug in by the barrow, their spoil and their tools.
+  t.fires.push({ col: 92, row: 19 });
+  for (const [c, r] of [[88, 16], [96, 16]] as const) prop("woodPile", c, r);
+  prop("tools", 89, 21);
+  for (const [c, r] of [[95, 21], [97, 19], [86, 19]] as const) prop("goldStone", c, r);
+  who("thief", 90, 18, { to: { col: 94, row: 20 } });
+  who("thief", 95, 15);
+
+  // The Troll's Grave: a troll the dead brought down, its bones picked, the dead still round it.
+  prop("trollDead", 88, 39);
+  for (const [c, r] of [[83, 38], [93, 42], [85, 43], [92, 37]] as const) prop("bones", c, r);
+  crowd(t, rng, "skull", { col: 90, row: 43 }, 4, 2);
+  who("skullGuard", 84, 41);
 
   // The Dead Mere: mist on the sunk water, a drowned watch, things in the reeds.
-  prop("watchtower", 68, 46);
-  for (const [c, r] of [[70, 50], [84, 44]] as const) who("lizard", c, r, { to: { col: c + 3, row: r } });
-  who("bombFish", 76, 46, { to: { col: 79, row: 46 } });
+  prop("watchtower", 75, 55);
+  for (const [c, r] of [[75, 62], [89, 59]] as const) who("lizard", c, r, { to: { col: c + 2, row: r } });
+  who("bombFish", 82, 60, { to: { col: 85, row: 60 } });
 
-  // The King's Barrow: the dead kings' guard on its steps, the Barrow King on its crown, the cave at its foot.
-  for (const [c, r] of [[56, 22], [72, 22], [58, 28], [70, 28]] as const) prop("skullSpike", c, r);
-  for (const [c, r] of [[60, 20], [68, 20], [64, 26]] as const) prop("bones", c, r);
-  t.bosses.push({ name: "The Barrow King", area: "barrowmoor", col: 64, row: 20 });
-  who("minotaurGuard", 64, 20, { scale: 1.6 });
-  for (const [c, r] of [[57, 26], [71, 26]] as const) who("skullGuard", c, r);
-  prop("cave", 64, 34);
-  t.fires.push({ col: 70, row: 34 });
+  // The Grey Road: skulls staked along it, the warlord's outpost before his gate.
+  for (const c of [106, 110, 114]) for (const r of [33, 39]) prop("skullSpike", c, r);
+  prop("tower", 107, 31, black);
+  crowd(t, rng, "warrior", { col: 111, row: 36 }, 3, 2, black);
+  who("lancer", 105, 37, { ...black, to: { col: 114, row: 37 } });
 
-  // The Grey Road: down off the moor's east cliff, skulls staked along it, the warlord's outpost in the bog.
-  for (const c of [104, 108, 112]) for (const r of [33, 39]) prop("skullSpike", c, r);
-  prop("tower", 110, 28, black);
-  crowd(t, rng, "warrior", { col: 108, row: 36 }, 3, 2, black);
-  who("lancer", 104, 36, { ...black, to: { col: 114, row: 36 } });
-
-  // The Fen Path: the south skirt, duckboards down to the reeds, a fire at the top of them.
-  t.fires.push({ col: 64, row: 68 });
-  for (const [c, r] of [[52, 70], [70, 72], [56, 76]] as const) prop("deadTree", c, r, { scale: 0.6 });
-  who("lizard", 58, 72, { to: { col: 62, row: 76 } });
-  who("snake", 66, 74);
+  // The Fen Path: duckboards down to the reeds, a fire at the top of them.
+  t.fires.push({ col: 58, row: 71 });
+  who("lizard", 58, 74, { to: { col: 63, row: 74 } });
+  who("snake", 63, 70);
 
   const exits: AreaExit[] = [
     { to: "harbour", name: "Moor Gate", kind: "shortcut", at: { col: 1, row: 40 } },
     { to: "greyfall", name: "Grey Gate", kind: "locked", at: { col: 118, row: 36 } },
     { to: "fen", name: "Barrow Path", kind: "open", at: { col: 60, row: 78 } },
-    { to: "deeps", name: "Barrow Cave", kind: "lift", at: { col: 64, row: 35 } },
+    { to: "deeps", name: "Barrow Cave", kind: "lift", at: { col: 62, row: 26 } },
   ];
-  // The heath one dusky colour, the barrows darker, the skirt of bog green-teal, the King's Barrow gold-brown.
+  // One colour a clearing, olive or green, never teal (it reads as water); the barrows a shade up.
   const districts: District[] = [
-    { name: "The Moor Gate", at: { col: 10, row: 48 }, levels: [1], palette: [5], dress: "harbour", decor: 2 },
-    { name: "The Heath", at: { col: 50, row: 46 }, levels: [2], palette: [4], dress: "barrowmoor", decor: 2.5 },
-    { name: "Barrow Field", at: { col: 32, row: 16 }, levels: [3], palette: [3], dress: "barrowmoor", decor: 2 },
-    { name: "Gibbet Hill", at: { col: 40, row: 55 }, levels: [3], palette: [3], dress: "greyfall", decor: 2 },
-    { name: "The Dead Mere", at: { col: 76, row: 52 }, levels: [2], palette: [4], dress: "fen", decor: 2 },
-    { name: "The King's Barrow", at: { col: 64, row: 13 }, levels: [3, 4], palette: [2], dress: "barrowmoor", decor: 1.5 },
-    { name: "The Grey Road", at: { col: 110, row: 44 }, levels: [1], palette: [5], dress: "greyfall", decor: 2 },
-    { name: "The Fen Path", at: { col: 60, row: 70 }, levels: [1], palette: [5], dress: "fen", decor: 2 },
+    { name: "The Moor Gate", at: { col: 12, row: 40 }, levels: [1], palette: [3], dress: "harbour", decor: 2 },
+    { name: "The Wayshrine", at: { col: 30, row: 42 }, levels: [1], palette: [4], dress: "barrowmoor", decor: 2 },
+    { name: "Barrow Field", at: { col: 26, row: 19 }, levels: [1, 2], palette: [4], dress: "barrowmoor", decor: 2 },
+    { name: "Gibbet Hill", at: { col: 35, row: 54 }, levels: [1, 2], palette: [4], dress: "greyfall", decor: 2 },
+    { name: "The Burned Hamlet", at: { col: 56, row: 60 }, levels: [1], palette: [3], dress: "greyfall", decor: 1.5 },
+    { name: "The Mourners' Way", at: { col: 58, row: 41 }, levels: [1], palette: [4], dress: "barrowmoor", decor: 2.5 },
+    { name: "The King's Barrow", at: { col: 62, row: 10 }, levels: [1, 2, 3], palette: [3], dress: "barrowmoor", decor: 1.5 },
+    { name: "The Robbers' Camp", at: { col: 92, row: 14 }, levels: [1], palette: [3], dress: "harbour", decor: 2 },
+    { name: "The Troll's Grave", at: { col: 88, row: 36 }, levels: [1], palette: [4], dress: "barrowmoor", decor: 2.5 },
+    { name: "The Dead Mere", at: { col: 82, row: 54 }, levels: [1], palette: [4], dress: "fen", decor: 2 },
+    { name: "The Grey Road", at: { col: 110, row: 41 }, levels: [1], palette: [4], dress: "greyfall", decor: 2 },
+    { name: "The Fen Path", at: { col: 62, row: 70 }, levels: [1], palette: [3], dress: "fen", decor: 2 },
   ];
-  const tier = t.finish({}, [{ col: 6, row: 40 }]);
+  const tier = t.finish({}, [{ col: 6, row: 40 }], open);
   return { ...tier, area: "barrowmoor", entry: { col: 6, row: 40 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [] };
 }
 

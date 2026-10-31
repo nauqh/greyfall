@@ -330,8 +330,8 @@ returns to the atlas, focused on the area.
   (`hedge()`), the Crags knolls, outcrops and scrub copses round the
   mountain's foot, the Greyfall open courts with clumps of dead wood in
   its bailey, the Gilded Reach plazas with tree avenues (`avenue()`) and
-  one hanging garden, the Steps bare isles with lone trees, Barrowmoor an
-  open heath of barrows and thickets.
+  one hanging garden, the Steps bare isles with lone trees, Barrowmoor
+  clearings walled by dead thicket.
 - **Lizard Fen** is a spiral that climbs: one causeway of reed coiling two
   turns inward through black water, each district a tier higher than the
   last (Causeway Landing on the lowland, the Eel Shallows, the Drowned
@@ -350,14 +350,18 @@ returns to the atlas, focused on the area.
   Pirate Cove, the raised Lighthouse Rock and Militia Fort, Smugglers'
   Steps, the eel pens, the Shingle Spit out to the Fen). Compact, not an
   open world: the boardwalks are the only ways.
-- **Barrowmoor is a tableland**, unlike any other area: one great plateau
-  ringed by cliffs over a skirt of bog (the Moor Gate, the Grey Road, the
-  Fen Path), the Heath across its top in dead thickets, lesser barrows and
-  Gibbet Hill rising out of it as mounds of their own, the Dead Mere sunk
-  into it, and the King's Barrow two steps higher at its heart with the
-  Barrow King on its crown and the Barrow Cave at its foot. Ground a
-  landform names is never absorbed as a pocket, so a small barrow keeps
-  its district's colour.
+- **Barrowmoor is clearings in dead thicket**, about a screen each, so
+  every few steps is a new place: the Moor Gate, the Wayshrine (the first
+  fire), Barrow Field's four mounds, Gibbet Hill, the Burned Hamlet, the
+  Mourners' Way up to the King's Barrow (two steps, the Barrow King on its
+  crown, the cave at its foot), the Robbers' Camp, the Troll's Grave, the
+  Dead Mere, the Grey Road and the Fen Path. `finish()`'s `open` is the
+  clearings' ragged ellipses; the lanes are roads, so they stay clear, with
+  loops round the Mourners' Way and the Troll's Grave. It was a
+  tableland, one plateau 88 by 50 with a few trees on it: up close it
+  read as empty, and woods grow only on lowland, so nothing could wall
+  it. Ground a landform names is never absorbed as a pocket, so a small
+  barrow keeps its district's colour.
 - **The Greyfall is a citadel-crag**: no walls or blocks, but one great
   rock rising out of the rot-marsh in four ragged tiers (the Lower City,
   the High City, the Warlord's Hall, the Keep on its crown), the tiers
@@ -366,6 +370,15 @@ returns to the atlas, focused on the area.
   Yard and the Ashen Approach lie in the marsh round its foot.
 - **Emberwood** keeps its maze, but its hills and Troll's Hollow (once a
   rectangular ring of blocks, now a raised arena of ash) are landforms.
+  The whole wood has one floor colour: per-district colours met in
+  straight lines through the trees and read as painted patches. Colour
+  changes only up a cliff (Smoke Bluff, Troll's Hollow and the Burn's
+  mound in ash-gold), the Burn is scorched by its dead trees, and the
+  pines run through every wooded district with yellow among them. On
+  every area map a forest tile takes its tree kind from a spot up to four
+  tiles off, so two districts' woods mingle at their border. A fire at
+  the Cinder Ford is the rest before the troll, and goblin posts hold the
+  ford and the climb to Crag Foot.
 - **No rectangles left.** The Gilded Reach's Sun Steps and Throne Isle,
   the Skyward Steps' Broken Stair, Windward Rest and Bell Isle, the
   Undercroft's Ossuary, the Deeps' Great Barrow and the Hollow's Shell
@@ -383,7 +396,11 @@ returns to the atlas, focused on the area.
   ground under it. The Harbour is built from them: the Keep on the
   Citadel on the Upper Town on Old Town, the Northwood and the Mine Hills
   as uplands either side, the Moor Watch's bluff, with land run to the
-  frame's edge (sea and sky maps keep a margin of only 3 tiles). Stacked
+  frame's edge (sea and sky maps keep a margin of only 3 tiles), except
+  behind the castle, where open sea puts the Keep on a sea cliff. West
+  Fields owns a `box` edged on its hedgerows: by nearest seed, flat
+  ground met the Lower Town in a straight diagonal. A market of stock
+  heaps and traders' houses fills the square's east side. Stacked
   rectangles and full-width bands both read as slabs and were dropped. A
   landform names its district (`shape(..., owner)`) and gives it every
   tile it covers, so one landform is one colour; a district's `levels`
@@ -414,7 +431,7 @@ returns to the atlas, focused on the area.
   slopes, bare rock, a gold summit) so its tiers read without a patchwork;
   scrub dresses its lower slopes and boulders its upper. A stream runs off
   its west face under a footbridge, a tarn sits under the outcrops, and the
-  gnomes' Terraces on the southern spur are fenced plots with their stock.
+  gnomes' Terraces, a raised shelf on the southern spur, are fenced plots with their stock.
 - **Each area has its own frame and silhouette:** the Harbour taller,
   with Lighthouse Point curling round the bay; Emberwood a long valley
   with the sea biting its corners; the Crags tall, with the Southern Spur

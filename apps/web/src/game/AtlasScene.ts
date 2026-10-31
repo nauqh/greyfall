@@ -486,7 +486,8 @@ export class AtlasScene extends Phaser.Scene {
     // An area map's ground reads a shade lighter each height up; the engine works each tile's colour out.
     const shade = local ? groundColours(local) : null;
     buildMap(this, roads, (c, r, lv) => {
-      if (shade) return `tilesetC${shade[r]?.[c] ?? 4}`;
+      // A stair stands on the lower ground at its foot: the art is see-through round the ramp, so that ground shows there.
+      if (shade) return `tilesetC${(isSlope(c, r) && lv < level(c, r) ? shade[r + 1]?.[c] : shade[r]?.[c]) ?? 4}`;
       const ch = tier.areaAt[r]?.[c];
       // The rock of the Underneath, and anything outside an area, in the dustiest green.
       const p = ch && ch !== "-" ? AREAS[AREA_CODE.indexOf(ch)]!.palette : [4, 4, 4];
@@ -555,7 +556,9 @@ export class AtlasScene extends Phaser.Scene {
     const built = new Set(tier.props.flatMap((p) => footprint(p, true).map((c) => c.row * STRAT_COLS + c.col)));
     for (let r = 0; r < STRAT_ROWS; r++) {
       for (let c = 0; c < STRAT_COLS; c++) {
-        const id = areaId(c, r);
+        // In an area's woods each tree takes its kind from a spot a few tiles off, so two districts' trees mingle, not meet in a line.
+        const k = (n: number): number => Math.round(((((Math.sin(c * 12.9898 + r * 78.233 + n) * 43758.5453) % 1) + 1) % 1) * 8 - 4);
+        const id = (this.local && isForest(c, r) && areaId(c + k(1), r + k(2))) || areaId(c, r);
         if (built.has(r * STRAT_COLS + c) && isLand(c, r)) continue;
         // The rock of the Underneath is bare: its dark is the point.
         if (at(c, r) === "%") continue;
