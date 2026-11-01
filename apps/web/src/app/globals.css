@@ -759,13 +759,16 @@ textarea {
 }
 
 .areaRevealName {
-	font-family: var(--display), serif;
-	font-weight: 600;
-	font-size: clamp(30px, 5vw, 64px);
-	letter-spacing: 0.14em;
+	/* The map's own district-label look: Nunito, bold, upper case, cream in a navy outline. */
+	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-weight: 800;
+	font-size: clamp(30px, 5vw, 60px);
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
 	text-align: center;
-	color: #fffcf2;
-	text-shadow: 0 0 18px rgb(0 0 0 / 0.85), 0 2px 2px rgb(0 0 0 / 0.6);
+	color: #fdfaf0;
+	-webkit-text-stroke: 8px #1c2634;
+	paint-order: stroke fill;
 	animation: areaRevealName 1200ms cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 
