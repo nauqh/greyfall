@@ -2031,13 +2031,13 @@ function saltreach(): AreaMap {
   const P = {
     landing: [80, 14, 6, 4],
     market: [66, 8, 5, 3],
-    saltworks: [68, 26, 6, 4],
+    saltworks: [68, 26, 8, 5],
     lofts: [52, 16, 4, 3],
     village: [46, 32, 7, 5],
     gull: [30, 20, 4, 3],
-    fort: [22, 42, 8, 5],
+    fort: [22, 43, 11, 7],
     cove: [10, 28, 5, 4],
-    light: [12, 10, 6, 5],
+    light: [13, 11, 8, 6],
     steps: [40, 48, 5, 3],
     spit: [58, 48, 6, 4],
     pens: [78, 40, 5, 3],
@@ -2056,9 +2056,11 @@ function saltreach(): AreaMap {
   t.bridge({ col: 58, row: 50 }, { col: 58, row: 58 }, 3);
 
   // The raised rooms: the militia's fort on its piled rock, the lighthouse on its crag.
-  t.shape(2, 22, 41, 6, 4, 0.3, "The Militia Fort");
+  // Each lower tier stands well out round the one above, so a stair off the top lands on open ground with room to
+  // walk, never on a sliver straight over the next stair down.
+  t.shape(2, 22, 42, 8.5, 5, 0.3, "The Militia Fort");
   t.shape(3, 22, 40, 4, 2.6, 0.25, "The Militia Fort");
-  t.shape(2, 12, 9, 4, 3, 0.3, "Lighthouse Rock");
+  t.shape(2, 13, 10, 6.5, 4.2, 0.3, "Lighthouse Rock");
   t.shape(3, 12, 8, 2.5, 1.6, 0.25, "Lighthouse Rock");
 
   // Old Bridge Landing: the toll post where the Harbour's road comes in, the carts loading the town's goods for it.
@@ -2075,8 +2077,10 @@ function saltreach(): AreaMap {
   crowd(t, rng, "pawn", { col: 66, row: 9 }, 3, 2, { ...yellow, act: "knife" });
   for (const [c, r] of [[60, 5], [72, 5]] as const) prop("boat", c, r, { flip: c > 66 });
 
-  // The Saltworks: two fenced salt pans, fuel stacked for boiling, the salt carried to the landing.
-  t.fences.push({ col: 64, row: 24, w: 4, h: 3 }, { col: 69, row: 24, w: 4, h: 3 });
+  // The Saltworks: two fenced salt pans, each a shallow pond of seawater left to dry, fuel stacked for boiling,
+  // the salt carried to the landing.
+  t.fences.push({ col: 63, row: 24, w: 4, h: 3 }, { col: 69, row: 24, w: 4, h: 3 });
+  for (const c of [64, 70]) t.pond(c, 25, 2, 1);
   for (const [c, r] of [[64, 28], [72, 28]] as const) prop("woodPile", c, r);
   crowd(t, rng, "pawn", { col: 68, row: 28 }, 2, 2, { ...yellow, act: "axe" });
   who("pawn", 68, 23, { ...yellow, act: "gold", to: { col: 79, row: 16 } });
@@ -2113,8 +2117,9 @@ function saltreach(): AreaMap {
   who("monk", 10, 11, yellow);
 
   // The Militia Fort: the barracks on the piled rock, its guns turned west to the cove, the garrison drilling.
-  prop("barracks", 22, 39, yellow);
-  for (const c of [17, 18]) prop("cannon", c, 43, { flip: true });
+  prop("barracks", 23, 40, yellow);
+  // A battery on the lower tier's west ledge toward the cove, three tiles apart, clear of the stairs' landings.
+  for (const [c, r] of [[14, 40], [14, 43]] as const) prop("cannon", c, r, { flip: true });
   crowd(t, rng, "warrior", { col: 24, row: 45 }, 3, 2, yellow);
   who("archer", 16, 45, { ...yellow, to: { col: 28, row: 45 } });
 
