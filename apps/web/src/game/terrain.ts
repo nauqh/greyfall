@@ -42,10 +42,10 @@ export const DEPTH = {
   ground: 3,
   /** Units and everything standing, sorted by y: see standing(). */
   unit: 1000,
-  /** Drifting cloud shade, over the whole world. */
-  clouds: 5000,
-  fx: 6000,
-  hud: 9000,
+  /** Drifting cloud shade, over the whole world: above any unit, on a map up to 300 tiles tall. */
+  clouds: 20000,
+  fx: 21000,
+  hud: 24000,
 } as const;
 
 /** How far below a unit's centre its feet stand, in px. */
