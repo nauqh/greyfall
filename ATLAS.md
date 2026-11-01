@@ -378,6 +378,15 @@ returns to the atlas, focused on the area.
   Pirate Cove, the raised Lighthouse Rock and Militia Fort, Smugglers'
   Steps, the eel pens, the Shingle Spit out to the Fen). Compact, not an
   open world: the boardwalks are the only ways.
+  The walks tell its story: the catch and the salt go out over the Old
+  Bridge, so the market and saltworks crowd the landing; the fishers
+  live at the heart where every walk meets; the pirates hold the far
+  west, joined to the town by one plank off Gull Rock, where the
+  militia keep a watch, and the fort's guns face the cove; the
+  smugglers' landing under the village has no way on but the water.
+  Boats are moored at the platforms, sharks keep offshore past the
+  pirates, and the town stands on one green timber, the pirates' and
+  smugglers' ground a shade darker.
 - **Barrowmoor is clearings in dead thicket**, about a screen each, so
   every few steps is a new place: the Moor Gate, the Wayshrine (the first
   fire), Barrow Field's four mounds, Gibbet Hill, the Burned Hamlet, the
