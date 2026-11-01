@@ -801,6 +801,92 @@ textarea {
 	}
 }
 
+/* A crossing between areas: covers the screen its own way, holds while the next map is built, then uncovers. */
+@property --r {
+	syntax: "<length>";
+	inherits: false;
+	initial-value: 0px;
+}
+
+.travel {
+	position: absolute;
+	inset: 0;
+	z-index: 6;
+	background: #070a10;
+}
+
+/* Walking out is the game's own cloud bank, on no dark of its own. */
+.travelClouds {
+	background: none;
+}
+
+/* A drop and a stair: the dark closes in on the hole or the stairway; the next map opens out from its middle. */
+.travel-fall,
+.travel-stair {
+	--r: 0px;
+	-webkit-mask-image: radial-gradient(circle at var(--x) var(--y), transparent var(--r), #000 calc(var(--r) + 1px));
+	mask-image: radial-gradient(circle at var(--x) var(--y), transparent var(--r), #000 calc(var(--r) + 1px));
+}
+.travel-fall.travel-cover { animation: closeIn 600ms cubic-bezier(0.55, 0, 1, 0.45) both; }
+.travel-stair.travel-cover { animation: closeIn 1000ms cubic-bezier(0.77, 0, 0.175, 1) both; }
+.travel-fall.travel-uncover,
+.travel-stair.travel-uncover { --x: 50%; --y: 50%; animation: openOut 700ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+
+@keyframes closeIn { from { --r: 150vmax; } to { --r: 0px; } }
+@keyframes openOut { from { --r: 0px; } to { --r: 150vmax; } }
+
+/* A lift: going down, rock passes upward in the dark; going up, cloud passes downward in the light. Held as long as the map takes. */
+.travel-ride.travel-down {
+	background:
+		repeating-linear-gradient(180deg, rgb(70 60 52 / 0.7) 0 10px, rgb(40 34 30 / 0.5) 10px 22px, transparent 22px 96px),
+		linear-gradient(90deg, #1a1612 0 14%, #070a10 14% 86%, #1a1612 86%);
+	--pass: 0 -480px;
+}
+.travel-ride.travel-up {
+	background:
+		repeating-linear-gradient(180deg, rgb(255 255 255 / 0.85) 0 18px, rgb(255 255 255 / 0) 18px 140px),
+		linear-gradient(180deg, #8fc4ec, #e6f3ff);
+	--pass: 0 560px;
+}
+.travel-ride { animation: ridePass 900ms linear infinite; }
+.travel-ride.travel-cover { animation: rideIn 500ms ease-out both, ridePass 900ms linear infinite; }
+.travel-ride.travel-uncover { animation: rideOut 700ms ease-out both, ridePass 900ms linear infinite; }
+
+@keyframes ridePass { to { background-position: var(--pass), 0 0; } }
+@keyframes rideIn { from { opacity: 0; } }
+@keyframes rideOut { to { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+	.travel.travel-cover { animation: rideIn 300ms ease both; }
+	.travel.travel-uncover { animation: rideOut 300ms ease both; }
+	.travel.travel-hold { animation: none; }
+	.travel-fall,
+	.travel-stair { -webkit-mask-image: none; mask-image: none; }
+}
+
+/* The one-way drop's warning, once per drop. */
+.dropWarn {
+	position: absolute;
+	inset: 0;
+	z-index: 7;
+	display: grid;
+	place-items: center;
+	padding: 16px;
+	background: rgb(7 10 16 / 0.45);
+}
+
+.dropWarnCard {
+	max-width: 420px;
+	text-align: center;
+}
+
+.dropWarnActions {
+	display: flex;
+	justify-content: center;
+	gap: 12px;
+	margin-top: 12px;
+}
+
 /* Outside the HUD, so it stays to bring the HUD back. */
 .hudToggle {
 	position: absolute;

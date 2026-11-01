@@ -40,14 +40,35 @@ export interface AtlasApi {
   focus: (id: AreaId) => void;
   /** Show a tier from its own height. */
   tier: (id: TierId) => void;
+  /** In an area's map: rebuild the scene as another area's map, arriving at its exit back to `from`. */
+  travel: (to: AreaId, from: AreaId, arrive: Crossing) => void;
   /** Draw the Souls map over the tier in view. */
+}
+
+/** How a crossing feels: walking out over a gate, falling down a drop, riding a lift, or going down a stair into the deep. */
+export type Crossing = "walk" | "fall" | "ride" | "stair";
+
+/** One way out of an area's map, as the page needs it to play the crossing. */
+export interface Departure {
+  to: AreaId;
+  name: string;
+  kind: Crossing;
+  /** The way the traveller goes: across the screen for a walk, up or down for a ride. */
+  dir: "left" | "right" | "up" | "down";
+  /** Where the exit stands on screen, 0 to 1, for a crossing that closes in on it. */
+  x: number;
+  y: number;
 }
 
 export interface AtlasHooks {
   /** An area's own map instead of the atlas: the camera kept inside it. */
   area?: AreaId;
+  /** The area travelled in from: the map opens at its exit back there. */
+  from?: AreaId;
+  /** How the traveller arrived: set on a scene rebuilt by a crossing, which then opens without the clouds. */
+  arrive?: Crossing;
   /** Asks the page to travel through an exit to another area. */
-  onExit?: (to: AreaId) => void;
+  onExit?: (exit: Departure) => void;
   /** Asks the page to show an area's card. */
   onArea: (id: AreaId) => void;
   /** Tells the page which tier is in view, after a lift or a tab. */
@@ -225,6 +246,15 @@ export class AtlasScene extends Phaser.Scene {
 
   init(data: AtlasHooks): void {
     this.hooks = data;
+    // A crossing restarts this same scene as the next area: start clean.
+    this.building = "surface";
+    this.view = "surface";
+    this.names = [];
+    this.live = [];
+    this.drag = null;
+    this.local = null;
+    this.built = new Set();
+    this.signs = [];
   }
 
   preload(): void {
@@ -303,9 +333,11 @@ export class AtlasScene extends Phaser.Scene {
       below: this.cameras.add(0, 0, main.width, main.height).setBackgroundColor(0x101018),
       sky: this.cameras.add(0, 0, main.width, main.height),
     };
-    this.scale.on(Phaser.Scale.Events.RESIZE, (size: Phaser.Structs.Size) => {
+    const resize = (size: Phaser.Structs.Size): void => {
       for (const c of Object.values(this.cams)) c.setSize(size.width, size.height);
-    });
+    };
+    this.scale.on(Phaser.Scale.Events.RESIZE, resize);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, resize));
 
     if (this.local) {
       // The camera stays inside the area, and opens on where a traveller arrives.
@@ -315,7 +347,15 @@ export class AtlasScene extends Phaser.Scene {
       this.show(local.id);
       for (const c of Object.values(this.cams)) c.setBounds(0, 0, STRAT_COLS * CELL, STRAT_ROWS * CELL);
       cam.setZoom(this.zoomFor(22));
-      cam.centerOn((local.entry.col + 0.5) * CELL, (local.entry.row + 0.5) * CELL);
+      // A traveller arrives at the exit back the way they came, not the area's front door.
+      const at = local.exits.find((e) => e.to === this.hooks.from)?.at ?? local.entry;
+      cam.centerOn((at.col + 0.5) * CELL, (at.row + 0.5) * CELL);
+      if (this.hooks.arrive === "fall") {
+        // Dropped in: the view comes down onto the spot and lands with a jolt.
+        const y = cam.scrollY;
+        cam.setScroll(cam.scrollX, y - 3 * CELL);
+        this.tweens.add({ targets: cam, scrollY: y, duration: 650, ease: "Bounce.easeOut", onComplete: () => cam.shake(140, 0.004) });
+      }
     } else {
       const hub = AREAS.find((a) => a.id === "harbour")!.label;
       main.setZoom(this.zoomFor(22));
@@ -333,6 +373,7 @@ export class AtlasScene extends Phaser.Scene {
         const mid = (k: "c" | "r") => tiles.reduce((n, t) => n + t[k], 0) / Math.max(1, tiles.length);
         this.flyTo({ col: mid("c"), row: mid("r") }, 24);
       },
+      travel: (to, from, arrive) => this.scene.restart({ ...this.hooks, area: to, from, arrive }),
       tier: (id) => {
         this.show(id);
         // Onto the tier's ground, when the view would otherwise be open sky or solid rock.
@@ -344,7 +385,33 @@ export class AtlasScene extends Phaser.Scene {
         }
       },
     });
-    cloudCover(this, "open", () => this.hooks.opened?.());
+    // A crossing's own cover is the page's; only a first arrival opens on the clouds.
+    if (this.hooks.arrive) this.time.delayedCall(0, () => this.hooks.opened?.());
+    else cloudCover(this, "open", () => this.hooks.opened?.());
+  }
+
+  /** Leaves through an exit: works out how the crossing feels and where it stands on screen, and asks the page. */
+  private depart(e: AreaMap["exits"][number]): void {
+    const local = this.local!;
+    const here = AREAS.find((a) => a.id === local.area)!.tier;
+    const there = AREAS.find((a) => a.id === e.to)!.tier;
+    const cam = this.active;
+    const v = cam.worldView;
+    const [wx, wy] = [(e.at.col + 0.5) * CELL, (e.at.row + 0.5) * CELL];
+    const x = Phaser.Math.Clamp((wx - v.x) / v.width, 0, 1);
+    const y = Phaser.Math.Clamp((wy - v.y) / v.height, 0, 1);
+    let kind: Crossing;
+    let dir: Departure["dir"];
+    if (here !== there) {
+      kind = e.kind === "drop" ? "fall" : "ride";
+      dir = TIERS.indexOf(there) < TIERS.indexOf(here) ? "up" : "down";
+    } else {
+      kind = here === "below" ? "stair" : "walk";
+      // Out across the edge the exit stands on.
+      const [dx, dy] = [e.at.col / STRAT_COLS - 0.5, e.at.row / STRAT_ROWS - 0.5];
+      dir = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? "left" : "right") : dy < 0 ? "up" : "down";
+    }
+    this.hooks.onExit?.({ to: e.to, name: e.name, kind, dir, x, y });
   }
 
   private zoomFor(rows: number): number {
@@ -423,9 +490,12 @@ export class AtlasScene extends Phaser.Scene {
       const cell = { col: Math.floor(w.x / CELL), row: Math.floor(w.y / CELL) };
       // An exit travels, a lift's end rides it, else the area under the pointer.
       for (const e of this.local?.exits ?? []) {
-        if (Math.abs(e.at.col - cell.col) <= 2 && Math.abs(e.at.row - cell.row) <= 2) return this.hooks.onExit?.(e.to);
+        if (Math.abs(e.at.col - cell.col) <= 2 && Math.abs(e.at.row - cell.row) <= 2) return this.depart(e);
       }
-      for (const s of this.signs) if (s.text.getBounds().contains(w.x, w.y)) return this.hooks.onExit?.(s.to);
+      for (const s of this.signs) {
+        const e = this.local?.exits.find((x) => x.to === s.to);
+        if (e && s.text.getBounds().contains(w.x, w.y)) return this.depart(e);
+      }
       for (const l of this.map.lifts) {
         for (const end of [l.up, l.down]) {
           if (end.tier === this.view && Math.abs(end.at.col - cell.col) <= 2 && Math.abs(end.at.row - cell.row) <= 2) return this.ride(l, this.view);
@@ -447,6 +517,8 @@ export class AtlasScene extends Phaser.Scene {
 
   /** A soft round light, and a shaft of it for lifts going up. */
   private glowTextures(): void {
+    // Made once per game: a scene restarted by a crossing finds them already there.
+    if (this.textures.exists("glow")) return;
     const t = this.textures.createCanvas("glow", 256, 256)!;
     const g = t.context.createRadialGradient(128, 128, 0, 128, 128, 128);
     g.addColorStop(0, "rgba(255, 200, 110, 0.9)");
@@ -785,12 +857,33 @@ export class AtlasScene extends Phaser.Scene {
     const there = AREAS.find((a) => a.id === e.to)!;
     const up = TIERS.indexOf(there.tier) < TIERS.indexOf(here);
     const down = TIERS.indexOf(there.tier) > TIERS.indexOf(here);
-    if (down) {
-      this.add.ellipse(x, y, 110, 52, 0x05050a, 0.85).setStrokeStyle(5, 0x3a3f4a).setDepth(DEPTH.ground + 1);
-      this.add.ellipse(x, y + 4, 70, 30, 0x000000, 0.9).setDepth(DEPTH.ground + 2);
-    } else if (up) {
-      const beam = this.add.image(x, y, "beam").setOrigin(0.5, 1).setScale(1.6, 2.4).setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.clouds - 2);
-      this.tweens.add({ targets: beam, alpha: 0.55, duration: 1400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    // Each crossing is drawn as the thing it is: a town's well, a fen's sinkhole, a railed lift; a lift beside its own
+    // building (the cave, the gnomes' tower, the keep) needs nothing more.
+    const ground = DEPTH.ground + 1;
+    if (e.kind === "drop" && this.local!.area === "harbour") {
+      // The Old Well: a ring of stones round dark water, a post either side and the beam the rope hangs from.
+      this.add.ellipse(x, y, 92, 44, 0x6f747e).setStrokeStyle(4, 0x3a3f4a).setDepth(ground);
+      this.add.ellipse(x, y + 2, 64, 26, 0x16303c).setStrokeStyle(3, 0x2a2f38).setDepth(ground + 1);
+      for (const side of [-1, 1]) this.add.rectangle(x + side * 40, y - 30, 8, 64, 0x7a5432).setStrokeStyle(2, 0x3b2716).setDepth(standing(y));
+      this.add.rectangle(x, y - 62, 96, 9, 0x7a5432).setStrokeStyle(2, 0x3b2716).setDepth(standing(y) + 1);
+      this.add.rectangle(x, y - 40, 3, 42, 0xc8b48a).setDepth(standing(y) + 1);
+    } else if (e.kind === "drop") {
+      // A sinkhole: the fen's black water drawing down into the ground, ringed in reed, a slow ripple on it.
+      this.add.ellipse(x, y, 136, 62, 0x0e2226).setStrokeStyle(5, 0x2e4c3c).setDepth(ground);
+      const ripple = this.add.ellipse(x, y, 70, 30).setStrokeStyle(2, 0x5a8a8a, 0.7).setDepth(ground + 1);
+      this.tweens.add({ targets: ripple, scaleX: 0.3, scaleY: 0.3, alpha: 0, duration: 2600, repeat: -1, ease: "Sine.easeIn" });
+      for (let i = 0; i < 7; i++) {
+        const a = (i / 7) * Math.PI * 2;
+        this.track(addDecor(this, "bush", x + Math.cos(a) * 78, y + Math.sin(a) * 38, 0.8, `sink${i}`));
+      }
+    } else if (up || down) {
+      const beside = this.map.tiers[here].props.some((p) => ["cave", "gnomeTower", "watchtower", "tower", "castle", "monastery"].includes(p.art) && footprint(p).some((c) => Math.abs(c.col - e.at.col) <= 3 && Math.abs(c.row - e.at.row) <= 3));
+      if (!beside) {
+        // A lift: a plank floor railed on three sides, open on the side you step on from.
+        this.add.rectangle(x, y - 0.3 * CELL, 2.4 * CELL, 1.6 * CELL, 0x8a6038).setStrokeStyle(4, 0x3b2716).setDepth(ground);
+        for (let i = -1; i <= 1; i++) this.add.rectangle(x + i * 0.8 * CELL, y - 0.3 * CELL, 2, 1.5 * CELL, 0x5e3f22).setDepth(ground + 1);
+        this.fence(e.at.col - 1, e.at.row - 1, 3, 1);
+      }
     }
     const tone = e.kind in GATE_TONE ? GATE_TONE[e.kind as GateKind] : LIFT_TONE[e.kind as LiftKind];
     const word = up ? "up to " : down ? "down to " : "to ";
@@ -854,6 +947,8 @@ export class AtlasScene extends Phaser.Scene {
     const pad = 6;
     const w = STRAT_COLS + 2 * pad;
     const h = STRAT_ROWS + 2 * pad;
+    // Every map on one tier shares the key: a crossing to another lays its own light.
+    if (this.textures.exists(`atlasMood-${tier.id}`)) this.textures.remove(`atlasMood-${tier.id}`);
     const tex = this.textures.createCanvas(`atlasMood-${tier.id}`, w, h)!;
     const img = tex.context.createImageData(w, h);
     const rows = tier.island.rows;

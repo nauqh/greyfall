@@ -195,6 +195,24 @@ it, and the camera stays inside that map. An exit at its edge, or a lift or
 well inside it, takes you to the next area's map; "Back to the atlas"
 returns to the atlas, focused on the area.
 
+Crossing between areas never leaves the page: the scene rebuilds itself
+as the next map inside the same game (`travel` on its api) while the
+address follows quietly (`/atlas/<area>?from=<area>`), and you arrive at
+the exit back the way you came, not the area's front door. Each kind of
+crossing has its own cover, held while the next map is built: walking
+out draws the game's own cloud bank in and parts it on the next map
+(a dark wipe read as ugly); a drop closes the dark in on the
+hole, then the view falls onto the spot with a jolt; a lift passes rock
+upward going down and cloud downward going up; a stair into the deep
+closes in slowly on the stairway. The first time you take a one-way
+drop, it asks first. The area's name is not announced again when you
+step straight back into the area you just left. Each crossing is drawn as the
+thing it is: the Old Well a ring of stones with posts and a rope beam,
+the Fen Sinkhole a reed-ringed pool of black water drawing down, a lift
+by its own building (the cave, the gnomes' tower, the keep) nothing
+more, a lift standing alone a railed plank floor. The dark hole and the
+white shaft of light that marked every crossing are gone.
+
 - `block(level, x, y, w, h)` lays out exact terraces. A castle is nested
   blocks, each with its own cliff faces. `block(1, ...)` cuts a notch back to
   the ground, as for a gatehouse.
