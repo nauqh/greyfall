@@ -1193,7 +1193,9 @@ function gilded(): AreaMap {
   for (const [c, r] of [[29, 34], [34, 36], [39, 33], [27, 36]] as const) prop("goldStone", c, r);
   for (const [c, r] of [[32, 31], [24, 34]] as const) prop("meat", c, r);
   prop("woodPile", 38, 37);
+  // The livestock pen at the market's edge: the city eats what it can keep on an isle.
   t.fences.push({ col: 28, row: 38, w: 5, h: 3 });
+  for (const c of [29, 31]) who("sheep", c, 39);
   t.fires.push({ col: 33, row: 33 });
   crowd(t, rng, "gnome", { col: 32, row: 34 }, 5, 6);
   crowd(t, rng, "pawn", { col: 31, row: 35 }, 3, 5, { ...gold, act: "gold" });
@@ -1212,7 +1214,7 @@ function gilded(): AreaMap {
   for (const [c, r] of [[29, 61], [21, 60]] as const) prop("goldStone", c, r);
   crowd(t, rng, "gnome", { col: 26, row: 59 }, 4, 4);
 
-  // The Gilded Gate, north: the yellow guard's barracks and drill yard.
+  // The Gilded Gate, north: the yellow guard's garrison isle, its barracks and drill yard, off the city's ways.
   prop("barracks", 66, 7, gold);
   prop("tower", 60, 8, gold);
   prop("tower", 78, 8, gold);
@@ -1240,6 +1242,11 @@ function gilded(): AreaMap {
   for (const [c, r] of [[58, 62], [70, 62]] as const) prop("goldStone", c, r);
   crowd(t, rng, "monk", { col: 64, row: 63 }, 3, 4, gold);
 
+  // The span's head: the guard hold the one way in from the warlord's isle, a tower either side, archers watching it.
+  for (const [c, r] of [[83, 31], [81, 37]] as const) prop("tower", c, r, gold);
+  for (const [c, r] of [[79, 32], [79, 35]] as const) who("archer", c, r, gold);
+  who("lancer", 78, 34, { ...gold, to: { col: 75, row: 34 } });
+
   // The Throne Isle: black stone over the gold, imps round the warlord's empty seat.
   for (const [c, r] of [[95, 31], [102, 31]] as const) prop("tower", c, r, black);
   for (const [c, r] of [[94, 37], [98, 38], [102, 37]] as const) prop("skullSpike", c, r);
@@ -1252,15 +1259,16 @@ function gilded(): AreaMap {
     { to: "greyfall", name: "Throne Stair", kind: "lift", at: { col: 99, row: 34 } },
   ];
   const districts: District[] = [
-    // The Sun Steps' tiers share a gold ramp to the white-gold summit; the throne isle is the warlord's black-teal.
-    { name: "The Sun Steps", at: { col: 64, row: 48 }, levels: [1, 2, 3, 4], palette: [4, 3, 2, 1], dress: "gilded", decor: 2 },
-    { name: "The Throne Isle", at: { col: 98, row: 43 }, levels: [1, 2], palette: [5], dress: "greyfall", decor: 2 },
-    { name: "Cloud Landing", at: { col: 12, row: 40 }, palette: [2, 1], dress: "gilded", clearing: 4 },
-    { name: "The Gold Market", at: { col: 32, row: 34 }, palette: [1, 2], dress: "gilded", clearing: 7 },
-    { name: "The Bee Gardens", at: { col: 36, row: 10 }, palette: [2, 3], dress: "emberwood", clearing: 5 },
-    { name: "Gnome Landing", at: { col: 26, row: 63 }, palette: [3, 2], dress: "crags", clearing: 5 },
-    { name: "The Gilded Gate", at: { col: 70, row: 8 }, palette: [1, 4], dress: "gilded", clearing: 5 },
-    { name: "The Sun Chapel", at: { col: 64, row: 61 }, palette: [5, 1], dress: "gilded", clearing: 5 },
+    // All gold and sunlight: the city in fresh green climbing to gold, the market, gate and chapel gold; the gardens
+    // green; only the warlord's isle dark.
+    { name: "The Sun Steps", at: { col: 64, row: 48 }, levels: [1, 2, 3, 4], palette: [2, 1, 1, 1], dress: "gilded", decor: 2 },
+    { name: "The Throne Isle", at: { col: 98, row: 43 }, levels: [1, 2], palette: [4], dress: "greyfall", decor: 2 },
+    { name: "Cloud Landing", at: { col: 12, row: 40 }, palette: [2], dress: "gilded", clearing: 4 },
+    { name: "The Gold Market", at: { col: 32, row: 34 }, palette: [1], dress: "gilded", clearing: 7 },
+    { name: "The Bee Gardens", at: { col: 36, row: 10 }, palette: [2], dress: "emberwood", clearing: 5 },
+    { name: "Gnome Landing", at: { col: 26, row: 63 }, palette: [2], dress: "crags", clearing: 5 },
+    { name: "The Gilded Gate", at: { col: 70, row: 8 }, palette: [1], dress: "gilded", clearing: 5 },
+    { name: "The Sun Chapel", at: { col: 64, row: 61 }, palette: [1], dress: "gilded", clearing: 5 },
   ];
   // A city, not a maze: open plazas, trees in avenues along its ways, and the Bee Gardens hanging thick.
   avenue(t, [[10, 36], [20, 36], [32, 35], [46, 34]]);
@@ -1357,11 +1365,12 @@ function steps(): AreaMap {
   prop("goldStone", 29, 12);
   who("monk", 24, 11, gold);
 
-  // The Gold Wreck: a gnome barge that fell short, its gold spilt, and what came for it.
-  for (const [c, r] of [[86, 52], [90, 55], [84, 56], [92, 51]] as const) prop("goldStone", c, r);
-  prop("woodPile", 88, 53);
-  prop("trollDead", 90, 58);
-  crowd(t, rng, "imp", { col: 88, row: 55 }, 3, 3);
+  // The Gold Wreck: a gnome barge that fell short of the isle and hangs off its edge in the sky, its timbers and gold
+  // spilt across the rock, the imps picking it over.
+  prop("boat", 97, 55, { scale: 1.6 });
+  for (const [c, r] of [[86, 52], [90, 55], [84, 56], [92, 51], [93, 56]] as const) prop("goldStone", c, r);
+  for (const [c, r] of [[88, 53], [92, 54], [86, 57]] as const) prop("woodPile", c, r);
+  crowd(t, rng, "imp", { col: 89, row: 55 }, 3, 3);
 
   const exits: AreaExit[] = [
     { to: "gilded", name: "Cloud Bridge", kind: "open", at: { col: 110, row: 16 } },
@@ -1372,7 +1381,7 @@ function steps(): AreaMap {
     { name: "The Broken Stair", at: { col: 80, row: 30 }, levels: [1, 2, 3], palette: [4, 2, 1], dress: "crags", decor: 2.5 },
     { name: "Windward Rest", at: { col: 58, row: 8 }, levels: [1, 2, 3], palette: [3, 2, 1], dress: "gilded", decor: 2 },
     { name: "Cloud Pier", at: { col: 100, row: 21 }, levels: [1], palette: [3], dress: "gilded", decor: 2 },
-    { name: "The Hanging Graves", at: { col: 58, row: 47 }, levels: [1], palette: [5], dress: "barrowmoor", decor: 2.5 },
+    { name: "The Hanging Graves", at: { col: 58, row: 47 }, levels: [1], palette: [4], dress: "barrowmoor", decor: 2.5 },
     { name: "The Bell Isle", at: { col: 36, row: 39 }, levels: [1, 2], palette: [3], dress: "harbour", decor: 2 },
     { name: "Watch Isle", at: { col: 14, row: 52 }, levels: [1], palette: [2], dress: "harbour", decor: 2 },
     { name: "The Hermit's Rock", at: { col: 26, row: 14 }, levels: [1], palette: [2], dress: "gilded", decor: 2 },

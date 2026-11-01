@@ -269,12 +269,19 @@ returns to the atlas, focused on the area.
   Steps in three terraces to the Sun Hall, where the Sun Sentinel stands.
   The Throne Isle hangs off the east end, reached only by the raised
   Gilded Span.
+  All gold and sunlight: the city climbs from fresh green to gold, with
+  only the warlord's isle dark. The yellow guard hold the span's foot,
+  a tower either side and archers on its landing, because the span is
+  the one way the warlord's creatures can come in; the Gilded Gate isle
+  is their garrison. The market keeps its livestock in a pen.
   Skyward Steps is the sixth, a descent after the Ringed City's broken
   stairs: from the Cloud Pier up the Broken Stair, across the raised Old
   Span to the Windward Rest, down its steps, then by rope bridges over the
   Hanging Graves and the Bell Isle to the Watch Isle and its lift onto the
   Harbour's castle; the Hermit's Rock and the Gold Wreck are dead ends off
-  the way. A stair onto the third height must rise from second-height
+  the way. The Gold Wreck's barge hangs off the
+  isle's edge in the sky where it fell short, its timbers and gold
+  spilt across the rock for the imps. A stair onto the third height must rise from second-height
   ground, so a high isle steps down through a ledge to its lowland; and a
   bridge must run from well inside one isle, as a ragged rim leaves one
   that stops at the edge joined to nothing.
