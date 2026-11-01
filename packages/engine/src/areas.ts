@@ -485,12 +485,16 @@ function harbour(): AreaMap {
   // Open sea behind the castle, so the Keep stands on a sea cliff, not over a strip of empty lowland.
   lake(t, 58, 2, 24, 4.5);
 
-  // Districts as landforms, each its own shape at its own height, nested as the town climbs to its castle.
-  // Old Town on the hillside, the Upper Town on it, the Citadel on that, the Keep on the crown.
-  t.shape(2, 56, 33, 30, 9, 0.45, "Old Town");
-  t.shape(3, 56, 24, 21, 8, 0.45, "The Upper Town");
-  t.shape(4, 58, 15, 13, 7, 0.45, "The Citadel");
-  t.shape(5, 58, 10, 6, 3.5, 0.3, "The Keep");
+  // Districts as landforms, each wholly inside the one below with ground all round it, so every tier is reached
+  // only from the tier under it: Old Town on the hill, the Upper Town on it, the Citadel on that, the Keep on the
+  // crown. To the north all four run out to the sea. Tiers that overhung the one below stood straight on the
+  // lowland, with stairs from the ground to the third and fourth heights.
+  t.shape(2, 58, 22, 21, 19, 0.3, "Old Town");
+  // Old Town's north-east shoulder: its ring round the Upper Town ran too thin there and was cut away as a sliver.
+  t.shape(2, 70, 10, 9, 6, 0.3, "Old Town");
+  t.shape(3, 58, 18, 16, 13, 0.3, "The Upper Town");
+  t.shape(4, 58, 14, 11, 7, 0.3, "The Citadel");
+  t.shape(5, 58, 10, 5, 3.5, 0.25, "The Keep");
   // The Northwood: a wooded upland of its own west of the castle, a crag on its crown.
   t.shape(2, 18, 20, 14, 11, 0.45, "The Northwood");
   t.shape(3, 15, 14, 6, 4, 0.45, "The Northwood");
@@ -520,26 +524,26 @@ function harbour(): AreaMap {
   who("lancer", 55, 11, { ...blue, to: { col: 61, row: 11 } });
 
   // The Citadel: towers, barracks, archery and chapel round the keep's foot, guns over its cliffs.
-  for (const [c, r] of [[48, 14], [68, 14]] as const) prop("tower", c, r, blue);
-  prop("barracks", 51, 18, blue);
-  prop("archery", 65, 18, blue);
-  for (const c of [50, 58, 66]) prop("cannon", c, 21);
-  crowd(t, rng, "warrior", { col: 58, row: 18 }, 3, 3, blue);
-  for (const [c, r] of [[48, 16], [68, 16]] as const) who("archer", c, r, blue);
+  for (const [c, r] of [[50, 15], [66, 15]] as const) prop("tower", c, r, blue);
+  prop("barracks", 53, 19, blue);
+  prop("archery", 63, 19, blue);
+  for (const c of [50, 58, 66]) prop("cannon", c, 19);
+  crowd(t, rng, "warrior", { col: 58, row: 17 }, 3, 2, blue);
+  for (const [c, r] of [[50, 17], [66, 17]] as const) who("archer", c, r, blue);
 
   // The Upper Town: the chapel and the old families' tall houses on the third height.
-  prop("monastery", 44, 24, blue);
-  for (const [c, r, art] of [[38, 26, "house2"], [50, 27, "house1"], [64, 27, "house2"], [70, 25, "house3"], [76, 27, "house2"]] as const) prop(art, c, r, blue);
-  t.fires.push({ col: 57, row: 28 });
-  crowd(t, rng, "pawn", { col: 58, row: 27 }, 3, 6, { ...blue, act: "gold" });
-  who("monk", 46, 28, blue);
+  prop("monastery", 48, 25, blue);
+  for (const [c, r, art] of [[53, 28, "house2"], [63, 28, "house1"], [68, 25, "house3"], [46, 20, "house2"], [70, 20, "house2"]] as const) prop(art, c, r, blue);
+  t.fires.push({ col: 58, row: 27 });
+  crowd(t, rng, "pawn", { col: 58, row: 26 }, 3, 4, { ...blue, act: "gold" });
+  who("monk", 51, 27, blue);
 
   // Old Town: cottages along the hillside, the archery butts, a fire where the stairs come down.
-  for (const [c, r, art] of [[30, 35, "house1"], [36, 37, "house3"], [44, 37, "house2"], [70, 37, "house1"], [78, 36, "house3"], [84, 34, "house2"], [26, 32, "house3"]] as const) prop(art, c, r, blue);
+  for (const [c, r, art] of [[44, 35, "house1"], [48, 38, "house3"], [66, 38, "house2"], [72, 35, "house1"], [41, 22, "house3"], [75, 22, "house2"]] as const) prop(art, c, r, blue);
   prop("archery", 58, 37, blue);
-  t.fires.push({ col: 50, row: 38 });
-  crowd(t, rng, "pawn", { col: 64, row: 37 }, 3, 6, blue);
-  who("warrior", 34, 38, { ...blue, to: { col: 80, row: 38 } });
+  t.fires.push({ col: 53, row: 38 });
+  crowd(t, rng, "pawn", { col: 63, row: 36 }, 3, 3, blue);
+  who("warrior", 46, 40, { ...blue, to: { col: 70, row: 40 } });
 
   // The lower town: the square, its fire and the Old Well, the market, houses down to the water.
   t.fires.push({ col: 56, row: 43 });
@@ -600,21 +604,21 @@ function harbour(): AreaMap {
     { to: "barrowmoor", name: "Moor Gate", kind: "shortcut", at: { col: 110, row: 44 } },
     { to: "emberwood", name: "Ember Gate", kind: "gate", at: { col: 26, row: 1 } },
     { to: "undercroft", name: "Old Well", kind: "drop", at: { col: 56, row: 45 } },
-    { to: "steps", name: "Watch Lift", kind: "shortcut", at: { col: 62, row: 11 } },
+    { to: "steps", name: "Watch Lift", kind: "shortcut", at: { col: 61, row: 9 } },
   ];
-  // One colour a district; a district's heights share it, so the landforms' own cliffs carry the steps.
+  // The hub is the brightest place in the game: green ground climbing through fresh green to a gold capital, no olive or teal.
   const districts: District[] = [
     { name: "The Keep", at: { col: 58, row: 13 }, levels: [5], palette: [1], dress: "harbour", decor: 1.5 },
     { name: "The Citadel", at: { col: 58, row: 20 }, levels: [4], palette: [1], dress: "harbour", decor: 1.5 },
-    { name: "The Upper Town", at: { col: 70, row: 30 }, levels: [3], palette: [2], dress: "harbour", decor: 2 },
-    { name: "Old Town", at: { col: 40, row: 40 }, levels: [2], palette: [3], dress: "harbour", decor: 2 },
-    { name: "The Lower Town", at: { col: 56, row: 52 }, levels: [1], palette: [4], dress: "harbour", decor: 2 },
-    { name: "The Docks", at: { col: 56, row: 75 }, levels: [1], palette: [5], dress: "saltreach", decor: 2 },
+    { name: "The Upper Town", at: { col: 70, row: 30 }, levels: [3], palette: [1], dress: "harbour", decor: 2 },
+    { name: "Old Town", at: { col: 40, row: 40 }, levels: [2], palette: [2], dress: "harbour", decor: 2 },
+    { name: "The Lower Town", at: { col: 56, row: 52 }, levels: [1], palette: [3], dress: "harbour", decor: 2 },
+    { name: "The Docks", at: { col: 56, row: 75 }, levels: [1], palette: [3], dress: "saltreach", decor: 2 },
     { name: "West Fields", at: { col: 16, row: 62 }, palette: [2], dress: "harbour", decor: 2.5, box: { x: 0, y: 46, w: 29, h: 34 } },
-    { name: "The Northwood", at: { col: 18, row: 30 }, levels: [1, 2, 3], palette: [4, 3, 2], dress: "emberwood", decor: 1.5, trees: 0.4 },
-    { name: "Mine Hills", at: { col: 96, row: 34 }, levels: [1, 2, 3, 4], palette: [4, 3, 2, 1], dress: "crags", decor: 2.5, trees: 0.06 },
+    { name: "The Northwood", at: { col: 18, row: 30 }, levels: [1, 2, 3], palette: [3, 2, 1], dress: "emberwood", decor: 1.5, trees: 0.4 },
+    { name: "Mine Hills", at: { col: 96, row: 34 }, levels: [1, 2, 3, 4], palette: [3, 2, 1, 1], dress: "crags", decor: 2.5, trees: 0.06 },
     { name: "Lighthouse Point", at: { col: 92, row: 77 }, levels: [1], palette: [3], dress: "saltreach", decor: 2 },
-    { name: "Moor Watch", at: { col: 98, row: 66 }, levels: [1, 2, 3], palette: [4, 3, 2], dress: "barrowmoor", decor: 1.5 },
+    { name: "Moor Watch", at: { col: 98, row: 66 }, levels: [1, 2, 3], palette: [3, 2, 1], dress: "barrowmoor", decor: 1.5 },
   ];
   const tier = t.finish({}, [{ col: 56, row: 46 }]);
   return { ...tier, area: "harbour", entry: { col: 56, row: 46 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [] };

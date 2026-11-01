@@ -400,7 +400,12 @@ returns to the atlas, focused on the area.
   behind the castle, where open sea puts the Keep on a sea cliff. West
   Fields owns a `box` edged on its hedgerows: by nearest seed, flat
   ground met the Lower Town in a straight diagonal. A market of stock
-  heaps and traders' houses fills the square's east side. Stacked
+  heaps and traders' houses fills the square's east side. The capital's
+  tiers nest, each wholly inside the one below with ground all round,
+  so a tier is reached only from the tier under it: overhanging tiers
+  stood on the lowland with stairs from the ground to the third and
+  fourth heights. The hub is the brightest map, green ground climbing
+  through fresh green to a gold capital. Stacked
   rectangles and full-width bands both read as slabs and were dropped. A
   landform names its district (`shape(..., owner)`) and gives it every
   tile it covers, so one landform is one colour; a district's `levels`
