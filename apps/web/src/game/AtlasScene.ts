@@ -186,6 +186,17 @@ const LIFT_TONE: Record<LiftKind, string> = { lift: "#ffe9a8", drop: "#d6b8ff", 
 /** Ground under the rock of the Underneath: dark, and darker than the caverns. */
 const ROCK_MOOD = 0x1e1e2a;
 
+/**
+ * Each underground map lit its own way: the rock's own dark, how much the open floor shows unlit, the colour its
+ * lights cast. The Undercroft is torchlit masonry, the Deeps the darkest and lit ghost-green, the Hollow the
+ * brightest, a vast cave in pale blue where the gold glows far.
+ */
+const UNDER: Partial<Record<AreaId, { rock: number; ambient: number; glow: number; gold: number }>> = {
+  undercroft: { rock: 0x221a16, ambient: 0.16, glow: 0xffc890, gold: 4 },
+  deeps: { rock: 0x0e1214, ambient: 0.1, glow: 0x9cdcb4, gold: 4 },
+  hollow: { rock: 0x16202e, ambient: 0.42, glow: 0xb4e0ff, gold: 8 },
+};
+
 interface Tracked {
   s: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image;
   b: Phaser.Geom.Rectangle;
@@ -232,7 +243,7 @@ export class AtlasScene extends Phaser.Scene {
     for (const tier of new Set(Object.values(this.map.tiers))) {
       for (const p of tier.props) {
         if (p.color) this.load.image(this.buildingKey(p), packUrl(`Buildings/${COLOR_DIR[p.color]} Buildings/${BUILDING_FILE[p.art]}`));
-        else sheet(`prop_${p.art}`, PROP[p.art]!);
+        else if (p.art !== "sconce") sheet(`prop_${p.art}`, PROP[p.art]!);
       }
       for (const d of tier.dwellers) {
         const { idle, move, frame } = this.look(d);
@@ -658,6 +669,15 @@ export class AtlasScene extends Phaser.Scene {
       this.add.image(x, y, this.buildingKey(p)).setOrigin(0.5, spec.anchorY / spec.h).setScale(p.scale ?? 1).setFlipX(p.flip ?? false).setDepth(standing(y));
       return;
     }
+    if (p.art === "sconce") {
+      // A torch in its bracket on a crypt wall: a small flame and its pool of light.
+      const flame = this.add.sprite(x, y - 30, "fire").setOrigin(0.5, FIRE.anchor).setScale(0.32).setDepth(standing(y));
+      this.loop(flame, "fire");
+      this.track(flame);
+      const glow = this.add.image(x, y - 40, "glow").setBlendMode(Phaser.BlendModes.ADD).setTint(0xffb870).setAlpha(0.45).setScale(0.8).setDepth(DEPTH.clouds - 2);
+      this.tweens.add({ targets: glow, alpha: 0.6, duration: 700 + Math.random() * 500, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+      return;
+    }
     const spec = PROP[p.art]!;
     const key = `prop_${p.art}`;
     const s = this.add
@@ -713,13 +733,17 @@ export class AtlasScene extends Phaser.Scene {
   private bonfire(f: Cell): void {
     const x = (f.col + 0.5) * CELL;
     const y = (f.row + 0.8) * CELL;
+    // In the Deeps the fires burn ghost-green: corpse-candles, not hearths.
+    const ghost = this.local?.area === "deeps";
     const glow = this.add.image(x, y - 24, "glow").setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.55).setScale(1.3).setDepth(DEPTH.clouds - 2);
+    if (ghost) glow.setTint(0x7cf0b0);
     this.tweens.add({ targets: glow, scale: 1.5, alpha: 0.75, duration: 900 + Math.random() * 400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
     for (let i = 0; i < 5; i++) {
       const a = (i / 5) * Math.PI * 2;
       this.add.ellipse(x + Math.cos(a) * 26, y + Math.sin(a) * 12, 16, 10, 0x8b8f99).setStrokeStyle(2, 0x3a3f4a).setDepth(standing(y) - 1);
     }
     const fire = this.add.sprite(x, y, "fire").setOrigin(0.5, FIRE.anchor).setScale(0.7).setDepth(standing(y));
+    if (ghost) fire.setTint(0x8cffc0);
     this.loop(fire, "fire");
     this.track(fire);
   }
@@ -863,22 +887,23 @@ export class AtlasScene extends Phaser.Scene {
     }
     // Underground in an area's own map, the dark is the point: ground is near black but in pools of light
     // round its fires, its ways out, and the gold glowing in the rock.
-    const lights = this.local && tier.base === "rock"
+    const under = this.local && tier.base === "rock" ? (UNDER[this.local.area] ?? { rock: ROCK_MOOD, ambient: 0.22, glow: AREAS.find((a) => a.id === this.local!.area)!.mood, gold: 4 }) : null;
+    const lights = this.local && under
       ? [
           ...tier.fires.map((f) => ({ c: f.col, r: f.row, reach: 9 })),
           ...this.local.exits.map((e) => ({ c: e.at.col, r: e.at.row, reach: 7 })),
-          ...tier.props.filter((p) => p.art === "goldStone").map((p) => ({ c: p.col, r: p.row, reach: 4 })),
+          ...tier.props.filter((p) => p.art === "goldStone").map((p) => ({ c: p.col, r: p.row, reach: under.gold })),
+          ...tier.props.filter((p) => p.art === "sconce").map((p) => ({ c: p.col, r: p.row, reach: 5 })),
         ]
       : null;
     const lit = (c: number, r: number): number => Math.max(0, ...lights!.map((l) => 1 - Math.hypot(c - l.c, r - l.r) / l.reach));
     const tone = (c: number, r: number): number => {
-      if (tier.base === "rock" && (rows[r]?.[c] ?? "%") === "%") return ROCK_MOOD;
-      if (lights) {
-        // Open water has no area of its own: it takes the map's, a little dimmer, so a lake reads as water in the dark.
-        const own = AREAS[AREA_CODE.indexOf(tier.areaAt[r]![c]!)]?.mood;
-        const m = own ?? AREAS.find((a) => a.id === this.local!.area)!.mood;
-        const k = Math.min(1, (own ? 0.22 : 0.3) + lit(c, r) * 1.1);
-        const mix = (shift: number) => Math.round(((ROCK_MOOD >> shift) & 255) + (((m >> shift) & 255) - ((ROCK_MOOD >> shift) & 255)) * k);
+      if (tier.base === "rock" && (rows[r]?.[c] ?? "%") === "%") return under?.rock ?? ROCK_MOOD;
+      if (lights && under) {
+        // Open water has no area of its own: it shows a little more than the floor, so a lake reads as water in the dark.
+        const water = AREAS[AREA_CODE.indexOf(tier.areaAt[r]![c]!)] === undefined;
+        const k = Math.min(1, under.ambient + (water ? 0.08 : 0) + lit(c, r) * 1.1);
+        const mix = (shift: number) => Math.round(((under.rock >> shift) & 255) + (((under.glow >> shift) & 255) - ((under.rock >> shift) & 255)) * k);
         return (mix(16) << 16) | (mix(8) << 8) | mix(0);
       }
       const k = (r + pad) * w + c + pad;
@@ -922,8 +947,9 @@ export class AtlasScene extends Phaser.Scene {
       drift("barrowmoor", 10, 0xb8bce0, 0.3);
       drift("fen", 9, 0xd8f0d8, 0.3);
     } else if (tier.id === "below") {
-      drift("deeps", 8, 0x6a6080, 0.3);
-      drift("hollow", 12, 0x9ab8d0, 0.3);
+      // Grave-mist in the Deeps, green and low; a pale haze over the Hollow's lake.
+      drift("deeps", 12, 0x6ab08a, 0.32);
+      drift("hollow", 20, 0xa8d0ec, 0.28);
     } else {
       drift("gilded", 6, 0xffffff, 0.35);
     }

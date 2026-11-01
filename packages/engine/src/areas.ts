@@ -1388,76 +1388,89 @@ function undercroft(): AreaMap {
   const t = tierBuilder("below", rng, { cols: 104, rows: 80 });
   const { prop, who } = t;
   const purple = { color: "purple" } as const;
+  const u = "undercroft";
 
-  // The Harbour's catacombs, after Diablo's cathedral crypts: chambers cut from the rock under the well,
-  // joined by narrow passages, the dark between them solid.
-  const chambers: [number, number, number, number][] = [[52, 14, 7, 5], [20, 36, 12, 8], [10, 12, 5, 4], [84, 22, 10, 7], [50, 46, 9, 6], [74, 58, 13, 8], [90, 72, 8, 5]];
-  for (const [x, y, rx, ry] of chambers) t.blob("undercroft", x, y, rx, ry);
-  // Passages: west to the Cisterns and on to the Nook, east to the Pillars, south down to the Chapel,
-  // the Pillars on down to the Ossuary, the Ossuary to the Dig, and a long way round from the Cisterns to the Chapel.
-  for (const way of [
-    [[48, 15], [36, 18], [30, 26], [24, 32]],
-    [[14, 32], [12, 24], [10, 14]],
-    [[56, 14], [66, 12], [76, 18], [82, 22]],
-    [[52, 18], [54, 28], [50, 36], [50, 44]],
-    [[86, 26], [90, 38], [82, 48], [76, 56]],
-    [[82, 62], [88, 68], [90, 72]],
-    [[24, 42], [30, 52], [42, 50], [48, 48]],
-  ] as const) passage(t, rng, "undercroft", way);
+  // The Harbour's catacombs are the one place underground that people built: square halls and straight corridors
+  // laid out on a cross from the well, torches in brackets along the walls. Only the Dig, the tunnel east that nobody
+  // admits to, is rough rock, so it reads as the thing that does not belong.
+  const halls: [number, number, number, number][] = [[46, 8, 13, 11], [8, 8, 13, 9], [8, 32, 28, 16], [70, 12, 28, 20], [40, 40, 24, 16], [68, 50, 22, 16]];
+  for (const [x, y, w, h] of halls) t.ground(u, x, y, w, h);
+  const corridors: (readonly (readonly [number, number])[])[] = [
+    [[52, 18], [52, 40]],
+    [[14, 27], [74, 27]],
+    [[14, 27], [14, 16]],
+    [[24, 27], [24, 32]],
+    [[86, 31], [86, 50]],
+    [[63, 52], [68, 52]],
+    [[20, 47], [20, 52], [40, 52]],
+  ];
+  for (const way of corridors) tunnel(t, way);
+  /** Torches along a corridor, on its north or west edge, every few tiles. */
+  const sconces = (way: readonly (readonly [number, number])[]): void => {
+    for (let i = 1; i < way.length; i++) {
+      const [[x0, y0], [x1, y1]] = [way[i - 1]!, way[i]!];
+      const len = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+      for (let d = 3; d < len - 1; d += 6) {
+        const [c, r] = [x0 + Math.sign(x1 - x0) * d, y0 + Math.sign(y1 - y0) * d];
+        prop("sconce", y0 === y1 ? c : c - 1, y0 === y1 ? r - 1 : r);
+      }
+    }
+  };
+  for (const way of corridors) sconces(way);
+
+  // The Cisterns: three straight channels across the hall, two walkways bridging them.
+  for (const r of [35, 39, 43]) river(t, [[10, r], [33, r]], 2);
+  for (const c of [16, 28]) t.bridge({ col: c, row: 33 }, { col: c, row: 46 });
+  // The Spider Pillars: a hall of square pillars in two rows.
+  for (const x of [75, 81, 87, 93]) for (const y of [16, 22]) t.pillar(x, y, 2, 2);
+  // The Drowned Chapel: a square pool, the chapel on its platform, a causeway out from the spine.
+  lake(t, 52, 48, 9, 5);
+  t.ground(u, 49, 46, 7, 5);
+  t.bridge({ col: 52, row: 41 }, { col: 52, row: 46 });
+  // The Ossuary: two shelves of bone raised against its north wall.
+  t.shape(2, 74, 54, 4, 2.5, 0.3, "The Ossuary");
+  t.shape(2, 83, 54, 4, 2.5, 0.3, "The Ossuary");
+  // The Dig: hacked out of the rock, ragged, off the Ossuary's corner.
+  t.blob(u, 90, 72, 8, 5);
+  passage(t, rng, u, [[84, 65], [86, 68], [88, 70]]);
+  rubble(t, rng, 90, 72, 8, 5, 3);
   tunnel(t, [[96, 72], [102, 72]], 3);
 
-  // The Cisterns: three black channels winding across the hall, walkways over them.
-  for (const r of [31, 36, 41]) river(t, [[9, r + 1], [15, r], [21, r + 1], [27, r], [32, r + 1]], 2);
-  for (const c of [14, 26]) t.bridge({ col: c, row: 29 }, { col: c, row: 43 });
-  // The Spider Pillars: a hall of standing rock.
-  for (const [x, y] of [[78, 18], [84, 18], [90, 18], [78, 25], [84, 25], [90, 25]] as const) t.pillar(x, y, 2, 2);
-  // The Drowned Chapel: its isle in a sunken pool, a causeway out.
-  lake(t, 50, 48, 8, 4);
-  t.blob("undercroft", 50, 48, 4, 2);
-  t.bridge({ col: 50, row: 42 }, { col: 50, row: 47 });
-  // The Ossuary: two lobes of bone heaped against the north wall, a stair down from each.
-  t.shape(2, 70, 56, 5, 3, 0.5, "The Ossuary");
-  t.shape(2, 79, 58, 5, 3, 0.5, "The Ossuary");
-  // Fallen rock in the larger chambers.
-  rubble(t, rng, 20, 36, 12, 8, 5);
-  rubble(t, rng, 74, 58, 13, 8, 6);
-  rubble(t, rng, 90, 72, 8, 5, 3);
-
-  // The Well Bottom: where the rope comes down, a fire under the shaft of light.
+  // The Well Bottom: where the rope comes down, a fire under the shaft of light, and what fell down the well.
   t.fires.push({ col: 52, row: 16 });
-  for (const [c, r] of [[48, 12], [56, 13]] as const) prop("bones", c, r);
-  prop("woodPile", 55, 17);
+  for (const [c, r] of [[48, 10], [56, 10]] as const) prop("bones", c, r);
+  prop("woodPile", 56, 17);
   who("rubberDuck", 49, 16);
 
   // The Cisterns: what lives in the black water, and the dead on the walkways.
-  for (const [c, r] of [[12, 31], [20, 36], [16, 41]] as const) who("bombFish", c, r, { to: { col: c + 6, row: r } });
-  who("turtle", 28, 31);
-  crowd(t, rng, "skull", { col: 20, row: 38 }, 3, 4);
-  for (const [c, r] of [[12, 34], [28, 39]] as const) prop("bones", c, r);
-  t.fires.push({ col: 20, row: 44 });
+  for (const r of [35, 39, 43]) who("bombFish", 12, r, { to: { col: 20, row: r } });
+  who("turtle", 30, 39);
+  crowd(t, rng, "skull", { col: 22, row: 37 }, 3, 2);
+  for (const [c, r] of [[12, 37], [30, 41]] as const) prop("bones", c, r);
+  t.fires.push({ col: 22, row: 46 });
 
-  // Smugglers' Nook: a dead end off the Cisterns, the thieves' cache.
-  for (const [c, r] of [[8, 11], [12, 12]] as const) prop("goldStone", c, r);
-  prop("meat", 10, 14);
-  crowd(t, rng, "thief", { col: 10, row: 12 }, 2, 2);
+  // Smugglers' Nook: a storeroom off the end of the gallery, the thieves' cache.
+  for (const [c, r] of [[10, 10], [18, 10]] as const) prop("goldStone", c, r);
+  prop("meat", 14, 14);
+  crowd(t, rng, "thief", { col: 14, row: 12 }, 2, 2);
 
-  // The Spider Pillars: webs in the rock, what they caught, bats in the roof.
-  crowd(t, rng, "spider", { col: 84, row: 22 }, 5, 6);
-  for (const [c, r] of [[81, 21], [87, 23], [80, 27]] as const) prop("bones", c, r);
-  who("bat", 88, 20);
+  // The Spider Pillars: webs between the pillars, what they caught, bats in the roof.
+  crowd(t, rng, "spider", { col: 84, row: 20 }, 5, 6);
+  for (const [c, r] of [[78, 19], [90, 25], [80, 29]] as const) prop("bones", c, r);
+  who("bat", 88, 14);
 
-  // The Drowned Chapel: a purple chapel under the Harbour's own streets.
-  prop("monastery", 50, 48, purple);
-  who("monk", 46, 44, { ...purple, to: { col: 54, row: 44 } });
-  who("shaman", 55, 51);
-  prop("goldStone", 44, 48);
+  // The Drowned Chapel: a purple chapel under the Harbour's own streets, its priests walking the pool's edge.
+  prop("monastery", 52, 49, purple);
+  who("monk", 42, 42, { ...purple, to: { col: 62, row: 42 } });
+  who("shaman", 60, 54);
+  prop("goldStone", 44, 54);
 
-  // The Ossuary: the Harbour's dead stacked on the terrace, their warden among them.
-  for (const [c, r] of [[68, 55], [72, 54], [78, 57], [81, 58]] as const) prop("skullSpike", c, r);
-  for (const [c, r] of [[70, 57], [79, 59]] as const) prop("bones", c, r);
-  crowd(t, rng, "skull", { col: 74, row: 62 }, 3, 4);
-  who("skullGuard", 74, 57, { scale: 1.4 });
-  t.fires.push({ col: 64, row: 62 });
+  // The Ossuary: the Harbour's dead laid out in rows on the floor, skulls staked on the shelves, their warden.
+  for (const [c, r] of [[72, 53], [76, 53], [81, 53], [85, 53]] as const) prop("skullSpike", c, r);
+  for (const r of [59, 63]) for (const c of [71, 75, 79, 83, 87]) prop("bones", c, r);
+  crowd(t, rng, "skull", { col: 78, row: 61 }, 3, 3);
+  who("skullGuard", 78, 57, { scale: 1.4 });
+  t.fires.push({ col: 70, row: 56 });
 
   // The Dig: the tunnel east that nobody admits to, its diggers and their spoil.
   prop("cave", 88, 70);
@@ -1468,13 +1481,13 @@ function undercroft(): AreaMap {
 
   const exits: AreaExit[] = [{ to: "deeps", name: "Cistern Run", kind: "open", at: { col: 102, row: 72 } }];
   const districts: District[] = [
-    { name: "The Well Bottom", at: { col: 52, row: 7 }, palette: [5, 4], dress: "undercroft" },
-    { name: "The Cisterns", at: { col: 20, row: 47 }, palette: [5, 3], dress: "undercroft" },
-    { name: "Smugglers' Nook", at: { col: 10, row: 5 }, palette: [4, 3], dress: "undercroft" },
-    { name: "The Spider Pillars", at: { col: 84, row: 13 }, palette: [4, 5], dress: "undercroft" },
-    { name: "The Drowned Chapel", at: { col: 50, row: 55 }, palette: [5, 3], dress: "undercroft" },
-    { name: "The Ossuary", at: { col: 74, row: 68 }, palette: [5, 4], dress: "deeps" },
-    { name: "The Dig", at: { col: 92, row: 79 }, palette: [5, 4], dress: "undercroft" },
+    { name: "The Well Bottom", at: { col: 52, row: 6 }, palette: [4], dress: "undercroft" },
+    { name: "The Cisterns", at: { col: 22, row: 50 }, palette: [4], dress: "undercroft" },
+    { name: "Smugglers' Nook", at: { col: 14, row: 6 }, palette: [4], dress: "undercroft" },
+    { name: "The Spider Pillars", at: { col: 84, row: 10 }, palette: [4], dress: "undercroft" },
+    { name: "The Drowned Chapel", at: { col: 52, row: 58 }, palette: [4], dress: "undercroft" },
+    { name: "The Ossuary", at: { col: 78, row: 68 }, palette: [5], dress: "deeps" },
+    { name: "The Dig", at: { col: 92, row: 79 }, palette: [5], dress: "undercroft" },
   ];
   const tier = stone(t.finish({}, [{ col: 52, row: 14 }]));
   return { ...tier, area: "undercroft", entry: { col: 52, row: 14 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [] };
@@ -1524,18 +1537,21 @@ function deeps(): AreaMap {
   prop("monastery", 46, 12, purple);
   for (const [c, r] of [[34, 19], [40, 19], [48, 19], [54, 19]] as const) prop("skullSpike", c, r);
   prop("bones", 44, 17);
+  // The kings' graves in two ranks before the barrow, a stake at each head, facing the way down.
+  for (const c of [32, 36, 40, 48, 52, 56]) for (const r of [22, 25]) prop("skullSpike", c, r);
   crowd(t, rng, "skull", { col: 44, row: 24 }, 3, 5);
   who("skullGuard", 34, 16);
   who("skullGuard", 53, 16, { flip: true });
 
-  // The Ossuary Galleries: the common dead, stacked; their keepers.
+  // The Ossuary Galleries: the common dead laid in rows down the gallery, a stake at the head of each row; their keepers.
   for (const [c, r] of [[63, 34], [69, 34], [63, 44], [69, 44]] as const) prop("skullSpike", c, r);
-  prop("bones", 66, 38);
+  for (const r of [36, 39, 42]) for (const c of [62, 65, 68, 71]) prop("bones", c, r);
   crowd(t, rng, "skull", { col: 66, row: 41 }, 3, 3);
   who("skullGuard", 66, 46);
 
-  // The Drowned Graves: the shrine on the shore, snakes at the water's edge.
+  // The Drowned Graves: the shrine on the shore, its graves running down into the water, snakes at the water's edge.
   prop("tower", 20, 44, purple);
+  for (const [c, r] of [[30, 42], [33, 43], [34, 46], [33, 49]] as const) prop("skullSpike", c, r);
   who("shaman", 22, 48);
   who("snake", 28, 50);
   t.fires.push({ col: 18, row: 49 });
@@ -1590,7 +1606,7 @@ function hollow(): AreaMap {
   // The Shell Isle and the Gold Shoals that carry the causeways.
   for (const [x, y, rx, ry] of [[54, 40, 9, 6], [40, 40, 3, 2], [74, 42, 3, 2]] as const) t.blob("hollow", x, y, rx, ry);
   // Stone pillars standing in the water: the drowned trees.
-  for (const [x, y] of [[32, 30], [72, 30], [36, 50], [68, 52], [80, 34]] as const) t.pillar(x, y, 1, 2);
+  for (const [x, y] of [[32, 30], [72, 30], [36, 50], [68, 52], [80, 34], [44, 26], [64, 25], [28, 42], [82, 46], [46, 54], [62, 55]] as const) t.pillar(x, y, 1, 2);
 
   tunnel(t, [[50, 8], [50, 1]]);
   tunnel(t, [[50, 10], [52, 18]]);
@@ -1617,14 +1633,14 @@ function hollow(): AreaMap {
   prop("goldStone", 66, 17);
 
   // The Stone Grove: trees turned to stone, and what roots among them.
-  for (const [c, r] of [[80, 13], [86, 12], [90, 16], [82, 19]] as const) prop("deadTree", c, r, { scale: 0.7 });
+  for (const [c, r] of [[80, 13], [86, 12], [90, 16], [82, 19], [78, 17], [88, 20], [84, 11]] as const) prop("deadTree", c, r, { scale: 0.7 });
+  for (const [x, y] of [[83, 15], [87, 17], [80, 20]] as const) t.pillar(x, y, 1, 1);
   who("lizard", 84, 16, { to: { col: 88, row: 18 } });
   prop("goldStone", 88, 19);
 
-  // The West Shallows: gold glowing in the rock, snakes at the edge.
-  for (const [c, r] of [[18, 30], [20, 42], [16, 36]] as const) prop("goldStone", c, r);
+  // The West Shallows: no fire, only the gold glowing in the rock and the water, snakes at the edge.
+  for (const [c, r] of [[18, 30], [20, 42], [16, 36], [24, 46], [20, 33]] as const) prop("goldStone", c, r);
   who("snake", 24, 34);
-  t.fires.push({ col: 22, row: 38 });
 
   // Pilgrims' Rest: those come down to pray to what sleeps here, their shrine on the east shore.
   prop("monastery", 95, 40, purple);

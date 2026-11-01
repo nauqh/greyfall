@@ -308,6 +308,23 @@ returns to the atlas, focused on the area.
   the Barrow King on its crown and the Barrow Cave at its foot. A grown
   relief lost its top step there, so the great mound is built from blocks,
   with land of its own under it so its back does not stand in the sea.
+- **The three underground maps are three different places.** The
+  Undercroft is the one people built: square halls and straight
+  corridors on a cross from the well (`ground()` rectangles, `tunnel()`
+  lines), torches in brackets along the walls (`sconce`), lit warm amber
+  on brown-black rock, with only the Dig left as ragged rock because it
+  is the tunnel nobody admits to. Barrow Deeps is a tomb: the darkest map,
+  cold black rock, its fires burning ghost-green, green grave-mist, and
+  the dead laid in rows (the kings' two ranks before the Great Barrow,
+  the Ossuary Galleries' rows, graves running into the Drowned Graves'
+  pool). The Drowned Hollow is the quiet wonder: the brightest map, pale
+  blue on deep-blue rock, few fires, the gold glowing far over the
+  water, stone trees standing in the lake and in the Stone Grove. Each
+  map's light is `UNDER` in `AtlasScene.ts`.
+- **Every unit is under the light.** The cloud, light and HUD layers sit
+  above any map up to 300 tiles tall: they once sat at 5000, so on a map
+  over 63 tiles tall (Barrow Deeps is 96) everything south of row 63
+  sorted above the darkness and shone at full brightness.
 - **Underground maps are rooms and passages in the dark**, not mazes:
   separate chambers cut from solid rock, joined by bending `tunnel()`s
   three tiles wide (under rock a tile is a cliff face, so a narrower one
