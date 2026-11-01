@@ -482,7 +482,8 @@ describe("simulate", () => {
       }),
       { numRuns: 150 },
     );
-  });
+    // 300 whole battles: 1.3s alone, past the 5s default when the area-map tests share the CPU.
+  }, 20_000);
 
   it("property: HP never exceeds a unit's maximum and never goes negative", () => {
     fc.assert(
