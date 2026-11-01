@@ -53,6 +53,8 @@ export interface AtlasHooks {
   /** Tells the page which tier is in view, after a lift or a tab. */
   onTier: (id: TierId) => void;
   ready: (api: AtlasApi) => void;
+  /** Once the clouds have parted and the map is in view. */
+  opened?: () => void;
 }
 
 /** A sheet: its file, frame width (and height, when not square), and the ground's height in the frame, 0 to 1. */
@@ -331,7 +333,7 @@ export class AtlasScene extends Phaser.Scene {
         }
       },
     });
-    cloudCover(this, "open", () => {});
+    cloudCover(this, "open", () => this.hooks.opened?.());
   }
 
   private zoomFor(rows: number): number {

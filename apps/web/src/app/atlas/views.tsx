@@ -1,6 +1,6 @@
 "use client";
 
-import type { AreaId } from "@greyfall/engine";
+import { AREAS, type AreaId } from "@greyfall/engine";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -45,12 +45,20 @@ export function AreaView({ area }: { area: AreaId }) {
   const router = useRouter();
   const leave = (to: AreaId): void => router.push(`/atlas?focus=${to}`);
   const onExit = (to: AreaId): void => router.push(`/atlas/${to}`);
-  const hooks = useRef<AtlasHooks>({ area, onExit, onArea: () => {}, onTier: () => {}, ready: () => {} }).current;
+  const [reveal, setReveal] = useState(false);
+  // The name mounts two painted frames after the clouds part, so its clock never runs while the first frames are still drawing.
+  const hooks = useRef<AtlasHooks>({ area, onExit, onArea: () => {}, onTier: () => {}, ready: () => {}, opened: () => requestAnimationFrame(() => requestAnimationFrame(() => setReveal(true))) }).current;
   const [hud, toggleHud] = useHud();
   return (
     <main className="stage">
       <GameCanvas start={(el) => import("../../game/AtlasScene").then(({ startAtlas }) => startAtlas(el, hooks))}>
         <HudToggle shown={hud} toggle={toggleHud} />
+        {reveal && (
+          // The area's name as you arrive, after the Souls games: up out of the dark, held, gone.
+          <div className="areaReveal" role="status" onAnimationEnd={(e) => e.target === e.currentTarget && setReveal(false)}>
+            <span className="areaRevealName">{AREAS.find((a) => a.id === area)?.name}</span>
+          </div>
+        )}
         <div className="worldHud" hidden={!hud}>
           <header className="atlasTop">
             <div className="worldLinks">
