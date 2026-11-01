@@ -481,9 +481,9 @@ export class AtlasScene extends Phaser.Scene {
     this.building = tier.id;
     useIsland(tier.island);
     const before = new Set(this.children.list);
-    // An area map draws no roads: its ways are open ground in the district's own colour, a road tile's
-    // other colour read as a stripe painted on. The engine's roads still keep that ground clear.
-    const roads = this.local ? new Set<number>() : trailTiles(tier.roads);
+    // An area map draws no roads, its ways open ground in the district's own colour (across the wilds a road
+    // tile's other colour read as a stripe painted on), unless it is a town whose streets should read as streets.
+    const roads = this.local && !this.local.streets ? new Set<number>() : trailTiles(tier.roads);
     const local = this.local;
     // An area map's ground reads a shade lighter each height up; the engine works each tile's colour out.
     const shade = local ? groundColours(local) : null;
@@ -556,11 +556,17 @@ export class AtlasScene extends Phaser.Scene {
     };
     // Nothing grows in a building's base or the ground round it.
     const built = new Set(tier.props.flatMap((p) => footprint(p, true).map((c) => c.row * STRAT_COLS + c.col)));
+    // Nor on a fence's line or the tile outside it, so no bush or rock tangles with the posts.
+    for (const f of tier.fences) for (let r = f.row - 1; r <= f.row + f.h; r++) for (let c = f.col - 1; c <= f.col + f.w; c++) if (r <= f.row || r >= f.row + f.h - 1 || c <= f.col || c >= f.col + f.w - 1) built.add(r * STRAT_COLS + c);
     for (let r = 0; r < STRAT_ROWS; r++) {
       for (let c = 0; c < STRAT_COLS; c++) {
-        // In an area's woods each tree takes its kind from a spot a few tiles off, so two districts' trees mingle, not meet in a line.
+        // A thin line of woods is a hedgerow; a mass of them is a wood, whose trees take their kind from a spot a few
+        // tiles off, so two districts' woods mingle rather than meet in a line.
+        let woods = 0;
+        for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) if ((dc || dr) && isForest(c + dc, r + dr)) woods++;
+        const hedge = !!this.local && tier.base !== "rock" && woods <= 3;
         const k = (n: number): number => Math.round(((((Math.sin(c * 12.9898 + r * 78.233 + n) * 43758.5453) % 1) + 1) % 1) * 8 - 4);
-        const id = (this.local && isForest(c, r) && areaId(c + k(1), r + k(2))) || areaId(c, r);
+        const id = (this.local && isForest(c, r) && !hedge && areaId(c + k(1), r + k(2))) || areaId(c, r);
         if (built.has(r * STRAT_COLS + c) && isLand(c, r)) continue;
         // The rock of the Underneath is bare: its dark is the point.
         if (at(c, r) === "%") continue;
@@ -572,7 +578,11 @@ export class AtlasScene extends Phaser.Scene {
           continue;
         }
         if (isForest(c, r)) {
-          if (id === "emberwood") {
+          if (hedge) {
+            // Bushes along the line, a tree every few tiles: full trees on every tile piled into a wall.
+            decor("bush", (c + 0.5) * CELL, (r + 0.85) * CELL, 1.1);
+            if (r01() < 0.3) decor("tree", (c + 0.4 + r01() * 0.2) * CELL, (r + 0.8) * CELL);
+          } else if (id === "emberwood") {
             const pick = r01() < 0.55 ? 0 : 1;
             // Still, not swaying: the first frame of the sheet.
             spot(c, r, `bigTree${pick}`, BIG_TREE[pick]!, 0);
@@ -617,6 +627,11 @@ export class AtlasScene extends Phaser.Scene {
         if (!isWalkable(c, r) || isSlope(c, r) || isSlope(c, r - 1) || roads.has(r * STRAT_COLS + c)) {
           // A cliff's foot: shrubs and stones soften the wall.
           if (!isWalkable(c, r) && level(c, r - 1) > level(c, r) && r01() < 0.45) decor(r01() < 0.6 && tier.base !== "rock" ? "bush" : "rock", (c + 0.25 + r01() * 0.5) * CELL, (r + 0.92) * CELL);
+          continue;
+        }
+        if (this.local && districtOf(this.local, c, r)?.crops) {
+          // A planted field: a small bush on every tile of every row, so it reads as crop rows.
+          decor("bush", (c + 0.5) * CELL, (r + 0.8) * CELL, 0.5);
           continue;
         }
         let edgy = false;
@@ -924,7 +939,7 @@ export class AtlasScene extends Phaser.Scene {
       this.names.push({ text: t, px: min, tier: this.building });
       return t;
     };
-    for (const d of this.local?.districts ?? []) text((d.at.col + 0.5) * CELL, d.at.row * CELL, d.name.toUpperCase(), 44, "#fdfaf0", 16).setLetterSpacing(6);
+    for (const d of this.local?.districts ?? []) if (d.name) text((d.at.col + 0.5) * CELL, d.at.row * CELL, d.name.toUpperCase(), 44, "#fdfaf0", 16).setLetterSpacing(6);
     if (!this.local) for (const a of AREAS) if (a.tier === tier.id) text(a.label.col * CELL, a.label.row * CELL, a.name.toUpperCase(), 64, "#fdfaf0", 22).setLetterSpacing(10);
     for (const g of tier.gates) {
       const word = GATE_WORD[g.kind];

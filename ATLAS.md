@@ -343,6 +343,17 @@ returns to the atlas, focused on the area.
   coil's centre line in a straight notch so the stair has lower ground
   above and below it; a notch following the ragged edge put the stair
   over water, and the engine then erased every tier above.
+  The fen tells its story inward along the causeway, and each thing
+  stands where its people would put it (`spot(turns, along, out)` places
+  on the coil, `out` toward the water side): Saltreach's militia at the
+  landing with a jetty, hut over the water and its boat below; the
+  moor's dead buried at the Barrow Rise beside the Barrow Path, stakes in
+  rows; the fishers' stilt village along Eel Shallows, each hut with its
+  boat and catch, one shared fire; the Drowned Village's houses still
+  lining both sides of its old street, no fire lit, reed closing over its
+  end; the lizard-folk's stakes at the top of the stair, their huts
+  ringing one fire; the cult's ring of stakes round the sinkhole under
+  the chapel. Sharks keep to the deep channels, out of the shallows.
 - **Saltreach** is a stilt town: no land to speak of, a web of a dozen
   small timber platforms on the shallows knotted by boardwalks into short
   ways and loops, each platform a room with one job (the toll landing,
@@ -383,6 +394,13 @@ returns to the atlas, focused on the area.
   the Skyward Steps' Broken Stair, Windward Rest and Bell Isle, the
   Undercroft's Ossuary, the Deeps' Great Barrow and the Hollow's Shell
   Isle are landforms now; no area map calls `block()`.
+- **Fences, buildings and woods keep their distance.** A fence stands on
+  open ground of one height, a tile clear of any building, fire or other
+  fence, off the roads, and moves to the nearest place that fits; a
+  building never stands on a road (stock may); authored woods on a cliff
+  face are cleared once the terrain is laid; a thin line of woods is
+  drawn as a hedgerow of bushes, and only a mass of woods mingles its
+  trees with the next district's.
 - **Area maps carry no banner**: an area's name is on its land, and
   "Back to the atlas" is the one control left at the top.
 - **Area maps draw no roads.** A road there is open ground in the
@@ -405,7 +423,20 @@ returns to the atlas, focused on the area.
   so a tier is reached only from the tier under it: overhanging tiers
   stood on the lowland with stairs from the ground to the third and
   fourth heights. The hub is the brightest map, green ground climbing
-  through fresh green to a gold capital. Stacked
+  through fresh green to a gold capital. The capital is a hill town, not
+  a cake: the castle on a headland with the sea on two sides, the tiers
+  stepping down to the south-east, each tier its own work (the garrison's
+  soldiers drilling, the chapel and gardens, Old Town's market and trades). The
+  Lower Town is clusters after the Witcher's Oxenfurt: a paved market
+  round the Old Well, a west quarter thinning toward the archery butts,
+  an east quarter of smithy, garden and barracks, the docks, a
+  watchtower at each gate, joined by bending streets the map draws
+  (`streets: true` on the area); a grid of houses read as two rows. Roads
+  run on to the farm, the lumber camp, the miners' camp and the
+  lighthouse, and carriers walk between them. West Fields is a farm of
+  fenced fields drawn in crop rows (`crops` on a district) and fenced
+  pastures, on the town's own green: painted field colours read as flat
+  patches, and tree hedgerows as walls. Stacked
   rectangles and full-width bands both read as slabs and were dropped. A
   landform names its district (`shape(..., owner)`) and gives it every
   tile it covers, so one landform is one colour; a district's `levels`

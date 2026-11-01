@@ -598,6 +598,8 @@ function terrain(t: Builder, rows: number, cols: number): void {
   }
 }
 
+type Fence = AtlasTier["fences"][number];
+
 /** Anything left on a cliff face or a stair by the terrain steps off it, onto the nearest open ground. */
 function settleAll(t: Builder): void {
   const islandNow = (): Island => {
@@ -622,7 +624,8 @@ function settleAll(t: Builder): void {
     if (!wet && height !== undefined && base !== height) return false;
     for (const c of footprint(p)) {
       if (taken.has(key(c))) return false;
-      if (wet ? t.at(c.col, c.row) !== "~" : !isWalkable(c.col, c.row) || slope(c) || level(c.col, c.row) !== base || t.area[c.row]?.[c.col] !== own) return false;
+      // A building is never on a road, a building in a street reads as one dropped there; stock and stalls may be.
+      if (wet ? t.at(c.col, c.row) !== "~" : !isWalkable(c.col, c.row) || slope(c) || level(c.col, c.row) !== base || t.area[c.row]?.[c.col] !== own || (FOOT[p.art]?.clear && t.roadSet.has(key(c)))) return false;
     }
     for (const c of footprint(p, true)) {
       if (under.has(key(c))) return false;
@@ -676,6 +679,33 @@ function settleAll(t: Builder): void {
     const q = site(p);
     return { col: q.col, row: q.row };
   });
+  // Fences after the fires: every post on open ground of one height, a tile clear of any building or fire and of
+  // each other; one that does not fit moves to the nearest place that does, or is left out.
+  const posts = (f: Fence): Cell[] => {
+    const out: Cell[] = [];
+    for (let r = f.row; r < f.row + f.h; r++) for (let c = f.col; c < f.col + f.w; c++) if (r === f.row || r === f.row + f.h - 1 || c === f.col || c === f.col + f.w - 1) out.push({ col: c, row: r });
+    return out;
+  };
+  const fenceFits = (f: Fence): boolean => {
+    const base = level(f.col, f.row);
+    const area = t.area[f.row]?.[f.col];
+    return posts(f).every((c) => isWalkable(c.col, c.row) && !slope(c) && level(c.col, c.row) === base && !castsCliff(c.col, c.row - 1) && t.area[c.row]?.[c.col] === area && !taken.has(key(c)) && !t.roadSet.has(key(c)));
+  };
+  const fenced: Fence[] = [];
+  for (const f of t.fences) {
+    let at: Fence | undefined = fenceFits(f) ? f : undefined;
+    for (let d = 1; d <= 6 && !at; d++) {
+      for (let dr = -d; dr <= d && !at; dr++) for (let dc = -d; dc <= d && !at; dc++) {
+        const q = { ...f, col: f.col + dc, row: f.row + dr };
+        if (Math.max(Math.abs(dr), Math.abs(dc)) === d && fenceFits(q)) at = q;
+      }
+    }
+    if (!at) continue;
+    fenced.push(at);
+    for (const c of posts(at)) under.add(key(c));
+    for (let r = at.row - 1; r <= at.row + at.h; r++) for (let c = at.col - 1; c <= at.col + at.w; c++) taken.add(key({ col: c, row: r }));
+  }
+  t.fences = fenced;
 
   const open = (c: Cell) => isWalkable(c.col, c.row) && !slope(c) && !under.has(key(c));
   const settle = <T extends Cell>(p: T, wet = false): T => {
@@ -917,6 +947,8 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
     /** With `open`, a maze: every lowland tile it leaves shut is woods, walling the clearings and lanes it opens. */
     finish(density: Partial<Record<AreaId, number>>, from: readonly Cell[], open?: (c: number, r: number) => boolean): AtlasTier {
       terrain(t, rows, cols);
+      // Woods laid before the terrain existed (a hedge, a grove) never stand on a cliff face.
+      for (let r = 1; r < rows; r++) for (let c = 0; c < cols; c++) if (at(c, r) === "T" && "#^45".includes(at(c, r - 1))) put(c, r, ".");
       const keep = new Set<string>();
       const clear = (c: number, r: number, rad: number): void => {
         for (let dr = -rad; dr <= rad; dr++) for (let dc = -rad; dc <= rad; dc++) keep.add(`${c + dc},${r + dr}`);

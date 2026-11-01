@@ -75,6 +75,25 @@ describe.each(MAPPED_AREAS)("the %s area map", (id) => {
       }
     }
   });
+
+  it("stands every fence on open ground of one height, clear of buildings, walkers and other fences", () => {
+    useIsland(m.island);
+    const built = new Set(m.props.flatMap((p) => footprint(p, true).map(cellKey)));
+    const fenced = new Set<number>();
+    for (const f of m.fences) {
+      const name = `fence at ${f.col},${f.row}`;
+      const base = level(f.col, f.row);
+      const line: Cell[] = [];
+      for (let r = f.row; r < f.row + f.h; r++) for (let c = f.col; c < f.col + f.w; c++) if (r === f.row || r === f.row + f.h - 1 || c === f.col || c === f.col + f.w - 1) line.push({ col: c, row: r });
+      for (const c of line) {
+        expect(isWalkable(c.col, c.row) && !isSlope(c.col, c.row) && level(c.col, c.row) === base && !castsCliff(c.col, c.row - 1), `${name}: post over ${c.col},${c.row}`).toBe(true);
+        expect(built.has(cellKey(c)), `${name}: post on a building's ground at ${c.col},${c.row}`).toBe(false);
+        expect(m.dwellers.some((d) => d.col === c.col && d.row === c.row), `${name}: a walker stands on its line at ${c.col},${c.row}`).toBe(false);
+      }
+      for (let r = f.row - 1; r <= f.row + f.h; r++) for (let c = f.col - 1; c <= f.col + f.w; c++) expect(fenced.has(cellKey({ col: c, row: r })), `${name} touches another fence`).toBe(false);
+      for (let r = f.row; r < f.row + f.h; r++) for (let c = f.col; c < f.col + f.w; c++) fenced.add(cellKey({ col: c, row: r }));
+    }
+  });
 });
 
 it("raises the harbour's town in tiers to the castle on its crown", () => {
