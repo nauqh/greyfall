@@ -13,7 +13,11 @@ import {
   districtOf,
   FOES,
   HERO,
+  NPCS,
+  TALK_RANGE,
   canStep,
+  nextTalk,
+  talkKey,
   findRoute,
   foeIntent,
   routeToward,
@@ -34,8 +38,10 @@ import {
   type FoeStats,
   type GateKind,
   type LiftKind,
+  type Npc,
   type Placed,
   type TierId,
+  type WorldFlag,
 } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
@@ -55,6 +61,8 @@ export interface AtlasApi {
   travel: (to: AreaId, from: AreaId, arrive: Crossing) => void;
   /** In an area's map: dev mode frees the camera to see the whole map; off, it holds on the hero. */
   dev: (on: boolean) => void;
+  /** In a talk: the next page, or the end of it. */
+  next: () => void;
   /** Draw the Souls map over the tier in view. */
 }
 
@@ -91,6 +99,17 @@ export interface AtlasHooks {
   ready: (api: AtlasApi) => void;
   /** Once the clouds have parted and the map is in view. */
   opened?: () => void;
+  /** A page of a talk to show, or null when it ends. */
+  onSay?: (say: Say | null) => void;
+  /** Who the captain stands near enough to talk to, or null. */
+  onNear?: (name: string | null) => void;
+}
+
+export interface Say {
+  name: string;
+  text: string;
+  /** More pages follow. */
+  more: boolean;
 }
 
 /** A sheet: its file, frame width (and height, when not square), and the ground's height in the frame, 0 to 1. */
@@ -257,6 +276,30 @@ interface Foe extends Body {
   home: Cell;
   stats: FoeStats;
 }
+/** One of the folk who talk, standing at their spot. */
+interface Folk {
+  npc: Npc;
+  s: Phaser.GameObjects.Sprite;
+  near: boolean;
+  bubble: Phaser.GameObjects.Text | null;
+}
+
+/** What the captain has heard and done, kept on this browser; a blocked store only means folk repeat themselves. */
+function remembered<T extends string>(key: string): Set<T> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(key) ?? "[]") as T[]);
+  } catch {
+    return new Set();
+  }
+}
+function remember(key: string, set: ReadonlySet<string>): void {
+  try {
+    localStorage.setItem(key, JSON.stringify([...set]));
+  } catch {}
+}
+const HEARD = "greyfall.heard";
+const FLAGS = "greyfall.flags";
+const npcLook = (n: Npc): Dweller => ({ kind: n.kind, col: n.at.col, row: n.at.row, color: "blue", act: n.act });
 /**
  * Each underground map lit its own way: the rock's own dark, how much the open floor shows unlit, the colour its
  * lights cast. The Undercroft is torchlit masonry, the Deeps the darkest and lit ghost-green, the Hollow the
@@ -296,6 +339,11 @@ export class AtlasScene extends Phaser.Scene {
   private keys: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d", Phaser.Input.Keyboard.Key> | null = null;
   private spawn: Cell = { col: 0, row: 0 };
   private foes: Foe[] = [];
+  private folk: Folk[] = [];
+  private talk: { folk: Folk; lines: readonly string[]; key: string; page: number } | null = null;
+  private nearName: string | null = null;
+  private heard = new Set<string>();
+  private flags = new Set<WorldFlag>();
   private dev = false;
 
   constructor() {
@@ -317,6 +365,9 @@ export class AtlasScene extends Phaser.Scene {
     this.hold = null;
     this.keys = null;
     this.foes = [];
+    this.folk = [];
+    this.talk = null;
+    this.nearName = null;
     this.dev = !!data.dev;
   }
 
@@ -349,6 +400,10 @@ export class AtlasScene extends Phaser.Scene {
       sheet(idle.key, { file: idle.file, frame, anchor: 0 });
       if (move) sheet(move.key, { file: move.file, frame, anchor: 0 });
       sheet(HERO_ATTACK.key, { file: HERO_ATTACK.file, frame, anchor: 0 });
+      for (const n of NPCS.filter((n) => n.area === this.local!.area)) {
+        const l = this.look(npcLook(n));
+        sheet(l.idle.key, { file: l.idle.file, frame: l.frame, anchor: 0 });
+      }
       for (const d of this.local.dwellers) {
         const b = BEAST[d.kind];
         if (FOES[d.kind] && b?.attack) sheet(`beast_${d.kind}_attack`, { file: b.attack, frame: b.frame, anchor: 0 });
@@ -425,6 +480,14 @@ export class AtlasScene extends Phaser.Scene {
       const near = isWalkable(at.col, at.row) ? at : (findRoute(at, (c) => isWalkable(c.col, c.row) && !isSlope(c.col, c.row))?.at(-1) ?? local.entry);
       this.spawn = near;
       this.spawnHero(near);
+      this.heard = remembered(HEARD);
+      this.flags = remembered(FLAGS);
+      // What a crossing proves: down the well, the Watch Lift ridden down, the Moor Gate come through from the moor.
+      if (local.area === "undercroft") this.flag("wellDescended");
+      if (local.area === "harbour" && this.hooks.from === "steps") this.flag("watchLiftOpen");
+      if (local.area === "harbour" && this.hooks.from === "barrowmoor") this.flag("moorGateOpen");
+      for (const n of NPCS.filter((n) => n.area === local.area)) this.addFolk(n);
+      this.input.keyboard?.on("keydown-E", () => this.interact());
       this.setDev(this.dev);
       if (this.hooks.arrive === "fall") {
         // Dropped in: the hero comes down onto the spot and lands with a jolt.
@@ -452,6 +515,7 @@ export class AtlasScene extends Phaser.Scene {
       },
       travel: (to, from, arrive) => this.scene.restart({ ...this.hooks, area: to, from, arrive, dev: this.dev }),
       dev: (on) => this.setDev(on),
+      next: () => this.nextPage(),
       tier: (id) => {
         this.show(id);
         // Onto the tier's ground, when the view would otherwise be open sky or solid rock.
@@ -544,6 +608,7 @@ export class AtlasScene extends Phaser.Scene {
 
   private controls(): void {
     this.input.setDefaultCursor(HAND);
+    this.input.mouse?.disableContextMenu();
     this.input.on("wheel", (_p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
       if (this.playing) return;
       const cam = this.active;
@@ -553,7 +618,8 @@ export class AtlasScene extends Phaser.Scene {
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
       const cam = this.active;
       this.drag = { x: p.x, y: p.y, sx: cam.scrollX, sy: cam.scrollY, moved: false };
-      if (this.playing) {
+      // In play the right button gives orders; the left does nothing on the map.
+      if (this.playing && p.rightButtonDown()) {
         const w = cam.getWorldPoint(p.x, p.y);
         this.hold = { x: w.x, y: w.y, since: this.time.now };
         this.order(w, { col: Math.floor(w.x / CELL), row: Math.floor(w.y / CELL) });
@@ -671,6 +737,15 @@ export class AtlasScene extends Phaser.Scene {
       Object.assign(hero, { target: foe, then: null, planned: -1e9 });
       return;
     }
+    const folk = this.folk.find((f) => Math.abs(f.s.x - w.x) < 0.7 * CELL && w.y < f.s.y + 0.3 * CELL && w.y > f.s.y - 1.2 * CELL);
+    if (folk) {
+      if (this.talk?.folk === folk) return this.nextPage();
+      const at = folk.npc.at;
+      this.walk(hero, findRoute(hero.at, (c) => tileDistance(c, at) <= 1 && !(c.col === at.col && c.row === at.row)) ?? []);
+      Object.assign(hero, { target: null, then: () => this.talkTo(folk) });
+      if (hero.way.length === 0) hero.then?.();
+      return;
+    }
     const sign = this.signs.find((s) => s.text.getBounds().contains(w.x, w.y));
     // Only a click on an exit's own tile or its sign takes it: walking about beside the well must not drop you down it.
     const exit = this.local!.exits.find((e) => tileDistance(e.at, cell) <= 1 || e.to === sign?.to);
@@ -745,6 +820,7 @@ export class AtlasScene extends Phaser.Scene {
       return;
     }
     const hero = this.hero!;
+    this.flag("died");
     Object.assign(hero, { target: null, way: [], then: null });
     this.tweens.add({ targets: b.s, alpha: 0.25, duration: 600 });
     this.time.delayedCall(1800, () => {
@@ -1408,11 +1484,112 @@ export class AtlasScene extends Phaser.Scene {
     for (const b of tier.bosses) text((b.col + 0.5) * CELL, (b.row - 2.6) * CELL, b.name, 28, "#ff8f7a", 13);
   }
 
+  private flag(f: WorldFlag): void {
+    this.flags.add(f);
+    remember(FLAGS, this.flags);
+  }
+
+  private addFolk(n: Npc): void {
+    const look = this.look(npcLook(n));
+    const y = (n.at.row + 0.75) * CELL;
+    const s = this.add.sprite((n.at.col + 0.5) * CELL, y, look.idle.key).setOrigin(0.5, look.anchor).setDepth(standing(y)).setFlipX(!!n.flip);
+    this.loop(s, look.idle.key);
+    // Named over their heads, so they stand out from the villagers at work round them.
+    this.add
+      .text(s.x, y - 1.05 * CELL, n.name, { fontFamily: FONT, fontSize: "20px", fontStyle: "bold", color: "#f2d48a", stroke: "#1c2634", strokeThickness: 5 })
+      .setOrigin(0.5, 1)
+      .setDepth(DEPTH.fx);
+    this.folk.push({ npc: n, s, near: false, bubble: null });
+  }
+
+  /** A line called out over a dweller's head: up, held, gone. */
+  private callOut(f: Folk, text: string): void {
+    f.bubble?.destroy();
+    const b = this.add
+      .text(f.s.x, f.s.y - 1.45 * CELL, text, { fontFamily: FONT, fontSize: "24px", fontStyle: "italic bold", color: "#fdfaf0", stroke: "#1c2634", strokeThickness: 6, align: "center", wordWrap: { width: 5 * CELL } })
+      .setOrigin(0.5, 1)
+      .setDepth(DEPTH.fx + 2)
+      .setAlpha(0);
+    f.bubble = b;
+    this.tweens.chain({
+      targets: b,
+      tweens: [
+        { alpha: 1, y: b.y - 8, duration: 260, ease: "Cubic.easeOut" },
+        { alpha: 0, duration: 400, delay: 2400, ease: "Sine.easeIn" },
+      ],
+      onComplete: () => {
+        b.destroy();
+        if (f.bubble === b) f.bubble = null;
+      },
+    });
+  }
+
+  /** E: on in a talk, else talk to whoever stands near. */
+  private interact(): void {
+    if (!this.playing || this.hero!.dead) return;
+    if (this.talk) return this.nextPage();
+    const f = this.folk.find((f) => f.near);
+    if (f) this.talkTo(f);
+  }
+
+  private talkTo(f: Folk): void {
+    const hero = this.hero!;
+    if (tileDistance(f.npc.at, hero.at) > TALK_RANGE) return;
+    Object.assign(hero, { way: [], target: null, then: null });
+    f.bubble?.destroy();
+    f.bubble = null;
+    f.s.setFlipX(hero.s.x < f.s.x);
+    hero.s.setFlipX(f.s.x < hero.s.x);
+    const t = nextTalk(f.npc, this.heard, this.flags);
+    this.talk = { folk: f, lines: t.lines, key: talkKey(f.npc, t), page: 0 };
+    this.say();
+  }
+
+  private say(): void {
+    const t = this.talk;
+    this.hooks.onSay?.(t ? { name: t.folk.npc.name, text: t.lines[t.page]!, more: t.page < t.lines.length - 1 } : null);
+  }
+
+  /** On to the next page; past the last, the talk is heard and done. */
+  private nextPage(): void {
+    const t = this.talk;
+    if (!t) return;
+    if (++t.page >= t.lines.length) {
+      this.heard.add(t.key);
+      remember(HEARD, this.heard);
+      this.talk = null;
+    }
+    this.say();
+  }
+
+  /** Once a frame: folk greet a captain who comes near and turn to them; one walked away from mid-talk calls after. */
+  private mind(): void {
+    const hero = this.hero!;
+    let near: Folk | null = null;
+    for (const f of this.folk) {
+      const d = tileDistance(f.npc.at, hero.at);
+      if (d <= TALK_RANGE && !hero.dead) {
+        near ??= f;
+        if (!f.near && this.talk?.folk !== f) this.callOut(f, f.npc.greet);
+        f.near = true;
+        f.s.setFlipX(hero.s.x < f.s.x);
+      } else if (d > TALK_RANGE + 1) f.near = false;
+      if (this.talk?.folk === f && d > TALK_RANGE) {
+        this.talk = null;
+        this.say();
+        this.callOut(f, f.npc.part);
+      }
+    }
+    const name = this.talk ? null : (near?.npc.name ?? null);
+    if (name !== this.nearName) this.hooks.onNear?.((this.nearName = name));
+  }
+
   update(time: number, delta: number): void {
     const act = this.active;
     if (this.hero) {
       // A long stall (a tab in the background) is not a long stride.
       this.fight(time, Math.min(delta, 100));
+      this.mind();
       for (const b of [this.hero, ...this.foes]) this.drawBar(b);
     }
     for (const { text, px, tier } of this.names) {

@@ -968,3 +968,98 @@ textarea {
 		width: auto;
 	}
 }
+
+/* A talk, after the Souls games: no box, the words at the foot of the screen in the map labels' outline, the name above. */
+.talk {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 5;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 10px;
+	padding: 64px 16px 36px;
+	border: 0;
+	background: none;
+	color: #fdfaf0;
+	text-align: center;
+	cursor: pointer;
+	font: inherit;
+}
+
+.talkName {
+	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-weight: 800;
+	font-size: 15px;
+	letter-spacing: 0.2em;
+	text-transform: uppercase;
+	color: #f2d48a;
+	-webkit-text-stroke: 5px #1c2634;
+	paint-order: stroke fill;
+}
+
+.talkText {
+	max-width: 760px;
+	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-size: clamp(18px, 2.2vw, 24px);
+	font-weight: 800;
+	line-height: 1.45;
+	-webkit-text-stroke: 6px #1c2634;
+	paint-order: stroke fill;
+	animation: talkText 420ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.talkNext {
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: #fdfaf0;
+	-webkit-text-stroke: 4px #1c2634;
+	paint-order: stroke fill;
+}
+
+@keyframes talkText {
+	from {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+}
+
+/* Near someone who talks: the prompt, low in the middle. */
+.talkPrompt {
+	position: absolute;
+	left: 50%;
+	bottom: 72px;
+	z-index: 5;
+	transform: translateX(-50%);
+	padding: 8px 16px;
+	border-radius: 4px;
+	background: rgb(7 10 16 / 0.72);
+	color: #fdfaf0;
+	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-size: 16px;
+	white-space: nowrap;
+	pointer-events: none;
+	animation: talkText 240ms ease-out both;
+}
+
+.talkPrompt kbd {
+	display: inline-block;
+	min-width: 22px;
+	margin-right: 8px;
+	padding: 1px 6px;
+	border: 1px solid rgb(253 250 240 / 0.6);
+	border-radius: 3px;
+	font: 700 13px "Nunito", sans-serif;
+	text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.talkText,
+	.talkPrompt {
+		animation: none;
+	}
+}

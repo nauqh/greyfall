@@ -22,15 +22,16 @@ Mouse first, as in Diablo. The camera follows the hero inside the area map.
 
 | Input | Action |
 | --- | --- |
-| Left click on ground | Move; hold to keep walking toward the cursor |
-| Left click on an enemy | Walk up and attack until it dies |
-| Right click | The hero's skill, aimed at the cursor |
+| Right click on ground | Move; hold to keep walking toward the cursor |
+| Right click on an enemy | Walk up and attack until it dies |
+| Right click on someone who talks | Walk up and talk |
+| Skill | The hero's skill, aimed at the cursor; its button is not chosen yet |
 | Space | Dodge-roll a short way: brief invulnerability, costs stamina |
 | 1 | Band: Follow (stay close, defend the hero) |
 | 2 | Band: Attack my target |
 | 3 | Band: Hold here (guard the spot) |
 | Q | Drink a flask |
-| E | Interact: gate, lever, lift, chest, bonfire, NPC |
+| E | Interact: gate, lever, lift, chest, bonfire; talk, and the next page of a talk |
 | Tab | The area map, showing what has been explored |
 
 ## The hero

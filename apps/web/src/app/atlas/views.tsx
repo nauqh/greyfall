@@ -4,7 +4,7 @@ import { AREAS, type AreaId } from "@greyfall/engine";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import type { AtlasApi, AtlasHooks, Departure } from "../../game/AtlasScene";
+import type { AtlasApi, AtlasHooks, Departure, Say } from "../../game/AtlasScene";
 import { Clouds } from "../../game/Clouds";
 import { GameCanvas } from "../../game/GameCanvas";
 
@@ -63,6 +63,8 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const [reveal, setReveal] = useState(false);
   const [travel, setTravel] = useState<(Departure & { phase: "cover" | "hold" | "uncover" }) | null>(null);
   const [warn, setWarn] = useState<Departure | null>(null);
+  const [say, setSay] = useState<Say | null>(null);
+  const [near, setNear] = useState<string | null>(null);
   const api = useRef<AtlasApi | null>(null);
   const now = useRef({ area: first, cameFrom: undefined as AreaId | undefined, quiet: false, travelling: false });
 
@@ -79,6 +81,8 @@ export function AreaView({ area: first }: { area: AreaId }) {
     now.current.area = d.to;
     setArea(d.to);
     setReveal(false);
+    setSay(null);
+    setNear(null);
     setTravel({ ...d, phase: "hold" });
     window.history.pushState(null, "", `/atlas/${d.to}?from=${from}`);
     api.current?.travel(d.to, from, d.kind);
@@ -97,6 +101,8 @@ export function AreaView({ area: first }: { area: AreaId }) {
     onArea: () => {},
     onTier: () => {},
     ready: (a) => (api.current = a),
+    onSay: setSay,
+    onNear: setNear,
     opened: () => {
       if (now.current.travelling) setTravel((t) => (t ? { ...t, phase: "uncover" } : t));
       else announce();
@@ -174,6 +180,20 @@ export function AreaView({ area: first }: { area: AreaId }) {
               }
             }}
           />
+        )}
+        {say ? (
+          // A talk, after the Souls games: the name, then one page at a time across the foot of the screen.
+          <button key={say.text} type="button" className="talk" onClick={() => api.current?.next()} aria-live="polite">
+            <span className="talkName">{say.name}</span>
+            <span className="talkText">{say.text}</span>
+            <span className="talkNext" aria-hidden="true">E</span>
+          </button>
+        ) : (
+          near && (
+            <div className="talkPrompt" role="status">
+              <kbd>E</kbd> Talk
+            </div>
+          )
         )}
         {warn && (
           <div className="dropWarn" role="alertdialog" aria-modal="true" aria-labelledby="dropWarnText">
