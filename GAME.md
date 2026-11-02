@@ -43,7 +43,7 @@ A Warrior in blue, the captain.
 | --- | --- | --- |
 | HP | 100 | |
 | Stamina | 100 | Dodge costs 25, heavy swing 30; refills in about 2 s |
-| Attack | 12 a swing, 0.8 s apart | Light combo of 3 swings; the third knocks back |
+| Attack | 12 a swing | Combo of 3: the first two 0.45 s apart, the third knocks back and takes 0.9 s to recover |
 | Skill | Shield Bash | Stuns for 1.5 s, 6 s cooldown |
 | Flasks | 3 | Each heals 40 HP; refilled at a bonfire |
 

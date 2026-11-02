@@ -5,8 +5,9 @@ import { canStep, cellKey, stepsFrom, tileDistance, type Cell } from "./island.t
 
 /** The captain: a Warrior in blue. */
 /** A walk, not a sprint: 2.8 tiles a second (4 read as running everywhere). */
-/** A raised shield lets a fifth of a blow from the front through; swings within `combo` seconds of the last chain. */
-export const HERO = { hp: 100, attack: 12, every: 0.8, speed: 2.8, guard: 0.2, combo: 1.4 } as const;
+/** Swings: the first two of a combo `chain` seconds apart, the finisher's recovery `every`; a swing within `combo` seconds of
+ *  being ready again chains. A raised shield lets a fifth of a blow from the front through. */
+export const HERO = { hp: 100, attack: 12, chain: 0.45, every: 0.9, speed: 2.8, guard: 0.2, combo: 1.4 } as const;
 
 export interface FoeStats {
   hp: number;
@@ -47,9 +48,15 @@ export function foeIntent(foe: Cell, home: Cell, hero: Cell | null, stats: FoeSt
   return foe.col === home.col && foe.row === home.row ? "idle" : "return";
 }
 
-/** Which swing of the three-swing combo comes next, 1 to 3: the third knocks back, and a pause starts over. */
-export function comboStep(last: number, secondsSince: number): number {
-  return last >= 3 || secondsSince > HERO.combo ? 1 : last + 1;
+/** Which swing of the three-swing combo comes next, 1 to 3, given how long the hero has been ready: the third knocks
+ *  back, and a pause starts over. */
+export function comboStep(last: number, secondsReady: number): number {
+  return last >= 3 || secondsReady > HERO.combo ? 1 : last + 1;
+}
+
+/** Seconds until the hero can swing again after swing `step`: quick between the first two, a longer recovery after the finisher. */
+export function swingWait(step: number): number {
+  return step >= 3 ? HERO.every : HERO.chain;
 }
 
 /** What of a blow gets through a raised shield: a share of it, never nothing. */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FOES, HERO, clearLine, comboStep, findPath, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
+import { FOES, HERO, clearLine, comboStep, findPath, swingWait, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
 
 const goblin = FOES.torch!;
 const home = { col: 10, row: 10 };
@@ -47,9 +47,14 @@ describe("a blow", () => {
   it("chains three swings, then starts over, and a pause breaks the chain", () => {
     let step = 0;
     const steps = [];
-    for (let i = 0; i < 4; i++) steps.push((step = comboStep(step, HERO.every)));
+    for (let i = 0; i < 4; i++) steps.push((step = comboStep(step, 0)));
     expect(steps).toEqual([1, 2, 3, 1]);
     expect(comboStep(1, HERO.combo + 0.1)).toBe(1);
+  });
+
+  it("swings the first two quickly and recovers longer after the finisher", () => {
+    expect(swingWait(1)).toBe(swingWait(2));
+    expect(swingWait(3)).toBeGreaterThan(swingWait(1));
   });
 
   it("is mostly turned by a raised shield, but never wholly", () => {

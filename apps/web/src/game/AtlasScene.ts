@@ -17,6 +17,7 @@ import {
   TALK_RANGE,
   canStep,
   comboStep,
+  swingWait,
   nextTalk,
   talkKey,
   findRoute,
@@ -346,9 +347,9 @@ export class AtlasScene extends Phaser.Scene {
   /** F held: the hero stands behind its shield. */
   private guarding = false;
   /** When E was pressed before the last swing was through: it swings the moment it can, not never. */
-  private queued = -1e9;
-  /** The hero's place in its three-swing combo, and when it last swung, in scene ms. */
-  private combo = { step: 0, at: -1e9 };
+  private queued = false;
+  /** The hero's place in its three-swing combo. */
+  private combo = 0;
   private spawn: Cell = { col: 0, row: 0 };
   private foes: Foe[] = [];
   private folk: Folk[] = [];
@@ -380,8 +381,8 @@ export class AtlasScene extends Phaser.Scene {
     this.keys = null;
     this.foes = [];
     this.guarding = false;
-    this.queued = -1e9;
-    this.combo = { step: 0, at: -1e9 };
+    this.queued = false;
+    this.combo = 0;
     this.folk = [];
     this.talk = null;
     this.nearName = null;
@@ -894,14 +895,15 @@ export class AtlasScene extends Phaser.Scene {
     if (this.guarding) {
       // Behind the shield it stands still, turned to the nearest monster, once any swing is through.
       Object.assign(hero, { way: [], then: null });
+      this.queued = false;
       if (time >= hero.busy) {
         const foe = this.foes.filter((f) => !f.dead && tileDistance(f.at, hero.at) <= 3).sort((a, b) => tileDistance(a.at, hero.at) - tileDistance(b.at, hero.at))[0];
         if (foe && Math.abs(foe.s.x - hero.s.x) > 4) hero.s.setFlipX(foe.s.x < hero.s.x);
         this.play(hero.s, HERO_GUARD.key);
       }
     } else if (!hero.dead) {
-      // A press made in the last half second of the wait swings as soon as the hero is ready.
-      if (time - this.queued < 500 && time >= hero.busy && time >= hero.next) this.attack(time);
+      // A press made during a swing is kept, and swings the moment the hero is ready.
+      if (this.queued && time >= hero.busy && time >= hero.next) this.attack(time);
       const steering = this.steer();
       // Holding the mouse keeps walking toward it, re-aimed a few times a second.
       if (!steering && this.hold && time - this.hold.since > 220 && time - hero.planned > 200 && !hero.target) {
@@ -967,7 +969,9 @@ export class AtlasScene extends Phaser.Scene {
   private makeAnims(): void {
     for (const key of this.textures.getTextureKeys()) {
       if ((key.endsWith("_attack") || key === HERO_ATTACK.key || key === HERO_ATTACK2.key) && !this.anims.exists(`${key}_once`)) {
-        this.anims.create({ key: `${key}_once`, frames: this.anims.generateFrameNumbers(key), frameRate: 16, repeat: 0 });
+        // The hero's swings fill the wait to the next one (4 frames, 0.4 s) rather than snap through and stand idle.
+        const rate = key === HERO_ATTACK.key || key === HERO_ATTACK2.key ? 10 : 16;
+        this.anims.create({ key: `${key}_once`, frames: this.anims.generateFrameNumbers(key), frameRate: rate, repeat: 0 });
       }
       const frames = this.textures.get(key).frameTotal - 1;
       if (frames < 2 || this.anims.exists(`${key}_loop`) || key.startsWith("tileset")) continue;
@@ -1584,8 +1588,8 @@ export class AtlasScene extends Phaser.Scene {
   private attack(time: number): void {
     const hero = this.hero!;
     if (this.guarding) return;
-    if (time < hero.busy || time < hero.next) return void (this.queued = time);
-    this.queued = -1e9;
+    if (time < hero.busy || time < hero.next) return void (this.queued = true);
+    this.queued = false;
     const reach = this.foes.filter((f) => !f.dead && tileDistance(f.at, hero.at) <= 1 && Math.hypot(f.s.x - hero.s.x, f.s.y - hero.s.y) < 1.5 * CELL);
     const foe = reach.find((f) => f === hero.target) ?? reach.find((f) => this.facing(hero, f)) ?? reach[0];
     hero.then = null;
@@ -1595,11 +1599,10 @@ export class AtlasScene extends Phaser.Scene {
   /** The hero's next swing of its combo: the first and third cut one way, the second back the other; the third knocks back. */
   private heroSwing(foe: Foe | null, time: number): void {
     const hero = this.hero!;
-    const step = comboStep(this.combo.step, (time - this.combo.at) / 1000);
-    this.combo = { step, at: time };
+    const step = (this.combo = comboStep(this.combo, (time - hero.next) / 1000));
     const anim = step === 2 ? HERO_ATTACK2.key : HERO_ATTACK.key;
-    if (!foe) return this.swing(hero, null, HERO.every, time, anim);
-    this.strike(hero, foe, HERO.attack, HERO.every, time, anim);
+    if (!foe) return this.swing(hero, null, swingWait(step), time, anim);
+    this.strike(hero, foe, HERO.attack, swingWait(step), time, anim);
     if (step === 3 && !foe.dead) this.knockBack(foe, time);
   }
 
