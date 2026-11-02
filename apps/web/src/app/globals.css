@@ -803,9 +803,9 @@ textarea {
 
 /* A crossing between areas: covers the screen its own way, holds while the next map is built, then uncovers. */
 @property --r {
-	syntax: "<length>";
+	syntax: "<percentage>";
 	inherits: false;
-	initial-value: 0px;
+	initial-value: 0%;
 }
 
 .travel {
@@ -823,17 +823,17 @@ textarea {
 /* A drop and a stair: the dark closes in on the hole or the stairway; the next map opens out from its middle. */
 .travel-fall,
 .travel-stair {
-	--r: 0px;
-	-webkit-mask-image: radial-gradient(circle at var(--x) var(--y), transparent var(--r), #000 calc(var(--r) + 1px));
-	mask-image: radial-gradient(circle at var(--x) var(--y), transparent var(--r), #000 calc(var(--r) + 1px));
+	--r: 0%;
+	-webkit-mask-image: radial-gradient(circle farthest-corner at var(--x) var(--y), transparent var(--r), #000 calc(var(--r) + 4%));
+	mask-image: radial-gradient(circle farthest-corner at var(--x) var(--y), transparent var(--r), #000 calc(var(--r) + 4%));
 }
 .travel-fall.travel-cover { animation: closeIn 600ms cubic-bezier(0.55, 0, 1, 0.45) both; }
 .travel-stair.travel-cover { animation: closeIn 1000ms cubic-bezier(0.77, 0, 0.175, 1) both; }
 .travel-fall.travel-uncover,
 .travel-stair.travel-uncover { --x: 50%; --y: 50%; animation: openOut 700ms cubic-bezier(0.23, 1, 0.32, 1) both; }
 
-@keyframes closeIn { from { --r: 150vmax; } to { --r: 0px; } }
-@keyframes openOut { from { --r: 0px; } to { --r: 150vmax; } }
+@keyframes closeIn { from { --r: 100%; } to { --r: -4%; } }
+@keyframes openOut { from { --r: -4%; } to { --r: 100%; } }
 
 /* A lift: going down, rock passes upward in the dark; going up, cloud passes downward in the light. Held as long as the map takes. */
 .travel-ride.travel-down {
