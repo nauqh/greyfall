@@ -5,7 +5,8 @@ import { canStep, cellKey, stepsFrom, tileDistance, type Cell } from "./island.t
 
 /** The captain: a Warrior in blue. */
 /** A walk, not a sprint: 2.8 tiles a second (4 read as running everywhere). */
-export const HERO = { hp: 100, attack: 12, every: 0.8, speed: 2.8 } as const;
+/** A raised shield lets a fifth of a blow from the front through. */
+export const HERO = { hp: 100, attack: 12, every: 0.8, speed: 2.8, guard: 0.2 } as const;
 
 export interface FoeStats {
   hp: number;
@@ -44,6 +45,11 @@ export function foeIntent(foe: Cell, home: Cell, hero: Cell | null, stats: FoeSt
   if (hero && leashed && tileDistance(foe, hero) <= 1) return "attack";
   if (hero && leashed && tileDistance(foe, hero) <= stats.aggro && tileDistance(hero, home) <= stats.leash) return "chase";
   return foe.col === home.col && foe.row === home.row ? "idle" : "return";
+}
+
+/** What of a blow gets through a raised shield: a share of it, never nothing. */
+export function throughGuard(attack: number): number {
+  return Math.max(1, Math.ceil(attack * HERO.guard));
 }
 
 /** What a blow leaves: never below nothing. */

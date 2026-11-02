@@ -60,7 +60,8 @@ function markWarned(name: string): void {
 export function AreaView({ area: first }: { area: AreaId }) {
   const router = useRouter();
   const [area, setArea] = useState(first);
-  const [reveal, setReveal] = useState(false);
+  // The name up out of the dark: the area's as you arrive, a quarter's as you walk into it.
+  const [reveal, setReveal] = useState<string | null>(null);
   const [travel, setTravel] = useState<(Departure & { phase: "cover" | "hold" | "uncover" }) | null>(null);
   const [warn, setWarn] = useState<Departure | null>(null);
   const [say, setSay] = useState<Say | null>(null);
@@ -80,7 +81,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
     now.current.cameFrom = from;
     now.current.area = d.to;
     setArea(d.to);
-    setReveal(false);
+    setReveal(null);
     setSay(null);
     setNear(null);
     setTravel({ ...d, phase: "hold" });
@@ -89,7 +90,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
   };
   // The name mounts two painted frames after the map is in view, so its clock never runs while the first frames are still drawing.
   const announce = (): void => {
-    if (!now.current.quiet) requestAnimationFrame(() => requestAnimationFrame(() => setReveal(true)));
+    if (!now.current.quiet) requestAnimationFrame(() => requestAnimationFrame(() => setReveal(AREAS.find((a) => a.id === now.current.area)?.name ?? null)));
   };
   const hooks = useRef<AtlasHooks>({
     area: first,
@@ -103,6 +104,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
     ready: (a) => (api.current = a),
     onSay: setSay,
     onNear: setNear,
+    onDistrict: (d) => !now.current.travelling && setReveal(d),
     opened: () => {
       if (now.current.travelling) setTravel((t) => (t ? { ...t, phase: "uncover" } : t));
       else announce();
@@ -128,7 +130,6 @@ export function AreaView({ area: first }: { area: AreaId }) {
     return () => window.removeEventListener("keydown", key);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const name = AREAS.find((a) => a.id === area)?.name;
   return (
     <main className="stage">
       <GameCanvas
@@ -143,9 +144,9 @@ export function AreaView({ area: first }: { area: AreaId }) {
         }}
       >
         {reveal && (
-          // The area's name as you arrive, after the Souls games: up out of the dark, held, gone.
-          <div key={area} className="areaReveal" role="status" onAnimationEnd={(e) => e.target === e.currentTarget && setReveal(false)}>
-            <span className="areaRevealName">{name}</span>
+          // After the Souls games: up out of the dark, held, gone.
+          <div key={reveal} className="areaReveal" role="status" onAnimationEnd={(e) => e.target === e.currentTarget && setReveal(null)}>
+            <span className="areaRevealName">{reveal}</span>
           </div>
         )}
         {travel?.kind === "walk" && (

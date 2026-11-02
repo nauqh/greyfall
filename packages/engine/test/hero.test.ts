@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FOES, HERO, clearLine, findPath, foeIntent, routeToward, smoothPath, struck, useIsland } from "../src/index.ts";
+import { FOES, HERO, clearLine, findPath, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
 
 const goblin = FOES.torch!;
 const home = { col: 10, row: 10 };
@@ -42,6 +42,13 @@ describe("a blow", () => {
     let swings = 0;
     while (hp > 0) (hp = struck(hp, HERO.attack)), swings++;
     expect(swings).toBe(3);
+  });
+
+  it("is mostly turned by a raised shield, but never wholly", () => {
+    for (const foe of Object.values(FOES)) {
+      expect(throughGuard(foe!.attack)).toBeLessThan(foe!.attack);
+      expect(throughGuard(foe!.attack)).toBeGreaterThanOrEqual(1);
+    }
   });
 });
 
