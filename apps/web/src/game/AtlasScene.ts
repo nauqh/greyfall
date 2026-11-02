@@ -2,7 +2,8 @@
 // autotiler and dressed area by area. Each tier renders to its own camera and
 // shows alone: the sky over its cloud bank, the Surface on the sea, the
 // Underneath as rock with its caverns lit. Lifts join the tiers where they
-// stand, and a click on one rides it. Nothing here is a game yet.
+// stand, and a click on one rides it. On an area map the hero walks and fights, the camera held on it; dev mode
+// frees the camera over the whole map.
 
 import {
   AREAS,
@@ -10,7 +11,13 @@ import {
   TIERS,
   areaMap,
   districtOf,
+  FOES,
+  HERO,
+  findRoute,
+  foeIntent,
   groundColours,
+  struck,
+  tileDistance,
   atlasMap,
   footprint,
   useIsland,
@@ -21,6 +28,7 @@ import {
   type AtlasTier,
   type Cell,
   type Dweller,
+  type FoeStats,
   type GateKind,
   type LiftKind,
   type Placed,
@@ -42,6 +50,8 @@ export interface AtlasApi {
   tier: (id: TierId) => void;
   /** In an area's map: rebuild the scene as another area's map, arriving at its exit back to `from`. */
   travel: (to: AreaId, from: AreaId, arrive: Crossing) => void;
+  /** In an area's map: dev mode frees the camera to see the whole map; off, it holds on the hero. */
+  dev: (on: boolean) => void;
   /** Draw the Souls map over the tier in view. */
 }
 
@@ -67,6 +77,8 @@ export interface AtlasHooks {
   from?: AreaId;
   /** How the traveller arrived: set on a scene rebuilt by a crossing, which then opens without the clouds. */
   arrive?: Crossing;
+  /** Dev mode: the camera free over the whole area map, not held on the hero. */
+  dev?: boolean;
   /** Asks the page to travel through an exit to another area. */
   onExit?: (exit: Departure) => void;
   /** Asks the page to show an area's card. */
@@ -128,6 +140,8 @@ const PROP: Record<string, Sheet> = {
 interface Beast {
   idle: string;
   move?: string;
+  /** Its blow, played once a strike. */
+  attack?: string;
   frame: number;
   anchor: number;
   scale?: number;
@@ -136,17 +150,17 @@ interface Beast {
 }
 const EP = "Enemy Pack/";
 const BEAST: Record<string, Beast> = {
-  torch: { idle: `${EP}Torch Goblin/Torch Goblin_Idle.png`, move: `${EP}Torch Goblin/Torch Goblin_Run.png`, frame: 192, anchor: 132 / 192 },
-  spear: { idle: `${EP}Spear Goblin/Spear Goblin_Idle.png`, move: `${EP}Spear Goblin/Spear Goblin_Run.png`, frame: 256, anchor: 174 / 256 },
-  thief: { idle: `${EP}Thief/Thief_Idle.png`, move: `${EP}Thief/Thief_Run.png`, frame: 192, anchor: 131 / 192 },
-  gnoll: { idle: `${EP}Gnoll/Gnoll_Idle.png`, move: `${EP}Gnoll/Gnoll_Walk.png`, frame: 192, anchor: 133 / 192 },
+  torch: { idle: `${EP}Torch Goblin/Torch Goblin_Idle.png`, move: `${EP}Torch Goblin/Torch Goblin_Run.png`, attack: `${EP}Torch Goblin/Torch Goblin_Attack.png`, frame: 192, anchor: 132 / 192 },
+  spear: { idle: `${EP}Spear Goblin/Spear Goblin_Idle.png`, move: `${EP}Spear Goblin/Spear Goblin_Run.png`, attack: `${EP}Spear Goblin/Spear Goblin_Attack Fast.png`, frame: 256, anchor: 174 / 256 },
+  thief: { idle: `${EP}Thief/Thief_Idle.png`, move: `${EP}Thief/Thief_Run.png`, attack: `${EP}Thief/Thief_Attack.png`, frame: 192, anchor: 131 / 192 },
+  gnoll: { idle: `${EP}Gnoll/Gnoll_Idle.png`, move: `${EP}Gnoll/Gnoll_Walk.png`, attack: `${EP}Gnoll/Gnoll_Throw.png`, frame: 192, anchor: 133 / 192 },
   troll: { idle: `${EP}Troll/Troll_Idle.png`, move: `${EP}Troll/Troll_Walk.png`, frame: 384, anchor: 296 / 384, scale: 0.8 },
-  skull: { idle: `${EP}Skull/Skull_Idle.png`, move: `${EP}Skull/Skull_Run.png`, frame: 192, anchor: 128 / 192 },
+  skull: { idle: `${EP}Skull/Skull_Idle.png`, move: `${EP}Skull/Skull_Run.png`, attack: `${EP}Skull/Skull_Attack.png`, frame: 192, anchor: 128 / 192 },
   skullGuard: { idle: `${EP}Extra/Skull Guard/Skull_Guard.png`, frame: 192, anchor: 128 / 192 },
   shaman: { idle: `${EP}Hex Shaman/Hex Shaman_Idle.png`, move: `${EP}Hex Shaman/Hex Shaman_Run.png`, frame: 192, anchor: 136 / 192 },
-  spider: { idle: `${EP}Spider/Spider_Idle.png`, move: `${EP}Spider/Spider_Run.png`, frame: 192, anchor: 0.68 },
-  snake: { idle: `${EP}Snake/Snake_Idle.png`, move: `${EP}Snake/Snake_Run.png`, frame: 192, anchor: 0.68 },
-  lizard: { idle: `${EP}Lizard/Lizard_Idle.png`, move: `${EP}Lizard/Lizard_Run.png`, frame: 192, anchor: 0.68 },
+  spider: { idle: `${EP}Spider/Spider_Idle.png`, move: `${EP}Spider/Spider_Run.png`, attack: `${EP}Spider/Spider_Attack.png`, frame: 192, anchor: 0.68 },
+  snake: { idle: `${EP}Snake/Snake_Idle.png`, move: `${EP}Snake/Snake_Run.png`, attack: `${EP}Snake/Snake_Attack.png`, frame: 192, anchor: 0.68 },
+  lizard: { idle: `${EP}Lizard/Lizard_Idle.png`, move: `${EP}Lizard/Lizard_Run.png`, attack: `${EP}Lizard/Lizard_Attack.png`, frame: 192, anchor: 0.68 },
   bat: { idle: `${EP}Giant Bat/Giant Bat_Idle.png`, move: `${EP}Giant Bat/Giant Bat_Move.png`, frame: 192, anchor: 0.7, fly: true },
   bee: { idle: `${EP}Bumblebee/Bumblebee_Idle.png`, move: `${EP}Bumblebee/Bumblebee_Move.png`, frame: 192, anchor: 0.7, fly: true, scale: 0.7 },
   imp: { idle: `${EP}Imp/Imp_Idle.png`, move: `${EP}Imp/Imp_Move.png`, frame: 192, anchor: 0.7, fly: true },
@@ -207,6 +221,38 @@ const LIFT_TONE: Record<LiftKind, string> = { lift: "#ffe9a8", drop: "#d6b8ff", 
 /** Ground under the rock of the Underneath: dark, and darker than the caverns. */
 const ROCK_MOOD = 0x1e1e2a;
 
+/** An area map's view in play: this many rows tall, held on the hero. */
+const AREA_ROWS = 15;
+/** The captain, drawn from the knights' sheets. */
+const HERO_LOOK: Dweller = { kind: "warrior", col: 0, row: 0, color: "blue" };
+const HERO_ATTACK = { key: "blue_Warrior/Warrior_Attack1.png", file: "Units/Blue Units/Warrior/Warrior_Attack1.png" };
+/** Where the minimap is drawn, far off the world, for its own camera alone to see. */
+const MINI_AT = -100_000;
+/** The minimap's ground by height, darkest low. */
+const MINI_GROUND = [0x6f8a4a, 0x8aa05a, 0xa8b46c, 0xc4c27c, 0xd8cf8a];
+
+/** One body in a fight on an area map: the hero or a monster. */
+interface Body {
+  s: Phaser.GameObjects.Sprite;
+  at: Cell;
+  hp: number;
+  max: number;
+  /** When it may strike again, and when it finishes its step, in scene ms. */
+  next: number;
+  busy: number;
+  speed: number;
+  idle: string;
+  move?: string;
+  attack?: string;
+  /** How far its health bar floats above its feet, in px. */
+  lift: number;
+  bar: Phaser.GameObjects.Graphics;
+  dead: boolean;
+}
+interface Foe extends Body {
+  home: Cell;
+  stats: FoeStats;
+}
 /**
  * Each underground map lit its own way: the rock's own dark, how much the open floor shows unlit, the colour its
  * lights cast. The Undercroft is torchlit masonry, the Deeps the darkest and lit ghost-green, the Hollow the
@@ -239,6 +285,12 @@ export class AtlasScene extends Phaser.Scene {
   private built = new Set<TierId>();
   /** Each exit's sign: clicking it travels, as the exit's own tile does. */
   private signs: { to: AreaId; text: Phaser.GameObjects.Text }[] = [];
+  /** In an area's map: the hero, where it rises again, what it is walking to or fighting, the monsters. */
+  private hero: (Body & { path: Cell[]; target: Foe | null; then: (() => void) | null }) | null = null;
+  private spawn: Cell = { col: 0, row: 0 };
+  private foes: Foe[] = [];
+  private dev = false;
+  private mini: { cam: Phaser.Cameras.Scene2D.Camera; dot: Phaser.GameObjects.Rectangle; view: Phaser.GameObjects.Rectangle } | null = null;
 
   constructor() {
     super("atlas");
@@ -255,6 +307,10 @@ export class AtlasScene extends Phaser.Scene {
     this.local = null;
     this.built = new Set();
     this.signs = [];
+    this.hero = null;
+    this.foes = [];
+    this.mini = null;
+    this.dev = !!data.dev;
   }
 
   preload(): void {
@@ -279,6 +335,16 @@ export class AtlasScene extends Phaser.Scene {
         const { idle, move, frame } = this.look(d);
         sheet(idle.key, { file: idle.file, frame, anchor: 0 });
         if (move) sheet(move.key, { file: move.file, frame, anchor: 0 });
+      }
+    }
+    if (this.local) {
+      const { idle, move, frame } = this.look(HERO_LOOK);
+      sheet(idle.key, { file: idle.file, frame, anchor: 0 });
+      if (move) sheet(move.key, { file: move.file, frame, anchor: 0 });
+      sheet(HERO_ATTACK.key, { file: HERO_ATTACK.file, frame, anchor: 0 });
+      for (const d of this.local.dwellers) {
+        const b = BEAST[d.kind];
+        if (FOES[d.kind] && b?.attack) sheet(`beast_${d.kind}_attack`, { file: b.attack, frame: b.frame, anchor: 0 });
       }
     }
     for (const k of ["deadTree", "stump", "bones", "skullSpike", "goldStone"]) sheet(`prop_${k}`, PROP[k]!);
@@ -335,6 +401,7 @@ export class AtlasScene extends Phaser.Scene {
     };
     const resize = (size: Phaser.Structs.Size): void => {
       for (const c of Object.values(this.cams)) c.setSize(size.width, size.height);
+      if (this.playing) this.active.setZoom(this.zoomFor(AREA_ROWS));
     };
     this.scale.on(Phaser.Scale.Events.RESIZE, resize);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, resize));
@@ -346,15 +413,19 @@ export class AtlasScene extends Phaser.Scene {
       // Bounds after show(): it builds the map, and only then is the grid this area's size.
       this.show(local.id);
       for (const c of Object.values(this.cams)) c.setBounds(0, 0, STRAT_COLS * CELL, STRAT_ROWS * CELL);
-      cam.setZoom(this.zoomFor(22));
-      // A traveller arrives at the exit back the way they came, not the area's front door.
+      // A traveller arrives at the exit back the way they came, not the area's front door, on the nearest open tile.
       const at = local.exits.find((e) => e.to === this.hooks.from)?.at ?? local.entry;
-      cam.centerOn((at.col + 0.5) * CELL, (at.row + 0.5) * CELL);
+      const near = isWalkable(at.col, at.row) ? at : (findRoute(at, (c) => isWalkable(c.col, c.row) && !isSlope(c.col, c.row))?.at(-1) ?? local.entry);
+      this.spawn = near;
+      this.spawnHero(near);
+      this.minimap(local);
+      this.setDev(this.dev);
       if (this.hooks.arrive === "fall") {
-        // Dropped in: the view comes down onto the spot and lands with a jolt.
-        const y = cam.scrollY;
-        cam.setScroll(cam.scrollX, y - 3 * CELL);
-        this.tweens.add({ targets: cam, scrollY: y, duration: 650, ease: "Bounce.easeOut", onComplete: () => cam.shake(140, 0.004) });
+        // Dropped in: the hero comes down onto the spot and lands with a jolt.
+        const s = this.hero!.s;
+        const y = s.y;
+        s.setY(y - 3 * CELL);
+        this.tweens.add({ targets: s, y, duration: 650, ease: "Bounce.easeOut", onComplete: () => cam.shake(140, 0.004) });
       }
     } else {
       const hub = AREAS.find((a) => a.id === "harbour")!.label;
@@ -373,7 +444,8 @@ export class AtlasScene extends Phaser.Scene {
         const mid = (k: "c" | "r") => tiles.reduce((n, t) => n + t[k], 0) / Math.max(1, tiles.length);
         this.flyTo({ col: mid("c"), row: mid("r") }, 24);
       },
-      travel: (to, from, arrive) => this.scene.restart({ ...this.hooks, area: to, from, arrive }),
+      travel: (to, from, arrive) => this.scene.restart({ ...this.hooks, area: to, from, arrive, dev: this.dev }),
+      dev: (on) => this.setDev(on),
       tier: (id) => {
         this.show(id);
         // Onto the tier's ground, when the view would otherwise be open sky or solid rock.
@@ -467,6 +539,7 @@ export class AtlasScene extends Phaser.Scene {
   private controls(): void {
     this.input.setDefaultCursor(HAND);
     this.input.on("wheel", (_p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
+      if (this.playing) return;
       const cam = this.active;
       const widest = this.local ? Math.max(this.zoomFor(STRAT_ROWS), cam.width / (STRAT_COLS * CELL)) : this.zoomFor(STRAT_ROWS + 6);
       cam.zoomTo(Phaser.Math.Clamp(cam.zoom * (dy > 0 ? 0.85 : 1.18), widest, this.zoomFor(9)), 160, "Sine.easeOut", true);
@@ -478,6 +551,7 @@ export class AtlasScene extends Phaser.Scene {
     this.input.on("pointermove", (p: Phaser.Input.Pointer) => {
       const d = this.drag;
       if (!d || !p.isDown) return;
+      if (this.playing) return;
       if (Math.abs(p.x - d.x) + Math.abs(p.y - d.y) > 8) d.moved = true;
       const cam = this.active;
       if (d.moved) cam.setScroll(d.sx - (p.x - d.x) / cam.zoom, d.sy - (p.y - d.y) / cam.zoom);
@@ -488,6 +562,7 @@ export class AtlasScene extends Phaser.Scene {
       if (!d || d.moved) return;
       const w = this.active.getWorldPoint(p.x, p.y);
       const cell = { col: Math.floor(w.x / CELL), row: Math.floor(w.y / CELL) };
+      if (this.playing) return this.order(w, cell);
       // An exit travels, a lift's end rides it, else the area under the pointer.
       for (const e of this.local?.exits ?? []) {
         if (Math.abs(e.at.col - cell.col) <= 2 && Math.abs(e.at.row - cell.row) <= 2) return this.depart(e);
@@ -506,9 +581,226 @@ export class AtlasScene extends Phaser.Scene {
     });
   }
 
+  /** In play: an area map with the hero on it and dev mode off. */
+  private get playing(): boolean {
+    return !!this.hero && !this.dev;
+  }
+
+  /** Dev mode frees the camera over the whole map; off, it holds on the hero at the play zoom, with the minimap. */
+  private setDev(on: boolean): void {
+    this.dev = on;
+    this.hooks.dev = on;
+    const cam = this.active;
+    if (!this.hero) return;
+    this.mini?.cam.setVisible(!on);
+    // At once, not eased: a zoom still running when play resumes would carry on over the play zoom.
+    cam.zoomEffect.reset();
+    cam.panEffect.reset();
+    if (on) {
+      cam.stopFollow();
+      // Unbounded, so a map smaller than the screen sits in its middle rather than against an edge.
+      cam.removeBounds();
+      // The whole map in view, its longer side to the screen's edge.
+      cam.setZoom(Math.min(this.zoomFor(STRAT_ROWS), cam.width / (STRAT_COLS * CELL)));
+      cam.centerOn((STRAT_COLS * CELL) / 2, (STRAT_ROWS * CELL) / 2);
+    } else {
+      cam.setBounds(0, 0, STRAT_COLS * CELL, STRAT_ROWS * CELL);
+      cam.setZoom(this.zoomFor(AREA_ROWS));
+      cam.startFollow(this.hero.s, true, 0.15, 0.15);
+    }
+  }
+
+  private body(s: Phaser.GameObjects.Sprite, at: Cell, hp: number, speed: number, look: { idle: string; move?: string; attack?: string }): Body {
+    return { s, at, hp, max: hp, next: 0, busy: 0, speed, ...look, lift: s.displayHeight * s.originY * 0.78, bar: this.add.graphics().setDepth(DEPTH.fx), dead: false };
+  }
+
+  private spawnHero(at: Cell): void {
+    const look = this.look(HERO_LOOK);
+    const y = (at.row + 0.75) * CELL;
+    const s = this.add.sprite((at.col + 0.5) * CELL, y, look.idle.key).setOrigin(0.5, look.anchor).setDepth(standing(y));
+    this.play(s, look.idle.key);
+    this.hero = { ...this.body(s, at, HERO.hp, HERO.speed, { idle: look.idle.key, move: look.move?.key, attack: HERO_ATTACK.key }), path: [], target: null, then: null };
+  }
+
+  /** A monster at its post: it waits there until it notices the hero. */
+  private addFoe(d: Dweller): void {
+    const look = this.look(d);
+    const stats = FOES[d.kind]!;
+    const y = (d.row + 0.75) * CELL;
+    const s = this.add.sprite((d.col + 0.5) * CELL, y, look.idle.key).setOrigin(0.5, look.anchor).setScale(look.scale).setDepth(standing(y)).setFlipX(Math.random() < 0.5);
+    this.play(s, look.idle.key);
+    const at = { col: d.col, row: d.row };
+    const attack = BEAST[d.kind]?.attack ? `beast_${d.kind}_attack` : undefined;
+    this.foes.push({ ...this.body(s, at, stats.hp, stats.speed, { idle: look.idle.key, move: look.move?.key, attack }), home: at, stats });
+  }
+
+  /** Plays a sheet's loop, unless it is already playing: a body stepping cell to cell keeps its stride. */
+  private play(s: Phaser.GameObjects.Sprite, key: string): void {
+    if (s.anims.currentAnim?.key === `${key}_loop` && s.anims.isPlaying) return;
+    if (this.anims.exists(`${key}_loop`)) s.play(`${key}_loop`);
+    else s.setTexture(key, 0);
+  }
+
+  /** A click in play: on a monster, fight it; on an exit or its sign, walk there and through; else walk there. */
+  private order(w: Phaser.Math.Vector2, cell: Cell): void {
+    const hero = this.hero!;
+    if (hero.dead) return;
+    const foe = this.foes.find((f) => !f.dead && Math.abs(f.s.x - w.x) < 0.7 * CELL && w.y < f.s.y + 0.3 * CELL && w.y > f.s.y - f.lift);
+    if (foe) return void Object.assign(hero, { target: foe, path: [], then: null });
+    const sign = this.signs.find((s) => s.text.getBounds().contains(w.x, w.y));
+    // Only a click on an exit's own tile or its sign takes it: walking about beside the well must not drop you down it.
+    const exit = this.local!.exits.find((e) => tileDistance(e.at, cell) <= 1 || e.to === sign?.to);
+    const to = exit?.at ?? cell;
+    const near = isWalkable(to.col, to.row) ? 0 : 1;
+    const way = findRoute(hero.at, (c) => tileDistance(c, to) <= near);
+    if (!way) return;
+    Object.assign(hero, { target: null, path: way, then: exit ? () => this.depart(exit) : null });
+    if (way.length === 0) hero.then?.();
+  }
+
+  /** One step to a neighbouring cell, at the body's own speed. */
+  private step(b: Body, to: Cell, time: number): void {
+    b.busy = time + 1000 / b.speed;
+    if (to.col !== b.at.col) b.s.setFlipX(to.col < b.at.col);
+    b.at = to;
+    if (b.move) this.play(b.s, b.move);
+    this.tweens.add({ targets: b.s, x: (to.col + 0.5) * CELL, y: (to.row + 0.75) * CELL, duration: 1000 / b.speed, onUpdate: () => b.s.setDepth(standing(b.s.y)) });
+  }
+
+  /** A blow: the striker's swing, the target's flash and the number off it. */
+  private strike(from: Body, to: Body, attack: number, every: number, time: number): void {
+    from.next = time + every * 1000;
+    from.busy = time + 350;
+    if (to.at.col !== from.at.col) from.s.setFlipX(to.at.col < from.at.col);
+    if (from.attack && this.anims.exists(`${from.attack}_once`)) {
+      from.s.play(`${from.attack}_once`);
+      from.s.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => !from.dead && this.play(from.s, from.idle));
+    } else this.tweens.add({ targets: from.s, x: from.s.x + (to.s.x - from.s.x) * 0.25, duration: 90, yoyo: true });
+    to.hp = struck(to.hp, attack);
+    to.s.setTintFill(0xffffff);
+    this.time.delayedCall(90, () => to.s.clearTint());
+    const n = this.add.text(to.s.x, to.s.y - to.lift - 10, `${attack}`, { fontFamily: FONT, fontSize: "28px", fontStyle: "bold", color: to === this.hero ? "#ff8a7a" : "#fdfaf0", stroke: "#1c2634", strokeThickness: 6 }).setOrigin(0.5).setDepth(DEPTH.fx + 1);
+    this.tweens.add({ targets: n, y: n.y - 40, alpha: 0, duration: 700, ease: "Sine.easeOut", onComplete: () => n.destroy() });
+    if (to.hp === 0) this.fall(to);
+  }
+
+  /** A body at nothing: a monster is gone; the hero rises again where it arrived, whole. */
+  private fall(b: Body): void {
+    b.dead = true;
+    b.bar.clear();
+    this.tweens.killTweensOf(b.s);
+    if (b !== this.hero) {
+      this.tweens.add({ targets: b.s, alpha: 0, duration: 500, onComplete: () => b.s.destroy() });
+      if (this.hero!.target === b) this.hero!.target = null;
+      return;
+    }
+    const hero = this.hero!;
+    Object.assign(hero, { target: null, path: [], then: null });
+    this.tweens.add({ targets: b.s, alpha: 0.25, duration: 600 });
+    this.time.delayedCall(1800, () => {
+      hero.at = this.spawn;
+      b.s.setPosition((this.spawn.col + 0.5) * CELL, (this.spawn.row + 0.75) * CELL).setAlpha(1);
+      Object.assign(hero, { hp: hero.max, dead: false });
+      this.play(b.s, b.idle);
+    });
+  }
+
+  /** The fight, once a frame: the hero walks or strikes, each monster near enough strikes, chases or goes home. */
+  private fight(time: number): void {
+    const hero = this.hero!;
+    if (!hero.dead && time >= hero.busy) {
+      // With nothing else to do, the hero turns on a monster beside it rather than stand and take its blows.
+      if (!hero.target && hero.path.length === 0) hero.target = this.foes.find((f) => !f.dead && tileDistance(f.at, hero.at) <= 1) ?? null;
+      const t = hero.target;
+      if (t && !t.dead) {
+        if (tileDistance(hero.at, t.at) <= 1) {
+          if (time >= hero.next) this.strike(hero, t, HERO.attack, HERO.every, time);
+          else this.play(hero.s, hero.idle);
+        } else {
+          const way = findRoute(hero.at, (c) => tileDistance(c, t.at) <= 1);
+          if (way?.length) this.step(hero, way[0]!, time);
+        }
+      } else if (hero.path.length > 0) {
+        this.step(hero, hero.path.shift()!, time);
+        if (hero.path.length === 0 && hero.then) {
+          const then = hero.then;
+          hero.then = null;
+          this.time.delayedCall(1000 / hero.speed, then);
+        }
+      } else this.play(hero.s, hero.idle);
+    }
+    for (const f of this.foes) {
+      if (f.dead || time < f.busy) continue;
+      // Far from the hero and at home, a monster rests.
+      if (tileDistance(f.at, hero.at) > 14 && f.at.col === f.home.col && f.at.row === f.home.row) continue;
+      const intent = foeIntent(f.at, f.home, hero.dead ? null : hero.at, f.stats);
+      if (intent === "attack") {
+        if (time >= f.next) this.strike(f, hero, f.stats.attack, f.stats.every, time);
+        else this.play(f.s, f.idle);
+        continue;
+      }
+      if (intent === "idle") {
+        this.play(f.s, f.idle);
+        continue;
+      }
+      const taken = (c: Cell) => (c.col === hero.at.col && c.row === hero.at.row) || this.foes.some((o) => o !== f && !o.dead && o.at.col === c.col && o.at.row === c.row);
+      const goal = intent === "chase" ? (c: Cell) => tileDistance(c, hero.at) <= 1 : (c: Cell) => c.col === f.home.col && c.row === f.home.row;
+      const way = findRoute(f.at, goal, taken);
+      if (way?.length) this.step(f, way[0]!, time);
+      else this.play(f.s, f.idle);
+    }
+  }
+
+  /** A health bar over a body: always over the hero, over a monster only once it is hurt. */
+  private drawBar(b: Body): void {
+    b.bar.clear();
+    if (b.dead || (b !== this.hero && b.hp === b.max)) return;
+    const [w, h] = [56, 7];
+    const [x, y] = [b.s.x - w / 2, b.s.y - b.lift - 4];
+    b.bar.fillStyle(0x1c2634, 0.85).fillRect(x - 2, y - 2, w + 4, h + 4);
+    b.bar.fillStyle(b === this.hero ? 0x6fd06a : 0xe05a4a).fillRect(x, y, (w * b.hp) / b.max, h);
+  }
+
+  /** The whole area a pixel a tile, in its own camera in the corner: ground by height, woods, water, exits, the hero. */
+  private minimap(m: AreaMap): void {
+    const key = "minimap";
+    if (this.textures.exists(key)) this.textures.remove(key);
+    const tex = this.textures.createCanvas(key, STRAT_COLS, STRAT_ROWS)!;
+    const img = tex.context.createImageData(STRAT_COLS, STRAT_ROWS);
+    const water = { sea: 0x2d5f78, sky: 0x9cc8e8, rock: 0x15131c }[m.base];
+    for (let r = 0; r < STRAT_ROWS; r++) {
+      for (let c = 0; c < STRAT_COLS; c++) {
+        const ch = at(c, r);
+        const rgb = ch === "~" ? water : ch === "%" ? 0x2a2733 : isForest(c, r) ? 0x2c4a2e : isWalkable(c, r) ? MINI_GROUND[Math.min(4, level(c, r) - 1)]! : 0x4a4438;
+        img.data.set([rgb >> 16, (rgb >> 8) & 255, rgb & 255, 255], (r * STRAT_COLS + c) * 4);
+      }
+    }
+    tex.context.putImageData(img, 0, 0);
+    tex.refresh();
+    const made: Phaser.GameObjects.GameObject[] = [this.add.image(MINI_AT, 0, key).setOrigin(0)];
+    for (const e of m.exits) made.push(this.add.rectangle(MINI_AT + e.at.col + 0.5, e.at.row + 0.5, 2, 2, 0xffd36a));
+    const view = this.add.rectangle(MINI_AT, 0, 1, 1).setOrigin(0).setStrokeStyle(0.5, 0xfdfaf0, 0.9);
+    const dot = this.add.rectangle(MINI_AT, 0, 2.5, 2.5, 0xff5a4a).setStrokeStyle(0.5, 0xffffff);
+    made.push(view, dot);
+    for (const c of Object.values(this.cams)) c.ignore(made);
+    const cam = this.cameras.add(0, 0, 10, 10, false, "minimap").setBackgroundColor(0x1c2634);
+    cam.ignore(this.children.list.filter((o) => !made.includes(o)));
+    this.mini = { cam, dot, view };
+    const place = (): void => {
+      const k = Math.max(1, Math.floor(Math.min(this.cameras.main.width * 0.18, 300 * DPR) / STRAT_COLS));
+      cam.setViewport(16 * DPR, this.cameras.main.height - STRAT_ROWS * k - 16 * DPR, STRAT_COLS * k, STRAT_ROWS * k).setOrigin(0).setZoom(k).setScroll(MINI_AT, 0);
+    };
+    place();
+    this.scale.on(Phaser.Scale.Events.RESIZE, place);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, place));
+  }
+
   /** Loops for every sheet with more than one frame: props, beasts, knights. */
   private makeAnims(): void {
     for (const key of this.textures.getTextureKeys()) {
+      if ((key.endsWith("_attack") || key === HERO_ATTACK.key) && !this.anims.exists(`${key}_once`)) {
+        this.anims.create({ key: `${key}_once`, frames: this.anims.generateFrameNumbers(key), frameRate: 16, repeat: 0 });
+      }
       const frames = this.textures.get(key).frameTotal - 1;
       if (frames < 2 || this.anims.exists(`${key}_loop`) || key.startsWith("tileset")) continue;
       this.anims.create({ key: `${key}_loop`, frames: this.anims.generateFrameNumbers(key), frameRate: 9, repeat: -1 });
@@ -898,6 +1190,7 @@ export class AtlasScene extends Phaser.Scene {
 
   /** Creatures and knights, idle at their spot or walking their beat. */
   private addDweller(d: Dweller): void {
+    if (this.local && FOES[d.kind]) return this.addFoe(d);
     const look = this.look(d);
     const x = (d.col + 0.5) * CELL;
     const y = (d.row + 0.75) * CELL;
@@ -1069,8 +1362,17 @@ export class AtlasScene extends Phaser.Scene {
     for (const b of tier.bosses) text((b.col + 0.5) * CELL, (b.row - 2.6) * CELL, b.name, 28, "#ff8f7a", 13);
   }
 
-  update(): void {
+  update(time: number): void {
     const act = this.active;
+    if (this.hero) {
+      this.fight(time);
+      for (const b of [this.hero, ...this.foes]) this.drawBar(b);
+      if (this.mini) {
+        const v = act.worldView;
+        this.mini.dot.setPosition(MINI_AT + this.hero.s.x / CELL, this.hero.s.y / CELL);
+        this.mini.view.setPosition(MINI_AT + v.x / CELL, v.y / CELL).setSize(v.width / CELL, v.height / CELL);
+      }
+    }
     for (const { text, px, tier } of this.names) {
       text.setVisible(tier === this.view);
       text.setScale(Math.max(1, (px * DPR) / (Number.parseInt(String(text.style.fontSize)) * act.zoom)));

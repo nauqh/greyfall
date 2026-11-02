@@ -103,6 +103,24 @@ export function AreaView({ area: first }: { area: AreaId }) {
     },
   }).current;
   const [hud, toggleHud] = useHud();
+  // Dev mode: the camera free over the whole map, remembered on this browser; the backquote key toggles it.
+  const [dev, setDev] = useState(false);
+  const toggleDev = (): void =>
+    setDev((on) => {
+      try {
+        localStorage.setItem("greyfall.dev", on ? "0" : "1");
+      } catch {}
+      api.current?.dev(!on);
+      return !on;
+    });
+  useEffect(() => {
+    const key = (e: KeyboardEvent): void => {
+      if (e.key === "`" && !(e.target instanceof HTMLInputElement)) toggleDev();
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const name = AREAS.find((a) => a.id === area)?.name;
   return (
     <main className="stage">
@@ -110,6 +128,10 @@ export function AreaView({ area: first }: { area: AreaId }) {
         start={(el) => {
           // Arrived by a link with ?from=: the map opens at the exit back there.
           hooks.from = (new URLSearchParams(window.location.search).get("from") as AreaId | null) ?? undefined;
+          try {
+            hooks.dev = localStorage.getItem("greyfall.dev") === "1";
+          } catch {}
+          setDev(!!hooks.dev);
           return import("../../game/AtlasScene").then(({ startAtlas }) => startAtlas(el, hooks));
         }}
       >
@@ -184,6 +206,9 @@ export function AreaView({ area: first }: { area: AreaId }) {
             <div className="worldLinks">
               <button className="linkBtn" type="button" onClick={() => router.push(`/atlas?focus=${area}`)}>
                 Back to the atlas
+              </button>
+              <button className="linkBtn" type="button" onClick={toggleDev} aria-pressed={dev} title="See the whole map (`)">
+                {dev ? "Play" : "Dev: whole map"}
               </button>
             </div>
           </header>

@@ -528,10 +528,29 @@ white shaft of light that marked every crossing are gone.
   reached from the entry, every bridge deck stays raised, all land belongs to
   a district, and every building sits wholly on its ground.
 
+## Playing an area map
+
+An area map is played: the hero (a blue Warrior) stands where you
+arrived, the camera holds on it 15 rows tall, and a minimap sits in the
+corner. Click the ground to walk there by the engine's own path, a
+monster to walk up and fight it until it dies, an exit or its sign to
+walk to it and through. With nothing else to do the hero turns on a
+monster beside it. Monsters (`FOES` in `packages/engine/src/hero.ts`,
+GAME.md's numbers) wait at their posts, chase a hero within their aggro
+range, strike when beside it, and walk home past their leash. A hero at
+nothing wakes where it arrived, whole; bonfires and dropped gold come
+next. The first fight is the goblins' camp outside the Harbour's Ember
+Gate: two torches and a spear, winnable with the sword alone (three
+met at once killed in five seconds).
+
+Dev mode (the backquote key, or "Dev: whole map" at the top) frees the
+camera to show the whole area map, centred, with the wheel and drag
+back; it is remembered on the browser and carries across crossings.
+
 ## Not done yet
 
-- Nothing is playable on it: no warband, no keys, no gates or lifts that
-  open.
+- The hero walks and fights, but there are no bonfires, flasks, dodge,
+  gold, warband or keys yet, and gates and lifts all open.
 - No minimap. Zoom out with the wheel; ride a lift to change tier.
 - No blacksmith in the Harbour yet: the plan is below.
 

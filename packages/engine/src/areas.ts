@@ -610,6 +610,15 @@ function harbour(): AreaMap {
   for (const [c, r] of [[21, 36], [28, 36]] as const) who("pawn", c, r, { ...blue, act: "axe" });
   who("pawn", 26, 39, { ...blue, act: "wood", to: { col: 40, row: 46 } });
 
+  // The goblins' camp outside the Ember Gate: Emberwood's raiders dug in on the Harbour's side of the road, the first
+  // fight a captain walking north meets.
+  prop("goblinHut", 35, 6);
+  t.fires.push({ col: 33, row: 9 });
+  // Two torches and a spear: winnable at the start, with nothing but the sword (three met at once killed in five seconds).
+  for (const [c, r] of [[35, 10], [36, 12]] as const) who("torch", c, r);
+  who("spear", 34, 13);
+  prop("skullSpike", 31, 5);
+
   // The Mine Hills: the mine in the working face, ore in the rock, a cave under the crest.
   prop("goldMine", 90, 22);
   for (const [c, r] of [[86, 16], [98, 18], [100, 26], [88, 28]] as const) prop("goldStone", c, r);
@@ -679,7 +688,7 @@ function harbour(): AreaMap {
     { name: "Moor Watch", at: { col: 98, row: 66 }, levels: [1, 2, 3], palette: [3, 2, 1], dress: "barrowmoor", decor: 1.5 },
   ];
   const tier = t.finish({}, [{ col: 56, row: 46 }]);
-  return { ...tier, area: "harbour", entry: { col: 56, row: 46 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], streets: true };
+  return { ...tier, area: "harbour", entry: { col: 56, row: 50 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], streets: true };
 }
 
 function emberwood(): AreaMap {

@@ -182,3 +182,4 @@ export {
   type TierId,
 } from "./atlas.ts";
 export { MAPPED_AREAS, areaMap, districtOf, groundColours, type AreaExit, type AreaMap, type District } from "./areas.ts";
+export { FOES, HERO, foeIntent, struck, type FoeStats, type Intent } from "./hero.ts";
