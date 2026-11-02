@@ -16,6 +16,7 @@ import {
   NPCS,
   TALK_RANGE,
   canStep,
+  comboStep,
   nextTalk,
   talkKey,
   findRoute,
@@ -251,6 +252,7 @@ const AREA_ROWS = 15;
 /** The captain, drawn from the knights' sheets. */
 const HERO_LOOK: Dweller = { kind: "warrior", col: 0, row: 0, color: "blue" };
 const HERO_ATTACK = { key: "blue_Warrior/Warrior_Attack1.png", file: "Units/Blue Units/Warrior/Warrior_Attack1.png" };
+const HERO_ATTACK2 = { key: "blue_Warrior/Warrior_Attack2.png", file: "Units/Blue Units/Warrior/Warrior_Attack2.png" };
 const HERO_GUARD = { key: "blue_Warrior/Warrior_Guard.png", file: "Units/Blue Units/Warrior/Warrior_Guard.png" };
 
 /** One body in a fight on an area map: the hero or a monster. */
@@ -345,6 +347,8 @@ export class AtlasScene extends Phaser.Scene {
   private guarding = false;
   /** When E was pressed before the last swing was through: it swings the moment it can, not never. */
   private queued = -1e9;
+  /** The hero's place in its three-swing combo, and when it last swung, in scene ms. */
+  private combo = { step: 0, at: -1e9 };
   private spawn: Cell = { col: 0, row: 0 };
   private foes: Foe[] = [];
   private folk: Folk[] = [];
@@ -377,6 +381,7 @@ export class AtlasScene extends Phaser.Scene {
     this.foes = [];
     this.guarding = false;
     this.queued = -1e9;
+    this.combo = { step: 0, at: -1e9 };
     this.folk = [];
     this.talk = null;
     this.nearName = null;
@@ -414,6 +419,7 @@ export class AtlasScene extends Phaser.Scene {
       if (move) sheet(move.key, { file: move.file, frame, anchor: 0 });
       sheet(HERO_ATTACK.key, { file: HERO_ATTACK.file, frame, anchor: 0 });
       sheet(HERO_GUARD.key, { file: HERO_GUARD.file, frame, anchor: 0 });
+      sheet(HERO_ATTACK2.key, { file: HERO_ATTACK2.file, frame, anchor: 0 });
       for (const n of NPCS.filter((n) => n.area === this.local!.area)) {
         const l = this.look(npcLook(n));
         sheet(l.idle.key, { file: l.idle.file, frame: l.frame, anchor: 0 });
@@ -808,13 +814,13 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** A swing, at a body or at the air. */
-  private swing(from: Body, to: Body | null, every: number, time: number): void {
+  private swing(from: Body, to: Body | null, every: number, time: number, anim = from.attack): void {
     from.next = time + every * 1000;
     from.busy = time + 350;
     from.way = [];
     if (to && to.at.col !== from.at.col) from.s.setFlipX(to.at.col < from.at.col);
-    if (from.attack && this.anims.exists(`${from.attack}_once`)) {
-      from.s.play(`${from.attack}_once`);
+    if (anim && this.anims.exists(`${anim}_once`)) {
+      from.s.play(`${anim}_once`);
       from.s.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => !from.dead && this.play(from.s, from.idle));
     } else if (to) this.tweens.add({ targets: from.s, x: from.s.x + (to.s.x - from.s.x) * 0.25, duration: 90, yoyo: true });
   }
@@ -825,8 +831,8 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** A blow: the striker's swing, the target's flash and the number off it; a guarding hero takes little from the front. */
-  private strike(from: Body, to: Body, attack: number, every: number, time: number): void {
-    this.swing(from, to, every, time);
+  private strike(from: Body, to: Body, attack: number, every: number, time: number, anim = from.attack): void {
+    this.swing(from, to, every, time, anim);
     const blocked = to === this.hero && this.guarding && this.facing(to, from);
     const dealt = blocked ? throughGuard(attack) : attack;
     to.hp = struck(to.hp, dealt);
@@ -907,7 +913,7 @@ export class AtlasScene extends Phaser.Scene {
         // Mid-swing: it holds still.
       } else if (t && tileDistance(hero.at, t.at) <= 1 && Math.hypot(t.s.x - hero.s.x, t.s.y - hero.s.y) < 1.5 * CELL) {
         hero.way = [];
-        if (time >= hero.next) this.strike(hero, t, HERO.attack, HERO.every, time);
+        if (time >= hero.next) this.heroSwing(t, time);
         else this.play(hero.s, hero.idle);
       } else {
         if (t && time - hero.planned > 250) {
@@ -960,7 +966,7 @@ export class AtlasScene extends Phaser.Scene {
   /** Loops for every sheet with more than one frame: props, beasts, knights. */
   private makeAnims(): void {
     for (const key of this.textures.getTextureKeys()) {
-      if ((key.endsWith("_attack") || key === HERO_ATTACK.key) && !this.anims.exists(`${key}_once`)) {
+      if ((key.endsWith("_attack") || key === HERO_ATTACK.key || key === HERO_ATTACK2.key) && !this.anims.exists(`${key}_once`)) {
         this.anims.create({ key: `${key}_once`, frames: this.anims.generateFrameNumbers(key), frameRate: 16, repeat: 0 });
       }
       const frames = this.textures.get(key).frameTotal - 1;
@@ -1583,8 +1589,31 @@ export class AtlasScene extends Phaser.Scene {
     const reach = this.foes.filter((f) => !f.dead && tileDistance(f.at, hero.at) <= 1 && Math.hypot(f.s.x - hero.s.x, f.s.y - hero.s.y) < 1.5 * CELL);
     const foe = reach.find((f) => f === hero.target) ?? reach.find((f) => this.facing(hero, f)) ?? reach[0];
     hero.then = null;
-    if (foe) this.strike(hero, foe, HERO.attack, HERO.every, time);
-    else this.swing(hero, null, HERO.every, time);
+    this.heroSwing(foe ?? null, time);
+  }
+
+  /** The hero's next swing of its combo: the first and third cut one way, the second back the other; the third knocks back. */
+  private heroSwing(foe: Foe | null, time: number): void {
+    const hero = this.hero!;
+    const step = comboStep(this.combo.step, (time - this.combo.at) / 1000);
+    this.combo = { step, at: time };
+    const anim = step === 2 ? HERO_ATTACK2.key : HERO_ATTACK.key;
+    if (!foe) return this.swing(hero, null, HERO.every, time, anim);
+    this.strike(hero, foe, HERO.attack, HERO.every, time, anim);
+    if (step === 3 && !foe.dead) this.knockBack(foe, time);
+  }
+
+  /** Thrown a tile straight back from the hero, if the ground allows, and staggered a moment either way. */
+  private knockBack(f: Foe, time: number): void {
+    const hero = this.hero!;
+    const to = { col: f.at.col + Math.sign(f.at.col - hero.at.col), row: f.at.row + Math.sign(f.at.row - hero.at.row) };
+    f.busy = Math.max(f.busy, time + 500);
+    f.way = [];
+    if (to.col === f.at.col && to.row === f.at.row) return;
+    if (!canStep(f.at, to) || this.foes.some((o) => o !== f && !o.dead && o.at.col === to.col && o.at.row === to.row)) return;
+    f.at = to;
+    const y = (to.row + 0.75) * CELL;
+    this.tweens.add({ targets: f.s, x: (to.col + 0.5) * CELL, y, duration: 180, ease: "Cubic.easeOut", onComplete: () => f.s.setDepth(standing(y)) });
   }
 
   private talkTo(f: Folk): void {

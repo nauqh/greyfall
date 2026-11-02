@@ -182,5 +182,5 @@ export {
   type TierId,
 } from "./atlas.ts";
 export { MAPPED_AREAS, areaMap, districtOf, groundColours, type AreaExit, type AreaMap, type District } from "./areas.ts";
-export { FOES, HERO, clearLine, foeIntent, routeToward, smoothPath, struck, throughGuard, type FoeStats, type Intent } from "./hero.ts";
+export { FOES, HERO, clearLine, comboStep, foeIntent, routeToward, smoothPath, struck, throughGuard, type FoeStats, type Intent } from "./hero.ts";
 export { NPCS, TALK_RANGE, nextTalk, talkKey, type Npc, type Talk, type WorldFlag } from "./npcs.ts";
