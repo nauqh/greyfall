@@ -531,8 +531,13 @@ white shaft of light that marked every crossing are gone.
 ## Playing an area map
 
 An area map is played: the hero (a blue Warrior) stands where you
-arrived, the camera holds on it 15 rows tall, and a minimap sits in the
-corner. Click the ground to walk there by the engine's own path, a
+arrived, the camera holds on it 15 rows tall; there is no minimap (dev mode
+shows the whole map). The hero walks at 2.8 tiles a second, in straight legs (the grid
+path pulled taut, `smoothPath`) at a steady speed rather than a hop a
+cell; hold the mouse to keep walking toward it, or steer with WASD or
+the arrows, sliding along what blocks. A click on the woods or the sea
+walks to the nearest ground beside it (`routeToward`), and a ring marks
+where a walk ends. Click the ground to walk there by the engine's own path, a
 monster to walk up and fight it until it dies, an exit or its sign to
 walk to it and through. With nothing else to do the hero turns on a
 monster beside it. Monsters (`FOES` in `packages/engine/src/hero.ts`,

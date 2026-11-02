@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FOES, HERO, foeIntent, struck } from "../src/index.ts";
+import { FOES, HERO, clearLine, findPath, foeIntent, routeToward, smoothPath, struck, useIsland } from "../src/index.ts";
 
 const goblin = FOES.torch!;
 const home = { col: 10, row: 10 };
@@ -42,5 +42,41 @@ describe("a blow", () => {
     let swings = 0;
     while (hp > 0) (hp = struck(hp, HERO.attack)), swings++;
     expect(swings).toBe(3);
+  });
+});
+
+describe("the hero's walking", () => {
+  // Open ground with a wall down the middle and a gap at the bottom; woods (T) block.
+  const island = (rows: string[]) => ({ rows, start: { a: { castle: { col: 1, row: 1 }, barracks: { col: 1, row: 1 } }, b: { castle: { col: 1, row: 1 }, barracks: { col: 1, row: 1 } } }, mines: [], lair: { col: 1, row: 1 } });
+  const ground = ["~~~~~~~~~~", "~...T....~", "~...T....~", "~...T....~", "~........~", "~~~~~~~~~~"];
+
+  it("pulls a path across open ground straight to its end", () => {
+    useIsland(island(ground));
+    const from = { col: 1, row: 1 };
+    const to = { col: 3, row: 3 };
+    expect(smoothPath(from, findPath(from, to)!)).toEqual([to]);
+  });
+
+  it("keeps the corner a wall forces, and never cuts through it", () => {
+    useIsland(island(ground));
+    const from = { col: 2, row: 1 };
+    const to = { col: 6, row: 1 };
+    const legs = smoothPath(from, findPath(from, to)!);
+    expect(legs.length).toBeGreaterThan(1);
+    let at = from;
+    for (const leg of legs) (expect(clearLine(at, leg)).toBe(true), (at = leg));
+    expect(at).toEqual(to);
+  });
+
+  it("walks a click on the woods to the nearest ground beside them", () => {
+    useIsland(island(ground));
+    const way = routeToward({ col: 1, row: 2 }, { col: 4, row: 2 });
+    expect(way.at(-1)).toEqual({ col: 3, row: 2 });
+  });
+
+  it("walks a click on the sea to the nearest shore", () => {
+    useIsland(island(ground));
+    const way = routeToward({ col: 2, row: 2 }, { col: 2, row: 0 });
+    expect(way.at(-1)).toEqual({ col: 2, row: 1 });
   });
 });

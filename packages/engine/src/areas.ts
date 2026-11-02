@@ -543,17 +543,16 @@ function harbour(): AreaMap {
   t.fences.push({ col: 63, row: 21, w: 4, h: 2 });
   for (const [c, r] of [[64, 21], [65, 22]] as const) who("sheep", c, r);
   who("monk", 50, 22, { ...blue, to: { col: 55, row: 21 } });
-  crowd(t, rng, "pawn", { col: 59, row: 22 }, 3, 3, { ...blue, act: "gold" });
+  who("pawn", 59, 22, { ...blue, act: "gold", to: { col: 62, row: 22 } });
   t.fires.push({ col: 60, row: 25 });
 
   // Old Town: the busiest ground in the Reach. The market under the terraces, a smithy corner, cottages on every
   // spare ledge, folk at their trades, and the watch walking the stairs between the tiers.
   for (const [c, r, art] of [[40, 28, "house1"], [42, 34, "house3"], [48, 37, "house2"], [70, 34, "house1"], [75, 26, "house3"], [73, 14, "house2"], [66, 38, "house3"]] as const) prop(art, c, r, blue);
   for (const [c, r, art] of [[54, 32, "woodPile"], [58, 33, "meat"], [62, 32, "goldStone"], [56, 36, "tools"]] as const) prop(art, c, r);
-  crowd(t, rng, "pawn", { col: 58, row: 34 }, 5, 4, { ...blue, act: "meat" });
+  crowd(t, rng, "pawn", { col: 58, row: 34 }, 2, 3, { ...blue, act: "meat" });
   prop("house3", 46, 30, blue);
   who("pawn", 48, 31, { ...blue, act: "hammer" });
-  who("pawn", 44, 31, { ...blue, act: "pickaxe" });
   t.fires.push({ col: 52, row: 38 });
   who("warrior", 44, 38, { ...blue, to: { col: 70, row: 30 } });
   who("archer", 72, 30, { ...blue, to: { col: 64, row: 22 } });
@@ -563,8 +562,9 @@ function harbour(): AreaMap {
   // garden and garrison, and the docks on the shore; a watchtower at each gate. Folk walk between them at their work.
   t.fires.push({ col: 56, row: 43 });
   for (const [c, r, art] of [[51, 45, "woodPile"], [61, 45, "meat"], [51, 48, "tools"], [61, 48, "goldStone"], [53, 49, "meat"], [59, 49, "woodPile"]] as const) prop(art, c, r);
-  crowd(t, rng, "pawn", { col: 56, row: 46 }, 6, 4, { ...blue, act: "gold" });
-  crowd(t, rng, "pawn", { col: 56, row: 47 }, 3, 3, { color: "yellow", act: "meat" });
+  // A few at the market, not a crowd: a town this size reads busy with a handful.
+  crowd(t, rng, "pawn", { col: 56, row: 46 }, 2, 4, { ...blue, act: "gold" });
+  who("pawn", 58, 47, { color: "yellow", act: "meat", to: { col: 54, row: 47 } });
   // The west quarter: close round the square, sparser toward the fields.
   for (const [c, r, art] of [[47, 44, "house2"], [44, 44, "house1"], [40, 44, "house3"], [36, 44, "house2"], [48, 50, "house3"], [45, 50, "house2"], [35, 50, "house1"], [48, 53, "house1"], [45, 53, "house3"], [51, 53, "house2"], [36, 54, "house3"]] as const) prop(art, c, r, blue);
   prop("archery", 31, 51, blue);
@@ -585,13 +585,11 @@ function harbour(): AreaMap {
   who("pawn", 30, 56, { ...blue, act: "wood", to: { col: 64, row: 50 } });
   who("pawn", 57, 55, { ...blue, act: "meat", to: { col: 57, row: 49 } });
   who("warrior", 30, 48, { ...blue, to: { col: 82, row: 48 } });
-  who("pawn", 41, 50, { ...blue, act: "gold", to: { col: 41, row: 54 } });
 
   // The Docks: fish huts along both shores of the bay, the catch heaped and gutted, boats out on the water.
   for (const [c, r] of [[42, 58], [70, 58], [47, 59], [65, 59]] as const) prop("fishHut", c, r);
   for (const [c, r] of [[58, 56], [44, 60], [68, 60]] as const) prop("meat", c, r);
   for (const [c, r] of [[46, 65], [62, 66], [56, 69], [51, 62], [60, 61]] as const) prop("boat", c, r, { flip: c > 56 });
-  crowd(t, rng, "pawn", { col: 56, row: 56 }, 4, 7, { ...blue, act: "knife" });
   for (const [c, r] of [[45, 61], [67, 61]] as const) who("pawn", c, r, { ...blue, act: "knife" });
   who("turtle", 44, 60);
   who("rubberDuck", 52, 66);

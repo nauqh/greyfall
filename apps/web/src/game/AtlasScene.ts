@@ -13,8 +13,11 @@ import {
   districtOf,
   FOES,
   HERO,
+  canStep,
   findRoute,
   foeIntent,
+  routeToward,
+  smoothPath,
   groundColours,
   struck,
   tileDistance,
@@ -226,10 +229,6 @@ const AREA_ROWS = 15;
 /** The captain, drawn from the knights' sheets. */
 const HERO_LOOK: Dweller = { kind: "warrior", col: 0, row: 0, color: "blue" };
 const HERO_ATTACK = { key: "blue_Warrior/Warrior_Attack1.png", file: "Units/Blue Units/Warrior/Warrior_Attack1.png" };
-/** Where the minimap is drawn, far off the world, for its own camera alone to see. */
-const MINI_AT = -100_000;
-/** The minimap's ground by height, darkest low. */
-const MINI_GROUND = [0x6f8a4a, 0x8aa05a, 0xa8b46c, 0xc4c27c, 0xd8cf8a];
 
 /** One body in a fight on an area map: the hero or a monster. */
 interface Body {
@@ -237,10 +236,15 @@ interface Body {
   at: Cell;
   hp: number;
   max: number;
-  /** When it may strike again, and when it finishes its step, in scene ms. */
+  /** When it may strike again, and until when a swing holds it still, in scene ms. */
   next: number;
   busy: number;
+  /** Tiles a second. */
   speed: number;
+  /** The points it is walking through, in world px: straight legs at a steady speed, not a hop a cell. */
+  way: { x: number; y: number }[];
+  /** When its route was last worked out, so a chase re-plans a few times a second rather than every frame. */
+  planned: number;
   idle: string;
   move?: string;
   attack?: string;
@@ -286,11 +290,13 @@ export class AtlasScene extends Phaser.Scene {
   /** Each exit's sign: clicking it travels, as the exit's own tile does. */
   private signs: { to: AreaId; text: Phaser.GameObjects.Text }[] = [];
   /** In an area's map: the hero, where it rises again, what it is walking to or fighting, the monsters. */
-  private hero: (Body & { path: Cell[]; target: Foe | null; then: (() => void) | null }) | null = null;
+  private hero: (Body & { target: Foe | null; then: (() => void) | null }) | null = null;
+  /** Mouse held in play: where it points, for walking toward it while held. */
+  private hold: { x: number; y: number; since: number } | null = null;
+  private keys: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d", Phaser.Input.Keyboard.Key> | null = null;
   private spawn: Cell = { col: 0, row: 0 };
   private foes: Foe[] = [];
   private dev = false;
-  private mini: { cam: Phaser.Cameras.Scene2D.Camera; dot: Phaser.GameObjects.Rectangle; view: Phaser.GameObjects.Rectangle } | null = null;
 
   constructor() {
     super("atlas");
@@ -308,8 +314,9 @@ export class AtlasScene extends Phaser.Scene {
     this.built = new Set();
     this.signs = [];
     this.hero = null;
+    this.hold = null;
+    this.keys = null;
     this.foes = [];
-    this.mini = null;
     this.dev = !!data.dev;
   }
 
@@ -418,7 +425,6 @@ export class AtlasScene extends Phaser.Scene {
       const near = isWalkable(at.col, at.row) ? at : (findRoute(at, (c) => isWalkable(c.col, c.row) && !isSlope(c.col, c.row))?.at(-1) ?? local.entry);
       this.spawn = near;
       this.spawnHero(near);
-      this.minimap(local);
       this.setDev(this.dev);
       if (this.hooks.arrive === "fall") {
         // Dropped in: the hero comes down onto the spot and lands with a jolt.
@@ -547,11 +553,22 @@ export class AtlasScene extends Phaser.Scene {
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
       const cam = this.active;
       this.drag = { x: p.x, y: p.y, sx: cam.scrollX, sy: cam.scrollY, moved: false };
+      if (this.playing) {
+        const w = cam.getWorldPoint(p.x, p.y);
+        this.hold = { x: w.x, y: w.y, since: this.time.now };
+        this.order(w, { col: Math.floor(w.x / CELL), row: Math.floor(w.y / CELL) });
+      }
     });
     this.input.on("pointermove", (p: Phaser.Input.Pointer) => {
       const d = this.drag;
       if (!d || !p.isDown) return;
-      if (this.playing) return;
+      if (this.playing) {
+        if (this.hold) {
+          const w = this.active.getWorldPoint(p.x, p.y);
+          Object.assign(this.hold, { x: w.x, y: w.y });
+        }
+        return;
+      }
       if (Math.abs(p.x - d.x) + Math.abs(p.y - d.y) > 8) d.moved = true;
       const cam = this.active;
       if (d.moved) cam.setScroll(d.sx - (p.x - d.x) / cam.zoom, d.sy - (p.y - d.y) / cam.zoom);
@@ -559,10 +576,12 @@ export class AtlasScene extends Phaser.Scene {
     this.input.on("pointerup", (p: Phaser.Input.Pointer) => {
       const d = this.drag;
       this.drag = null;
+      this.hold = null;
       if (!d || d.moved) return;
       const w = this.active.getWorldPoint(p.x, p.y);
       const cell = { col: Math.floor(w.x / CELL), row: Math.floor(w.y / CELL) };
-      if (this.playing) return this.order(w, cell);
+      // In play the press already gave the order; letting go only ends the hold.
+      if (this.playing) return void (this.hold = null);
       // An exit travels, a lift's end rides it, else the area under the pointer.
       for (const e of this.local?.exits ?? []) {
         if (Math.abs(e.at.col - cell.col) <= 2 && Math.abs(e.at.row - cell.row) <= 2) return this.depart(e);
@@ -586,13 +605,13 @@ export class AtlasScene extends Phaser.Scene {
     return !!this.hero && !this.dev;
   }
 
-  /** Dev mode frees the camera over the whole map; off, it holds on the hero at the play zoom, with the minimap. */
+  /** Dev mode frees the camera over the whole map; off, it holds on the hero at the play zoom. */
   private setDev(on: boolean): void {
     this.dev = on;
+    this.hold = null;
     this.hooks.dev = on;
     const cam = this.active;
     if (!this.hero) return;
-    this.mini?.cam.setVisible(!on);
     // At once, not eased: a zoom still running when play resumes would carry on over the play zoom.
     cam.zoomEffect.reset();
     cam.panEffect.reset();
@@ -611,7 +630,7 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   private body(s: Phaser.GameObjects.Sprite, at: Cell, hp: number, speed: number, look: { idle: string; move?: string; attack?: string }): Body {
-    return { s, at, hp, max: hp, next: 0, busy: 0, speed, ...look, lift: s.displayHeight * s.originY * 0.78, bar: this.add.graphics().setDepth(DEPTH.fx), dead: false };
+    return { s, at, hp, max: hp, next: 0, busy: 0, speed, way: [], planned: -1e9, ...look, lift: s.displayHeight * s.originY * 0.78, bar: this.add.graphics().setDepth(DEPTH.fx), dead: false };
   }
 
   private spawnHero(at: Cell): void {
@@ -619,7 +638,9 @@ export class AtlasScene extends Phaser.Scene {
     const y = (at.row + 0.75) * CELL;
     const s = this.add.sprite((at.col + 0.5) * CELL, y, look.idle.key).setOrigin(0.5, look.anchor).setDepth(standing(y));
     this.play(s, look.idle.key);
-    this.hero = { ...this.body(s, at, HERO.hp, HERO.speed, { idle: look.idle.key, move: look.move?.key, attack: HERO_ATTACK.key }), path: [], target: null, then: null };
+    this.hero = { ...this.body(s, at, HERO.hp, HERO.speed, { idle: look.idle.key, move: look.move?.key, attack: HERO_ATTACK.key }), target: null, then: null };
+    const k = this.input.keyboard;
+    if (k) this.keys = k.addKeys({ up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT", w: "W", a: "A", s: "S", d: "D" }, false) as typeof this.keys;
   }
 
   /** A monster at its post: it waits there until it notices the hero. */
@@ -642,35 +663,64 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** A click in play: on a monster, fight it; on an exit or its sign, walk there and through; else walk there. */
-  private order(w: Phaser.Math.Vector2, cell: Cell): void {
+  private order(w: Phaser.Math.Vector2, cell: Cell, quiet = false): void {
     const hero = this.hero!;
     if (hero.dead) return;
     const foe = this.foes.find((f) => !f.dead && Math.abs(f.s.x - w.x) < 0.7 * CELL && w.y < f.s.y + 0.3 * CELL && w.y > f.s.y - f.lift);
-    if (foe) return void Object.assign(hero, { target: foe, path: [], then: null });
+    if (foe) {
+      Object.assign(hero, { target: foe, then: null, planned: -1e9 });
+      return;
+    }
     const sign = this.signs.find((s) => s.text.getBounds().contains(w.x, w.y));
     // Only a click on an exit's own tile or its sign takes it: walking about beside the well must not drop you down it.
     const exit = this.local!.exits.find((e) => tileDistance(e.at, cell) <= 1 || e.to === sign?.to);
-    const to = exit?.at ?? cell;
-    const near = isWalkable(to.col, to.row) ? 0 : 1;
-    const way = findRoute(hero.at, (c) => tileDistance(c, to) <= near);
-    if (!way) return;
-    Object.assign(hero, { target: null, path: way, then: exit ? () => this.depart(exit) : null });
-    if (way.length === 0) hero.then?.();
+    const goal = exit?.at ?? cell;
+    this.walk(hero, routeToward(hero.at, goal));
+    Object.assign(hero, { target: null, then: exit ? () => this.depart(exit) : null });
+    if (!quiet) this.mark(hero.way.at(-1) ?? { x: hero.s.x, y: hero.s.y });
+    if (hero.way.length === 0) hero.then?.();
   }
 
-  /** One step to a neighbouring cell, at the body's own speed. */
-  private step(b: Body, to: Cell, time: number): void {
-    b.busy = time + 1000 / b.speed;
-    if (to.col !== b.at.col) b.s.setFlipX(to.col < b.at.col);
-    b.at = to;
-    if (b.move) this.play(b.s, b.move);
-    this.tweens.add({ targets: b.s, x: (to.col + 0.5) * CELL, y: (to.row + 0.75) * CELL, duration: 1000 / b.speed, onUpdate: () => b.s.setDepth(standing(b.s.y)) });
+  /** Sets a body walking a grid route, pulled into straight legs. */
+  private walk(b: Body, route: readonly Cell[]): void {
+    b.way = smoothPath(b.at, route).map((c) => ({ x: (c.col + 0.5) * CELL, y: (c.row + 0.75) * CELL }));
+  }
+
+  /** Where a walk ends: a ring on the ground that shrinks away. */
+  private mark(at: { x: number; y: number }): void {
+    const ring = this.add.ellipse(at.x, at.y, 46, 20).setStrokeStyle(3, 0xfdfaf0, 0.9).setDepth(DEPTH.ground + 3);
+    this.tweens.add({ targets: ring, scaleX: 0.35, scaleY: 0.35, alpha: 0, duration: 450, ease: "Sine.easeOut", onComplete: () => ring.destroy() });
+  }
+
+  /** Walks a body along its way for one frame at its speed; true while it moves. */
+  private advance(b: Body, dt: number): boolean {
+    let left = (b.speed * CELL * dt) / 1000;
+    while (left > 0 && b.way.length > 0) {
+      const to = b.way[0]!;
+      const [dx, dy] = [to.x - b.s.x, to.y - b.s.y];
+      const d = Math.hypot(dx, dy);
+      if (Math.abs(dx) > 2) b.s.setFlipX(dx < 0);
+      if (d <= left) {
+        b.s.setPosition(to.x, to.y);
+        b.way.shift();
+        left -= d;
+      } else {
+        b.s.setPosition(b.s.x + (dx / d) * left, b.s.y + (dy / d) * left);
+        left = 0;
+      }
+    }
+    b.at = { col: Math.floor(b.s.x / CELL), row: Math.round(b.s.y / CELL - 0.75) };
+    b.s.setDepth(standing(b.s.y));
+    const moving = b.way.length > 0;
+    this.play(b.s, moving && b.move ? b.move : b.idle);
+    return moving;
   }
 
   /** A blow: the striker's swing, the target's flash and the number off it. */
   private strike(from: Body, to: Body, attack: number, every: number, time: number): void {
     from.next = time + every * 1000;
     from.busy = time + 350;
+    from.way = [];
     if (to.at.col !== from.at.col) from.s.setFlipX(to.at.col < from.at.col);
     if (from.attack && this.anims.exists(`${from.attack}_once`)) {
       from.s.play(`${from.attack}_once`);
@@ -695,7 +745,7 @@ export class AtlasScene extends Phaser.Scene {
       return;
     }
     const hero = this.hero!;
-    Object.assign(hero, { target: null, path: [], then: null });
+    Object.assign(hero, { target: null, way: [], then: null });
     this.tweens.add({ targets: b.s, alpha: 0.25, duration: 600 });
     this.time.delayedCall(1800, () => {
       hero.at = this.spawn;
@@ -705,49 +755,79 @@ export class AtlasScene extends Phaser.Scene {
     });
   }
 
-  /** The fight, once a frame: the hero walks or strikes, each monster near enough strikes, chases or goes home. */
-  private fight(time: number): void {
+  /** Keys in play: WASD or the arrows walk the hero a cell at a time in their direction, sliding along what blocks. */
+  private steer(): boolean {
+    const k = this.keys;
     const hero = this.hero!;
-    if (!hero.dead && time >= hero.busy) {
+    if (!k || hero.dead) return false;
+    const dc = (k.right.isDown || k.d.isDown ? 1 : 0) - (k.left.isDown || k.a.isDown ? 1 : 0);
+    const dr = (k.down.isDown || k.s.isDown ? 1 : 0) - (k.up.isDown || k.w.isDown ? 1 : 0);
+    if (!dc && !dr) return false;
+    Object.assign(hero, { target: null, then: null });
+    if (hero.way.length > 1) hero.way = hero.way.slice(0, 1);
+    if (hero.way.length === 1) return true;
+    for (const [c, r] of [[dc, dr], [dc, 0], [0, dr]] as const) {
+      const next = { col: hero.at.col + c, row: hero.at.row + r };
+      if ((c || r) && canStep(hero.at, next)) {
+        hero.way = [{ x: (next.col + 0.5) * CELL, y: (next.row + 0.75) * CELL }];
+        return true;
+      }
+    }
+    return true;
+  }
+
+  /** The fight, once a frame: the hero walks or strikes, each monster near enough strikes, chases or goes home. */
+  private fight(time: number, dt: number): void {
+    const hero = this.hero!;
+    if (!hero.dead) {
+      const steering = this.steer();
+      // Holding the mouse keeps walking toward it, re-aimed a few times a second.
+      if (!steering && this.hold && time - this.hold.since > 220 && time - hero.planned > 200 && !hero.target) {
+        hero.planned = time;
+        this.order(new Phaser.Math.Vector2(this.hold.x, this.hold.y), { col: Math.floor(this.hold.x / CELL), row: Math.floor(this.hold.y / CELL) }, true);
+      }
       // With nothing else to do, the hero turns on a monster beside it rather than stand and take its blows.
-      if (!hero.target && hero.path.length === 0) hero.target = this.foes.find((f) => !f.dead && tileDistance(f.at, hero.at) <= 1) ?? null;
-      const t = hero.target;
-      if (t && !t.dead) {
-        if (tileDistance(hero.at, t.at) <= 1) {
-          if (time >= hero.next) this.strike(hero, t, HERO.attack, HERO.every, time);
-          else this.play(hero.s, hero.idle);
-        } else {
-          const way = findRoute(hero.at, (c) => tileDistance(c, t.at) <= 1);
-          if (way?.length) this.step(hero, way[0]!, time);
+      if (!steering && !hero.target && hero.way.length === 0) hero.target = this.foes.find((f) => !f.dead && tileDistance(f.at, hero.at) <= 1) ?? null;
+      const t = hero.target?.dead ? null : hero.target;
+      if (time < hero.busy) {
+        // Mid-swing: it holds still.
+      } else if (t && tileDistance(hero.at, t.at) <= 1 && Math.hypot(t.s.x - hero.s.x, t.s.y - hero.s.y) < 1.5 * CELL) {
+        hero.way = [];
+        if (time >= hero.next) this.strike(hero, t, HERO.attack, HERO.every, time);
+        else this.play(hero.s, hero.idle);
+      } else {
+        if (t && time - hero.planned > 250) {
+          hero.planned = time;
+          const near = findRoute(hero.at, (c) => tileDistance(c, t.at) <= 1);
+          if (near) this.walk(hero, near);
         }
-      } else if (hero.path.length > 0) {
-        this.step(hero, hero.path.shift()!, time);
-        if (hero.path.length === 0 && hero.then) {
+        const was = hero.way.length > 0;
+        if (!this.advance(hero, dt) && was && hero.then) {
           const then = hero.then;
           hero.then = null;
-          this.time.delayedCall(1000 / hero.speed, then);
+          then();
         }
-      } else this.play(hero.s, hero.idle);
+      }
     }
     for (const f of this.foes) {
       if (f.dead || time < f.busy) continue;
       // Far from the hero and at home, a monster rests.
-      if (tileDistance(f.at, hero.at) > 14 && f.at.col === f.home.col && f.at.row === f.home.row) continue;
+      if (tileDistance(f.at, hero.at) > 14 && f.at.col === f.home.col && f.at.row === f.home.row && f.way.length === 0) continue;
       const intent = foeIntent(f.at, f.home, hero.dead ? null : hero.at, f.stats);
-      if (intent === "attack") {
+      if (intent === "attack" && Math.hypot(hero.s.x - f.s.x, hero.s.y - f.s.y) < 1.5 * CELL) {
+        f.way = [];
         if (time >= f.next) this.strike(f, hero, f.stats.attack, f.stats.every, time);
         else this.play(f.s, f.idle);
         continue;
       }
-      if (intent === "idle") {
-        this.play(f.s, f.idle);
-        continue;
+      if (intent !== "idle" && time - f.planned > 400) {
+        f.planned = time;
+        const taken = (c: Cell) => this.foes.some((o) => o !== f && !o.dead && o.at.col === c.col && o.at.row === c.row);
+        const goal = intent === "return" ? (c: Cell) => c.col === f.home.col && c.row === f.home.row : (c: Cell) => tileDistance(c, hero.at) <= 1;
+        const way = findRoute(f.at, goal, taken);
+        if (way) this.walk(f, way);
       }
-      const taken = (c: Cell) => (c.col === hero.at.col && c.row === hero.at.row) || this.foes.some((o) => o !== f && !o.dead && o.at.col === c.col && o.at.row === c.row);
-      const goal = intent === "chase" ? (c: Cell) => tileDistance(c, hero.at) <= 1 : (c: Cell) => c.col === f.home.col && c.row === f.home.row;
-      const way = findRoute(f.at, goal, taken);
-      if (way?.length) this.step(f, way[0]!, time);
-      else this.play(f.s, f.idle);
+      this.advance(f, dt);
     }
   }
 
@@ -759,40 +839,6 @@ export class AtlasScene extends Phaser.Scene {
     const [x, y] = [b.s.x - w / 2, b.s.y - b.lift - 4];
     b.bar.fillStyle(0x1c2634, 0.85).fillRect(x - 2, y - 2, w + 4, h + 4);
     b.bar.fillStyle(b === this.hero ? 0x6fd06a : 0xe05a4a).fillRect(x, y, (w * b.hp) / b.max, h);
-  }
-
-  /** The whole area a pixel a tile, in its own camera in the corner: ground by height, woods, water, exits, the hero. */
-  private minimap(m: AreaMap): void {
-    const key = "minimap";
-    if (this.textures.exists(key)) this.textures.remove(key);
-    const tex = this.textures.createCanvas(key, STRAT_COLS, STRAT_ROWS)!;
-    const img = tex.context.createImageData(STRAT_COLS, STRAT_ROWS);
-    const water = { sea: 0x2d5f78, sky: 0x9cc8e8, rock: 0x15131c }[m.base];
-    for (let r = 0; r < STRAT_ROWS; r++) {
-      for (let c = 0; c < STRAT_COLS; c++) {
-        const ch = at(c, r);
-        const rgb = ch === "~" ? water : ch === "%" ? 0x2a2733 : isForest(c, r) ? 0x2c4a2e : isWalkable(c, r) ? MINI_GROUND[Math.min(4, level(c, r) - 1)]! : 0x4a4438;
-        img.data.set([rgb >> 16, (rgb >> 8) & 255, rgb & 255, 255], (r * STRAT_COLS + c) * 4);
-      }
-    }
-    tex.context.putImageData(img, 0, 0);
-    tex.refresh();
-    const made: Phaser.GameObjects.GameObject[] = [this.add.image(MINI_AT, 0, key).setOrigin(0)];
-    for (const e of m.exits) made.push(this.add.rectangle(MINI_AT + e.at.col + 0.5, e.at.row + 0.5, 2, 2, 0xffd36a));
-    const view = this.add.rectangle(MINI_AT, 0, 1, 1).setOrigin(0).setStrokeStyle(0.5, 0xfdfaf0, 0.9);
-    const dot = this.add.rectangle(MINI_AT, 0, 2.5, 2.5, 0xff5a4a).setStrokeStyle(0.5, 0xffffff);
-    made.push(view, dot);
-    for (const c of Object.values(this.cams)) c.ignore(made);
-    const cam = this.cameras.add(0, 0, 10, 10, false, "minimap").setBackgroundColor(0x1c2634);
-    cam.ignore(this.children.list.filter((o) => !made.includes(o)));
-    this.mini = { cam, dot, view };
-    const place = (): void => {
-      const k = Math.max(1, Math.floor(Math.min(this.cameras.main.width * 0.18, 300 * DPR) / STRAT_COLS));
-      cam.setViewport(16 * DPR, this.cameras.main.height - STRAT_ROWS * k - 16 * DPR, STRAT_COLS * k, STRAT_ROWS * k).setOrigin(0).setZoom(k).setScroll(MINI_AT, 0);
-    };
-    place();
-    this.scale.on(Phaser.Scale.Events.RESIZE, place);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, place));
   }
 
   /** Loops for every sheet with more than one frame: props, beasts, knights. */
@@ -1362,16 +1408,12 @@ export class AtlasScene extends Phaser.Scene {
     for (const b of tier.bosses) text((b.col + 0.5) * CELL, (b.row - 2.6) * CELL, b.name, 28, "#ff8f7a", 13);
   }
 
-  update(time: number): void {
+  update(time: number, delta: number): void {
     const act = this.active;
     if (this.hero) {
-      this.fight(time);
+      // A long stall (a tab in the background) is not a long stride.
+      this.fight(time, Math.min(delta, 100));
       for (const b of [this.hero, ...this.foes]) this.drawBar(b);
-      if (this.mini) {
-        const v = act.worldView;
-        this.mini.dot.setPosition(MINI_AT + this.hero.s.x / CELL, this.hero.s.y / CELL);
-        this.mini.view.setPosition(MINI_AT + v.x / CELL, v.y / CELL).setSize(v.width / CELL, v.height / CELL);
-      }
     }
     for (const { text, px, tier } of this.names) {
       text.setVisible(tier === this.view);

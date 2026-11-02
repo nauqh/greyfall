@@ -102,7 +102,8 @@ export function AreaView({ area: first }: { area: AreaId }) {
       else announce();
     },
   }).current;
-  const [hud, toggleHud] = useHud();
+  // The HUD hides with H; there is no button for it on an area map.
+  const [hud] = useHud();
   // Dev mode: the camera free over the whole map, remembered on this browser; the backquote key toggles it.
   const [dev, setDev] = useState(false);
   const toggleDev = (): void =>
@@ -135,7 +136,6 @@ export function AreaView({ area: first }: { area: AreaId }) {
           return import("../../game/AtlasScene").then(({ startAtlas }) => startAtlas(el, hooks));
         }}
       >
-        <HudToggle shown={hud} toggle={toggleHud} />
         {reveal && (
           // The area's name as you arrive, after the Souls games: up out of the dark, held, gone.
           <div key={area} className="areaReveal" role="status" onAnimationEnd={(e) => e.target === e.currentTarget && setReveal(false)}>
