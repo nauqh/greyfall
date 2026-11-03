@@ -30,8 +30,8 @@ Mouse first, as in Diablo. The camera follows the hero inside the area map.
 | 1 | Band: Follow (stay close, defend the hero) |
 | 2 | Band: Attack my target |
 | 3 | Band: Hold here (guard the spot) |
-| Q | Drink a flask |
-| E | Attack: a swing at the monster in reach, the one in front first. Beside someone who talks, talk instead, and the next page of a talk |
+| R | Drink a flask |
+| E | Attack: a swing at the monster in reach, the one in front first. Beside someone who talks, talk instead, and the next page of a talk; at a bonfire, rest |
 | F (hold) | Guard: stand behind the shield, turned to the nearest monster; a blow from the front lets a fifth through |
 | Tab | The area map, showing what has been explored |
 
@@ -101,8 +101,9 @@ then walks back; the engine already has a guard leash.
 
 ## Loot and gold
 
-- **Gold** drops from enemies, gold stones and chests. It is the only
-  currency: levels, recruits, upgrades.
+- **Gold** drops from enemies where they fall, and lies in gold stones
+  (25 each, taken once) and chests; walk up to it to pick it up. It is
+  the only currency: levels, recruits, upgrades.
 - **Gear**, three slots, deliberately small:
   - **Weapon:** sword, axe, or spear (longer reach, slower).
   - **Charm:** for example +1 flask, +10% gold, or stamina back on a hit.

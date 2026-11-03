@@ -65,7 +65,11 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const [travel, setTravel] = useState<(Departure & { phase: "cover" | "hold" | "uncover" }) | null>(null);
   const [warn, setWarn] = useState<Departure | null>(null);
   const [say, setSay] = useState<Say | null>(null);
-  const [near, setNear] = useState<string | null>(null);
+  const [near, setNear] = useState<"Talk" | "Rest" | null>(null);
+  const [flasks, setFlasks] = useState<number | null>(null);
+  const [gold, setGold] = useState<number | null>(null);
+  // Died: the words, then the dark, then waking at the bonfire in this area.
+  const [died, setDied] = useState<AreaId | null>(null);
   const api = useRef<AtlasApi | null>(null);
   const now = useRef({ area: first, cameFrom: undefined as AreaId | undefined, quiet: false, travelling: false });
 
@@ -73,19 +77,23 @@ export function AreaView({ area: first }: { area: AreaId }) {
     now.current.travelling = true;
     setTravel({ ...d, phase: "cover" });
   };
+  // A rest, or waking after a death: the dark comes down, and the captain wakes at the bonfire.
+  const wake = (to: AreaId): void => depart({ to, name: "", kind: "rest", dir: "down", x: 0.5, y: 0.5 });
   // Covered: the scene rebuilds as the next area behind the cover, and the address follows quietly.
   const covered = (d: Departure): void => {
     const from = now.current.area;
-    // Back into the area just left, the name is not announced again.
-    now.current.quiet = d.to === now.current.cameFrom;
-    now.current.cameFrom = from;
+    const rest = d.kind === "rest";
+    // Back into the area just left, or woken at a bonfire, the name is not announced again.
+    now.current.quiet = rest || d.to === now.current.cameFrom;
+    now.current.cameFrom = rest ? undefined : from;
     now.current.area = d.to;
     setArea(d.to);
     setReveal(null);
+    setDied(null);
     setSay(null);
     setNear(null);
     setTravel({ ...d, phase: "hold" });
-    window.history.pushState(null, "", `/atlas/${d.to}?from=${from}`);
+    window.history.pushState(null, "", rest ? `/atlas/${d.to}` : `/atlas/${d.to}?from=${from}`);
     api.current?.travel(d.to, from, d.kind);
   };
   // The name mounts two painted frames after the map is in view, so its clock never runs while the first frames are still drawing.
@@ -104,6 +112,14 @@ export function AreaView({ area: first }: { area: AreaId }) {
     ready: (a) => (api.current = a),
     onSay: setSay,
     onNear: setNear,
+    onFlasks: setFlasks,
+    onGold: setGold,
+    onRest: (to) => !now.current.travelling && wake(to),
+    onDeath: (to) => {
+      if (now.current.travelling) return;
+      setReveal(null);
+      setDied(to);
+    },
     onDistrict: (d) => !now.current.travelling && setReveal(d),
     opened: () => {
       if (now.current.travelling) setTravel((t) => (t ? { ...t, phase: "uncover" } : t));
@@ -192,9 +208,23 @@ export function AreaView({ area: first }: { area: AreaId }) {
         ) : (
           near && (
             <div className="talkPrompt" role="status">
-              <kbd>E</kbd> Talk
+              <kbd>E</kbd> {near}
             </div>
           )
+        )}
+        {died && (
+          // After the Souls games: the words up out of a darkening screen, then the dark closes and the captain wakes.
+          <div
+            className="youDied"
+            role="alert"
+            onAnimationEnd={(e) => {
+              if (e.target !== e.currentTarget) return;
+              // Held until the dark is down, so the map never shows between the words and the waking.
+              wake(died);
+            }}
+          >
+            <span className="youDiedText">You died</span>
+          </div>
         )}
         {warn && (
           <div className="dropWarn" role="alertdialog" aria-modal="true" aria-labelledby="dropWarnText">
@@ -223,6 +253,16 @@ export function AreaView({ area: first }: { area: AreaId }) {
           </div>
         )}
         <div className="worldHud" hidden={!hud}>
+          {flasks !== null && (
+            <div className="purse">
+              <span title="Drink a flask (R)">
+                <kbd>R</kbd> Flask <b>{flasks}</b>
+              </span>
+              <span>
+                Gold <b className="purseGold">{gold ?? 0}</b>
+              </span>
+            </div>
+          )}
           <header className="atlasTop">
             <div className="worldLinks">
               <button className="linkBtn" type="button" onClick={() => router.push(`/atlas?focus=${area}`)}>

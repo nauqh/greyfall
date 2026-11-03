@@ -554,8 +554,11 @@ back; it is remembered on the browser and carries across crossings.
 
 ## Not done yet
 
-- The hero walks and fights, but there are no bonfires, flasks, dodge,
-  gold, warband or keys yet, and gates and lifts all open.
+- The hero walks, fights, rests at bonfires and drinks flasks, but there
+  is no gold, dodge, warband or keys yet, and gates and lifts all open.
+- No boss can be killed and no monk freed yet, so the questline's stages
+  past the Troll Key, the Horned Key, the Warlord and the Drowned Chapel
+  wait on them.
 - No minimap. Zoom out with the wheel; ride a lift to change tier.
 - No blacksmith in the Harbour yet: the plan is below.
 
@@ -584,3 +587,19 @@ Missing:
 Plan: compose it in Last Harbour from `House3` as the shed, a hammering pawn
 at an anvil out front, a looping fire with sparks and chimney smoke, and the
 tool icons and ore laid out beside it.
+
+## The folk's questline
+
+The Harbour's ten move out into the Reach as the captain does, after Dark Souls: no log, no choices, the captain never speaks. Where each stands is `whereabouts()` in `npcs.ts`, from world flags; some flags are set by hearing a talk to its end (`Talk.sets`). Positions change only on entering an area.
+
+| Who | Moved on by | Turns up | Ends |
+| --- | --- | --- | --- |
+| Tobin | his remark on the well, then a talk | Undercroft, Smugglers' Nook; then the Deeps, Robbers' Camp | Stays with his brother, the thieves' captain. Never talked to, never leaves |
+| Mother Ysolde | the monk freed, then a talk | Undercroft, the Drowned Chapel; then the Hollow, Pilgrims' Rest | Kneels over her drowned sisters and will not come back |
+| Ansel of the Wall | his remark on the Troll Key | The Greyfall, the Ashen Approach | Hear him out twice and he goes ahead and dies in the High City, below the Warlord's Hall; kill the Warlord first and he is back on the wall |
+| Penny | reaching the Greyfall | The Greyfall, Gallows Yard, penned with her mum | Freed when the Warlord falls |
+| Sergeant Corwin | the Barrow King dead | Barrowmoor, Barrow Field, digging out his forty | Stays with them |
+| The Moor Watchman | his remark on the open Moor Gate | Barrowmoor, Gibbet Hill, watching the lights | Gone into the barrows once the King is dead |
+| Maren | her remark on the Warlord dead | | Sails on the first ship in three winters; missed if not talked to |
+| Wren | the Troll Key | Emberwood, Old Pines | Stays, shooting |
+| Old Ferrow, Brenna | | | Stay; both remark on Ansel leaving |

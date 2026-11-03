@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import { footprint } from "../src/atlas.ts";
 import { areaMap, findPath, isWalkable, useIsland } from "../src/index.ts";
-import { NPCS, nextTalk, talkKey, type WorldFlag } from "../src/npcs.ts";
+import { NPCS, nextTalk, talkKey, whereabouts, type Npc, type WorldFlag } from "../src/npcs.ts";
 
 const ferrow = NPCS.find((n) => n.id === "ferrow")!;
 const heardAll = (ids: string[]): Set<string> => new Set(ids.map((id) => `ferrow.${id}`));
+const npc = (id: string): Npc => NPCS.find((n) => n.id === id)!;
+const flags = (...f: WorldFlag[]): Set<WorldFlag> => new Set(f);
+const stations = (n: Npc) => [{ area: n.area, at: n.at, talks: n.talks }, ...(n.later ?? [])];
 
 describe("talking", () => {
   it("plays the conversations in order, then repeats the last", () => {
@@ -22,22 +25,21 @@ describe("talking", () => {
   });
 
   it("keys every conversation apart", () => {
-    const keys = NPCS.flatMap((n) => n.talks.map((t) => talkKey(n, t)));
+    const keys = NPCS.flatMap((n) => stations(n).flatMap((s) => (s.talks ?? []).map((t) => talkKey(n, t))));
     expect(new Set(keys).size).toBe(keys.length);
   });
 });
 
 describe("where the folk stand", () => {
-  it("each on open ground the captain can walk to", () => {
-    for (const area of new Set(NPCS.map((n) => n.area))) {
-      const map = areaMap(area);
-      useIsland(map.island);
-      const taken = new Set(map.props.flatMap((p) => footprint(p)).map((c) => `${c.col},${c.row}`));
-      for (const n of NPCS.filter((n) => n.area === area)) {
-        expect(isWalkable(n.at.col, n.at.row), n.id).toBe(true);
-        expect(taken.has(`${n.at.col},${n.at.row}`), n.id).toBe(false);
-        expect(findPath(map.entry, n.at), n.id).not.toBeNull();
-      }
+  const spots = NPCS.flatMap((n) => stations(n).flatMap((s) => (s.area && s.at ? [{ id: n.id, area: s.area, at: s.at }] : [])));
+  it.each([...new Set(spots.map((s) => s.area))])("each on open ground the captain can walk to, in %s", (area) => {
+    const map = areaMap(area);
+    useIsland(map.island);
+    const taken = new Set(map.props.flatMap((p) => footprint(p)).map((c) => `${c.col},${c.row}`));
+    for (const { id, at } of spots.filter((s) => s.area === area)) {
+      expect(isWalkable(at.col, at.row), id).toBe(true);
+      expect(taken.has(`${at.col},${at.row}`), id).toBe(false);
+      expect(findPath(map.entry, at), id).not.toBeNull();
     }
   });
 
@@ -49,5 +51,56 @@ describe("where the folk stand", () => {
     expect(near(map.exits.find((e) => e.name === "Old Well")!.at, at("tobin"))).toBe(true);
     expect(map.props.some((p) => p.art === "barracks" && near(p, at("corwin")))).toBe(true);
     expect(map.props.some((p) => p.art === "monastery" && near(p, at("ysolde")))).toBe(true);
+  });
+});
+
+describe("the questline", () => {
+  it("keeps everyone home until something happens", () => {
+    for (const n of NPCS) expect(whereabouts(n, new Set())?.area, n.id).toBe("harbour");
+  });
+
+  it("moves folk on as the world changes, the last station that applies winning", () => {
+    expect(whereabouts(npc("tobin"), flags("wellDescended"))?.area).toBe("harbour");
+    expect(whereabouts(npc("tobin"), flags("tobinDown"))?.area).toBe("undercroft");
+    expect(whereabouts(npc("tobin"), flags("tobinDown", "tobinDeeper"))?.area).toBe("deeps");
+    expect(whereabouts(npc("penny"), flags("greyfallReached", "warlordDead"))?.talks[0]?.id).toBe("free");
+  });
+
+  it("asks for every flag a station names", () => {
+    expect(whereabouts(npc("watchman"), flags("hornedKey"))?.area).toBe("harbour");
+    expect(whereabouts(npc("watchman"), flags("watchmanOut"))?.area).toBe("barrowmoor");
+    expect(whereabouts(npc("watchman"), flags("watchmanOut", "hornedKey"))).toBeNull();
+  });
+
+  it("lets Ansel live only if the warlord falls before he goes ahead", () => {
+    const ansel = npc("ansel");
+    expect(whereabouts(ansel, flags("anselRoused", "warlordDead"))).toMatchObject({ area: "harbour", dead: false });
+    expect(whereabouts(ansel, flags("anselRoused", "anselAhead"))).toMatchObject({ area: "greyfall", dead: true, talks: [] });
+    expect(whereabouts(ansel, flags("anselRoused", "anselAhead", "warlordDead"))?.dead).toBe(true);
+  });
+
+  it("talks where they stand, a remark waiting on the first talk there", () => {
+    const tobin = npc("tobin");
+    const down = flags("wellDescended", "tobinDown");
+    expect(nextTalk(tobin, new Set(["tobin.first"]), flags("wellDescended")).id).toBe("below");
+    expect(nextTalk(tobin, new Set(["tobin.first", "tobin.below"]), down).id).toBe("nook");
+    expect(nextTalk(tobin, new Set(["tobin.nook"]), down).id).toBe("deeper");
+    const corwin = npc("corwin");
+    const won = flags("hornedKey", "warlordDead");
+    expect(nextTalk(corwin, new Set(["corwin.first"]), won).id).toBe("barrows");
+    expect(nextTalk(corwin, new Set(["corwin.barrows"]), won).id).toBe("done");
+  });
+
+  it("sets each quest flag from a talk that can be reached", () => {
+    const set = new Map(NPCS.flatMap((n) => stations(n).flatMap((s) => (s.talks ?? []).filter((t) => t.sets).map((t) => [t.sets!, talkKey(n, t)] as const))));
+    expect(Object.fromEntries(set)).toEqual({
+      tobinDown: "tobin.below",
+      tobinDeeper: "tobin.deeper",
+      ysoldeDeeper: "ysolde.lake",
+      anselRoused: "ansel.roused",
+      anselAhead: "ansel.ahead",
+      watchmanOut: "watchman.open",
+      marenSails: "maren.sail",
+    });
   });
 });

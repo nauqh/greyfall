@@ -12,14 +12,17 @@ import {
   areaMap,
   districtOf,
   FOES,
+  GOLD_STONE,
   HERO,
   NPCS,
   TALK_RANGE,
   canStep,
   comboStep,
+  drink,
   swingWait,
   nextTalk,
   talkKey,
+  whereabouts,
   findRoute,
   foeIntent,
   routeToward,
@@ -44,6 +47,7 @@ import {
   type Npc,
   type Placed,
   type TierId,
+  type Whereabouts,
   type WorldFlag,
 } from "@greyfall/engine";
 import * as Phaser from "phaser";
@@ -70,7 +74,7 @@ export interface AtlasApi {
 }
 
 /** How a crossing feels: walking out over a gate, falling down a drop, riding a lift, or going down a stair into the deep. */
-export type Crossing = "walk" | "fall" | "ride" | "stair";
+export type Crossing = "walk" | "fall" | "ride" | "stair" | "rest";
 
 /** One way out of an area's map, as the page needs it to play the crossing. */
 export interface Departure {
@@ -89,8 +93,11 @@ export interface AtlasHooks {
   area?: AreaId;
   /** The area travelled in from: the map opens at its exit back there. */
   from?: AreaId;
-  /** How the traveller arrived: set on a scene rebuilt by a crossing, which then opens without the clouds. */
+  /** How the traveller arrived: set on a scene rebuilt by a crossing, which then opens without the clouds. A rest wakes at
+   *  the bonfire last rested at. */
   arrive?: Crossing;
+  /** The hero's health and flasks carried across a crossing; a rest or a reload starts whole. */
+  carry?: { hp: number; flasks: number };
   /** Dev mode: the camera free over the whole area map, not held on the hero. */
   dev?: boolean;
   /** Asks the page to travel through an exit to another area. */
@@ -104,8 +111,15 @@ export interface AtlasHooks {
   opened?: () => void;
   /** A page of a talk to show, or null when it ends. */
   onSay?: (say: Say | null) => void;
-  /** Who the captain stands near enough to talk to, or null. */
-  onNear?: (name: string | null) => void;
+  /** What E would do where the captain stands, other than swing: talk, or rest at a bonfire. */
+  onNear?: (action: "Talk" | "Rest" | null) => void;
+  /** The flasks left. */
+  onFlasks?: (n: number) => void;
+  /** The gold carried. */
+  onGold?: (n: number) => void;
+  /** Rested at a bonfire, or died: the page darkens and wakes the captain at the bonfire last rested at, in `area`. */
+  onRest?: (area: AreaId) => void;
+  onDeath?: (area: AreaId) => void;
   /** The captain has walked into a named quarter of the area. */
   onDistrict?: (name: string) => void;
 }
@@ -286,6 +300,7 @@ interface Foe extends Body {
 /** One of the folk who talk, standing at their spot. */
 interface Folk {
   npc: Npc;
+  at: Cell;
   s: Phaser.GameObjects.Sprite;
   near: boolean;
   bubble: Phaser.GameObjects.Text | null;
@@ -305,6 +320,45 @@ function remember(key: string, set: ReadonlySet<string>): void {
   } catch {}
 }
 const HEARD = "greyfall.heard";
+/** The bonfire last rested at; until one is, the Harbour square's. */
+const REST = "greyfall.rest";
+function restPoint(): { area: AreaId; col: number; row: number } {
+  try {
+    const r = JSON.parse(localStorage.getItem(REST) ?? "null") as { area: AreaId; col: number; row: number } | null;
+    if (r && areaMap(r.area).fires.some((f) => f.col === r.col && f.row === r.row)) return r;
+  } catch {}
+  return { area: "harbour", col: 59, row: 46 };
+}
+/** Gold carried, the gold stones already taken, and the gold left where the captain last died: kept on this browser. */
+const GOLD = "greyfall.gold";
+const TAKEN = "greyfall.taken";
+const LOST = "greyfall.lost";
+type Lost = { area: AreaId; col: number; row: number; gold: number };
+function stored<T>(key: string, empty: T): T {
+  try {
+    return (JSON.parse(localStorage.getItem(key) ?? "null") as T | null) ?? empty;
+  } catch {
+    return empty;
+  }
+}
+function store(key: string, value: unknown): void {
+  try {
+    if (value === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, JSON.stringify(value));
+  } catch {}
+}
+/** Gold on the ground: a monster's drop, a gold stone, or the gold left at the last death. */
+interface Pile {
+  at: Cell;
+  gold: number;
+  s: Phaser.GameObjects.Image;
+  stone?: string;
+  lost?: boolean;
+  /** A stone's glow in the dark of the Underneath. */
+  shine?: Phaser.GameObjects.Image;
+}
+/** No rest with a monster this near the fire. */
+const REST_CLEAR = 8;
 const FLAGS = "greyfall.flags";
 const npcLook = (n: Npc): Dweller => ({ kind: n.kind, col: n.at.col, row: n.at.row, color: "blue", act: n.act });
 /**
@@ -353,10 +407,17 @@ export class AtlasScene extends Phaser.Scene {
   private spawn: Cell = { col: 0, row: 0 };
   private foes: Foe[] = [];
   private folk: Folk[] = [];
-  private talk: { folk: Folk; lines: readonly string[]; key: string; page: number } | null = null;
-  private nearName: string | null = null;
+  private talk: { folk: Folk; lines: readonly string[]; key: string; sets?: WorldFlag; page: number } | null = null;
+  /** The flags as the area was entered: who stands where, and what they say, holds until the captain leaves and comes back. */
+  private seen = new Set<WorldFlag>();
+  private nearName: "Talk" | "Rest" | null = null;
+  private flasks: number = HERO.flasks;
+  private gold = 0;
+  private piles: Pile[] = [];
+  /** Resting or dead: the page is darkening and nothing more is done here. */
+  private gone = false;
   /** The quarter the captain was last announced in, and one just stepped into, with when. */
-  private district = { name: "", next: "", since: 0 };
+  private district = { name: "", next: "", since: 0, shown: new Set<string>() };
   private heard = new Set<string>();
   private flags = new Set<WorldFlag>();
   private dev = false;
@@ -386,7 +447,19 @@ export class AtlasScene extends Phaser.Scene {
     this.folk = [];
     this.talk = null;
     this.nearName = null;
-    this.district = { name: "", next: "", since: 0 };
+    this.heard = remembered(HEARD);
+    this.flags = remembered(FLAGS);
+    // What a crossing proves: down the well, the Watch Lift ridden down, the Moor Gate come through from the moor, the Greyfall reached.
+    if (data.area === "undercroft") this.flag("wellDescended");
+    if (data.area === "harbour" && data.from === "steps") this.flag("watchLiftOpen");
+    if (data.area === "harbour" && data.from === "barrowmoor") this.flag("moorGateOpen");
+    if (data.area === "greyfall") this.flag("greyfallReached");
+    this.seen = new Set(this.flags);
+    this.flasks = data.carry?.flasks ?? HERO.flasks;
+    this.gold = stored(GOLD, 0);
+    this.piles = [];
+    this.gone = false;
+    this.district = { name: "", next: "", since: 0, shown: new Set<string>() };
     this.dev = !!data.dev;
   }
 
@@ -399,6 +472,7 @@ export class AtlasScene extends Phaser.Scene {
     loadTerrain(this);
     loadGroundColours(this);
     this.load.image("tilesetRoad", packUrl("Terrain/Tileset/Tilemap_color4.png"));
+    if (!this.textures.exists("gold")) this.load.image("gold", packUrl("Terrain/Resources/Gold/Gold Resource/Gold_Resource.png"));
     const sheet = (key: string, s: Sheet): void => {
       if (this.textures.exists(key)) return;
       this.load.spritesheet(key, packUrl(s.file), { frameWidth: s.frame, frameHeight: s.frameH ?? s.frame });
@@ -421,7 +495,7 @@ export class AtlasScene extends Phaser.Scene {
       sheet(HERO_ATTACK.key, { file: HERO_ATTACK.file, frame, anchor: 0 });
       sheet(HERO_GUARD.key, { file: HERO_GUARD.file, frame, anchor: 0 });
       sheet(HERO_ATTACK2.key, { file: HERO_ATTACK2.file, frame, anchor: 0 });
-      for (const n of NPCS.filter((n) => n.area === this.local!.area)) {
+      for (const [n] of this.folkHere()) {
         const l = this.look(npcLook(n));
         sheet(l.idle.key, { file: l.idle.file, frame: l.frame, anchor: 0 });
       }
@@ -497,19 +571,25 @@ export class AtlasScene extends Phaser.Scene {
       this.show(local.id);
       for (const c of Object.values(this.cams)) c.setBounds(0, 0, STRAT_COLS * CELL, STRAT_ROWS * CELL);
       // A traveller arrives at the exit back the way they came, not the area's front door, on the nearest open tile.
-      const at = local.exits.find((e) => e.to === this.hooks.from)?.at ?? local.entry;
-      const near = isWalkable(at.col, at.row) ? at : (findRoute(at, (c) => isWalkable(c.col, c.row) && !isSlope(c.col, c.row))?.at(-1) ?? local.entry);
+      // Woken from a rest or a death, beside the bonfire rested at, not on the fire itself.
+      const rest = this.hooks.arrive === "rest" ? restPoint() : null;
+      const fire = rest?.area === local.area ? { col: rest.col, row: rest.row } : null;
+      const at = fire ?? local.exits.find((e) => e.to === this.hooks.from)?.at ?? local.entry;
+      const open = (c: Cell): boolean => isWalkable(c.col, c.row) && !isSlope(c.col, c.row) && !(fire && c.col === fire.col && c.row === fire.row);
+      const near = open(at) ? at : (findRoute(at, open)?.at(-1) ?? local.entry);
       this.spawn = near;
       this.spawnHero(near);
-      this.heard = remembered(HEARD);
-      this.flags = remembered(FLAGS);
-      // What a crossing proves: down the well, the Watch Lift ridden down, the Moor Gate come through from the moor.
-      if (local.area === "undercroft") this.flag("wellDescended");
-      if (local.area === "harbour" && this.hooks.from === "steps") this.flag("watchLiftOpen");
-      if (local.area === "harbour" && this.hooks.from === "barrowmoor") this.flag("moorGateOpen");
-      for (const n of NPCS.filter((n) => n.area === local.area)) this.addFolk(n);
+      if (this.hooks.carry) this.hero!.hp = Math.max(1, Math.min(this.hero!.max, this.hooks.carry.hp));
+      this.hooks.onFlasks?.(this.flasks);
+      this.hooks.onGold?.(this.gold);
+      // The gold left at the last death waits where it fell, glowing, until it is picked up or the captain dies again.
+      const lost = stored<Lost | null>(LOST, null);
+      if (lost?.area === local.area) this.dropGold({ col: lost.col, row: lost.row }, lost.gold, { lost: true });
+      this.input.keyboard?.on("keydown-R", (e: KeyboardEvent) => !e.repeat && this.quaff());
+      for (const [n, w] of this.folkHere()) this.addFolk(n, w);
       // Arriving, the area's own name is shown; only the quarters walked into after are.
       this.district.name = districtOf(local, near.col, near.row)?.name ?? "";
+      this.district.shown.add(this.district.name);
       this.input.keyboard?.on("keydown-E", (e: KeyboardEvent) => this.interact(e.repeat));
       this.setDev(this.dev);
       if (this.hooks.arrive === "fall") {
@@ -536,7 +616,10 @@ export class AtlasScene extends Phaser.Scene {
         const mid = (k: "c" | "r") => tiles.reduce((n, t) => n + t[k], 0) / Math.max(1, tiles.length);
         this.flyTo({ col: mid("c"), row: mid("r") }, 24);
       },
-      travel: (to, from, arrive) => this.scene.restart({ ...this.hooks, area: to, from, arrive, dev: this.dev }),
+      travel: (to, from, arrive) => {
+        const carry = arrive === "rest" || !this.hero ? undefined : { hp: this.hero.hp, flasks: this.flasks };
+        this.scene.restart({ ...this.hooks, area: to, from, arrive, dev: this.dev, carry });
+      },
       dev: (on) => this.setDev(on),
       next: () => this.nextPage(),
       tier: (id) => {
@@ -754,7 +837,7 @@ export class AtlasScene extends Phaser.Scene {
   /** A click in play: on a monster, fight it; on an exit or its sign, walk there and through; else walk there. */
   private order(w: Phaser.Math.Vector2, cell: Cell, quiet = false): void {
     const hero = this.hero!;
-    if (hero.dead) return;
+    if (hero.dead || this.gone) return;
     const foe = this.foes.find((f) => !f.dead && Math.abs(f.s.x - w.x) < 0.7 * CELL && w.y < f.s.y + 0.3 * CELL && w.y > f.s.y - f.lift);
     if (foe) {
       Object.assign(hero, { target: foe, then: null, planned: -1e9 });
@@ -763,7 +846,7 @@ export class AtlasScene extends Phaser.Scene {
     const folk = this.folk.find((f) => Math.abs(f.s.x - w.x) < 0.7 * CELL && w.y < f.s.y + 0.3 * CELL && w.y > f.s.y - 1.2 * CELL);
     if (folk) {
       if (this.talk?.folk === folk) return this.nextPage();
-      const at = folk.npc.at;
+      const at = folk.at;
       this.walk(hero, findRoute(hero.at, (c) => tileDistance(c, at) <= 1 && !(c.col === at.col && c.row === at.row)) ?? []);
       Object.assign(hero, { target: null, then: () => this.talkTo(folk) });
       if (hero.way.length === 0) hero.then?.();
@@ -852,19 +935,104 @@ export class AtlasScene extends Phaser.Scene {
     this.tweens.killTweensOf(b.s);
     if (b !== this.hero) {
       this.tweens.add({ targets: b.s, alpha: 0, duration: 500, onComplete: () => b.s.destroy() });
+      const gold = (b as Foe).stats?.gold;
+      if (gold) this.dropGold(b.at, gold);
       if (this.hero!.target === b) this.hero!.target = null;
       return;
     }
     const hero = this.hero!;
     this.flag("died");
+    this.gone = true;
+    // All the gold carried stays where the captain fell; whatever was left at the last death is gone.
+    store(LOST, this.gold > 0 ? { area: this.local!.area, col: hero.at.col, row: hero.at.row, gold: this.gold } : null);
+    this.setGold(0);
     Object.assign(hero, { target: null, way: [], then: null });
     this.tweens.add({ targets: b.s, alpha: 0.25, duration: 600 });
-    this.time.delayedCall(1800, () => {
-      hero.at = this.spawn;
-      b.s.setPosition((this.spawn.col + 0.5) * CELL, (this.spawn.row + 0.75) * CELL).setAlpha(1);
-      Object.assign(hero, { hp: hero.max, dead: false });
-      this.play(b.s, b.idle);
-    });
+    // The page says so, darkens, and wakes the captain at the bonfire last rested at, the monsters back at their posts.
+    this.time.delayedCall(900, () => this.hooks.onDeath?.(restPoint().area));
+  }
+
+  /** What E does here besides swing: talk to someone right beside, else rest at a bonfire beside, else talk to someone near. */
+  private eTarget(): Folk | Cell | undefined {
+    const at = this.hero!.at;
+    const folk = this.folk.filter((f) => f.near).sort((a, b) => tileDistance(a.at, at) - tileDistance(b.at, at))[0];
+    if (folk && tileDistance(folk.at, at) <= 1) return folk;
+    return this.fireNear() ?? folk;
+  }
+
+  /** Gold on the ground at a cell: a nugget that pops out, or the glowing heap left at a death. */
+  private dropGold(at: Cell, gold: number, more: { lost?: boolean } = {}): void {
+    const x = (at.col + 0.5) * CELL;
+    const y = (at.row + 0.75) * CELL;
+    const s = this.add.image(x, y, "gold").setOrigin(0.5, 0.62).setScale(more.lost ? 0.8 : 0.5).setDepth(standing(y) - 1);
+    if (more.lost) {
+      const glow = this.add.image(x, y - 10, "glow").setBlendMode(Phaser.BlendModes.ADD).setTint(0xffd65a).setAlpha(0.6).setDepth(DEPTH.clouds - 2);
+      this.tweens.add({ targets: [s, glow], scale: "*=1.12", duration: 700, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+      s.once(Phaser.GameObjects.Events.DESTROY, () => glow.destroy());
+    } else this.tweens.add({ targets: s, y: { from: y - 30, to: y }, duration: 420, ease: "Bounce.easeOut" });
+    this.piles.push({ at: { ...at }, gold, s, ...more });
+  }
+
+  private setGold(n: number): void {
+    this.gold = n;
+    store(GOLD, n);
+    this.hooks.onGold?.(n);
+  }
+
+  /** Once a frame: gold within a tile of the captain is picked up. */
+  private gather(): void {
+    const hero = this.hero!;
+    if (hero.dead || this.gone) return;
+    for (const p of this.piles.filter((p) => tileDistance(p.at, hero.at) <= 1)) {
+      this.piles.splice(this.piles.indexOf(p), 1);
+      this.setGold(this.gold + p.gold);
+      if (p.stone) store(TAKEN, [...stored<string[]>(TAKEN, []), p.stone]);
+      if (p.lost) store(LOST, null);
+      p.shine?.destroy();
+      this.tweens.add({ targets: p.s, y: p.s.y - 24, alpha: 0, duration: 300, ease: "Sine.easeOut", onComplete: () => p.s.destroy() });
+      this.float(p.s.x, p.s.y - 50, `+${p.gold} gold`, "#ffd65a");
+    }
+  }
+
+  /** The bonfire the captain stands beside, if any. */
+  private fireNear(): Cell | undefined {
+    const at = this.hero!.at;
+    return this.local?.fires.find((f) => tileDistance(f, at) <= 1);
+  }
+
+  /** E at a bonfire: rest, unless a monster is near. Resting saves the spot; the page wakes the captain there, whole. */
+  private rest(fire: Cell): void {
+    const hero = this.hero!;
+    if (this.foes.some((f) => !f.dead && tileDistance(f.at, fire) <= REST_CLEAR)) return this.float(hero.s.x, hero.s.y - hero.lift - 30, "Not with monsters near", "#fdfaf0");
+    try {
+      localStorage.setItem(REST, JSON.stringify({ area: this.local!.area, col: fire.col, row: fire.row }));
+    } catch {}
+    this.gone = true;
+    Object.assign(hero, { target: null, way: [], then: null });
+    this.hooks.onRest?.(this.local!.area);
+  }
+
+  /** R: a flask, if there is one and anything to heal; the hero stands still a moment to drink it. */
+  private quaff(): void {
+    const hero = this.hero!;
+    const time = this.time.now;
+    if (!this.playing || hero.dead || this.gone || this.guarding || time < hero.busy) return;
+    const was = hero.hp;
+    const d = drink(hero.hp, hero.max, this.flasks);
+    if (d.flasks === this.flasks) return this.float(hero.s.x, hero.s.y - hero.lift - 30, this.flasks ? "Unhurt" : "No flasks", "#fdfaf0");
+    Object.assign(hero, { hp: d.hp, way: [], target: null, then: null, busy: time + 600 });
+    this.flasks = d.flasks;
+    this.hooks.onFlasks?.(this.flasks);
+    this.play(hero.s, hero.idle);
+    hero.s.setTint(0x9cf0a0);
+    this.time.delayedCall(300, () => hero.s.clearTint());
+    this.float(hero.s.x, hero.s.y - hero.lift - 10, `+${d.hp - was}`, "#8fe08a");
+  }
+
+  /** A word or a number over a body: up and gone. */
+  private float(x: number, y: number, text: string, color: string): void {
+    const n = this.add.text(x, y, text, { fontFamily: FONT, fontSize: "26px", fontStyle: "bold", color, stroke: "#1c2634", strokeThickness: 6 }).setOrigin(0.5).setDepth(DEPTH.fx + 1);
+    this.tweens.add({ targets: n, y: y - 40, alpha: 0, duration: 900, ease: "Sine.easeOut", onComplete: () => n.destroy() });
   }
 
   /** Keys in play: WASD or the arrows walk the hero a cell at a time in their direction, sliding along what blocks. */
@@ -901,7 +1069,7 @@ export class AtlasScene extends Phaser.Scene {
         if (foe && Math.abs(foe.s.x - hero.s.x) > 4) hero.s.setFlipX(foe.s.x < hero.s.x);
         this.play(hero.s, HERO_GUARD.key);
       }
-    } else if (!hero.dead) {
+    } else if (!hero.dead && !this.gone) {
       // A press made during a swing is kept, and swings the moment the hero is ready.
       if (this.queued && time >= hero.busy && time >= hero.next) this.attack(time);
       const steering = this.steer();
@@ -1214,6 +1382,9 @@ export class AtlasScene extends Phaser.Scene {
       this.tweens.add({ targets: glow, alpha: 0.6, duration: 700 + Math.random() * 500, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
       return;
     }
+    // On an area map a gold stone is gold to pick up, once: taken, it is gone for good.
+    const stone = p.art === "goldStone" && this.local ? `${this.local.area}:${p.col},${p.row}` : undefined;
+    if (stone && stored<string[]>(TAKEN, []).includes(stone)) return;
     const spec = PROP[p.art]!;
     const key = `prop_${p.art}`;
     const s = this.add
@@ -1226,8 +1397,9 @@ export class AtlasScene extends Phaser.Scene {
     if (p.art === "trollDead") s.setFrame(this.textures.get(key).frameTotal - 2);
     else if (p.frame === undefined && ["cave", "fishHut", "pirateTowerWater", "boat", "goldMine"].includes(p.art)) this.loop(s, key);
     // Gold in the rock of the Underneath glows.
-    if (p.art === "goldStone" && base === "rock") this.add.image(x, y - 20, "glow").setBlendMode(Phaser.BlendModes.ADD).setTint(0xffe27a).setAlpha(0.5).setScale(0.9).setDepth(DEPTH.clouds - 2);
+    const shine = p.art === "goldStone" && base === "rock" ? this.add.image(x, y - 20, "glow").setBlendMode(Phaser.BlendModes.ADD).setTint(0xffe27a).setAlpha(0.5).setScale(0.9).setDepth(DEPTH.clouds - 2) : null;
     this.track(s);
+    if (stone) this.piles.push({ at: { col: p.col, row: p.row }, gold: GOLD_STONE, s, stone, ...(shine && { shine }) });
   }
 
   /** A fence pen: corners, rails and posts from the kit's 4x3 tile sheet. */
@@ -1538,17 +1710,30 @@ export class AtlasScene extends Phaser.Scene {
     remember(FLAGS, this.flags);
   }
 
-  private addFolk(n: Npc): void {
+  /** The folk in this area as it was entered, with where each stands. */
+  private folkHere(): [Npc, Whereabouts][] {
+    return NPCS.flatMap((n): [Npc, Whereabouts][] => {
+      const w = whereabouts(n, this.seen);
+      return w && w.area === this.local!.area ? [[n, w]] : [];
+    });
+  }
+
+  private addFolk(n: Npc, w: Whereabouts): void {
     const look = this.look(npcLook(n));
-    const y = (n.at.row + 0.75) * CELL;
-    const s = this.add.sprite((n.at.col + 0.5) * CELL, y, look.idle.key).setOrigin(0.5, look.anchor).setDepth(standing(y)).setFlipX(!!n.flip);
+    const y = (w.at.row + 0.75) * CELL;
+    const s = this.add.sprite((w.at.col + 0.5) * CELL, y, look.idle.key).setOrigin(0.5, look.anchor).setDepth(standing(y)).setFlipX(w.flip);
+    if (w.dead) {
+      // A body where they fell: laid down, greyed, still, and silent.
+      s.setTexture(look.idle.key, 0).setAngle(w.flip ? -90 : 90).setTint(0x8a8f99).setDepth(standing(y) - 2);
+      return;
+    }
     this.loop(s, look.idle.key);
     // Named over their heads, so they stand out from the villagers at work round them.
     this.add
       .text(s.x, y - 1.05 * CELL, n.name, { fontFamily: FONT, fontSize: "20px", fontStyle: "bold", color: "#f2d48a", stroke: "#1c2634", strokeThickness: 5 })
       .setOrigin(0.5, 1)
       .setDepth(DEPTH.fx);
-    this.folk.push({ npc: n, s, near: false, bubble: null });
+    this.folk.push({ npc: n, at: w.at, s, near: false, bubble: null });
   }
 
   /** A line called out over a dweller's head: up, held, gone. */
@@ -1575,11 +1760,12 @@ export class AtlasScene extends Phaser.Scene {
 
   /** E: on in a talk, else talk to whoever stands near, else swing; held, it keeps swinging but never skips a page. */
   private interact(repeat: boolean): void {
-    if (!this.playing || this.hero!.dead) return;
-    const f = this.folk.find((f) => f.near);
-    if (this.talk || f) {
+    if (!this.playing || this.hero!.dead || this.gone) return;
+    const t = this.talk ? undefined : this.eTarget();
+    if (this.talk || t) {
       if (repeat) return;
-      return this.talk ? this.nextPage() : this.talkTo(f!);
+      if (this.talk) return this.nextPage();
+      return "npc" in t! ? this.talkTo(t) : this.rest(t!);
     }
     this.attack(this.time.now);
   }
@@ -1621,14 +1807,14 @@ export class AtlasScene extends Phaser.Scene {
 
   private talkTo(f: Folk): void {
     const hero = this.hero!;
-    if (tileDistance(f.npc.at, hero.at) > TALK_RANGE) return;
+    if (tileDistance(f.at, hero.at) > TALK_RANGE) return;
     Object.assign(hero, { way: [], target: null, then: null });
     f.bubble?.destroy();
     f.bubble = null;
     f.s.setFlipX(hero.s.x < f.s.x);
     hero.s.setFlipX(f.s.x < hero.s.x);
-    const t = nextTalk(f.npc, this.heard, this.flags);
-    this.talk = { folk: f, lines: t.lines, key: talkKey(f.npc, t), page: 0 };
+    const t = nextTalk(f.npc, this.heard, this.seen);
+    this.talk = { folk: f, lines: t.lines, key: talkKey(f.npc, t), sets: t.sets, page: 0 };
     this.say();
   }
 
@@ -1644,6 +1830,8 @@ export class AtlasScene extends Phaser.Scene {
     if (++t.page >= t.lines.length) {
       this.heard.add(t.key);
       remember(HEARD, this.heard);
+      // A talk heard to its end can move someone on: they are elsewhere the next time this area is entered.
+      if (t.sets) this.flag(t.sets);
       this.talk = null;
     }
     this.say();
@@ -1652,11 +1840,9 @@ export class AtlasScene extends Phaser.Scene {
   /** Once a frame: folk greet a captain who comes near and turn to them; one walked away from mid-talk calls after. */
   private mind(): void {
     const hero = this.hero!;
-    let near: Folk | null = null;
     for (const f of this.folk) {
-      const d = tileDistance(f.npc.at, hero.at);
+      const d = tileDistance(f.at, hero.at);
       if (d <= TALK_RANGE && !hero.dead) {
-        near ??= f;
         if (!f.near && this.talk?.folk !== f) this.callOut(f, f.npc.greet);
         f.near = true;
         f.s.setFlipX(hero.s.x < f.s.x);
@@ -1667,20 +1853,23 @@ export class AtlasScene extends Phaser.Scene {
         this.callOut(f, f.npc.part);
       }
     }
-    const name = this.talk ? null : (near?.npc.name ?? null);
-    if (name !== this.nearName) this.hooks.onNear?.((this.nearName = name));
+    const t = this.talk || hero.dead || this.gone ? undefined : this.eTarget();
+    const action = !t ? null : "npc" in t ? "Talk" : "Rest";
+    if (action !== this.nearName) this.hooks.onNear?.((this.nearName = action));
   }
 
-  /** A quarter's name as the captain walks into it, once they have kept to it a moment: not at every step along a border. */
+  /** A quarter's name the first time the captain walks into it on this visit, once they have kept to it a moment: walking
+   *  a border, or back and forth, never says it again. */
   private whereabouts(time: number): void {
     const hero = this.hero!;
     // An unnamed patch, a field or a pasture, belongs to the quarter round it.
     const here = districtOf(this.local!, hero.at.col, hero.at.row)?.name || this.district.name;
     const d = this.district;
     if (here !== d.next) Object.assign(d, { next: here, since: time });
-    else if (here !== d.name && time - d.since > 600 && this.playing && !hero.dead) {
+    else if (here !== d.name && time - d.since > 1200 && this.playing && !hero.dead) {
       d.name = here;
-      this.hooks.onDistrict?.(here);
+      if (!d.shown.has(here)) this.hooks.onDistrict?.(here);
+      d.shown.add(here);
     }
   }
 
@@ -1690,6 +1879,7 @@ export class AtlasScene extends Phaser.Scene {
       // A long stall (a tab in the background) is not a long stride.
       this.fight(time, Math.min(delta, 100));
       this.mind();
+      this.gather();
       this.whereabouts(time);
       for (const b of [this.hero, ...this.foes]) this.drawBar(b);
     }

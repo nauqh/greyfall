@@ -1063,3 +1063,90 @@ textarea {
 		animation: none;
 	}
 }
+
+/* A rest at a bonfire, or waking after a death: the dark comes down slowly and lifts slower. */
+.travel-rest.travel-cover { animation: rideIn 900ms ease-in both; }
+.travel-rest.travel-uncover { animation: rideOut 1400ms ease-out both; }
+
+/* Death, after the Souls games: the screen darkens, the words come up, then all goes dark. */
+.youDied {
+	position: absolute;
+	inset: 0;
+	z-index: 6;
+	display: grid;
+	place-items: center;
+	padding: 16px;
+	pointer-events: none;
+	animation: youDied 4200ms linear both;
+}
+
+.youDiedText {
+	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-weight: 800;
+	font-size: clamp(40px, 8vw, 96px);
+	letter-spacing: 0.16em;
+	text-transform: uppercase;
+	color: #b8322a;
+	-webkit-text-stroke: 8px #1c2634;
+	paint-order: stroke fill;
+	animation: youDiedText 4200ms linear both;
+}
+
+@keyframes youDied {
+	0% { background: rgb(7 10 16 / 0); }
+	30% { background: rgb(7 10 16 / 0.5); }
+	78% { background: rgb(7 10 16 / 0.6); }
+	100% { background: rgb(7 10 16 / 1); }
+}
+
+@keyframes youDiedText {
+	0%, 12% { opacity: 0; transform: scale(0.96); }
+	40% { opacity: 1; transform: scale(1); }
+	80% { opacity: 1; transform: scale(1.02); }
+	100% { opacity: 0; transform: scale(1.03); }
+}
+
+/* The flasks left and the gold carried, in the top corner. */
+.purse {
+	display: flex;
+	gap: 14px;
+	position: absolute;
+	left: 16px;
+	top: 12px;
+	padding: 6px 12px;
+	border-radius: 4px;
+	background: rgb(7 10 16 / 0.72);
+	color: #fdfaf0;
+	font: 700 15px "Nunito", "Segoe UI", sans-serif;
+}
+
+.purse b {
+	margin-left: 4px;
+	color: #8fe08a;
+}
+
+.purse .purseGold {
+	color: #ffd65a;
+}
+
+.purse kbd {
+	display: inline-block;
+	min-width: 20px;
+	margin-right: 6px;
+	padding: 0 5px;
+	border: 1px solid rgb(253 250 240 / 0.6);
+	border-radius: 3px;
+	font: 700 12px "Nunito", sans-serif;
+	text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.youDiedText {
+		animation-name: youDiedFade;
+	}
+	@keyframes youDiedFade {
+		0%, 12% { opacity: 0; }
+		40%, 80% { opacity: 1; }
+		100% { opacity: 0; }
+	}
+}

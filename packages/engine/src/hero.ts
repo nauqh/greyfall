@@ -7,7 +7,7 @@ import { canStep, cellKey, stepsFrom, tileDistance, type Cell } from "./island.t
 /** A walk, not a sprint: 2.8 tiles a second (4 read as running everywhere). */
 /** Swings: the first two of a combo `chain` seconds apart, the finisher's recovery `every`; a swing within `combo` seconds of
  *  being ready again chains. A raised shield lets a fifth of a blow from the front through. */
-export const HERO = { hp: 100, attack: 12, chain: 0.45, every: 0.9, speed: 2.8, guard: 0.2, combo: 1.4 } as const;
+export const HERO = { hp: 100, attack: 12, chain: 0.45, every: 0.9, speed: 2.8, guard: 0.2, combo: 1.4, flasks: 3, flask: 40 } as const;
 
 export interface FoeStats {
   hp: number;
@@ -20,19 +20,24 @@ export interface FoeStats {
   leash: number;
   /** Tiles a second. */
   speed: number;
+  /** The gold it drops where it falls. */
+  gold: number;
 }
+
+/** What a gold stone on the map is worth, picked up once. */
+export const GOLD_STONE = 25;
 
 /** The monsters that fight, by dweller kind; everything else on a map is scenery or a bystander. Most are a little
  *  slower than the hero, so it can walk away from a fight; spiders and thieves are quicker. */
 export const FOES: Partial<Record<string, FoeStats>> = {
-  torch: { hp: 30, attack: 6, every: 1.2, aggro: 6, leash: 10, speed: 2.2 },
-  spear: { hp: 40, attack: 8, every: 1.4, aggro: 6, leash: 10, speed: 2.2 },
-  skull: { hp: 25, attack: 5, every: 1.0, aggro: 5, leash: 9, speed: 1.9 },
-  spider: { hp: 22, attack: 5, every: 0.9, aggro: 5, leash: 8, speed: 3 },
-  gnoll: { hp: 45, attack: 9, every: 1.5, aggro: 6, leash: 10, speed: 2.2 },
-  thief: { hp: 28, attack: 7, every: 1.0, aggro: 5, leash: 8, speed: 3 },
-  lizard: { hp: 35, attack: 7, every: 1.2, aggro: 5, leash: 9, speed: 2.2 },
-  snake: { hp: 18, attack: 4, every: 1.0, aggro: 4, leash: 7, speed: 2.2 },
+  torch: { hp: 30, attack: 6, every: 1.2, aggro: 6, leash: 10, speed: 2.2, gold: 6 },
+  spear: { hp: 40, attack: 8, every: 1.4, aggro: 6, leash: 10, speed: 2.2, gold: 9 },
+  skull: { hp: 25, attack: 5, every: 1.0, aggro: 5, leash: 9, speed: 1.9, gold: 7 },
+  spider: { hp: 22, attack: 5, every: 0.9, aggro: 5, leash: 8, speed: 3, gold: 5 },
+  gnoll: { hp: 45, attack: 9, every: 1.5, aggro: 6, leash: 10, speed: 2.2, gold: 12 },
+  thief: { hp: 28, attack: 7, every: 1.0, aggro: 5, leash: 8, speed: 3, gold: 15 },
+  lizard: { hp: 35, attack: 7, every: 1.2, aggro: 5, leash: 9, speed: 2.2, gold: 8 },
+  snake: { hp: 18, attack: 4, every: 1.0, aggro: 4, leash: 7, speed: 2.2, gold: 4 },
 };
 
 export type Intent = "attack" | "chase" | "return" | "idle";
@@ -57,6 +62,12 @@ export function comboStep(last: number, secondsReady: number): number {
 /** Seconds until the hero can swing again after swing `step`: quick between the first two, a longer recovery after the finisher. */
 export function swingWait(step: number): number {
   return step >= 3 ? HERO.every : HERO.chain;
+}
+
+/** A flask drunk: `HERO.flask` back, never past whole; none drunk with none left or nothing to heal. */
+export function drink(hp: number, max: number, flasks: number): { hp: number; flasks: number } {
+  if (flasks <= 0 || hp >= max) return { hp, flasks };
+  return { hp: Math.min(max, hp + HERO.flask), flasks: flasks - 1 };
 }
 
 /** What of a blow gets through a raised shield: a share of it, never nothing. */

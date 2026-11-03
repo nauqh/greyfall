@@ -4,15 +4,54 @@
 import type { AreaId } from "./atlas.ts";
 import type { Cell } from "./island.ts";
 
-/** What the world remembers that folk remark on. */
-export type WorldFlag = "died" | "wellDescended" | "monkFreed" | "moorGateOpen" | "watchLiftOpen" | "trollKey" | "warlordDead";
+/** What the world remembers that folk remark on, and that moves them on. */
+export type WorldFlag =
+  | "died"
+  | "wellDescended"
+  | "monkFreed"
+  | "moorGateOpen"
+  | "watchLiftOpen"
+  | "trollKey"
+  | "hornedKey"
+  | "greyfallReached"
+  | "warlordDead"
+  // Set by a talk, not by the world.
+  | "tobinDown"
+  | "tobinDeeper"
+  | "ysoldeDeeper"
+  | "anselRoused"
+  | "anselAhead"
+  | "watchmanOut"
+  | "marenSails";
 
 export interface Talk {
   id: string;
   /** Said once, after the first talk, when this has happened. */
   when?: WorldFlag;
+  /** Heard to the end, this happens: how a questline moves on. */
+  sets?: WorldFlag;
   /** One page each. */
   lines: readonly string[];
+}
+
+/** Where a dweller is once all of `when` has happened; of several, the last listed wins. */
+export interface Station {
+  when: readonly WorldFlag[];
+  /** Left out: moved on for good. */
+  area?: AreaId;
+  at?: Cell;
+  flip?: boolean;
+  /** Lies here dead and says nothing. */
+  dead?: boolean;
+  talks?: readonly Talk[];
+}
+
+export interface Whereabouts {
+  area: AreaId;
+  at: Cell;
+  flip: boolean;
+  dead: boolean;
+  talks: readonly Talk[];
 }
 
 export interface Npc {
@@ -29,6 +68,8 @@ export interface Npc {
   /** Called after a captain who walks off mid-talk. */
   part: string;
   talks: readonly Talk[];
+  /** Where the questline takes them; until any applies they stand at home, above. */
+  later?: readonly Station[];
 }
 
 /** Within this many tiles a dweller greets the captain and can be talked to. */
@@ -78,6 +119,14 @@ export const NPCS: readonly Npc[] = [
         when: "warlordDead",
         lines: ["So. The grey is lifting.", "...I'll keep the fire going anyway. Habit. Someone ought to."],
       },
+      {
+        id: "ansel",
+        when: "anselRoused",
+        lines: [
+          "Ansel's stool is empty. First time in years.",
+          "I'll leave it where it is. They come back, or they don't, and it's still a good stool.",
+        ],
+      },
     ],
   },
   {
@@ -110,6 +159,14 @@ export const NPCS: readonly Npc[] = [
         when: "trollKey",
         lines: ["Let me see that key. ...No. I won't touch it.", "Whatever forged that wasn't a smith."],
       },
+      {
+        id: "ansel",
+        when: "anselRoused",
+        lines: [
+          "Ansel came by. Wanted an edge on a sword I'd forgotten he had.",
+          "He didn't haggle. That worried me.",
+        ],
+      },
     ],
   },
   {
@@ -141,6 +198,29 @@ export const NPCS: readonly Npc[] = [
         lines: ["Forty spears.", "I'll carve them into the gate. Every one. Leave me to it, captain."],
       },
     ],
+    later: [
+      {
+        when: ["hornedKey"],
+        area: "barrowmoor",
+        at: { col: 29, row: 22 },
+        talks: [
+          {
+            id: "barrows",
+            lines: [
+              "Captain. The king's dead, so the barrows are only barrows now.",
+              "My forty went into them. I'm digging them out. One at a time.",
+            ],
+          },
+          { id: "count", lines: ["Twenty-two. Dace still had his pipe.", "Holm had nothing. Holm always had nothing."] },
+          { id: "last", lines: ["Thirty-nine.", "The fortieth was me, I think. I ought to be down there with them."] },
+          {
+            id: "done",
+            when: "warlordDead",
+            lines: ["So it's finished. Up in the grey.", "Tell them at the gate. I've no hands left for carving."],
+          },
+        ],
+      },
+    ],
   },
   {
     id: "wren",
@@ -167,6 +247,23 @@ export const NPCS: readonly Npc[] = [
       },
       { id: "back", lines: ["Five paces back, always. If you can smell it, you're too close."] },
     ],
+    later: [
+      {
+        when: ["trollKey"],
+        area: "emberwood",
+        at: { col: 29, row: 44 },
+        talks: [
+          {
+            id: "bluff",
+            lines: [
+              "Captain! Troll's dead, the goblins don't know which way to run. Best shooting in years.",
+              "Don't tell the Harbour. They'll want me back being useful.",
+            ],
+          },
+          { id: "torches", lines: ["Torches first. Always torches first."] },
+        ],
+      },
+    ],
   },
   {
     id: "tobin",
@@ -189,10 +286,49 @@ export const NPCS: readonly Npc[] = [
       {
         id: "below",
         when: "wellDescended",
+        sets: "tobinDown",
         lines: [
           "You came back? From down there?",
           "...Did you see him? Thin fellow. Quick hands. Always smiling.",
           "No. Course not. Forget I asked.",
+        ],
+      },
+    ],
+    later: [
+      {
+        when: ["tobinDown"],
+        area: "undercroft",
+        at: { col: 11, row: 9 },
+        talks: [
+          {
+            id: "nook",
+            lines: [
+              "Captain. Don't look so surprised. No rule against going down, is there?",
+              "Smugglers keep this corner. One of them wore his coat. Said he swapped it, deeper in.",
+              "Swapped it. Ha. He never swapped a thing in his life.",
+            ],
+          },
+          {
+            id: "deeper",
+            sets: "tobinDeeper",
+            lines: ["I'm going on, through the cisterns.", "Don't wait for me. Nobody ever has."],
+          },
+        ],
+      },
+      {
+        when: ["tobinDeeper"],
+        area: "deeps",
+        at: { col: 7, row: 69 },
+        talks: [
+          {
+            id: "camp",
+            lines: [
+              "Found him, captain. He runs this camp. Thin as ever. Smiling.",
+              "He says the coin was never dropped. He threw it, to see who'd come after.",
+              "...I came after.",
+            ],
+          },
+          { id: "stay", lines: ["I'm staying. Someone has to count what he steals.", "Quick hands run in the family. Turns out."] },
         ],
       },
     ],
@@ -215,13 +351,46 @@ export const NPCS: readonly Npc[] = [
         ],
       },
       { id: "candle", lines: ["I light a candle each night.", "It is not hope. It is habit, which outlasts hope."] },
+    ],
+    later: [
       {
-        id: "freed",
-        when: "monkFreed",
-        lines: [
-          "You found one of us. Living.",
-          "Then the others... no.",
-          "One is a mercy. I'll not ask the dark for more than it gives.",
+        when: ["monkFreed"],
+        area: "undercroft",
+        at: { col: 49, row: 55 },
+        talks: [
+          {
+            id: "freed",
+            lines: [
+              "You found one of us. Living. So I came down the well. Old knees, long drop.",
+              "She does not remember her name yet. I tell it to her, and she thanks me, every time.",
+              "One is a mercy. I'll not ask the dark for more than it gives.",
+            ],
+          },
+          {
+            id: "lake",
+            sets: "ysoldeDeeper",
+            lines: [
+              "She speaks in her sleep. Of a lake under all of this, clear as glass.",
+              "The others went on to it. I must go too.",
+              "Do not follow, captain. Or do. I am too old to forbid things.",
+            ],
+          },
+        ],
+      },
+      {
+        when: ["ysoldeDeeper"],
+        area: "hollow",
+        at: { col: 94, row: 49 },
+        talks: [
+          {
+            id: "clear",
+            lines: [
+              "Look, captain. The water is clear down here. Clear at last.",
+              "I can see them at the bottom. All my sisters, kneeling. Still praying.",
+              "...No. Don't pull me back. I have only just found them.",
+            ],
+          },
+          { id: "kneel", lines: ["I have stopped lighting candles.", "There is light enough down here. Cold, but enough."] },
         ],
       },
     ],
@@ -245,7 +414,18 @@ export const NPCS: readonly Npc[] = [
       },
       { id: "sharks", lines: ["Sharks off the Saltreach shore. Don't swim there.", "Don't even think wet thoughts."] },
       { id: "tide", lines: ["Tide's out. It's always out, lately.", "As if the sea's leaving too."] },
+      {
+        id: "sail",
+        when: "warlordDead",
+        sets: "marenSails",
+        lines: [
+          "A sail. Off the point, this morning. First in three winters.",
+          "Salt men, likely. Pirates, likelier. I don't care.",
+          "Thirty years I've watched that water. I'd like to be on it once, before it leaves for good.",
+        ],
+      },
     ],
+    later: [{ when: ["marenSails"] }],
   },
   {
     id: "watchman",
@@ -269,12 +449,32 @@ export const NPCS: readonly Npc[] = [
       {
         id: "open",
         when: "moorGateOpen",
+        sets: "watchmanOut",
         lines: [
           "...You came through the barrows. On foot.",
           "Well. I'll stop barring it, then. You've made my post pointless.",
           "Thank you. I think.",
         ],
       },
+    ],
+    later: [
+      {
+        when: ["watchmanOut"],
+        area: "barrowmoor",
+        at: { col: 38, row: 57 },
+        flip: true,
+        talks: [
+          {
+            id: "lights",
+            lines: [
+              "Captain. Thought I'd see the lights for myself, since the gate's open anyway.",
+              "They're lanterns. Held by nobody. Swinging, all the same.",
+            ],
+          },
+          { id: "look", lines: ["I'll just look a little longer.", "Looking is how it starts. I know. I said that."] },
+        ],
+      },
+      { when: ["watchmanOut", "hornedKey"] },
     ],
   },
   {
@@ -295,10 +495,35 @@ export const NPCS: readonly Npc[] = [
         ],
       },
       { id: "crows", lines: ["I count the crows.", "When there's more of them, they're bringing more people."] },
+    ],
+    later: [
       {
-        id: "warlord",
-        when: "warlordDead",
-        lines: ["Is the yard open? Is it really?", "I'm going. I'm going right now. Don't you stop me!"],
+        when: ["greyfallReached"],
+        area: "greyfall",
+        at: { col: 73, row: 67 },
+        talks: [
+          {
+            id: "penned",
+            lines: [
+              "Shh! Captain! I followed you through the gate. You walk loud, it's easy.",
+              "They caught me straight off. But they put me in the yard. Same yard as mum!",
+              "So that's alright. Mostly.",
+            ],
+          },
+          { id: "fewer", lines: ["Fewer crows here today.", "You're killing them, aren't you? The black ones, I mean."] },
+        ],
+      },
+      {
+        when: ["warlordDead"],
+        area: "greyfall",
+        at: { col: 73, row: 67 },
+        talks: [
+          {
+            id: "free",
+            lines: ["They ran! All the black soldiers, they just ran!", "Mum says thank you. She says it twice. She's like that."],
+          },
+          { id: "home", lines: ["We're walking home. Mum says slowly.", "She's had enough of being hurried by ropes."] },
+        ],
       },
     ],
   },
@@ -336,6 +561,53 @@ export const NPCS: readonly Npc[] = [
         when: "watchLiftOpen",
         lines: ["So you went up. Were they kind?", "...No. Gold never is."],
       },
+      {
+        id: "roused",
+        when: "trollKey",
+        sets: "anselRoused",
+        lines: [
+          "The troll. You killed it. With that.",
+          "...I had a sword once. It's under the bed, I think.",
+          "Maybe I've sat long enough. Don't say anything. You'll talk me out of it.",
+        ],
+      },
+    ],
+    later: [
+      {
+        when: ["anselRoused"],
+        area: "greyfall",
+        at: { col: 14, row: 54 },
+        talks: [
+          {
+            id: "out",
+            lines: [
+              "Captain. Don't look at me like that. I said I'd come out.",
+              "I'd forgotten the smell of the grey. Wet ash and old iron.",
+            ],
+          },
+          {
+            id: "ahead",
+            sets: "anselAhead",
+            lines: [
+              "The warlord's hall is up past the keep. I'll go first, this time.",
+              "Let me have that. You've had all the others.",
+            ],
+          },
+        ],
+      },
+      {
+        when: ["warlordDead"],
+        area: "harbour",
+        at: { col: 53, row: 19 },
+        talks: [
+          {
+            id: "without",
+            lines: ["You went up without me. Good.", "I'd only have been in the way. I'd only have been brave."],
+          },
+          { id: "wall", lines: ["Back on the wall. It's a good wall.", "You can see the gold from here. Doesn't glint so much now."] },
+        ],
+      },
+      { when: ["anselAhead"], area: "greyfall", at: { col: 95, row: 25 }, dead: true },
     ],
   },
 ];
@@ -347,11 +619,19 @@ export const talkKey = (npc: Npc, talk: Talk): string => `${npc.id}.${talk.id}`;
  * next unheard conversation, else the last one again.
  */
 export function nextTalk(npc: Npc, heard: ReadonlySet<string>, flags: ReadonlySet<WorldFlag>): Talk {
-  const plain = npc.talks.filter((t) => !t.when);
+  const talks = whereabouts(npc, flags)?.talks ?? npc.talks;
+  const plain = talks.filter((t) => !t.when);
   const unheard = (t: Talk): boolean => !heard.has(talkKey(npc, t));
   if (!unheard(plain[0]!)) {
-    const news = npc.talks.find((t) => t.when && flags.has(t.when) && unheard(t));
+    const news = talks.find((t) => t.when && flags.has(t.when) && unheard(t));
     if (news) return news;
   }
   return plain.find(unheard) ?? plain.at(-1)!;
+}
+
+/** Where a dweller stands given what has happened, or null once they have moved on. */
+export function whereabouts(npc: Npc, flags: ReadonlySet<WorldFlag>): Whereabouts | null {
+  const s = [...(npc.later ?? [])].reverse().find((s) => s.when.every((f) => flags.has(f)));
+  if (!s) return { area: npc.area, at: npc.at, flip: !!npc.flip, dead: false, talks: npc.talks };
+  return s.area && s.at ? { area: s.area, at: s.at, flip: !!s.flip, dead: !!s.dead, talks: s.talks ?? [] } : null;
 }

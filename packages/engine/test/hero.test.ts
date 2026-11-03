@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FOES, HERO, clearLine, comboStep, findPath, swingWait, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
+import { FOES, GOLD_STONE, HERO, clearLine, comboStep, drink, findPath, swingWait, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
 
 const goblin = FOES.torch!;
 const home = { col: 10, row: 10 };
@@ -62,6 +62,27 @@ describe("a blow", () => {
       expect(throughGuard(foe!.attack)).toBeLessThan(foe!.attack);
       expect(throughGuard(foe!.attack)).toBeGreaterThanOrEqual(1);
     }
+  });
+});
+
+describe("gold", () => {
+  it("drops from every monster, and a stone is worth more than any one of them", () => {
+    for (const foe of Object.values(FOES)) {
+      expect(foe!.gold).toBeGreaterThan(0);
+      expect(foe!.gold).toBeLessThan(GOLD_STONE);
+    }
+  });
+});
+
+describe("a flask", () => {
+  it("heals its share, never past whole, and is used up", () => {
+    expect(drink(30, HERO.hp, 3)).toEqual({ hp: 30 + HERO.flask, flasks: 2 });
+    expect(drink(HERO.hp - 5, HERO.hp, 1)).toEqual({ hp: HERO.hp, flasks: 0 });
+  });
+
+  it("is not drunk with none left or nothing to heal", () => {
+    expect(drink(30, HERO.hp, 0)).toEqual({ hp: 30, flasks: 0 });
+    expect(drink(HERO.hp, HERO.hp, 3)).toEqual({ hp: HERO.hp, flasks: 3 });
   });
 });
 
