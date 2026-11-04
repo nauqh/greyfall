@@ -1125,6 +1125,12 @@ textarea {
 	color: #8fe08a;
 }
 
+.purseIcon {
+	width: 20px;
+	height: 20px;
+	vertical-align: -5px;
+}
+
 .purse .purseGold {
 	color: #ffd65a;
 }

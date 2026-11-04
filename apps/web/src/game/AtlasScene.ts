@@ -293,6 +293,9 @@ const AREA_ROWS = 15;
 const HERO_LOOK: Dweller = { kind: "warrior", col: 0, row: 0, color: "blue" };
 const HERO_ATTACK = { key: "blue_Warrior/Warrior_Attack1.png", file: "Units/Blue Units/Warrior/Warrior_Attack1.png" };
 const HERO_ATTACK2 = { key: "blue_Warrior/Warrior_Attack2.png", file: "Units/Blue Units/Warrior/Warrior_Attack2.png" };
+/** A flask drunk: the Monk's healing swirl round the feet, and the green drop over the head (the pack has no flask). */
+const HEAL_FX = { key: "healFx", file: "Units/Blue Units/Monk/Heal_Effect.png" };
+const FLASK_ICON = { key: "flaskIcon", file: "ui/icon_heal.png" };
 const HERO_GUARD = { key: "blue_Warrior/Warrior_Guard.png", file: "Units/Blue Units/Warrior/Warrior_Guard.png" };
 
 /** One body in a fight on an area map: the hero or a monster. */
@@ -549,6 +552,8 @@ export class AtlasScene extends Phaser.Scene {
       sheet(HERO_ATTACK.key, { file: HERO_ATTACK.file, frame, anchor: 0 });
       sheet(HERO_GUARD.key, { file: HERO_GUARD.file, frame, anchor: 0 });
       sheet(HERO_ATTACK2.key, { file: HERO_ATTACK2.file, frame, anchor: 0 });
+      sheet(HEAL_FX.key, { file: HEAL_FX.file, frame: 192, anchor: 0 });
+      if (!this.textures.exists(FLASK_ICON.key)) this.load.image(FLASK_ICON.key, packUrl(FLASK_ICON.file));
       for (const kind of ["lancer", "archer"] as const) {
         const l = this.look({ kind, col: 0, row: 0, color: "blue" });
         sheet(l.idle.key, { file: l.idle.file, frame: l.frame, anchor: 0 });
@@ -1132,9 +1137,15 @@ export class AtlasScene extends Phaser.Scene {
     this.flasks = d.flasks;
     this.hooks.onFlasks?.(this.flasks);
     this.play(hero.s, hero.idle);
+    const [x, y] = [hero.s.x, hero.s.y];
+    const drop = this.add.image(x, y - hero.lift - 6, FLASK_ICON.key).setScale(0.6).setDepth(DEPTH.fx + 1);
+    this.tweens.add({ targets: drop, y: drop.y - 34, alpha: { from: 1, to: 0 }, duration: 650, ease: "Sine.easeOut", onComplete: () => drop.destroy() });
+    // The swirl rises from the ground round the feet, in front of the hero.
+    const fx = this.add.sprite(x, y + 14, HEAL_FX.key).setOrigin(0.5, 0.72).setDepth(standing(y) + 1);
+    fx.play(`${HEAL_FX.key}_once`).once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => fx.destroy());
     hero.s.setTint(0x9cf0a0);
     this.time.delayedCall(300, () => hero.s.clearTint());
-    this.float(hero.s.x, hero.s.y - hero.lift - 10, `+${d.hp - was}`, "#8fe08a");
+    this.time.delayedCall(250, () => this.float(x, y - hero.lift - 10, `+${d.hp - was}`, "#8fe08a"));
   }
 
   /** A companion beside the captain, at `hp` (carried across a crossing; 0 lies fallen), else whole. */
@@ -1405,10 +1416,10 @@ export class AtlasScene extends Phaser.Scene {
   /** Loops for every sheet with more than one frame: props, beasts, knights. */
   private makeAnims(): void {
     for (const key of this.textures.getTextureKeys()) {
-      const once = key.endsWith("_attack") || key === HERO_ATTACK.key || key === HERO_ATTACK2.key || key === COMPANION_ATTACK.lancer.key || key === COMPANION_ATTACK.archer.key;
+      const once = key.endsWith("_attack") || [HERO_ATTACK.key, HERO_ATTACK2.key, COMPANION_ATTACK.lancer.key, COMPANION_ATTACK.archer.key, HEAL_FX.key].includes(key);
       if (once && !this.anims.exists(`${key}_once`)) {
         // The hero's swings fill the wait to the next one (4 frames, 0.4 s) rather than snap through and stand idle.
-        const rate = key === HERO_ATTACK.key || key === HERO_ATTACK2.key ? 10 : 16;
+        const rate = key === HERO_ATTACK.key || key === HERO_ATTACK2.key ? 10 : key === HEAL_FX.key ? 12 : 16;
         this.anims.create({ key: `${key}_once`, frames: this.anims.generateFrameNumbers(key), frameRate: rate, repeat: 0 });
       }
       const frames = this.textures.get(key).frameTotal - 1;

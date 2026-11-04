@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 
 import type { AtlasApi, AtlasHooks, BandView, Departure, MenuView, Say } from "../../game/AtlasScene";
 import { Clouds } from "../../game/Clouds";
+import { packUrl } from "../../game/art";
 import { GameCanvas } from "../../game/GameCanvas";
 
 /** The HUD shown or hidden: the H key or the corner button, remembered on this browser. */
@@ -286,7 +287,9 @@ export function AreaView({ area: first }: { area: AreaId }) {
           {flasks !== null && (
             <div className="purse">
               <span title="Drink a flask (R)">
-                <kbd>R</kbd> Flask <b>{flasks}</b>
+                <kbd>R</kbd>
+                <img className="purseIcon" src={packUrl("ui/icon_heal.png")} alt="Flasks" />
+                <b>{flasks}</b>
               </span>
               <span>
                 Gold <b className="purseGold">{gold ?? 0}</b>
