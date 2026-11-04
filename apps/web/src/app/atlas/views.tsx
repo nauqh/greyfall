@@ -4,7 +4,7 @@ import { AREAS, type AreaId } from "@greyfall/engine";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import type { AtlasApi, AtlasHooks, BandView, Departure, Say } from "../../game/AtlasScene";
+import type { AtlasApi, AtlasHooks, BandView, Departure, MenuView, Say } from "../../game/AtlasScene";
 import { Clouds } from "../../game/Clouds";
 import { GameCanvas } from "../../game/GameCanvas";
 
@@ -69,6 +69,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const [flasks, setFlasks] = useState<number | null>(null);
   const [gold, setGold] = useState<number | null>(null);
   const [band, setBand] = useState<BandView | null>(null);
+  const [menu, setMenu] = useState<MenuView | null>(null);
   // Died: the words, then the dark, then waking at the bonfire in this area.
   const [died, setDied] = useState<AreaId | null>(null);
   const api = useRef<AtlasApi | null>(null);
@@ -92,6 +93,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
     setReveal(null);
     setDied(null);
     setSay(null);
+    setMenu(null);
     setNear(null);
     setTravel({ ...d, phase: "hold" });
     window.history.pushState(null, "", rest ? `/atlas/${d.to}` : `/atlas/${d.to}?from=${from}`);
@@ -116,6 +118,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
     onFlasks: setFlasks,
     onGold: setGold,
     onBand: setBand,
+    onMenu: setMenu,
     onRest: (to) => !now.current.travelling && wake(to),
     onDeath: (to) => {
       if (now.current.travelling) return;
@@ -200,18 +203,29 @@ export function AreaView({ area: first }: { area: AreaId }) {
             }}
           />
         )}
-        {say?.hire && (
-          <button
-            className="btn small hire"
-            type="button"
-            disabled={!say.hire.can}
-            onClick={(e) => {
-              api.current?.hire();
-              e.currentTarget.blur();
-            }}
-          >
-            Hire {say.hire.kind === "lancer" ? "a Lancer" : "an Archer"}, {say.hire.cost} gold
-          </button>
+        {menu && (
+          // A merchant's menu, after the Souls games: the name, the options, the one picked marked.
+          <div className="menu" role="menu" aria-label={menu.name}>
+            <span className="talkName">{menu.name}</span>
+            {menu.options.map((o, i) => (
+              <button
+                key={o.label}
+                type="button"
+                role="menuitem"
+                className={`menuOption${i === menu.pick ? " picked" : ""}`}
+                onClick={(e) => {
+                  api.current?.choose(i);
+                  e.currentTarget.blur();
+                }}
+              >
+                {o.label}
+                {o.note && <span className="menuNote">{o.note}</span>}
+              </button>
+            ))}
+            <span className="talkNext" aria-hidden="true">
+              W/S, E
+            </span>
+          </div>
         )}
         {say ? (
           // A talk, after the Souls games: the name, then one page at a time across the foot of the screen.
@@ -221,7 +235,8 @@ export function AreaView({ area: first }: { area: AreaId }) {
             <span className="talkNext" aria-hidden="true">E</span>
           </button>
         ) : (
-          near && (
+          near &&
+          !menu && (
             <div className="talkPrompt" role="status">
               <kbd>E</kbd> {near}
             </div>

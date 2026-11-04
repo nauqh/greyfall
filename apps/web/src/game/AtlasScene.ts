@@ -77,8 +77,8 @@ export interface AtlasApi {
   dev: (on: boolean) => void;
   /** In a talk: the next page, or the end of it. */
   next: () => void;
-  /** In a talk with someone who hires out: hire one into the band. */
-  hire: () => void;
+  /** In a menu with someone who hires out: pick an option, as E on it would. */
+  choose: (i: number) => void;
   /** Draw the Souls map over the tier in view. */
 }
 
@@ -120,6 +120,8 @@ export interface AtlasHooks {
   opened?: () => void;
   /** A page of a talk to show, or null when it ends. */
   onSay?: (say: Say | null) => void;
+  /** The menu of someone who hires out, or null when it closes. */
+  onMenu?: (menu: MenuView | null) => void;
   /** What E would do where the captain stands, other than swing: talk, or rest at a bonfire. */
   onNear?: (action: "Talk" | "Rest" | null) => void;
   /** The flasks left. */
@@ -140,8 +142,13 @@ export interface Say {
   text: string;
   /** More pages follow. */
   more: boolean;
-  /** Someone who hires out companions: whom, for what, and whether the captain can. */
-  hire?: { kind: CompanionKind; cost: number; can: boolean };
+}
+
+/** After the Souls games' merchants: a name over a short list, one option picked. */
+export interface MenuView {
+  name: string;
+  options: { label: string; note?: string }[];
+  pick: number;
 }
 
 export interface BandView {
@@ -327,6 +334,11 @@ const COMPANION_ATTACK: Record<CompanionKind, { key: string; file: string }> = {
 };
 /** Who hires out which companion, by the dweller's id. */
 const RECRUITER: Record<string, CompanionKind> = { corwin: "lancer", wren: "archer" };
+/** What they say turning a hire down: short of gold, or the band already full. */
+const REFUSE: Record<string, { poor: string; full: string }> = {
+  corwin: { poor: "Lances cost gold, captain. Seventy-five.", full: "Three at your back already. I've none to spare." },
+  wren: { poor: "Bows aren't free. Sixty gold, then we'll talk.", full: "You've a crowd already. Mine stay here." },
+};
 const BAND = "greyfall.band";
 const ORDER_WORD: Record<BandOrder, string> = { follow: "Follow me", attack: "Attack my target", hold: "Hold here" };
 /** One of the folk who talk, standing at their spot. */
@@ -443,6 +455,8 @@ export class AtlasScene extends Phaser.Scene {
   /** The flags as the area was entered: who stands where, and what they say, holds until the captain leaves and comes back. */
   private seen = new Set<WorldFlag>();
   private nearName: "Talk" | "Rest" | null = null;
+  /** Open with someone who hires out: Talk, Hire, Leave. */
+  private menu: { folk: Folk; pick: number } | null = null;
   private flasks: number = HERO.flasks;
   private gold = 0;
   private band: Companion[] = [];
@@ -483,6 +497,7 @@ export class AtlasScene extends Phaser.Scene {
     this.folk = [];
     this.talk = null;
     this.nearName = null;
+    this.menu = null;
     this.heard = remembered(HEARD);
     this.flags = remembered(FLAGS);
     // What a crossing proves: down the well, the Watch Lift ridden down, the Moor Gate come through from the moor, the Greyfall reached.
@@ -634,6 +649,7 @@ export class AtlasScene extends Phaser.Scene {
       k?.on("keydown-ONE", () => this.command("follow"));
       k?.on("keydown-TWO", () => this.command("attack"));
       k?.on("keydown-THREE", () => this.command("hold"));
+      for (const [key, d] of [["W", -1], ["UP", -1], ["S", 1], ["DOWN", 1]] as const) k?.on(`keydown-${key}`, () => this.movePick(d));
       // The gold left at the last death waits where it fell, glowing, until it is picked up or the captain dies again.
       const lost = stored<Lost | null>(LOST, null);
       if (lost?.area === local.area) this.dropGold({ col: lost.col, row: lost.row }, lost.gold, { lost: true });
@@ -674,7 +690,11 @@ export class AtlasScene extends Phaser.Scene {
       },
       dev: (on) => this.setDev(on),
       next: () => this.nextPage(),
-      hire: () => this.hireHere(),
+      choose: (i) => {
+        if (!this.menu) return;
+        this.menu.pick = i;
+        this.choose();
+      },
       tier: (id) => {
         this.show(id);
         // Onto the tier's ground, when the view would otherwise be open sky or solid rock.
@@ -901,7 +921,7 @@ export class AtlasScene extends Phaser.Scene {
       if (this.talk?.folk === folk) return this.nextPage();
       const at = folk.at;
       this.walk(hero, findRoute(hero.at, (c) => tileDistance(c, at) <= 1 && !(c.col === at.col && c.row === at.row)) ?? []);
-      Object.assign(hero, { target: null, then: () => this.talkTo(folk) });
+      Object.assign(hero, { target: null, then: () => (RECRUITER[folk.npc.id] ? this.openMenu(folk) : this.talkTo(folk)) });
       if (hero.way.length === 0) hero.then?.();
       return;
     }
@@ -1196,18 +1216,69 @@ export class AtlasScene extends Phaser.Scene {
 
   /** In a talk with someone who hires out: a companion joins, for gold, if there is room. */
   private hireHere(): void {
-    const t = this.talk;
-    const kind = t && RECRUITER[t.folk.npc.id];
+    const kind = this.menu && RECRUITER[this.menu.folk.npc.id];
     if (!kind) return;
     const hero = this.hero!;
     const h = hire(this.gold, this.band.map((c) => c.kind), kind);
-    if (!h) return this.float(hero.s.x, hero.s.y - hero.lift - 30, this.band.length >= BAND_SIZE ? "The band is full" : "Not enough gold", "#fdfaf0");
+    if (!h) {
+      const f = this.menu!.folk;
+      return this.callOut(f, this.band.length >= BAND_SIZE ? REFUSE[f.npc.id]!.full : REFUSE[f.npc.id]!.poor);
+    }
     this.setGold(h.gold);
     store(BAND, h.band);
     this.addCompanion(kind);
     this.emitBand();
     this.float(hero.s.x, hero.s.y - hero.lift - 30, `A ${kind === "lancer" ? "Lancer" : "Archer"} joins`, "#9cc4e8");
-    this.say();
+    this.showMenu();
+  }
+
+  private menuOptions(f: Folk): MenuView["options"] {
+    const kind = RECRUITER[f.npc.id]!;
+    const cost = COMPANIONS[kind].cost;
+    return [{ label: "Talk" }, { label: `Hire ${kind === "lancer" ? "a Lancer" : "an Archer"}`, note: `${cost} gold` }, { label: "Leave" }];
+  }
+
+  private showMenu(): void {
+    const m = this.menu;
+    this.hooks.onMenu?.(m ? { name: m.folk.npc.name, options: this.menuOptions(m.folk), pick: m.pick } : null);
+  }
+
+  private openMenu(f: Folk): void {
+    const hero = this.hero!;
+    Object.assign(hero, { way: [], target: null, then: null });
+    f.bubble?.destroy();
+    f.bubble = null;
+    f.s.setFlipX(hero.s.x < f.s.x);
+    hero.s.setFlipX(f.s.x < hero.s.x);
+    this.menu = { folk: f, pick: 0 };
+    this.showMenu();
+  }
+
+  private closeMenu(part: boolean): void {
+    const m = this.menu;
+    if (!m) return;
+    this.menu = null;
+    this.showMenu();
+    if (part) this.callOut(m.folk, m.folk.npc.part);
+  }
+
+  private movePick(d: number): void {
+    const m = this.menu;
+    if (!m) return;
+    m.pick = (m.pick + d + 3) % 3;
+    this.showMenu();
+  }
+
+  /** E in a menu: talk (and back to the menu after), hire, or leave. */
+  private choose(): void {
+    const m = this.menu!;
+    if (m.pick === 0) {
+      const f = m.folk;
+      this.menu = null;
+      this.showMenu();
+      this.talkTo(f);
+    } else if (m.pick === 1) this.hireHere();
+    else this.closeMenu(true);
   }
 
   /** A word or a number over a body: up and gone. */
@@ -1216,24 +1287,33 @@ export class AtlasScene extends Phaser.Scene {
     this.tweens.add({ targets: n, y: y - 40, alpha: 0, duration: 900, ease: "Sine.easeOut", onComplete: () => n.destroy() });
   }
 
-  /** Keys in play: WASD or the arrows walk the hero a cell at a time in their direction, sliding along what blocks. */
-  private steer(): boolean {
+  /**
+   * Keys in play: WASD or the arrows walk the hero freely, at its own speed, the way they point. Each axis is tried on
+   * its own, so it slides along what blocks; a cliff is crossed only at a ramp, by the same step rule as any walk.
+   */
+  private steer(dt: number): boolean {
     const k = this.keys;
     const hero = this.hero!;
-    if (!k || hero.dead) return false;
-    const dc = (k.right.isDown || k.d.isDown ? 1 : 0) - (k.left.isDown || k.a.isDown ? 1 : 0);
-    const dr = (k.down.isDown || k.s.isDown ? 1 : 0) - (k.up.isDown || k.w.isDown ? 1 : 0);
-    if (!dc && !dr) return false;
-    Object.assign(hero, { target: null, then: null });
-    if (hero.way.length > 1) hero.way = hero.way.slice(0, 1);
-    if (hero.way.length === 1) return true;
-    for (const [c, r] of [[dc, dr], [dc, 0], [0, dr]] as const) {
-      const next = { col: hero.at.col + c, row: hero.at.row + r };
-      if ((c || r) && canStep(hero.at, next)) {
-        hero.way = [{ x: (next.col + 0.5) * CELL, y: (next.row + 0.75) * CELL }];
-        return true;
-      }
-    }
+    if (!k || hero.dead || this.menu) return false;
+    const dx = (k.right.isDown || k.d.isDown ? 1 : 0) - (k.left.isDown || k.a.isDown ? 1 : 0);
+    const dy = (k.down.isDown || k.s.isDown ? 1 : 0) - (k.up.isDown || k.w.isDown ? 1 : 0);
+    if (!dx && !dy) return false;
+    Object.assign(hero, { target: null, then: null, way: [] });
+    const step = (hero.speed * CELL * dt) / 1000 / Math.hypot(dx, dy);
+    const cellAt = (x: number, y: number): Cell => ({ col: Math.floor(x / CELL), row: Math.round(y / CELL - 0.75) });
+    // Felt for a little ahead of the feet, so the hero stops short of a wall instead of half inside it.
+    const ahead = 0.3 * CELL;
+    const open = (x: number, y: number): boolean => {
+      const to = cellAt(x, y);
+      return (to.col === hero.at.col && to.row === hero.at.row) || canStep(hero.at, to);
+    };
+    let { x, y } = hero.s;
+    if (dx && open(x + dx * (step + ahead), y)) x += dx * step;
+    if (dy && open(x, y + dy * (step + ahead))) y += dy * step;
+    hero.s.setPosition(x, y).setDepth(standing(y));
+    hero.at = cellAt(x, y);
+    if (dx) hero.s.setFlipX(dx < 0);
+    this.play(hero.s, hero.move ?? hero.idle);
     return true;
   }
 
@@ -1253,14 +1333,16 @@ export class AtlasScene extends Phaser.Scene {
     } else if (!hero.dead && !this.gone) {
       // A press made during a swing is kept, and swings the moment the hero is ready.
       if (this.queued && time >= hero.busy && time >= hero.next) this.attack(time);
-      const steering = this.steer();
+      const steering = time >= hero.busy && this.steer(dt);
       // Holding the mouse keeps walking toward it, re-aimed a few times a second.
       if (!steering && this.hold && time - this.hold.since > 220 && time - hero.planned > 200 && !hero.target) {
         hero.planned = time;
         this.order(new Phaser.Math.Vector2(this.hold.x, this.hold.y), { col: Math.floor(this.hold.x / CELL), row: Math.floor(this.hold.y / CELL) }, true);
       }
       const t = hero.target?.dead ? null : hero.target;
-      if (time < hero.busy) {
+      if (steering) {
+        // Walked by the keys this frame.
+      } else if (time < hero.busy) {
         // Mid-swing: it holds still.
       } else if (t && tileDistance(hero.at, t.at) <= 1 && Math.hypot(t.s.x - hero.s.x, t.s.y - hero.s.y) < 1.5 * CELL) {
         hero.way = [];
@@ -1949,11 +2031,13 @@ export class AtlasScene extends Phaser.Scene {
   /** E: on in a talk, else talk to whoever stands near, else swing; held, it keeps swinging but never skips a page. */
   private interact(repeat: boolean): void {
     if (!this.playing || this.hero!.dead || this.gone) return;
+    if (this.menu) return void (!repeat && this.choose());
     const t = this.talk ? undefined : this.eTarget();
     if (this.talk || t) {
       if (repeat) return;
       if (this.talk) return this.nextPage();
-      return "npc" in t! ? this.talkTo(t) : this.rest(t!);
+      if (!("npc" in t!)) return this.rest(t!);
+      return RECRUITER[t.npc.id] ? this.openMenu(t) : this.talkTo(t);
     }
     this.attack(this.time.now);
   }
@@ -2009,9 +2093,7 @@ export class AtlasScene extends Phaser.Scene {
 
   private say(): void {
     const t = this.talk;
-    const kind = t && RECRUITER[t.folk.npc.id];
-    const hire = kind ? { kind, cost: COMPANIONS[kind].cost, can: this.gold >= COMPANIONS[kind].cost && this.band.length < BAND_SIZE } : undefined;
-    this.hooks.onSay?.(t ? { name: t.folk.npc.name, text: t.lines[t.page]!, more: t.page < t.lines.length - 1, ...(hire && { hire }) } : null);
+    this.hooks.onSay?.(t ? { name: t.folk.npc.name, text: t.lines[t.page]!, more: t.page < t.lines.length - 1 } : null);
   }
 
   /** On to the next page; past the last, the talk is heard and done. */
@@ -2024,6 +2106,10 @@ export class AtlasScene extends Phaser.Scene {
       // A talk heard to its end can move someone on: they are elsewhere the next time this area is entered.
       if (t.sets) this.flag(t.sets);
       this.talk = null;
+      this.say();
+      // Talked out, a merchant's menu comes back, as in the Souls games.
+      if (RECRUITER[t.folk.npc.id]) this.openMenu(t.folk);
+      return;
     }
     this.say();
   }
@@ -2043,8 +2129,9 @@ export class AtlasScene extends Phaser.Scene {
         this.say();
         this.callOut(f, f.npc.part);
       }
+      if (this.menu?.folk === f && d > TALK_RANGE) this.closeMenu(true);
     }
-    const t = this.talk || hero.dead || this.gone ? undefined : this.eTarget();
+    const t = this.talk || this.menu || hero.dead || this.gone ? undefined : this.eTarget();
     const action = !t ? null : "npc" in t ? "Talk" : "Rest";
     if (action !== this.nearName) this.hooks.onNear?.((this.nearName = action));
   }

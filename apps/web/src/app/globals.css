@@ -1193,11 +1193,44 @@ textarea {
 	background: #6fb0e0;
 }
 
-/* Hiring a companion, over the talk with the one who hires them out. */
-.hire {
+/* A merchant's menu: like a talk, at the foot of the screen in the labels' outline, the picked option marked. */
+.menu {
 	position: absolute;
-	left: 50%;
-	bottom: 150px;
-	z-index: 6;
-	transform: translateX(-50%);
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 5;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	padding: 48px 16px 36px;
 }
+
+.menuOption {
+	border: 0;
+	background: none;
+	padding: 2px 12px;
+	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-weight: 800;
+	font-size: clamp(17px, 2vw, 22px);
+	color: rgb(253 250 240 / 0.7);
+	-webkit-text-stroke: 6px #1c2634;
+	paint-order: stroke fill;
+	cursor: pointer;
+}
+
+.menuOption.picked {
+	color: #f2d48a;
+}
+
+.menuOption.picked::before {
+	content: "> ";
+}
+
+.menuNote {
+	margin-left: 10px;
+	font-size: 0.8em;
+	color: #ffd65a;
+}
+

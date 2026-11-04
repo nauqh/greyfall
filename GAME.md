@@ -23,6 +23,7 @@ Mouse first, as in Diablo. The camera follows the hero inside the area map.
 | Input | Action |
 | --- | --- |
 | Right click on ground | Move; hold to keep walking toward the cursor |
+| W A S D or the arrows | Walk freely the way they point, diagonals too, sliding along walls; in a merchant's menu, W and S move the pick |
 | Right click on an enemy | Walk up and attack until it dies |
 | Right click on someone who talks | Walk up and talk |
 | Skill | The hero's skill, aimed at the cursor; its button is not chosen yet |
@@ -56,8 +57,8 @@ Up to three companions at once, all Tiny Swords units already drawn in blue.
 
 | Companion | Role | Behaviour | How you get one |
 | --- | --- | --- | --- |
-| Lancer | Tank | Charges your target and draws aggro | Hire from Sergeant Corwin at the barracks, 75 gold |
-| Archer | Ranged | Keeps 5 tiles back and shoots | Hire from Wren at the archery range, 60 gold |
+| Lancer | Tank | Charges your target and draws aggro | Hire from Sergeant Corwin at the barracks, 75 gold: E beside him opens Talk / Hire / Leave |
+| Archer | Ranged | Keeps 5 tiles back and shoots | Hire from Wren at the archery range, 60 gold, the same way |
 | Monk | Healer | Heals whoever is lowest below 60%, 8 s cooldown | Freed from the Drowned Chapel (Undercroft) |
 | Pawn | Utility | Carries more loot, picks up gold, repairs bridges | Recruit in Old Town, cheap |
 | Gnome | Special | Throws bombs | Won after Old Bamboo (Tinker Crags) |
