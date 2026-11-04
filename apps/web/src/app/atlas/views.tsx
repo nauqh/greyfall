@@ -206,21 +206,21 @@ export function AreaView({ area: first }: { area: AreaId }) {
         )}
         {menu && (
           // A merchant's menu, after the Souls games: the name, the options, the one picked marked.
-          <div className="menu" role="menu" aria-label={menu.name}>
+          <div className="shop" role="menu" aria-label={menu.name}>
             <span className="talkName">{menu.name}</span>
             {menu.options.map((o, i) => (
               <button
                 key={o.label}
                 type="button"
                 role="menuitem"
-                className={`menuOption${i === menu.pick ? " picked" : ""}`}
+                className={`shopOption${i === menu.pick ? " picked" : ""}`}
                 onClick={(e) => {
                   api.current?.choose(i);
                   e.currentTarget.blur();
                 }}
               >
                 {o.label}
-                {o.note && <span className="menuNote">{o.note}</span>}
+                {o.note && <span className="shopNote">{o.note}</span>}
               </button>
             ))}
             <span className="talkNext" aria-hidden="true">

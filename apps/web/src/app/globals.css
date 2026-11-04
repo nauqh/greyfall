@@ -1200,7 +1200,7 @@ textarea {
 }
 
 /* A merchant's menu: like a talk, at the foot of the screen in the labels' outline, the picked option marked. */
-.menu {
+.shop {
 	position: absolute;
 	left: 0;
 	right: 0;
@@ -1213,7 +1213,7 @@ textarea {
 	padding: 48px 16px 36px;
 }
 
-.menuOption {
+.shopOption {
 	border: 0;
 	background: none;
 	padding: 2px 12px;
@@ -1226,15 +1226,15 @@ textarea {
 	cursor: pointer;
 }
 
-.menuOption.picked {
+.shopOption.picked {
 	color: #f2d48a;
 }
 
-.menuOption.picked::before {
+.shopOption.picked::before {
 	content: "> ";
 }
 
-.menuNote {
+.shopNote {
 	margin-left: 10px;
 	font-size: 0.8em;
 	color: #ffd65a;
