@@ -56,8 +56,8 @@ Up to three companions at once, all Tiny Swords units already drawn in blue.
 
 | Companion | Role | Behaviour | How you get one |
 | --- | --- | --- | --- |
-| Lancer | Tank | Charges your target and draws aggro | Recruit at the Harbour barracks |
-| Archer | Ranged | Keeps 5 tiles back and shoots | Recruit at the archery range |
+| Lancer | Tank | Charges your target and draws aggro | Hire from Sergeant Corwin at the barracks, 75 gold |
+| Archer | Ranged | Keeps 5 tiles back and shoots | Hire from Wren at the archery range, 60 gold |
 | Monk | Healer | Heals whoever is lowest below 60%, 8 s cooldown | Freed from the Drowned Chapel (Undercroft) |
 | Pawn | Utility | Carries more loot, picks up gold, repairs bridges | Recruit in Old Town, cheap |
 | Gnome | Special | Throws bombs | Won after Old Bamboo (Tinker Crags) |

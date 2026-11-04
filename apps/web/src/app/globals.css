@@ -1150,3 +1150,54 @@ textarea {
 		100% { opacity: 0; }
 	}
 }
+
+/* The band, under the purse: its order, and each companion's health. */
+.bandPanel {
+	position: absolute;
+	left: 16px;
+	top: 52px;
+	display: grid;
+	gap: 4px;
+	padding: 6px 12px 8px;
+	border-radius: 4px;
+	background: rgb(7 10 16 / 0.72);
+	color: #fdfaf0;
+	font: 700 13px "Nunito", "Segoe UI", sans-serif;
+}
+
+.bandOrder {
+	color: #9cc4e8;
+}
+
+.bandMember {
+	display: grid;
+	grid-template-columns: 56px 80px;
+	align-items: center;
+	gap: 8px;
+}
+
+.bandMember.down {
+	opacity: 0.45;
+}
+
+.bandBar {
+	height: 6px;
+	border-radius: 2px;
+	background: rgb(253 250 240 / 0.15);
+	overflow: hidden;
+}
+
+.bandBar > span {
+	display: block;
+	height: 100%;
+	background: #6fb0e0;
+}
+
+/* Hiring a companion, over the talk with the one who hires them out. */
+.hire {
+	position: absolute;
+	left: 50%;
+	bottom: 150px;
+	z-index: 6;
+	transform: translateX(-50%);
+}

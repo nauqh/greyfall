@@ -8,6 +8,11 @@
 import {
   AREAS,
   AREA_CODE,
+  BAND_SIZE,
+  COMPANIONS,
+  companionPlan,
+  foeTarget,
+  hire,
   TIERS,
   areaMap,
   districtOf,
@@ -39,7 +44,9 @@ import {
   type AtlasLift,
   type AtlasMap,
   type AtlasTier,
+  type BandOrder,
   type Cell,
+  type CompanionKind,
   type Dweller,
   type FoeStats,
   type GateKind,
@@ -70,6 +77,8 @@ export interface AtlasApi {
   dev: (on: boolean) => void;
   /** In a talk: the next page, or the end of it. */
   next: () => void;
+  /** In a talk with someone who hires out: hire one into the band. */
+  hire: () => void;
   /** Draw the Souls map over the tier in view. */
 }
 
@@ -97,7 +106,7 @@ export interface AtlasHooks {
    *  the bonfire last rested at. */
   arrive?: Crossing;
   /** The hero's health and flasks carried across a crossing; a rest or a reload starts whole. */
-  carry?: { hp: number; flasks: number };
+  carry?: { hp: number; flasks: number; band: number[] };
   /** Dev mode: the camera free over the whole area map, not held on the hero. */
   dev?: boolean;
   /** Asks the page to travel through an exit to another area. */
@@ -117,6 +126,8 @@ export interface AtlasHooks {
   onFlasks?: (n: number) => void;
   /** The gold carried. */
   onGold?: (n: number) => void;
+  /** The band: its order, and each companion's health, 0 for one fallen. */
+  onBand?: (band: BandView) => void;
   /** Rested at a bonfire, or died: the page darkens and wakes the captain at the bonfire last rested at, in `area`. */
   onRest?: (area: AreaId) => void;
   onDeath?: (area: AreaId) => void;
@@ -129,6 +140,13 @@ export interface Say {
   text: string;
   /** More pages follow. */
   more: boolean;
+  /** Someone who hires out companions: whom, for what, and whether the captain can. */
+  hire?: { kind: CompanionKind; cost: number; can: boolean };
+}
+
+export interface BandView {
+  order: BandOrder;
+  members: { kind: CompanionKind; hp: number; max: number }[];
 }
 
 /** A sheet: its file, frame width (and height, when not square), and the ground's height in the frame, 0 to 1. */
@@ -297,6 +315,20 @@ interface Foe extends Body {
   home: Cell;
   stats: FoeStats;
 }
+/** A companion in the band, and the spot it keeps on hold. */
+interface Companion extends Body {
+  kind: CompanionKind;
+  post: Cell;
+}
+/** The companions' strike sheets: the Lancer's thrust (it is drawn facing right), the Archer's draw and loose. */
+const COMPANION_ATTACK: Record<CompanionKind, { key: string; file: string }> = {
+  lancer: { key: "blue_Lancer/Lancer_Right_Attack.png", file: "Units/Blue Units/Lancer/Lancer_Right_Attack.png" },
+  archer: { key: "blue_Archer/Archer_Shoot.png", file: "Units/Blue Units/Archer/Archer_Shoot.png" },
+};
+/** Who hires out which companion, by the dweller's id. */
+const RECRUITER: Record<string, CompanionKind> = { corwin: "lancer", wren: "archer" };
+const BAND = "greyfall.band";
+const ORDER_WORD: Record<BandOrder, string> = { follow: "Follow me", attack: "Attack my target", hold: "Hold here" };
 /** One of the folk who talk, standing at their spot. */
 interface Folk {
   npc: Npc;
@@ -413,6 +445,10 @@ export class AtlasScene extends Phaser.Scene {
   private nearName: "Talk" | "Rest" | null = null;
   private flasks: number = HERO.flasks;
   private gold = 0;
+  private band: Companion[] = [];
+  private bandOrder: BandOrder = "follow";
+  /** The monster the captain last struck: on "attack my target", the band goes for it. */
+  private lastHit: Foe | null = null;
   private piles: Pile[] = [];
   /** Resting or dead: the page is darkening and nothing more is done here. */
   private gone = false;
@@ -457,6 +493,9 @@ export class AtlasScene extends Phaser.Scene {
     this.seen = new Set(this.flags);
     this.flasks = data.carry?.flasks ?? HERO.flasks;
     this.gold = stored(GOLD, 0);
+    this.band = [];
+    this.bandOrder = "follow";
+    this.lastHit = null;
     this.piles = [];
     this.gone = false;
     this.district = { name: "", next: "", since: 0, shown: new Set<string>() };
@@ -495,6 +534,13 @@ export class AtlasScene extends Phaser.Scene {
       sheet(HERO_ATTACK.key, { file: HERO_ATTACK.file, frame, anchor: 0 });
       sheet(HERO_GUARD.key, { file: HERO_GUARD.file, frame, anchor: 0 });
       sheet(HERO_ATTACK2.key, { file: HERO_ATTACK2.file, frame, anchor: 0 });
+      for (const kind of ["lancer", "archer"] as const) {
+        const l = this.look({ kind, col: 0, row: 0, color: "blue" });
+        sheet(l.idle.key, { file: l.idle.file, frame: l.frame, anchor: 0 });
+        if (l.move) sheet(l.move.key, { file: l.move.file, frame: l.frame, anchor: 0 });
+        sheet(COMPANION_ATTACK[kind].key, { file: COMPANION_ATTACK[kind].file, frame: l.frame, anchor: 0 });
+      }
+      if (!this.textures.exists("arrow")) this.load.image("arrow", packUrl("Units/Blue Units/Archer/Arrow.png"));
       for (const [n] of this.folkHere()) {
         const l = this.look(npcLook(n));
         sheet(l.idle.key, { file: l.idle.file, frame: l.frame, anchor: 0 });
@@ -582,6 +628,12 @@ export class AtlasScene extends Phaser.Scene {
       if (this.hooks.carry) this.hero!.hp = Math.max(1, Math.min(this.hero!.max, this.hooks.carry.hp));
       this.hooks.onFlasks?.(this.flasks);
       this.hooks.onGold?.(this.gold);
+      stored<CompanionKind[]>(BAND, []).forEach((kind, i) => this.addCompanion(kind, this.hooks.carry?.band[i]));
+      this.emitBand();
+      const k = this.input.keyboard;
+      k?.on("keydown-ONE", () => this.command("follow"));
+      k?.on("keydown-TWO", () => this.command("attack"));
+      k?.on("keydown-THREE", () => this.command("hold"));
       // The gold left at the last death waits where it fell, glowing, until it is picked up or the captain dies again.
       const lost = stored<Lost | null>(LOST, null);
       if (lost?.area === local.area) this.dropGold({ col: lost.col, row: lost.row }, lost.gold, { lost: true });
@@ -617,11 +669,12 @@ export class AtlasScene extends Phaser.Scene {
         this.flyTo({ col: mid("c"), row: mid("r") }, 24);
       },
       travel: (to, from, arrive) => {
-        const carry = arrive === "rest" || !this.hero ? undefined : { hp: this.hero.hp, flasks: this.flasks };
+        const carry = arrive === "rest" || !this.hero ? undefined : { hp: this.hero.hp, flasks: this.flasks, band: this.band.map((c) => (c.dead ? 0 : c.hp)) };
         this.scene.restart({ ...this.hooks, area: to, from, arrive, dev: this.dev, carry });
       },
       dev: (on) => this.setDev(on),
       next: () => this.nextPage(),
+      hire: () => this.hireHere(),
       tier: (id) => {
         this.show(id);
         // Onto the tier's ground, when the view would otherwise be open sky or solid rock.
@@ -917,6 +970,11 @@ export class AtlasScene extends Phaser.Scene {
   /** A blow: the striker's swing, the target's flash and the number off it; a guarding hero takes little from the front. */
   private strike(from: Body, to: Body, attack: number, every: number, time: number, anim = from.attack): void {
     this.swing(from, to, every, time, anim);
+    this.hurt(from, to, attack);
+  }
+
+  /** A blow landing: the target's flash and the number off it; a guarding hero takes little from the front. */
+  private hurt(from: Body, to: Body, attack: number): void {
     const blocked = to === this.hero && this.guarding && this.facing(to, from);
     const dealt = blocked ? throughGuard(attack) : attack;
     to.hp = struck(to.hp, dealt);
@@ -926,6 +984,27 @@ export class AtlasScene extends Phaser.Scene {
     const n = this.add.text(to.s.x, to.s.y - to.lift - 10, `${dealt}`, { fontFamily: FONT, fontSize: "28px", fontStyle: "bold", color, stroke: "#1c2634", strokeThickness: 6 }).setOrigin(0.5).setDepth(DEPTH.fx + 1);
     this.tweens.add({ targets: n, y: n.y - 40, alpha: 0, duration: 700, ease: "Sine.easeOut", onComplete: () => n.destroy() });
     if (to.hp === 0) this.fall(to);
+    else if (this.band.includes(to as Companion)) this.emitBand();
+  }
+
+  /** An archer's shot: the draw, then the arrow across, landing if the mark still stands. */
+  private shoot(c: Companion, foe: Foe, time: number): void {
+    const stats = COMPANIONS[c.kind];
+    this.swing(c, foe, stats.every, time);
+    const [x, y] = [c.s.x, c.s.y - 40];
+    const [tx, ty] = [foe.s.x, foe.s.y - 30];
+    const arrow = this.add.image(x, y, "arrow").setRotation(Math.atan2(ty - y, tx - x)).setDepth(DEPTH.fx);
+    this.tweens.add({
+      targets: arrow,
+      x: tx,
+      y: ty,
+      delay: 250,
+      duration: Math.max(120, Math.hypot(tx - x, ty - y) / 0.9),
+      onComplete: () => {
+        arrow.destroy();
+        if (!foe.dead) this.hurt(c, foe, stats.attack);
+      },
+    });
   }
 
   /** A body at nothing: a monster is gone; the hero rises again where it arrived, whole. */
@@ -933,6 +1012,15 @@ export class AtlasScene extends Phaser.Scene {
     b.dead = true;
     b.bar.clear();
     this.tweens.killTweensOf(b.s);
+    if (this.band.includes(b as Companion)) {
+      // A fallen companion lies where it fell until the captain rests.
+      b.way = [];
+      b.s.stop();
+      b.s.setTexture(b.idle, 0).setAngle(b.s.flipX ? -90 : 90).setAlpha(0.6).setTint(0x8a8f99);
+      this.emitBand();
+      return;
+    }
+    if (this.lastHit === b) this.lastHit = null;
     if (b !== this.hero) {
       this.tweens.add({ targets: b.s, alpha: 0, duration: 500, onComplete: () => b.s.destroy() });
       const gold = (b as Foe).stats?.gold;
@@ -994,16 +1082,16 @@ export class AtlasScene extends Phaser.Scene {
     }
   }
 
-  /** The bonfire the captain stands beside, if any. */
+  /** The bonfire the captain stands beside, if any, and only with no monster near it: by a camp still held, E fights. */
   private fireNear(): Cell | undefined {
     const at = this.hero!.at;
-    return this.local?.fires.find((f) => tileDistance(f, at) <= 1);
+    const fire = this.local?.fires.find((f) => tileDistance(f, at) <= 1);
+    return fire && !this.foes.some((f) => !f.dead && tileDistance(f.at, fire) <= REST_CLEAR) ? fire : undefined;
   }
 
-  /** E at a bonfire: rest, unless a monster is near. Resting saves the spot; the page wakes the captain there, whole. */
+  /** E at a bonfire: rest. Resting saves the spot; the page wakes the captain there, whole. */
   private rest(fire: Cell): void {
     const hero = this.hero!;
-    if (this.foes.some((f) => !f.dead && tileDistance(f.at, fire) <= REST_CLEAR)) return this.float(hero.s.x, hero.s.y - hero.lift - 30, "Not with monsters near", "#fdfaf0");
     try {
       localStorage.setItem(REST, JSON.stringify({ area: this.local!.area, col: fire.col, row: fire.row }));
     } catch {}
@@ -1027,6 +1115,99 @@ export class AtlasScene extends Phaser.Scene {
     hero.s.setTint(0x9cf0a0);
     this.time.delayedCall(300, () => hero.s.clearTint());
     this.float(hero.s.x, hero.s.y - hero.lift - 10, `+${d.hp - was}`, "#8fe08a");
+  }
+
+  /** A companion beside the captain, at `hp` (carried across a crossing; 0 lies fallen), else whole. */
+  private addCompanion(kind: CompanionKind, hp?: number): void {
+    const hero = this.hero!;
+    const free = (c: Cell): boolean =>
+      isWalkable(c.col, c.row) && !isSlope(c.col, c.row) && !(c.col === hero.at.col && c.row === hero.at.row) && !this.band.some((o) => o.at.col === c.col && o.at.row === c.row);
+    const at = findRoute(hero.at, free)?.at(-1) ?? hero.at;
+    const look = this.look({ kind, col: at.col, row: at.row, color: "blue" });
+    const y = (at.row + 0.75) * CELL;
+    const s = this.add.sprite((at.col + 0.5) * CELL, y, look.idle.key).setOrigin(0.5, look.anchor).setDepth(standing(y));
+    this.play(s, look.idle.key);
+    const stats = COMPANIONS[kind];
+    const c: Companion = { ...this.body(s, at, stats.hp, stats.speed, { idle: look.idle.key, move: look.move?.key, attack: COMPANION_ATTACK[kind].key }), kind, post: { ...at } };
+    this.band.push(c);
+    if (hp !== undefined) c.hp = Math.min(c.max, hp);
+    if (hp === 0) this.fall(c);
+  }
+
+  /** The band, once a frame: each companion fights, follows or holds, as the order and its plan say. */
+  private lead(time: number, dt: number): void {
+    const hero = this.hero!;
+    const live = this.foes.filter((f) => !f.dead);
+    const aim = [hero.target, this.lastHit].find((f) => f && !f.dead);
+    const target = this.bandOrder === "attack" && aim ? live.indexOf(aim) : -1;
+    for (const c of this.band) {
+      if (c.dead || time < c.busy) continue;
+      if (hero.dead || this.gone) {
+        c.way = [];
+        this.advance(c, dt);
+        continue;
+      }
+      const stats = COMPANIONS[c.kind];
+      const plan = companionPlan(c.at, c.kind, this.bandOrder, hero.at, target, live.map((f) => f.at), c.post);
+      if (plan.do === "strike") {
+        const foe = live[plan.foe]!;
+        c.way = [];
+        if (time >= c.next) {
+          if (c.kind === "archer") this.shoot(c, foe, time);
+          else this.strike(c, foe, stats.attack, stats.every, time);
+        } else {
+          this.play(c.s, c.idle);
+          if (Math.abs(foe.s.x - c.s.x) > 4) c.s.setFlipX(foe.s.x < c.s.x);
+        }
+        continue;
+      }
+      if (plan.do === "stay") c.way = [];
+      else if (time - c.planned > 400) {
+        c.planned = time;
+        // Not onto the captain or another companion: a band stands round its captain, not on them.
+        const taken = (cell: Cell): boolean =>
+          (cell.col === hero.at.col && cell.row === hero.at.row) || this.band.some((o) => o !== c && !o.dead && o.at.col === cell.col && o.at.row === cell.row);
+        const goal =
+          plan.do === "close"
+            ? (cell: Cell) => tileDistance(cell, live[plan.foe]!.at) <= stats.range
+            : this.bandOrder === "hold"
+              ? (cell: Cell) => cell.col === plan.to.col && cell.row === plan.to.row
+              : (cell: Cell) => tileDistance(cell, plan.to) <= 1;
+        const way = findRoute(c.at, goal, taken);
+        if (way) this.walk(c, way);
+      }
+      this.advance(c, dt);
+    }
+  }
+
+  /** 1, 2, 3: the band's order; on hold, each keeps the spot it stands on. */
+  private command(order: BandOrder): void {
+    const hero = this.hero!;
+    if (!this.playing || hero.dead || this.gone || this.band.length === 0) return;
+    this.bandOrder = order;
+    for (const c of this.band) c.post = { ...c.at };
+    this.float(hero.s.x, hero.s.y - hero.lift - 30, ORDER_WORD[order], "#9cc4e8");
+    this.emitBand();
+  }
+
+  private emitBand(): void {
+    this.hooks.onBand?.({ order: this.bandOrder, members: this.band.map((c) => ({ kind: c.kind, hp: c.dead ? 0 : c.hp, max: c.max })) });
+  }
+
+  /** In a talk with someone who hires out: a companion joins, for gold, if there is room. */
+  private hireHere(): void {
+    const t = this.talk;
+    const kind = t && RECRUITER[t.folk.npc.id];
+    if (!kind) return;
+    const hero = this.hero!;
+    const h = hire(this.gold, this.band.map((c) => c.kind), kind);
+    if (!h) return this.float(hero.s.x, hero.s.y - hero.lift - 30, this.band.length >= BAND_SIZE ? "The band is full" : "Not enough gold", "#fdfaf0");
+    this.setGold(h.gold);
+    store(BAND, h.band);
+    this.addCompanion(kind);
+    this.emitBand();
+    this.float(hero.s.x, hero.s.y - hero.lift - 30, `A ${kind === "lancer" ? "Lancer" : "Archer"} joins`, "#9cc4e8");
+    this.say();
   }
 
   /** A word or a number over a body: up and gone. */
@@ -1099,14 +1280,19 @@ export class AtlasScene extends Phaser.Scene {
         }
       }
     }
+    this.lead(time, dt);
     for (const f of this.foes) {
       if (f.dead || time < f.busy) continue;
       // Far from the hero and at home, a monster rests.
       if (tileDistance(f.at, hero.at) > 14 && f.at.col === f.home.col && f.at.row === f.home.row && f.way.length === 0) continue;
-      const intent = foeIntent(f.at, f.home, hero.dead ? null : hero.at, f.stats);
-      if (intent === "attack" && Math.hypot(hero.s.x - f.s.x, hero.s.y - f.s.y) < 1.5 * CELL) {
+      // Its mark: the captain or a companion it can see, a Lancer first.
+      const marks: Body[] = [...(hero.dead || this.gone ? [] : [hero]), ...this.band.filter((c) => !c.dead)];
+      const m = foeTarget(f.at, f.stats.aggro, marks.map((b) => ({ at: b.at, draws: (b as Companion).kind === "lancer" })));
+      const mark = marks[m] ?? hero;
+      const intent = foeIntent(f.at, f.home, m >= 0 ? mark.at : null, f.stats);
+      if (intent === "attack" && Math.hypot(mark.s.x - f.s.x, mark.s.y - f.s.y) < 1.5 * CELL) {
         f.way = [];
-        if (time >= f.next) this.strike(f, hero, f.stats.attack, f.stats.every, time);
+        if (time >= f.next) this.strike(f, mark, f.stats.attack, f.stats.every, time);
         else this.play(f.s, f.idle);
         continue;
       }
@@ -1115,7 +1301,7 @@ export class AtlasScene extends Phaser.Scene {
       else if (intent !== "idle" && time - f.planned > 400) {
         f.planned = time;
         const taken = (c: Cell) => this.foes.some((o) => o !== f && !o.dead && o.at.col === c.col && o.at.row === c.row);
-        const goal = intent === "return" ? (c: Cell) => c.col === f.home.col && c.row === f.home.row : (c: Cell) => tileDistance(c, hero.at) <= 1;
+        const goal = intent === "return" ? (c: Cell) => c.col === f.home.col && c.row === f.home.row : (c: Cell) => tileDistance(c, mark.at) <= 1;
         const way = findRoute(f.at, goal, taken);
         if (way) this.walk(f, way);
       }
@@ -1127,16 +1313,18 @@ export class AtlasScene extends Phaser.Scene {
   private drawBar(b: Body): void {
     b.bar.clear();
     if (b.dead || (b !== this.hero && b.hp === b.max)) return;
+    const ally = this.band.includes(b as Companion);
     const [w, h] = [56, 7];
     const [x, y] = [b.s.x - w / 2, b.s.y - b.lift - 4];
     b.bar.fillStyle(0x1c2634, 0.85).fillRect(x - 2, y - 2, w + 4, h + 4);
-    b.bar.fillStyle(b === this.hero ? 0x6fd06a : 0xe05a4a).fillRect(x, y, (w * b.hp) / b.max, h);
+    b.bar.fillStyle(b === this.hero ? 0x6fd06a : ally ? 0x6fb0e0 : 0xe05a4a).fillRect(x, y, (w * b.hp) / b.max, h);
   }
 
   /** Loops for every sheet with more than one frame: props, beasts, knights. */
   private makeAnims(): void {
     for (const key of this.textures.getTextureKeys()) {
-      if ((key.endsWith("_attack") || key === HERO_ATTACK.key || key === HERO_ATTACK2.key) && !this.anims.exists(`${key}_once`)) {
+      const once = key.endsWith("_attack") || key === HERO_ATTACK.key || key === HERO_ATTACK2.key || key === COMPANION_ATTACK.lancer.key || key === COMPANION_ATTACK.archer.key;
+      if (once && !this.anims.exists(`${key}_once`)) {
         // The hero's swings fill the wait to the next one (4 frames, 0.4 s) rather than snap through and stand idle.
         const rate = key === HERO_ATTACK.key || key === HERO_ATTACK2.key ? 10 : 16;
         this.anims.create({ key: `${key}_once`, frames: this.anims.generateFrameNumbers(key), frameRate: rate, repeat: 0 });
@@ -1788,6 +1976,7 @@ export class AtlasScene extends Phaser.Scene {
     const step = (this.combo = comboStep(this.combo, (time - hero.next) / 1000));
     const anim = step === 2 ? HERO_ATTACK2.key : HERO_ATTACK.key;
     if (!foe) return this.swing(hero, null, swingWait(step), time, anim);
+    this.lastHit = foe;
     this.strike(hero, foe, HERO.attack, swingWait(step), time, anim);
     if (step === 3 && !foe.dead) this.knockBack(foe, time);
   }
@@ -1820,7 +2009,9 @@ export class AtlasScene extends Phaser.Scene {
 
   private say(): void {
     const t = this.talk;
-    this.hooks.onSay?.(t ? { name: t.folk.npc.name, text: t.lines[t.page]!, more: t.page < t.lines.length - 1 } : null);
+    const kind = t && RECRUITER[t.folk.npc.id];
+    const hire = kind ? { kind, cost: COMPANIONS[kind].cost, can: this.gold >= COMPANIONS[kind].cost && this.band.length < BAND_SIZE } : undefined;
+    this.hooks.onSay?.(t ? { name: t.folk.npc.name, text: t.lines[t.page]!, more: t.page < t.lines.length - 1, ...(hire && { hire }) } : null);
   }
 
   /** On to the next page; past the last, the talk is heard and done. */
@@ -1881,7 +2072,7 @@ export class AtlasScene extends Phaser.Scene {
       this.mind();
       this.gather();
       this.whereabouts(time);
-      for (const b of [this.hero, ...this.foes]) this.drawBar(b);
+      for (const b of [this.hero, ...this.foes, ...this.band]) this.drawBar(b);
     }
     for (const { text, px, tier } of this.names) {
       text.setVisible(tier === this.view);

@@ -4,7 +4,7 @@ import { AREAS, type AreaId } from "@greyfall/engine";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import type { AtlasApi, AtlasHooks, Departure, Say } from "../../game/AtlasScene";
+import type { AtlasApi, AtlasHooks, BandView, Departure, Say } from "../../game/AtlasScene";
 import { Clouds } from "../../game/Clouds";
 import { GameCanvas } from "../../game/GameCanvas";
 
@@ -68,6 +68,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const [near, setNear] = useState<"Talk" | "Rest" | null>(null);
   const [flasks, setFlasks] = useState<number | null>(null);
   const [gold, setGold] = useState<number | null>(null);
+  const [band, setBand] = useState<BandView | null>(null);
   // Died: the words, then the dark, then waking at the bonfire in this area.
   const [died, setDied] = useState<AreaId | null>(null);
   const api = useRef<AtlasApi | null>(null);
@@ -114,6 +115,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
     onNear: setNear,
     onFlasks: setFlasks,
     onGold: setGold,
+    onBand: setBand,
     onRest: (to) => !now.current.travelling && wake(to),
     onDeath: (to) => {
       if (now.current.travelling) return;
@@ -198,6 +200,19 @@ export function AreaView({ area: first }: { area: AreaId }) {
             }}
           />
         )}
+        {say?.hire && (
+          <button
+            className="btn small hire"
+            type="button"
+            disabled={!say.hire.can}
+            onClick={(e) => {
+              api.current?.hire();
+              e.currentTarget.blur();
+            }}
+          >
+            Hire {say.hire.kind === "lancer" ? "a Lancer" : "an Archer"}, {say.hire.cost} gold
+          </button>
+        )}
         {say ? (
           // A talk, after the Souls games: the name, then one page at a time across the foot of the screen.
           <button key={say.text} type="button" className="talk" onClick={() => api.current?.next()} aria-live="polite">
@@ -261,6 +276,21 @@ export function AreaView({ area: first }: { area: AreaId }) {
               <span>
                 Gold <b className="purseGold">{gold ?? 0}</b>
               </span>
+            </div>
+          )}
+          {band && band.members.length > 0 && (
+            <div className="bandPanel">
+              <div className="bandOrder">
+                Band: {band.order === "follow" ? "Follow (1)" : band.order === "attack" ? "Attack (2)" : "Hold (3)"}
+              </div>
+              {band.members.map((m, i) => (
+                <div key={i} className={`bandMember${m.hp === 0 ? " down" : ""}`}>
+                  <span>{m.kind === "lancer" ? "Lancer" : "Archer"}</span>
+                  <span className="bandBar">
+                    <span style={{ width: `${(100 * m.hp) / m.max}%` }} />
+                  </span>
+                </div>
+              ))}
             </div>
           )}
           <header className="atlasTop">

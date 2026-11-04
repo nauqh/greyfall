@@ -184,3 +184,4 @@ export {
 export { MAPPED_AREAS, areaMap, districtOf, groundColours, type AreaExit, type AreaMap, type District } from "./areas.ts";
 export { FOES, GOLD_STONE, HERO, clearLine, comboStep, drink, foeIntent, swingWait, routeToward, smoothPath, struck, throughGuard, type FoeStats, type Intent } from "./hero.ts";
 export { NPCS, TALK_RANGE, nextTalk, talkKey, whereabouts, type Npc, type Station, type Talk, type Whereabouts, type WorldFlag } from "./npcs.ts";
+export { BAND_SIZE, COMPANIONS, companionPlan, foeTarget, hire, type BandOrder, type CompanionKind, type CompanionStats, type Plan as BandPlan } from "./band.ts";

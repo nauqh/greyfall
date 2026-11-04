@@ -554,8 +554,9 @@ back; it is remembered on the browser and carries across crossings.
 
 ## Not done yet
 
-- The hero walks, fights, rests at bonfires and drinks flasks, but there
-  is no gold, dodge, warband or keys yet, and gates and lifts all open.
+- The hero walks, fights, rests at bonfires, drinks flasks, picks up
+  gold and leads a band hired in the Harbour, but there is no dodge or
+  keys yet, and gates and lifts all open.
 - No boss can be killed and no monk freed yet, so the questline's stages
   past the Troll Key, the Horned Key, the Warlord and the Drowned Chapel
   wait on them.
