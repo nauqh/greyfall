@@ -20,6 +20,7 @@ import {
   GOLD_STONE,
   HERO,
   NPCS,
+  canReach,
   TALK_RANGE,
   canStep,
   comboStep,
@@ -223,20 +224,20 @@ const BEAST: Record<string, Beast> = {
   troll: { idle: `${EP}Troll/Troll_Idle.png`, move: `${EP}Troll/Troll_Walk.png`, frame: 384, anchor: 296 / 384, scale: 0.8 },
   skull: { idle: `${EP}Skull/Skull_Idle.png`, move: `${EP}Skull/Skull_Run.png`, attack: `${EP}Skull/Skull_Attack.png`, frame: 192, anchor: 128 / 192 },
   skullGuard: { idle: `${EP}Extra/Skull Guard/Skull_Guard.png`, frame: 192, anchor: 128 / 192 },
-  shaman: { idle: `${EP}Hex Shaman/Hex Shaman_Idle.png`, move: `${EP}Hex Shaman/Hex Shaman_Run.png`, frame: 192, anchor: 136 / 192 },
+  shaman: { idle: `${EP}Hex Shaman/Hex Shaman_Idle.png`, move: `${EP}Hex Shaman/Hex Shaman_Run.png`, attack: `${EP}Hex Shaman/Hex Shaman_Attack.png`, frame: 192, anchor: 136 / 192 },
   spider: { idle: `${EP}Spider/Spider_Idle.png`, move: `${EP}Spider/Spider_Run.png`, attack: `${EP}Spider/Spider_Attack.png`, frame: 192, anchor: 0.68 },
   snake: { idle: `${EP}Snake/Snake_Idle.png`, move: `${EP}Snake/Snake_Run.png`, attack: `${EP}Snake/Snake_Attack.png`, frame: 192, anchor: 0.68 },
   lizard: { idle: `${EP}Lizard/Lizard_Idle.png`, move: `${EP}Lizard/Lizard_Run.png`, attack: `${EP}Lizard/Lizard_Attack.png`, frame: 192, anchor: 0.68 },
-  bat: { idle: `${EP}Giant Bat/Giant Bat_Idle.png`, move: `${EP}Giant Bat/Giant Bat_Move.png`, frame: 192, anchor: 0.7, fly: true },
-  bee: { idle: `${EP}Bumblebee/Bumblebee_Idle.png`, move: `${EP}Bumblebee/Bumblebee_Move.png`, frame: 192, anchor: 0.7, fly: true, scale: 0.7 },
-  imp: { idle: `${EP}Imp/Imp_Idle.png`, move: `${EP}Imp/Imp_Move.png`, frame: 192, anchor: 0.7, fly: true },
+  bat: { idle: `${EP}Giant Bat/Giant Bat_Idle.png`, move: `${EP}Giant Bat/Giant Bat_Move.png`, attack: `${EP}Giant Bat/Giant Bat_Attack.png`, frame: 192, anchor: 0.7, fly: true },
+  bee: { idle: `${EP}Bumblebee/Bumblebee_Idle.png`, move: `${EP}Bumblebee/Bumblebee_Move.png`, attack: `${EP}Bumblebee/Bumblebee_Attack.png`, frame: 192, anchor: 0.7, fly: true, scale: 0.7 },
+  imp: { idle: `${EP}Imp/Imp_Idle.png`, move: `${EP}Imp/Imp_Move.png`, attack: `${EP}Imp/Imp_Attack_Loop.png`, frame: 192, anchor: 0.7, fly: true },
   bear: { idle: `${EP}Bear/Bear_Idle.png`, move: `${EP}Bear/Bear_Run.png`, frame: 256, anchor: 0.68 },
   panda: { idle: `${EP}Panda/Panda_Idle.png`, move: `${EP}Panda/Panda_Run.png`, frame: 256, anchor: 0.68 },
   pandaGuard: { idle: `${EP}Extra/Panda Guard/Panda_Guard.png`, frame: 256, anchor: 0.68, scale: 1.2 },
   minotaurGuard: { idle: `${EP}Extra/Minotaur Guard/Minotaur_Guard.png`, frame: 320, anchor: 213 / 320, scale: 1.1 },
   turtleGuard: { idle: `${EP}Extra/Turtle Guard/Turtle_Guard_In.png`, frame: 320, anchor: 0.66 },
   gnome: { idle: `${EP}Gnome/Gnome_Idle.png`, move: `${EP}Gnome/Gnome_Run.png`, frame: 192, anchor: 0.68 },
-  slingshot: { idle: `${EP}Slingshot Gnome/Slingshot Gnome_Idle.png`, move: `${EP}Slingshot Gnome/Slingshot Gnome_Run.png`, frame: 192, anchor: 0.68 },
+  slingshot: { idle: `${EP}Slingshot Gnome/Slingshot Gnome_Idle.png`, move: `${EP}Slingshot Gnome/Slingshot Gnome_Run.png`, attack: `${EP}Slingshot Gnome/Slingshot Gnome_Shoot.png`, frame: 192, anchor: 0.68 },
   turtle: { idle: `${EP}Turtle/Turtle_Idle.png`, move: `${EP}Turtle/Turtle_Walk.png`, frame: 320, anchor: 0.66, scale: 0.8 },
   pig: { idle: `${EP}Extra/Pig/Pig_Idle.png`, move: `${EP}Extra/Pig/Pig_Run.png`, frame: 192, anchor: 0.68, scale: 0.8 },
   harpoonShark: { idle: `${EP}Harpoon Shark/Harpoon Shark_Idle.png`, move: `${EP}Harpoon Shark/Harpoon Shark_Run.png`, frame: 192, anchor: 0.62, swim: true },
@@ -271,6 +272,16 @@ const BIG_TREE: Sheet[] = [
   { file: "Terrain/Resources/Wood/Trees/Tree1.png", frame: 192, frameH: 256, anchor: 0.87, scale: 0.85 },
   { file: "Terrain/Resources/Wood/Trees/Tree2.png", frame: 192, frameH: 256, anchor: 0.87, scale: 0.85 },
 ];
+
+/** What a thrower or a shooter lets fly: a spinning bone, an acorn, a hex bolt; a companion archer's arrow. */
+const MISSILE: Record<string, { key: string; file: string; frame?: number }> = {
+  gnoll: { key: "missile_gnoll", file: `${EP}Gnoll/Gnoll_Bone.png`, frame: 64 },
+  slingshot: { key: "missile_slingshot", file: `${EP}Slingshot Gnome/Acorn_Projectile.png`, frame: 64 },
+  shaman: { key: "missile_shaman", file: `${EP}Hex Shaman/Hex Shaman_Projectile.png`, frame: 128 },
+  archer: { key: "arrow", file: "Units/Blue Units/Archer/Arrow.png" },
+};
+/** How far above its feet a flyer hangs, as a share of its frame. */
+const HOVER = 0.28;
 
 const FIRE: Sheet = { file: "Effects/Fire/Fire.png", frame: 128, anchor: 0.8 };
 const FENCE = "Enemy Pack/Extra/Wooden Fence/Wooden Fence_64x64 tile.png";
@@ -322,6 +333,7 @@ interface Body {
   dead: boolean;
 }
 interface Foe extends Body {
+  kind: string;
   home: Cell;
   stats: FoeStats;
 }
@@ -560,7 +572,11 @@ export class AtlasScene extends Phaser.Scene {
         if (l.move) sheet(l.move.key, { file: l.move.file, frame: l.frame, anchor: 0 });
         sheet(COMPANION_ATTACK[kind].key, { file: COMPANION_ATTACK[kind].file, frame: l.frame, anchor: 0 });
       }
-      if (!this.textures.exists("arrow")) this.load.image("arrow", packUrl("Units/Blue Units/Archer/Arrow.png"));
+      for (const m of Object.values(MISSILE)) {
+        if (this.textures.exists(m.key)) continue;
+        if (m.frame) this.load.spritesheet(m.key, packUrl(m.file), { frameWidth: m.frame, frameHeight: m.frame });
+        else this.load.image(m.key, packUrl(m.file));
+      }
       for (const [n] of this.folkHere()) {
         const l = this.look(npcLook(n));
         sheet(l.idle.key, { file: l.idle.file, frame: l.frame, anchor: 0 });
@@ -898,11 +914,16 @@ export class AtlasScene extends Phaser.Scene {
     const look = this.look(d);
     const stats = FOES[d.kind]!;
     const y = (d.row + 0.75) * CELL;
-    const s = this.add.sprite((d.col + 0.5) * CELL, y, look.idle.key).setOrigin(0.5, look.anchor).setScale(look.scale).setDepth(standing(y)).setFlipX(Math.random() < 0.5);
+    const s = this.add
+      .sprite((d.col + 0.5) * CELL, y, look.idle.key)
+      .setOrigin(0.5, look.anchor + (stats.flies ? HOVER : 0))
+      .setScale(look.scale)
+      .setDepth(standing(y))
+      .setFlipX(Math.random() < 0.5);
     this.play(s, look.idle.key);
     const at = { col: d.col, row: d.row };
     const attack = BEAST[d.kind]?.attack ? `beast_${d.kind}_attack` : undefined;
-    this.foes.push({ ...this.body(s, at, stats.hp, stats.speed, { idle: look.idle.key, move: look.move?.key, attack }), home: at, stats });
+    this.foes.push({ ...this.body(s, at, stats.hp, stats.speed, { idle: look.idle.key, move: look.move?.key, attack }), kind: d.kind, home: at, stats });
   }
 
   /** Plays a sheet's loop, unless it is already playing: a body stepping cell to cell keeps its stride. */
@@ -917,6 +938,7 @@ export class AtlasScene extends Phaser.Scene {
     const hero = this.hero!;
     if (hero.dead || this.gone) return;
     const foe = this.foes.find((f) => !f.dead && Math.abs(f.s.x - w.x) < 0.7 * CELL && w.y < f.s.y + 0.3 * CELL && w.y > f.s.y - f.lift);
+    if (foe && !canReach(1, foe.stats)) return this.float(foe.s.x, foe.s.y - foe.lift - 20, "Out of reach", "#fdfaf0");
     if (foe) {
       Object.assign(hero, { target: foe, then: null, planned: -1e9 });
       return;
@@ -1013,21 +1035,23 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** An archer's shot: the draw, then the arrow across, landing if the mark still stands. */
-  private shoot(c: Companion, foe: Foe, time: number): void {
-    const stats = COMPANIONS[c.kind];
-    this.swing(c, foe, stats.every, time);
-    const [x, y] = [c.s.x, c.s.y - 40];
-    const [tx, ty] = [foe.s.x, foe.s.y - 30];
-    const arrow = this.add.image(x, y, "arrow").setRotation(Math.atan2(ty - y, tx - x)).setDepth(DEPTH.fx);
+  private shoot(from: Body, to: Body, attack: number, every: number, time: number, missile: (typeof MISSILE)[string]): void {
+    this.swing(from, to, every, time);
+    const [x, y] = [from.s.x, from.s.y - 40];
+    const [tx, ty] = [to.s.x, to.s.y - to.lift * 0.5];
+    // An arrow flies point first; a bone, an acorn or a bolt tumbles.
+    const m = this.add.sprite(x, y, missile.key).setDepth(DEPTH.fx);
+    if (missile.frame) this.loop(m, missile.key);
+    else m.setRotation(Math.atan2(ty - y, tx - x));
     this.tweens.add({
-      targets: arrow,
+      targets: m,
       x: tx,
       y: ty,
       delay: 250,
       duration: Math.max(120, Math.hypot(tx - x, ty - y) / 0.9),
       onComplete: () => {
-        arrow.destroy();
-        if (!foe.dead) this.hurt(c, foe, stats.attack);
+        m.destroy();
+        if (!to.dead) this.hurt(from, to, attack);
       },
     });
   }
@@ -1179,12 +1203,14 @@ export class AtlasScene extends Phaser.Scene {
         continue;
       }
       const stats = COMPANIONS[c.kind];
-      const plan = companionPlan(c.at, c.kind, this.bandOrder, hero.at, target, live.map((f) => f.at), c.post);
+      // A lancer cannot reach what flies: it fights only what walks, and leaves the rest to the bows.
+      const mine = live.filter((f) => canReach(stats.range, f.stats));
+      const plan = companionPlan(c.at, c.kind, this.bandOrder, hero.at, target >= 0 ? mine.indexOf(live[target]!) : -1, mine.map((f) => f.at), c.post);
       if (plan.do === "strike") {
-        const foe = live[plan.foe]!;
+        const foe = mine[plan.foe]!;
         c.way = [];
         if (time >= c.next) {
-          if (c.kind === "archer") this.shoot(c, foe, time);
+          if (c.kind === "archer") this.shoot(c, foe, stats.attack, stats.every, time, MISSILE.archer!);
           else this.strike(c, foe, stats.attack, stats.every, time);
         } else {
           this.play(c.s, c.idle);
@@ -1200,7 +1226,7 @@ export class AtlasScene extends Phaser.Scene {
           (cell.col === hero.at.col && cell.row === hero.at.row) || this.band.some((o) => o !== c && !o.dead && o.at.col === cell.col && o.at.row === cell.row);
         const goal =
           plan.do === "close"
-            ? (cell: Cell) => tileDistance(cell, live[plan.foe]!.at) <= stats.range
+            ? (cell: Cell) => tileDistance(cell, mine[plan.foe]!.at) <= stats.range
             : this.bandOrder === "hold"
               ? (cell: Cell) => cell.col === plan.to.col && cell.row === plan.to.row
               : (cell: Cell) => tileDistance(cell, plan.to) <= 1;
@@ -1350,7 +1376,7 @@ export class AtlasScene extends Phaser.Scene {
         hero.planned = time;
         this.order(new Phaser.Math.Vector2(this.hold.x, this.hold.y), { col: Math.floor(this.hold.x / CELL), row: Math.floor(this.hold.y / CELL) }, true);
       }
-      const t = hero.target?.dead ? null : hero.target;
+      const t = hero.target?.dead || (hero.target && !canReach(1, hero.target.stats)) ? null : hero.target;
       if (steering) {
         // Walked by the keys this frame.
       } else if (time < hero.busy) {
@@ -1383,18 +1409,30 @@ export class AtlasScene extends Phaser.Scene {
       const m = foeTarget(f.at, f.stats.aggro, marks.map((b) => ({ at: b.at, draws: (b as Companion).kind === "lancer" })));
       const mark = marks[m] ?? hero;
       const intent = foeIntent(f.at, f.home, m >= 0 ? mark.at : null, f.stats);
-      if (intent === "attack" && Math.hypot(mark.s.x - f.s.x, mark.s.y - f.s.y) < 1.5 * CELL) {
+      const missile = MISSILE[f.kind];
+      if (intent === "attack" && (missile || Math.hypot(mark.s.x - f.s.x, mark.s.y - f.s.y) < 1.5 * CELL)) {
         f.way = [];
-        if (time >= f.next) this.strike(f, mark, f.stats.attack, f.stats.every, time);
-        else this.play(f.s, f.idle);
+        if (time < f.next) {
+          this.play(f.s, f.idle);
+          if (Math.abs(mark.s.x - f.s.x) > 4) f.s.setFlipX(mark.s.x < f.s.x);
+        } else if (missile) this.shoot(f, mark, f.stats.attack, f.stats.every, time, missile);
+        else this.strike(f, mark, f.stats.attack, f.stats.every, time);
         continue;
       }
-      // Beside the hero by tile but stopped short of its tile's middle, mid-stride: it steps in rather than stand out of reach.
-      if (intent === "attack" && f.way.length === 0) f.way = [{ x: (f.at.col + 0.5) * CELL, y: (f.at.row + 0.75) * CELL }];
-      else if (intent !== "idle" && time - f.planned > 400) {
+      if (f.stats.flies) {
+        // On the wing it goes straight over anything: at its mark, or home.
+        if (intent !== "idle" && time - f.planned > 300) {
+          f.planned = time;
+          const to = intent === "return" ? f.home : mark.at;
+          f.way = [{ x: (to.col + 0.5) * CELL, y: (to.row + 0.75) * CELL }];
+        }
+      } else if (intent === "attack" && f.way.length === 0) {
+        // Beside the hero by tile but stopped short of its tile's middle, mid-stride: it steps in rather than stand out of reach.
+        f.way = [{ x: (f.at.col + 0.5) * CELL, y: (f.at.row + 0.75) * CELL }];
+      } else if (intent !== "idle" && time - f.planned > 400) {
         f.planned = time;
         const taken = (c: Cell) => this.foes.some((o) => o !== f && !o.dead && o.at.col === c.col && o.at.row === c.row);
-        const goal = intent === "return" ? (c: Cell) => c.col === f.home.col && c.row === f.home.row : (c: Cell) => tileDistance(c, mark.at) <= 1;
+        const goal = intent === "return" ? (c: Cell) => c.col === f.home.col && c.row === f.home.row : (c: Cell) => tileDistance(c, mark.at) <= (f.stats.range ?? 1);
         const way = findRoute(f.at, goal, taken);
         if (way) this.walk(f, way);
       }
@@ -2059,7 +2097,7 @@ export class AtlasScene extends Phaser.Scene {
     if (this.guarding) return;
     if (time < hero.busy || time < hero.next) return void (this.queued = true);
     this.queued = false;
-    const reach = this.foes.filter((f) => !f.dead && tileDistance(f.at, hero.at) <= 1 && Math.hypot(f.s.x - hero.s.x, f.s.y - hero.s.y) < 1.5 * CELL);
+    const reach = this.foes.filter((f) => !f.dead && canReach(1, f.stats) && tileDistance(f.at, hero.at) <= 1 && Math.hypot(f.s.x - hero.s.x, f.s.y - hero.s.y) < 1.5 * CELL);
     const foe = reach.find((f) => f === hero.target) ?? reach.find((f) => this.facing(hero, f)) ?? reach[0];
     hero.then = null;
     this.heroSwing(foe ?? null, time);

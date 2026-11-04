@@ -22,6 +22,10 @@ export interface FoeStats {
   speed: number;
   /** The gold it drops where it falls. */
   gold: number;
+  /** Tiles it strikes from, throwing or shooting; beside it (1) when unset. */
+  range?: number;
+  /** On the wing: a blade cannot reach it, only a bow. */
+  flies?: boolean;
 }
 
 /** What a gold stone on the map is worth, picked up once. */
@@ -34,21 +38,33 @@ export const FOES: Partial<Record<string, FoeStats>> = {
   spear: { hp: 40, attack: 8, every: 1.4, aggro: 6, leash: 10, speed: 2.2, gold: 9 },
   skull: { hp: 25, attack: 5, every: 1.0, aggro: 5, leash: 9, speed: 1.9, gold: 7 },
   spider: { hp: 22, attack: 5, every: 0.9, aggro: 5, leash: 8, speed: 3, gold: 5 },
-  gnoll: { hp: 45, attack: 9, every: 1.5, aggro: 6, leash: 10, speed: 2.2, gold: 12 },
   thief: { hp: 28, attack: 7, every: 1.0, aggro: 5, leash: 8, speed: 3, gold: 15 },
   lizard: { hp: 35, attack: 7, every: 1.2, aggro: 5, leash: 9, speed: 2.2, gold: 8 },
   snake: { hp: 18, attack: 4, every: 1.0, aggro: 4, leash: 7, speed: 2.2, gold: 4 },
+  // Throwers and shooters: they stop at range and let fly.
+  gnoll: { hp: 45, attack: 9, every: 1.6, aggro: 7, leash: 10, speed: 2.2, gold: 12, range: 4 },
+  slingshot: { hp: 18, attack: 5, every: 1.6, aggro: 7, leash: 10, speed: 2.2, gold: 7, range: 5 },
+  shaman: { hp: 35, attack: 9, every: 2.0, aggro: 7, leash: 10, speed: 1.9, gold: 14, range: 5 },
+  // On the wing, over anything, quick: only an archer brings them down.
+  bat: { hp: 16, attack: 4, every: 1.1, aggro: 6, leash: 9, speed: 3, gold: 5, flies: true },
+  imp: { hp: 22, attack: 6, every: 1.2, aggro: 6, leash: 9, speed: 3, gold: 9, flies: true },
+  bee: { hp: 8, attack: 3, every: 1.0, aggro: 4, leash: 6, speed: 3.2, gold: 2, flies: true },
 };
+
+/** Whether a striker reaching `range` tiles can hit a monster: one on the wing only from afar, with a bow. */
+export function canReach(range: number, foe: FoeStats): boolean {
+  return !foe.flies || range > 1;
+}
 
 export type Intent = "attack" | "chase" | "return" | "idle";
 
 /**
- * What a monster does now. It strikes a hero beside it, chases one it has noticed while within its leash, and
- * otherwise walks back to its post. A dead hero, or none, is ignored.
+ * What a monster does now. It strikes a hero within its reach (beside it, or as far as it throws), chases one it has
+ * noticed while within its leash, and otherwise walks back to its post. A dead hero, or none, is ignored.
  */
 export function foeIntent(foe: Cell, home: Cell, hero: Cell | null, stats: FoeStats): Intent {
   const leashed = tileDistance(foe, home) <= stats.leash;
-  if (hero && leashed && tileDistance(foe, hero) <= 1) return "attack";
+  if (hero && leashed && tileDistance(foe, hero) <= (stats.range ?? 1)) return "attack";
   if (hero && leashed && tileDistance(foe, hero) <= stats.aggro && tileDistance(hero, home) <= stats.leash) return "chase";
   return foe.col === home.col && foe.row === home.row ? "idle" : "return";
 }

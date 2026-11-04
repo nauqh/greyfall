@@ -97,6 +97,11 @@ All from the Tiny Swords enemy pack.
 | The Greyfall | Black soldiers, gnolls | Minotaur champion | The Grey Warlord |
 | Gilded Reach | Yellow guard | Lancers | The Sun Sentinel |
 
+Gnolls, slingshot gnomes and hex shamans throw from four or five tiles
+off rather than close in. Bats, imps and bees fly: no blade reaches them,
+not the captain's nor a Lancer's, so only an Archer brings them down; a
+captain alone can guard and walk away.
+
 Camps sit in the maze rooms. An enemy chases up to 10 tiles from its post,
 then walks back; the engine already has a guard leash.
 

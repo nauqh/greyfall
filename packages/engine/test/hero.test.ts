@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FOES, GOLD_STONE, HERO, clearLine, comboStep, drink, findPath, swingWait, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
+import { FOES, GOLD_STONE, HERO, clearLine, comboStep, drink, findPath, canReach, swingWait, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
 
 const goblin = FOES.torch!;
 const home = { col: 10, row: 10 };
@@ -62,6 +62,21 @@ describe("a blow", () => {
       expect(throughGuard(foe!.attack)).toBeLessThan(foe!.attack);
       expect(throughGuard(foe!.attack)).toBeGreaterThanOrEqual(1);
     }
+  });
+});
+
+describe("a thrower and a flyer", () => {
+  it("throws from its range instead of walking up", () => {
+    const gnoll = FOES.gnoll!;
+    expect(foeIntent(home, home, { col: 10 + gnoll.range!, row: 10 }, gnoll)).toBe("attack");
+    expect(foeIntent(home, home, { col: 10 + gnoll.range! + 1, row: 10 }, gnoll)).toBe("chase");
+  });
+
+  it("is out of a blade's reach on the wing, but not a bow's", () => {
+    expect(canReach(1, FOES.bat!)).toBe(false);
+    expect(canReach(5, FOES.bat!)).toBe(true);
+    expect(canReach(1, FOES.torch!)).toBe(true);
+    for (const foe of Object.values(FOES)) if (foe!.range) expect(foe!.aggro).toBeGreaterThanOrEqual(foe!.range);
   });
 });
 
