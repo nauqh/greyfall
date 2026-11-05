@@ -125,7 +125,7 @@ export interface AtlasHooks {
   /** The menu of someone who hires out, or null when it closes. */
   onMenu?: (menu: MenuView | null) => void;
   /** What E would do where the captain stands, other than swing: talk, or rest at a bonfire. */
-  onNear?: (action: "Talk" | "Rest" | null) => void;
+  onNear?: (action: string | null) => void;
   /** The flasks left. */
   onFlasks?: (n: number) => void;
   /** The gold carried. */
@@ -434,6 +434,8 @@ const UNDER: Partial<Record<AreaId, { rock: number; ambient: number; glow: numbe
   hollow: { rock: 0x16202e, ambient: 0.42, glow: 0xb4e0ff, gold: 8 },
 };
 
+type Exit = AreaMap["exits"][number];
+
 interface Tracked {
   s: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image;
   b: Phaser.Geom.Rectangle;
@@ -472,7 +474,7 @@ export class AtlasScene extends Phaser.Scene {
   private talk: { folk: Folk; lines: readonly string[]; key: string; sets?: WorldFlag; page: number } | null = null;
   /** The flags as the area was entered: who stands where, and what they say, holds until the captain leaves and comes back. */
   private seen = new Set<WorldFlag>();
-  private nearName: "Talk" | "Rest" | null = null;
+  private nearName: string | null = null;
   /** Open with someone who hires out: Talk, Hire, Leave. */
   private menu: { folk: Folk; pick: number } | null = null;
   private flasks: number = HERO.flasks;
@@ -741,27 +743,62 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** Leaves through an exit: works out how the crossing feels and where it stands on screen, and asks the page. */
-  private depart(e: AreaMap["exits"][number]): void {
-    const local = this.local!;
-    const here = AREAS.find((a) => a.id === local.area)!.tier;
-    const there = AREAS.find((a) => a.id === e.to)!.tier;
+  private depart(e: Exit): void {
     const cam = this.active;
     const v = cam.worldView;
     const [wx, wy] = [(e.at.col + 0.5) * CELL, (e.at.row + 0.5) * CELL];
     const x = Phaser.Math.Clamp((wx - v.x) / v.width, 0, 1);
     const y = Phaser.Math.Clamp((wy - v.y) / v.height, 0, 1);
-    let kind: Crossing;
-    let dir: Departure["dir"];
-    if (here !== there) {
-      kind = e.kind === "drop" ? "fall" : "ride";
-      dir = TIERS.indexOf(there) < TIERS.indexOf(here) ? "up" : "down";
-    } else {
-      kind = here === "below" ? "stair" : "walk";
-      // Out across the edge the exit stands on.
-      const [dx, dy] = [e.at.col / STRAT_COLS - 0.5, e.at.row / STRAT_ROWS - 0.5];
-      dir = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? "left" : "right") : dy < 0 ? "up" : "down";
+    this.hooks.onExit?.({ to: e.to, name: e.name, ...this.crossing(e), x, y });
+  }
+
+  /** How a crossing feels: a fall or a ride between tiers, else a walk (a stair underground) out across its edge. */
+  private crossing(e: Exit): { kind: Crossing; dir: Departure["dir"] } {
+    const here = AREAS.find((a) => a.id === this.local!.area)!.tier;
+    const there = AREAS.find((a) => a.id === e.to)!.tier;
+    if (here !== there) return { kind: e.kind === "drop" ? "fall" : "ride", dir: TIERS.indexOf(there) < TIERS.indexOf(here) ? "up" : "down" };
+    const [dx, dy] = [e.at.col / STRAT_COLS - 0.5, e.at.row / STRAT_ROWS - 0.5];
+    return { kind: here === "below" ? "stair" : "walk", dir: Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? "left" : "right") : dy < 0 ? "up" : "down" };
+  }
+
+  /** What E at a way out is called. */
+  private exitWord(e: Exit): string {
+    const { kind, dir } = this.crossing(e);
+    if (kind === "fall") return "Drop";
+    if (kind === "ride") return `Ride the lift ${dir}`;
+    return "Traverse the white light";
+  }
+
+  /** E at a way out: into the white light, slowly, and through; a lift or a drop goes at once (a drop still warns). */
+  private traverse(e: Exit): void {
+    const { kind } = this.crossing(e);
+    if (kind !== "walk" && kind !== "stair") return this.depart(e);
+    const hero = this.hero!;
+    this.gone = true;
+    Object.assign(hero, { way: [], target: null, then: null });
+    const [x, y] = [(e.at.col + 0.5) * CELL, (e.at.row + 0.75) * CELL];
+    if (Math.abs(x - hero.s.x) > 2) hero.s.setFlipX(x < hero.s.x);
+    this.play(hero.s, hero.move ?? hero.idle);
+    this.tweens.add({ targets: hero.s, x, y, alpha: 0.1, duration: 1100, ease: "Sine.easeIn", onComplete: () => this.depart(e) });
+  }
+
+  /** A wall of white light across a way out, after the Souls games: the edge of what is known, slowly breathing. */
+  private fogWall(e: Exit): void {
+    const { dir } = this.crossing(e);
+    const across = dir === "left" || dir === "right";
+    const [x, y] = [(e.at.col + 0.5) * CELL, (e.at.row + 0.5) * CELL];
+    // Tall wisps along the edge, overlapping, each drifting and breathing on its own.
+    for (let i = -3; i <= 3; i++) {
+      const [fx, fy] = across ? [x, y + i * 0.4 * CELL] : [x + i * 0.4 * CELL, y];
+      const wisp = this.add
+        .image(fx, fy, "fog")
+        .setAngle(across ? 0 : 90)
+        .setAlpha(0.55)
+        .setScale(0.9 + Math.random() * 0.25, 0.8 + Math.random() * 0.25)
+        .setDepth(DEPTH.clouds - 3);
+      const drift = across ? { x: fx + (Math.random() - 0.5) * 18 } : { y: fy + (Math.random() - 0.5) * 18 };
+      this.tweens.add({ targets: wisp, alpha: 0.9, ...drift, duration: 1500 + Math.random() * 1000, yoyo: true, repeat: -1, ease: "Sine.easeInOut", delay: Math.random() * 900 });
     }
-    this.hooks.onExit?.({ to: e.to, name: e.name, kind, dir, x, y });
   }
 
   private zoomFor(rows: number): number {
@@ -968,7 +1005,8 @@ export class AtlasScene extends Phaser.Scene {
     const exit = this.local!.exits.find((e) => tileDistance(e.at, cell) <= 1 || e.to === sign?.to);
     const goal = exit?.at ?? cell;
     this.walk(hero, routeToward(hero.at, goal));
-    Object.assign(hero, { target: null, then: exit ? () => this.depart(exit) : null });
+    // Arriving at a way out does not take it: E does, at the prompt.
+    Object.assign(hero, { target: null, then: null });
     if (!quiet) this.mark(hero.way.at(-1) ?? { x: hero.s.x, y: hero.s.y });
     if (hero.way.length === 0) hero.then?.();
   }
@@ -1103,11 +1141,15 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** What E does here besides swing: talk to someone right beside, else rest at a bonfire beside, else talk to someone near. */
-  private eTarget(): Folk | Cell | undefined {
+  private eTarget(): { folk: Folk } | { fire: Cell } | { exit: Exit } | undefined {
     const at = this.hero!.at;
     const folk = this.folk.filter((f) => f.near).sort((a, b) => tileDistance(a.at, at) - tileDistance(b.at, at))[0];
-    if (folk && tileDistance(folk.at, at) <= 1) return folk;
-    return this.fireNear() ?? folk;
+    if (folk && tileDistance(folk.at, at) <= 1) return { folk };
+    const fire = this.fireNear();
+    if (fire) return { fire };
+    const exit = this.local?.exits.find((e) => tileDistance(e.at, at) <= 1);
+    if (exit) return { exit };
+    return folk && { folk };
   }
 
   /** Gold on the ground at a cell: a nugget that pops out, or the glowing heap left at a death. */
@@ -1455,7 +1497,7 @@ export class AtlasScene extends Phaser.Scene {
   /** A health bar over a body: always over the hero, over a monster only once it is hurt. */
   private drawBar(b: Body): void {
     b.bar.clear();
-    if (b.dead || (b !== this.hero && b.hp === b.max)) return;
+    if (b.dead || (b !== this.hero && b.hp === b.max) || (b === this.hero && this.gone)) return;
     const ally = this.band.includes(b as Companion);
     const [w, h] = [56, 7];
     const [x, y] = [b.s.x - w / 2, b.s.y - b.lift - 4];
@@ -1481,6 +1523,19 @@ export class AtlasScene extends Phaser.Scene {
   /** A soft round light, and a shaft of it for lifts going up. */
   private glowTextures(): void {
     // Made once per game: a scene restarted by a crossing finds them already there.
+    if (!this.textures.exists("fog")) {
+      // A wisp of the white light at a way out: tall, soft, white all through.
+      const f = this.textures.createCanvas("fog", 128, 256)!;
+      f.context.translate(64, 128);
+      f.context.scale(1, 2);
+      const w = f.context.createRadialGradient(0, 0, 0, 0, 0, 64);
+      w.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+      w.addColorStop(0.5, "rgba(240, 244, 255, 0.55)");
+      w.addColorStop(1, "rgba(235, 240, 255, 0)");
+      f.context.fillStyle = w;
+      f.context.fillRect(-64, -64, 128, 128);
+      f.refresh();
+    }
     if (this.textures.exists("glow")) return;
     const t = this.textures.createCanvas("glow", 256, 256)!;
     const g = t.context.createRadialGradient(128, 128, 0, 128, 128, 128);
@@ -1817,7 +1872,7 @@ export class AtlasScene extends Phaser.Scene {
    * An area map's exit: a lift's shaft of light or a well's dark mouth when it
    * goes up or down a tier, else a sign at the map's edge naming where the road goes.
    */
-  private exitMark(e: AreaMap["exits"][number]): void {
+  private exitMark(e: Exit): void {
     const x = (e.at.col + 0.5) * CELL;
     const y = (e.at.row + 0.8) * CELL;
     const here = this.local!.id;
@@ -1852,6 +1907,7 @@ export class AtlasScene extends Phaser.Scene {
         this.fence(e.at.col - 1, e.at.row - 1, 3, 1);
       }
     }
+    if (!up && !down && e.kind !== "drop") this.fogWall(e);
     const tone = e.kind in GATE_TONE ? GATE_TONE[e.kind as GateKind] : LIFT_TONE[e.kind as LiftKind];
     const word = up ? "up to " : down ? "down to " : "to ";
     const t = this.add
@@ -2097,8 +2153,9 @@ export class AtlasScene extends Phaser.Scene {
     if (this.talk || t) {
       if (repeat) return;
       if (this.talk) return this.nextPage();
-      if (!("npc" in t!)) return this.rest(t!);
-      return RECRUITER[t.npc.id] ? this.openMenu(t) : this.talkTo(t);
+      if ("fire" in t!) return this.rest(t.fire);
+      if ("exit" in t!) return this.traverse(t.exit);
+      return RECRUITER[t!.folk.npc.id] ? this.openMenu(t!.folk) : this.talkTo(t!.folk);
     }
     this.attack(this.time.now);
   }
@@ -2193,7 +2250,7 @@ export class AtlasScene extends Phaser.Scene {
       if (this.menu?.folk === f && d > TALK_RANGE) this.closeMenu(true);
     }
     const t = this.talk || this.menu || hero.dead || this.gone ? undefined : this.eTarget();
-    const action = !t ? null : "npc" in t ? "Talk" : "Rest";
+    const action = !t ? null : "folk" in t ? "Talk" : "fire" in t ? "Rest" : this.exitWord(t.exit);
     if (action !== this.nearName) this.hooks.onNear?.((this.nearName = action));
   }
 

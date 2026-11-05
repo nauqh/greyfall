@@ -32,7 +32,7 @@ Mouse first, as in Diablo. The camera follows the hero inside the area map.
 | 2 | Band: Attack my target |
 | 3 | Band: Hold here (guard the spot) |
 | R | Drink a flask |
-| E | Attack: a swing at the monster in reach, the one in front first. Beside someone who talks, talk instead, and the next page of a talk; at a bonfire, rest |
+| E | Attack: a swing at the monster in reach, the one in front first. Beside someone who talks, talk instead, and the next page of a talk; at a bonfire, rest; at a way out, traverse the white light (or ride the lift, or drop) |
 | F (hold) | Guard: stand behind the shield, turned to the nearest monster; a blow from the front lets a fifth through |
 | Tab | The area map, showing what has been explored |
 

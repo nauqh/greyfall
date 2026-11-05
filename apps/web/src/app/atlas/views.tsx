@@ -66,7 +66,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const [travel, setTravel] = useState<(Departure & { phase: "cover" | "hold" | "uncover" }) | null>(null);
   const [warn, setWarn] = useState<Departure | null>(null);
   const [say, setSay] = useState<Say | null>(null);
-  const [near, setNear] = useState<"Talk" | "Rest" | null>(null);
+  const [near, setNear] = useState<string | null>(null);
   const [flasks, setFlasks] = useState<number | null>(null);
   const [gold, setGold] = useState<number | null>(null);
   const [band, setBand] = useState<BandView | null>(null);
