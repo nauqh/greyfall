@@ -20,6 +20,11 @@ import {
   GOLD_STONE,
   HERO,
   NPCS,
+  STAMINA,
+  block,
+  canAct,
+  recover,
+  spend,
   canReach,
   clearShot,
   TALK_RANGE,
@@ -128,6 +133,8 @@ export interface AtlasHooks {
   onNear?: (action: string | null) => void;
   /** The flasks left. */
   onFlasks?: (n: number) => void;
+  /** The captain's health and stamina, a few times a second while they change. */
+  onVitals?: (v: Vitals) => void;
   /** The gold carried. */
   onGold?: (n: number) => void;
   /** The band: its order, and each companion's health, 0 for one fallen. */
@@ -151,6 +158,12 @@ export interface MenuView {
   name: string;
   options: { label: string; note?: string }[];
   pick: number;
+}
+
+export interface Vitals {
+  hp: number;
+  max: number;
+  stamina: number;
 }
 
 export interface BandView {
@@ -283,6 +296,9 @@ const MISSILE: Record<string, { key: string; file: string; frame?: number }> = {
 };
 /** What a thrown or shot missile cannot pass: anything built, a hut, a cave mouth, a dead tree. Woods are cover too. */
 const COVER_ART: ReadonlySet<string> = new Set(["castle", "monastery", "barracks", "archery", "tower", "watchtower", "house1", "house2", "house3", "goblinHut", "gnomeHut", "gnomeTower", "cave", "fishHut", "goldMine", "trollDead", "deadTree"]);
+/** Shift, after Dark Souls on a keyboard: a tap rolls (or backsteps, standing still), held while moving it sprints. */
+const TAP = 250;
+const ROLL = { tiles: 2.2, ms: 320, back: { tiles: 1.1, ms: 220 }, recover: 120 } as const;
 /** How far above its feet a flyer hangs, as a share of its frame. */
 const HOVER = 0.28;
 
@@ -461,7 +477,18 @@ export class AtlasScene extends Phaser.Scene {
   private hero: (Body & { target: Foe | null; then: (() => void) | null }) | null = null;
   /** Mouse held in play: where it points, for walking toward it while held. */
   private hold: { x: number; y: number; since: number } | null = null;
-  private keys: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d" | "f", Phaser.Input.Keyboard.Key> | null = null;
+  private keys: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d" | "f" | "shift", Phaser.Input.Keyboard.Key> | null = null;
+  private stamina: number = STAMINA.max;
+  /** When stamina was last spent: it comes back only after a pause. */
+  private spentAt = -1e9;
+  /** When Shift went down, -1 when it is up: a tap rolls, a hold sprints. */
+  private shiftAt = -1;
+  /** A roll under way: until when it moves and nothing can hurt, which way, how fast, and when it last left an echo. */
+  private roll = { until: 0, dx: 0, dy: 0, speed: 0, trail: 0, back: false };
+  /** A guard broken by a blow it could not pay for holds nothing up until then. */
+  private guardBroken = 0;
+  private vitalsAt = 0;
+  private vitalsKey = "";
   /** F held: the hero stands behind its shield. */
   private guarding = false;
   /** When E was pressed before the last swing was through: it swings the moment it can, not never. */
@@ -516,6 +543,12 @@ export class AtlasScene extends Phaser.Scene {
     this.foes = [];
     this.guarding = false;
     this.queued = false;
+    this.stamina = STAMINA.max;
+    this.spentAt = -1e9;
+    this.shiftAt = -1;
+    this.roll = { until: 0, dx: 0, dy: 0, speed: 0, trail: 0, back: false };
+    this.guardBroken = 0;
+    this.vitalsKey = "";
     this.combo = 0;
     this.folk = [];
     this.talk = null;
@@ -681,6 +714,11 @@ export class AtlasScene extends Phaser.Scene {
       k?.on("keydown-TWO", () => this.command("attack"));
       k?.on("keydown-THREE", () => this.command("hold"));
       for (const [key, d] of [["W", -1], ["UP", -1], ["S", 1], ["DOWN", 1]] as const) k?.on(`keydown-${key}`, () => this.movePick(d));
+      k?.on("keydown-SHIFT", (e: KeyboardEvent) => !e.repeat && (this.shiftAt = this.time.now));
+      k?.on("keyup-SHIFT", () => {
+        if (this.shiftAt >= 0 && this.time.now - this.shiftAt < TAP) this.dodge(this.time.now);
+        this.shiftAt = -1;
+      });
       // The gold left at the last death waits where it fell, glowing, until it is picked up or the captain dies again.
       const lost = stored<Lost | null>(LOST, null);
       if (lost?.area === local.area) this.dropGold({ col: lost.col, row: lost.row }, lost.gold, { lost: true });
@@ -951,7 +989,7 @@ export class AtlasScene extends Phaser.Scene {
     this.play(s, look.idle.key);
     this.hero = { ...this.body(s, at, HERO.hp, HERO.speed, { idle: look.idle.key, move: look.move?.key, attack: HERO_ATTACK.key }), target: null, then: null };
     const k = this.input.keyboard;
-    if (k) this.keys = k.addKeys({ up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT", w: "W", a: "A", s: "S", d: "D", f: "F" }, false) as typeof this.keys;
+    if (k) this.keys = k.addKeys({ up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT", w: "W", a: "A", s: "S", d: "D", f: "F", shift: "SHIFT" }, false) as typeof this.keys;
   }
 
   /** A monster at its post: it waits there until it notices the hero. */
@@ -1071,7 +1109,22 @@ export class AtlasScene extends Phaser.Scene {
 
   /** A blow landing: the target's flash and the number off it; a guarding hero takes little from the front. */
   private hurt(from: Body, to: Body, attack: number): void {
-    const blocked = to === this.hero && this.guarding && this.facing(to, from);
+    const now = this.time.now;
+    // Mid-roll nothing lands, as in Dark Souls.
+    if (to === this.hero && now < this.roll.until) return;
+    let blocked = to === this.hero && this.guarding && this.facing(to, from);
+    if (blocked) {
+      const b = block(this.stamina, attack);
+      this.stamina = b.stamina;
+      this.spentAt = now;
+      if (b.broken) {
+        // Too little stamina to take it on the shield: the guard breaks, the blow lands whole, the captain staggers.
+        blocked = false;
+        this.guardBroken = now + 900;
+        to.busy = Math.max(to.busy, now + 900);
+        this.float(to.s.x, to.s.y - to.lift - 40, "Guard broken", "#fdfaf0");
+      }
+    }
     const dealt = blocked ? throughGuard(attack) : attack;
     to.hp = struck(to.hp, dealt);
     to.s.setTintFill(blocked ? 0x9cc4e8 : 0xffffff);
@@ -1386,14 +1439,27 @@ export class AtlasScene extends Phaser.Scene {
    * its own, so it slides along what blocks; a cliff is crossed only at a ramp, by the same step rule as any walk.
    */
   private steer(dt: number): boolean {
-    const k = this.keys;
     const hero = this.hero!;
-    if (!k || hero.dead || this.menu) return false;
-    const dx = (k.right.isDown || k.d.isDown ? 1 : 0) - (k.left.isDown || k.a.isDown ? 1 : 0);
-    const dy = (k.down.isDown || k.s.isDown ? 1 : 0) - (k.up.isDown || k.w.isDown ? 1 : 0);
+    if (!this.keys || hero.dead || this.menu) return false;
+    const [dx, dy] = this.keyDir();
     if (!dx && !dy) return false;
     Object.assign(hero, { target: null, then: null, way: [] });
-    const step = (hero.speed * CELL * dt) / 1000 / Math.hypot(dx, dy);
+    this.slide(dx, dy, (hero.speed * CELL * dt) / 1000, true);
+    this.play(hero.s, hero.move ?? hero.idle);
+    return true;
+  }
+
+  /** The way the movement keys point, each axis -1, 0 or 1. */
+  private keyDir(): [number, number] {
+    const k = this.keys;
+    if (!k || this.menu) return [0, 0];
+    return [(k.right.isDown || k.d.isDown ? 1 : 0) - (k.left.isDown || k.a.isDown ? 1 : 0), (k.down.isDown || k.s.isDown ? 1 : 0) - (k.up.isDown || k.w.isDown ? 1 : 0)];
+  }
+
+  /** Moves the hero `px` the way (dx, dy) points, each axis on its own so it slides along what blocks. */
+  private slide(dx: number, dy: number, px: number, face: boolean): void {
+    const hero = this.hero!;
+    const step = px / Math.hypot(dx, dy);
     const cellAt = (x: number, y: number): Cell => ({ col: Math.floor(x / CELL), row: Math.round(y / CELL - 0.75) });
     // Felt for a little ahead of the feet, so the hero stops short of a wall instead of half inside it.
     const ahead = 0.3 * CELL;
@@ -1402,20 +1468,52 @@ export class AtlasScene extends Phaser.Scene {
       return (to.col === hero.at.col && to.row === hero.at.row) || canStep(hero.at, to);
     };
     let { x, y } = hero.s;
-    if (dx && open(x + dx * (step + ahead), y)) x += dx * step;
-    if (dy && open(x, y + dy * (step + ahead))) y += dy * step;
+    if (dx && open(x + Math.sign(dx) * ahead + dx * step, y)) x += dx * step;
+    if (dy && open(x, y + Math.sign(dy) * ahead + dy * step)) y += dy * step;
     hero.s.setPosition(x, y).setDepth(standing(y));
     hero.at = cellAt(x, y);
-    if (dx) hero.s.setFlipX(dx < 0);
+    if (face && Math.abs(dx) > 0.01) hero.s.setFlipX(dx < 0);
+  }
+
+  /** A tap of Shift: a roll the way the hero walks, or a backstep standing still; nothing lands on it while it lasts. */
+  private dodge(time: number): void {
+    const hero = this.hero!;
+    if (!this.playing || hero.dead || this.gone || this.menu || this.talk || this.guarding || time < hero.busy || time < this.roll.until || !canAct(this.stamina)) return;
+    let [dx, dy] = this.keyDir();
+    const next = hero.way[0];
+    if (!dx && !dy && next) [dx, dy] = [next.x - hero.s.x, next.y - hero.s.y];
+    const back = !dx && !dy;
+    if (back) dx = hero.s.flipX ? 1 : -1;
+    const len = Math.hypot(dx, dy);
+    const { tiles, ms } = back ? ROLL.back : ROLL;
+    this.stamina = spend(this.stamina, STAMINA.roll);
+    this.spentAt = time;
+    this.queued = false;
+    this.roll = { until: time + ms, dx: dx / len, dy: dy / len, speed: (tiles * CELL) / (ms / 1000), trail: 0, back };
+    Object.assign(hero, { way: [], target: null, then: null, busy: time + ms + ROLL.recover });
+    if (!back) hero.s.setFlipX(dx < 0);
     this.play(hero.s, hero.move ?? hero.idle);
-    return true;
+  }
+
+  /** A fading echo of the hero, left behind as it rolls: the pack has no roll, so the speed is shown this way. */
+  private echo(): void {
+    const s = this.hero!.s;
+    const g = this.add.image(s.x, s.y, s.texture.key, s.frame.name).setOrigin(s.originX, s.originY).setFlipX(s.flipX).setDepth(s.depth - 1).setTintFill(0xdfe8ff).setAlpha(0.45);
+    this.tweens.add({ targets: g, alpha: 0, duration: 260, onComplete: () => g.destroy() });
   }
 
   /** The fight, once a frame: the hero walks or strikes, each monster near enough strikes, chases or goes home. */
   private fight(time: number, dt: number): void {
     const hero = this.hero!;
-    this.guarding = !hero.dead && this.playing && !!this.keys?.f.isDown;
-    if (this.guarding) {
+    const rolling = time < this.roll.until;
+    this.guarding = !rolling && !hero.dead && this.playing && !!this.keys?.f.isDown && time >= this.guardBroken;
+    if (rolling) {
+      this.slide(this.roll.dx, this.roll.dy, (this.roll.speed * dt) / 1000, !this.roll.back);
+      if (time - this.roll.trail > 45) {
+        this.roll.trail = time;
+        this.echo();
+      }
+    } else if (this.guarding) {
       // Behind the shield it stands still, turned to the nearest monster, once any swing is through.
       Object.assign(hero, { way: [], then: null });
       this.queued = false;
@@ -1425,6 +1523,14 @@ export class AtlasScene extends Phaser.Scene {
         this.play(hero.s, HERO_GUARD.key);
       }
     } else if (!hero.dead && !this.gone) {
+      // Shift held past a tap, while moving: a sprint, for as long as the stamina lasts.
+      const [kx, ky] = this.keyDir();
+      const sprinting = this.shiftAt >= 0 && time - this.shiftAt >= TAP && (kx || ky || hero.way.length > 0) && canAct(this.stamina) && time >= hero.busy;
+      hero.speed = HERO.speed * (sprinting ? HERO.sprint : 1);
+      if (sprinting) {
+        this.stamina = spend(this.stamina, (STAMINA.sprint * dt) / 1000);
+        this.spentAt = time;
+      }
       // A press made during a swing is kept, and swings the moment the hero is ready.
       if (this.queued && time >= hero.busy && time >= hero.next) this.attack(time);
       const steering = time >= hero.busy && this.steer(dt);
@@ -1446,6 +1552,7 @@ export class AtlasScene extends Phaser.Scene {
         }
       }
     }
+    this.stamina = recover(this.stamina, dt / 1000, (time - this.spentAt) / 1000, this.guarding);
     this.lead(time, dt);
     for (const f of this.foes) {
       if (f.dead || time < f.busy) continue;
@@ -1494,15 +1601,15 @@ export class AtlasScene extends Phaser.Scene {
     }
   }
 
-  /** A health bar over a body: always over the hero, over a monster only once it is hurt. */
+  /** A health bar over a companion or a monster once it is hurt; the captain's own health is in the HUD. */
   private drawBar(b: Body): void {
     b.bar.clear();
-    if (b.dead || (b !== this.hero && b.hp === b.max) || (b === this.hero && this.gone)) return;
+    if (b.dead || b === this.hero || b.hp === b.max) return;
     const ally = this.band.includes(b as Companion);
     const [w, h] = [56, 7];
     const [x, y] = [b.s.x - w / 2, b.s.y - b.lift - 4];
     b.bar.fillStyle(0x1c2634, 0.85).fillRect(x - 2, y - 2, w + 4, h + 4);
-    b.bar.fillStyle(b === this.hero ? 0x6fd06a : ally ? 0x6fb0e0 : 0xe05a4a).fillRect(x, y, (w * b.hp) / b.max, h);
+    b.bar.fillStyle(ally ? 0x6fb0e0 : 0xe05a4a).fillRect(x, y, (w * b.hp) / b.max, h);
   }
 
   /** Loops for every sheet with more than one frame: props, beasts, knights. */
@@ -2163,7 +2270,7 @@ export class AtlasScene extends Phaser.Scene {
   /** A swing on E: at the monster being fought if in reach, else one in front, else any beside, else the air. */
   private attack(time: number): void {
     const hero = this.hero!;
-    if (this.guarding) return;
+    if (this.guarding || !canAct(this.stamina)) return;
     if (time < hero.busy || time < hero.next) return void (this.queued = true);
     this.queued = false;
     const reach = this.foes.filter((f) => !f.dead && canReach(1, f.stats) && tileDistance(f.at, hero.at) <= 1 && Math.hypot(f.s.x - hero.s.x, f.s.y - hero.s.y) < 1.5 * CELL);
@@ -2176,6 +2283,8 @@ export class AtlasScene extends Phaser.Scene {
   private heroSwing(foe: Foe | null, time: number): void {
     const hero = this.hero!;
     const step = (this.combo = comboStep(this.combo, (time - hero.next) / 1000));
+    this.stamina = spend(this.stamina, STAMINA.swing);
+    this.spentAt = time;
     const anim = step === 2 ? HERO_ATTACK2.key : HERO_ATTACK.key;
     if (!foe) return this.swing(hero, null, swingWait(step), time, anim);
     this.lastHit = foe;
@@ -2278,6 +2387,16 @@ export class AtlasScene extends Phaser.Scene {
       this.gather();
       this.whereabouts(time);
       for (const b of [this.hero, ...this.foes, ...this.band]) this.drawBar(b);
+      // The HUD's bars, a few times a second and only when they change.
+      if (time - this.vitalsAt > 80) {
+        this.vitalsAt = time;
+        const v = { hp: this.hero.hp, max: this.hero.max, stamina: Math.round(this.stamina) };
+        const key = `${v.hp},${v.max},${v.stamina}`;
+        if (key !== this.vitalsKey) {
+          this.vitalsKey = key;
+          this.hooks.onVitals?.(v);
+        }
+      }
     }
     for (const { text, px, tier } of this.names) {
       text.setVisible(tier === this.view);

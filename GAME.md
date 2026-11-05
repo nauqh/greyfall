@@ -27,7 +27,8 @@ Mouse first, as in Diablo. The camera follows the hero inside the area map.
 | Right click on an enemy | Walk up beside it and mark it as your target (the band's order 2); you swing with E |
 | Right click on someone who talks | Walk up and talk |
 | Skill | The hero's skill, aimed at the cursor; its button is not chosen yet |
-| Space | Dodge-roll a short way: brief invulnerability, costs stamina |
+| Shift (tap) | Roll the way you walk, or backstep standing still: nothing lands during it, costs stamina |
+| Shift (hold, moving) | Sprint, draining stamina |
 | 1 | Band: Follow (stay close, defend the hero) |
 | 2 | Band: Attack my target |
 | 3 | Band: Hold here (guard the spot) |
@@ -43,7 +44,7 @@ A Warrior in blue, the captain.
 | Stat | Start | Notes |
 | --- | --- | --- |
 | HP | 100 | |
-| Stamina | 100 | Dodge costs 25, heavy swing 30; refills in about 2 s |
+| Stamina | 100 | As in Dark Souls: a swing 14, a roll 22, sprinting 15 a second, a blow on the shield 2.5 times its weight (too little left breaks the guard: it lands whole and staggers). Comes back 45 a second after half a second unspent, a third as fast behind the shield. At nothing, no swing or roll |
 | Attack | 12 a swing | Combo of 3: the first two 0.45 s apart, the third knocks back and takes 0.9 s to recover |
 | Skill | Shield Bash | Stuns for 1.5 s, 6 s cooldown |
 | Flasks | 3 | Each heals 40 HP; refilled at a bonfire |

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FOES, GOLD_STONE, HERO, clearLine, clearShot, comboStep, drink, findPath, canReach, swingWait, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
+import { FOES, GOLD_STONE, HERO, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, swingWait, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
 
 const goblin = FOES.torch!;
 const home = { col: 10, row: 10 };
@@ -94,6 +94,26 @@ describe("gold", () => {
       expect(foe!.gold).toBeGreaterThan(0);
       expect(foe!.gold).toBeLessThan(GOLD_STONE);
     }
+  });
+});
+
+describe("stamina", () => {
+  it("lets an action start on any stamina at all, and never goes below nothing", () => {
+    expect(canAct(1)).toBe(true);
+    expect(canAct(0)).toBe(false);
+    expect(spend(5, STAMINA.roll)).toBe(0);
+  });
+
+  it("comes back only after a pause, slower behind a shield, never past full", () => {
+    expect(recover(50, 1, STAMINA.delay / 2, false)).toBe(50);
+    expect(recover(50, 1, STAMINA.delay, false)).toBe(50 + STAMINA.regen);
+    expect(recover(50, 1, STAMINA.delay, true)).toBeCloseTo(50 + STAMINA.regen * STAMINA.guarded);
+    expect(recover(99, 1, 5, false)).toBe(STAMINA.max);
+  });
+
+  it("pays for a blow on the shield, and breaks the guard when it cannot", () => {
+    expect(block(100, 8)).toEqual({ stamina: 100 - 8 * STAMINA.block, broken: false });
+    expect(block(10, 8)).toEqual({ stamina: 0, broken: true });
   });
 });
 

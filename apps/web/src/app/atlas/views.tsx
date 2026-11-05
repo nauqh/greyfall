@@ -4,7 +4,7 @@ import { AREAS, type AreaId } from "@greyfall/engine";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import type { AtlasApi, AtlasHooks, BandView, Departure, MenuView, Say } from "../../game/AtlasScene";
+import type { AtlasApi, AtlasHooks, BandView, Departure, MenuView, Say, Vitals } from "../../game/AtlasScene";
 import { Clouds } from "../../game/Clouds";
 import { packUrl } from "../../game/art";
 import { GameCanvas } from "../../game/GameCanvas";
@@ -68,6 +68,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const [say, setSay] = useState<Say | null>(null);
   const [near, setNear] = useState<string | null>(null);
   const [flasks, setFlasks] = useState<number | null>(null);
+  const [vitals, setVitals] = useState<Vitals | null>(null);
   const [gold, setGold] = useState<number | null>(null);
   const [band, setBand] = useState<BandView | null>(null);
   const [menu, setMenu] = useState<MenuView | null>(null);
@@ -117,6 +118,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
     onSay: setSay,
     onNear: setNear,
     onFlasks: setFlasks,
+    onVitals: setVitals,
     onGold: setGold,
     onBand: setBand,
     onMenu: setMenu,
@@ -284,6 +286,17 @@ export function AreaView({ area: first }: { area: AreaId }) {
           </div>
         )}
         <div className="worldHud" hidden={!hud}>
+          {vitals && (
+            // After Dark Souls: health in red over stamina in green, top left.
+            <div className="vitals" aria-label={`Health ${vitals.hp} of ${vitals.max}, stamina ${vitals.stamina}`}>
+              <span className="vitalBar hp">
+                <span style={{ width: `${(100 * vitals.hp) / vitals.max}%` }} />
+              </span>
+              <span className="vitalBar stamina">
+                <span style={{ width: `${vitals.stamina}%` }} />
+              </span>
+            </div>
+          )}
           {flasks !== null && (
             <div className="purse">
               <span title="Drink a flask (R)">

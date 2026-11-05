@@ -1106,13 +1106,51 @@ textarea {
 	100% { opacity: 0; transform: scale(1.03); }
 }
 
+/* The captain's health over stamina, after Dark Souls: thin bars in the top corner, the purse under them. */
+.vitals {
+	position: absolute;
+	left: 16px;
+	top: 12px;
+	display: grid;
+	gap: 4px;
+	width: 220px;
+}
+
+.vitalBar {
+	display: block;
+	height: 10px;
+	border: 2px solid #1c2634;
+	border-radius: 2px;
+	background: rgb(7 10 16 / 0.6);
+	overflow: hidden;
+}
+
+.vitalBar.stamina {
+	height: 8px;
+	width: 80%;
+}
+
+.vitalBar > span {
+	display: block;
+	height: 100%;
+	transition: width 120ms linear;
+}
+
+.vitalBar.hp > span {
+	background: #c8392e;
+}
+
+.vitalBar.stamina > span {
+	background: #5fbf4a;
+}
+
 /* The flasks left and the gold carried, in the top corner. */
 .purse {
 	display: flex;
 	gap: 14px;
 	position: absolute;
 	left: 16px;
-	top: 12px;
+	top: 44px;
 	padding: 6px 12px;
 	border-radius: 4px;
 	background: rgb(7 10 16 / 0.72);
@@ -1161,7 +1199,7 @@ textarea {
 .bandPanel {
 	position: absolute;
 	left: 16px;
-	top: 52px;
+	top: 84px;
 	display: grid;
 	gap: 4px;
 	padding: 6px 12px 8px;

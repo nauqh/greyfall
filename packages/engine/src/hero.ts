@@ -7,7 +7,7 @@ import { canStep, cellKey, stepsFrom, tileDistance, type Cell } from "./island.t
 /** A walk, not a sprint: 2.8 tiles a second (4 read as running everywhere). */
 /** Swings: the first two of a combo `chain` seconds apart, the finisher's recovery `every`; a swing within `combo` seconds of
  *  being ready again chains. A raised shield lets a fifth of a blow from the front through. */
-export const HERO = { hp: 100, attack: 12, chain: 0.45, every: 0.9, speed: 2.8, guard: 0.2, combo: 1.4, flasks: 3, flask: 40 } as const;
+export const HERO = { hp: 100, attack: 12, chain: 0.45, every: 0.9, speed: 2.8, sprint: 1.6, guard: 0.2, combo: 1.4, flasks: 3, flask: 40 } as const;
 
 export interface FoeStats {
   hp: number;
@@ -94,6 +94,34 @@ export function swingWait(step: number): number {
 export function drink(hp: number, max: number, flasks: number): { hp: number; flasks: number } {
   if (flasks <= 0 || hp >= max) return { hp, flasks };
   return { hp: Math.min(max, hp + HERO.flask), flasks: flasks - 1 };
+}
+
+/**
+ * Stamina, after Dark Souls: every swing, roll and blow on the shield spends it, sprinting drains it, and it comes back
+ * quickly once nothing has been spent for a moment, a third as fast behind a raised shield. Seconds and points.
+ */
+export const STAMINA = { max: 100, regen: 45, delay: 0.5, guarded: 1 / 3, swing: 14, roll: 22, sprint: 15, block: 2.5 } as const;
+
+/** Whether an action can start: any stamina at all will do, as in Dark Souls; the cost may take it to nothing. */
+export function canAct(stamina: number): boolean {
+  return stamina > 0;
+}
+
+/** Stamina after spending: never below nothing. */
+export function spend(stamina: number, cost: number): number {
+  return Math.max(0, stamina - cost);
+}
+
+/** Stamina after `dt` seconds, `idle` seconds since any was last spent, the shield up or not. */
+export function recover(stamina: number, dt: number, idle: number, guarding: boolean): number {
+  if (idle < STAMINA.delay) return stamina;
+  return Math.min(STAMINA.max, stamina + STAMINA.regen * dt * (guarding ? STAMINA.guarded : 1));
+}
+
+/** A blow on the shield: it costs stamina by its weight, and with too little left the guard breaks and it lands whole. */
+export function block(stamina: number, attack: number): { stamina: number; broken: boolean } {
+  const cost = attack * STAMINA.block;
+  return stamina >= cost ? { stamina: stamina - cost, broken: false } : { stamina: 0, broken: true };
 }
 
 /** What of a blow gets through a raised shield: a share of it, never nothing. */
