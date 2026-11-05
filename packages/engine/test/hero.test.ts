@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FOES, GOLD_STONE, HERO, clearLine, comboStep, drink, findPath, canReach, swingWait, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
+import { FOES, GOLD_STONE, HERO, clearLine, clearShot, comboStep, drink, findPath, canReach, swingWait, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
 
 const goblin = FOES.torch!;
 const home = { col: 10, row: 10 };
@@ -70,6 +70,14 @@ describe("a thrower and a flyer", () => {
     const gnoll = FOES.gnoll!;
     expect(foeIntent(home, home, { col: 10 + gnoll.range!, row: 10 }, gnoll)).toBe("attack");
     expect(foeIntent(home, home, { col: 10 + gnoll.range! + 1, row: 10 }, gnoll)).toBe("chase");
+  });
+
+  it("needs a clear line: a house or a wood between hides the mark", () => {
+    const house = (c: { col: number; row: number }) => c.col === 12 && c.row === 10;
+    expect(clearShot({ col: 10, row: 10 }, { col: 14, row: 10 }, house)).toBe(false);
+    expect(clearShot({ col: 10, row: 10 }, { col: 14, row: 12 }, house)).toBe(true);
+    // Standing in the doorway is not hiding behind the wall.
+    expect(clearShot({ col: 10, row: 10 }, { col: 12, row: 10 }, house)).toBe(true);
   });
 
   it("is out of a blade's reach on the wing, but not a bow's", () => {

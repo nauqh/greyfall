@@ -51,6 +51,16 @@ export const FOES: Partial<Record<string, FoeStats>> = {
   bee: { hp: 8, attack: 3, every: 1.0, aggro: 4, leash: 6, speed: 3.2, gold: 2, flies: true },
 };
 
+/** Whether a missile flies clear from `a` to `b`: no tile it crosses, the two ends aside, is cover (a wall, a wood). */
+export function clearShot(a: Cell, b: Cell, cover: (c: Cell) => boolean): boolean {
+  const n = Math.max(Math.abs(b.col - a.col), Math.abs(b.row - a.row)) * 2;
+  for (let i = 1; i < n; i++) {
+    const c = { col: Math.round(a.col + ((b.col - a.col) * i) / n), row: Math.round(a.row + ((b.row - a.row) * i) / n) };
+    if (!(c.col === a.col && c.row === a.row) && !(c.col === b.col && c.row === b.row) && cover(c)) return false;
+  }
+  return true;
+}
+
 /** Whether a striker reaching `range` tiles can hit a monster: one on the wing only from afar, with a bow. */
 export function canReach(range: number, foe: FoeStats): boolean {
   return !foe.flies || range > 1;

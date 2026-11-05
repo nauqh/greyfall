@@ -24,7 +24,7 @@ Mouse first, as in Diablo. The camera follows the hero inside the area map.
 | --- | --- |
 | Right click on ground | Move; hold to keep walking toward the cursor |
 | W A S D or the arrows | Walk freely the way they point, diagonals too, sliding along walls; in a merchant's menu, W and S move the pick |
-| Right click on an enemy | Walk up and attack until it dies |
+| Right click on an enemy | Walk up beside it and mark it as your target (the band's order 2); you swing with E |
 | Right click on someone who talks | Walk up and talk |
 | Skill | The hero's skill, aimed at the cursor; its button is not chosen yet |
 | Space | Dodge-roll a short way: brief invulnerability, costs stamina |
@@ -101,6 +101,9 @@ Gnolls, slingshot gnomes and hex shamans throw from four or five tiles
 off rather than close in. Bats, imps and bees fly: no blade reaches them,
 not the captain's nor a Lancer's, so only an Archer brings them down; a
 captain alone can guard and walk away.
+A thrown or shot missile needs a clear line: a house, a hut, a tower, a
+dead tree or the woods hide whoever stands behind them, and a thrower
+walks round for a clear shot. Archers in the band need one too.
 
 Camps sit in the maze rooms. An enemy chases up to 10 tiles from its post,
 then walks back; the engine already has a guard leash.

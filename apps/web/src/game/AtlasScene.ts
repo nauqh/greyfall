@@ -21,6 +21,7 @@ import {
   HERO,
   NPCS,
   canReach,
+  clearShot,
   TALK_RANGE,
   canStep,
   comboStep,
@@ -280,6 +281,8 @@ const MISSILE: Record<string, { key: string; file: string; frame?: number }> = {
   shaman: { key: "missile_shaman", file: `${EP}Hex Shaman/Hex Shaman_Projectile.png`, frame: 128 },
   archer: { key: "arrow", file: "Units/Blue Units/Archer/Arrow.png" },
 };
+/** What a thrown or shot missile cannot pass: anything built, a hut, a cave mouth, a dead tree. Woods are cover too. */
+const COVER_ART: ReadonlySet<string> = new Set(["castle", "monastery", "barracks", "archery", "tower", "watchtower", "house1", "house2", "house3", "goblinHut", "gnomeHut", "gnomeTower", "cave", "fishHut", "goldMine", "trollDead", "deadTree"]);
 /** How far above its feet a flyer hangs, as a share of its frame. */
 const HOVER = 0.28;
 
@@ -479,6 +482,9 @@ export class AtlasScene extends Phaser.Scene {
   /** The monster the captain last struck: on "attack my target", the band goes for it. */
   private lastHit: Foe | null = null;
   private piles: Pile[] = [];
+  /** The tiles under what a missile cannot pass, as "col,row". */
+  private cover = new Set<string>();
+  private readonly blocks = (c: Cell): boolean => this.cover.has(`${c.col},${c.row}`) || isForest(c.col, c.row);
   /** Resting or dead: the page is darkening and nothing more is done here. */
   private gone = false;
   /** The quarter the captain was last announced in, and one just stepped into, with when. */
@@ -527,6 +533,7 @@ export class AtlasScene extends Phaser.Scene {
     this.bandOrder = "follow";
     this.lastHit = null;
     this.piles = [];
+    this.cover = new Set();
     this.gone = false;
     this.district = { name: "", next: "", since: 0, shown: new Set<string>() };
     this.dev = !!data.dev;
@@ -660,6 +667,7 @@ export class AtlasScene extends Phaser.Scene {
       const open = (c: Cell): boolean => isWalkable(c.col, c.row) && !isSlope(c.col, c.row) && !(fire && c.col === fire.col && c.row === fire.row);
       const near = open(at) ? at : (findRoute(at, open)?.at(-1) ?? local.entry);
       this.spawn = near;
+      for (const p of local.props) if (COVER_ART.has(p.art)) for (const c of footprint(p)) this.cover.add(`${c.col},${c.row}`);
       this.spawnHero(near);
       if (this.hooks.carry) this.hero!.hp = Math.max(1, Math.min(this.hero!.max, this.hooks.carry.hp));
       this.hooks.onFlasks?.(this.flasks);
@@ -933,14 +941,17 @@ export class AtlasScene extends Phaser.Scene {
     else s.setTexture(key, 0);
   }
 
-  /** A click in play: on a monster, fight it; on an exit or its sign, walk there and through; else walk there. */
+  /** A click in play: on a monster, walk up beside it (the swings are E's); on an exit or its sign, walk there and
+   *  through; else walk there. */
   private order(w: Phaser.Math.Vector2, cell: Cell, quiet = false): void {
     const hero = this.hero!;
     if (hero.dead || this.gone) return;
     const foe = this.foes.find((f) => !f.dead && Math.abs(f.s.x - w.x) < 0.7 * CELL && w.y < f.s.y + 0.3 * CELL && w.y > f.s.y - f.lift);
     if (foe && !canReach(1, foe.stats)) return this.float(foe.s.x, foe.s.y - foe.lift - 20, "Out of reach", "#fdfaf0");
     if (foe) {
-      Object.assign(hero, { target: foe, then: null, planned: -1e9 });
+      // It becomes the captain's mark, the band's on "attack my target", but the captain only closes in.
+      this.walk(hero, findRoute(hero.at, (c) => tileDistance(c, foe.at) <= 1) ?? []);
+      Object.assign(hero, { target: foe, then: null });
       return;
     }
     const folk = this.folk.find((f) => Math.abs(f.s.x - w.x) < 0.7 * CELL && w.y < f.s.y + 0.3 * CELL && w.y > f.s.y - 1.2 * CELL);
@@ -1037,6 +1048,7 @@ export class AtlasScene extends Phaser.Scene {
   /** An archer's shot: the draw, then the arrow across, landing if the mark still stands. */
   private shoot(from: Body, to: Body, attack: number, every: number, time: number, missile: (typeof MISSILE)[string]): void {
     this.swing(from, to, every, time);
+    const launch = { ...from.at };
     const [x, y] = [from.s.x, from.s.y - 40];
     const [tx, ty] = [to.s.x, to.s.y - to.lift * 0.5];
     // An arrow flies point first; a bone, an acorn or a bolt tumbles.
@@ -1051,7 +1063,8 @@ export class AtlasScene extends Phaser.Scene {
       duration: Math.max(120, Math.hypot(tx - x, ty - y) / 0.9),
       onComplete: () => {
         m.destroy();
-        if (!to.dead) this.hurt(from, to, attack);
+        // Stepped behind cover while it flew: it strikes the wall, not them.
+        if (!to.dead && clearShot(launch, to.at, this.blocks)) this.hurt(from, to, attack);
       },
     });
   }
@@ -1205,7 +1218,9 @@ export class AtlasScene extends Phaser.Scene {
       const stats = COMPANIONS[c.kind];
       // A lancer cannot reach what flies: it fights only what walks, and leaves the rest to the bows.
       const mine = live.filter((f) => canReach(stats.range, f.stats));
-      const plan = companionPlan(c.at, c.kind, this.bandOrder, hero.at, target >= 0 ? mine.indexOf(live[target]!) : -1, mine.map((f) => f.at), c.post);
+      let plan = companionPlan(c.at, c.kind, this.bandOrder, hero.at, target >= 0 ? mine.indexOf(live[target]!) : -1, mine.map((f) => f.at), c.post);
+      // An archer with no clear line moves for one.
+      if (plan.do === "strike" && c.kind === "archer" && !clearShot(c.at, mine[plan.foe]!.at, this.blocks)) plan = { do: "close", foe: plan.foe };
       if (plan.do === "strike") {
         const foe = mine[plan.foe]!;
         c.way = [];
@@ -1226,7 +1241,7 @@ export class AtlasScene extends Phaser.Scene {
           (cell.col === hero.at.col && cell.row === hero.at.row) || this.band.some((o) => o !== c && !o.dead && o.at.col === cell.col && o.at.row === cell.row);
         const goal =
           plan.do === "close"
-            ? (cell: Cell) => tileDistance(cell, mine[plan.foe]!.at) <= stats.range
+            ? (cell: Cell) => tileDistance(cell, mine[plan.foe]!.at) <= stats.range && (c.kind !== "archer" || clearShot(cell, mine[plan.foe]!.at, this.blocks))
             : this.bandOrder === "hold"
               ? (cell: Cell) => cell.col === plan.to.col && cell.row === plan.to.row
               : (cell: Cell) => tileDistance(cell, plan.to) <= 1;
@@ -1372,25 +1387,15 @@ export class AtlasScene extends Phaser.Scene {
       if (this.queued && time >= hero.busy && time >= hero.next) this.attack(time);
       const steering = time >= hero.busy && this.steer(dt);
       // Holding the mouse keeps walking toward it, re-aimed a few times a second.
-      if (!steering && this.hold && time - this.hold.since > 220 && time - hero.planned > 200 && !hero.target) {
+      if (!steering && this.hold && time - this.hold.since > 220 && time - hero.planned > 200) {
         hero.planned = time;
         this.order(new Phaser.Math.Vector2(this.hold.x, this.hold.y), { col: Math.floor(this.hold.x / CELL), row: Math.floor(this.hold.y / CELL) }, true);
       }
-      const t = hero.target?.dead || (hero.target && !canReach(1, hero.target.stats)) ? null : hero.target;
       if (steering) {
         // Walked by the keys this frame.
       } else if (time < hero.busy) {
         // Mid-swing: it holds still.
-      } else if (t && tileDistance(hero.at, t.at) <= 1 && Math.hypot(t.s.x - hero.s.x, t.s.y - hero.s.y) < 1.5 * CELL) {
-        hero.way = [];
-        if (time >= hero.next) this.heroSwing(t, time);
-        else this.play(hero.s, hero.idle);
       } else {
-        if (t && time - hero.planned > 250) {
-          hero.planned = time;
-          const near = findRoute(hero.at, (c) => tileDistance(c, t.at) <= 1);
-          if (near) this.walk(hero, near);
-        }
         const was = hero.way.length > 0;
         if (!this.advance(hero, dt) && was && hero.then) {
           const then = hero.then;
@@ -1410,7 +1415,8 @@ export class AtlasScene extends Phaser.Scene {
       const mark = marks[m] ?? hero;
       const intent = foeIntent(f.at, f.home, m >= 0 ? mark.at : null, f.stats);
       const missile = MISSILE[f.kind];
-      if (intent === "attack" && (missile || Math.hypot(mark.s.x - f.s.x, mark.s.y - f.s.y) < 1.5 * CELL)) {
+      const sighted = missile ? clearShot(f.at, mark.at, this.blocks) : Math.hypot(mark.s.x - f.s.x, mark.s.y - f.s.y) < 1.5 * CELL;
+      if (intent === "attack" && sighted) {
         f.way = [];
         if (time < f.next) {
           this.play(f.s, f.idle);
@@ -1426,13 +1432,19 @@ export class AtlasScene extends Phaser.Scene {
           const to = intent === "return" ? f.home : mark.at;
           f.way = [{ x: (to.col + 0.5) * CELL, y: (to.row + 0.75) * CELL }];
         }
-      } else if (intent === "attack" && f.way.length === 0) {
+      } else if (intent === "attack" && !missile && f.way.length === 0) {
         // Beside the hero by tile but stopped short of its tile's middle, mid-stride: it steps in rather than stand out of reach.
         f.way = [{ x: (f.at.col + 0.5) * CELL, y: (f.at.row + 0.75) * CELL }];
       } else if (intent !== "idle" && time - f.planned > 400) {
         f.planned = time;
         const taken = (c: Cell) => this.foes.some((o) => o !== f && !o.dead && o.at.col === c.col && o.at.row === c.row);
-        const goal = intent === "return" ? (c: Cell) => c.col === f.home.col && c.row === f.home.row : (c: Cell) => tileDistance(c, mark.at) <= (f.stats.range ?? 1);
+        // A thrower comes round for a clear line; a fighter comes beside.
+        const goal =
+          intent === "return"
+            ? (c: Cell) => c.col === f.home.col && c.row === f.home.row
+            : missile
+              ? (c: Cell) => tileDistance(c, mark.at) <= (f.stats.range ?? 1) && clearShot(c, mark.at, this.blocks)
+              : (c: Cell) => tileDistance(c, mark.at) <= 1;
         const way = findRoute(f.at, goal, taken);
         if (way) this.walk(f, way);
       }
