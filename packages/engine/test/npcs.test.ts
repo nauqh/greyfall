@@ -24,6 +24,15 @@ describe("talking", () => {
     expect(nextTalk(ferrow, heardAll(["first", "died"]), died).id).toBe("roads");
   });
 
+  it("has Tobin warn of the flyers down the well, and point to Wren's bows, until the captain listens", () => {
+    const tobin = NPCS.find((n) => n.id === "tobin")!;
+    const heard = new Set(["tobin.first", "tobin.rule"]);
+    const wings = nextTalk(tobin, heard, new Set());
+    expect(wings.id).toBe("wings");
+    expect(wings.lines.join(" ")).toMatch(/Wren/);
+    expect(nextTalk(tobin, new Set([...heard, "tobin.wings"]), new Set()).id).toBe("wings");
+  });
+
   it("keys every conversation apart", () => {
     const keys = NPCS.flatMap((n) => stations(n).flatMap((s) => (s.talks ?? []).map((t) => talkKey(n, t))));
     expect(new Set(keys).size).toBe(keys.length);

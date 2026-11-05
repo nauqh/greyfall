@@ -284,6 +284,19 @@ export const NPCS: readonly Npc[] = [
       },
       { id: "rule", lines: ["No climbing back. That's the rule of the well.", "Funny, a hole having rules."] },
       {
+        id: "wings",
+        lines: [
+          "Something else lives down there. Wings. You hear them before you see them.",
+          "A sword's no use on a thing that won't come down to meet it.",
+          "Wren hires out bows, at the butts by the west road. Take one with you, if you go.",
+        ],
+      },
+      {
+        id: "chewed",
+        when: "died",
+        lines: ["You look chewed on, captain.", "If it had wings, steel won't reach it. Wren's bows will."],
+      },
+      {
         id: "below",
         when: "wellDescended",
         sets: "tobinDown",

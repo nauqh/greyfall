@@ -160,6 +160,13 @@ Greets you: *"Don't lean on the rope."* Walked away from: *"...Right. Off you go
 - **rule**
   1. No climbing back. That's the rule of the well.
   2. Funny, a hole having rules.
+- **wings**
+  1. Something else lives down there. Wings. You hear them before you see them.
+  2. A sword's no use on a thing that won't come down to meet it.
+  3. Wren hires out bows, at the butts by the west road. Take one with you, if you go.
+- **chewed** (once, after meeting, when **died**)
+  1. You look chewed on, captain.
+  2. If it had wings, steel won't reach it. Wren's bows will.
 - **below** (once, after meeting, when **wellDescended**; heard to the end, sets **tobinDown**)
   1. You came back? From down there?
   2. ...Did you see him? Thin fellow. Quick hands. Always smiling.
