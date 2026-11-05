@@ -18,23 +18,22 @@ Harbour square.
 
 ## Controls
 
-Mouse first, as in Diablo. The camera follows the hero inside the area map.
+Keyboard and mouse after Dark Souls on a PC. The camera follows the hero
+inside the area map.
 
 | Input | Action |
 | --- | --- |
-| Right click on ground | Move; hold to keep walking toward the cursor |
-| W A S D or the arrows | Walk freely the way they point, diagonals too, sliding along walls; in a merchant's menu, W and S move the pick |
-| Right click on an enemy | Walk up beside it and mark it as your target (the band's order 2); you swing with E |
-| Right click on someone who talks | Walk up and talk |
-| Skill | The hero's skill, aimed at the cursor; its button is not chosen yet |
+| W A S D or the arrows | Walk the way they point, diagonals too, sliding along walls; in a merchant's menu, W and S move the pick |
+| Left click | Attack, turned toward the cursor: the monster in reach nearest where it points. A press made mid-swing is kept |
+| Right click (hold), or F | Guard: stand behind the shield, turned to the nearest monster; a blow from the front lets a fifth through and costs stamina |
 | Shift (tap) | Roll the way you walk, or backstep standing still: nothing lands during it, costs stamina |
 | Shift (hold, moving) | Sprint, draining stamina |
-| 1 | Band: Follow (stay close, defend the hero) |
-| 2 | Band: Attack my target |
-| 3 | Band: Hold here (guard the spot) |
+| E | Interact: talk and turn the page, rest at a bonfire, traverse the white light at a way out (or ride the lift, or drop) |
+| Q | Shield Bash: a shove at what stands in front, stunning it 1.5 s; 6 s between, costs stamina |
 | R | Drink a flask |
-| E | Attack: a swing at the monster in reach, the one in front first. Beside someone who talks, talk instead, and the next page of a talk; at a bonfire, rest; at a way out, traverse the white light (or ride the lift, or drop) |
-| F (hold) | Guard: stand behind the shield, turned to the nearest monster; a blow from the front lets a fifth through |
+| 1 | Band: Follow (stay close, defend the hero) |
+| 2 | Band: Attack the monster you last struck |
+| 3 | Band: Hold here (guard the spot) |
 | Tab | The area map, showing what has been explored |
 
 ## The hero
@@ -46,7 +45,7 @@ A Warrior in blue, the captain.
 | HP | 100 | |
 | Stamina | 100 | As in Dark Souls: a swing 14, a roll 22, sprinting 15 a second, a blow on the shield 2.5 times its weight (too little left breaks the guard: it lands whole and staggers). Comes back 45 a second after half a second unspent, a third as fast behind the shield. At nothing, no swing or roll |
 | Attack | 12 a swing | Combo of 3: the first two 0.45 s apart, the third knocks back and takes 0.9 s to recover |
-| Skill | Shield Bash | Stuns for 1.5 s, 6 s cooldown |
+| Skill | Shield Bash (Q) | Stuns for 1.5 s, 6 s cooldown |
 | Flasks | 3 | Each heals 40 HP; refilled at a bonfire |
 
 Levelling is Souls-style: spend gold at a bonfire. Each level adds +10 HP,
@@ -105,6 +104,12 @@ captain alone can guard and walk away.
 A thrown or shot missile needs a clear line: a house, a hut, a tower, a
 dead tree or the woods hide whoever stands behind them, and a thrower
 walks round for a clear shot. Archers in the band need one too.
+
+A monster winds up before it strikes, its attack playing out with a
+white flash at the start: roll or raise the shield then, and strike back
+while it recovers. No more than two blades press one mark at a time;
+the rest hold back and wait their turn. A hit breaks a light monster's
+wind-up; gnolls, lizards and shamans do not flinch.
 
 Camps sit in the maze rooms. An enemy chases up to 10 tiles from its post,
 then walks back; the engine already has a guard leash.

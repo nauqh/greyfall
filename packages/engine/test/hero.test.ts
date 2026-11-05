@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FOES, GOLD_STONE, HERO, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, swingWait, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
+import { FOES, GOLD_STONE, HERO, PACE, mayEngage, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, swingWait, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
 
 const goblin = FOES.torch!;
 const home = { col: 10, row: 10 };
@@ -62,6 +62,21 @@ describe("a blow", () => {
       expect(throughGuard(foe!.attack)).toBeLessThan(foe!.attack);
       expect(throughGuard(foe!.attack)).toBeGreaterThanOrEqual(1);
     }
+  });
+});
+
+describe("the pace of a fight", () => {
+  it("gives every monster a wind-up to read, shorter than the wait between its blows", () => {
+    for (const foe of Object.values(FOES)) {
+      expect(foe!.windup).toBeGreaterThanOrEqual(0.4);
+      expect(foe!.every).toBeGreaterThan(foe!.windup + PACE.recover);
+    }
+  });
+
+  it("lets no more than two close in on one mark at a time", () => {
+    expect(mayEngage(0)).toBe(true);
+    expect(mayEngage(PACE.engage - 1)).toBe(true);
+    expect(mayEngage(PACE.engage)).toBe(false);
   });
 });
 

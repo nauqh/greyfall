@@ -7,13 +7,26 @@ import { canStep, cellKey, stepsFrom, tileDistance, type Cell } from "./island.t
 /** A walk, not a sprint: 2.8 tiles a second (4 read as running everywhere). */
 /** Swings: the first two of a combo `chain` seconds apart, the finisher's recovery `every`; a swing within `combo` seconds of
  *  being ready again chains. A raised shield lets a fifth of a blow from the front through. */
-export const HERO = { hp: 100, attack: 12, chain: 0.45, every: 0.9, speed: 2.8, sprint: 1.6, guard: 0.2, combo: 1.4, flasks: 3, flask: 40 } as const;
+export const HERO = { hp: 100, attack: 12, chain: 0.65, every: 1.1, hit: 0.2, speed: 2.8, sprint: 1.6, guard: 0.2, combo: 1.4, flasks: 3, flask: 40 } as const;
+
+/** Shield Bash, the captain's skill: a shove with the shield that stuns what it meets. Seconds and points. */
+export const BASH = { damage: 4, stun: 1.5, every: 6, cost: 18 } as const;
+
+/**
+ * The pace of a fight, after Dark Souls: a monster stands this long after striking, open to a punish, and no more
+ * than `engage` close in on one mark at a time; the rest hold back and wait their turn.
+ */
+export const PACE = { recover: 0.45, engage: 2 } as const;
 
 export interface FoeStats {
   hp: number;
   attack: number;
   /** Seconds between blows. */
   every: number;
+  /** Seconds it winds up before a blow lands: the moment to roll or raise a shield. */
+  windup: number;
+  /** Unflinching: a hit does not break its wind-up. */
+  poise?: boolean;
   /** Tiles within which it notices the hero. */
   aggro: number;
   /** Tiles from its post past which it gives up and walks back. */
@@ -34,21 +47,21 @@ export const GOLD_STONE = 25;
 /** The monsters that fight, by dweller kind; everything else on a map is scenery or a bystander. Most are a little
  *  slower than the hero, so it can walk away from a fight; spiders and thieves are quicker. */
 export const FOES: Partial<Record<string, FoeStats>> = {
-  torch: { hp: 30, attack: 6, every: 1.2, aggro: 6, leash: 10, speed: 2.2, gold: 6 },
-  spear: { hp: 40, attack: 8, every: 1.4, aggro: 6, leash: 10, speed: 2.2, gold: 9 },
-  skull: { hp: 25, attack: 5, every: 1.0, aggro: 5, leash: 9, speed: 1.9, gold: 7 },
-  spider: { hp: 22, attack: 5, every: 0.9, aggro: 5, leash: 8, speed: 3, gold: 5 },
-  thief: { hp: 28, attack: 7, every: 1.0, aggro: 5, leash: 8, speed: 3, gold: 15 },
-  lizard: { hp: 35, attack: 7, every: 1.2, aggro: 5, leash: 9, speed: 2.2, gold: 8 },
-  snake: { hp: 18, attack: 4, every: 1.0, aggro: 4, leash: 7, speed: 2.2, gold: 4 },
+  torch: { hp: 30, attack: 6, every: 2.4, windup: 0.6, aggro: 6, leash: 10, speed: 2.2, gold: 6 },
+  spear: { hp: 40, attack: 8, every: 2.8, windup: 0.75, aggro: 6, leash: 10, speed: 2.2, gold: 9 },
+  skull: { hp: 25, attack: 5, every: 2.2, windup: 0.55, aggro: 5, leash: 9, speed: 1.9, gold: 7 },
+  spider: { hp: 22, attack: 5, every: 2.0, windup: 0.5, aggro: 5, leash: 8, speed: 3, gold: 5 },
+  thief: { hp: 28, attack: 7, every: 2.0, windup: 0.45, aggro: 5, leash: 8, speed: 3, gold: 15 },
+  lizard: { hp: 35, attack: 7, every: 2.6, windup: 0.7, poise: true, aggro: 5, leash: 9, speed: 2.2, gold: 8 },
+  snake: { hp: 18, attack: 4, every: 2.2, windup: 0.5, aggro: 4, leash: 7, speed: 2.2, gold: 4 },
   // Throwers and shooters: they stop at range and let fly.
-  gnoll: { hp: 45, attack: 9, every: 1.6, aggro: 7, leash: 10, speed: 2.2, gold: 12, range: 4 },
-  slingshot: { hp: 18, attack: 5, every: 1.6, aggro: 7, leash: 10, speed: 2.2, gold: 7, range: 5 },
-  shaman: { hp: 35, attack: 9, every: 2.0, aggro: 7, leash: 10, speed: 1.9, gold: 14, range: 5 },
+  gnoll: { hp: 45, attack: 9, every: 3.0, windup: 0.8, poise: true, aggro: 7, leash: 10, speed: 2.2, gold: 12, range: 4 },
+  slingshot: { hp: 18, attack: 5, every: 2.6, windup: 0.6, aggro: 7, leash: 10, speed: 2.2, gold: 7, range: 5 },
+  shaman: { hp: 35, attack: 9, every: 3.2, windup: 0.9, poise: true, aggro: 7, leash: 10, speed: 1.9, gold: 14, range: 5 },
   // On the wing, over anything, quick: only an archer brings them down.
-  bat: { hp: 16, attack: 4, every: 1.1, aggro: 6, leash: 9, speed: 3, gold: 5, flies: true },
-  imp: { hp: 22, attack: 6, every: 1.2, aggro: 6, leash: 9, speed: 3, gold: 9, flies: true },
-  bee: { hp: 8, attack: 3, every: 1.0, aggro: 4, leash: 6, speed: 3.2, gold: 2, flies: true },
+  bat: { hp: 16, attack: 4, every: 2.2, windup: 0.5, aggro: 6, leash: 9, speed: 3, gold: 5, flies: true },
+  imp: { hp: 22, attack: 6, every: 2.4, windup: 0.6, aggro: 6, leash: 9, speed: 3, gold: 9, flies: true },
+  bee: { hp: 8, attack: 3, every: 2.0, windup: 0.45, aggro: 4, leash: 6, speed: 3.2, gold: 2, flies: true },
 };
 
 /** Whether a missile flies clear from `a` to `b`: no tile it crosses, the two ends aside, is cover (a wall, a wood). */
@@ -59,6 +72,11 @@ export function clearShot(a: Cell, b: Cell, cover: (c: Cell) => boolean): boolea
     if (!(c.col === a.col && c.row === a.row) && !(c.col === b.col && c.row === b.row) && cover(c)) return false;
   }
   return true;
+}
+
+/** Whether a monster may start a blow at its mark: only while fewer than `PACE.engage` others are already at it. */
+export function mayEngage(engaged: number): boolean {
+  return engaged < PACE.engage;
 }
 
 /** Whether a striker reaching `range` tiles can hit a monster: one on the wing only from afar, with a bow. */
