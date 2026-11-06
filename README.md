@@ -76,7 +76,7 @@ rounds design), [RTS.md](RTS.md) (the move to real time) and
 | Mode | Route | |
 | --- | --- | --- |
 | Play | `/map` | The real-time war against the AI |
-| Atlas | `/atlas` | The whole world on one map, to look round |
+| Atlas | `/atlas` | The Souls game: come ashore at the Landing; the world map (`/atlas/map`) opens from a bonfire |
 | Skirmish | `/battle` | Auto chess against three AI clans: five knights and seven monsters, star-ups and traits |
 | Duel | `/duel` | A 20-gold draft against a friend via a room code |
 

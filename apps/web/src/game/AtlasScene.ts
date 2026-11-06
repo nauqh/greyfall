@@ -17,6 +17,11 @@ import {
   areaMap,
   districtOf,
   FOES,
+  TROLL,
+  chargeLine,
+  trollMove,
+  type TrollMove,
+  type Note,
   GOLD_STONE,
   HERO,
   NPCS,
@@ -85,6 +90,8 @@ export interface AtlasApi {
   dev: (on: boolean) => void;
   /** In a talk: the next page, or the end of it. */
   next: () => void;
+  /** At a bonfire just rested at: sit by it, the camera drawn in, or stand again; sitting gives the bonfire's name. */
+  sit: (on: boolean) => string | null;
   /** In a menu with someone who hires out: pick an option, as E on it would. */
   choose: (i: number) => void;
   /** Draw the Souls map over the tier in view. */
@@ -150,6 +157,8 @@ export interface AtlasHooks {
 export interface Say {
   name: string;
   text: string;
+  /** A note on the ground, read off its paper, not spoken. */
+  note?: boolean;
   /** More pages follow. */
   more: boolean;
 }
@@ -236,7 +245,7 @@ const BEAST: Record<string, Beast> = {
   spear: { idle: `${EP}Spear Goblin/Spear Goblin_Idle.png`, move: `${EP}Spear Goblin/Spear Goblin_Run.png`, attack: `${EP}Spear Goblin/Spear Goblin_Attack Fast.png`, frame: 256, anchor: 174 / 256 },
   thief: { idle: `${EP}Thief/Thief_Idle.png`, move: `${EP}Thief/Thief_Run.png`, attack: `${EP}Thief/Thief_Attack.png`, frame: 192, anchor: 131 / 192 },
   gnoll: { idle: `${EP}Gnoll/Gnoll_Idle.png`, move: `${EP}Gnoll/Gnoll_Walk.png`, attack: `${EP}Gnoll/Gnoll_Throw.png`, frame: 192, anchor: 133 / 192 },
-  troll: { idle: `${EP}Troll/Troll_Idle.png`, move: `${EP}Troll/Troll_Walk.png`, frame: 384, anchor: 296 / 384, scale: 0.8 },
+  troll: { idle: `${EP}Troll/Troll_Idle.png`, move: `${EP}Troll/Troll_Walk.png`, attack: `${EP}Troll/Troll_Attack.png`, frame: 384, anchor: 296 / 384, scale: 0.8 },
   skull: { idle: `${EP}Skull/Skull_Idle.png`, move: `${EP}Skull/Skull_Run.png`, attack: `${EP}Skull/Skull_Attack.png`, frame: 192, anchor: 128 / 192 },
   skullGuard: { idle: `${EP}Extra/Skull Guard/Skull_Guard.png`, frame: 192, anchor: 128 / 192 },
   shaman: { idle: `${EP}Hex Shaman/Hex Shaman_Idle.png`, move: `${EP}Hex Shaman/Hex Shaman_Run.png`, attack: `${EP}Hex Shaman/Hex Shaman_Attack.png`, frame: 192, anchor: 136 / 192 },
@@ -356,8 +365,18 @@ interface Foe extends Body {
   kind: string;
   home: Cell;
   stats: FoeStats;
-  /** A blow drawn back: when it lands, and on whom. */
-  windup: { at: number; mark: Body } | null;
+  /** A blow drawn back: when it lands, and on whom; a boss's, which blow and the cells it falls on. */
+  windup: { at: number; mark: Body; move?: TrollMove; aim?: Cell[] } | null;
+  /** A boss's last blow, so it does not repeat one at range. */
+  last?: TrollMove;
+}
+/** Embers on the ground after the troll's toss: they burn whoever stands in them until they die down. */
+interface Ember {
+  at: Cell;
+  until: number;
+  tick: number;
+  from: Foe;
+  s: Phaser.GameObjects.Sprite;
 }
 /** A companion in the band, and the spot it keeps on hold. */
 interface Companion extends Body {
@@ -403,15 +422,21 @@ function remember(key: string, set: ReadonlySet<string>): void {
 const HEARD = "greyfall.heard";
 /** The bonfire last rested at; until one is, the Harbour square's. */
 const REST = "greyfall.rest";
+/** Every bonfire rested at, `area:col,row`, the places the map can travel to. */
+const KINDLED = "greyfall.kindled";
 function restPoint(): { area: AreaId; col: number; row: number } {
   try {
     const r = JSON.parse(localStorage.getItem(REST) ?? "null") as { area: AreaId; col: number; row: number } | null;
     if (r && areaMap(r.area).fires.some((f) => f.col === r.col && f.row === r.row)) return r;
   } catch {}
-  return { area: "harbour", col: 59, row: 46 };
+  return { area: "landing", ...areaMap("landing").fires[0]! };
 }
 /** Gold carried, the gold stones already taken, and the gold left where the captain last died: kept on this browser. */
 const GOLD = "greyfall.gold";
+/** Bosses slain, which never come back, and the keys they drop, by the boss's kind. */
+const SLAIN = "greyfall.slain";
+const KEYS = "greyfall.keys";
+const BOSS_KEY: Partial<Record<string, string>> = { troll: "Troll Key" };
 const TAKEN = "greyfall.taken";
 const LOST = "greyfall.lost";
 type Lost = { area: AreaId; col: number; row: number; gold: number };
@@ -502,6 +527,10 @@ export class AtlasScene extends Phaser.Scene {
   private combo = 0;
   private spawn: Cell = { col: 0, row: 0 };
   private foes: Foe[] = [];
+  private embers: Ember[] = [];
+  /** Notes on the ground here, and the one being read. */
+  private notes: Note[] = [];
+  private reading: Note | null = null;
   private folk: Folk[] = [];
   private talk: { folk: Folk; lines: readonly string[]; key: string; sets?: WorldFlag; page: number } | null = null;
   /** The flags as the area was entered: who stands where, and what they say, holds until the captain leaves and comes back. */
@@ -547,6 +576,9 @@ export class AtlasScene extends Phaser.Scene {
     this.aim = null;
     this.keys = null;
     this.foes = [];
+    this.embers = [];
+    this.notes = [];
+    this.reading = null;
     this.guarding = false;
     this.queued = false;
     this.stamina = STAMINA.max;
@@ -589,6 +621,7 @@ export class AtlasScene extends Phaser.Scene {
     loadTerrain(this);
     loadGroundColours(this);
     this.load.image("tilesetRoad", packUrl("Terrain/Tileset/Tilemap_color4.png"));
+    if (!this.textures.exists("note")) this.load.image("note", packUrl("ui/paper.png"));
     if (!this.textures.exists("gold")) this.load.image("gold", packUrl("Terrain/Resources/Gold/Gold Resource/Gold_Resource.png"));
     const sheet = (key: string, s: Sheet): void => {
       if (this.textures.exists(key)) return;
@@ -632,6 +665,7 @@ export class AtlasScene extends Phaser.Scene {
       for (const d of this.local.dwellers) {
         const b = BEAST[d.kind];
         if (FOES[d.kind] && b?.attack) sheet(`beast_${d.kind}_attack`, { file: b.attack, frame: b.frame, anchor: 0 });
+        if (d.kind === "troll") for (const k of ["Windup", "Recovery"]) sheet(`beast_troll_${k.toLowerCase()}`, { file: `${EP}Troll/Troll_${k}.png`, frame: 384, anchor: 0 });
       }
     }
     for (const k of ["deadTree", "stump", "bones", "skullSpike", "goldStone"]) sheet(`prop_${k}`, PROP[k]!);
@@ -709,6 +743,8 @@ export class AtlasScene extends Phaser.Scene {
       const near = open(at) ? at : (findRoute(at, open)?.at(-1) ?? local.entry);
       this.spawn = near;
       for (const p of local.props) if (COVER_ART.has(p.art)) for (const c of footprint(p)) this.cover.add(`${c.col},${c.row}`);
+      this.notes = local.notes ?? [];
+      for (const n of this.notes) this.addNote(n);
       this.spawnHero(near);
       if (this.hooks.carry) this.hero!.hp = Math.max(1, Math.min(this.hero!.max, this.hooks.carry.hp));
       this.hooks.onFlasks?.(this.flasks);
@@ -764,7 +800,8 @@ export class AtlasScene extends Phaser.Scene {
         this.scene.restart({ ...this.hooks, area: to, from, arrive, dev: this.dev, carry });
       },
       dev: (on) => this.setDev(on),
-      next: () => this.nextPage(),
+      next: () => (this.reading ? this.read(null) : this.nextPage()),
+      sit: (on) => this.sit(on),
       choose: (i) => {
         if (!this.menu) return;
         this.menu.pick = i;
@@ -1068,11 +1105,11 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** A blow landing: the target's flash and the number off it; a guarding hero takes little from the front. */
-  private hurt(from: Body, to: Body, attack: number): void {
+  private hurt(from: Body, to: Body, attack: number, open = false): void {
     const now = this.time.now;
     // Mid-roll nothing lands, as in Dark Souls.
     if (to === this.hero && now < this.roll.until) return;
-    let blocked = to === this.hero && this.guarding && this.facing(to, from);
+    let blocked = !open && to === this.hero && this.guarding && this.facing(to, from);
     if (blocked) {
       const b = block(this.stamina, attack);
       this.stamina = b.stamina;
@@ -1143,6 +1180,8 @@ export class AtlasScene extends Phaser.Scene {
       this.tweens.add({ targets: b.s, alpha: 0, duration: 500, onComplete: () => b.s.destroy() });
       const gold = (b as Foe).stats?.gold;
       if (gold) this.dropGold(b.at, gold);
+      const key = BOSS_KEY[(b as Foe).kind];
+      if (key) this.felled((b as Foe).kind, key);
       return;
     }
     const hero = this.hero!;
@@ -1158,12 +1197,14 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** What E does here besides swing: talk to someone right beside, else rest at a bonfire beside, else talk to someone near. */
-  private eTarget(): { folk: Folk } | { fire: Cell } | { exit: Exit } | undefined {
+  private eTarget(): { folk: Folk } | { fire: Cell } | { note: Note } | { exit: Exit } | undefined {
     const at = this.hero!.at;
     const folk = this.folk.filter((f) => f.near).sort((a, b) => tileDistance(a.at, at) - tileDistance(b.at, at))[0];
     if (folk && tileDistance(folk.at, at) <= 1) return { folk };
     const fire = this.fireNear();
     if (fire) return { fire };
+    const note = this.notes.find((n) => tileDistance(n.at, at) <= 1);
+    if (note) return { note };
     const exit = this.local?.exits.find((e) => tileDistance(e.at, at) <= 1);
     if (exit) return { exit };
     return folk && { folk };
@@ -1216,9 +1257,23 @@ export class AtlasScene extends Phaser.Scene {
     try {
       localStorage.setItem(REST, JSON.stringify({ area: this.local!.area, col: fire.col, row: fire.row }));
     } catch {}
+    remember(KINDLED, remembered(KINDLED).add(`${this.local!.area}:${fire.col},${fire.row}`));
     this.gone = true;
     hero.way = [];
     this.hooks.onRest?.(this.local!.area);
+  }
+
+  /** Sat by the bonfire last rested at, after the Souls games: still, turned to the fire, the camera drawn in close. */
+  private sit(on: boolean): string | null {
+    const hero = this.hero;
+    if (!hero || !this.local) return null;
+    this.gone = on;
+    hero.way = [];
+    const fire = restPoint();
+    if (on) hero.s.setFlipX((fire.col + 0.5) * CELL < hero.s.x);
+    this.play(hero.s, hero.idle);
+    this.active.zoomTo(this.zoomFor(AREA_ROWS) * (on ? 1.7 : 1), 900, "Sine.easeInOut", true);
+    return districtOf(this.local, fire.col, fire.row)?.name || (AREAS.find((a) => a.id === this.local!.area)?.name ?? null);
   }
 
   /** R: a flask, if there is one and anything to heal; the hero stands still a moment to drink it. */
@@ -1470,7 +1525,7 @@ export class AtlasScene extends Phaser.Scene {
   private fight(time: number, dt: number): void {
     const hero = this.hero!;
     const rolling = time < this.roll.until;
-    this.guarding = !rolling && !hero.dead && this.playing && (!!this.keys?.f.isDown || this.shieldUp) && time >= this.guardBroken;
+    this.guarding = !rolling && !hero.dead && !this.gone && this.playing && (!!this.keys?.f.isDown || this.shieldUp) && time >= this.guardBroken;
     if (rolling) {
       this.slide(this.roll.dx, this.roll.dy, (this.roll.speed * dt) / 1000, !this.roll.back);
       if (time - this.roll.trail > 45) {
@@ -1506,6 +1561,7 @@ export class AtlasScene extends Phaser.Scene {
     }
     this.stamina = recover(this.stamina, dt / 1000, (time - this.spentAt) / 1000, this.guarding);
     this.lead(time, dt);
+    this.burn(time);
     this.foes.forEach((f, i) => {
       if (f.dead) return;
       if (f.windup && time >= f.windup.at) this.land(f, time);
@@ -1517,6 +1573,10 @@ export class AtlasScene extends Phaser.Scene {
       const m = foeTarget(f.at, f.stats.aggro, marks.map((b) => ({ at: b.at, draws: (b as Companion).kind === "lancer" })));
       const mark = marks[m] ?? hero;
       const intent = foeIntent(f.at, f.home, m >= 0 ? mark.at : null, f.stats);
+      if (f.kind === "troll" && m >= 0 && intent !== "return" && time >= f.next) {
+        const move = trollMove(tileDistance(f.at, mark.at), f.last ?? null);
+        if (move) return this.trollWindUp(f, mark, move, time);
+      }
       const missile = MISSILE[f.kind];
       const sighted = missile ? clearShot(f.at, mark.at, this.blocks) : Math.hypot(mark.s.x - f.s.x, mark.s.y - f.s.y) < 1.5 * CELL;
       // Blades take turns at a mark: the first two beside it (in the order they stand on the map) fight, the rest wait.
@@ -1575,13 +1635,99 @@ export class AtlasScene extends Phaser.Scene {
 
   /** The wind-up's end: a missile flies, or a blade lands if the mark is still in reach; a roll or a step away is a miss. */
   private land(f: Foe, time: number): void {
-    const { mark } = f.windup!;
+    const { mark, move, aim } = f.windup!;
     f.windup = null;
+    if (move) return this.trollLands(f, move, aim!, time);
     f.busy = time + PACE.recover * 1000;
     if (mark.dead) return;
     const missile = MISSILE[f.kind];
     if (missile) return this.loose(f, mark, f.stats.attack, missile);
     if (tileDistance(f.at, mark.at) <= 1 && Math.hypot(mark.s.x - f.s.x, mark.s.y - f.s.y) < 1.6 * CELL) this.hurt(f, mark, f.stats.attack);
+  }
+
+  /** The troll draws back for a blow, its cells glowing red on the ground until it falls. */
+  private trollWindUp(f: Foe, mark: Body, move: TrollMove, time: number): void {
+    const ms = TROLL[move].windup * 1000;
+    const aim = move === "slam" ? this.around(mark.at, TROLL.slam.radius) : move === "charge" ? chargeLine(f.at, mark.at) : this.scatter(mark.at, TROLL.toss.patches);
+    Object.assign(f, { last: move, way: [], windup: { at: time + ms, mark, move, aim }, next: time + f.stats.every * 1000, busy: time + ms });
+    if (Math.abs(mark.s.x - f.s.x) > 4) f.s.setFlipX(mark.s.x < f.s.x);
+    f.s.setTintFill(0xffffff);
+    this.time.delayedCall(70, () => f.s.clearTint());
+    f.s.play("beast_troll_windup_once");
+    const g = this.add.graphics().setDepth(DEPTH.unit - 1);
+    for (const c of aim) g.fillStyle(move === "toss" ? 0xff9a3a : 0xe03a2a, 0.45).fillRect(c.col * CELL + 2, c.row * CELL + 2, CELL - 4, CELL - 4);
+    this.tweens.add({ targets: g, alpha: { from: 0.4, to: 1 }, duration: ms, onComplete: () => g.destroy() });
+  }
+
+  /** The troll's blow falls: the club on its circle, the charge down its line, or embers that burn on. */
+  private trollLands(f: Foe, move: TrollMove, aim: Cell[], time: number): void {
+    f.busy = time + TROLL.recover * 1000;
+    f.s.play("beast_troll_attack_once");
+    f.s.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => !f.dead && f.s.play("beast_troll_recovery_once").once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => !f.dead && this.play(f.s, f.idle)));
+    const on = new Set(aim.map((c) => `${c.col},${c.row}`));
+    const struck = (dmg: number) => {
+      for (const b of [this.hero!, ...this.band]) if (!b.dead && on.has(`${b.at.col},${b.at.row}`)) this.hurt(f, b, dmg);
+    };
+    if (move === "slam") {
+      this.cameras.main.shake(160, 0.006);
+      return struck(TROLL.slam.damage);
+    }
+    if (move === "charge") {
+      const end = aim.at(-1);
+      if (!end) return;
+      struck(TROLL.charge.damage);
+      const ms = (aim.length / TROLL.charge.speed) * 1000;
+      f.busy += ms;
+      f.at = end;
+      this.tweens.add({ targets: f.s, x: (end.col + 0.5) * CELL, y: (end.row + 0.75) * CELL, duration: ms, onUpdate: () => f.s.setDepth(standing(f.s.y)) });
+      return;
+    }
+    for (const at of aim) {
+      const y = (at.row + 0.75) * CELL;
+      const s = this.add.sprite((at.col + 0.5) * CELL, y, "fire").setOrigin(0.5, FIRE.anchor).setScale(0.55).setDepth(standing(y));
+      this.loop(s, "fire");
+      this.embers.push({ at, until: time + TROLL.toss.burn * 1000, tick: time, from: f, s });
+    }
+  }
+
+  /** Embers die down in time, and burn whoever stands in them every tick; a shield is no help against the ground. */
+  private burn(time: number): void {
+    this.embers = this.embers.filter((e) => {
+      if (time >= e.until) return void e.s.destroy();
+      if (time >= e.tick) {
+        e.tick = time + TROLL.toss.tick * 1000;
+        for (const b of [this.hero!, ...this.band]) if (!b.dead && b.at.col === e.at.col && b.at.row === e.at.row) this.hurt(e.from, b, TROLL.toss.damage, true);
+      }
+      return true;
+    });
+  }
+
+  /** The open cells within `r` of a cell, itself among them. */
+  private around(at: Cell, r: number): Cell[] {
+    const cells: Cell[] = [];
+    for (let dr = -r; dr <= r; dr++) for (let dc = -r; dc <= r; dc++) if (isWalkable(at.col + dc, at.row + dr)) cells.push({ col: at.col + dc, row: at.row + dr });
+    return cells;
+  }
+
+  /** `n` open cells where embers land: the mark's own, the rest scattered near it. */
+  private scatter(at: Cell, n: number): Cell[] {
+    const near = this.around(at, 2).filter((c) => c.col !== at.col || c.row !== at.row);
+    const picked = [at];
+    while (picked.length < n && near.length) picked.push(near.splice(Math.floor(Math.random() * near.length), 1)[0]!);
+    return picked;
+  }
+
+  /** A boss down: it stays down for good, and its key is the captain's. */
+  private felled(kind: string, key: string): void {
+    remember(SLAIN, remembered(SLAIN).add(kind));
+    remember(KEYS, remembered(KEYS).add(kind));
+    const cam = this.cameras.main;
+    const t = this.add
+      .text(cam.width / 2, cam.height * 0.4, `${key}\nobtained`, { fontFamily: FONT, fontSize: "40px", fontStyle: "bold", color: "#f4cf6b", stroke: "#1c2634", strokeThickness: 8, align: "center" })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(DEPTH.clouds + 10);
+    this.tweens.add({ targets: t, alpha: { from: 0, to: 1 }, duration: 600, hold: 2400, yoyo: true, onComplete: () => t.destroy() });
   }
 
   /** A hit breaks a monster's wind-up, unless it is one that does not flinch. */
@@ -1606,11 +1752,11 @@ export class AtlasScene extends Phaser.Scene {
   /** Loops for every sheet with more than one frame: props, beasts, knights. */
   private makeAnims(): void {
     for (const key of this.textures.getTextureKeys()) {
-      const once = key.endsWith("_attack") || [HERO_ATTACK.key, HERO_ATTACK2.key, COMPANION_ATTACK.lancer.key, COMPANION_ATTACK.archer.key, HEAL_FX.key].includes(key);
+      const once = /_(attack|windup|recovery)$/.test(key) || [HERO_ATTACK.key, HERO_ATTACK2.key, COMPANION_ATTACK.lancer.key, COMPANION_ATTACK.archer.key, HEAL_FX.key].includes(key);
       if (once && !this.anims.exists(`${key}_once`)) {
         // The hero's swings fill the wait to the next one (4 frames, 0.4 s) rather than snap through and stand idle.
         // The hero's swings fill the wait to the next; a monster's attack plays out over its wind-up.
-        const rate = key === HERO_ATTACK.key || key === HERO_ATTACK2.key || (key.startsWith("beast_") && key.endsWith("_attack")) ? 10 : key === HEAL_FX.key ? 12 : 16;
+        const rate = key === HERO_ATTACK.key || key === HERO_ATTACK2.key || (key.startsWith("beast_") && /_(attack|windup|recovery)$/.test(key)) ? 10 : key === HEAL_FX.key ? 12 : 16;
         this.anims.create({ key: `${key}_once`, frames: this.anims.generateFrameNumbers(key), frameRate: rate, repeat: 0 });
       }
       const frames = this.textures.get(key).frameTotal - 1;
@@ -2020,7 +2166,10 @@ export class AtlasScene extends Phaser.Scene {
 
   /** Creatures and knights, idle at their spot or walking their beat. */
   private addDweller(d: Dweller): void {
-    if (this.local && FOES[d.kind]) return this.addFoe(d);
+    if (this.local && FOES[d.kind]) {
+      if (!remembered(SLAIN).has(d.kind)) this.addFoe(d);
+      return;
+    }
     const look = this.look(d);
     const x = (d.col + 0.5) * CELL;
     const y = (d.row + 0.75) * CELL;
@@ -2248,11 +2397,13 @@ export class AtlasScene extends Phaser.Scene {
   private interact(repeat: boolean): void {
     if (!this.playing || this.hero!.dead || this.gone) return;
     if (this.menu) return void (!repeat && this.choose());
+    if (this.reading) return void (!repeat && this.read(null));
     const t = this.talk ? undefined : this.eTarget();
     if (this.talk || t) {
       if (repeat) return;
       if (this.talk) return this.nextPage();
       if ("fire" in t!) return this.rest(t.fire);
+      if ("note" in t!) return this.read(t.note);
       if ("exit" in t!) return this.traverse(t.exit);
       return RECRUITER[t!.folk.npc.id] ? this.openMenu(t!.folk) : this.talkTo(t!.folk);
     }
@@ -2288,7 +2439,7 @@ export class AtlasScene extends Phaser.Scene {
     this.time.delayedCall(HERO.hit * 1000, () => {
       if (foe.dead || hero.dead || tileDistance(foe.at, hero.at) > 1 || Math.hypot(foe.s.x - hero.s.x, foe.s.y - hero.s.y) > 1.6 * CELL) return;
       this.hurt(hero, foe, HERO.attack);
-      if (step === 3 && !foe.dead) this.knockBack(foe, this.time.now);
+      if (step === 3 && !foe.dead && !BOSS_KEY[foe.kind]) this.knockBack(foe, this.time.now);
     });
   }
 
@@ -2317,6 +2468,20 @@ export class AtlasScene extends Phaser.Scene {
     const t = nextTalk(f.npc, this.heard, this.seen);
     this.talk = { folk: f, lines: t.lines, key: talkKey(f.npc, t), sets: t.sets, page: 0 };
     this.say();
+  }
+
+  /** A note opened, shown as a talk is, or closed. */
+  private read(n: Note | null): void {
+    this.reading = n;
+    this.hooks.onSay?.(n && { name: "A note in the sand", text: n.text, more: false, note: true });
+  }
+
+  /** A note lying on the ground, glowing softly so it is seen from a way off. */
+  private addNote(n: Note): void {
+    const [x, y] = [(n.at.col + 0.5) * CELL, (n.at.row + 0.6) * CELL];
+    this.add.image(x, y, "note").setScale(0.32).setAngle(Math.random() * 24 - 12).setDepth(DEPTH.unit - 1);
+    const glow = this.add.image(x, y, "glow").setBlendMode(Phaser.BlendModes.ADD).setTint(0xffb347).setScale(0.45).setDepth(DEPTH.unit - 1);
+    this.tweens.add({ targets: glow, alpha: { from: 0.25, to: 0.6 }, duration: 1400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
   }
 
   private say(): void {
@@ -2359,8 +2524,9 @@ export class AtlasScene extends Phaser.Scene {
       }
       if (this.menu?.folk === f && d > TALK_RANGE) this.closeMenu(true);
     }
-    const t = this.talk || this.menu || hero.dead || this.gone ? undefined : this.eTarget();
-    const action = !t ? null : "folk" in t ? "Talk" : "fire" in t ? "Rest" : this.exitWord(t.exit);
+    if (this.reading && tileDistance(this.reading.at, hero.at) > 1) this.read(null);
+    const t = this.talk || this.menu || this.reading || hero.dead || this.gone ? undefined : this.eTarget();
+    const action = !t ? null : "folk" in t ? "Talk" : "fire" in t ? "Rest" : "note" in t ? "Read" : this.exitWord(t.exit);
     if (action !== this.nearName) this.hooks.onNear?.((this.nearName = action));
   }
 

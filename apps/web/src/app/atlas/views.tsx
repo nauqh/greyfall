@@ -9,7 +9,7 @@ import { Clouds } from "../../game/Clouds";
 import { packUrl } from "../../game/art";
 import { GameCanvas } from "../../game/GameCanvas";
 
-/** The HUD shown or hidden: the H key or the corner button, remembered on this browser. */
+/** The HUD shown or hidden with the H key, remembered on this browser. */
 export function useHud(): [boolean, () => void] {
   const [shown, setShown] = useState(true);
   useEffect(() => {
@@ -32,14 +32,6 @@ export function useHud(): [boolean, () => void] {
     return () => window.removeEventListener("keydown", key);
   }, []);
   return [shown, toggle];
-}
-
-export function HudToggle({ shown, toggle }: { shown: boolean; toggle: () => void }) {
-  return (
-    <button className="btn small hudToggle" type="button" onClick={toggle} aria-pressed={!shown} title="Show or hide the HUD (H)">
-      {shown ? "Hide HUD" : "Show HUD"}
-    </button>
-  );
 }
 
 /** A one-way drop is warned of once, on this browser; the warning is a convenience, so a blocked store just warns again. */
@@ -74,8 +66,10 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const [menu, setMenu] = useState<MenuView | null>(null);
   // Died: the words, then the dark, then waking at the bonfire in this area.
   const [died, setDied] = useState<AreaId | null>(null);
+  // Sat at a bonfire after a rest: its name, and the option picked.
+  const [fire, setFire] = useState<{ name: string; pick: number } | null>(null);
   const api = useRef<AtlasApi | null>(null);
-  const now = useRef({ area: first, cameFrom: undefined as AreaId | undefined, quiet: false, travelling: false });
+  const now = useRef({ area: first, cameFrom: undefined as AreaId | undefined, quiet: false, travelling: false, sit: false });
 
   const depart = (d: Departure): void => {
     now.current.travelling = true;
@@ -101,6 +95,23 @@ export function AreaView({ area: first }: { area: AreaId }) {
     window.history.pushState(null, "", rest ? `/atlas/${d.to}` : `/atlas/${d.to}?from=${from}`);
     api.current?.travel(d.to, from, d.kind);
   };
+  // Through the crossing: a rest sits the captain at the fire; anything else names where they are.
+  const landed = (): void => {
+    setTravel(null);
+    now.current.travelling = false;
+    if (!now.current.sit) return announce();
+    now.current.sit = false;
+    const name = api.current?.sit(true);
+    if (name) setFire({ name, pick: 0 });
+  };
+  const leaveFire = (): void => {
+    api.current?.sit(false);
+    setFire(null);
+  };
+  const bonfire = [
+    { label: "Travel", go: () => router.push(`/atlas/map?from=${now.current.area}`) },
+    { label: "Leave", go: leaveFire },
+  ];
   // The name mounts two painted frames after the map is in view, so its clock never runs while the first frames are still drawing.
   const announce = (): void => {
     if (!now.current.quiet) requestAnimationFrame(() => requestAnimationFrame(() => setReveal(AREAS.find((a) => a.id === now.current.area)?.name ?? null)));
@@ -122,7 +133,11 @@ export function AreaView({ area: first }: { area: AreaId }) {
     onGold: setGold,
     onBand: setBand,
     onMenu: setMenu,
-    onRest: (to) => !now.current.travelling && wake(to),
+    onRest: (to) => {
+      if (now.current.travelling) return;
+      now.current.sit = true;
+      wake(to);
+    },
     onDeath: (to) => {
       if (now.current.travelling) return;
       setReveal(null);
@@ -147,6 +162,20 @@ export function AreaView({ area: first }: { area: AreaId }) {
       return !on;
     });
   useEffect(() => {
+    if (!fire) return;
+    const key = (e: KeyboardEvent): void => {
+      const k = e.key.toLowerCase();
+      if (k === "w" || k === "arrowup" || k === "s" || k === "arrowdown") {
+        const d = k === "w" || k === "arrowup" ? -1 : 1;
+        setFire((f) => f && { ...f, pick: (f.pick + d + bonfire.length) % bonfire.length });
+      } else if ((k === "e" || k === "enter") && !e.repeat) bonfire[fire.pick]!.go();
+      else if (k === "escape") leaveFire();
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fire]);
+  useEffect(() => {
     const key = (e: KeyboardEvent): void => {
       if (e.key === "`" && !(e.target instanceof HTMLInputElement)) toggleDev();
     };
@@ -158,8 +187,10 @@ export function AreaView({ area: first }: { area: AreaId }) {
     <main className="stage">
       <GameCanvas
         start={(el) => {
-          // Arrived by a link with ?from=: the map opens at the exit back there.
-          hooks.from = (new URLSearchParams(window.location.search).get("from") as AreaId | null) ?? undefined;
+          // Arrived by a link with ?from=: the map opens at the exit back there; travelled to with ?rest=, at the bonfire.
+          const q = new URLSearchParams(window.location.search);
+          hooks.from = (q.get("from") as AreaId | null) ?? undefined;
+          if (q.has("rest")) hooks.arrive = "rest";
           try {
             hooks.dev = localStorage.getItem("greyfall.dev") === "1";
           } catch {}
@@ -181,11 +212,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
               mode={travel.phase === "cover" ? "close" : travel.phase === "hold" ? "cover" : "open"}
               onDone={() => {
                 if (travel.phase === "cover") covered(travel);
-                else if (travel.phase === "uncover") {
-                  setTravel(null);
-                  now.current.travelling = false;
-                  announce();
-                }
+                else if (travel.phase === "uncover") landed();
               }}
             />
           </div>
@@ -198,13 +225,23 @@ export function AreaView({ area: first }: { area: AreaId }) {
             onAnimationEnd={(e) => {
               if (e.target !== e.currentTarget) return;
               if (travel.phase === "cover") covered(travel);
-              else if (travel.phase === "uncover") {
-                setTravel(null);
-                now.current.travelling = false;
-                announce();
-              }
+              else if (travel.phase === "uncover") landed();
             }}
           />
+        )}
+        {fire && (
+          // Sat at a bonfire, after Dark Souls 3: the dark drawn in round the fire, its name, travel or stand.
+          <div className="bonfire" role="menu" aria-label={fire.name}>
+            <span className="bonfireName">{fire.name}</span>
+            {bonfire.map((o, i) => (
+              <button key={o.label} type="button" role="menuitem" className={`shopOption${i === fire.pick ? " picked" : ""}`} onClick={o.go}>
+                {o.label}
+              </button>
+            ))}
+            <span className="talkNext" aria-hidden="true">
+              W/S, E
+            </span>
+          </div>
         )}
         {menu && (
           // A merchant's menu, after the Souls games: the name, the options, the one picked marked.
@@ -230,7 +267,13 @@ export function AreaView({ area: first }: { area: AreaId }) {
             </span>
           </div>
         )}
-        {say ? (
+        {say?.note ? (
+          // A note on the ground: its words on the same paper it lies on.
+          <button key={say.text} type="button" className="noteRead" onClick={() => api.current?.next()} aria-live="polite">
+            <span className="noteHead">{say.name}</span>
+            <span className="noteText">{say.text}</span>
+          </button>
+        ) : say ? (
           // A talk, after the Souls games: the name, then one page at a time across the foot of the screen.
           <button key={say.text} type="button" className="talk" onClick={() => api.current?.next()} aria-live="polite">
             <span className="talkName">{say.name}</span>
@@ -239,7 +282,8 @@ export function AreaView({ area: first }: { area: AreaId }) {
           </button>
         ) : (
           near &&
-          !menu && (
+          !menu &&
+          !fire && (
             <div className="talkPrompt" role="status">
               <kbd>E</kbd> {near}
             </div>
@@ -299,8 +343,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
           )}
           {flasks !== null && (
             <div className="purse">
-              <span title="Drink a flask (R)">
-                <kbd>R</kbd>
+              <span title="Flasks">
                 <img className="purseIcon" src={packUrl("ui/icon_heal.png")} alt="Flasks" />
                 <b>{flasks}</b>
               </span>
@@ -326,8 +369,8 @@ export function AreaView({ area: first }: { area: AreaId }) {
           )}
           <header className="atlasTop">
             <div className="worldLinks">
-              <button className="linkBtn" type="button" onClick={() => router.push(`/atlas?focus=${area}`)}>
-                Back to the atlas
+              <button className="linkBtn" type="button" onClick={() => router.push("/")}>
+                Leave to the title
               </button>
               <button className="linkBtn" type="button" onClick={toggleDev} aria-pressed={dev} title="See the whole map (`)">
                 {dev ? "Play" : "Dev: whole map"}

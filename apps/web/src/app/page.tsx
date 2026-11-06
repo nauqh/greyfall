@@ -12,7 +12,7 @@ import { GameCanvas } from "../game/GameCanvas";
 
 const MENU = [
   { href: "/map", label: "Play", hint: "The War. Raise a town, train an army, take the island." },
-  { href: "/atlas", label: "Atlas", hint: "The Shattered Reach on one map: seven areas, their gates, and everything that lives there." },
+  { href: "/atlas", label: "Atlas", hint: "Come ashore at the Landing and fight through the Shattered Reach, bonfire to bonfire." },
   { href: "/battle", label: "Skirmish", hint: "Auto chess against three clans. Buy, merge, and outlast them." },
   { href: "/duel", label: "Duel", hint: "Open a room and send the code to a friend." },
 ] as const;

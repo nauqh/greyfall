@@ -55,6 +55,13 @@ export interface AreaMap extends AtlasTier {
   decks: Cell[];
   /** Draws its roads as streets in the road colour: a town's, where a way should read as a way. */
   streets?: boolean;
+  /** Notes left on the ground, after the Souls games' messages: read with E. */
+  notes?: Note[];
+}
+
+export interface Note {
+  at: Cell;
+  text: string;
 }
 
 /**
@@ -237,6 +244,7 @@ function pad(m: AreaMap, n: number): AreaMap {
     exits,
     districts: m.districts.map((d) => ({ ...d, at: at(d.at), ...(d.box && { box: { ...d.box, x: d.box.x + n, y: d.box.y + n } }) })),
     decks: m.decks.map(at),
+    ...(m.notes && { notes: m.notes.map((x) => ({ ...x, at: at(x.at) })) }),
   };
 }
 
@@ -667,6 +675,7 @@ function harbour(): AreaMap {
     { to: "emberwood", name: "Ember Gate", kind: "gate", at: { col: 26, row: 1 } },
     { to: "undercroft", name: "Old Well", kind: "drop", at: { col: 56, row: 45 } },
     { to: "steps", name: "Watch Lift", kind: "shortcut", at: { col: 52, row: 9 } },
+    { to: "landing", name: "Shore Road", kind: "open", at: { col: 48, row: 76 } },
   ];
   // The hub is the brightest place in the game: green ground climbing through fresh green to a gold capital, no olive or teal.
   const districts: District[] = [
@@ -2184,7 +2193,49 @@ function saltreach(): AreaMap {
   return { ...tier, area: "saltreach", entry: { col: 86, row: 14 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [] };
 }
 
-const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour, emberwood, crags, greyfall, gilded, steps, undercroft, deeps, hollow, barrowmoor, fen, saltreach };
+function landing(): AreaMap {
+  const rng = makeRng("area:landing");
+  const t = tierBuilder("surface", rng, { cols: 60, rows: 44 });
+  const { prop, who } = t;
+
+  // Where a new captain comes ashore: a beach, the dunes behind it, and the road up to the Harbour. Short and safe, two
+  // goblins to learn on, and notes in the sand from those who landed before, one for each thing worth knowing.
+  for (const [x, y, rx, ry] of [[30, 34, 18, 7], [30, 21, 13, 8], [30, 8, 6, 8]] as const) t.blob("landing", x, y, rx, ry);
+  t.road([30, 36], [30, 27], [30, 14], [30, 1]);
+  t.bridge({ col: 30, row: 5 }, { col: 30, row: 1 }, 3);
+
+  // The Strand: the boat that brought the captain, the first fire.
+  prop("boat", 30, 42);
+  t.fires.push({ col: 36, row: 35 });
+  // The Dunes: a goblin who strayed from the wood, gold in the sand.
+  who("torch", 30, 20);
+  prop("goldStone", 37, 18);
+  // The Shore Road: one more goblin before the town.
+  who("torch", 31, 11);
+
+  const notes: Note[] = [
+    { at: { col: 28, row: 36 }, text: "W A S D to walk. Hold Shift while walking to sprint." },
+    { at: { col: 34, row: 33 }, text: "E to rest at a bonfire: it heals you and refills your flasks, but every monster comes back." },
+    { at: { col: 24, row: 33 }, text: "R drinks a flask. You carry three, so save them for when it counts." },
+    { at: { col: 30, row: 28 }, text: "A goblin ahead. Left click swings toward the cursor. Three swings chain, and the third knocks back." },
+    { at: { col: 25, row: 24 }, text: "A monster flashes white as it winds up. Tap Shift to roll through the blow, or hold right click to guard." },
+    { at: { col: 35, row: 23 }, text: "Swings, rolls and blows on the shield all cost stamina. Run dry and you can do none of them. Step back and breathe." },
+    { at: { col: 29, row: 15 }, text: "Die and your gold stays where you fell. Go back for it; die again on the way and it is lost." },
+    { at: { col: 32, row: 6 }, text: "The Harbour is up the road. Hire a band there, then 1, 2 and 3 tell them to follow, attack, or hold." },
+    { at: { col: 28, row: 3 }, text: "At the road's end, stand in the white light and press E to go on." },
+  ];
+  const exits: AreaExit[] = [{ to: "harbour", name: "Shore Road", kind: "open", at: { col: 30, row: 1 } }];
+  const districts: District[] = [
+    { name: "The Strand", at: { col: 30, row: 37 }, palette: [3], dress: "saltreach", decor: 1.5 },
+    { name: "The Dunes", at: { col: 30, row: 21 }, palette: [3], dress: "harbour", decor: 1.5 },
+    { name: "The Shore Road", at: { col: 30, row: 6 }, palette: [3], dress: "harbour", decor: 1 },
+  ];
+  const entry = { col: 30, row: 37 };
+  const tier = t.finish({ landing: 0.03 }, [entry]);
+  return { ...tier, area: "landing", entry, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes };
+}
+
+const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour, emberwood, crags, greyfall, gilded, steps, undercroft, deeps, hollow, barrowmoor, fen, saltreach, landing };
 
 /** The areas that have a map of their own so far. */
 export const MAPPED_AREAS = Object.keys(BUILT) as AreaId[];

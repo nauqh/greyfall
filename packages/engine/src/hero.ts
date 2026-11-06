@@ -59,7 +59,42 @@ export const FOES: Partial<Record<string, FoeStats>> = {
   bat: { hp: 16, attack: 4, every: 2.2, windup: 0.5, aggro: 6, leash: 9, speed: 3, gold: 5, flies: true },
   imp: { hp: 22, attack: 6, every: 2.4, windup: 0.6, aggro: 6, leash: 9, speed: 3, gold: 9, flies: true },
   bee: { hp: 8, attack: 3, every: 2.0, windup: 0.45, aggro: 4, leash: 6, speed: 3.2, gold: 2, flies: true },
+  // Bosses: never back once slain.
+  troll: { hp: 320, attack: 24, every: 2.4, windup: 1.1, poise: true, aggro: 7, leash: 9, speed: 1.6, gold: 150 },
 };
+
+/**
+ * The Cinder Troll's three blows, after GAME.md: a club slam on a ground circle, a charge down a line, embers tossed
+ * to burn. Each warns for its `windup` seconds, then it stands `recover` seconds, open. Tiles, seconds and points.
+ */
+export const TROLL = {
+  slam: { windup: 1.1, radius: 1, damage: 24 },
+  charge: { windup: 0.9, tiles: 6, damage: 20, speed: 12 },
+  toss: { windup: 1.0, patches: 3, damage: 5, burn: 4, tick: 0.5 },
+  recover: 1.3,
+} as const;
+export type TrollMove = "slam" | "charge" | "toss";
+
+/** The troll's next blow at a mark `distance` tiles off: a slam up close, a charge or embers in turn further out, none past a charge's reach. */
+export function trollMove(distance: number, last: TrollMove | null): TrollMove | null {
+  if (distance <= 2) return "slam";
+  if (distance > TROLL.charge.tiles) return null;
+  return last === "charge" ? "toss" : "charge";
+}
+
+/** The cells a charge crosses from `from` toward `to`, up to its reach, stopping where a step is barred (a wall, a cliff). */
+export function chargeLine(from: Cell, to: Cell): Cell[] {
+  const [dc, dr] = [to.col - from.col, to.row - from.row];
+  const n = Math.max(Math.abs(dc), Math.abs(dr));
+  const line: Cell[] = [];
+  let prev = from;
+  for (let i = 1; n > 0 && i <= TROLL.charge.tiles; i++) {
+    const c = { col: from.col + Math.round((dc * i) / n), row: from.row + Math.round((dr * i) / n) };
+    if (!canStep(prev, c)) break;
+    line.push((prev = c));
+  }
+  return line;
+}
 
 /** Whether a missile flies clear from `a` to `b`: no tile it crosses, the two ends aside, is cover (a wall, a wood). */
 export function clearShot(a: Cell, b: Cell, cover: (c: Cell) => boolean): boolean {

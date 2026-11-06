@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FOES, GOLD_STONE, HERO, PACE, mayEngage, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, swingWait, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
+import { FOES, GOLD_STONE, HERO, PACE, TROLL, chargeLine, trollMove, mayEngage, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, swingWait, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
 
 const goblin = FOES.torch!;
 const home = { col: 10, row: 10 };
@@ -104,11 +104,12 @@ describe("a thrower and a flyer", () => {
 });
 
 describe("gold", () => {
-  it("drops from every monster, and a stone is worth more than any one of them", () => {
-    for (const foe of Object.values(FOES)) {
+  it("drops from every monster, and a stone is worth more than any but a boss", () => {
+    for (const [kind, foe] of Object.entries(FOES)) {
       expect(foe!.gold).toBeGreaterThan(0);
-      expect(foe!.gold).toBeLessThan(GOLD_STONE);
+      if (kind !== "troll") expect(foe!.gold).toBeLessThan(GOLD_STONE);
     }
+    expect(FOES.troll!.gold).toBeGreaterThan(GOLD_STONE);
   });
 });
 
@@ -177,5 +178,22 @@ describe("the hero's walking", () => {
     useIsland(island(ground));
     const way = routeToward({ col: 2, row: 2 }, { col: 2, row: 0 });
     expect(way.at(-1)).toEqual({ col: 2, row: 1 });
+  });
+});
+
+describe("the cinder troll", () => {
+  it("slams up close, and further out charges and tosses embers in turn", () => {
+    expect(trollMove(1, null)).toBe("slam");
+    expect(trollMove(4, null)).toBe("charge");
+    expect(trollMove(4, "charge")).toBe("toss");
+    expect(trollMove(4, "toss")).toBe("charge");
+    expect(trollMove(TROLL.charge.tiles + 1, null)).toBeNull();
+  });
+
+  it("charges as far as its reach, and stops short of a wall", () => {
+    const island = (rows: string[]) => ({ rows, start: { a: { castle: { col: 1, row: 1 }, barracks: { col: 1, row: 1 } }, b: { castle: { col: 1, row: 1 }, barracks: { col: 1, row: 1 } } }, mines: [], lair: { col: 1, row: 1 } });
+    useIsland(island(["~~~~~~~~~~", "~........~", "~...T....~", "~~~~~~~~~~"]));
+    expect(chargeLine({ col: 1, row: 1 }, { col: 3, row: 1 }).at(-1)).toEqual({ col: 7, row: 1 });
+    expect(chargeLine({ col: 1, row: 2 }, { col: 8, row: 2 })).toEqual([{ col: 2, row: 2 }, { col: 3, row: 2 }]);
   });
 });

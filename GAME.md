@@ -71,7 +71,9 @@ Up to three companions at once, all Tiny Swords units already drawn in blue.
 
 - **Bonfires.** Resting fully heals the hero and the band, refills flasks,
   saves, and respawns every enemy in the area, but not bosses or opened
-  shortcuts. Each area has 1 to 3; they already stand on the maps.
+  shortcuts. Each area has 1 to 3; they already stand on the maps. After
+  the rest the captain sits by the fire, as in Dark Souls 3: Travel opens
+  the map, to go to any bonfire already lit, and Leave stands up.
 - **Death.** You wake at the last bonfire you rested at. Your carried gold
   stays where you fell, marked on the map. Reach it again to get it back;
   die on the way and it is gone.
@@ -116,26 +118,27 @@ then walks back; the engine already has a guard leash.
 
 - **Gold** drops from enemies where they fall, and lies in gold stones
   (25 each, taken once) and chests; walk up to it to pick it up. It is
-  the only currency: levels, recruits, upgrades.
-- **Gear**, three slots, deliberately small:
-  - **Weapon:** sword, axe, or spear (longer reach, slower).
-  - **Charm:** for example +1 flask, +10% gold, or stamina back on a hit.
-  - **Banner:** a buff for the whole band, such as +15% companion HP.
-- **The blacksmith** in the Harbour upgrades weapons +1 to +5 for gold and
-  ore from the Mine Hills and the Crags (see "Planned: a blacksmith" in
-  `ATLAS.md`).
+  the only currency: levels, recruits, sword upgrades.
+- **No gear.** The captain's sprite is fixed, so there are no weapons or
+  armour to find or wear.
+- **The blacksmith** in the Harbour upgrades the captain's sword +1 to +5
+  for gold and ore from the Mine Hills and the Crags (see "Planned: a
+  blacksmith" in `ATLAS.md`).
 
 ## The first slice
 
-1. **The Harbour:** the hub. Bonfire, recruiting (Lancer, Archer), the
+1. **The Landing:** the beach a new game starts on, south of the Harbour
+   up the Shore Road. A bonfire, two goblins, and notes on the ground
+   that teach the controls, read with E.
+2. **The Harbour:** the hub. Bonfire, recruiting (Lancer, Archer), the
    blacksmith.
-2. **Emberwood:** the first hostile area. Goblin camps through the maze, two
+3. **Emberwood:** the first hostile area. Goblin camps through the maze, two
    bonfires, the Treetop Walk shortcut.
-3. **The Cinder Troll** in Troll's Hollow, with three attacks:
+4. **The Cinder Troll** in Troll's Hollow, with three attacks:
    - **Club slam:** a ground circle that warns before it lands.
    - **Charge:** a straight line across the arena.
    - **Ember toss:** fire patches on the ground.
-4. **Reward:** the Troll Key and a new weapon.
+5. **Reward:** the Troll Key and its gold.
 
 **Done when:** you can walk out of the Harbour, die in Emberwood, recover
 your gold, open the shortcut, and kill the Troll with a band of two.

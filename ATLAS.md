@@ -4,11 +4,12 @@ Oct 26, 2026 · revised Oct 26: three tiers, lifts between them, and heights to 
 
 ## Summary
 
-The Shattered Reach as one world, at `/atlas`. It isn't a game yet: it's the
-world to build one in. It stands in three tiers on one grid:
+The Shattered Reach as one world. `/atlas` starts the game on the Landing;
+the whole world is the travel map at `/atlas/map`, opened from a bonfire.
+It stands in three tiers on one grid:
 
 - **The Gilded Reach (sky):** a sky city overhead.
-- **The Surface:** seven lands on the sea.
+- **The Surface:** eight lands on the sea.
 - **The Underneath:** caverns cut from the rock below.
 
 Within a tier, areas are joined only at named gates, the way a Souls map
@@ -38,6 +39,7 @@ roads) and its pathing walks it. The data is
 | Sky | Skyward Steps | drifting isles with watch posts, a lift down onto the castle | |
 | Sky | The Gilded Reach | the gnome-kings' golden hall on its own height, yellow guard, a monastery, bees, the warlord's throne isle with imps | The Sun Sentinel |
 | Surface | Saltreach | yellow militia, fishing villages, turtles, sharks offshore, pirate towers | |
+| Surface | The Landing (start) | the beach a new game starts on, notes in the sand that teach the controls, two goblins to learn on | |
 | Surface | Last Harbour (hub) | the blue castle on its own height above the town, the bonfire square, the Old Well, pawns at work | |
 | Surface | Emberwood | goblin warrens, the big pines (standing still), gnolls on Smoke Ridge | Cinder Troll |
 | Surface | Tinker Crags | a mesa that steps up three heights to the Tinker Peak, gnomes, bears, pandas, the Gnome Lift up | Old Bamboo |
@@ -59,7 +61,7 @@ BELOW     The Undercroft ──Cistern Run── Barrow Deeps ──Sinking Stai
 ```
 
 - **Surface gates:**
-  - Open: Old Bridge, Crag Stair, Fen Causeway, Barrow Path.
+  - Open: Shore Road, Old Bridge, Crag Stair, Fen Causeway, Barrow Path.
   - Barred: the Ember Gate.
   - Shortcut: the Moor Gate.
   - Locked: the Grey Gate.
@@ -190,10 +192,11 @@ so they never wall a ledge off.
 ## Area maps
 
 Every area has its own large map (`areas.ts`, 112 x 72 tiles), built with
-the same `tierBuilder`, at `/atlas/<area>`. "Enter" on an area's card opens
-it, and the camera stays inside that map. An exit at its edge, or a lift or
-well inside it, takes you to the next area's map; "Back to the atlas"
-returns to the atlas, focused on the area.
+the same `tierBuilder`, at `/atlas/<area>`, and the camera stays inside
+that map. An exit at its edge, or a lift or well inside it, takes you to
+the next area's map. Resting at a bonfire sits the captain by it, with
+Travel and Leave: Travel opens the map, whose area cards list the
+bonfires lit there, each one a place to travel to.
 
 Crossing between areas never leaves the page: the scene rebuilds itself
 as the next map inside the same game (`travel` on its api) while the
@@ -453,7 +456,7 @@ white shaft of light that marked every crossing are gone.
   drawn as a hedgerow of bushes, and only a mass of woods mingles its
   trees with the next district's.
 - **Area maps carry no banner**: an area's name is on its land, and
-  "Back to the atlas" is the one control left at the top.
+  "Leave to the title" is the one control left at the top.
 - **Area maps draw no roads.** A road there is open ground in the
   district's own colour: the engine's roads still keep woods and buildings
   off it, but a road tile's other colour read as a stripe painted across

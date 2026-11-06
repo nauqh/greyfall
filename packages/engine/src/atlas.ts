@@ -28,7 +28,8 @@ export type AreaId =
   | "gilded"
   | "undercroft"
   | "deeps"
-  | "hollow";
+  | "hollow"
+  | "landing";
 
 export interface AtlasArea {
   id: AreaId;
@@ -134,7 +135,7 @@ export interface AtlasMap {
 export const ATLAS_SIZE = { cols: 128, rows: 80 } as const;
 export const TIERS: readonly TierId[] = ["sky", "surface", "below"];
 /** One character a tile in `areaAt`, by the area's index in AREAS. */
-export const AREA_CODE = "0123456789ab";
+export const AREA_CODE = "0123456789abc";
 
 export const AREAS: readonly AtlasArea[] = [
   {
@@ -245,11 +246,20 @@ export const AREAS: readonly AtlasArea[] = [
     mood: 0x9ab4c8,
     label: { col: 64, row: 76 },
   },
+  {
+    id: "landing",
+    tier: "surface",
+    name: "The Landing",
+    blurb: "The beach under the Harbour where the captain came ashore. Those who landed before left notes in the sand for whoever came next.",
+    palette: [3, 3, 3],
+    mood: 0xffffff,
+    label: { col: 37, row: 66 },
+  },
 ];
 
 export const TIER_INFO: Record<TierId, { name: string; blurb: string; base: TierBase }> = {
   sky: { name: "The Gilded Reach", blurb: "The sky over the rock and the citadel, where the gnome-kings built in gold.", base: "sky" },
-  surface: { name: "The Surface", blurb: "Seven lands on the sea, joined at their gates.", base: "sea" },
+  surface: { name: "The Surface", blurb: "Eight lands on the sea, joined at their gates.", base: "sea" },
   below: { name: "The Underneath", blurb: "Caverns in the rock under the town, the moor and the fen.", base: "rock" },
 };
 
@@ -1154,6 +1164,7 @@ function surface(rng: Rng): AtlasTier {
     ["barrowmoor", 78, 46, 15, 10], ["barrowmoor", 88, 54, 8, 6],
     ["fen", 62, 70, 14, 7], ["fen", 78, 72, 10, 6],
     ["greyfall", 113, 27, 12, 15], ["greyfall", 113, 50, 12, 13], ["greyfall", 117, 66, 8, 6],
+    ["landing", 37, 62, 6, 4],
   ];
   for (const [a, x, y, rx, ry] of B) t.blob(a, x, y, rx, ry);
   t.separate();
@@ -1179,6 +1190,7 @@ function surface(rng: Rng): AtlasTier {
   t.relief({ area: "greyfall", at: { col: 113, row: 29 }, rx: 10, ry: 14, levels: 3, core: { at: { col: 112, row: 23 }, r: 2.2 } });
   t.relief({ area: "greyfall", at: { col: 106, row: 18 }, rx: 4, ry: 3, levels: 2 });
 
+  t.gate("shore-road", "Shore Road", "open", "landing", "harbour", { col: 37, row: 59 }, { col: 37, row: 53 }, "Up off the beach where the captain came ashore, into the town.");
   t.gate("old-bridge", "Old Bridge", "open", "saltreach", "harbour", { col: 22, row: 45 }, { col: 31, row: 44 }, "The way in from the shore, always open.");
   t.gate("ember-gate", "Ember Gate", "gate", "harbour", "emberwood", { col: 30, row: 37 }, { col: 30, row: 22 }, "A palisade on the causeway north. The town bars it at night.");
   t.gate("crag-stair", "Crag Stair", "open", "emberwood", "crags", { col: 61, row: 11 }, { col: 69, row: 16 }, "A gnome path out of the smoke, up to the rock.");
