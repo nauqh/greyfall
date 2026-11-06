@@ -9,9 +9,6 @@ import { canStep, cellKey, stepsFrom, tileDistance, type Cell } from "./island.t
  *  being ready again chains. A raised shield lets a fifth of a blow from the front through. */
 export const HERO = { hp: 100, attack: 12, chain: 0.65, every: 1.1, hit: 0.2, speed: 2.8, sprint: 1.6, guard: 0.2, combo: 1.4, flasks: 3, flask: 40 } as const;
 
-/** Shield Bash, the captain's skill: a shove with the shield that stuns what it meets. Seconds and points. */
-export const BASH = { damage: 4, stun: 1.5, every: 6, cost: 18 } as const;
-
 /**
  * The pace of a fight, after Dark Souls: a monster stands this long after striking, open to a punish, and no more
  * than `engage` close in on one mark at a time; the rest hold back and wait their turn.

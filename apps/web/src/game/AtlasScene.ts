@@ -18,7 +18,6 @@ import {
   districtOf,
   FOES,
   GOLD_STONE,
-  BASH,
   HERO,
   NPCS,
   PACE,
@@ -483,8 +482,6 @@ export class AtlasScene extends Phaser.Scene {
   private shieldUp = false;
   /** Where the last attack was aimed, for a press kept until the hero is ready. */
   private aim: { x: number; y: number } | null = null;
-  /** When Shield Bash is ready again. */
-  private bashReady = 0;
   private keys: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d" | "f" | "shift", Phaser.Input.Keyboard.Key> | null = null;
   private stamina: number = STAMINA.max;
   /** When stamina was last spent: it comes back only after a pause. */
@@ -548,7 +545,6 @@ export class AtlasScene extends Phaser.Scene {
     this.hero = null;
     this.shieldUp = false;
     this.aim = null;
-    this.bashReady = 0;
     this.keys = null;
     this.foes = [];
     this.guarding = false;
@@ -724,7 +720,6 @@ export class AtlasScene extends Phaser.Scene {
       k?.on("keydown-TWO", () => this.command("attack"));
       k?.on("keydown-THREE", () => this.command("hold"));
       for (const [key, d] of [["W", -1], ["UP", -1], ["S", 1], ["DOWN", 1]] as const) k?.on(`keydown-${key}`, () => this.movePick(d));
-      k?.on("keydown-Q", (e: KeyboardEvent) => !e.repeat && this.bash(this.time.now));
       k?.on("keydown-SHIFT", (e: KeyboardEvent) => !e.repeat && (this.shiftAt = this.time.now));
       k?.on("keyup-SHIFT", () => {
         if (this.shiftAt >= 0 && this.time.now - this.shiftAt < TAP) this.dodge(this.time.now);
@@ -2275,29 +2270,6 @@ export class AtlasScene extends Phaser.Scene {
     const reach = this.foes.filter((f) => !f.dead && canReach(1, f.stats) && tileDistance(f.at, hero.at) <= 1 && Math.hypot(f.s.x - hero.s.x, f.s.y - hero.s.y) < 1.5 * CELL);
     const foe = reach.sort((a, b) => Math.hypot(a.s.x - at.x, a.s.y - at.y) - Math.hypot(b.s.x - at.x, b.s.y - at.y))[0];
     this.heroSwing(foe ?? null, time);
-  }
-
-  /** Q, Shield Bash: a shove with the shield at what stands in front, stunning it; on a long wait. */
-  private bash(time: number): void {
-    const hero = this.hero!;
-    if (!this.playing || hero.dead || this.gone || this.menu || this.talk || this.guarding || time < hero.busy || time < this.bashReady || !canAct(this.stamina)) return;
-    this.stamina = spend(this.stamina, BASH.cost);
-    this.spentAt = time;
-    this.bashReady = time + BASH.every * 1000;
-    hero.way = [];
-    hero.busy = time + 450;
-    this.play(hero.s, HERO_GUARD.key);
-    const dir = hero.s.flipX ? -1 : 1;
-    this.tweens.add({ targets: hero.s, x: hero.s.x + dir * 14, duration: 90, yoyo: true });
-    for (const f of this.foes.filter((f) => !f.dead && canReach(1, f.stats) && tileDistance(f.at, hero.at) <= 1 && this.facing(hero, f))) {
-      this.hurt(hero, f, BASH.damage);
-      if (f.dead) continue;
-      f.windup = null;
-      f.way = [];
-      f.busy = time + BASH.stun * 1000;
-      this.play(f.s, f.idle);
-      this.float(f.s.x, f.s.y - f.lift - 30, "Stunned", "#9cc4e8");
-    }
   }
 
   /** The hero's next swing of its combo: the first and third cut one way, the second back the other; the third knocks back. */

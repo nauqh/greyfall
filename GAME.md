@@ -29,7 +29,6 @@ inside the area map.
 | Shift (tap) | Roll the way you walk, or backstep standing still: nothing lands during it, costs stamina |
 | Shift (hold, moving) | Sprint, draining stamina |
 | E | Interact: talk and turn the page, rest at a bonfire, traverse the white light at a way out (or ride the lift, or drop) |
-| Q | Shield Bash: a shove at what stands in front, stunning it 1.5 s; 6 s between, costs stamina |
 | R | Drink a flask |
 | 1 | Band: Follow (stay close, defend the hero) |
 | 2 | Band: Attack the monster you last struck |
@@ -44,8 +43,7 @@ A Warrior in blue, the captain.
 | --- | --- | --- |
 | HP | 100 | |
 | Stamina | 100 | As in Dark Souls: a swing 14, a roll 22, sprinting 15 a second, a blow on the shield 2.5 times its weight (too little left breaks the guard: it lands whole and staggers). Comes back 45 a second after half a second unspent, a third as fast behind the shield. At nothing, no swing or roll |
-| Attack | 12 a swing | Combo of 3: the first two 0.45 s apart, the third knocks back and takes 0.9 s to recover |
-| Skill | Shield Bash (Q) | Stuns for 1.5 s, 6 s cooldown |
+| Attack | 12 a swing | Combo of 3: the first two 0.65 s apart, the third knocks back and takes 1.1 s to recover |
 | Flasks | 3 | Each heals 40 HP; refilled at a bonfire |
 
 Levelling is Souls-style: spend gold at a bonfire. Each level adds +10 HP,
