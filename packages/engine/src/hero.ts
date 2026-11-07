@@ -6,8 +6,8 @@ import { canStep, cellKey, stepsFrom, tileDistance, type Cell } from "./island.t
 /** The captain: a Warrior in blue. */
 /** A walk, not a sprint: 2.8 tiles a second (4 read as running everywhere). */
 /** Swings: the first two of a combo `chain` seconds apart, the finisher's recovery `every`; a swing within `combo` seconds of
- *  being ready again chains. A raised shield lets a fifth of a blow from the front through, and walks at `guardWalk` of the pace. */
-export const HERO = { hp: 100, attack: 12, chain: 0.65, every: 1.1, hit: 0.2, speed: 2.8, sprint: 1.6, guard: 0.2, guardWalk: 0.55, combo: 1.4, flasks: 3, flask: 40 } as const;
+ *  being ready again chains. A raised shield lets a fifth of a blow from the front through. */
+export const HERO = { hp: 100, attack: 12, chain: 0.65, every: 1.1, hit: 0.2, speed: 2.8, sprint: 1.6, guard: 0.2, combo: 1.4, flasks: 3, flask: 40 } as const;
 
 /**
  * The pace of a fight, after Dark Souls: a monster stands this long after striking, open to a punish, and no more
@@ -60,6 +60,8 @@ export const FOES: Partial<Record<string, FoeStats>> = {
   imp: { hp: 22, attack: 6, every: 2.4, windup: 0.6, aggro: 6, leash: 9, speed: 3, gold: 9, flies: true },
   bee: { hp: 8, attack: 3, every: 2.0, windup: 0.45, aggro: 4, leash: 6, speed: 3.2, gold: 2, flies: true },
   // Bosses: never back once slain.
+  // The Landing's end: plain blows, but heavy ones, to teach the roll and the guard before the Harbour.
+  minotaur: { hp: 220, attack: 22, every: 2.6, windup: 0.9, poise: true, aggro: 6, leash: 8, speed: 1.9, gold: 80 },
   troll: { hp: 320, attack: 24, every: 2.4, windup: 1.1, poise: true, aggro: 7, leash: 9, speed: 1.6, gold: 150 },
 };
 

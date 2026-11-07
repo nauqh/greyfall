@@ -25,10 +25,10 @@ inside the area map.
 | --- | --- |
 | W A S D or the arrows | Walk the way they point, diagonals too, sliding along walls; in a merchant's menu, W and S move the pick |
 | Left click | Attack, turned toward the cursor: the monster in reach nearest where it points. A press made mid-swing is kept |
-| Space or right click (hold) | Guard: walk slowly behind the shield, turned to the nearest monster, stamina coming back at a third the speed; a blow from the front lets a fifth through and costs stamina. Shift rolls straight out of it |
+| Space or right click (hold) | Guard: walk at your pace behind the shield, turned to the nearest monster, stamina coming back at a third the speed; a blow from the front lets a fifth through and costs stamina. Shift rolls straight out of it |
 | Shift (tap) | Roll the way you walk, or backstep standing still: nothing lands during it, costs stamina |
 | Shift (hold, moving) | Sprint, draining stamina |
-| E | Interact: talk and turn the page, rest at a bonfire, go on through the cloud bank at a way out (or ride the lift, or drop) |
+| E | Interact: talk and turn the page, rest at a bonfire, traverse the clouds at a way out (or ride the lift, or drop) |
 | R | Drink a flask |
 | 1 | Band: Follow (stay close, defend the hero) |
 | 2 | Band: Attack the monster you last struck |
@@ -53,6 +53,9 @@ Levelling is Souls-style: spend gold at a bonfire. Each level adds +10 HP,
 
 Up to three companions at once, all Tiny Swords units already drawn in blue.
 
+A new game (the New game button on an area map) clears the save, so you
+come ashore alone.
+
 | Companion | Role | Behaviour | How you get one |
 | --- | --- | --- | --- |
 | Lancer | Tank | Charges your target and draws aggro | Hire from Sergeant Corwin at the barracks, 75 gold: E beside him opens Talk / Hire / Leave |
@@ -74,7 +77,8 @@ Up to three companions at once, all Tiny Swords units already drawn in blue.
   shortcuts. Each area has 1 to 3; they already stand on the maps. After
   the rest the captain sits by the fire, as in Dark Souls 3: Travel opens
   the map, to go to any bonfire already lit, and Leave stands up.
-- **Death.** You wake at the last bonfire you rested at. Your carried gold
+- **Death.** You wake at the last bonfire you rested at, except to a boss
+  that guards a way out (the Shore Minotaur): then you wake past it. Your carried gold
   stays where you fell, marked on the map. Reach it again to get it back;
   die on the way and it is gone.
 - **Shortcuts.** Gates and lifts that open from one side only, such as the
@@ -128,8 +132,11 @@ then walks back; the engine already has a guard leash.
 ## The first slice
 
 1. **The Landing:** the beach a new game starts on, south of the Harbour
-   up the Shore Road. A bonfire, two goblins, and notes on the ground
-   that teach the controls, read with E.
+   up the Shore Road. You come ashore alone. A bonfire, two goblins,
+   notes on the ground that teach the controls (read with E), and the
+   Shore Minotaur at the road's end, a tutorial boss that bars the way
+   out. Kill it and the road opens; fall to it and you wake at the
+   Harbour's first bonfire. Either way the training is over.
 2. **The Harbour:** the hub. Bonfire, recruiting (Lancer, Archer), the
    blacksmith.
 3. **Emberwood:** the first hostile area. Goblin camps through the maze, two

@@ -39,7 +39,7 @@ roads) and its pathing walks it. The data is
 | Sky | Skyward Steps | drifting isles with watch posts, a lift down onto the castle | |
 | Sky | The Gilded Reach | the gnome-kings' golden hall on its own height, yellow guard, a monastery, bees, the warlord's throne isle with imps | The Sun Sentinel |
 | Surface | Saltreach | yellow militia, fishing villages, turtles, sharks offshore, pirate towers | |
-| Surface | The Landing (start) | the beach a new game starts on, notes in the sand that teach the controls, two goblins to learn on | |
+| Surface | The Landing (start) | the beach a new game starts on, notes in the sand that teach the controls, two goblins to learn on | Shore Minotaur |
 | Surface | Last Harbour (hub) | the blue castle on its own height above the town, the bonfire square, the Old Well, pawns at work | |
 | Surface | Emberwood | goblin warrens, the big pines (standing still), gnolls on Smoke Ridge | Cinder Troll |
 | Surface | Tinker Crags | a mesa that steps up three heights to the Tinker Peak, gnomes, bears, pandas, the Gnome Lift up | Old Bamboo |

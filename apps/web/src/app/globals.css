@@ -1193,71 +1193,115 @@ textarea {
 	100% { opacity: 0; transform: scale(1.03); }
 }
 
-/* The captain's health over stamina, after Dark Souls: thin bars in the top corner, the purse under them. */
+/* The captain's vitals after Dark Souls 1: a round bronze badge with the flasks, thin bevelled bars run out beside it. */
 .vitals {
 	position: absolute;
 	left: 16px;
-	top: 12px;
+	top: 14px;
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+}
+
+.vitalBadge {
+	position: relative;
 	display: grid;
-	gap: 4px;
-	width: 220px;
+	place-items: center;
+	width: 48px;
+	height: 48px;
+	border-radius: 50%;
+	border: 2px solid #8a7a58;
+	background: radial-gradient(circle at 50% 40%, #2a2d33, #0b0c0f 70%);
+	box-shadow: 0 0 0 2px #14161a, inset 0 0 6px rgb(0 0 0 / 0.9);
+}
+
+.vitalBadge b {
+	font: 700 18px var(--display), serif;
+	color: #e9e2cf;
+	text-shadow: 0 1px 2px #000;
+}
+
+.vitalBadge img {
+	position: absolute;
+	right: -6px;
+	bottom: -6px;
+	width: 22px;
+	height: 22px;
+}
+
+.vitalBars {
+	display: grid;
+	gap: 5px;
+	padding-top: 9px;
 }
 
 .vitalBar {
+	position: relative;
 	display: block;
-	height: 10px;
-	border: 2px solid #1c2634;
-	border-radius: 2px;
-	background: rgb(7 10 16 / 0.6);
-	overflow: hidden;
+	max-width: calc(100vw - 110px);
+	height: 9px;
+	border: 1px solid #000;
+	outline: 1px solid #5d5442;
+	outline-offset: 0;
+	background: linear-gradient(#0d0e10, #1c1d20);
+	box-shadow: 0 1px 3px rgb(0 0 0 / 0.7);
 }
 
 .vitalBar.stamina {
-	height: 8px;
-	width: 80%;
+	width: 240px;
+	height: 7px;
+}
+
+.vitalBar > span,
+.vitalBar > i {
+	position: absolute;
+	inset: 0 auto 0 0;
+	display: block;
 }
 
 .vitalBar > span {
-	display: block;
-	height: 100%;
 	transition: width 120ms linear;
 }
 
+/* The trail: it waits, then drains to the health left, so a blow's size reads at a glance. */
+.vitalBar > i {
+	background: #c9a46a;
+	transition: width 500ms ease-in 450ms;
+}
+
 .vitalBar.hp > span {
-	background: #c8392e;
+	background: linear-gradient(#d0503f, #8e1d16 55%, #6a120d);
 }
 
 .vitalBar.stamina > span {
-	background: #5fbf4a;
+	background: linear-gradient(#7fc463, #3d7d2c 55%, #2b5c1f);
 }
 
-/* The flasks left and the gold carried, in the top corner. */
+/* Gold carried where Dark Souls keeps its souls: a dark plate, bottom right. */
 .purse {
-	display: flex;
-	gap: 14px;
 	position: absolute;
-	left: 16px;
-	top: 44px;
-	padding: 6px 12px;
-	border-radius: 4px;
-	background: rgb(7 10 16 / 0.72);
-	color: #fdfaf0;
-	font: 700 15px "Nunito", "Segoe UI", sans-serif;
+	right: 20px;
+	bottom: 20px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 120px;
+	justify-content: space-between;
+	padding: 6px 14px 6px 8px;
+	border: 1px solid #5d5442;
+	background: linear-gradient(rgb(12 13 16 / 0.85), rgb(24 25 29 / 0.85));
+	box-shadow: 0 0 0 1px #000;
+}
+
+.purse img {
+	width: 24px;
+	height: 24px;
 }
 
 .purse b {
-	margin-left: 4px;
-	color: #8fe08a;
-}
-
-.purseIcon {
-	width: 20px;
-	height: 20px;
-	vertical-align: -5px;
-}
-
-.purse .purseGold {
-	color: #ffd65a;
+	font: 700 20px var(--display), serif;
+	color: #e9e2cf;
+	text-shadow: 0 1px 2px #000;
 }
 
 
@@ -1276,7 +1320,7 @@ textarea {
 .bandPanel {
 	position: absolute;
 	left: 16px;
-	top: 84px;
+	top: 76px;
 	display: grid;
 	gap: 4px;
 	padding: 6px 12px 8px;

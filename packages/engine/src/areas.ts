@@ -18,6 +18,8 @@ export interface AreaExit {
   kind: GateKind | LiftKind;
   /** Where it is, on this map. */
   at: Cell;
+  /** A boss's kind: the way stays shut while it lives. */
+  guard?: string;
 }
 
 /** A quarter of an area with its own ground, dressing and name on the land. */
@@ -2210,8 +2212,10 @@ function landing(): AreaMap {
   // The Dunes: a goblin who strayed from the wood, gold in the sand.
   who("torch", 30, 20);
   prop("goldStone", 37, 18);
-  // The Shore Road: one more goblin before the town.
-  who("torch", 31, 11);
+  // The Shore Road: one more goblin, then the Minotaur at the road's end, the last lesson before the town.
+  who("torch", 32, 15);
+  t.bosses.push({ name: "The Shore Minotaur", area: "landing", col: 30, row: 7 });
+  who("minotaur", 30, 7, { to: { col: 32, row: 8 } });
 
   const notes: Note[] = [
     { at: { col: 28, row: 36 }, text: "W A S D to walk. Hold Shift while walking to sprint." },
@@ -2220,11 +2224,12 @@ function landing(): AreaMap {
     { at: { col: 30, row: 28 }, text: "A goblin ahead. Left click swings toward the cursor. Three swings chain, and the third knocks back." },
     { at: { col: 25, row: 24 }, text: "A monster flashes white as it winds up. Tap Shift to roll through the blow, or hold Space to guard and walk behind the shield." },
     { at: { col: 35, row: 23 }, text: "Swings, rolls and blows on the shield all cost stamina. Run dry and you can do none of them. Step back and breathe." },
-    { at: { col: 29, row: 15 }, text: "Die and your gold stays where you fell. Go back for it; die again on the way and it is lost." },
-    { at: { col: 32, row: 6 }, text: "The Harbour is up the road. Hire a band there, then 1, 2 and 3 tell them to follow, attack, or hold." },
-    { at: { col: 28, row: 3 }, text: "At the road's end, walk up to the clouds and press E to go on to the next land." },
+    { at: { col: 29, row: 17 }, text: "Die and your gold stays where you fell. Go back for it; die again on the way and it is lost." },
+    { at: { col: 28, row: 14 }, text: "Something big bars the road ahead. Roll its blows and strike while it recovers. Fall to it, and you wake in the Harbour." },
+    { at: { col: 32, row: 4 }, text: "The Harbour is up the road. Hire a band there, then 1, 2 and 3 tell them to follow, attack, or hold." },
+    { at: { col: 28, row: 3 }, text: "At the road's end, walk up to the clouds and press E to traverse them to the next land." },
   ];
-  const exits: AreaExit[] = [{ to: "harbour", name: "Shore Road", kind: "open", at: { col: 30, row: 1 } }];
+  const exits: AreaExit[] = [{ to: "harbour", name: "Shore Road", kind: "open", at: { col: 30, row: 1 }, guard: "minotaur" }];
   const districts: District[] = [
     { name: "The Strand", at: { col: 30, row: 37 }, palette: [3], dress: "saltreach", decor: 1.5 },
     { name: "The Dunes", at: { col: 30, row: 21 }, palette: [3], dress: "harbour", decor: 1.5 },

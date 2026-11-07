@@ -107,9 +107,9 @@ describe("gold", () => {
   it("drops from every monster, and a stone is worth more than any but a boss", () => {
     for (const [kind, foe] of Object.entries(FOES)) {
       expect(foe!.gold).toBeGreaterThan(0);
-      if (kind !== "troll") expect(foe!.gold).toBeLessThan(GOLD_STONE);
+      if (kind !== "troll" && kind !== "minotaur") expect(foe!.gold).toBeLessThan(GOLD_STONE);
     }
-    expect(FOES.troll!.gold).toBeGreaterThan(GOLD_STONE);
+    for (const boss of ["troll", "minotaur"]) expect(FOES[boss]!.gold).toBeGreaterThan(GOLD_STONE);
   });
 });
 

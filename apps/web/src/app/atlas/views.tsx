@@ -69,13 +69,13 @@ export function AreaView({ area: first }: { area: AreaId }) {
   // Sat at a bonfire after a rest: its name, and the option picked.
   const [fire, setFire] = useState<{ name: string; pick: number } | null>(null);
   const api = useRef<AtlasApi | null>(null);
-  const now = useRef({ area: first, cameFrom: undefined as AreaId | undefined, quiet: false, travelling: false, sit: false });
+  const now = useRef({ area: first, cameFrom: undefined as AreaId | undefined, quiet: false, travelling: false });
 
   const depart = (d: Departure): void => {
     now.current.travelling = true;
     setTravel({ ...d, phase: "cover" });
   };
-  // A rest, or waking after a death: the dark comes down, and the captain wakes at the bonfire.
+  // Waking after a death: the dark comes down, and the captain wakes at the bonfire.
   const wake = (to: AreaId): void => depart({ to, name: "", kind: "rest", dir: "down", x: 0.5, y: 0.5 });
   // Covered: the scene rebuilds as the next area behind the cover, and the address follows quietly.
   const covered = (d: Departure): void => {
@@ -95,14 +95,11 @@ export function AreaView({ area: first }: { area: AreaId }) {
     window.history.pushState(null, "", rest ? `/atlas/${d.to}` : `/atlas/${d.to}?from=${from}`);
     api.current?.travel(d.to, from, d.kind);
   };
-  // Through the crossing: a rest sits the captain at the fire; anything else names where they are.
+  // Through the crossing: the name of where they are.
   const landed = (): void => {
     setTravel(null);
     now.current.travelling = false;
-    if (!now.current.sit) return announce();
-    now.current.sit = false;
-    const name = api.current?.sit(true);
-    if (name) setFire({ name, pick: 0 });
+    announce();
   };
   const leaveFire = (): void => {
     api.current?.sit(false);
@@ -133,10 +130,11 @@ export function AreaView({ area: first }: { area: AreaId }) {
     onGold: setGold,
     onBand: setBand,
     onMenu: setMenu,
-    onRest: (to) => {
+    // The scene rests in place: no dark, only the camera drawing in on the fire.
+    onRest: () => {
       if (now.current.travelling) return;
-      now.current.sit = true;
-      wake(to);
+      const name = api.current?.sit(true);
+      if (name) setFire({ name, pick: 0 });
     },
     onDeath: (to) => {
       if (now.current.travelling) return;
@@ -161,6 +159,14 @@ export function AreaView({ area: first }: { area: AreaId }) {
       api.current?.dev(!on);
       return !on;
     });
+  // Every save of a run, so the captain comes ashore at the Landing again, alone; settings and the duel name stay.
+  const newGame = (): void => {
+    if (!window.confirm("Start a new game? Your gold, band, bonfires and slain bosses are lost.")) return;
+    try {
+      for (const k of ["band", "flags", "gold", "heard", "keys", "kindled", "lost", "rest", "slain", "taken"]) localStorage.removeItem(`greyfall.${k}`);
+    } catch {}
+    window.location.assign("/atlas/landing?rest");
+  };
   useEffect(() => {
     if (!fire) return;
     const key = (e: KeyboardEvent): void => {
@@ -331,25 +337,29 @@ export function AreaView({ area: first }: { area: AreaId }) {
         )}
         <div className="worldHud" hidden={!hud}>
           {vitals && (
-            // After Dark Souls: health in red over stamina in green, top left.
-            <div className="vitals" aria-label={`Health ${vitals.hp} of ${vitals.max}, stamina ${vitals.stamina}`}>
-              <span className="vitalBar hp">
-                <span style={{ width: `${(100 * vitals.hp) / vitals.max}%` }} />
+            // After Dark Souls 1: a round badge holding the flasks, and beside it health over stamina, the health bar as long as
+            // the captain's health is deep; a paler trail lingers where a blow took it.
+            <div className="vitals" aria-label={`Health ${vitals.hp} of ${vitals.max}, stamina ${vitals.stamina}, ${flasks ?? 0} flasks`}>
+              <span className="vitalBadge" title="Flasks">
+                <b>{String(flasks ?? 0).padStart(2, "0")}</b>
+                <img src={packUrl("ui/icon_heal.png")} alt="" />
               </span>
-              <span className="vitalBar stamina">
-                <span style={{ width: `${vitals.stamina}%` }} />
+              <span className="vitalBars">
+                <span className="vitalBar hp" style={{ width: `${vitals.max * 3}px` }}>
+                  <i style={{ width: `${(100 * vitals.hp) / vitals.max}%` }} />
+                  <span style={{ width: `${(100 * vitals.hp) / vitals.max}%` }} />
+                </span>
+                <span className="vitalBar stamina">
+                  <span style={{ width: `${vitals.stamina}%` }} />
+                </span>
               </span>
             </div>
           )}
-          {flasks !== null && (
-            <div className="purse">
-              <span title="Flasks">
-                <img className="purseIcon" src={packUrl("ui/icon_heal.png")} alt="Flasks" />
-                <b>{flasks}</b>
-              </span>
-              <span>
-                Gold <b className="purseGold">{gold ?? 0}</b>
-              </span>
+          {gold !== null && (
+            // The souls counter's place: gold carried, bottom right.
+            <div className="purse" title="Gold">
+              <img src={packUrl("ui/icon_gold.png")} alt="Gold" />
+              <b>{gold}</b>
             </div>
           )}
           {band && band.members.length > 0 && (
@@ -371,6 +381,9 @@ export function AreaView({ area: first }: { area: AreaId }) {
             <div className="worldLinks">
               <button className="linkBtn" type="button" onClick={() => router.push("/")}>
                 Leave to the title
+              </button>
+              <button className="linkBtn" type="button" onClick={newGame}>
+                New game
               </button>
               <button className="linkBtn" type="button" onClick={toggleDev} aria-pressed={dev} title="See the whole map (`)">
                 {dev ? "Play" : "Dev: whole map"}

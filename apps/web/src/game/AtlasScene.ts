@@ -147,8 +147,9 @@ export interface AtlasHooks {
   onGold?: (n: number) => void;
   /** The band: its order, and each companion's health, 0 for one fallen. */
   onBand?: (band: BandView) => void;
-  /** Rested at a bonfire, or died: the page darkens and wakes the captain at the bonfire last rested at, in `area`. */
+  /** Rested at a bonfire, in place: the page sits the captain at it. */
   onRest?: (area: AreaId) => void;
+  /** Died: the page darkens and wakes the captain at the bonfire last rested at, in `area`. */
   onDeath?: (area: AreaId) => void;
   /** The captain has walked into a named quarter of the area. */
   onDistrict?: (name: string) => void;
@@ -245,6 +246,7 @@ const BEAST: Record<string, Beast> = {
   spear: { idle: `${EP}Spear Goblin/Spear Goblin_Idle.png`, move: `${EP}Spear Goblin/Spear Goblin_Run.png`, attack: `${EP}Spear Goblin/Spear Goblin_Attack Fast.png`, frame: 256, anchor: 174 / 256 },
   thief: { idle: `${EP}Thief/Thief_Idle.png`, move: `${EP}Thief/Thief_Run.png`, attack: `${EP}Thief/Thief_Attack.png`, frame: 192, anchor: 131 / 192 },
   gnoll: { idle: `${EP}Gnoll/Gnoll_Idle.png`, move: `${EP}Gnoll/Gnoll_Walk.png`, attack: `${EP}Gnoll/Gnoll_Throw.png`, frame: 192, anchor: 133 / 192 },
+  minotaur: { idle: `${EP}Minotaur/Minotaur_Idle.png`, move: `${EP}Minotaur/Minotaur_Walk.png`, attack: `${EP}Minotaur/Minotaur_Attack.png`, frame: 320, anchor: 213 / 320 },
   troll: { idle: `${EP}Troll/Troll_Idle.png`, move: `${EP}Troll/Troll_Walk.png`, attack: `${EP}Troll/Troll_Attack.png`, frame: 384, anchor: 296 / 384, scale: 0.8 },
   skull: { idle: `${EP}Skull/Skull_Idle.png`, move: `${EP}Skull/Skull_Run.png`, attack: `${EP}Skull/Skull_Attack.png`, frame: 192, anchor: 128 / 192 },
   skullGuard: { idle: `${EP}Extra/Skull Guard/Skull_Guard.png`, frame: 192, anchor: 128 / 192 },
@@ -437,6 +439,11 @@ const GOLD = "greyfall.gold";
 const SLAIN = "greyfall.slain";
 const KEYS = "greyfall.keys";
 const BOSS_KEY: Partial<Record<string, string>> = { troll: "Troll Key" };
+const BOSSES = new Set(["troll", "minotaur"]);
+/** A way out shut until its guarding boss falls, or the captain has already rested on the far side. */
+function barred(e: Exit): boolean {
+  return !!e.guard && !remembered(SLAIN).has(e.guard) && ![...remembered(KINDLED)].some((k) => k.startsWith(`${e.to}:`));
+}
 const TAKEN = "greyfall.taken";
 const LOST = "greyfall.lost";
 type Lost = { area: AreaId; col: number; row: number; gold: number };
@@ -844,11 +851,14 @@ export class AtlasScene extends Phaser.Scene {
     const { kind, dir } = this.crossing(e);
     if (kind === "fall") return "Drop";
     if (kind === "ride") return `Ride the lift ${dir}`;
-    return `Go on to ${AREAS.find((a) => a.id === e.to)?.name ?? "the next land"}`;
+    if (barred(e)) return "Barred";
+    const there = AREAS.find((a) => a.id === e.to)?.name;
+    return there ? `Traverse the clouds to ${there}` : "Traverse the clouds";
   }
 
   /** E at a way out: into the cloud bank, slowly, and through; a lift or a drop goes at once (a drop still warns). */
   private traverse(e: Exit): void {
+    if (barred(e)) return;
     const { kind } = this.crossing(e);
     if (kind !== "walk" && kind !== "stair") return this.depart(e);
     const hero = this.hero!;
@@ -1123,7 +1133,7 @@ export class AtlasScene extends Phaser.Scene {
     const color = blocked ? "#9cc4e8" : to === this.hero ? "#ff8a7a" : "#fdfaf0";
     const n = this.add.text(to.s.x, to.s.y - to.lift - 10, `${dealt}`, { fontFamily: FONT, fontSize: "28px", fontStyle: "bold", color, stroke: "#1c2634", strokeThickness: 6 }).setOrigin(0.5).setDepth(DEPTH.fx + 1);
     this.tweens.add({ targets: n, y: n.y - 40, alpha: 0, duration: 700, ease: "Sine.easeOut", onComplete: () => n.destroy() });
-    if (to.hp === 0) this.fall(to);
+    if (to.hp === 0) this.fall(to, from);
     else if (this.band.includes(to as Companion)) this.emitBand();
     else if (this.foes.includes(to as Foe)) this.flinch(to as Foe, now, 400);
   }
@@ -1157,7 +1167,7 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** A body at nothing: a monster is gone; the hero rises again where it arrived, whole. */
-  private fall(b: Body): void {
+  private fall(b: Body, by?: Body): void {
     b.dead = true;
     b.bar.clear();
     this.tweens.killTweensOf(b.s);
@@ -1174,8 +1184,7 @@ export class AtlasScene extends Phaser.Scene {
       this.tweens.add({ targets: b.s, alpha: 0, duration: 500, onComplete: () => b.s.destroy() });
       const gold = (b as Foe).stats?.gold;
       if (gold) this.dropGold(b.at, gold);
-      const key = BOSS_KEY[(b as Foe).kind];
-      if (key) this.felled((b as Foe).kind, key);
+      if (BOSSES.has((b as Foe).kind)) this.felled((b as Foe).kind, BOSS_KEY[(b as Foe).kind]);
       return;
     }
     const hero = this.hero!;
@@ -1186,6 +1195,13 @@ export class AtlasScene extends Phaser.Scene {
     this.setGold(0);
     hero.way = [];
     this.tweens.add({ targets: b.s, alpha: 0.25, duration: 600 });
+    // Felled by the boss guarding a way out, as at the Landing's end: the captain wakes past it, at the far side's first fire.
+    const past = this.local!.exits.find((e) => e.guard && e.guard === (by as Foe | undefined)?.kind);
+    if (past) {
+      const fire = areaMap(past.to).fires[0]!;
+      store(REST, { area: past.to, ...fire });
+      remember(KINDLED, remembered(KINDLED).add(`${past.to}:${fire.col},${fire.row}`));
+    }
     // The page says so, darkens, and wakes the captain at the bonfire last rested at, the monsters back at their posts.
     this.time.delayedCall(900, () => this.hooks.onDeath?.(restPoint().area));
   }
@@ -1245,7 +1261,7 @@ export class AtlasScene extends Phaser.Scene {
     return fire && !this.foes.some((f) => !f.dead && tileDistance(f.at, fire) <= REST_CLEAR) ? fire : undefined;
   }
 
-  /** E at a bonfire: rest. Resting saves the spot; the page wakes the captain there, whole. */
+  /** E at a bonfire: rest, in place. Resting saves the spot, makes the captain and the band whole, and the monsters come back. */
   private rest(fire: Cell): void {
     const hero = this.hero!;
     try {
@@ -1254,6 +1270,22 @@ export class AtlasScene extends Phaser.Scene {
     remember(KINDLED, remembered(KINDLED).add(`${this.local!.area}:${fire.col},${fire.row}`));
     this.gone = true;
     hero.way = [];
+    hero.hp = hero.max;
+    this.flasks = HERO.flasks;
+    this.hooks.onFlasks?.(this.flasks);
+    for (const b of [...this.foes, ...this.band]) {
+      // Marked dead first, so a blow still in flight finds no one.
+      b.dead = true;
+      this.tweens.killTweensOf(b.s);
+      b.s.destroy();
+      b.bar.destroy();
+    }
+    this.foes = [];
+    this.band = [];
+    this.lastHit = null;
+    for (const d of this.local!.dwellers) if (FOES[d.kind] && !remembered(SLAIN).has(d.kind)) this.addFoe(d);
+    stored<CompanionKind[]>(BAND, []).forEach((kind) => this.addCompanion(kind));
+    this.emitBand();
     this.hooks.onRest?.(this.local!.area);
   }
 
@@ -1519,6 +1551,7 @@ export class AtlasScene extends Phaser.Scene {
   private fight(time: number, dt: number): void {
     const hero = this.hero!;
     const rolling = time < this.roll.until;
+    if (!hero.dead) hero.s.setAngle(0);
     this.guarding = !rolling && !hero.dead && !this.gone && this.playing && (!!this.keys?.space.isDown || this.shieldUp) && time >= this.guardBroken;
     if (rolling) {
       this.slide(this.roll.dx, this.roll.dy, (this.roll.speed * dt) / 1000, !this.roll.back);
@@ -1527,13 +1560,17 @@ export class AtlasScene extends Phaser.Scene {
         this.echo();
       }
     } else if (this.guarding) {
-      // Behind the shield it walks slowly, no sprint, turned to the nearest monster, once any swing is through.
+      // Behind the shield it walks at its pace, no sprint, once any swing is through, the shield kept to the nearest monster.
       hero.way = [];
       this.queued = false;
       if (time >= hero.busy) {
         const [kx, ky] = this.keyDir();
-        if (kx || ky) this.slide(kx, ky, (HERO.speed * HERO.guardWalk * CELL * dt) / 1000, true);
         const foe = this.foes.filter((f) => !f.dead && tileDistance(f.at, hero.at) <= 3).sort((a, b) => tileDistance(a.at, hero.at) - tileDistance(b.at, hero.at))[0];
+        if (kx || ky) {
+          this.slide(kx, ky, (HERO.speed * CELL * dt) / 1000, !foe);
+          // The pack has no guarding walk: the guard pose rocks foot to foot about the feet, a step each swing.
+          hero.s.setAngle(Math.sin((time / 1000) * Math.PI * 5) * 6);
+        }
         if (foe && Math.abs(foe.s.x - hero.s.x) > 4) hero.s.setFlipX(foe.s.x < hero.s.x);
         this.play(hero.s, HERO_GUARD.key);
       }
@@ -1713,13 +1750,13 @@ export class AtlasScene extends Phaser.Scene {
     return picked;
   }
 
-  /** A boss down: it stays down for good, and its key is the captain's. */
-  private felled(kind: string, key: string): void {
+  /** A boss down: it stays down for good, and its key, if it has one, is the captain's. */
+  private felled(kind: string, key?: string): void {
     remember(SLAIN, remembered(SLAIN).add(kind));
-    remember(KEYS, remembered(KEYS).add(kind));
+    if (key) remember(KEYS, remembered(KEYS).add(kind));
     const cam = this.cameras.main;
     const t = this.add
-      .text(cam.width / 2, cam.height * 0.4, `${key}\nobtained`, { fontFamily: FONT, fontSize: "40px", fontStyle: "bold", color: "#f4cf6b", stroke: "#1c2634", strokeThickness: 8, align: "center" })
+      .text(cam.width / 2, cam.height * 0.4, key ? `${key}\nobtained` : "Victory\nachieved", { fontFamily: FONT, fontSize: "40px", fontStyle: "bold", color: "#f4cf6b", stroke: "#1c2634", strokeThickness: 8, align: "center" })
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(DEPTH.clouds + 10);
@@ -2414,7 +2451,7 @@ export class AtlasScene extends Phaser.Scene {
     this.time.delayedCall(HERO.hit * 1000, () => {
       if (foe.dead || hero.dead || tileDistance(foe.at, hero.at) > 1 || Math.hypot(foe.s.x - hero.s.x, foe.s.y - hero.s.y) > 1.6 * CELL) return;
       this.hurt(hero, foe, HERO.attack);
-      if (step === 3 && !foe.dead && !BOSS_KEY[foe.kind]) this.knockBack(foe, this.time.now);
+      if (step === 3 && !foe.dead && !BOSSES.has(foe.kind)) this.knockBack(foe, this.time.now);
     });
   }
 
