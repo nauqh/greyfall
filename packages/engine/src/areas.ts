@@ -2231,7 +2231,7 @@ function landing(): AreaMap {
   for (const [c, r] of [[25, 6], [35, 6], [24, 9], [36, 10], [27, 2], [33, 2]] as const) prop("skullSpike", c, r);
   for (const [c, r] of [[27, 5], [33, 9], [26, 8], [34, 5], [31, 10]] as const) prop("bones", c, r);
   prop("boat", 45, 9);
-  t.bosses.push({ name: "The Shore Minotaur", area: "landing", col: 30, row: 7 });
+  t.bosses.push({ name: "Shore Minotaur", area: "landing", col: 30, row: 7 });
   who("minotaur", 30, 7, { to: { col: 31, row: 7 } });
 
   const notes: Note[] = [

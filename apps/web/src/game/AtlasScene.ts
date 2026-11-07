@@ -2685,9 +2685,12 @@ export class AtlasScene extends Phaser.Scene {
           this.vitalsKey = key;
           this.hooks.onVitals?.(v);
         }
-        // A boss shows its bar once the captain is within its leash, as a major fight opens in the Souls games.
+        // A boss shows its bar as its fight opens: a room's boss once the captain is in the room, any other within its leash.
         const hero = this.hero;
-        const boss = hero.dead ? undefined : this.foes.find((f) => BOSSES.has(f.kind) && !f.dead && tileDistance(f.at, hero.at) <= f.stats.leash);
+        const inRoom = this.sealed.size > 0 && this.mist.length === 0;
+        const boss = hero.dead
+          ? undefined
+          : this.foes.find((f) => BOSSES.has(f.kind) && !f.dead && (f.kind === this.local?.arena?.boss ? inRoom : tileDistance(f.at, hero.at) <= f.stats.leash));
         const name = boss && this.local?.bosses.slice().sort((a, b) => tileDistance(a, boss.home) - tileDistance(b, boss.home))[0]?.name;
         const bossKey = boss ? `${name},${boss.hp}` : "";
         if (bossKey !== this.bossKey) {
