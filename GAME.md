@@ -25,10 +25,10 @@ inside the area map.
 | --- | --- |
 | W A S D or the arrows | Walk the way they point, diagonals too, sliding along walls; in a merchant's menu, W and S move the pick |
 | Left click | Attack, turned toward the cursor: the monster in reach nearest where it points. A press made mid-swing is kept |
-| Right click (hold), or F | Guard: stand behind the shield, turned to the nearest monster; a blow from the front lets a fifth through and costs stamina |
+| Space or right click (hold) | Guard: walk slowly behind the shield, turned to the nearest monster, stamina coming back at a third the speed; a blow from the front lets a fifth through and costs stamina. Shift rolls straight out of it |
 | Shift (tap) | Roll the way you walk, or backstep standing still: nothing lands during it, costs stamina |
 | Shift (hold, moving) | Sprint, draining stamina |
-| E | Interact: talk and turn the page, rest at a bonfire, traverse the white light at a way out (or ride the lift, or drop) |
+| E | Interact: talk and turn the page, rest at a bonfire, go on through the cloud bank at a way out (or ride the lift, or drop) |
 | R | Drink a flask |
 | 1 | Band: Follow (stay close, defend the hero) |
 | 2 | Band: Attack the monster you last struck |

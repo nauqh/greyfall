@@ -2218,11 +2218,11 @@ function landing(): AreaMap {
     { at: { col: 34, row: 33 }, text: "E to rest at a bonfire: it heals you and refills your flasks, but every monster comes back." },
     { at: { col: 24, row: 33 }, text: "R drinks a flask. You carry three, so save them for when it counts." },
     { at: { col: 30, row: 28 }, text: "A goblin ahead. Left click swings toward the cursor. Three swings chain, and the third knocks back." },
-    { at: { col: 25, row: 24 }, text: "A monster flashes white as it winds up. Tap Shift to roll through the blow, or hold right click to guard." },
+    { at: { col: 25, row: 24 }, text: "A monster flashes white as it winds up. Tap Shift to roll through the blow, or hold Space to guard and walk behind the shield." },
     { at: { col: 35, row: 23 }, text: "Swings, rolls and blows on the shield all cost stamina. Run dry and you can do none of them. Step back and breathe." },
     { at: { col: 29, row: 15 }, text: "Die and your gold stays where you fell. Go back for it; die again on the way and it is lost." },
     { at: { col: 32, row: 6 }, text: "The Harbour is up the road. Hire a band there, then 1, 2 and 3 tell them to follow, attack, or hold." },
-    { at: { col: 28, row: 3 }, text: "At the road's end, stand in the white light and press E to go on." },
+    { at: { col: 28, row: 3 }, text: "At the road's end, walk up to the clouds and press E to go on to the next land." },
   ];
   const exits: AreaExit[] = [{ to: "harbour", name: "Shore Road", kind: "open", at: { col: 30, row: 1 } }];
   const districts: District[] = [

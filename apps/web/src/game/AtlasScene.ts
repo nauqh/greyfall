@@ -499,15 +499,13 @@ export class AtlasScene extends Phaser.Scene {
   /** In an area's own map: that map. */
   private local: AreaMap | null = null;
   private built = new Set<TierId>();
-  /** Each exit's sign: clicking it travels, as the exit's own tile does. */
-  private signs: { to: AreaId; text: Phaser.GameObjects.Text }[] = [];
   /** In an area's map: the hero, where it rises again, what it is walking to or fighting, the monsters. */
   private hero: Body | null = null;
   /** The right button held in play: the shield up, as F. */
   private shieldUp = false;
   /** Where the last attack was aimed, for a press kept until the hero is ready. */
   private aim: { x: number; y: number } | null = null;
-  private keys: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d" | "f" | "shift", Phaser.Input.Keyboard.Key> | null = null;
+  private keys: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d" | "space", Phaser.Input.Keyboard.Key> | null = null;
   private stamina: number = STAMINA.max;
   /** When stamina was last spent: it comes back only after a pause. */
   private spentAt = -1e9;
@@ -570,7 +568,6 @@ export class AtlasScene extends Phaser.Scene {
     this.drag = null;
     this.local = null;
     this.built = new Set();
-    this.signs = [];
     this.hero = null;
     this.shieldUp = false;
     this.aim = null;
@@ -847,10 +844,10 @@ export class AtlasScene extends Phaser.Scene {
     const { kind, dir } = this.crossing(e);
     if (kind === "fall") return "Drop";
     if (kind === "ride") return `Ride the lift ${dir}`;
-    return "Traverse the white light";
+    return `Go on to ${AREAS.find((a) => a.id === e.to)?.name ?? "the next land"}`;
   }
 
-  /** E at a way out: into the white light, slowly, and through; a lift or a drop goes at once (a drop still warns). */
+  /** E at a way out: into the cloud bank, slowly, and through; a lift or a drop goes at once (a drop still warns). */
   private traverse(e: Exit): void {
     const { kind } = this.crossing(e);
     if (kind !== "walk" && kind !== "stair") return this.depart(e);
@@ -863,22 +860,21 @@ export class AtlasScene extends Phaser.Scene {
     this.tweens.add({ targets: hero.s, x, y, alpha: 0.1, duration: 1100, ease: "Sine.easeIn", onComplete: () => this.depart(e) });
   }
 
-  /** A wall of white light across a way out, after the Souls games: the edge of what is known, slowly breathing. */
-  private fogWall(e: Exit): void {
+  /** A bank of the pack's own clouds lying across a way out, the same clouds that close in on a crossing, slowly drifting. */
+  private cloudBank(e: Exit): void {
     const { dir } = this.crossing(e);
     const across = dir === "left" || dir === "right";
     const [x, y] = [(e.at.col + 0.5) * CELL, (e.at.row + 0.5) * CELL];
-    // Tall wisps along the edge, overlapping, each drifting and breathing on its own.
-    for (let i = -3; i <= 3; i++) {
-      const [fx, fy] = across ? [x, y + i * 0.4 * CELL] : [x + i * 0.4 * CELL, y];
-      const wisp = this.add
-        .image(fx, fy, "fog")
-        .setAngle(across ? 0 : 90)
-        .setAlpha(0.55)
-        .setScale(0.9 + Math.random() * 0.25, 0.8 + Math.random() * 0.25)
-        .setDepth(DEPTH.clouds - 3);
-      const drift = across ? { x: fx + (Math.random() - 0.5) * 18 } : { y: fy + (Math.random() - 0.5) * 18 };
-      this.tweens.add({ targets: wisp, alpha: 0.9, ...drift, duration: 1500 + Math.random() * 1000, yoyo: true, repeat: -1, ease: "Sine.easeInOut", delay: Math.random() * 900 });
+    // Overlapping along the edge, the lower ones in front, each drifting a little along it and back.
+    for (let i = -2; i <= 2; i++) {
+      const [cx, cy] = across ? [x + (i % 2) * 0.3 * CELL, y + i * 0.65 * CELL] : [x + i * 0.75 * CELL, y + (i % 2) * 0.25 * CELL];
+      const cloud = this.add
+        .image(cx, cy, `cloud${1 + ((e.at.col + e.at.row + i + 8) % 8)}`)
+        .setScale(0.85 + Math.random() * 0.3)
+        .setFlipX(Math.random() < 0.5)
+        .setDepth(DEPTH.clouds - 3 + cy / 10000);
+      const drift = across ? { y: cy + (Math.random() - 0.5) * 20 } : { x: cx + (Math.random() - 0.5) * 28 };
+      this.tweens.add({ targets: cloud, ...drift, duration: 2600 + Math.random() * 1600, yoyo: true, repeat: -1, ease: "Sine.easeInOut", delay: Math.random() * 1200 });
     }
   }
 
@@ -971,10 +967,6 @@ export class AtlasScene extends Phaser.Scene {
       for (const e of this.local?.exits ?? []) {
         if (Math.abs(e.at.col - cell.col) <= 2 && Math.abs(e.at.row - cell.row) <= 2) return this.depart(e);
       }
-      for (const s of this.signs) {
-        const e = this.local?.exits.find((x) => x.to === s.to);
-        if (e && s.text.getBounds().contains(w.x, w.y)) return this.depart(e);
-      }
       for (const l of this.map.lifts) {
         for (const end of [l.up, l.down]) {
           if (end.tier === this.view && Math.abs(end.at.col - cell.col) <= 2 && Math.abs(end.at.row - cell.row) <= 2) return this.ride(l, this.view);
@@ -1025,7 +1017,9 @@ export class AtlasScene extends Phaser.Scene {
     this.play(s, look.idle.key);
     this.hero = { ...this.body(s, at, HERO.hp, HERO.speed, { idle: look.idle.key, move: look.move?.key, attack: HERO_ATTACK.key }) };
     const k = this.input.keyboard;
-    if (k) this.keys = k.addKeys({ up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT", w: "W", a: "A", s: "S", d: "D", f: "F", shift: "SHIFT" }, false) as typeof this.keys;
+    if (k) this.keys = k.addKeys({ up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT", w: "W", a: "A", s: "S", d: "D", space: "SPACE" }, false) as typeof this.keys;
+    // Captured, so Space never scrolls the page or presses a focused button.
+    k?.addCapture("SPACE");
   }
 
   /** A monster at its post: it waits there until it notices the hero. */
@@ -1497,7 +1491,7 @@ export class AtlasScene extends Phaser.Scene {
   /** A tap of Shift: a roll the way the hero walks, or a backstep standing still; nothing lands on it while it lasts. */
   private dodge(time: number): void {
     const hero = this.hero!;
-    if (!this.playing || hero.dead || this.gone || this.menu || this.talk || this.guarding || time < hero.busy || time < this.roll.until || !canAct(this.stamina)) return;
+    if (!this.playing || hero.dead || this.gone || this.menu || this.talk || time < hero.busy || time < this.roll.until || !canAct(this.stamina)) return;
     let [dx, dy] = this.keyDir();
     const next = hero.way[0];
     if (!dx && !dy && next) [dx, dy] = [next.x - hero.s.x, next.y - hero.s.y];
@@ -1525,7 +1519,7 @@ export class AtlasScene extends Phaser.Scene {
   private fight(time: number, dt: number): void {
     const hero = this.hero!;
     const rolling = time < this.roll.until;
-    this.guarding = !rolling && !hero.dead && !this.gone && this.playing && (!!this.keys?.f.isDown || this.shieldUp) && time >= this.guardBroken;
+    this.guarding = !rolling && !hero.dead && !this.gone && this.playing && (!!this.keys?.space.isDown || this.shieldUp) && time >= this.guardBroken;
     if (rolling) {
       this.slide(this.roll.dx, this.roll.dy, (this.roll.speed * dt) / 1000, !this.roll.back);
       if (time - this.roll.trail > 45) {
@@ -1533,10 +1527,12 @@ export class AtlasScene extends Phaser.Scene {
         this.echo();
       }
     } else if (this.guarding) {
-      // Behind the shield it stands still, turned to the nearest monster, once any swing is through.
+      // Behind the shield it walks slowly, no sprint, turned to the nearest monster, once any swing is through.
       hero.way = [];
       this.queued = false;
       if (time >= hero.busy) {
+        const [kx, ky] = this.keyDir();
+        if (kx || ky) this.slide(kx, ky, (HERO.speed * HERO.guardWalk * CELL * dt) / 1000, true);
         const foe = this.foes.filter((f) => !f.dead && tileDistance(f.at, hero.at) <= 3).sort((a, b) => tileDistance(a.at, hero.at) - tileDistance(b.at, hero.at))[0];
         if (foe && Math.abs(foe.s.x - hero.s.x) > 4) hero.s.setFlipX(foe.s.x < hero.s.x);
         this.play(hero.s, HERO_GUARD.key);
@@ -1768,19 +1764,6 @@ export class AtlasScene extends Phaser.Scene {
   /** A soft round light, and a shaft of it for lifts going up. */
   private glowTextures(): void {
     // Made once per game: a scene restarted by a crossing finds them already there.
-    if (!this.textures.exists("fog")) {
-      // A wisp of the white light at a way out: tall, soft, white all through.
-      const f = this.textures.createCanvas("fog", 128, 256)!;
-      f.context.translate(64, 128);
-      f.context.scale(1, 2);
-      const w = f.context.createRadialGradient(0, 0, 0, 0, 0, 64);
-      w.addColorStop(0, "rgba(255, 255, 255, 0.95)");
-      w.addColorStop(0.5, "rgba(240, 244, 255, 0.55)");
-      w.addColorStop(1, "rgba(235, 240, 255, 0)");
-      f.context.fillStyle = w;
-      f.context.fillRect(-64, -64, 128, 128);
-      f.refresh();
-    }
     if (this.textures.exists("glow")) return;
     const t = this.textures.createCanvas("glow", 256, 256)!;
     const g = t.context.createRadialGradient(128, 128, 0, 128, 128, 128);
@@ -2152,16 +2135,8 @@ export class AtlasScene extends Phaser.Scene {
         this.fence(e.at.col - 1, e.at.row - 1, 3, 1);
       }
     }
-    if (!up && !down && e.kind !== "drop") this.fogWall(e);
-    const tone = e.kind in GATE_TONE ? GATE_TONE[e.kind as GateKind] : LIFT_TONE[e.kind as LiftKind];
-    const word = up ? "up to " : down ? "down to " : "to ";
-    const t = this.add
-      // Kept a few tiles inside the map so an edge exit's sign is never cut off.
-      .text(Phaser.Math.Clamp(x, 4 * CELL, (STRAT_COLS - 4) * CELL), Math.max(y - (up || down ? 2.4 : 1.2) * CELL, 3 * CELL), `${e.name}\n${word}${there.name}`, { fontFamily: FONT, fontSize: "26px", fontStyle: "bold", color: tone, stroke: "#1c2634", strokeThickness: 6, align: "center" })
-      .setOrigin(0.5)
-      .setDepth(DEPTH.fx + 3);
-    this.names.push({ text: t, px: 13, tier: this.building });
-    this.signs.push({ to: e.to, text: t });
+    // Unsigned, as in the Souls games: the cloud bank and the prompt say where a way out goes.
+    if (!up && !down && e.kind !== "drop") this.cloudBank(e);
   }
 
   /** Creatures and knights, idle at their spot or walking their beat. */

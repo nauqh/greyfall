@@ -253,9 +253,8 @@ white shaft of light that marked every crossing are gone.
   Emberwood is the second: the Ember Run (a river, cut with `river()`) splits
   it, crossed at the Cinder Ford, an east bridge, the Pine Ford, and the
   Treetop Walk raised from Smoke Bluff to the goblins' Warren Hill. The Cinder
-  Troll waits in Troll's Hollow, a ring of rock with one gap. An exit's sign
-  is clickable as well as its tile, since an exit on the map's edge can sit
-  off-screen.
+  Troll waits in Troll's Hollow, a ring of rock with one gap. Exits carry no
+  sign: a cloud bank lies across each, and E's prompt names where it goes.
   Tinker Crags is the third: the Tinker Rock climbs in five gnome-built
   steps, each two overlapping blocks so no ledge runs an even width, with
   every stair at the far end from the last, so the climb walks each ledge
@@ -541,7 +540,7 @@ cell; hold the mouse to keep walking toward it, or steer with WASD or
 the arrows, sliding along what blocks. A click on the woods or the sea
 walks to the nearest ground beside it (`routeToward`), and a ring marks
 where a walk ends. Click the ground to walk there by the engine's own path, a
-monster to walk up and fight it until it dies, an exit or its sign to
+monster to walk up and fight it until it dies, an exit to
 walk to it and through. With nothing else to do the hero turns on a
 monster beside it. Monsters (`FOES` in `packages/engine/src/hero.ts`,
 GAME.md's numbers) wait at their posts, chase a hero within their aggro
