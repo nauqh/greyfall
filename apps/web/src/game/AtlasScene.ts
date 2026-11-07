@@ -147,6 +147,8 @@ export interface AtlasHooks {
   onGold?: (n: number) => void;
   /** The band: its order, and each companion's health, 0 for one fallen. */
   onBand?: (band: BandView) => void;
+  /** A boss in the fight, by name, its health for the bar; null once there is none. */
+  onBoss?: (boss: { name: string; hp: number; max: number } | null) => void;
   /** Rested at a bonfire, in place: the page sits the captain at it. */
   onRest?: (area: AreaId) => void;
   /** Died: the page darkens and wakes the captain at the bonfire last rested at, in `area`. */
@@ -524,6 +526,12 @@ export class AtlasScene extends Phaser.Scene {
   private guardBroken = 0;
   private vitalsAt = 0;
   private vitalsKey = "";
+  private bossKey = "";
+  /** A boss room's fog: the cells no one crosses, and the clouds drawn on them. */
+  private sealed = new Set<string>();
+  private fog: Phaser.GameObjects.Image[] = [];
+  /** Mist over the boss room, hiding it until the captain is inside. */
+  private mist: Phaser.GameObjects.Image[] = [];
   /** F held: the hero stands behind its shield. */
   private guarding = false;
   /** When E was pressed before the last swing was through: it swings the moment it can, not never. */
@@ -576,6 +584,10 @@ export class AtlasScene extends Phaser.Scene {
     this.local = null;
     this.built = new Set();
     this.hero = null;
+    this.sealed = new Set();
+    this.fog = [];
+    this.mist = [];
+    this.bossKey = "";
     this.shieldUp = false;
     this.aim = null;
     this.keys = null;
@@ -755,6 +767,7 @@ export class AtlasScene extends Phaser.Scene {
       this.hooks.onGold?.(this.gold);
       stored<CompanionKind[]>(BAND, []).forEach((kind, i) => this.addCompanion(kind, this.hooks.carry?.band[i]));
       this.emitBand();
+      this.fogGate();
       const k = this.input.keyboard;
       k?.on("keydown-ONE", () => this.command("follow"));
       k?.on("keydown-TWO", () => this.command("attack"));
@@ -886,6 +899,98 @@ export class AtlasScene extends Phaser.Scene {
       const drift = across ? { y: cy + (Math.random() - 0.5) * 20 } : { x: cx + (Math.random() - 0.5) * 28 };
       this.tweens.add({ targets: cloud, ...drift, duration: 2600 + Math.random() * 1600, yoyo: true, repeat: -1, ease: "Sine.easeInOut", delay: Math.random() * 1200 });
     }
+  }
+
+  /** A boss room's fog across its way in, after the Souls games, while its boss lives. */
+  private fogGate(): void {
+    const arena = this.local?.arena;
+    if (!arena || remembered(SLAIN).has(arena.boss)) return;
+    for (const c of arena.gate) {
+      this.sealed.add(`${c.col},${c.row}`);
+      for (let i = 0; i < 2; i++) {
+        const [x, y] = [(c.col + 0.5 + (i - 0.5) * 0.5) * CELL, (c.row + 0.5 + (i - 0.5) * 0.4) * CELL];
+        const cloud = this.add
+          .image(x, y, `cloud${1 + ((c.col + c.row + i) % 8)}`)
+          .setScale(0.7)
+          .setTint(0xf4f1ea)
+          .setDepth(DEPTH.clouds - 3 + y / 10000);
+        this.tweens.add({ targets: cloud, x: x + (Math.random() - 0.5) * 24, alpha: { from: 0.75, to: 1 }, duration: 2200 + Math.random() * 1200, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+        this.fog.push(cloud);
+      }
+    }
+    // The room itself, every tile of its quarter, under mist: what waits in it is seen only from inside.
+    const room = this.roomOf(arena);
+    const tiers = this.local!.island.rows;
+    for (let r = 0; r < tiers.length; r += 2) {
+      for (let c = 0; c < tiers[r]!.length; c += 2) {
+        if (districtOf(this.local!, c, r)?.name !== room) continue;
+        const [x, y] = [(c + 1) * CELL, (r + 1) * CELL];
+        this.mist.push(this.add.image(x, y, `cloud${1 + ((c * 7 + r * 3) % 8)}`).setScale(1.4).setTint(0xe8e6e0).setDepth(DEPTH.clouds - 1));
+      }
+    }
+  }
+
+  /** The quarter a boss room's boss stands in. */
+  private roomOf(arena: NonNullable<AreaMap["arena"]>): string | undefined {
+    const home = this.local!.dwellers.find((d) => d.kind === arena.boss);
+    return home && districtOf(this.local!, home.col, home.row)?.name;
+  }
+
+  /** Once the captain stands in the boss room, by the fog or by the road from the far side, its mist parts. */
+  private partMist(): void {
+    const arena = this.local?.arena;
+    if (!arena || this.mist.length === 0 || this.gone) return;
+    const hero = this.hero!;
+    if (districtOf(this.local!, hero.at.col, hero.at.row)?.name !== this.roomOf(arena)) return;
+    for (const m of this.mist) this.tweens.add({ targets: m, alpha: 0, scale: 1.4, duration: 1400, ease: "Sine.easeOut", onComplete: () => m.destroy() });
+    this.mist = [];
+  }
+
+  private shut(c: Cell): boolean {
+    return this.sealed.has(`${c.col},${c.row}`);
+  }
+
+  /** Beside the fog, on the outside of it. */
+  private atFog(): boolean {
+    const arena = this.local?.arena;
+    const hero = this.hero!;
+    if (!arena || this.sealed.size === 0) return false;
+    const gate = arena.gate[0]!;
+    return arena.gate.some((c) => tileDistance(c, hero.at) <= 1) && tileDistance(hero.at, arena.inside) > tileDistance(gate, arena.inside);
+  }
+
+  /** E at the fog: through it, slowly, into the boss room; it stays shut behind. */
+  private enterFog(): void {
+    const hero = this.hero!;
+    const to = this.local!.arena!.inside;
+    this.gone = true;
+    hero.way = [];
+    this.play(hero.s, hero.move ?? hero.idle);
+    const [x, y] = [(to.col + 0.5) * CELL, (to.row + 0.75) * CELL];
+    this.tweens.add({
+      targets: hero.s,
+      x,
+      y,
+      alpha: { from: 1, to: 0.35 },
+      yoyo: false,
+      duration: 1100,
+      ease: "Sine.easeInOut",
+      onComplete: () => {
+        hero.s.setAlpha(1).setDepth(standing(y));
+        hero.at = { ...to };
+        this.gone = false;
+      },
+    });
+  }
+
+  /** The boss down: its fog thins away and the way back opens. */
+  private liftFog(): void {
+    this.sealed.clear();
+    for (const f of this.fog) {
+      this.tweens.killTweensOf(f);
+      this.tweens.add({ targets: f, alpha: 0, duration: 1600, onComplete: () => f.destroy() });
+    }
+    this.fog = [];
   }
 
   private zoomFor(rows: number): number {
@@ -1207,7 +1312,7 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** What E does here besides swing: talk to someone right beside, else rest at a bonfire beside, else talk to someone near. */
-  private eTarget(): { folk: Folk } | { fire: Cell } | { note: Note } | { exit: Exit } | undefined {
+  private eTarget(): { folk: Folk } | { fire: Cell } | { note: Note } | { exit: Exit } | { fog: true } | undefined {
     const at = this.hero!.at;
     const folk = this.folk.filter((f) => f.near).sort((a, b) => tileDistance(a.at, at) - tileDistance(b.at, at))[0];
     if (folk && tileDistance(folk.at, at) <= 1) return { folk };
@@ -1217,6 +1322,7 @@ export class AtlasScene extends Phaser.Scene {
     if (note) return { note };
     const exit = this.local?.exits.find((e) => tileDistance(e.at, at) <= 1);
     if (exit) return { exit };
+    if (this.atFog()) return { fog: true };
     return folk && { folk };
   }
 
@@ -1510,7 +1616,7 @@ export class AtlasScene extends Phaser.Scene {
     const ahead = 0.3 * CELL;
     const open = (x: number, y: number): boolean => {
       const to = cellAt(x, y);
-      return (to.col === hero.at.col && to.row === hero.at.row) || canStep(hero.at, to);
+      return (to.col === hero.at.col && to.row === hero.at.row) || (canStep(hero.at, to) && !this.shut(to));
     };
     let { x, y } = hero.s;
     if (dx && open(x + Math.sign(dx) * ahead + dx * step, y)) x += dx * step;
@@ -1635,7 +1741,7 @@ export class AtlasScene extends Phaser.Scene {
         f.way = [{ x: (f.at.col + 0.5) * CELL, y: (f.at.row + 0.75) * CELL }];
       } else if (intent !== "idle" && time - f.planned > 400) {
         f.planned = time;
-        const taken = (c: Cell) => this.foes.some((o) => o !== f && !o.dead && o.at.col === c.col && o.at.row === c.row);
+        const taken = (c: Cell) => this.shut(c) || this.foes.some((o) => o !== f && !o.dead && o.at.col === c.col && o.at.row === c.row);
         // A thrower comes round for a clear line; a fighter comes beside.
         const goal =
           intent === "return"
@@ -1753,6 +1859,7 @@ export class AtlasScene extends Phaser.Scene {
   /** A boss down: it stays down for good, and its key, if it has one, is the captain's. */
   private felled(kind: string, key?: string): void {
     remember(SLAIN, remembered(SLAIN).add(kind));
+    if (this.local?.arena?.boss === kind) this.liftFog();
     if (key) remember(KEYS, remembered(KEYS).add(kind));
     const cam = this.cameras.main;
     const t = this.add
@@ -2349,7 +2456,8 @@ export class AtlasScene extends Phaser.Scene {
       const word = GATE_WORD[g.kind];
       text((g.at.col + 0.5) * CELL, (g.at.row - 1.2) * CELL, word ? `${g.name} (${word})` : g.name, 26, GATE_TONE[g.kind], 12);
     }
-    for (const b of tier.bosses) text((b.col + 0.5) * CELL, (b.row - 2.6) * CELL, b.name, 28, "#ff8f7a", 13);
+    // In an area the boss bar names it, once the fight is on.
+    if (!this.local) for (const b of tier.bosses) text((b.col + 0.5) * CELL, (b.row - 2.6) * CELL, b.name, 28, "#ff8f7a", 13);
   }
 
   private flag(f: WorldFlag): void {
@@ -2417,6 +2525,7 @@ export class AtlasScene extends Phaser.Scene {
       if ("fire" in t!) return this.rest(t.fire);
       if ("note" in t!) return this.read(t.note);
       if ("exit" in t!) return this.traverse(t.exit);
+      if ("fog" in t!) return this.enterFog();
       return RECRUITER[t!.folk.npc.id] ? this.openMenu(t!.folk) : this.talkTo(t!.folk);
     }
   }
@@ -2463,7 +2572,7 @@ export class AtlasScene extends Phaser.Scene {
     f.busy = Math.max(f.busy, time + 500);
     f.way = [];
     if (to.col === f.at.col && to.row === f.at.row) return;
-    if (!canStep(f.at, to) || this.foes.some((o) => o !== f && !o.dead && o.at.col === to.col && o.at.row === to.row)) return;
+    if (!canStep(f.at, to) || this.shut(to) || this.foes.some((o) => o !== f && !o.dead && o.at.col === to.col && o.at.row === to.row)) return;
     f.at = to;
     const y = (to.row + 0.75) * CELL;
     this.tweens.add({ targets: f.s, x: (to.col + 0.5) * CELL, y, duration: 180, ease: "Cubic.easeOut", onComplete: () => f.s.setDepth(standing(y)) });
@@ -2538,7 +2647,7 @@ export class AtlasScene extends Phaser.Scene {
     }
     if (this.reading && tileDistance(this.reading.at, hero.at) > 1) this.read(null);
     const t = this.talk || this.menu || this.reading || hero.dead || this.gone ? undefined : this.eTarget();
-    const action = !t ? null : "folk" in t ? "Talk" : "fire" in t ? "Rest" : "note" in t ? "Read" : this.exitWord(t.exit);
+    const action = !t ? null : "folk" in t ? "Talk" : "fire" in t ? "Rest" : "note" in t ? "Read" : "fog" in t ? "Traverse the fog" : this.exitWord(t.exit);
     if (action !== this.nearName) this.hooks.onNear?.((this.nearName = action));
   }
 
@@ -2565,6 +2674,7 @@ export class AtlasScene extends Phaser.Scene {
       this.mind();
       this.gather();
       this.whereabouts(time);
+      this.partMist();
       for (const b of [this.hero, ...this.foes, ...this.band]) this.drawBar(b);
       // The HUD's bars, a few times a second and only when they change.
       if (time - this.vitalsAt > 80) {
@@ -2574,6 +2684,15 @@ export class AtlasScene extends Phaser.Scene {
         if (key !== this.vitalsKey) {
           this.vitalsKey = key;
           this.hooks.onVitals?.(v);
+        }
+        // A boss shows its bar once the captain is within its leash, as a major fight opens in the Souls games.
+        const hero = this.hero;
+        const boss = hero.dead ? undefined : this.foes.find((f) => BOSSES.has(f.kind) && !f.dead && tileDistance(f.at, hero.at) <= f.stats.leash);
+        const name = boss && this.local?.bosses.slice().sort((a, b) => tileDistance(a, boss.home) - tileDistance(b, boss.home))[0]?.name;
+        const bossKey = boss ? `${name},${boss.hp}` : "";
+        if (bossKey !== this.bossKey) {
+          this.bossKey = bossKey;
+          this.hooks.onBoss?.(boss ? { name: name ?? boss.kind, hp: boss.hp, max: boss.max } : null);
         }
       }
     }

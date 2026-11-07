@@ -59,6 +59,8 @@ export interface AreaMap extends AtlasTier {
   streets?: boolean;
   /** Notes left on the ground, after the Souls games' messages: read with E. */
   notes?: Note[];
+  /** A boss room: fog across `gate`, crossed with E from outside to `inside`, shut behind until the `boss` kind falls. */
+  arena?: { boss: string; gate: Cell[]; inside: Cell };
 }
 
 export interface Note {
@@ -247,6 +249,7 @@ function pad(m: AreaMap, n: number): AreaMap {
     districts: m.districts.map((d) => ({ ...d, at: at(d.at), ...(d.box && { box: { ...d.box, x: d.box.x + n, y: d.box.y + n } }) })),
     decks: m.decks.map(at),
     ...(m.notes && { notes: m.notes.map((x) => ({ ...x, at: at(x.at) })) }),
+    ...(m.arena && { arena: { ...m.arena, gate: m.arena.gate.map(at), inside: at(m.arena.inside) } }),
   };
 }
 
@@ -2200,11 +2203,14 @@ function landing(): AreaMap {
   const t = tierBuilder("surface", rng, { cols: 60, rows: 44 });
   const { prop, who } = t;
 
-  // Where a new captain comes ashore: a beach, the dunes behind it, and the road up to the Harbour. Short and safe, two
-  // goblins to learn on, and notes in the sand from those who landed before, one for each thing worth knowing.
-  for (const [x, y, rx, ry] of [[30, 34, 18, 7], [30, 21, 13, 8], [30, 8, 6, 8]] as const) t.blob("landing", x, y, rx, ry);
-  t.road([30, 36], [30, 27], [30, 14], [30, 1]);
-  t.bridge({ col: 30, row: 5 }, { col: 30, row: 1 }, 3);
+  // Where a new captain comes ashore: a beach, the dunes behind it, and the Bull's Ring, a boss room of its own past the
+  // water. Two goblins to learn on, and notes in the sand from those who landed before, one for each thing worth knowing.
+  for (const [x, y, rx, ry] of [[30, 34, 18, 7], [30, 22, 13, 7], [30, 7, 12, 6]] as const) t.blob("landing", x, y, rx, ry);
+  // Open water all round the Ring: one narrow causeway in, the Shore Road out on its far side.
+  t.pond(12, 13, 36, 2);
+  t.bridge({ col: 30, row: 16 }, { col: 30, row: 11 }, 2);
+  t.bridge({ col: 30, row: 4 }, { col: 30, row: 1 }, 3);
+  t.road([30, 36], [30, 27], [30, 16], [30, 11], [30, 1]);
 
   // The Strand: the boat that brought the captain, the first fire.
   prop("boat", 30, 42);
@@ -2212,10 +2218,21 @@ function landing(): AreaMap {
   // The Dunes: a goblin who strayed from the wood, gold in the sand.
   who("torch", 30, 20);
   prop("goldStone", 37, 18);
-  // The Shore Road: one more goblin, then the Minotaur at the road's end, the last lesson before the town.
-  who("torch", 32, 15);
+  // The Dunes' end: one more goblin before the causeway; over it, the Minotaur in the Ring, the last lesson before the town.
+  who("torch", 33, 18);
+  // The Bull's Ring: a hollow between two hills, the old watch's ruined tower on the eastern one, the road climbing out
+  // north between them. Braziers round the floor, and the spikes and bones of the captains who came ashore before.
+  t.shape(2, 21, 6, 4, 5, 0.5, "The Bull's Ring");
+  t.shape(3, 20, 5, 2, 3, 0.5, "The Bull's Ring");
+  t.shape(2, 39, 7, 4, 4.5, 0.5, "The Bull's Ring");
+  prop("tower", 40, 5, { color: "black" });
+  prop("deadTree", 20, 4);
+  for (const [c, r] of [[26, 3], [34, 3], [26, 11], [34, 11]] as const) prop("sconce", c, r);
+  for (const [c, r] of [[25, 6], [35, 6], [24, 9], [36, 10], [27, 2], [33, 2]] as const) prop("skullSpike", c, r);
+  for (const [c, r] of [[27, 5], [33, 9], [26, 8], [34, 5], [31, 10]] as const) prop("bones", c, r);
+  prop("boat", 45, 9);
   t.bosses.push({ name: "The Shore Minotaur", area: "landing", col: 30, row: 7 });
-  who("minotaur", 30, 7, { to: { col: 32, row: 8 } });
+  who("minotaur", 30, 7, { to: { col: 31, row: 7 } });
 
   const notes: Note[] = [
     { at: { col: 28, row: 36 }, text: "W A S D to walk. Hold Shift while walking to sprint." },
@@ -2224,8 +2241,8 @@ function landing(): AreaMap {
     { at: { col: 30, row: 28 }, text: "A goblin ahead. Left click swings toward the cursor. Three swings chain, and the third knocks back." },
     { at: { col: 25, row: 24 }, text: "A monster flashes white as it winds up. Tap Shift to roll through the blow, or hold Space to guard and walk behind the shield." },
     { at: { col: 35, row: 23 }, text: "Swings, rolls and blows on the shield all cost stamina. Run dry and you can do none of them. Step back and breathe." },
-    { at: { col: 29, row: 17 }, text: "Die and your gold stays where you fell. Go back for it; die again on the way and it is lost." },
-    { at: { col: 28, row: 14 }, text: "Something big bars the road ahead. Roll its blows and strike while it recovers. Fall to it, and you wake in the Harbour." },
+    { at: { col: 25, row: 19 }, text: "Die and your gold stays where you fell. Go back for it; die again on the way and it is lost." },
+    { at: { col: 28, row: 17 }, text: "Something big waits in the Ring over the causeway. Roll its blows and strike while it recovers. Fall to it, and you wake in the Harbour." },
     { at: { col: 32, row: 4 }, text: "The Harbour is up the road. Hire a band there, then 1, 2 and 3 tell them to follow, attack, or hold." },
     { at: { col: 28, row: 3 }, text: "At the road's end, walk up to the clouds and press E to traverse them to the next land." },
   ];
@@ -2233,11 +2250,13 @@ function landing(): AreaMap {
   const districts: District[] = [
     { name: "The Strand", at: { col: 30, row: 37 }, palette: [3], dress: "saltreach", decor: 1.5 },
     { name: "The Dunes", at: { col: 30, row: 21 }, palette: [3], dress: "harbour", decor: 1.5 },
-    { name: "The Shore Road", at: { col: 30, row: 6 }, palette: [3], dress: "harbour", decor: 1 },
+    // Cold drowned grass, apart from the beach.
+    { name: "The Bull's Ring", at: { col: 30, row: 6 }, palette: [5], dress: "barrowmoor", decor: 0.4 },
   ];
   const entry = { col: 30, row: 37 };
   const tier = t.finish({ landing: 0.03 }, [entry]);
-  return { ...tier, area: "landing", entry, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes };
+  const arena = { boss: "minotaur", gate: [{ col: 29, row: 13 }, { col: 30, row: 13 }], inside: { col: 30, row: 11 } };
+  return { ...tier, area: "landing", entry, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes, arena };
 }
 
 const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour, emberwood, crags, greyfall, gilded, steps, undercroft, deeps, hollow, barrowmoor, fen, saltreach, landing };

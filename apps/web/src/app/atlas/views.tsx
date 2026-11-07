@@ -62,6 +62,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const [flasks, setFlasks] = useState<number | null>(null);
   const [vitals, setVitals] = useState<Vitals | null>(null);
   const [gold, setGold] = useState<number | null>(null);
+  const [boss, setBoss] = useState<{ name: string; hp: number; max: number } | null>(null);
   const [band, setBand] = useState<BandView | null>(null);
   const [menu, setMenu] = useState<MenuView | null>(null);
   // Died: the words, then the dark, then waking at the bonfire in this area.
@@ -128,6 +129,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
     onFlasks: setFlasks,
     onVitals: setVitals,
     onGold: setGold,
+    onBoss: setBoss,
     onBand: setBand,
     onMenu: setMenu,
     // The scene rests in place: no dark, only the camera drawing in on the fire.
@@ -352,6 +354,16 @@ export function AreaView({ area: first }: { area: AreaId }) {
                 <span className="vitalBar stamina">
                   <span style={{ width: `${vitals.stamina}%` }} />
                 </span>
+              </span>
+            </div>
+          )}
+          {boss && (
+            // A major boss, after Dark Souls: its name over a long bar, low and centred.
+            <div className="bossBar" role="status" aria-label={`${boss.name}, health ${boss.hp} of ${boss.max}`}>
+              <span className="bossName">{boss.name}</span>
+              <span className="vitalBar hp">
+                <i style={{ width: `${(100 * boss.hp) / boss.max}%` }} />
+                <span style={{ width: `${(100 * boss.hp) / boss.max}%` }} />
               </span>
             </div>
           )}

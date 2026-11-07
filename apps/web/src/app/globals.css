@@ -1277,6 +1277,31 @@ textarea {
 	background: linear-gradient(#7fc463, #3d7d2c 55%, #2b5c1f);
 }
 
+/* A major boss: the name in the display face over a long thin bar, low and centred. */
+.bossBar {
+	position: absolute;
+	left: 50%;
+	bottom: 22px;
+	transform: translateX(-50%);
+	display: grid;
+	gap: 6px;
+	width: min(62vw, 760px);
+	pointer-events: none;
+}
+
+.bossName {
+	font: 700 20px var(--display), serif;
+	letter-spacing: 0.04em;
+	color: #e9e2cf;
+	text-shadow: 0 1px 3px #000, 0 0 8px #000;
+}
+
+.bossBar .vitalBar {
+	width: 100%;
+	max-width: none;
+	height: 10px;
+}
+
 /* Gold carried where Dark Souls keeps its souls: a dark plate, bottom right. */
 .purse {
 	position: absolute;

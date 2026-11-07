@@ -134,8 +134,11 @@ then walks back; the engine already has a guard leash.
 1. **The Landing:** the beach a new game starts on, south of the Harbour
    up the Shore Road. You come ashore alone. A bonfire, two goblins,
    notes on the ground that teach the controls (read with E), and the
-   Shore Minotaur at the road's end, a tutorial boss that bars the way
-   out. Kill it and the road opens; fall to it and you wake at the
+   Shore Minotaur, a tutorial boss in the Bull's Ring: a hollow between
+   two hills, a ruined tower on one, across the water. Mist hides it
+   from outside; E at the fog on the one causeway takes you in, and the
+   fog holds you there until the boss falls. A boss bar with its name
+   shows low and centred while you fight it. Kill it and the road opens; fall to it and you wake at the
    Harbour's first bonfire. Either way the training is over.
 2. **The Harbour:** the hub. Bonfire, recruiting (Lancer, Archer), the
    blacksmith.
