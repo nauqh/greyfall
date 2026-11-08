@@ -57,6 +57,8 @@ export interface Whereabouts {
 export interface Npc {
   id: string;
   name: string;
+  /** Over their head when the name carries a title; the full name shows once spoken to. */
+  short?: string;
   area: AreaId;
   /** On the map as areaMap() gives it: a surface map is padded with sea, so not the builder's own grid. */
   at: Cell;
@@ -132,6 +134,7 @@ export const NPCS: readonly Npc[] = [
   {
     id: "brenna",
     name: "Brenna the Smith",
+    short: "Brenna",
     area: "harbour",
     at: { col: 70, row: 59 },
     kind: "pawn",
@@ -172,6 +175,7 @@ export const NPCS: readonly Npc[] = [
   {
     id: "corwin",
     name: "Sergeant Corwin",
+    short: "Corwin",
     area: "harbour",
     at: { col: 77, row: 53 },
     kind: "lancer",
@@ -349,6 +353,7 @@ export const NPCS: readonly Npc[] = [
   {
     id: "ysolde",
     name: "Mother Ysolde",
+    short: "Ysolde",
     area: "harbour",
     at: { col: 50, row: 26 },
     kind: "monk",
@@ -411,6 +416,7 @@ export const NPCS: readonly Npc[] = [
   {
     id: "maren",
     name: "Maren the Harbourmaster",
+    short: "Maren",
     area: "harbour",
     at: { col: 48, row: 60 },
     kind: "pawn",
@@ -543,6 +549,7 @@ export const NPCS: readonly Npc[] = [
   {
     id: "ansel",
     name: "Ansel of the Wall",
+    short: "Ansel",
     area: "harbour",
     at: { col: 53, row: 19 },
     kind: "warrior",

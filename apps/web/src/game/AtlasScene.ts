@@ -826,16 +826,16 @@ export class AtlasScene extends Phaser.Scene {
       dev: (on) => this.setDev(on),
       next: () => (this.reading ? this.read(null) : this.nextPage()),
       sit: (on) => this.sit(on),
-      choose: (i) => {
-        if (!this.menu) return;
-        this.menu.pick = i;
-        this.choose();
       pause: (on) => {
         // The whole loop, not the scene: a paused scene still draws every frame under the other game.
         if (on) return this.game.loop.sleep();
         useIsland(this.map.tiers[this.view].island);
         this.game.loop.wake();
       },
+      choose: (i) => {
+        if (!this.menu) return;
+        this.menu.pick = i;
+        this.choose();
       },
       tier: (id) => {
         this.show(id);
@@ -1793,6 +1793,7 @@ export class AtlasScene extends Phaser.Scene {
     const { mark, move, aim } = f.windup!;
     f.windup = null;
     if (move) return this.trollLands(f, move, aim!, time);
+    if (BEAST[f.kind]?.hit) f.s.anims.msPerFrame = 100;
     f.busy = time + PACE.recover * 1000;
     if (mark.dead) return;
     const missile = MISSILE[f.kind];
@@ -1817,7 +1818,6 @@ export class AtlasScene extends Phaser.Scene {
   /** The troll's blow falls: the club on its circle, the charge down its line, or embers that burn on. */
   private trollLands(f: Foe, move: TrollMove, aim: Cell[], time: number): void {
     f.busy = time + TROLL.recover * 1000;
-    if (BEAST[f.kind]?.hit) f.s.anims.msPerFrame = 100;
     f.s.play("beast_troll_attack_once");
     f.s.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => !f.dead && f.s.play("beast_troll_recovery_once").once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => !f.dead && this.play(f.s, f.idle)));
     const on = new Set(aim.map((c) => `${c.col},${c.row}`));
@@ -2500,7 +2500,7 @@ export class AtlasScene extends Phaser.Scene {
     this.loop(s, look.idle.key);
     // Named over their heads, so they stand out from the villagers at work round them.
     this.add
-      .text(s.x, y - 1.05 * CELL, n.name, { fontFamily: FONT, fontSize: "20px", fontStyle: "bold", color: "#f2d48a", stroke: "#1c2634", strokeThickness: 5 })
+      .text(s.x, y - 1.05 * CELL, n.short ?? n.name, { fontFamily: FONT, fontSize: "20px", fontStyle: "bold", color: "#f2d48a", stroke: "#1c2634", strokeThickness: 5 })
       .setOrigin(0.5, 1)
       .setDepth(DEPTH.fx);
     this.folk.push({ npc: n, at: w.at, s, near: false, bubble: null });
