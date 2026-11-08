@@ -953,6 +953,13 @@ textarea {
 	color: #5a4630;
 }
 
+/* The bonfire's map: its own game over the area's, which waits paused beneath, under the crossing cover. */
+.travelMap {
+	position: absolute;
+	inset: 0;
+	z-index: 5;
+}
+
 /* The bonfires lit in an area, each a place to travel to. */
 .atlasFires {
 	display: flex;

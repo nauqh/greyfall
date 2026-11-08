@@ -375,11 +375,13 @@ export function cloudCover(scene: Phaser.Scene, mode: "open" | "close", done: ()
     vw,
     vh,
   );
+  // Sized to the scenes' fit zoom as the DOM cover is (Clouds.tsx), whatever the camera's: dev mode's whole-map zoom drew hundreds of tiny clouds.
+  const u = Math.min(cam.width / 1200, cam.height / 720) / cam.zoom;
   const depth = DEPTH.hud + 40;
   const opening = mode === "open";
   // Solid under the clouds, so the gaps between them never show the world.
   const backdrop = scene.add
-    .rectangle(view.centerX, view.centerY, view.width + 400, view.height + 400, CLOUD_SKY)
+    .rectangle(view.centerX, view.centerY, view.width + 400 * u, view.height + 400 * u, CLOUD_SKY)
     .setDepth(depth)
     .setAlpha(opening ? 1 : 0);
   // Three layers, each swaying on the wall clock (art.ts cloudDrift), so the
@@ -391,7 +393,7 @@ export function cloudCover(scene: Phaser.Scene, mode: "open" | "close", done: ()
   const sway = (): void => {
     if (still) return;
     const now = Date.now();
-    layers.forEach((l, i) => l.setX(cloudDrift(i, now)));
+    layers.forEach((l, i) => l.setX(cloudDrift(i, now) * u));
   };
   sway();
   scene.events.on(Phaser.Scenes.Events.UPDATE, sway);
@@ -401,13 +403,13 @@ export function cloudCover(scene: Phaser.Scene, mode: "open" | "close", done: ()
   scene.events.once(Phaser.Scenes.Events.SHUTDOWN, stopSway);
 
   const clouds: Phaser.GameObjects.Image[] = [];
-  for (let row = 0; view.y - 60 + row * CLOUD_GRID.dy < view.bottom + 120; row++) {
-    for (let col = 0; view.x - 120 + col * CLOUD_GRID.dx < view.right + 200; col++) {
+  for (let row = 0; view.y + (row * CLOUD_GRID.dy - 60) * u < view.bottom + 120 * u; row++) {
+    for (let col = 0; view.x + (col * CLOUD_GRID.dx - 120) * u < view.right + 200 * u; col++) {
       const c = cloudAt(row, col);
       const cloud = scene.add
-        .image(view.x + c.x, view.y + c.y, c.key)
+        .image(view.x + c.x * u, view.y + c.y * u, c.key)
         .setFlipX(c.flip)
-        .setScale(CLOUD_GRID.scale * c.s);
+        .setScale(CLOUD_GRID.scale * c.s * u);
       layers[c.layer]!.add(cloud);
       clouds.push(cloud);
     }

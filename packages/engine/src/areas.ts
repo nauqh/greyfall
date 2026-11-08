@@ -2235,11 +2235,11 @@ function landing(): AreaMap {
   who("minotaur", 30, 7, { to: { col: 31, row: 7 } });
 
   const notes: Note[] = [
-    { at: { col: 28, row: 36 }, text: "W A S D to walk. Hold Shift while walking to sprint." },
+    { at: { col: 28, row: 36 }, text: "W A S D to walk. Hold Space while walking to sprint." },
     { at: { col: 34, row: 33 }, text: "E to rest at a bonfire: it heals you and refills your flasks, but every monster comes back." },
     { at: { col: 24, row: 33 }, text: "R drinks a flask. You carry three, so save them for when it counts." },
     { at: { col: 30, row: 28 }, text: "A goblin ahead. Left click swings toward the cursor. Three swings chain, and the third knocks back." },
-    { at: { col: 25, row: 24 }, text: "A monster flashes white as it winds up. Tap Shift to roll through the blow, or hold Space to guard and walk behind the shield." },
+    { at: { col: 25, row: 24 }, text: "A monster flashes white as it winds up. Tap Space to roll through the blow, or hold Shift to guard and walk behind the shield." },
     { at: { col: 35, row: 23 }, text: "Swings, rolls and blows on the shield all cost stamina. Run dry and you can do none of them. Step back and breathe." },
     { at: { col: 25, row: 19 }, text: "Die and your gold stays where you fell. Go back for it; die again on the way and it is lost." },
     { at: { col: 28, row: 17 }, text: "Something big waits in the Ring over the causeway. Roll its blows and strike while it recovers. Fall to it, and you wake in the Harbour." },

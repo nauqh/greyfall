@@ -8,6 +8,7 @@ import type { AtlasApi, AtlasHooks, BandView, Departure, MenuView, Say, Vitals }
 import { Clouds } from "../../game/Clouds";
 import { packUrl } from "../../game/art";
 import { GameCanvas } from "../../game/GameCanvas";
+import { TravelMap } from "./TravelMap";
 
 /** The HUD shown or hidden with the H key, remembered on this browser. */
 export function useHud(): [boolean, () => void] {
@@ -69,6 +70,8 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const [died, setDied] = useState<AreaId | null>(null);
   // Sat at a bonfire after a rest: its name, and the option picked.
   const [fire, setFire] = useState<{ name: string; pick: number } | null>(null);
+  // The bonfire's map, open over the area while the scene waits paused behind it.
+  const [atlas, setAtlas] = useState(false);
   const api = useRef<AtlasApi | null>(null);
   const now = useRef({ area: first, cameFrom: undefined as AreaId | undefined, quiet: false, travelling: false });
 
@@ -107,7 +110,13 @@ export function AreaView({ area: first }: { area: AreaId }) {
     setFire(null);
   };
   const bonfire = [
-    { label: "Travel", go: () => router.push(`/atlas/map?from=${now.current.area}`) },
+    {
+      label: "Travel",
+      go: () => {
+        api.current?.pause(true);
+        setAtlas(true);
+      },
+    },
     { label: "Leave", go: leaveFire },
   ];
   // The name mounts two painted frames after the map is in view, so its clock never runs while the first frames are still drawing.
@@ -169,8 +178,12 @@ export function AreaView({ area: first }: { area: AreaId }) {
     } catch {}
     window.location.assign("/atlas/landing?rest");
   };
+  const closeAtlas = (): void => {
+    api.current?.pause(false);
+    setAtlas(false);
+  };
   useEffect(() => {
-    if (!fire) return;
+    if (!fire || atlas) return;
     const key = (e: KeyboardEvent): void => {
       const k = e.key.toLowerCase();
       if (k === "w" || k === "arrowup" || k === "s" || k === "arrowdown") {
@@ -182,7 +195,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fire]);
+  }, [fire, atlas]);
   useEffect(() => {
     const key = (e: KeyboardEvent): void => {
       if (e.key === "`" && !(e.target instanceof HTMLInputElement)) toggleDev();
@@ -237,7 +250,18 @@ export function AreaView({ area: first }: { area: AreaId }) {
             }}
           />
         )}
-        {fire && (
+        {atlas && (
+          <TravelMap
+            from={now.current.area}
+            onBack={closeAtlas}
+            onTravel={(f) => {
+              closeAtlas();
+              setFire(null);
+              depart({ to: f.area, name: f.name, kind: "rest", dir: "down", x: 0.5, y: 0.5 });
+            }}
+          />
+        )}
+        {fire && !atlas && (
           // Sat at a bonfire, after Dark Souls 3: the dark drawn in round the fire, its name, travel or stand.
           <div className="bonfire" role="menu" aria-label={fire.name}>
             <span className="bonfireName">{fire.name}</span>

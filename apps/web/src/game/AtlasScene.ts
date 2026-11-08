@@ -94,7 +94,8 @@ export interface AtlasApi {
   sit: (on: boolean) => string | null;
   /** In a menu with someone who hires out: pick an option, as E on it would. */
   choose: (i: number) => void;
-  /** Draw the Souls map over the tier in view. */
+  /** Stop the scene while another game (the bonfire map) runs on the page, or go on; that game swaps the shared walk grid. */
+  pause: (on: boolean) => void;
 }
 
 /** How a crossing feels: walking out over a gate, falling down a drop, riding a lift, or going down a stair into the deep. */
@@ -236,6 +237,8 @@ interface Beast {
   move?: string;
   /** Its blow, played once a strike. */
   attack?: string;
+  /** The attack frame where the blow connects, drawn out to land as the wind-up ends. */
+  hit?: number;
   frame: number;
   anchor: number;
   scale?: number;
@@ -244,8 +247,8 @@ interface Beast {
 }
 const EP = "Enemy Pack/";
 const BEAST: Record<string, Beast> = {
-  torch: { idle: `${EP}Torch Goblin/Torch Goblin_Idle.png`, move: `${EP}Torch Goblin/Torch Goblin_Run.png`, attack: `${EP}Torch Goblin/Torch Goblin_Attack.png`, frame: 192, anchor: 132 / 192 },
-  spear: { idle: `${EP}Spear Goblin/Spear Goblin_Idle.png`, move: `${EP}Spear Goblin/Spear Goblin_Run.png`, attack: `${EP}Spear Goblin/Spear Goblin_Attack Fast.png`, frame: 256, anchor: 174 / 256 },
+  torch: { idle: `${EP}Torch Goblin/Torch Goblin_Idle.png`, move: `${EP}Torch Goblin/Torch Goblin_Run.png`, attack: `${EP}Torch Goblin/Torch Goblin_Attack.png`, hit: 2, frame: 192, anchor: 132 / 192 },
+  spear: { idle: `${EP}Spear Goblin/Spear Goblin_Idle.png`, move: `${EP}Spear Goblin/Spear Goblin_Run.png`, attack: `${EP}Spear Goblin/Spear Goblin_Attack Fast.png`, hit: 5, frame: 256, anchor: 174 / 256 },
   thief: { idle: `${EP}Thief/Thief_Idle.png`, move: `${EP}Thief/Thief_Run.png`, attack: `${EP}Thief/Thief_Attack.png`, frame: 192, anchor: 131 / 192 },
   gnoll: { idle: `${EP}Gnoll/Gnoll_Idle.png`, move: `${EP}Gnoll/Gnoll_Walk.png`, attack: `${EP}Gnoll/Gnoll_Throw.png`, frame: 192, anchor: 133 / 192 },
   minotaur: { idle: `${EP}Minotaur/Minotaur_Idle.png`, move: `${EP}Minotaur/Minotaur_Walk.png`, attack: `${EP}Minotaur/Minotaur_Attack.png`, frame: 320, anchor: 213 / 320 },
@@ -310,7 +313,7 @@ const MISSILE: Record<string, { key: string; file: string; frame?: number }> = {
 };
 /** What a thrown or shot missile cannot pass: anything built, a hut, a cave mouth, a dead tree. Woods are cover too. */
 const COVER_ART: ReadonlySet<string> = new Set(["castle", "monastery", "barracks", "archery", "tower", "watchtower", "house1", "house2", "house3", "goblinHut", "gnomeHut", "gnomeTower", "cave", "fishHut", "goldMine", "trollDead", "deadTree"]);
-/** Shift, after Dark Souls on a keyboard: a tap rolls (or backsteps, standing still), held while moving it sprints. */
+/** Space, after Dark Souls on a keyboard: a tap rolls (or backsteps, standing still), held while moving it sprints. */
 const TAP = 250;
 const ROLL = { tiles: 2.2, ms: 320, back: { tiles: 1.1, ms: 220 }, recover: 120 } as const;
 /** How far above its feet a flyer hangs, as a share of its frame. */
@@ -514,12 +517,12 @@ export class AtlasScene extends Phaser.Scene {
   private shieldUp = false;
   /** Where the last attack was aimed, for a press kept until the hero is ready. */
   private aim: { x: number; y: number } | null = null;
-  private keys: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d" | "space", Phaser.Input.Keyboard.Key> | null = null;
+  private keys: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d" | "shift", Phaser.Input.Keyboard.Key> | null = null;
   private stamina: number = STAMINA.max;
   /** When stamina was last spent: it comes back only after a pause. */
   private spentAt = -1e9;
-  /** When Shift went down, -1 when it is up: a tap rolls, a hold sprints. */
-  private shiftAt = -1;
+  /** When Space went down, -1 when it is up: a tap rolls, a hold sprints. */
+  private spaceAt = -1;
   /** A roll under way: until when it moves and nothing can hurt, which way, how fast, and when it last left an echo. */
   private roll = { until: 0, dx: 0, dy: 0, speed: 0, trail: 0, back: false };
   /** A guard broken by a blow it could not pay for holds nothing up until then. */
@@ -599,7 +602,7 @@ export class AtlasScene extends Phaser.Scene {
     this.queued = false;
     this.stamina = STAMINA.max;
     this.spentAt = -1e9;
-    this.shiftAt = -1;
+    this.spaceAt = -1;
     this.roll = { until: 0, dx: 0, dy: 0, speed: 0, trail: 0, back: false };
     this.guardBroken = 0;
     this.vitalsKey = "";
@@ -773,10 +776,10 @@ export class AtlasScene extends Phaser.Scene {
       k?.on("keydown-TWO", () => this.command("attack"));
       k?.on("keydown-THREE", () => this.command("hold"));
       for (const [key, d] of [["W", -1], ["UP", -1], ["S", 1], ["DOWN", 1]] as const) k?.on(`keydown-${key}`, () => this.movePick(d));
-      k?.on("keydown-SHIFT", (e: KeyboardEvent) => !e.repeat && (this.shiftAt = this.time.now));
-      k?.on("keyup-SHIFT", () => {
-        if (this.shiftAt >= 0 && this.time.now - this.shiftAt < TAP) this.dodge(this.time.now);
-        this.shiftAt = -1;
+      k?.on("keydown-SPACE", (e: KeyboardEvent) => !e.repeat && (this.spaceAt = this.time.now));
+      k?.on("keyup-SPACE", () => {
+        if (this.spaceAt >= 0 && this.time.now - this.spaceAt < TAP) this.dodge(this.time.now);
+        this.spaceAt = -1;
       });
       // The gold left at the last death waits where it fell, glowing, until it is picked up or the captain dies again.
       const lost = stored<Lost | null>(LOST, null);
@@ -823,6 +826,12 @@ export class AtlasScene extends Phaser.Scene {
         if (!this.menu) return;
         this.menu.pick = i;
         this.choose();
+      pause: (on) => {
+        // The whole loop, not the scene: a paused scene still draws every frame under the other game.
+        if (on) return this.game.loop.sleep();
+        useIsland(this.map.tiers[this.view].island);
+        this.game.loop.wake();
+      },
       },
       tier: (id) => {
         this.show(id);
@@ -869,7 +878,7 @@ export class AtlasScene extends Phaser.Scene {
     return there ? `Traverse the clouds to ${there}` : "Traverse the clouds";
   }
 
-  /** E at a way out: into the cloud bank, slowly, and through; a lift or a drop goes at once (a drop still warns). */
+  /** E at a way out: a slow walk off the edge into the crossing's clouds; a lift or a drop goes at once (a drop still warns). */
   private traverse(e: Exit): void {
     if (barred(e)) return;
     const { kind } = this.crossing(e);
@@ -881,24 +890,6 @@ export class AtlasScene extends Phaser.Scene {
     if (Math.abs(x - hero.s.x) > 2) hero.s.setFlipX(x < hero.s.x);
     this.play(hero.s, hero.move ?? hero.idle);
     this.tweens.add({ targets: hero.s, x, y, alpha: 0.1, duration: 1100, ease: "Sine.easeIn", onComplete: () => this.depart(e) });
-  }
-
-  /** A bank of the pack's own clouds lying across a way out, the same clouds that close in on a crossing, slowly drifting. */
-  private cloudBank(e: Exit): void {
-    const { dir } = this.crossing(e);
-    const across = dir === "left" || dir === "right";
-    const [x, y] = [(e.at.col + 0.5) * CELL, (e.at.row + 0.5) * CELL];
-    // Overlapping along the edge, the lower ones in front, each drifting a little along it and back.
-    for (let i = -2; i <= 2; i++) {
-      const [cx, cy] = across ? [x + (i % 2) * 0.3 * CELL, y + i * 0.65 * CELL] : [x + i * 0.75 * CELL, y + (i % 2) * 0.25 * CELL];
-      const cloud = this.add
-        .image(cx, cy, `cloud${1 + ((e.at.col + e.at.row + i + 8) % 8)}`)
-        .setScale(0.85 + Math.random() * 0.3)
-        .setFlipX(Math.random() < 0.5)
-        .setDepth(DEPTH.clouds - 3 + cy / 10000);
-      const drift = across ? { y: cy + (Math.random() - 0.5) * 20 } : { x: cx + (Math.random() - 0.5) * 28 };
-      this.tweens.add({ targets: cloud, ...drift, duration: 2600 + Math.random() * 1600, yoyo: true, repeat: -1, ease: "Sine.easeInOut", delay: Math.random() * 1200 });
-    }
   }
 
   /** A boss room's fog across its way in, after the Souls games, while its boss lives. */
@@ -1132,7 +1123,7 @@ export class AtlasScene extends Phaser.Scene {
     this.play(s, look.idle.key);
     this.hero = { ...this.body(s, at, HERO.hp, HERO.speed, { idle: look.idle.key, move: look.move?.key, attack: HERO_ATTACK.key }) };
     const k = this.input.keyboard;
-    if (k) this.keys = k.addKeys({ up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT", w: "W", a: "A", s: "S", d: "D", space: "SPACE" }, false) as typeof this.keys;
+    if (k) this.keys = k.addKeys({ up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT", w: "W", a: "A", s: "S", d: "D", shift: "SHIFT" }, false) as typeof this.keys;
     // Captured, so Space never scrolls the page or presses a focused button.
     k?.addCapture("SPACE");
   }
@@ -1626,7 +1617,7 @@ export class AtlasScene extends Phaser.Scene {
     if (face && Math.abs(dx) > 0.01) hero.s.setFlipX(dx < 0);
   }
 
-  /** A tap of Shift: a roll the way the hero walks, or a backstep standing still; nothing lands on it while it lasts. */
+  /** A tap of Space: a roll the way the hero walks, or a backstep standing still; nothing lands on it while it lasts. */
   private dodge(time: number): void {
     const hero = this.hero!;
     if (!this.playing || hero.dead || this.gone || this.menu || this.talk || time < hero.busy || time < this.roll.until || !canAct(this.stamina)) return;
@@ -1658,7 +1649,7 @@ export class AtlasScene extends Phaser.Scene {
     const hero = this.hero!;
     const rolling = time < this.roll.until;
     if (!hero.dead) hero.s.setAngle(0);
-    this.guarding = !rolling && !hero.dead && !this.gone && this.playing && (!!this.keys?.space.isDown || this.shieldUp) && time >= this.guardBroken;
+    this.guarding = !rolling && !hero.dead && !this.gone && this.playing && (!!this.keys?.shift.isDown || this.shieldUp) && time >= this.guardBroken;
     if (rolling) {
       this.slide(this.roll.dx, this.roll.dy, (this.roll.speed * dt) / 1000, !this.roll.back);
       if (time - this.roll.trail > 45) {
@@ -1681,9 +1672,9 @@ export class AtlasScene extends Phaser.Scene {
         this.play(hero.s, HERO_GUARD.key);
       }
     } else if (!hero.dead && !this.gone) {
-      // Shift held past a tap, while moving: a sprint, for as long as the stamina lasts.
+      // Space held past a tap, while moving: a sprint, for as long as the stamina lasts.
       const [kx, ky] = this.keyDir();
-      const sprinting = this.shiftAt >= 0 && time - this.shiftAt >= TAP && (kx || ky || hero.way.length > 0) && canAct(this.stamina) && time >= hero.busy;
+      const sprinting = this.spaceAt >= 0 && time - this.spaceAt >= TAP && (kx || ky || hero.way.length > 0) && canAct(this.stamina) && time >= hero.busy;
       hero.speed = HERO.speed * (sprinting ? HERO.sprint : 1);
       if (sprinting) {
         this.stamina = spend(this.stamina, (STAMINA.sprint * dt) / 1000);
@@ -1767,7 +1758,8 @@ export class AtlasScene extends Phaser.Scene {
     f.s.setTintFill(0xffffff);
     this.time.delayedCall(70, () => f.s.clearTint());
     if (f.attack && this.anims.exists(`${f.attack}_once`)) {
-      f.s.play(`${f.attack}_once`);
+      const hit = BEAST[f.kind]?.hit;
+      f.s.play(hit ? { key: `${f.attack}_once`, frameRate: (hit * 1000) / ms } : `${f.attack}_once`);
       f.s.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => !f.dead && this.play(f.s, f.idle));
     }
   }
@@ -1801,6 +1793,7 @@ export class AtlasScene extends Phaser.Scene {
   /** The troll's blow falls: the club on its circle, the charge down its line, or embers that burn on. */
   private trollLands(f: Foe, move: TrollMove, aim: Cell[], time: number): void {
     f.busy = time + TROLL.recover * 1000;
+    if (BEAST[f.kind]?.hit) f.s.anims.msPerFrame = 100;
     f.s.play("beast_troll_attack_once");
     f.s.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => !f.dead && f.s.play("beast_troll_recovery_once").once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => !f.dead && this.play(f.s, f.idle)));
     const on = new Set(aim.map((c) => `${c.col},${c.row}`));
@@ -2279,8 +2272,6 @@ export class AtlasScene extends Phaser.Scene {
         this.fence(e.at.col - 1, e.at.row - 1, 3, 1);
       }
     }
-    // Unsigned, as in the Souls games: the cloud bank and the prompt say where a way out goes.
-    if (!up && !down && e.kind !== "drop") this.cloudBank(e);
   }
 
   /** Creatures and knights, idle at their spot or walking their beat. */
