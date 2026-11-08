@@ -503,7 +503,97 @@ white shaft of light that marked every crossing are gone.
   are the passes out, Old Town's cliff closes the north, and the rim's
   stairs stand in the passes. The houses sit on the rim; the Old Well is
   on its east ledge, off the square but in view of the fire. The two back
-  lanes that cut the rim's corners are gone. The Citadel's stairs are an
+  lanes that cut the rim's corners are gone. The bonfire stands at the
+  bowl's centre, copses on the rim and in its corners. Every way out
+  starts on the bowl's floor; the high ground is the climb, after
+  Firelink's stair to the Burg: twin stairs up the bowl's north wall onto
+  Old Town, then the Upper Town, the Citadel and the Keep stacked up the
+  bonfire's column to the castle on its sea cliff. Rim arms reaching out
+  as ridges (`ridge()`) were tried and dropped: they read as nowhere.
+  Lantern Point holds five ways, each with a tell: the Lantern Road
+  west (`lanterns()` along it; golden motes drifting off the fire along
+  it, after Elden Ring's guidance of grace, were tried and dropped as
+  odd), the Graves up the hill north, the Old Well by the fire, the pier
+  south and the cove east. `solidCells()` is what no one walks through
+  (props but gold, bones and boats; fence posts); the scene adds rocks
+  and stumps standing in open ground, never at an edge, so none seals a
+  pass, and a test walks every area round the solid props.
+- **The Citadel is a region, not a terrace stack.** After the Undead
+  Burg, the Undead Parish and Dark Souls 3's Undead Settlement, the
+  castle above the Harbour splits into areas of their own, joined in a
+  climb: the Lower Burg, the Ramparts, the Chapel Ward, the Keep. Built
+  so far: the Lower Burg (`burg`), the castle's fallen outer town, in at
+  the Burg Gate on Old Town's north-west, where the Lantern Road now
+  ends. Its south gate between two towers, the Lower Streets (thieves,
+  skulls), a gorge crossed by the Dilapidated Bridge (spear goblins at
+  its south end) or a narrow far crossing east (a gnoll, gold), the
+  Burg's bonfire on the square past the bridge, a notch stair up to the
+  Upper Streets, and the crest at the foot of the Ramparts. Its ground is
+  the dark teal-grey (tileset 5) so the olive streets read. Citadel areas
+  are built, not open: only their own rooms, streets and walls stand in
+  the void (`ground()` pieces, `block()` terraces with stairs set by
+  hand), so each way is a chosen corridor. The Lower Burg is a gate
+  court, a main street, two lanes to their yards, the gorge as void with
+  two crossings, the square, and the Upper Streets walled on a terrace.
+  The Ramparts (`ramparts`): the gate yard, a bailey lane to a dead end
+  with gold, and the wall walk, a straight run three tiles wide over the
+  void with a stair at each end; its east end is the Bull's Wall, fogged
+  at both ends while the Rampart Bull (the minotaur's sheets, iron-tinted,
+  bigger, harder) holds it. Past him the Ladder (`opens: "ladderDown"`)
+  drops to the Burg's square, where its foot is `shut` until then, and the
+  Gun Bridge crosses the chasm under slingshot gnomes on two rocks to the
+  Chapel Ward's barred door. A crossing lands at the exit of the same name
+  (`greyfall.via`), since two ways now join the Burg and the Ramparts.
+  The Chapel Ward (`chapel`), after the Undead Parish: the Cloister Gate
+  court, the cloister walk round a square pond (dead monks on their
+  rounds), the chapel terrace (the monastery, the Old Lift down to
+  Lantern Point, opened by riding it), the bell roof a height above,
+  fogged while the Stone Warden (the troll's sheets in stone, no troll's
+  moves) holds it, the Postern to Emberwood off the roof, barred until he
+  falls; and the forge yard east, the Ward's bonfire and Brenna. The
+  town's Ember Gate is now a shortcut, opened from the wood: Emberwood
+  comes after the Citadel. Every way between areas is a thing to see: a
+  stair in the terrain's own tiles (the Burg Gate on its landing above
+  Old Town), a gateway between towers or a bridge or causeway to it, and
+  across it a fog gate from the pack's art, fence end-posts with the
+  pack's white clouds banked between; a ladder is a run of fence, a lift
+  its platform. Solid props block a base centred under their art (an
+  even width rounds down), so none juts out to one side. The Keep
+  (`keep`), the Citadel's crown, its own area where the harbour's Citadel
+  and Keep terraces used to be: in at the Keep Gate off the Burg's Upper
+  Streets (an exit with a `key`, barred by the pack's fence until the
+  Troll Key is carried), the gate court, the bailey (the garrison, Corwin
+  at the barracks, the Keep's bonfire), and the castle on its terrace a
+  stair up, Ansel on the wall, the Watch Lift up to the Skyward Steps,
+  shut until ridden down. The Landing is a sea cave on the underground
+  tier, narrow tunnels from the grotto to the antechamber's fog; the
+  Bull's Ring is its own cavern area past it, the minotaur's arena fogged
+  at both tunnels, and the Ring Lift up to Lantern Point's pier. Every
+  fightable boss fights in a closed arena (the Ring, the Bull's Wall, the
+  bell roof, Troll's Hollow); walking into its fog walks the captain two
+  steps in, and it holds until the boss or the captain falls. The side a
+  crossing comes out on is `plain`, no fog.
+  The hub moved off the town to Lantern Point, a headland in the
+  south-east corner (Firelink is a ledge at the edge, not the middle):
+  the Shore Road from the Landing lands on it, the lighthouse fire is the
+  Harbour's first bonfire, an inlet against the Moor Watch's bluff leaves
+  the shore path the one way west, and the Moor Watch's hill behind the
+  point is the Graves: a path up its slope through gnolls and gold bait
+  to the Moor Gate on its seaward edge (the coast strip that once ran
+  north to a lowland gate read as a dead end, and the hill as scenery). An
+  exit's `shut` flag bars a shortcut from this side until it is opened
+  from the far one (the Moor Gate, the Watch Lift). The market's fire is
+  a campfire; the goblin camp's on the Ember road is the second bonfire.
+  After Firelink, the bowl carries one axis through the fire: north the
+  stair up to the castle and the sky, south the Old Well on the bowl's
+  floor, down to the drowned. A gate tower marks each pass mouth. Ferrow
+  at the fire says the goal (the Grey Gate's two keys), why the castle is
+  shut, and warns off the well. The countryside is thresholds, each a
+  taste of the region past it: Saltreach's fishers and yellow militia at
+  the Old Bridge, the lumber and goblin camps on the Ember road, the
+  moor's dead along the Moor Gate road, the mine's ore carried to the
+  smith; the lighthouse keeps gold and a note. Notes on the ground at the
+  well's lip, on the Keep looking east, and at the lighthouse. The Citadel's stairs are an
   area `lock`: shut until the Troll Key is carried, or opened from inside
   by coming down the Watch Lift.
 - **A district is one colour.** A district's `palette` can be a single

@@ -16,6 +16,7 @@ After Dark Souls: no quest log, no choices, the captain never speaks.
 | Flag | Set by |
 | --- | --- |
 | died | dying (works now) |
+| bullWon | falling to the Shore Minotaur, which washes the captain up on Lantern Point |
 | wellDescended | arriving in the Undercroft (works now) |
 | moorGateOpen | coming into the Harbour through the Moor Gate (works now) |
 | watchLiftOpen | riding the Watch Lift down into the Harbour (works now) |
@@ -44,12 +45,28 @@ After Dark Souls: no quest log, no choices, the captain never speaks.
 
 Greets you: *"Ah. Another one."* Walked away from: *"Mind the dark, then."*
 
-### Home: Last Harbour, The Lower Town (57, 46)
+### Home: Last Harbour, Lantern Point, by the lighthouse fire (96, 73)
 
 - **first**
   1. Another captain. Hm.
   2. The last one sat right where you're standing. Warmed his hands, same as you.
   3. Go on, then. The fire doesn't ask who you were. Nor do I.
+- **shore**
+  1. Follow the lanterns, captain. West along the shore, through the town, up to the Ember Gate. Someone lit them for you.
+  2. The path up the hill goes through the graves to the Moor Gate. Shut from this side, and the dogs up there don't care that it's shut.
+- **bull** (once, after meeting, when **bullWon**)
+  1. Washed up with the tide, did you? The bull did that.
+  2. He'll keep. Go back down the pier when your arm's stronger. What he guards is worth a fall or two.
+- **goal**
+  1. You'll be wanting the Grey Gate. East, past the moor. They all do.
+  2. Two keys open it. The king under the barrows keeps one.
+  3. The other's down below, where the spider weaves. Down the well, and further down.
+- **castle**
+  1. The castle? Shut since the grey came. The steward ran for the wood with its key.
+  2. Troll had him for supper, they say. Has the key still, I'd think.
+- **well**
+  1. The well only goes one way. Down, to the drowned.
+  2. Not yet, captain. Not that way. Not yet.
 - **roads**
   1. Every road out of here comes back to this fire. The gates, the well, the lift.
   2. Folk think that's a comfort. I've never been sure.
@@ -72,7 +89,7 @@ Greets you: *"Ah. Another one."* Walked away from: *"Mind the dark, then."*
 
 Greets you: *"Mind the sparks."* Walked away from: *"Come back with ore."*
 
-### Home: Last Harbour, The Lower Town (70, 59)
+### Home: The Chapel Ward, the Forge Yard (58, 27)
 
 - **first**
   1. You want an edge on that? Bring me gold and ore.
@@ -93,7 +110,7 @@ Greets you: *"Mind the sparks."* Walked away from: *"Come back with ore."*
 
 Greets you: *"Captain."* Walked away from: *"Dismissed, then."*
 
-### Home: Last Harbour, The Lower Town, by the barracks (77, 53)
+### Home: The Keep, the Bailey, by the barracks (20, 29)
 
 - **first**
   1. We were forty spears once. Forty.
@@ -151,7 +168,7 @@ Greets you: *"You walk loud, captain."* Walked away from: *"Keep your head down!
 
 Greets you: *"Don't lean on the rope."* Walked away from: *"...Right. Off you go."*
 
-### Home: Last Harbour, The Lower Town, by the Old Well on the east rim (72, 45)
+### Home: Last Harbour, Lantern Point, by the Old Well (93, 77)
 
 - **first**
   1. Don't lean on the rope. It's older than me.
@@ -196,7 +213,7 @@ Greets you: *"Don't lean on the rope."* Walked away from: *"...Right. Off you go
 
 Greets you: *"Peace on you."* Walked away from: *"Go gently, captain."*
 
-### Home: Last Harbour, The Upper Town (50, 26)
+### Home: Last Harbour, The Upper Town (54, 29)
 
 - **first**
   1. Peace on you, captain.
@@ -231,7 +248,7 @@ Greets you: *"Peace on you."* Walked away from: *"Go gently, captain."*
 
 Greets you: *"Tide's out."* Walked away from: *"Fair winds. Ha."*
 
-### Home: Last Harbour, The Lower Town (48, 60)
+### Home: Last Harbour, Lantern Point, on the pier (98, 81)
 
 - **first**
   1. No ships in three winters.
@@ -254,7 +271,7 @@ Greets you: *"Tide's out."* Walked away from: *"Fair winds. Ha."*
 
 Greets you: *"Gate stays shut."* Walked away from: *"Back to the wall, then."*
 
-### Home: Last Harbour, Mine Hills (109, 49)
+### Home: Last Harbour, the Moor Watch, by the Moor Gate on the hill (109, 49)
 
 - **first**
   1. The gate stays barred from this side, captain. Orders.
@@ -316,7 +333,7 @@ Greets you: *"Shh!"* Walked away from: *"Don't tell them I'm here!"*
 
 Greets you: *"Look up, captain."* Walked away from: *"Go on. I'll keep watch. It's all I'm good for."*
 
-### Home: Last Harbour, The Citadel (53, 19)
+### Home: The Keep, on the hall's terrace (25, 10)
 
 - **first**
   1. Look up, captain. See that glint? Past the clouds.
@@ -347,7 +364,7 @@ Greets you: *"Look up, captain."* Walked away from: *"Go on. I'll keep watch. It
   1. The warlord's hall is up past the keep. I'll go first, this time.
   2. Let me have that. You've had all the others.
 
-### At Last Harbour, The Citadel (53, 19), once **warlordDead**
+### At The Keep, on the hall's terrace (25, 10), once **warlordDead**
 
 - **without**
   1. You went up without me. Good.

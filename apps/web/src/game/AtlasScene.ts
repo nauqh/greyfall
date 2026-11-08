@@ -51,6 +51,7 @@ import {
   tileDistance,
   atlasMap,
   footprint,
+  solidCells,
   useIsland,
   type AreaId,
   type AreaMap,
@@ -244,6 +245,8 @@ interface Beast {
   scale?: number;
   fly?: boolean;
   swim?: boolean;
+  /** A colour laid over its sheets, kept through every hit flash: one pack sheet dressed as another monster. */
+  tint?: number;
 }
 const EP = "Enemy Pack/";
 const BEAST: Record<string, Beast> = {
@@ -252,7 +255,11 @@ const BEAST: Record<string, Beast> = {
   thief: { idle: `${EP}Thief/Thief_Idle.png`, move: `${EP}Thief/Thief_Run.png`, attack: `${EP}Thief/Thief_Attack.png`, frame: 192, anchor: 131 / 192 },
   gnoll: { idle: `${EP}Gnoll/Gnoll_Idle.png`, move: `${EP}Gnoll/Gnoll_Walk.png`, attack: `${EP}Gnoll/Gnoll_Throw.png`, frame: 192, anchor: 133 / 192 },
   minotaur: { idle: `${EP}Minotaur/Minotaur_Idle.png`, move: `${EP}Minotaur/Minotaur_Walk.png`, attack: `${EP}Minotaur/Minotaur_Attack.png`, frame: 320, anchor: 213 / 320 },
+  // The Ramparts' bull: the Landing's minotaur shod in iron, bigger, steel-grey.
+  rampartBull: { idle: `${EP}Minotaur/Minotaur_Idle.png`, move: `${EP}Minotaur/Minotaur_Walk.png`, attack: `${EP}Minotaur/Minotaur_Attack.png`, frame: 320, anchor: 213 / 320, scale: 1.2, tint: 0x9fb0c8 },
   troll: { idle: `${EP}Troll/Troll_Idle.png`, move: `${EP}Troll/Troll_Walk.png`, attack: `${EP}Troll/Troll_Attack.png`, frame: 384, anchor: 296 / 384, scale: 0.8 },
+  // The Chapel Ward's bell boss: the troll's sheets in stone, a warden squatting on the bell. No troll's moves: plain blows.
+  stoneWarden: { idle: `${EP}Troll/Troll_Idle.png`, move: `${EP}Troll/Troll_Walk.png`, attack: `${EP}Troll/Troll_Attack.png`, frame: 384, anchor: 296 / 384, scale: 0.85, tint: 0xa8acb4 },
   skull: { idle: `${EP}Skull/Skull_Idle.png`, move: `${EP}Skull/Skull_Run.png`, attack: `${EP}Skull/Skull_Attack.png`, frame: 192, anchor: 128 / 192 },
   skullGuard: { idle: `${EP}Extra/Skull Guard/Skull_Guard.png`, frame: 192, anchor: 128 / 192 },
   shaman: { idle: `${EP}Hex Shaman/Hex Shaman_Idle.png`, move: `${EP}Hex Shaman/Hex Shaman_Run.png`, attack: `${EP}Hex Shaman/Hex Shaman_Attack.png`, frame: 192, anchor: 136 / 192 },
@@ -444,9 +451,26 @@ const GOLD = "greyfall.gold";
 const SLAIN = "greyfall.slain";
 const KEYS = "greyfall.keys";
 const BOSS_KEY: Partial<Record<string, string>> = { troll: "Troll Key" };
-const BOSSES = new Set(["troll", "minotaur"]);
-/** A way out shut until its guarding boss falls, or the captain has already rested on the far side. */
+const BOSSES = new Set(["troll", "minotaur", "rampartBull", "stoneWarden"]);
+/** The exit last gone through, so a crossing lands at the way of the same name when two ways join the same areas. */
+const VIA = "greyfall.via";
+/** A boss whose fall is worth a flask more, for good: the Landing's bull, the reward for going back to him. */
+const BOSS_FLASK: ReadonlySet<string> = new Set(["minotaur"]);
+/** A hit flash over: back to the sprite's own colour, its base tint if it has one. */
+function untint(s: Phaser.GameObjects.Sprite): void {
+  const tint = s.getData("tint") as number | undefined;
+  if (tint) s.setTint(tint);
+  else s.clearTint();
+}
+/** Flasks carried at full: the base, and one for each boss that gives one. */
+function maxFlasks(): number {
+  return HERO.flasks + [...remembered(SLAIN)].filter((k) => BOSS_FLASK.has(k)).length;
+}
+/** A way out shut until its guarding boss falls, or the captain has already rested on the far side; or a shortcut not
+ *  yet opened from the far side. */
 function barred(e: Exit): boolean {
+  if (e.shut && !remembered(FLAGS).has(e.shut)) return true;
+  if (e.key && !remembered(KEYS).has(e.key)) return true;
   return !!e.guard && !remembered(SLAIN).has(e.guard) && ![...remembered(KINDLED)].some((k) => k.startsWith(`${e.to}:`));
 }
 const TAKEN = "greyfall.taken";
@@ -488,6 +512,9 @@ const UNDER: Partial<Record<AreaId, { rock: number; ambient: number; glow: numbe
   undercroft: { rock: 0x221a16, ambient: 0.16, glow: 0xffc890, gold: 4 },
   deeps: { rock: 0x0e1214, ambient: 0.1, glow: 0x9cdcb4, gold: 4 },
   hollow: { rock: 0x16202e, ambient: 0.42, glow: 0xb4e0ff, gold: 8 },
+  // The tutorial's sea cave and the Ring at its end: dark, in plain cool light, no warm cast; the torches show the way.
+  landing: { rock: 0x1e2226, ambient: 0.32, glow: 0xe6ecf0, gold: 4 },
+  ring: { rock: 0x1e2226, ambient: 0.3, glow: 0xe6ecf0, gold: 4 },
 };
 
 type Exit = AreaMap["exits"][number];
@@ -534,7 +561,9 @@ export class AtlasScene extends Phaser.Scene {
   private sealed = new Set<string>();
   /** Ways shut until their key is carried, apart from the fog so a boss's fall never opens them. */
   private locked = new Set<string>();
-  private fog: Phaser.GameObjects.Image[] = [];
+  /** What no one walks through: buildings, heaps, fence posts, and the rocks and stumps standing in open ground. */
+  private solid = new Set<string>();
+  private fog: Phaser.GameObjects.Sprite[] = [];
   /** Mist over the boss room, hiding it until the captain is inside. */
   private mist: Phaser.GameObjects.Image[] = [];
   /** F held: the hero stands behind its shield. */
@@ -591,6 +620,7 @@ export class AtlasScene extends Phaser.Scene {
     this.hero = null;
     this.sealed = new Set();
     this.locked = new Set();
+    this.solid = new Set();
     this.fog = [];
     this.mist = [];
     this.bossKey = "";
@@ -618,11 +648,11 @@ export class AtlasScene extends Phaser.Scene {
     this.flags = remembered(FLAGS);
     // What a crossing proves: down the well, the Watch Lift ridden down, the Moor Gate come through from the moor, the Greyfall reached.
     if (data.area === "undercroft") this.flag("wellDescended");
-    if (data.area === "harbour" && data.from === "steps") this.flag("watchLiftOpen");
+    if (data.area === "keep" && data.from === "steps") this.flag("watchLiftOpen");
     if (data.area === "harbour" && data.from === "barrowmoor") this.flag("moorGateOpen");
     if (data.area === "greyfall") this.flag("greyfallReached");
     this.seen = new Set(this.flags);
-    this.flasks = data.carry?.flasks ?? HERO.flasks;
+    this.flasks = data.carry?.flasks ?? maxFlasks();
     this.gold = stored(GOLD, 0);
     this.band = [];
     this.bandOrder = "follow";
@@ -694,6 +724,8 @@ export class AtlasScene extends Phaser.Scene {
     BIG_TREE.forEach((t, i) => sheet(`bigTree${i}`, t));
     sheet("fire", FIRE);
     this.load.spritesheet("fence", packUrl(FENCE), { frameWidth: 64, frameHeight: 64 });
+    // The pack's dust puffs: the fog gates are banked from their first frame, and wisps off them play the rest.
+    this.load.spritesheet("fogPuff", packUrl("Particle FX/Dust_02.png"), { frameWidth: 64, frameHeight: 64 });
   }
 
   /** The sheets a dweller plays, keyed so a colour and a job load once. */
@@ -760,11 +792,13 @@ export class AtlasScene extends Phaser.Scene {
       // Woken from a rest or a death, beside the bonfire rested at, not on the fire itself.
       const rest = this.hooks.arrive === "rest" ? restPoint() : null;
       const fire = rest?.area === local.area ? { col: rest.col, row: rest.row } : null;
-      const at = fire ?? local.exits.find((e) => e.to === this.hooks.from)?.at ?? local.entry;
+      const via = stored<string>(VIA, "");
+      const at = fire ?? (local.exits.find((e) => e.to === this.hooks.from && e.name === via) ?? local.exits.find((e) => e.to === this.hooks.from))?.at ?? local.entry;
       const open = (c: Cell): boolean => isWalkable(c.col, c.row) && !isSlope(c.col, c.row) && !(fire && c.col === fire.col && c.row === fire.row);
       const near = open(at) ? at : (findRoute(at, open)?.at(-1) ?? local.entry);
       this.spawn = near;
       for (const p of local.props) if (COVER_ART.has(p.art)) for (const c of footprint(p)) this.cover.add(`${c.col},${c.row}`);
+      for (const k of solidCells(local)) this.solid.add(k);
       this.notes = local.notes ?? [];
       for (const n of this.notes) this.addNote(n);
       this.spawnHero(near);
@@ -860,6 +894,8 @@ export class AtlasScene extends Phaser.Scene {
     const [wx, wy] = [(e.at.col + 0.5) * CELL, (e.at.row + 0.5) * CELL];
     const x = Phaser.Math.Clamp((wx - v.x) / v.width, 0, 1);
     const y = Phaser.Math.Clamp((wy - v.y) / v.height, 0, 1);
+    store(VIA, e.name);
+    if (e.opens) this.flag(e.opens as WorldFlag);
     this.hooks.onExit?.({ to: e.to, name: e.name, ...this.crossing(e), x, y });
   }
 
@@ -877,7 +913,7 @@ export class AtlasScene extends Phaser.Scene {
     const { kind, dir } = this.crossing(e);
     if (kind === "fall") return "Drop";
     if (kind === "ride") return `Ride the lift ${dir}`;
-    if (barred(e)) return "Barred";
+    if (barred(e)) return e.key && !remembered(KEYS).has(e.key) ? `Locked: the ${BOSS_KEY[e.key] ?? "key"} opens it` : "Barred";
     const there = AREAS.find((a) => a.id === e.to)?.name;
     return there ? `Traverse the clouds to ${there}` : "Traverse the clouds";
   }
@@ -900,18 +936,15 @@ export class AtlasScene extends Phaser.Scene {
   private fogGate(): void {
     const arena = this.local?.arena;
     if (!arena || remembered(SLAIN).has(arena.boss)) return;
-    for (const c of arena.gate) {
-      this.sealed.add(`${c.col},${c.row}`);
-      for (let i = 0; i < 2; i++) {
-        const [x, y] = [(c.col + 0.5 + (i - 0.5) * 0.5) * CELL, (c.row + 0.5 + (i - 0.5) * 0.4) * CELL];
-        const cloud = this.add
-          .image(x, y, `cloud${1 + ((c.col + c.row + i) % 8)}`)
-          .setScale(0.7)
-          .setTint(0xf4f1ea)
-          .setDepth(DEPTH.clouds - 3 + y / 10000);
-        this.tweens.add({ targets: cloud, x: x + (Math.random() - 0.5) * 24, alpha: { from: 0.75, to: 1 }, duration: 2200 + Math.random() * 1200, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
-        this.fog.push(cloud);
+    for (const c of arena.gate) this.sealed.add(`${c.col},${c.row}`);
+    // One gate for each run of fog cells: the Ramparts' wall is fogged at both its ends.
+    const left = [...arena.gate];
+    while (left.length > 0) {
+      const run = [left.shift()!];
+      for (let i = 0; i < run.length; i++) {
+        for (let j = left.length - 1; j >= 0; j--) if (Math.abs(left[j]!.col - run[i]!.col) + Math.abs(left[j]!.row - run[i]!.row) === 1) run.push(...left.splice(j, 1));
       }
+      this.fog.push(...this.fogVeil(run));
     }
     // The room itself, every tile of its quarter, under mist: what waits in it is seen only from inside.
     const room = this.roomOf(arena);
@@ -942,7 +975,8 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   private shut(c: Cell): boolean {
-    return this.sealed.has(`${c.col},${c.row}`) || this.locked.has(`${c.col},${c.row}`);
+    const k = `${c.col},${c.row}`;
+    return this.sealed.has(k) || this.locked.has(k) || this.solid.has(k);
   }
 
   /** A gate across each locked way, until its key is carried or the captain has come through from the far side. */
@@ -975,19 +1009,24 @@ export class AtlasScene extends Phaser.Scene {
   /** E at the fog: through it, slowly, into the boss room; it stays shut behind. */
   private enterFog(): void {
     const hero = this.hero!;
-    const to = this.local!.arena!.inside;
+    // Walked through, not carried: from where the captain stands, straight through the nearest fog tile and two steps
+    // on into the room, at a walking pace; never set down before the boss.
+    const gate = this.local!.arena!.gate.reduce((a, c) => (tileDistance(c, hero.at) < tileDistance(a, hero.at) ? c : a));
+    const [dc, dr] = [Math.sign(gate.col - hero.at.col), Math.sign(gate.row - hero.at.row)];
+    const to = [2, 1].map((k) => ({ col: gate.col + dc * k, row: gate.row + dr * k })).find((c) => isWalkable(c.col, c.row) && !this.shut(c)) ?? this.local!.arena!.inside;
     this.gone = true;
     hero.way = [];
     this.play(hero.s, hero.move ?? hero.idle);
+    if (dc) hero.s.setFlipX(dc < 0);
     const [x, y] = [(to.col + 0.5) * CELL, (to.row + 0.75) * CELL];
     this.tweens.add({
       targets: hero.s,
       x,
       y,
-      alpha: { from: 1, to: 0.35 },
+      alpha: { from: 1, to: 0.6 },
       yoyo: false,
-      duration: 1100,
-      ease: "Sine.easeInOut",
+      duration: 260 * Math.max(Math.abs(to.col - hero.at.col), Math.abs(to.row - hero.at.row)),
+      ease: "Linear",
       onComplete: () => {
         hero.s.setAlpha(1).setDepth(standing(y));
         hero.at = { ...to };
@@ -1161,6 +1200,8 @@ export class AtlasScene extends Phaser.Scene {
       .setScale(look.scale)
       .setDepth(standing(y))
       .setFlipX(Math.random() < 0.5);
+    const tint = BEAST[d.kind]?.tint;
+    if (tint) s.setTint(tint).setData("tint", tint);
     this.play(s, look.idle.key);
     const at = { col: d.col, row: d.row };
     const attack = BEAST[d.kind]?.attack ? `beast_${d.kind}_attack` : undefined;
@@ -1247,7 +1288,7 @@ export class AtlasScene extends Phaser.Scene {
     const dealt = blocked ? throughGuard(attack) : attack;
     to.hp = struck(to.hp, dealt);
     to.s.setTintFill(blocked ? 0x9cc4e8 : 0xffffff);
-    this.time.delayedCall(90, () => to.s.clearTint());
+    this.time.delayedCall(90, () => untint(to.s));
     const color = blocked ? "#9cc4e8" : to === this.hero ? "#ff8a7a" : "#fdfaf0";
     const n = this.add.text(to.s.x, to.s.y - to.lift - 10, `${dealt}`, { fontFamily: FONT, fontSize: "28px", fontStyle: "bold", color, stroke: "#1c2634", strokeThickness: 6 }).setOrigin(0.5).setDepth(DEPTH.fx + 1);
     this.tweens.add({ targets: n, y: n.y - 40, alpha: 0, duration: 700, ease: "Sine.easeOut", onComplete: () => n.destroy() });
@@ -1267,6 +1308,9 @@ export class AtlasScene extends Phaser.Scene {
     const launch = { ...from.at };
     const [x, y] = [from.s.x, from.s.y - 40];
     const [tx, ty] = [to.s.x, to.s.y - to.lift * 0.5];
+    // A monster's throw flies at where its mark stood, slow enough to see coming: step or roll off that spot and it misses.
+    // The band's arrows stay quick and sure.
+    const hostile = this.foes.includes(from as Foe);
     // An arrow flies point first; a bone, an acorn or a bolt tumbles.
     const m = this.add.sprite(x, y, missile.key).setDepth(DEPTH.fx);
     if (missile.frame) this.loop(m, missile.key);
@@ -1275,11 +1319,14 @@ export class AtlasScene extends Phaser.Scene {
       targets: m,
       x: tx,
       y: ty,
-      duration: Math.max(120, Math.hypot(tx - x, ty - y) / 0.9),
+      duration: Math.max(120, Math.hypot(tx - x, ty - y) / (hostile ? 0.55 : 0.9)),
       onComplete: () => {
         m.destroy();
+        if (to.dead) return;
+        // Dodged: no longer where it was aimed.
+        if (hostile && Math.hypot(to.s.x - tx, to.s.y - to.lift * 0.5 - ty) > 0.65 * CELL) return;
         // Stepped behind cover while it flew: it strikes the wall, not them.
-        if (!to.dead && clearShot(launch, to.at, this.blocks)) this.hurt(from, to, attack);
+        if (clearShot(launch, to.at, this.blocks)) this.hurt(from, to, attack);
       },
     });
   }
@@ -1316,6 +1363,8 @@ export class AtlasScene extends Phaser.Scene {
     // Felled by the boss guarding a way out, as at the Landing's end: the captain wakes past it, at the far side's first fire.
     const past = this.local!.exits.find((e) => e.guard && e.guard === (by as Foe | undefined)?.kind);
     if (past) {
+      // Lost, not over, after Elden Ring's Grafted Scion: the bull keeps the Ring and waits to be come back for.
+      this.flag("bullWon");
       const fire = areaMap(past.to).fires[0]!;
       store(REST, { area: past.to, ...fire });
       remember(KINDLED, remembered(KINDLED).add(`${past.to}:${fire.col},${fire.row}`));
@@ -1392,7 +1441,7 @@ export class AtlasScene extends Phaser.Scene {
     this.gone = true;
     hero.way = [];
     hero.hp = hero.max;
-    this.flasks = HERO.flasks;
+    this.flasks = maxFlasks();
     this.hooks.onFlasks?.(this.flasks);
     for (const b of [...this.foes, ...this.band]) {
       // Marked dead first, so a blow still in flight finds no one.
@@ -1780,7 +1829,7 @@ export class AtlasScene extends Phaser.Scene {
     f.next = time + f.stats.every * 1000;
     f.busy = time + ms;
     f.s.setTintFill(0xffffff);
-    this.time.delayedCall(70, () => f.s.clearTint());
+    this.time.delayedCall(70, () => untint(f.s));
     if (f.attack && this.anims.exists(`${f.attack}_once`)) {
       const hit = BEAST[f.kind]?.hit;
       f.s.play(hit ? { key: `${f.attack}_once`, frameRate: (hit * 1000) / ms } : `${f.attack}_once`);
@@ -1808,7 +1857,7 @@ export class AtlasScene extends Phaser.Scene {
     Object.assign(f, { last: move, way: [], windup: { at: time + ms, mark, move, aim }, next: time + f.stats.every * 1000, busy: time + ms });
     if (Math.abs(mark.s.x - f.s.x) > 4) f.s.setFlipX(mark.s.x < f.s.x);
     f.s.setTintFill(0xffffff);
-    this.time.delayedCall(70, () => f.s.clearTint());
+    this.time.delayedCall(70, () => untint(f.s));
     f.s.play("beast_troll_windup_once");
     const g = this.add.graphics().setDepth(DEPTH.unit - 1);
     for (const c of aim) g.fillStyle(move === "toss" ? 0xff9a3a : 0xe03a2a, 0.45).fillRect(c.col * CELL + 2, c.row * CELL + 2, CELL - 4, CELL - 4);
@@ -1878,9 +1927,14 @@ export class AtlasScene extends Phaser.Scene {
     remember(SLAIN, remembered(SLAIN).add(kind));
     if (this.local?.arena?.boss === kind) this.liftFog();
     if (key) remember(KEYS, remembered(KEYS).add(kind));
+    const flask = BOSS_FLASK.has(kind);
+    if (flask) {
+      this.flasks += 1;
+      this.hooks.onFlasks?.(this.flasks);
+    }
     const cam = this.cameras.main;
     const t = this.add
-      .text(cam.width / 2, cam.height * 0.4, key ? `${key}\nobtained` : "Victory\nachieved", { fontFamily: FONT, fontSize: "40px", fontStyle: "bold", color: "#f4cf6b", stroke: "#1c2634", strokeThickness: 8, align: "center" })
+      .text(cam.width / 2, cam.height * 0.4, key ? `${key}\nobtained` : flask ? "Victory achieved\nA flask more" : "Victory\nachieved", { fontFamily: FONT, fontSize: "40px", fontStyle: "bold", color: "#f4cf6b", stroke: "#1c2634", strokeThickness: 8, align: "center" })
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(DEPTH.clouds + 10);
@@ -2132,9 +2186,12 @@ export class AtlasScene extends Phaser.Scene {
         if (roll < chance) {
           const x = (c + 0.2 + r01() * 0.6) * CELL;
           const y = (r + 0.5 + r01() * 0.35) * CELL;
+          // A rock or stump with open ground all round stands in the way; one at an edge stays scenery, or it could seal a pass.
+          const block = (): void => void (!edgy && this.local && this.solid.add(`${c},${r}`));
           if ((id === "barrowmoor" || tier.base === "rock") && r01() < 0.5) spot(c, r, "prop_bones", PROP.bones!, 0);
-          else if (id === "emberwood" && r01() < 0.35) spot(c, r, "prop_stump", PROP.stump!, 0);
-          else decor(roll < chance * 0.6 && tier.base !== "rock" ? "bush" : "rock", x, y, roll < chance * 0.6 ? 0.75 : 1);
+          else if (id === "emberwood" && r01() < 0.35) (spot(c, r, "prop_stump", PROP.stump!, 0), block());
+          else if (roll < chance * 0.6 && tier.base !== "rock") decor("bush", x, y, 0.75);
+          else (decor("rock", x, y, 1), block());
         }
       }
     }
@@ -2179,10 +2236,23 @@ export class AtlasScene extends Phaser.Scene {
 
   /** A fence pen: corners, rails and posts from the kit's 4x3 tile sheet. */
   private fence(col: number, row: number, w: number, h: number): void {
-    const piece = (c: number, r: number, frame: number): void => {
+    /** One tile of the sheet; `crop` keeps only part of the frame, so an end piece shows no rail running off into nothing. */
+    const piece = (c: number, r: number, frame: number, crop?: [number, number, number, number]): void => {
       const y = (r + 1) * CELL;
-      this.add.image(c * CELL + CELL / 2, y, "fence", frame).setOrigin(0.5, 1).setDepth(standing(y));
+      const img = this.add.image(c * CELL + CELL / 2, y, "fence", frame).setOrigin(0.5, 1).setDepth(standing(y));
+      if (crop) img.setCrop(...crop);
     };
+    // The sheet is a pen's parts: corners, rails, sides. A straight run takes its ends from the corners, cut down to the
+    // post and the rail that carries on along the run; a lone post is an end piece cut down to the post alone.
+    if (w === 1 && h === 1) return piece(col, row, 10, [0, 0, 44, 64]);
+    if (w === 1) {
+      for (let r = row; r < row + h; r++) piece(col, r, r === row ? 0 : r === row + h - 1 ? 8 : 4, r === row || r === row + h - 1 ? [0, 0, 44, 64] : undefined);
+      return;
+    }
+    if (h === 1) {
+      for (let c = col; c < col + w; c++) piece(c, row, c === col ? 0 : c === col + w - 1 ? 3 : 1 + (c % 2), c === col || c === col + w - 1 ? [0, 0, 64, 54] : undefined);
+      return;
+    }
     for (let c = col; c < col + w; c++) {
       const first = c === col;
       const last = c === col + w - 1;
@@ -2203,12 +2273,12 @@ export class AtlasScene extends Phaser.Scene {
     const wide = Math.max(...cols) - Math.min(...cols) > Math.max(...rows) - Math.min(...rows);
     const mid = cells[Math.floor(cells.length / 2)]!;
     if (wide) {
-      // The way runs east-west: a fence post line north to south.
-      const across = cells.filter((c) => c.col === mid.col).map((c) => c.row).sort((a, b) => a - b);
-      for (const r of across) this.add.image((mid.col + 0.5) * CELL, (r + 1) * CELL, "fence", r === across[0] ? 0 : r === across.at(-1) ? 8 : 4).setOrigin(0.5, 1).setDepth(standing((r + 1) * CELL));
+      // The way runs east-west: a fence line north to south across it.
+      const across = cells.filter((c) => c.col === mid.col).map((c) => c.row);
+      this.fence(mid.col, Math.min(...across), 1, Math.max(...across) - Math.min(...across) + 1);
     } else {
-      const across = cells.filter((c) => c.row === mid.row).map((c) => c.col).sort((a, b) => a - b);
-      across.forEach((c, i) => this.add.image((c + 0.5) * CELL, (mid.row + 1) * CELL, "fence", i === 0 ? 0 : i === across.length - 1 ? 3 : 1 + (i % 2)).setOrigin(0.5, 1).setDepth(standing((mid.row + 1) * CELL)));
+      const across = cells.filter((c) => c.row === mid.row).map((c) => c.col);
+      this.fence(Math.min(...across), mid.row, Math.max(...across) - Math.min(...across) + 1, 1);
     }
   }
 
@@ -2287,15 +2357,63 @@ export class AtlasScene extends Phaser.Scene {
         const a = (i / 7) * Math.PI * 2;
         this.track(addDecor(this, "bush", x + Math.cos(a) * 78, y + Math.sin(a) * 38, 0.8, `sink${i}`));
       }
-    } else if (up || down) {
-      const beside = this.map.tiers[here].props.some((p) => ["cave", "gnomeTower", "watchtower", "tower", "castle", "monastery"].includes(p.art) && footprint(p).some((c) => Math.abs(c.col - e.at.col) <= 3 && Math.abs(c.row - e.at.row) <= 3));
+    } else if (up || down || e.name.includes("Lift")) {
+      const beside = (up || down) && this.map.tiers[here].props.some((p) => ["cave", "gnomeTower", "watchtower", "tower", "castle", "monastery"].includes(p.art) && footprint(p).some((c) => Math.abs(c.col - e.at.col) <= 3 && Math.abs(c.row - e.at.row) <= 3));
       if (!beside) {
-        // A lift: a plank floor railed on three sides, open on the side you step on from.
-        this.add.rectangle(x, y - 0.3 * CELL, 2.4 * CELL, 1.6 * CELL, 0x8a6038).setStrokeStyle(4, 0x3b2716).setDepth(ground);
-        for (let i = -1; i <= 1; i++) this.add.rectangle(x + i * 0.8 * CELL, y - 0.3 * CELL, 2, 1.5 * CELL, 0x5e3f22).setDepth(ground + 1);
-        this.fence(e.at.col - 1, e.at.row - 1, 3, 1);
+        // A lift: a plank floor railed on its left and right, open front and back, in the pack's own wood (its fence's and
+        // its boats' browns, the navy outline every sprite has).
+        this.add.rectangle(x, y - 0.3 * CELL, 2.4 * CELL, 1.6 * CELL, 0xbd8a59).setStrokeStyle(4, 0x161c2e).setDepth(ground);
+        this.add.rectangle(x, y - 1.05 * CELL, 2.4 * CELL - 8, 6, 0xe5be76).setDepth(ground + 1);
+        for (let i = -1; i <= 1; i++) this.add.rectangle(x + i * 0.8 * CELL, y - 0.3 * CELL, 3, 1.5 * CELL, 0x8d6857).setDepth(ground + 1);
+        for (const side of [-1, 1]) this.fence(e.at.col + side, e.at.row - 1, 1, 2);
+      }
+    } else if (e.name.includes("Ladder")) {
+      // A ladder, from the pack's fence: one upright run of it against the wall, rails and rungs.
+      this.fence(e.at.col, e.at.row - 2, 1, 3);
+    } else if (e.key && !remembered(KEYS).has(e.key)) {
+      // Locked: the pack's fence across the way until its key is carried, then fog like any other.
+      const { dir } = this.crossing(e);
+      const across = dir === "left" || dir === "right";
+      this.gatehouse("locked", [-1, 0, 1].map((i) => (across ? { col: e.at.col, row: e.at.row + i } : { col: e.at.col + i, row: e.at.row })));
+    } else if (!e.plain) {
+      this.fogDoor(e);
+    }
+  }
+
+  /** A way out to the next area on foot: a fog gate across the way, three tiles wide. */
+  private fogDoor(e: Exit): void {
+    const { dir } = this.crossing(e);
+    const across = dir === "left" || dir === "right";
+    this.fogVeil([-1, 0, 1].map((i) => (across ? { col: e.at.col, row: e.at.row + i } : { col: e.at.col + i, row: e.at.row })));
+  }
+
+  /** After the Souls games' fog gates, from the pack's own dust: a bank of its white puffs packed close across the way,
+   *  breathing, and now and then a wisp lifting off it and coming apart through the sheet's own frames. */
+  private fogVeil(cells: readonly Cell[]): Phaser.GameObjects.Sprite[] {
+    const made: Phaser.GameObjects.Sprite[] = [];
+    for (const c of cells) {
+      for (let j = 0; j < 4; j++) {
+        const x = (c.col + 0.22 + (j % 2) * 0.56) * CELL + (Math.random() - 0.5) * 10;
+        const y = (c.row + 0.3 + Math.floor(j / 2) * 0.45) * CELL;
+        const puff = this.add.sprite(x, y, "fogPuff", 0).setScale(1.25 + Math.random() * 0.3).setTint(0xf2f0ea).setAlpha(0.94).setDepth(standing(y + 0.5 * CELL));
+        this.tweens.add({ targets: puff, scale: puff.scale * 1.08, x: x + (Math.random() - 0.5) * 10, duration: 1400 + Math.random() * 1200, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+        made.push(puff);
       }
     }
+    if (!this.anims.exists("fogPuff_fade")) this.anims.create({ key: "fogPuff_fade", frames: this.anims.generateFrameNumbers("fogPuff"), frameRate: 9, repeat: 0 });
+    const wisps = this.time.addEvent({
+      delay: 650,
+      loop: true,
+      callback: () => {
+        if (!made[0]?.active) return void wisps.remove();
+        const c = cells[Math.floor(Math.random() * cells.length)]!;
+        const [x, y] = [(c.col + 0.2 + Math.random() * 0.6) * CELL, (c.row + 0.3) * CELL];
+        const wisp = this.add.sprite(x, y, "fogPuff", 0).setTint(0xf2f0ea).setAlpha(0.85).setDepth(standing(y + 0.6 * CELL));
+        wisp.play("fogPuff_fade");
+        this.tweens.add({ targets: wisp, y: y - 34, x: x + (Math.random() - 0.5) * 24, duration: 1100, onComplete: () => wisp.destroy() });
+      },
+    });
+    return made;
   }
 
   /** Creatures and knights, idle at their spot or walking their beat. */

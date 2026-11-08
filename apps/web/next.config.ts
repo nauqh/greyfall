@@ -12,9 +12,11 @@ const config: NextConfig = {
   webpack: (config, { dev }) => {
     if (dev) {
       config.resolve.alias.phaser = "phaser/dist/phaser.esm.min.js";
+      // Only Phaser is shared: with webpack's default groups on, game modules (boot.ts) landed in shared chunks that an
+      // incremental rebuild then left out of a scene's import, so the scene threw "reading 'call'" until a restart.
       config.optimization.splitChunks = {
         chunks: "all",
-        cacheGroups: { phaser: { test: /[\\/]node_modules[\\/]phaser[\\/]/, name: "phaser", priority: 10 } },
+        cacheGroups: { default: false, defaultVendors: false, phaser: { test: /[\\/]node_modules[\\/]phaser[\\/]/, name: "phaser", priority: 10 } },
       };
     }
     return config;

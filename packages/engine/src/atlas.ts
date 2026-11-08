@@ -29,7 +29,12 @@ export type AreaId =
   | "undercroft"
   | "deeps"
   | "hollow"
-  | "landing";
+  | "landing"
+  | "burg"
+  | "ramparts"
+  | "chapel"
+  | "ring"
+  | "keep";
 
 export interface AtlasArea {
   id: AreaId;
@@ -137,7 +142,7 @@ export interface AtlasMap {
 export const ATLAS_SIZE = { cols: 128, rows: 80 } as const;
 export const TIERS: readonly TierId[] = ["sky", "surface", "below"];
 /** One character a tile in `areaAt`, by the area's index in AREAS. */
-export const AREA_CODE = "0123456789abc";
+export const AREA_CODE = "0123456789abcdefgh";
 
 export const AREAS: readonly AtlasArea[] = [
   {
@@ -250,12 +255,57 @@ export const AREAS: readonly AtlasArea[] = [
   },
   {
     id: "landing",
-    tier: "surface",
+    tier: "below",
     name: "The Landing",
-    blurb: "The beach under the Harbour where the captain came ashore. Those who landed before left notes in the sand for whoever came next.",
+    blurb: "The sea cave under the Harbour where the captain washed in. Narrow ways through the rock, and notes scratched by those who washed in before.",
+    palette: [5, 5, 5],
+    mood: 0x8fb4c8,
+    label: { col: 26, row: 64 },
+  },
+  {
+    id: "burg",
+    tier: "surface",
+    name: "The Lower Burg",
+    blurb: "The castle's outer town on the hill above the Harbour, fallen to the grey before the town below. Thieves in the lanes, the dead in the yards, and the Ramparts above.",
+    palette: [5, 5, 5],
+    mood: 0xeee8e0,
+    label: { col: 45, row: 29 },
+  },
+  {
+    id: "ramparts",
+    tier: "surface",
+    name: "The Ramparts",
+    blurb: "The castle's curtain wall above the Burg, its walk too narrow to pass the bull that holds it, and past him the Gun Bridge over the chasm to the Chapel Ward.",
+    palette: [4, 4, 4],
+    mood: 0xeee8e0,
+    label: { col: 57, row: 28 },
+  },
+  {
+    id: "chapel",
+    tier: "surface",
+    name: "The Chapel Ward",
+    blurb: "The castle's monastery behind the Gun Bridge: a cloister round a still pond, the chapel on its terrace, and on the bell roof a warden of stone. Its lift goes down to the point; its postern opens on Emberwood.",
+    palette: [5, 5, 5],
+    mood: 0xf2ece4,
+    label: { col: 70, row: 27 },
+  },
+  {
+    id: "ring",
+    tier: "below",
+    name: "The Bull's Ring",
+    blurb: "A cavern at the sea cave's end, round as an arena, where a bull keeps the lift up to the Harbour.",
+    palette: [5, 5, 5],
+    mood: 0xc8a888,
+    label: { col: 38, row: 60 },
+  },
+  {
+    id: "keep",
+    tier: "surface",
+    name: "The Keep",
+    blurb: "The castle's crown over the Harbour: its bailey and garrison, the hall, and the Watch Lift up to the sky. Its gate off the Burg opens to the troll's key.",
     palette: [3, 3, 3],
     mood: 0xffffff,
-    label: { col: 37, row: 66 },
+    label: { col: 41, row: 36 },
   },
 ];
 
@@ -346,6 +396,26 @@ export function footprint(p: Placed, ring = false): Cell[] {
   const left = p.col - Math.floor((w - 1) / 2);
   const out: Cell[] = [];
   for (let r = p.row - f.d + 1 - m; r <= p.row + m; r++) for (let c = left - m; c < left + w + m; c++) out.push({ col: c, row: r });
+  return out;
+}
+
+/** Props walked over, not into: gold to pick up, bones in the grass, and whatever floats. */
+const UNDERFOOT: ReadonlySet<string> = new Set(["goldStone", "bones", "boat", "pirateTowerWater"]);
+
+/** The tiles no one walks through: every prop's base but those underfoot, and every fence post, as "col,row". A base
+ *  stands centred under the art, drawn on its tile's middle: an even width rounds down, so none juts out to one side. */
+export function solidCells(t: Pick<AtlasTier, "props" | "fences">): Set<string> {
+  const out = new Set<string>();
+  for (const p of t.props) {
+    if (UNDERFOOT.has(p.art)) continue;
+    const f = FOOT[p.art] ?? { w: 1, d: 1 };
+    const half = Math.floor((Math.max(1, Math.round(f.w * (p.scale ?? 1))) - 1) / 2);
+    for (let r = p.row - f.d + 1; r <= p.row; r++) for (let c = p.col - half; c <= p.col + half; c++) out.add(`${c},${r}`);
+  }
+  for (const f of t.fences) {
+    for (let c = f.col; c < f.col + f.w; c++) for (const r of [f.row, f.row + f.h - 1]) out.add(`${c},${r}`);
+    for (let r = f.row; r < f.row + f.h; r++) for (const c of [f.col, f.col + f.w - 1]) out.add(`${c},${r}`);
+  }
   return out;
 }
 
@@ -1151,12 +1221,20 @@ export const LIFTS: readonly AtlasLift[] = [
     down: { tier: "surface", area: "greyfall", at: { col: 112, row: 22 } },
   },
   {
+    id: "ring-lift",
+    name: "The Ring Lift",
+    kind: "lift",
+    note: "The fishers' old lift out of the Bull's Ring, up through the rock to the pier at Lantern Point.",
+    up: { tier: "surface", area: "harbour", at: { col: 37, row: 54 } },
+    down: { tier: "below", area: "ring", at: { col: 38, row: 58 } },
+  },
+  {
     id: "watch-lift",
     name: "Watch Lift",
     kind: "shortcut",
     note: "The castle's old sky-lift, chained from above. Ride it down once from the Steps and it runs both ways for good: the road home.",
-    up: { tier: "sky", area: "steps", at: { col: 43, row: 31 } },
-    down: { tier: "surface", area: "harbour", at: { col: 43, row: 36 } },
+    up: { tier: "sky", area: "steps", at: { col: 41, row: 31 } },
+    down: { tier: "surface", area: "keep", at: { col: 41, row: 35 } },
   },
 ];
 
@@ -1170,7 +1248,10 @@ function surface(rng: Rng): AtlasTier {
     ["barrowmoor", 78, 46, 15, 10], ["barrowmoor", 88, 54, 8, 6],
     ["fen", 62, 70, 14, 7], ["fen", 78, 72, 10, 6],
     ["greyfall", 113, 27, 12, 15], ["greyfall", 113, 50, 12, 13], ["greyfall", 117, 66, 8, 6],
-    ["landing", 37, 62, 6, 4],
+    ["burg", 45, 29, 7, 4],
+    ["ramparts", 58, 28, 6, 4],
+    ["chapel", 70, 27, 5, 5],
+    ["keep", 41, 36, 5, 3],
   ];
   for (const [a, x, y, rx, ry] of B) t.blob(a, x, y, rx, ry);
   t.separate();
@@ -1178,8 +1259,8 @@ function surface(rng: Rng): AtlasTier {
   // Saltreach: the lighthouse bluff, and the headland south of Netmend.
   t.relief({ area: "saltreach", at: { col: 9, row: 40 }, rx: 7, ry: 5, levels: 2 });
   t.relief({ area: "saltreach", at: { col: 8, row: 60 }, rx: 5, ry: 4, levels: 2 });
-  // Last Harbour: the castle hill, the castle on its own height above the town.
-  t.relief({ area: "harbour", at: { col: 41, row: 36 }, rx: 10, ry: 4.5, levels: 3, core: { at: { col: 42, row: 35 }, r: 2 } });
+  // The Keep: the castle on its own height above the town.
+  t.relief({ area: "keep", at: { col: 40, row: 36 }, rx: 2.5, ry: 1.5, levels: 2 });
   // Emberwood: Smoke Ridge, the western knolls, and a tarn.
   t.relief({ area: "emberwood", at: { col: 51, row: 15 }, rx: 7, ry: 5, levels: 2 });
   t.relief({ area: "emberwood", at: { col: 33, row: 8 }, rx: 6, ry: 4, levels: 2 });
@@ -1196,14 +1277,18 @@ function surface(rng: Rng): AtlasTier {
   t.relief({ area: "greyfall", at: { col: 113, row: 29 }, rx: 10, ry: 14, levels: 3, core: { at: { col: 112, row: 23 }, r: 2.2 } });
   t.relief({ area: "greyfall", at: { col: 106, row: 18 }, rx: 4, ry: 3, levels: 2 });
 
-  t.gate("shore-road", "Shore Road", "open", "landing", "harbour", { col: 37, row: 59 }, { col: 37, row: 53 }, "Up off the beach where the captain came ashore, into the town.");
   t.gate("old-bridge", "Old Bridge", "open", "saltreach", "harbour", { col: 22, row: 45 }, { col: 31, row: 44 }, "The way in from the shore, always open.");
-  t.gate("ember-gate", "Ember Gate", "gate", "harbour", "emberwood", { col: 30, row: 37 }, { col: 30, row: 22 }, "A palisade on the causeway north. The town bars it at night.");
+  t.gate("keep-gate", "Keep Gate", "locked", "burg", "keep", { col: 43, row: 31 }, { col: 43, row: 35 }, "Off the Burg's Upper Streets into the castle's bailey. The troll's key fits it.");
+  t.gate("chapel-door", "Chapel Door", "open", "ramparts", "chapel", { col: 61, row: 28 }, { col: 67, row: 28 }, "Over the Gun Bridge into the Chapel Ward's cloister.");
+  t.gate("chapel-postern", "The Postern", "open", "chapel", "emberwood", { col: 68, row: 23 }, { col: 60, row: 14 }, "The monks' back gate off the bell roof, out onto the edge of Emberwood.");
+  t.gate("rampart-gate", "Rampart Gate", "open", "burg", "ramparts", { col: 49, row: 28 }, { col: 55, row: 28 }, "Up off the Burg's crest through the gatehouse onto the castle's curtain wall.");
+  t.gate("burg-gate", "Burg Gate", "open", "harbour", "burg", { col: 51, row: 37 }, { col: 48, row: 30 }, "Up out of Old Town, through the castle's outer wall into the Lower Burg.");
+  t.gate("ember-gate", "Ember Gate", "shortcut", "harbour", "emberwood", { col: 30, row: 37 }, { col: 30, row: 22 }, "A palisade on the causeway north. The town bars it at night.");
   t.gate("crag-stair", "Crag Stair", "open", "emberwood", "crags", { col: 61, row: 11 }, { col: 69, row: 16 }, "A gnome path out of the smoke, up to the rock.");
   t.gate("moor-gate", "Moor Gate", "shortcut", "harbour", "barrowmoor", { col: 52, row: 42 }, { col: 65, row: 44 }, "Barred from the moor side. Whoever comes through the moor can open it, and come home the short way.");
   t.gate("fen-causeway", "Fen Causeway", "open", "saltreach", "fen", { col: 27, row: 72 }, { col: 50, row: 72 }, "A long spit of shingle along the south shore.", 2);
   t.gate("barrow-path", "Barrow Path", "open", "fen", "barrowmoor", { col: 78, row: 67 }, { col: 82, row: 57 }, "Duckboards over the reeds, up onto the moor.");
-  t.gate("grey-gate", "Grey Gate", "locked", "barrowmoor", "greyfall", { col: 93, row: 47 }, { col: 104, row: 47 }, "Two locks: the troll's key and the minotaur's.");
+  t.gate("grey-gate", "Grey Gate", "locked", "barrowmoor", "greyfall", { col: 93, row: 47 }, { col: 104, row: 47 }, "Two locks, one key from each way out of the Harbour: the barrow king's horned key, and the weaver's from below.");
   t.gate("sky-bridge", "Sky Bridge", "high", "crags", "greyfall", { col: 92, row: 6 }, { col: 104, row: 6 }, "The gnomes' high road off the top of the rock, straight onto the citadel wall.", 2);
   // The high road turns down to the citadel, and is part of the gate till it lands there.
   const high = t.gates.find((g) => g.id === "sky-bridge")!;
@@ -1460,7 +1545,11 @@ function below(rng: Rng): AtlasTier {
   for (const [x, y, rx, ry] of [[40, 46, 10, 6], [31, 50, 5, 3]] as const) t.blob("undercroft", x, y, rx, ry);
   for (const [x, y, rx, ry] of [[80, 49, 11, 6], [90, 55, 5, 4]] as const) t.blob("deeps", x, y, rx, ry);
   for (const [x, y, rx, ry] of [[66, 70, 17, 7], [52, 72, 6, 4]] as const) t.blob("hollow", x, y, rx, ry);
+  // Under the Harbour's shore: the sea cave the captain washes into, and at its end the Bull's Ring.
+  t.blob("landing", 25, 65, 8, 5);
+  t.blob("ring", 38, 60, 4, 3);
   t.separate();
+  t.gate("ring-gate", "Ring Gate", "open", "landing", "ring", { col: 30, row: 63 }, { col: 36, row: 61 }, "The sea cave's last passage, into the bull's cavern.");
   t.gate("cistern-run", "Cistern Run", "open", "undercroft", "deeps", { col: 49, row: 47 }, { col: 70, row: 48 }, "A tunnel east out of the cisterns. It comes up in the tombs.");
   t.gate("sinking-stair", "Sinking Stair", "open", "deeps", "hollow", { col: 76, row: 54 }, { col: 72, row: 64 }, "Steps cut down from the tombs to the Hollow's shore.");
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FLYING, MAPPED_AREAS, groundColours, SEA_KINDS, WATER_ART, areaMap, castsCliff, cellKey, footprint, isSlope, isWalkable, level, stepsFrom, useIsland, type Cell } from "../src/index.ts";
+import { FLYING, MAPPED_AREAS, NPCS, districtOf, groundColours, SEA_KINDS, WATER_ART, areaMap, castsCliff, cellKey, footprint, isSlope, isWalkable, level, solidCells, stepsFrom, useIsland, type Cell } from "../src/index.ts";
 
 function reach(from: Cell, shut: ReadonlySet<number> = new Set()): Set<number> {
   const seen = new Set([cellKey(from)]);
@@ -14,6 +14,20 @@ function reach(from: Cell, shut: ReadonlySet<number> = new Set()): Set<number> {
   }
   return seen;
 }
+
+it.each(MAPPED_AREAS)("leaves every way out, fire, note and dweller of %s in reach round the solid props", (id) => {
+  const m = areaMap(id);
+  useIsland(m.island);
+  const shut = new Set([...solidCells(m)].map((k) => cellKey({ col: Number(k.split(",")[0]), row: Number(k.split(",")[1]) })));
+  const seen = reach(m.entry, shut);
+  const byOne = (c: Cell) => [-1, 0, 1].some((dr) => [-1, 0, 1].some((dc) => seen.has(cellKey({ col: c.col + dc, row: c.row + dr }))));
+  for (const e of m.exits) expect(byOne(e.at), `${id} exit ${e.name}`).toBe(true);
+  for (const f of m.fires) expect(byOne(f), `${id} fire ${f.col},${f.row}`).toBe(true);
+  for (const n of m.notes ?? []) expect(byOne(n.at), `${id} note ${n.at.col},${n.at.row}`).toBe(true);
+  for (const n of NPCS.flatMap((x) => [{ id: x.id, area: x.area, at: x.at }, ...(x.later ?? []).map((s) => ({ id: x.id, area: s.area, at: s.at }))])) {
+    if (n.area === id && n.at) expect(byOne(n.at), `${id} ${n.id}`).toBe(true);
+  }
+});
 
 describe.each(MAPPED_AREAS)("the %s area map", (id) => {
   const m = areaMap(id);
@@ -44,7 +58,7 @@ describe.each(MAPPED_AREAS)("the %s area map", (id) => {
       line.forEach((a, c) => {
         for (const [dc, dr] of [[1, 0], [0, 1], [-1, 0], [0, -1]] as const) {
           const b = g[r + dr]?.[c + dc];
-          if (a == null || b == null || m.island.rows[r]![c] === "%" || level(c, r) <= level(c + dc, r + dr)) continue;
+          if (a == null || b == null || m.island.rows[r]![c] === "%" || level(c, r) <= level(c + dc, r + dr) || districtOf(m, c, r)?.gloom) continue;
           expect(light[a]! > light[b]! || a === 1, `${c},${r} colour ${a} over ${b}`).toBe(true);
         }
       }),
@@ -96,24 +110,29 @@ describe.each(MAPPED_AREAS)("the %s area map", (id) => {
   });
 });
 
-it("raises the harbour's town in tiers to the castle on its crown", () => {
-  const m = areaMap("harbour");
+it("stands the castle on the Keep's raised terrace, a height above its bailey", () => {
+  const m = areaMap("keep");
   useIsland(m.island);
   const castle = m.props.find((p) => p.art === "castle")!;
-  expect(level(castle.col, castle.row)).toBe(5);
+  expect(level(castle.col, castle.row)).toBe(2);
   expect(level(m.entry.col, m.entry.row)).toBe(1);
 });
 
-it("shuts the harbour's Citadel and Keep until the troll's key, and keeps every other way out open", () => {
+it("starts the harbour at Lantern Point: the Ring Lift's pier to its first bonfire, the Graves held, the Moor Gate shut", () => {
   const m = areaMap("harbour");
-  useIsland(m.island);
-  const lock = m.locks!.find((l) => l.key === "troll")!;
-  expect(lock.cells.length).toBeGreaterThan(0);
-  const shut = reach(m.entry, new Set(lock.cells.map(cellKey)));
-  const open = reach(m.entry);
-  const lift = m.exits.find((e) => e.name === "Watch Lift")!.at;
-  expect(open.has(cellKey(lift))).toBe(true);
-  expect(shut.has(cellKey(lift))).toBe(false);
-  for (const e of m.exits) if (e.name !== "Watch Lift") expect(shut.has(cellKey(e.at)), e.name).toBe(true);
-  for (const f of m.fires) expect(shut.has(cellKey(f))).toBe(true);
+  const near = (a: Cell, b: Cell, d: number) => Math.max(Math.abs(a.col - b.col), Math.abs(a.row - b.row)) <= d;
+  const shore = m.exits.find((e) => e.name === "The Ring Lift")!;
+  const moor = m.exits.find((e) => e.name === "Moor Gate")!;
+  expect(near(m.fires[0]!, shore.at, 12)).toBe(true);
+  expect(near(m.fires[0]!, m.entry, 3)).toBe(true);
+  expect(moor.shut).toBe("moorGateOpen");
+  expect(m.dwellers.filter((d) => d.kind === "gnoll" && d.row < m.fires[0]!.row && d.col > m.fires[0]!.col).length).toBeGreaterThanOrEqual(3);
+});
+
+it("shuts the Keep behind its gate off the Burg until the troll's key, and its Watch Lift until ridden down from the sky", () => {
+  const gate = areaMap("burg").exits.find((e) => e.to === "keep")!;
+  expect(gate.key).toBe("troll");
+  const lift = areaMap("keep").exits.find((e) => e.name === "Watch Lift")!;
+  expect(lift.shut).toBe("watchLiftOpen");
+  expect(areaMap("harbour").exits.some((e) => e.to === "steps")).toBe(false);
 });

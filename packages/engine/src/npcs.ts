@@ -7,6 +7,8 @@ import type { Cell } from "./island.ts";
 /** What the world remembers that folk remark on, and that moves them on. */
 export type WorldFlag =
   | "died"
+  // Felled by the Landing's bull and washed up on the point: he waits there still.
+  | "bullWon"
   | "wellDescended"
   | "monkFreed"
   | "moorGateOpen"
@@ -82,7 +84,7 @@ export const NPCS: readonly Npc[] = [
     id: "ferrow",
     name: "Old Ferrow",
     area: "harbour",
-    at: { col: 57, row: 46 },
+    at: { col: 96, row: 73 },
     kind: "pawn",
     greet: "Ah. Another one.",
     part: "Mind the dark, then.",
@@ -94,6 +96,40 @@ export const NPCS: readonly Npc[] = [
           "The last one sat right where you're standing. Warmed his hands, same as you.",
           "Go on, then. The fire doesn't ask who you were. Nor do I.",
         ],
+      },
+      {
+        id: "shore",
+        lines: [
+          "Follow the lanterns, captain. West along the shore, through the town, up to the Ember Gate. Someone lit them for you.",
+          "The path up the hill goes through the graves to the Moor Gate. Shut from this side, and the dogs up there don't care that it's shut.",
+        ],
+      },
+      {
+        id: "bull",
+        when: "bullWon",
+        lines: [
+          "Washed up with the tide, did you? The bull did that.",
+          "He'll keep. Go back down the pier when your arm's stronger. What he guards is worth a fall or two.",
+        ],
+      },
+      {
+        id: "goal",
+        lines: [
+          "You'll be wanting the Grey Gate. East, past the moor. They all do.",
+          "Two keys open it. The king under the barrows keeps one.",
+          "The other's down below, where the spider weaves. Down the well, and further down.",
+        ],
+      },
+      {
+        id: "castle",
+        lines: [
+          "The castle? Shut since the grey came. The steward ran for the wood with its key.",
+          "Troll had him for supper, they say. Has the key still, I'd think.",
+        ],
+      },
+      {
+        id: "well",
+        lines: ["The well only goes one way. Down, to the drowned.", "Not yet, captain. Not that way. Not yet."],
       },
       {
         id: "roads",
@@ -135,8 +171,8 @@ export const NPCS: readonly Npc[] = [
     id: "brenna",
     name: "Brenna the Smith",
     short: "Brenna",
-    area: "harbour",
-    at: { col: 70, row: 59 },
+    area: "chapel",
+    at: { col: 58, row: 27 },
     kind: "pawn",
     act: "hammer",
     greet: "Mind the sparks.",
@@ -176,8 +212,8 @@ export const NPCS: readonly Npc[] = [
     id: "corwin",
     name: "Sergeant Corwin",
     short: "Corwin",
-    area: "harbour",
-    at: { col: 77, row: 53 },
+    area: "keep",
+    at: { col: 20, row: 29 },
     kind: "lancer",
     greet: "Captain.",
     part: "Dismissed, then.",
@@ -273,7 +309,7 @@ export const NPCS: readonly Npc[] = [
     id: "tobin",
     name: "Tobin",
     area: "harbour",
-    at: { col: 72, row: 45 },
+    at: { col: 93, row: 77 },
     kind: "pawn",
     greet: "Don't lean on the rope.",
     part: "...Right. Off you go.",
@@ -355,7 +391,7 @@ export const NPCS: readonly Npc[] = [
     name: "Mother Ysolde",
     short: "Ysolde",
     area: "harbour",
-    at: { col: 50, row: 26 },
+    at: { col: 54, row: 29 },
     kind: "monk",
     greet: "Peace on you.",
     part: "Go gently, captain.",
@@ -418,7 +454,7 @@ export const NPCS: readonly Npc[] = [
     name: "Maren the Harbourmaster",
     short: "Maren",
     area: "harbour",
-    at: { col: 48, row: 60 },
+    at: { col: 98, row: 81 },
     kind: "pawn",
     greet: "Tide's out.",
     part: "Fair winds. Ha.",
@@ -550,8 +586,8 @@ export const NPCS: readonly Npc[] = [
     id: "ansel",
     name: "Ansel of the Wall",
     short: "Ansel",
-    area: "harbour",
-    at: { col: 53, row: 19 },
+    area: "keep",
+    at: { col: 25, row: 10 },
     kind: "warrior",
     greet: "Look up, captain.",
     part: "Go on. I'll keep watch. It's all I'm good for.",
@@ -617,8 +653,8 @@ export const NPCS: readonly Npc[] = [
       },
       {
         when: ["warlordDead"],
-        area: "harbour",
-        at: { col: 53, row: 19 },
+        area: "keep",
+        at: { col: 25, row: 10 },
         talks: [
           {
             id: "without",

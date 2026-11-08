@@ -84,11 +84,16 @@ come ashore alone.
 - **Shortcuts.** Gates and lifts that open from one side only, such as the
   Moor Gate and the Watch Lift. Opening one is permanent and turns the area
   into a loop.
-- **Keys.** The Cinder Troll (Emberwood) drops the Troll Key; the Barrow King
-  (Barrowmoor) drops the Horned Key. Together they open the Grey Gate. The
-  Troll Key also opens the Citadel Gate in the Harbour, shutting the
-  Citadel, the Keep and the Watch Lift until Emberwood is done. The
-  Sky Bridge from the Crags is the other, harder way into the Greyfall.
+- **Keys.** After Firelink's two bells, one up and one down. The Troll Key
+  is the Citadel's own: its steward fled into Emberwood with it when the
+  grey came, and the Cinder Troll has it now. It opens the Citadel Gate,
+  and above it the garrison (Corwin's Lancers), the Keep and the Watch
+  Lift to the sky. The Grey Gate takes two other keys, one from each way
+  out of the Harbour: the Barrow King's Horned Key (Barrowmoor, out the
+  Moor Gate) and the Weaver's key (the Barrow Deeps, down the Old Well).
+  The Sky Bridge from the Crags is the other, harder way into the
+  Greyfall. Not enforced yet: the Barrow King and the Weaver are not
+  fightable, so the Grey Gate stays open until they are.
 
 ## Enemies by area
 
@@ -133,18 +138,45 @@ then walks back; the engine already has a guard leash.
 
 ## The first slice
 
-1. **The Landing:** the beach a new game starts on, south of the Harbour
-   up the Shore Road. You come ashore alone. A bonfire, two goblins,
+1. **The Landing:** a sea cave under the Harbour, where a new game
+   starts: the captain washes in and finds the way out through narrow
+   lit tunnels, past two goblins and the notes, to the antechamber's fog
+   and the Bull's Ring, its own cavern, then the Ring Lift up to Lantern
+   Point. (Earlier, the beach south of the Harbour up the Shore Road.) You come ashore alone. A bonfire, two goblins,
    notes on the ground that teach the controls (read with E), and the
    Shore Minotaur, a tutorial boss in the Bull's Ring: a hollow between
    two hills, a ruined tower on one, across the water. Mist hides it
    from outside; E at the fog on the one causeway takes you in, and the
    fog holds you there until the boss falls. A boss bar with its name
-   shows low and centred while you fight it. Kill it and the road opens; fall to it and you wake at the
-   Harbour's first bonfire. Either way the training is over.
-2. **The Harbour:** the hub. One bonfire, in the market square.
-   Recruiting (Lancer, Archer), the blacksmith. The Citadel above stays
-   shut until the Troll Key.
+   shows low and centred while you fight it. Kill it and the road opens;
+   fall to it and you wash up on Lantern Point, as after Elden Ring's
+   Grafted Scion: lost, not over. The bull keeps the Ring, the pier leads
+   back to him whenever the captain likes, and his fall is worth a fourth
+   flask for good. Either way the training is over.
+2. **The Harbour:** the hub is Lantern Point, after Firelink: a small
+   headland in the south-east corner where the Shore Road comes in, the
+   lighthouse fire its one bonfire to start, Old Ferrow beside it saying
+   where to go. Five ways off it, each with its tell. The Lantern Road
+   west, lit lanterns from the point through the town and up to the
+   Ember Gate: the main path. The Graves, on the hill behind the point
+   (Firelink's graveyard on the slope behind the shrine): a path climbs
+   from the point's corner across the moor's dead, gold in plain view,
+   three gnolls and a shaman among the graves, to the Moor Gate on the
+   hill's seaward edge, shut from this side: the way that kills a new
+   captain. The old watchtower stands on the crest. The Old Well, a ring of stones by the
+   fire with Tobin at it, going down (bats below; only bows reach them).
+   The pier south, boats at it, back to the Landing's bull. The cove
+   east, gold in the rocks behind the lighthouse. The town past the
+   shore is safe and has no rest: Wren's bows, Brenna's forge, the Old
+   Bridge to Saltreach (hard), and at the Lantern Road's end the stair up
+   to the Burg Gate: the Citadel, the main path. The Lower Burg, the
+   Ramparts (the Rampart Bull), the Chapel Ward (the Stone Warden, the Old
+   Lift home, the Postern to Emberwood), the Keep last, shut until the
+   Troll Key. The town's Ember Gate is shut from its side, opened later
+   from the wood. Opened later from Barrowmoor, the Moor Gate brings
+   the captain down the hill through the Graves straight to the fire.
+   Buildings, heaps, fence posts and rocks in open ground are solid:
+   no one walks through them.
 3. **Emberwood:** the first hostile area. Goblin camps through the maze, two
    bonfires, the Treetop Walk shortcut.
 4. **The Cinder Troll** in Troll's Hollow, with three attacks:

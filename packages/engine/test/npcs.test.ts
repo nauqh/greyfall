@@ -13,15 +13,16 @@ const stations = (n: Npc) => [{ area: n.area, at: n.at, talks: n.talks }, ...(n.
 describe("talking", () => {
   it("plays the conversations in order, then repeats the last", () => {
     expect(nextTalk(ferrow, new Set(), new Set()).id).toBe("first");
-    expect(nextTalk(ferrow, heardAll(["first"]), new Set()).id).toBe("roads");
-    expect(nextTalk(ferrow, heardAll(["first", "roads", "rest"]), new Set()).id).toBe("rest");
+    expect(nextTalk(ferrow, heardAll(["first"]), new Set()).id).toBe("shore");
+    expect(nextTalk(ferrow, heardAll(["first", "shore", "goal", "castle", "well"]), new Set()).id).toBe("roads");
+    expect(nextTalk(ferrow, heardAll(["first", "shore", "goal", "castle", "well", "roads", "rest"]), new Set()).id).toBe("rest");
   });
 
   it("remarks on the world only once met, and only once", () => {
     const died = new Set<WorldFlag>(["died"]);
     expect(nextTalk(ferrow, new Set(), died).id).toBe("first");
     expect(nextTalk(ferrow, heardAll(["first"]), died).id).toBe("died");
-    expect(nextTalk(ferrow, heardAll(["first", "died"]), died).id).toBe("roads");
+    expect(nextTalk(ferrow, heardAll(["first", "died"]), died).id).toBe("shore");
   });
 
   it("has Tobin warn of the flyers down the well, and point to Wren's bows, until the captain listens", () => {
@@ -58,14 +59,14 @@ describe("where the folk stand", () => {
     const near = (a: { col: number; row: number }, b: { col: number; row: number }) => Math.max(Math.abs(a.col - b.col), Math.abs(a.row - b.row)) <= 3;
     expect(map.fires.some((f) => near(f, at("ferrow")))).toBe(true);
     expect(near(map.exits.find((e) => e.name === "Old Well")!.at, at("tobin"))).toBe(true);
-    expect(map.props.some((p) => p.art === "barracks" && near(p, at("corwin")))).toBe(true);
+    expect(areaMap("keep").props.some((p) => p.art === "barracks" && near(p, at("corwin")))).toBe(true);
     expect(map.props.some((p) => p.art === "monastery" && near(p, at("ysolde")))).toBe(true);
   });
 });
 
 describe("the questline", () => {
   it("keeps everyone home until something happens", () => {
-    for (const n of NPCS) expect(whereabouts(n, new Set())?.area, n.id).toBe("harbour");
+    for (const n of NPCS) expect(whereabouts(n, new Set())?.area, n.id).toBe(n.area);
   });
 
   it("moves folk on as the world changes, the last station that applies winning", () => {
@@ -83,7 +84,7 @@ describe("the questline", () => {
 
   it("lets Ansel live only if the warlord falls before he goes ahead", () => {
     const ansel = npc("ansel");
-    expect(whereabouts(ansel, flags("anselRoused", "warlordDead"))).toMatchObject({ area: "harbour", dead: false });
+    expect(whereabouts(ansel, flags("anselRoused", "warlordDead"))).toMatchObject({ area: "keep", dead: false });
     expect(whereabouts(ansel, flags("anselRoused", "anselAhead"))).toMatchObject({ area: "greyfall", dead: true, talks: [] });
     expect(whereabouts(ansel, flags("anselRoused", "anselAhead", "warlordDead"))?.dead).toBe(true);
   });

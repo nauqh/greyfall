@@ -62,6 +62,11 @@ export const FOES: Partial<Record<string, FoeStats>> = {
   // Bosses: never back once slain.
   // The Landing's end: plain blows, but heavy ones, to teach the roll and the guard before the Harbour.
   minotaur: { hp: 220, attack: 22, every: 2.6, windup: 0.9, poise: true, aggro: 6, leash: 8, speed: 1.9, gold: 80 },
+  // The Ramparts' wall boss, after the Taurus Demon: an iron-shod bull on a wall too narrow to circle, so every blow is
+  // rolled through or taken.
+  rampartBull: { hp: 300, attack: 24, every: 2.4, windup: 0.85, poise: true, aggro: 6, leash: 9, speed: 2.0, gold: 120 },
+  // The Chapel Ward's bell boss, after the Bell Gargoyles: a stone warden squatting on the bell roof, slow and very heavy.
+  stoneWarden: { hp: 380, attack: 26, every: 2.8, windup: 1.0, poise: true, aggro: 6, leash: 8, speed: 1.6, gold: 160 },
   troll: { hp: 320, attack: 24, every: 2.4, windup: 1.1, poise: true, aggro: 7, leash: 9, speed: 1.6, gold: 150 },
 };
 
