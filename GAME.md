@@ -86,6 +86,8 @@ come ashore alone.
   into a loop.
 - **Keys.** The Cinder Troll (Emberwood) drops the Troll Key; the Barrow King
   (Barrowmoor) drops the Horned Key. Together they open the Grey Gate. The
+  Troll Key also opens the Citadel Gate in the Harbour, shutting the
+  Citadel, the Keep and the Watch Lift until Emberwood is done. The
   Sky Bridge from the Crags is the other, harder way into the Greyfall.
 
 ## Enemies by area
@@ -140,8 +142,9 @@ then walks back; the engine already has a guard leash.
    fog holds you there until the boss falls. A boss bar with its name
    shows low and centred while you fight it. Kill it and the road opens; fall to it and you wake at the
    Harbour's first bonfire. Either way the training is over.
-2. **The Harbour:** the hub. Bonfire, recruiting (Lancer, Archer), the
-   blacksmith.
+2. **The Harbour:** the hub. One bonfire, in the market square.
+   Recruiting (Lancer, Archer), the blacksmith. The Citadel above stays
+   shut until the Troll Key.
 3. **Emberwood:** the first hostile area. Goblin camps through the maze, two
    bonfires, the Treetop Walk shortcut.
 4. **The Cinder Troll** in Troll's Hollow, with three attacks:

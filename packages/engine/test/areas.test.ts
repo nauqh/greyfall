@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { FLYING, MAPPED_AREAS, groundColours, SEA_KINDS, WATER_ART, areaMap, castsCliff, cellKey, footprint, isSlope, isWalkable, level, stepsFrom, useIsland, type Cell } from "../src/index.ts";
 
-function reach(from: Cell): Set<number> {
+function reach(from: Cell, shut: ReadonlySet<number> = new Set()): Set<number> {
   const seen = new Set([cellKey(from)]);
   const queue = [from];
   for (let i = 0; i < queue.length; i++) {
     for (const n of stepsFrom(queue[i]!)) {
-      if (seen.has(cellKey(n))) continue;
+      if (seen.has(cellKey(n)) || shut.has(cellKey(n))) continue;
       seen.add(cellKey(n));
       queue.push(n);
     }
@@ -102,4 +102,18 @@ it("raises the harbour's town in tiers to the castle on its crown", () => {
   const castle = m.props.find((p) => p.art === "castle")!;
   expect(level(castle.col, castle.row)).toBe(5);
   expect(level(m.entry.col, m.entry.row)).toBe(1);
+});
+
+it("shuts the harbour's Citadel and Keep until the troll's key, and keeps every other way out open", () => {
+  const m = areaMap("harbour");
+  useIsland(m.island);
+  const lock = m.locks!.find((l) => l.key === "troll")!;
+  expect(lock.cells.length).toBeGreaterThan(0);
+  const shut = reach(m.entry, new Set(lock.cells.map(cellKey)));
+  const open = reach(m.entry);
+  const lift = m.exits.find((e) => e.name === "Watch Lift")!.at;
+  expect(open.has(cellKey(lift))).toBe(true);
+  expect(shut.has(cellKey(lift))).toBe(false);
+  for (const e of m.exits) if (e.name !== "Watch Lift") expect(shut.has(cellKey(e.at)), e.name).toBe(true);
+  for (const f of m.fires) expect(shut.has(cellKey(f))).toBe(true);
 });

@@ -496,6 +496,16 @@ white shaft of light that marked every crossing are gone.
   names the heights it takes on the lowland and elsewhere. Any patch of a
   district under 60 tiles that is not its main piece goes to the district
   round it, so the noise in the borders leaves no islands. `districtAt` is base-36, read with `districtOf()`.
+- **One bonfire in the Harbour.** The market square's; the town's other
+  fires are `campfires`, lit but no rest. The Lower Town is a bowl after
+  Firelink: `rim()` rings the square with raised ground, cut a tile clear
+  of every road, so the main road west and east and the docks lane south
+  are the passes out, Old Town's cliff closes the north, and the rim's
+  stairs stand in the passes. The houses sit on the rim; the Old Well is
+  on its east ledge, off the square but in view of the fire. The two back
+  lanes that cut the rim's corners are gone. The Citadel's stairs are an
+  area `lock`: shut until the Troll Key is carried, or opened from inside
+  by coming down the Watch Lift.
 - **A district is one colour.** A district's `palette` can be a single
   tileset colour for all its heights; the Harbour's districts each are, in
   the atlas's family (an olive lower town climbing to a gold citadel,

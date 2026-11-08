@@ -234,7 +234,7 @@ export const CLOUDS = {
 /** The cloud bank's layout, in world units from the view's top-left. The
  *  DOM cover (Clouds.tsx) lays out the same grid from the same numbers, so
  *  an HTML screen's clouds and a scene's line up cloud for cloud. */
-export const CLOUD_GRID = { dx: 260, dy: 130, scale: 3.2 } as const;
+export const CLOUD_GRID = { dx: 440, dy: 220, scale: 3.2 } as const;
 
 /** The two big pack clouds, recoloured white by compose-ui.mjs into ui/<key>.png. */
 export const CLOUD_COVER = { cover1: 1, cover5: 5 } as const;

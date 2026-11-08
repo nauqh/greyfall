@@ -532,6 +532,8 @@ export class AtlasScene extends Phaser.Scene {
   private bossKey = "";
   /** A boss room's fog: the cells no one crosses, and the clouds drawn on them. */
   private sealed = new Set<string>();
+  /** Ways shut until their key is carried, apart from the fog so a boss's fall never opens them. */
+  private locked = new Set<string>();
   private fog: Phaser.GameObjects.Image[] = [];
   /** Mist over the boss room, hiding it until the captain is inside. */
   private mist: Phaser.GameObjects.Image[] = [];
@@ -588,6 +590,7 @@ export class AtlasScene extends Phaser.Scene {
     this.built = new Set();
     this.hero = null;
     this.sealed = new Set();
+    this.locked = new Set();
     this.fog = [];
     this.mist = [];
     this.bossKey = "";
@@ -771,6 +774,7 @@ export class AtlasScene extends Phaser.Scene {
       stored<CompanionKind[]>(BAND, []).forEach((kind, i) => this.addCompanion(kind, this.hooks.carry?.band[i]));
       this.emitBand();
       this.fogGate();
+      this.lockGates();
       const k = this.input.keyboard;
       k?.on("keydown-ONE", () => this.command("follow"));
       k?.on("keydown-TWO", () => this.command("attack"));
@@ -938,7 +942,25 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   private shut(c: Cell): boolean {
-    return this.sealed.has(`${c.col},${c.row}`);
+    return this.sealed.has(`${c.col},${c.row}`) || this.locked.has(`${c.col},${c.row}`);
+  }
+
+  /** A gate across each locked way, until its key is carried or the captain has come through from the far side. */
+  private lockGates(): void {
+    const keys = remembered(KEYS);
+    for (const l of this.local?.locks ?? []) {
+      if (keys.has(l.key) || (l.flag && this.flags.has(l.flag as WorldFlag))) continue;
+      for (const c of l.cells) {
+        this.locked.add(`${c.col},${c.row}`);
+        this.gatehouse("locked", [c]);
+      }
+    }
+  }
+
+  /** The locked way beside the captain, if any. */
+  private lockNear(): NonNullable<AreaMap["locks"]>[number] | undefined {
+    const at = this.hero!.at;
+    return this.local?.locks?.find((l) => l.cells.some((c) => this.locked.has(`${c.col},${c.row}`) && tileDistance(c, at) <= 1));
   }
 
   /** Beside the fog, on the outside of it. */
@@ -1303,7 +1325,7 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** What E does here besides swing: talk to someone right beside, else rest at a bonfire beside, else talk to someone near. */
-  private eTarget(): { folk: Folk } | { fire: Cell } | { note: Note } | { exit: Exit } | { fog: true } | undefined {
+  private eTarget(): { folk: Folk } | { fire: Cell } | { note: Note } | { exit: Exit } | { fog: true } | { lock: string } | undefined {
     const at = this.hero!.at;
     const folk = this.folk.filter((f) => f.near).sort((a, b) => tileDistance(a.at, at) - tileDistance(b.at, at))[0];
     if (folk && tileDistance(folk.at, at) <= 1) return { folk };
@@ -1314,6 +1336,8 @@ export class AtlasScene extends Phaser.Scene {
     const exit = this.local?.exits.find((e) => tileDistance(e.at, at) <= 1);
     if (exit) return { exit };
     if (this.atFog()) return { fog: true };
+    const lock = this.lockNear();
+    if (lock) return { lock: `${lock.name}: locked. The ${BOSS_KEY[lock.key] ?? "key"} opens it` };
     return folk && { folk };
   }
 
@@ -1968,7 +1992,7 @@ export class AtlasScene extends Phaser.Scene {
     for (const p of tier.props) this.addProp(p, tier.base);
     for (const f of tier.fences) this.fence(f.col, f.row, f.w, f.h);
     for (const g of tier.gates) this.gatehouse(g.kind, g.cells);
-    for (const f of tier.fires) this.bonfire(f);
+    for (const f of [...tier.fires, ...tier.campfires]) this.bonfire(f);
     for (const d of tier.dwellers) this.addDweller(d);
     for (const l of this.map.lifts) for (const end of [l.up, l.down]) if (end.tier === tier.id) this.liftMark(l, end === l.up);
     for (const e of this.local?.exits ?? []) this.exitMark(e);
@@ -2367,7 +2391,7 @@ export class AtlasScene extends Phaser.Scene {
     const under = this.local && tier.base === "rock" ? (UNDER[this.local.area] ?? { rock: ROCK_MOOD, ambient: 0.22, glow: AREAS.find((a) => a.id === this.local!.area)!.mood, gold: 4 }) : null;
     const lights = this.local && under
       ? [
-          ...tier.fires.map((f) => ({ c: f.col, r: f.row, reach: 9 })),
+          ...[...tier.fires, ...tier.campfires].map((f) => ({ c: f.col, r: f.row, reach: 9 })),
           ...this.local.exits.map((e) => ({ c: e.at.col, r: e.at.row, reach: 7 })),
           ...tier.props.filter((p) => p.art === "goldStone").map((p) => ({ c: p.col, r: p.row, reach: under.gold })),
           ...tier.props.filter((p) => p.art === "sconce").map((p) => ({ c: p.col, r: p.row, reach: 5 })),
@@ -2517,6 +2541,7 @@ export class AtlasScene extends Phaser.Scene {
       if ("note" in t!) return this.read(t.note);
       if ("exit" in t!) return this.traverse(t.exit);
       if ("fog" in t!) return this.enterFog();
+      if ("lock" in t!) return;
       return RECRUITER[t!.folk.npc.id] ? this.openMenu(t!.folk) : this.talkTo(t!.folk);
     }
   }
@@ -2638,7 +2663,7 @@ export class AtlasScene extends Phaser.Scene {
     }
     if (this.reading && tileDistance(this.reading.at, hero.at) > 1) this.read(null);
     const t = this.talk || this.menu || this.reading || hero.dead || this.gone ? undefined : this.eTarget();
-    const action = !t ? null : "folk" in t ? "Talk" : "fire" in t ? "Rest" : "note" in t ? "Read" : "fog" in t ? "Traverse the fog" : this.exitWord(t.exit);
+    const action = !t ? null : "folk" in t ? "Talk" : "fire" in t ? "Rest" : "note" in t ? "Read" : "fog" in t ? "Traverse the fog" : "lock" in t ? t.lock : this.exitWord(t.exit);
     if (action !== this.nearName) this.hooks.onNear?.((this.nearName = action));
   }
 

@@ -61,6 +61,8 @@ export interface AreaMap extends AtlasTier {
   notes?: Note[];
   /** A boss room: fog across `gate`, crossed with E from outside to `inside`, shut behind until the `boss` kind falls. */
   arena?: { boss: string; gate: Cell[]; inside: Cell };
+  /** Ways shut until a boss's key is carried: `key` is the boss kind that drops it; `flag`, a world flag that opens it too. */
+  locks?: { key: string; name: string; cells: Cell[]; flag?: string }[];
 }
 
 export interface Note {
@@ -242,6 +244,7 @@ function pad(m: AreaMap, n: number): AreaMap {
     props: m.props.map(at),
     dwellers: m.dwellers.map((d) => ({ ...at(d), ...(d.to && { to: at(d.to) }) })),
     fires: m.fires.map(at),
+    campfires: m.campfires.map(at),
     bosses: m.bosses.map(at),
     fences: m.fences.map(at),
     entry: at(m.entry),
@@ -250,6 +253,7 @@ function pad(m: AreaMap, n: number): AreaMap {
     decks: m.decks.map(at),
     ...(m.notes && { notes: m.notes.map((x) => ({ ...x, at: at(x.at) })) }),
     ...(m.arena && { arena: { ...m.arena, gate: m.arena.gate.map(at), inside: at(m.arena.inside) } }),
+    ...(m.locks && { locks: m.locks.map((l) => ({ ...l, cells: l.cells.map(at) })) }),
   };
 }
 
@@ -461,6 +465,23 @@ function districtGrid(tier: AtlasTier, districts: readonly District[], t?: Build
 
 type Builder = ReturnType<typeof tierBuilder>;
 
+/** A ring of raised ground `width` thick round a hollow, a tile clear of every road laid so far, so each street is a pass. */
+function rim(t: Builder, cx: number, cy: number, rx: number, ry: number, width: number, owner: string): void {
+  const n = noise(`rim:${cx},${cy}`, 3);
+  const keys = new Set<string>();
+  for (let r = Math.floor(cy - ry - 1); r <= cy + ry + 1; r++) {
+    for (let c = Math.floor(cx - rx - 1); c <= cx + rx + 1; c++) {
+      const d = Math.hypot((c - cx) / rx, (r - cy) / ry) + n(c, r) * 0.06;
+      if (d <= 1 && d >= 1 - width / ry) keys.add(`${c},${r}`);
+    }
+  }
+  for (const k of t.roadSet) {
+    const [c, r] = k.split(",").map(Number) as [number, number];
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) keys.delete(`${c + dc},${r + dr}`);
+  }
+  t.shapes.push({ level: 2, keys, owner });
+}
+
 /** Scatter `n` of a dweller round a spot, each walking a short beat. */
 function crowd(t: Builder, rng: Rng, kind: string, at: Cell, n: number, spread: number, more: { color?: "blue" | "red" | "yellow" | "purple" | "black"; act?: string; walk?: boolean } = {}): void {
   for (let i = 0; i < n; i++) {
@@ -516,14 +537,12 @@ function harbour(): AreaMap {
 
   // Roads: the lower town's streets from the square to the docks and both gates; the creek crossed by the Old Bridge.
   // Streets that bend with the ground, not a grid: the main way from the Old Bridge through the square to the Moor
-  // Gate, the Ember Gate road north, the docks lane curving down to the shore, two back lanes, and the farm road.
+  // Gate, the Ember Gate road north, the docks lane curving down to the shore, and the farm road.
   t.road([1, 42], [12, 43], [26, 47], [40, 47], [50, 46]);
   t.road([62, 46], [72, 48], [86, 47], [100, 44], [110, 44]);
   t.road([26, 47], [33, 41], [34, 30], [28, 4], [26, 1]);
   t.road([56, 48], [55, 52], [56, 56]);
   t.road([57, 48], [56, 52], [57, 56]);
-  t.road([41, 47], [39, 52], [42, 55]);
-  t.road([70, 48], [72, 53], [69, 56]);
   t.road([26, 47], [28, 54], [37, 58], [37, 66], [3, 66]);
   t.road([15, 66], [15, 61]);
   // Paths out to the clusters beyond the town: up to the mine, and down past the Moor Watch to the lighthouse.
@@ -536,6 +555,9 @@ function harbour(): AreaMap {
   t.bridge({ col: 100, row: 44 }, { col: 110, row: 44 }, 3);
   t.bridge({ col: 50, row: 58 }, { col: 50, row: 62 });
   t.bridge({ col: 62, row: 58 }, { col: 62, row: 62 });
+  // The Lower Town is a bowl, after Firelink: the bonfire square sunk in the middle, the houses up on a rim round it,
+  // Old Town's cliff its north side, and the streets the passes out of it.
+  rim(t, 56, 45, 15, 9, 4, "The Lower Town");
 
   // The Keep: the castle on its headland over the sea, the lift to the sky beside it, the guard at the gate.
   prop("castle", 49, 10, blue);
@@ -548,7 +570,7 @@ function harbour(): AreaMap {
   crowd(t, rng, "warrior", { col: 52, row: 15 }, 4, 1, blue);
   for (const [c, r] of [[49, 17], [57, 17]] as const) prop("cannon", c, r);
   who("archer", 56, 13, { ...blue, to: { col: 60, row: 13 } });
-  t.fires.push({ col: 54, row: 12 });
+  t.campfires.push({ col: 54, row: 12 });
 
   // The Upper Town: the chapel and its close of trees, the old families' houses along the terrace, the east lobe's garden.
   prop("monastery", 47, 21, blue);
@@ -557,7 +579,7 @@ function harbour(): AreaMap {
   for (const [c, r] of [[64, 21], [65, 22]] as const) who("sheep", c, r);
   who("monk", 50, 22, { ...blue, to: { col: 55, row: 21 } });
   who("pawn", 59, 22, { ...blue, act: "gold", to: { col: 62, row: 22 } });
-  t.fires.push({ col: 60, row: 25 });
+  t.campfires.push({ col: 60, row: 25 });
 
   // Old Town: the busiest ground in the Reach. The market under the terraces, a smithy corner, cottages on every
   // spare ledge, folk at their trades, and the watch walking the stairs between the tiers.
@@ -566,13 +588,14 @@ function harbour(): AreaMap {
   crowd(t, rng, "pawn", { col: 58, row: 34 }, 2, 3, { ...blue, act: "meat" });
   prop("house3", 46, 30, blue);
   who("pawn", 48, 31, { ...blue, act: "hammer" });
-  t.fires.push({ col: 52, row: 38 });
+  t.campfires.push({ col: 52, row: 38 });
   who("warrior", 44, 38, { ...blue, to: { col: 70, row: 30 } });
   who("archer", 72, 30, { ...blue, to: { col: 64, row: 22 } });
 
   // The Lower Town, as clusters each with its own life (after the Witcher's Oxenfurt): the paved market round the fire
   // and the Old Well, the west quarter's houses thinning out toward the archery butts, the east quarter's smithy,
   // garden and garrison, and the docks on the shore; a watchtower at each gate. Folk walk between them at their work.
+  // The Harbour's one bonfire, the hub every road comes back to; its other fires are campfires, lit but no rest.
   t.fires.push({ col: 56, row: 43 });
   for (const [c, r, art] of [[51, 45, "woodPile"], [61, 45, "meat"], [51, 48, "tools"], [61, 48, "goldStone"], [53, 49, "meat"], [59, 49, "woodPile"]] as const) prop(art, c, r);
   // A few at the market, not a crowd: a town this size reads busy with a handful.
@@ -617,14 +640,14 @@ function harbour(): AreaMap {
   // The lumber camp at the wood's foot by the Ember Gate road: felled trunks stacked, stumps, a fire, the axes going.
   for (const [c, r] of [[24, 37], [27, 38], [22, 39]] as const) prop("woodPile", c, r);
   for (const [c, r] of [[20, 35], [29, 35], [25, 34]] as const) prop("stump", c, r);
-  t.fires.push({ col: 25, row: 40 });
+  t.campfires.push({ col: 25, row: 40 });
   for (const [c, r] of [[21, 36], [28, 36]] as const) who("pawn", c, r, { ...blue, act: "axe" });
   who("pawn", 26, 39, { ...blue, act: "wood", to: { col: 40, row: 46 } });
 
   // The goblins' camp outside the Ember Gate: Emberwood's raiders dug in on the Harbour's side of the road, the first
   // fight a captain walking north meets.
   prop("goblinHut", 35, 6);
-  t.fires.push({ col: 33, row: 9 });
+  t.campfires.push({ col: 33, row: 9 });
   // Two torches and a spear: winnable at the start, with nothing but the sword (three met at once killed in five seconds).
   for (const [c, r] of [[35, 10], [36, 12]] as const) who("torch", c, r);
   who("spear", 34, 13);
@@ -637,7 +660,7 @@ function harbour(): AreaMap {
   crowd(t, rng, "pawn", { col: 92, row: 25 }, 4, 4, { ...blue, act: "pickaxe", walk: false });
   // The miners' camp at the hill's foot where the mine road ends, and the gold carried down to the market.
   for (const [c, r, art] of [[84, 36, "tools"], [89, 37, "woodPile"], [88, 35, "goldStone"]] as const) prop(art, c, r);
-  t.fires.push({ col: 86, row: 37 });
+  t.campfires.push({ col: 86, row: 37 });
   for (const [c, r] of [[90, 33], [96, 31]] as const) who("pawn", c, r, { ...blue, act: "pickaxe" });
   who("pawn", 87, 38, { ...blue, act: "gold", to: { col: 60, row: 46 } });
 
@@ -667,7 +690,7 @@ function harbour(): AreaMap {
   for (const [c, r] of [[90, 62], [104, 62], [100, 64]] as const) prop("deadTree", c, r, { scale: 0.7 });
   who("skull", 96, 57, { to: { col: 100, row: 58 } });
   prop("tower", 86, 74, blue);
-  t.fires.push({ col: 92, row: 74 });
+  t.campfires.push({ col: 92, row: 74 });
   who("archer", 88, 74, { ...blue, to: { col: 100, row: 72 } });
 
   // Copses in the lowland's corners and between the clusters, so the town sits in a country, not on bare grass.
@@ -678,7 +701,7 @@ function harbour(): AreaMap {
     { to: "saltreach", name: "Old Bridge", kind: "open", at: { col: 1, row: 42 } },
     { to: "barrowmoor", name: "Moor Gate", kind: "shortcut", at: { col: 110, row: 44 } },
     { to: "emberwood", name: "Ember Gate", kind: "gate", at: { col: 26, row: 1 } },
-    { to: "undercroft", name: "Old Well", kind: "drop", at: { col: 56, row: 45 } },
+    { to: "undercroft", name: "Old Well", kind: "drop", at: { col: 67, row: 41 } },
     { to: "steps", name: "Watch Lift", kind: "shortcut", at: { col: 52, row: 9 } },
     { to: "landing", name: "Shore Road", kind: "open", at: { col: 48, row: 76 } },
   ];
@@ -688,7 +711,7 @@ function harbour(): AreaMap {
     { name: "The Citadel", at: { col: 54, row: 17 }, levels: [4], palette: [1], dress: "harbour", decor: 1.5 },
     { name: "The Upper Town", at: { col: 62, row: 26 }, levels: [3], palette: [1], dress: "harbour", decor: 2 },
     { name: "Old Town", at: { col: 60, row: 39 }, levels: [2], palette: [2], dress: "harbour", decor: 2 },
-    { name: "The Lower Town", at: { col: 56, row: 52 }, levels: [1], palette: [3], dress: "harbour", decor: 2 },
+    { name: "The Lower Town", at: { col: 56, row: 52 }, levels: [1, 2], palette: [3, 2], dress: "harbour", decor: 2 },
     { name: "The Docks", at: { col: 56, row: 75 }, levels: [1], palette: [3], dress: "saltreach", decor: 2 },
     { name: "West Fields", at: { col: 16, row: 60 }, palette: [3], dress: "harbour", decor: 1 },
     // The fields and pastures, on the farm's own green (painted patches read as flat colour): the fields drawn in crop
@@ -700,7 +723,11 @@ function harbour(): AreaMap {
     { name: "Moor Watch", at: { col: 98, row: 66 }, levels: [1, 2, 3], palette: [3, 2, 1], dress: "barrowmoor", decor: 1.5 },
   ];
   const tier = t.finish({}, [{ col: 56, row: 46 }]);
-  return { ...tier, area: "harbour", entry: { col: 56, row: 50 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], streets: true };
+  // The Citadel's gate: every stair onto its terrace, shut until the troll's key is carried, or opened from inside by
+  // coming down the Watch Lift.
+  const stairs = tier.island.rows.flatMap((l, row) => [...l].flatMap((ch, col) => ("{}".includes(ch) ? [{ col, row }] : [])));
+  const locks = [{ key: "troll", name: "The Citadel Gate", cells: stairs, flag: "watchLiftOpen" }];
+  return { ...tier, area: "harbour", entry: { col: 56, row: 50 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], streets: true, locks };
 }
 
 function emberwood(): AreaMap {

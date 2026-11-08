@@ -93,7 +93,7 @@ Greets you: *"Mind the sparks."* Walked away from: *"Come back with ore."*
 
 Greets you: *"Captain."* Walked away from: *"Dismissed, then."*
 
-### Home: Last Harbour, The Citadel (59, 14)
+### Home: Last Harbour, The Lower Town, by the barracks (77, 53)
 
 - **first**
   1. We were forty spears once. Forty.
@@ -151,7 +151,7 @@ Greets you: *"You walk loud, captain."* Walked away from: *"Keep your head down!
 
 Greets you: *"Don't lean on the rope."* Walked away from: *"...Right. Off you go."*
 
-### Home: Last Harbour, The Lower Town (61, 49)
+### Home: Last Harbour, The Lower Town, by the Old Well on the east rim (72, 45)
 
 - **first**
   1. Don't lean on the rope. It's older than me.

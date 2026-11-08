@@ -121,6 +121,8 @@ export interface AtlasTier {
   dwellers: Dweller[];
   /** Bonfires: where the warband would rest. */
   fires: Cell[];
+  /** Campfires: lit like a bonfire, but no rest. */
+  campfires: Cell[];
   bosses: { name: string; area: AreaId; col: number; row: number }[];
   /** Fence pens and barricades, as rectangles of tiles. */
   fences: { col: number; row: number; w: number; h: number }[];
@@ -680,7 +682,7 @@ function settleAll(t: Builder): void {
   };
   t.props = t.props.map((p, i) => (fitted[i] ? p : site(p)));
   // Bonfires after the buildings, on ground of their own.
-  t.fires = t.fires.map((f) => {
+  const seat = (f: Cell): Cell => {
     const p: Placed = { art: "fire", ...f };
     if (fits(p, own(p))) {
       place(p);
@@ -688,7 +690,9 @@ function settleAll(t: Builder): void {
     }
     const q = site(p);
     return { col: q.col, row: q.row };
-  });
+  };
+  t.fires = t.fires.map(seat);
+  t.campfires = t.campfires.map(seat);
   // Fences after the fires: every post on open ground of one height, a tile clear of any building or fire and of
   // each other; one that does not fit moves to the nearest place that does, or is left out.
   const posts = (f: Fence): Cell[] => {
@@ -777,6 +781,7 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
     props: [] as Placed[],
     dwellers: [] as Dweller[],
     fires: [] as Cell[],
+    campfires: [] as Cell[],
     fences: [] as AtlasTier["fences"],
     bosses: [] as AtlasTier["bosses"],
     reliefs: [] as Relief[],
@@ -966,7 +971,7 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
       for (const p of t.props) clear(p.col, p.row, p.art === "castle" || p.art === "monastery" ? 3 : 2);
       for (const d of t.dwellers) clear(d.col, d.row, 1);
       for (const d of t.dwellers) if (d.to) line(d, d.to, (c) => clear(c.col, c.row, 1));
-      for (const f of t.fires) clear(f.col, f.row, 2);
+      for (const f of [...t.fires, ...t.campfires]) clear(f.col, f.row, 2);
       for (const b of t.bosses) clear(b.col, b.row, 3);
       for (const f of t.fences) for (let r = f.row - 1; r <= f.row + f.h; r++) for (let c = f.col - 1; c <= f.col + f.w; c++) keep.add(`${c},${r}`);
       for (const k of [...t.roadSet, ...t.paths]) {
@@ -1094,6 +1099,7 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
         props: t.props,
         dwellers: t.dwellers,
         fires: t.fires,
+        campfires: t.campfires,
         bosses: t.bosses,
         fences: t.fences,
       };
