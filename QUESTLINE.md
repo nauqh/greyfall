@@ -16,7 +16,7 @@ After Dark Souls: no quest log, no choices, the captain never speaks.
 | Flag | Set by |
 | --- | --- |
 | died | dying (works now) |
-| bullWon | falling to the Shore Minotaur, which washes the captain up on Lantern Point |
+| bullWon | falling to the Shore Minotaur, which washes the captain up at the Harbour's fire |
 | wellDescended | arriving in the Undercroft (works now) |
 | moorGateOpen | coming into the Harbour through the Moor Gate (works now) |
 | watchLiftOpen | riding the Watch Lift down into the Harbour (works now) |
@@ -45,7 +45,7 @@ After Dark Souls: no quest log, no choices, the captain never speaks.
 
 Greets you: *"Ah. Another one."* Walked away from: *"Mind the dark, then."*
 
-### Home: Last Harbour, Lantern Point, by the lighthouse fire (96, 73)
+### Home: Last Harbour, the Lower Town, by the bonfire (61, 48)
 
 - **first**
   1. Another captain. Hm.
@@ -89,7 +89,7 @@ Greets you: *"Ah. Another one."* Walked away from: *"Mind the dark, then."*
 
 Greets you: *"Mind the sparks."* Walked away from: *"Come back with ore."*
 
-### Home: The Chapel Ward, the Forge Yard (58, 27)
+### Home: The Chapel Ward, the Forge Yard (73, 29)
 
 - **first**
   1. You want an edge on that? Bring me gold and ore.
@@ -110,7 +110,7 @@ Greets you: *"Mind the sparks."* Walked away from: *"Come back with ore."*
 
 Greets you: *"Captain."* Walked away from: *"Dismissed, then."*
 
-### Home: The Keep, the Bailey, by the barracks (20, 29)
+### Home: The Keep, the Bailey, by the barracks (21, 29)
 
 - **first**
   1. We were forty spears once. Forty.
@@ -168,7 +168,7 @@ Greets you: *"You walk loud, captain."* Walked away from: *"Keep your head down!
 
 Greets you: *"Don't lean on the rope."* Walked away from: *"...Right. Off you go."*
 
-### Home: Last Harbour, Lantern Point, by the Old Well (93, 77)
+### Home: Last Harbour, the Lower Town, by the Old Well (57, 51)
 
 - **first**
   1. Don't lean on the rope. It's older than me.
@@ -248,7 +248,7 @@ Greets you: *"Peace on you."* Walked away from: *"Go gently, captain."*
 
 Greets you: *"Tide's out."* Walked away from: *"Fair winds. Ha."*
 
-### Home: Last Harbour, Lantern Point, on the pier (98, 81)
+### Home: Last Harbour, the Docks, at the boat's pier (55, 60)
 
 - **first**
   1. No ships in three winters.
@@ -333,7 +333,7 @@ Greets you: *"Shh!"* Walked away from: *"Don't tell them I'm here!"*
 
 Greets you: *"Look up, captain."* Walked away from: *"Go on. I'll keep watch. It's all I'm good for."*
 
-### Home: The Keep, on the hall's terrace (25, 10)
+### Home: The Keep, on the hall's terrace (43, 11)
 
 - **first**
   1. Look up, captain. See that glint? Past the clouds.

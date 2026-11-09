@@ -596,6 +596,34 @@ white shaft of light that marked every crossing are gone.
   well's lip, on the Keep looking east, and at the lighthouse. The Citadel's stairs are an
   area `lock`: shut until the Troll Key is carried, or opened from inside
   by coming down the Watch Lift.
+  Reworked since, and what holds now: the hub is the bowl's fire in the
+  village, the Harbour's one bonfire (a corner hub with the way on in the
+  far corner was a cross-map trek), Ferrow and Tobin at it, the Old Well
+  beside it. The captain comes from the Bull's Ring by boat (`The Boat`,
+  a `lift` crossing drawn as a moored boat, E says "Sail to"), not a lift
+  up through the rock, landing on the docks' pier below the bowl. The
+  climb runs straight up from the fire to the Citadel Gate on the hill's
+  crown, towers and the castle's keep beside it, and the road on north
+  off the map's edge to the Burg; the sea behind the castle is gone, the
+  Harbour's north border woods (`wooded(m, top)`), since a gate to an
+  inland area must not lead into the sea. The Old Lift from the Chapel
+  lands at Old Town's east foot, near the hub. The Citadel areas are no
+  longer rooms in the void or terrace pyramids: each is a hillside of its
+  own ground with woods round it (`HILL`, `wooded()`; the woods take the
+  nearest district's dress, a boss room's excluded so its mist stays
+  tight). The Burg is a town of blocks, each a yard or house a height
+  above three-wide lanes up its own stair, dead hedges closing some
+  lanes, the square sunk in a bay of the upper town's wall; the Ramparts
+  a wall walk a height over the bailey, the east tower and Gun Bridge
+  reachable only along it; the Chapel a cloister, a terrace and the bell
+  roof, the forge yard raised with a pier to the Old Lift on its lip; the
+  Keep a gate court, bailey and castle terrace. Every way out on foot is
+  a path three wide to the map's edge (`edgeWay()`), its road painted,
+  and needs no fog: a gate is seen by its path, fog is for boss rooms and
+  the Landing's antechamber. Two traps met on the way: high ground no
+  stair reaches is lowered by `finish()`, so a stepped base with no
+  stairs flattens; and a ground strip only reachable along a cliff's foot
+  is no way at all, as the row under a terrace is its face.
 - **A district is one colour.** A district's `palette` can be a single
   tileset colour for all its heights; the Harbour's districts each are, in
   the atlas's family (an olive lower town climbing to a gold citadel,

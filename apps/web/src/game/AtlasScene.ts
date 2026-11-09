@@ -912,7 +912,7 @@ export class AtlasScene extends Phaser.Scene {
   private exitWord(e: Exit): string {
     const { kind, dir } = this.crossing(e);
     if (kind === "fall") return "Drop";
-    if (kind === "ride") return `Ride the lift ${dir}`;
+    if (kind === "ride") return e.name === "The Boat" ? `Sail to ${AREAS.find((a) => a.id === e.to)?.name ?? "the far shore"}` : `Ride the lift ${dir}`;
     if (barred(e)) return e.key && !remembered(KEYS).has(e.key) ? `Locked: the ${BOSS_KEY[e.key] ?? "key"} opens it` : "Barred";
     const there = AREAS.find((a) => a.id === e.to)?.name;
     return there ? `Traverse the clouds to ${there}` : "Traverse the clouds";
@@ -1349,7 +1349,7 @@ export class AtlasScene extends Phaser.Scene {
       this.tweens.add({ targets: b.s, alpha: 0, duration: 500, onComplete: () => b.s.destroy() });
       const gold = (b as Foe).stats?.gold;
       if (gold) this.dropGold(b.at, gold);
-      if (BOSSES.has((b as Foe).kind)) this.felled((b as Foe).kind, BOSS_KEY[(b as Foe).kind]);
+      if (this.isBoss(b as Foe)) this.felled((b as Foe).kind, BOSS_KEY[(b as Foe).kind]);
       return;
     }
     const hero = this.hero!;
@@ -1922,6 +1922,11 @@ export class AtlasScene extends Phaser.Scene {
     return picked;
   }
 
+  // A boss kind counts only where the area places that boss: the Greyfall's own troll is rank and file.
+  private isBoss(f: Foe): boolean {
+    return BOSSES.has(f.kind) && !!this.local?.bosses.some((b) => tileDistance(b, f.home) <= 2);
+  }
+
   /** A boss down: it stays down for good, and its key, if it has one, is the captain's. */
   private felled(kind: string, key?: string): void {
     remember(SLAIN, remembered(SLAIN).add(kind));
@@ -2357,6 +2362,8 @@ export class AtlasScene extends Phaser.Scene {
         const a = (i / 7) * Math.PI * 2;
         this.track(addDecor(this, "bush", x + Math.cos(a) * 78, y + Math.sin(a) * 38, 0.8, `sink${i}`));
       }
+    } else if (e.name === "The Boat") {
+      // A boat crossing: the map moors the boat itself in the water beside it, so nothing more is drawn.
     } else if (up || down || e.name.includes("Lift")) {
       const beside = (up || down) && this.map.tiers[here].props.some((p) => ["cave", "gnomeTower", "watchtower", "tower", "castle", "monastery"].includes(p.art) && footprint(p).some((c) => Math.abs(c.col - e.at.col) <= 3 && Math.abs(c.row - e.at.row) <= 3));
       if (!beside) {
@@ -2847,7 +2854,7 @@ export class AtlasScene extends Phaser.Scene {
         const inRoom = this.sealed.size > 0 && this.mist.length === 0;
         const boss = hero.dead
           ? undefined
-          : this.foes.find((f) => BOSSES.has(f.kind) && !f.dead && (f.kind === this.local?.arena?.boss ? inRoom : tileDistance(f.at, hero.at) <= f.stats.leash));
+          : this.foes.find((f) => this.isBoss(f) && !f.dead && (f.kind === this.local?.arena?.boss ? inRoom : tileDistance(f.at, hero.at) <= f.stats.leash));
         const name = boss && this.local?.bosses.slice().sort((a, b) => tileDistance(a, boss.home) - tileDistance(b, boss.home))[0]?.name;
         const bossKey = boss ? `${name},${boss.hp}` : "";
         if (bossKey !== this.bossKey) {

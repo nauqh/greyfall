@@ -25,15 +25,15 @@ inside the area map.
 | --- | --- |
 | W A S D or the arrows | Walk the way they point, diagonals too, sliding along walls; in a merchant's menu, W and S move the pick |
 | Left click | Attack, turned toward the cursor: the monster in reach nearest where it points. A press made mid-swing is kept |
-| Space or right click (hold) | Guard: walk at your pace behind the shield, turned to the nearest monster, stamina coming back at a third the speed; a blow from the front lets a fifth through and costs stamina. Shift rolls straight out of it |
-| Shift (tap) | Roll the way you walk, or backstep standing still: nothing lands during it, costs stamina |
-| Shift (hold, moving) | Sprint, draining stamina |
+| Shift or right click (hold) | Guard: walk at your pace behind the shield, turned to the nearest monster, stamina coming back at a third the speed; a blow from the front lets a fifth through and costs stamina. Space rolls straight out of it |
+| Space (tap) | Roll the way you walk, or backstep standing still: nothing lands during it, costs stamina |
+| Space (hold, moving) | Sprint, draining stamina |
 | E | Interact: talk and turn the page, rest at a bonfire, traverse the clouds at a way out (or ride the lift, or drop) |
 | R | Drink a flask |
 | 1 | Band: Follow (stay close, defend the hero) |
 | 2 | Band: Attack the monster you last struck |
 | 3 | Band: Hold here (guard the spot) |
-| Tab | The area map, showing what has been explored |
+| M | The map, to look at; travel is from a bonfire |
 
 ## The hero
 
@@ -141,42 +141,35 @@ then walks back; the engine already has a guard leash.
 1. **The Landing:** a sea cave under the Harbour, where a new game
    starts: the captain washes in and finds the way out through narrow
    lit tunnels, past two goblins and the notes, to the antechamber's fog
-   and the Bull's Ring, its own cavern, then the Ring Lift up to Lantern
-   Point. (Earlier, the beach south of the Harbour up the Shore Road.) You come ashore alone. A bonfire, two goblins,
+   and the Bull's Ring, its own cavern, then the boat out along the sea
+   channel to the Harbour's docks. (Earlier, the beach south of the Harbour up the Shore Road.) You come ashore alone. A bonfire, two goblins,
    notes on the ground that teach the controls (read with E), and the
    Shore Minotaur, a tutorial boss in the Bull's Ring: a hollow between
    two hills, a ruined tower on one, across the water. Mist hides it
    from outside; E at the fog on the one causeway takes you in, and the
    fog holds you there until the boss falls. A boss bar with its name
    shows low and centred while you fight it. Kill it and the road opens;
-   fall to it and you wash up on Lantern Point, as after Elden Ring's
-   Grafted Scion: lost, not over. The bull keeps the Ring, the pier leads
+   fall to it and you wash up at the Harbour's fire, as after Elden Ring's
+   Grafted Scion: lost, not over. The bull keeps the Ring, the boat goes
    back to him whenever the captain likes, and his fall is worth a fourth
    flask for good. Either way the training is over.
-2. **The Harbour:** the hub is Lantern Point, after Firelink: a small
-   headland in the south-east corner where the Shore Road comes in, the
-   lighthouse fire its one bonfire to start, Old Ferrow beside it saying
-   where to go. Five ways off it, each with its tell. The Lantern Road
-   west, lit lanterns from the point through the town and up to the
-   Ember Gate: the main path. The Graves, on the hill behind the point
-   (Firelink's graveyard on the slope behind the shrine): a path climbs
-   from the point's corner across the moor's dead, gold in plain view,
-   three gnolls and a shaman among the graves, to the Moor Gate on the
-   hill's seaward edge, shut from this side: the way that kills a new
-   captain. The old watchtower stands on the crest. The Old Well, a ring of stones by the
-   fire with Tobin at it, going down (bats below; only bows reach them).
-   The pier south, boats at it, back to the Landing's bull. The cove
-   east, gold in the rocks behind the lighthouse. The town past the
-   shore is safe and has no rest: Wren's bows, Brenna's forge, the Old
-   Bridge to Saltreach (hard), and at the Lantern Road's end the stair up
-   to the Burg Gate: the Citadel, the main path. The Lower Burg, the
-   Ramparts (the Rampart Bull), the Chapel Ward (the Stone Warden, the Old
-   Lift home, the Postern to Emberwood), the Keep last, shut until the
-   Troll Key. The town's Ember Gate is shut from its side, opened later
-   from the wood. Opened later from Barrowmoor, the Moor Gate brings
-   the captain down the hill through the Graves straight to the fire.
-   Buildings, heaps, fence posts and rocks in open ground are solid:
-   no one walks through them.
+2. **The Harbour:** the hub is the village's bowl, after Firelink: the
+   Harbour's one bonfire at its centre, Old Ferrow beside it saying where
+   to go, the Old Well beside it going down (bats below; only bows reach
+   them), the boat's pier just south on the docks. The climb runs straight
+   up from the fire through Old Town and the Upper Town to the Citadel
+   Gate on the hill's crown, the road on north to the Burg: the main path.
+   The Lower Burg (a town of walled yards and lanes, the square's fire), the
+   Ramparts (the Rampart Bull on the wall walk), the Chapel Ward (the Stone
+   Warden, the Old Lift home to Old Town's foot, the Postern to Emberwood),
+   the Keep last, shut until the Troll Key. West, the Lantern Road to the
+   fields and the Old Bridge to Saltreach (hard); north-west, the Ember Gate,
+   shut from this side, opened later from the wood; east, past Lantern
+   Point's lighthouse, the Graves on the hill: gold in plain view, three
+   gnolls and a shaman among the graves, the Moor Gate on the hill's edge,
+   shut from this side, the way that kills a new captain. Every way out on
+   foot is a path running off the map's edge. Buildings, heaps, fence posts
+   and rocks in open ground are solid: no one walks through them.
 3. **Emberwood:** the first hostile area. Goblin camps through the maze, two
    bonfires, the Treetop Walk shortcut.
 4. **The Cinder Troll** in Troll's Hollow, with three attacks:
