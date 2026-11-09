@@ -168,6 +168,20 @@ function tunnel(t: Builder, points: readonly (readonly [number, number])[], widt
   for (let i = 1; i < points.length; i++) t.bridge({ col: points[i - 1]![0], row: points[i - 1]![1] }, { col: points[i]![0], row: points[i]![1] }, width);
 }
 
+/** A tunnel's three rows carried through the map's frame column at `col` (0 or the last), so it runs off the edge
+ *  instead of ending at a cap of rock; the builder keeps its own frame shut. */
+function openEdge(t: Builder, col: number, row: number): void {
+  // The area of the first ground in from the edge: a tunnel's own carved tiles carry none yet.
+  const step = col === 0 ? 1 : -1;
+  let own = -1;
+  for (let c = col + step; own < 0 && c >= 0 && c < t.area[row]!.length; c += step) own = t.area[row]![c]!;
+  for (let r = row - 1; r <= row + 1; r++) {
+    t.grid[r]![col] = ".";
+    t.area[r]![col] = own;
+    t.paths.add(`${col},${r}`);
+  }
+}
+
 /** A tunnel with alcoves cut into its walls every few tiles, side to side, the dead laid in some and a torch in one. */
 function passage(t: Builder, rng: Rng, a: AreaId, points: readonly (readonly [number, number])[]): void {
   tunnel(t, points);
@@ -2722,6 +2736,9 @@ function landing(): AreaMap {
   for (const [x, y, w, h] of [[26, 40, 16, 7], [12, 26, 12, 9], [14, 8, 16, 9], [40, 9, 6, 5], [46, 14, 10, 8]] as const) t.ground(l, x, y, w, h);
   t.pond(26, 46, 16, 2);
   for (const way of [[[32, 40], [32, 31], [20, 31]], [[18, 26], [18, 17]], [[29, 12], [40, 12]], [[22, 8], [22, 4], [51, 4], [51, 14]]] as const) tunnel(t, way);
+  // The Ring Gate: the antechamber opens east into a tunnel running on off the map, straight into the Ring's own.
+  tunnel(t, [[54, 18], [68, 18]]);
+  openEdge(t, 69, 18);
   // Torches in the rock along the way, so the way out is the lit one.
   for (const [c, r] of [[30, 36], [26, 30], [17, 21], [35, 11], [30, 3], [45, 3], [52, 9], [60, 17], [27, 41], [41, 41], [13, 27], [22, 34], [15, 9], [28, 9], [15, 15], [44, 10], [55, 15], [47, 21], [38, 3], [22, 5], [54, 21]] as const) prop("sconce", c, r);
 
@@ -2750,7 +2767,7 @@ function landing(): AreaMap {
     { at: { col: 49, row: 18 }, text: "Its blows are heavy: hold Shift to guard behind the shield, or roll and strike while it recovers." },
     { at: { col: 52, row: 20 }, text: "Die and your gold stays where you fell. Fall to what waits here and you wash up on Lantern Point. It will wait." },
   ];
-  const exits: AreaExit[] = [{ to: "ring", name: "Ring Gate", kind: "open", at: { col: 55, row: 18 } }];
+  const exits: AreaExit[] = [{ to: "ring", name: "Ring Gate", kind: "open", at: { col: 68, row: 18 }, plain: true }];
   const districts: District[] = [
     { name: "The Grotto", at: { col: 34, row: 42 }, palette: [5], dress: "saltreach", decor: 1 },
     { name: "The Goblins' Chamber", at: { col: 17, row: 30 }, palette: [5], dress: "undercroft", decor: 1 },
@@ -2776,6 +2793,8 @@ function ring(): AreaMap {
 
   t.blob("ring", 26, 20, 13, 10);
   tunnel(t, [[1, 20], [13, 20]]);
+  // No rock capping the tunnel's west end: it runs on off the map, back to the Landing's.
+  openEdge(t, 0, 20);
   tunnel(t, [[33, 20], [48, 20]]);
   // The sea channel at the tunnel's end, the fishers' boat moored in it.
   t.pond(47, 18, 4, 5);
@@ -2799,9 +2818,8 @@ function ring(): AreaMap {
     { name: "The Cave Tunnel", at: { col: 6, row: 20 }, palette: [5], dress: "undercroft", decor: 0.5, box: { x: 0, y: 17, w: 12, h: 7 } },
   ];
   const tier = stone(t.finish({}, [{ col: 3, row: 20 }]));
-  // Fog across both tunnels where they open on the floor, while the bull lives.
-  const across = (c: number) => [19, 20, 21].map((row) => ({ col: c, row }));
-  const arena = { boss: "minotaur", gate: [...across(12), ...across(40)], inside: { col: 24, row: 20 } };
+  // No fog: the Ring is the arena, walked straight into from the cave; the bull's guard on the boat holds the way on.
+  const arena = { boss: "minotaur", gate: [], inside: { col: 24, row: 20 } };
   return { ...tier, area: "ring", entry: { col: 3, row: 20 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], arena };
 }
 

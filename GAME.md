@@ -140,15 +140,14 @@ then walks back; the engine already has a guard leash.
 
 1. **The Landing:** a sea cave under the Harbour, where a new game
    starts: the captain washes in and finds the way out through narrow
-   lit tunnels, past two goblins and the notes, to the antechamber's fog
+   lit tunnels, past two goblins and the notes, to the antechamber's gate
    and the Bull's Ring, its own cavern, then the boat out along the sea
    channel to the Harbour's docks. (Earlier, the beach south of the Harbour up the Shore Road.) You come ashore alone. A bonfire, two goblins,
    notes on the ground that teach the controls (read with E), and the
-   Shore Minotaur, a tutorial boss in the Bull's Ring: a hollow between
-   two hills, a ruined tower on one, across the water. Mist hides it
-   from outside; E at the fog on the one causeway takes you in, and the
-   fog holds you there until the boss falls. A boss bar with its name
-   shows low and centred while you fight it. Kill it and the road opens;
+   Shore Minotaur, a tutorial boss in the Bull's Ring: a round cavern,
+   walked straight into from the cave's tunnel, no fog; the Ring is the
+   arena, and the bull guards the boat on. A boss bar with its name
+   shows low and centred once you stand in the Ring with him in view. Kill it and the road opens;
    fall to it and you wash up at the Harbour's fire, as after Elden Ring's
    Grafted Scion: lost, not over. The bull keeps the Ring, the boat goes
    back to him whenever the captain likes, and his fall is worth a fourth

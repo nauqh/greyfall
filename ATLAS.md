@@ -559,8 +559,10 @@ white shaft of light that marked every crossing are gone.
   stair up, Ansel on the wall, the Watch Lift up to the Skyward Steps,
   shut until ridden down. The Landing is a sea cave on the underground
   tier, narrow tunnels from the grotto to the antechamber's fog; the
-  Bull's Ring is its own cavern area past it, the minotaur's arena fogged
-  at both tunnels, and the Ring Lift up to Lantern Point's pier. Every
+  Bull's Ring is its own cavern area past it, walked straight into with
+  no fog (an arena with an empty `gate` has no fog, mist or seal; its
+  boss bar shows once the captain stands in the room with the boss in
+  view), and the boat out to the Harbour. Every
   fightable boss fights in a closed arena (the Ring, the Bull's Wall, the
   bell roof, Troll's Hollow); walking into its fog walks the captain two
   steps in, and it holds until the boss or the captain falls. The side a
@@ -611,8 +613,8 @@ white shaft of light that marked every crossing are gone.
   roof, the forge yard raised with a pier to the Old Lift on its lip; the
   Keep a gate court, bailey and castle terrace. Every way out on foot is
   a path three wide to the map's edge (`edgeWay()`), its road painted,
-  and needs no fog: a gate is seen by its path, fog is for boss rooms and
-  the Landing's antechamber. Two traps met on the way: high ground no
+  and needs no fog: a gate is seen by its path, fog is for boss rooms only
+  (the Landing's antechamber gate lost its fog too). Two traps met on the way: high ground no
   stair reaches is lowered by `finish()`, so a stepped base with no
   stairs flattens; and a ground strip only reachable along a cliff's foot
   is no way at all, as the row under a terrace is its face.

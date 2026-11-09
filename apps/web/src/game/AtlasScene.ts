@@ -991,12 +991,14 @@ export class AtlasScene extends Phaser.Scene {
   /** E at a way out: a slow walk off the edge into the crossing's clouds; a lift or a drop goes at once (a drop still warns). */
   private traverse(e: Exit): void {
     if (barred(e)) return;
-    const { kind } = this.crossing(e);
+    const { kind, dir } = this.crossing(e);
     if (kind !== "walk" && kind !== "stair") return this.depart(e);
     const hero = this.hero!;
     this.gone = true;
     hero.way = [];
-    const [x, y] = [(e.at.col + 0.5) * CELL, (e.at.row + 0.75) * CELL];
+    // On out past the gate the way it leads, wherever the captain stood: never back onto its tile from beyond it.
+    const [dc, dr] = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }[dir];
+    const [x, y] = [(e.at.col + 0.5 + 2 * dc) * CELL, (e.at.row + 0.75 + 2 * dr) * CELL];
     if (Math.abs(x - hero.s.x) > 2) hero.s.setFlipX(x < hero.s.x);
     this.play(hero.s, hero.move ?? hero.idle);
     this.tweens.add({ targets: hero.s, x, y, alpha: 0.1, duration: 1100, ease: "Sine.easeIn", onComplete: () => this.depart(e) });
@@ -1005,7 +1007,8 @@ export class AtlasScene extends Phaser.Scene {
   /** A boss room's fog across its way in, after the Souls games, while its boss lives. */
   private fogGate(): void {
     const arena = this.local?.arena;
-    if (!arena || remembered(SLAIN).has(arena.boss)) return;
+    // An arena with no gate is walked straight into: no fog, no mist.
+    if (!arena || arena.gate.length === 0 || remembered(SLAIN).has(arena.boss)) return;
     for (const c of arena.gate) this.sealed.add(`${c.col},${c.row}`);
     // One gate for each run of fog cells: the Ramparts' wall is fogged at both its ends.
     const left = [...arena.gate];
@@ -3023,12 +3026,15 @@ export class AtlasScene extends Phaser.Scene {
           this.vitalsKey = key;
           this.hooks.onVitals?.(v);
         }
-        // A boss shows its bar as its fight opens: a room's boss once the captain is in the room, any other within its leash.
+        // A boss shows its bar as its fight opens: a room's boss once the captain stands in its room, mist parted, and has it
+        // in view; any other within its leash.
         const hero = this.hero;
-        const inRoom = this.sealed.size > 0 && this.mist.length === 0;
+        const arena = this.local?.arena;
+        const inRoom = !!arena && this.mist.length === 0 && districtOf(this.local!, hero.at.col, hero.at.row)?.name === this.roomOf(arena);
+        const seen = (f: Foe): boolean => this.active.worldView.contains(f.s.x, f.s.y);
         const boss = hero.dead
           ? undefined
-          : this.foes.find((f) => this.isBoss(f) && !f.dead && (f.kind === this.local?.arena?.boss ? inRoom : tileDistance(f.at, hero.at) <= f.stats.leash));
+          : this.foes.find((f) => this.isBoss(f) && !f.dead && (f.kind === arena?.boss ? inRoom && seen(f) : tileDistance(f.at, hero.at) <= f.stats.leash));
         const name = boss && this.local?.bosses.slice().sort((a, b) => tileDistance(a, boss.home) - tileDistance(b, boss.home))[0]?.name;
         const bossKey = boss ? `${name},${boss.hp}` : "";
         if (bossKey !== this.bossKey) {
