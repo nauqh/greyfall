@@ -42,30 +42,44 @@ function restedAt(): { area: AreaId; col: number; row: number } | null {
   }
 }
 
-/** Opened at a bonfire in `from`; `onTravel` once a fire is chosen (the rest point already moved to it), `onBack` to sit on. */
-export function TravelMap({ from, onTravel, onBack }: { from: AreaId; onTravel: (f: Fire) => void; onBack: () => void }) {
+/** Opened at a bonfire in `from`, or anywhere with M to look (`travel` false): `onTravel` once a fire is chosen (the rest
+ *  point already moved to it), `onBack` to close. */
+export function TravelMap({ from, travel: canTravel, onTravel, onBack }: { from: AreaId; travel: boolean; onTravel: (f: Fire) => void; onBack: () => void }) {
   const [fires] = useState(kindled);
   const at = useMemo(restedAt, []);
-  const [pick, setPick] = useState(() => Math.max(0, fires.findIndex((f) => f.area === at?.area && f.col === at.col && f.row === at.row)));
+  const isHere = (f: Fire): boolean => canTravel && f.area === at?.area && f.col === at.col && f.row === at.row;
+  const [pick, setPick] = useState(() => {
+    const sat = fires.findIndex(isHere);
+    return sat >= 0 ? sat : Math.max(0, fires.findIndex((f) => f.area === from));
+  });
   const [area, setArea] = useState<AreaId>(fires[pick]?.area ?? from);
   const [tier, setTier] = useState<TierId>(AREAS.find((a) => a.id === area)!.tier);
   const map = useMemo(() => atlasMap(), []);
   const api = useRef<AtlasApi | null>(null);
+  const marks = fires.map((f) => ({ ...f, here: isHere(f) }));
+  const choose = (i: number): void => {
+    setPick(i);
+    setArea(fires[i]!.area);
+  };
   const hooks = useRef<AtlasHooks>({
-    onArea: (id) => {
-      setArea(id);
-      const first = fires.findIndex((f) => f.area === id);
-      if (first >= 0) setPick(first);
-    },
+    onArea: setArea,
     onTier: setTier,
+    onFire: choose,
     ready: (a) => {
       api.current = a;
-      a.focus(area);
+      if (fires.length > 0) a.fires(marks, pick);
+      else a.focus(area);
     },
   }).current;
+  useEffect(() => {
+    if (fires.length > 0) api.current?.fires(marks, pick);
+    // The marks only move with the pick; `marks` is rebuilt every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pick]);
 
   const travel = (f: Fire): void => {
-    if (f.area === at?.area && f.col === at.col && f.row === at.row) return onBack();
+    if (!canTravel) return;
+    if (isHere(f)) return onBack();
     try {
       localStorage.setItem(REST, JSON.stringify({ area: f.area, col: f.col, row: f.row }));
     } catch {}
@@ -75,13 +89,10 @@ export function TravelMap({ from, onTravel, onBack }: { from: AreaId; onTravel: 
   useEffect(() => {
     const key = (e: KeyboardEvent): void => {
       const k = e.key.toLowerCase();
-      if (k === "escape") return onBack();
+      if (k === "escape" || (k === "m" && !canTravel)) return onBack();
       if (e.repeat) return;
       if ((k === "w" || k === "arrowup" || k === "s" || k === "arrowdown") && fires.length > 0) {
-        const next = (pick + (k === "w" || k === "arrowup" ? -1 : 1) + fires.length) % fires.length;
-        setPick(next);
-        setArea(fires[next]!.area);
-        api.current?.focus(fires[next]!.area);
+        choose((pick + (k === "w" || k === "arrowup" ? -1 : 1) + fires.length) % fires.length);
       } else if (k === "a" || k === "arrowleft" || k === "d" || k === "arrowright") {
         api.current?.tier(TIERS[(TIERS.indexOf(tier) + (k === "a" || k === "arrowleft" ? -1 : 1) + TIERS.length) % TIERS.length]!);
       } else if ((k === "e" || k === "enter") && fires[pick]) travel(fires[pick]);
@@ -92,7 +103,7 @@ export function TravelMap({ from, onTravel, onBack }: { from: AreaId; onTravel: 
 
   const shown = AREAS.find((a) => a.id === area)!;
   const bosses = map.tiers[shown.tier].bosses.filter((b) => b.area === area);
-  const here = fires.filter((f) => f.area === area);
+  const lit = fires.filter((f) => f.area === area);
 
   return (
     <div className="travelMap">
@@ -100,19 +111,32 @@ export function TravelMap({ from, onTravel, onBack }: { from: AreaId; onTravel: 
         <div className="worldHud">
           <header className="atlasTop">
             <h1 className="banner">The Shattered Reach</h1>
-            <span className="talkNext">{TIER_INFO[tier].name}</span>
+            {/* The tiers, after Elden Ring's underground toggle; a dot where a bonfire is lit. */}
+            <nav className="worldLinks">
+              {TIERS.map((t) => (
+                <button key={t} className="linkBtn tierTab" type="button" aria-pressed={t === tier} onClick={() => api.current?.tier(t)}>
+                  {TIER_INFO[t].name}
+                  {fires.some((f) => AREAS.find((a) => a.id === f.area)!.tier === t) && " •"}
+                </button>
+              ))}
+            </nav>
           </header>
 
           <section className="paper atlasCard">
             <h2>{shown.name}</h2>
             <p className="atlasWhere">{TIER_INFO[shown.tier].name}</p>
             <p className="lore">{shown.blurb}</p>
-            {here.length > 0 ? (
+            {lit.length > 0 ? (
               <div className="atlasFires">
-                {here.map((f) => (
-                  <button key={`${f.col},${f.row}`} className={`btn small${f === fires[pick] ? " red" : ""}`} type="button" onClick={() => travel(f)}>
+                {lit.map((f) => (
+                  <button
+                    key={`${f.col},${f.row}`}
+                    className={`btn small${f === fires[pick] ? " red" : ""}`}
+                    type="button"
+                    onClick={() => (canTravel ? travel(f) : choose(fires.indexOf(f)))}
+                  >
                     {f.name}
-                    {f.area === at?.area && f.col === at.col && f.row === at.row && " (here)"}
+                    {isHere(f) && " (here)"}
                   </button>
                 ))}
               </div>
@@ -124,12 +148,10 @@ export function TravelMap({ from, onTravel, onBack }: { from: AreaId; onTravel: 
                 <b>Keeper:</b> {bosses.map((b) => b.name).join(", ")}
               </p>
             )}
+            {!canTravel && <p className="atlasWhere">Rest at a bonfire to travel.</p>}
             <button className="btn small" type="button" onClick={onBack}>
-              Back to the bonfire
+              {canTravel ? "Back to the bonfire" : "Close the map"}
             </button>
-            <span className="talkNext" aria-hidden="true">
-              W/S bonfire, A/D tier, E travel, Esc back
-            </span>
           </section>
         </div>
       </GameCanvas>

@@ -960,6 +960,13 @@ textarea {
 	z-index: 5;
 }
 
+/* The tier in view, among the map's tabs. */
+.tierTab[aria-pressed="true"] {
+	color: #f2d48a;
+	text-decoration: none;
+	opacity: 1;
+}
+
 /* The bonfires lit in an area, each a place to travel to. */
 .atlasFires {
 	display: flex;

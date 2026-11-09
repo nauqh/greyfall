@@ -97,6 +97,17 @@ export interface AtlasApi {
   choose: (i: number) => void;
   /** Stop the scene while another game (the bonfire map) runs on the page, or go on; that game swaps the shared walk grid. */
   pause: (on: boolean) => void;
+  /** On the atlas: mark the lit bonfires, ring `pick` and fly to it. */
+  fires: (fires: FireMark[], pick: number) => void;
+}
+
+/** A lit bonfire as the atlas marks it: on its area's own map, named, and whether the captain sits at it. */
+export interface FireMark {
+  area: AreaId;
+  col: number;
+  row: number;
+  name: string;
+  here?: boolean;
 }
 
 /** How a crossing feels: walking out over a gate, falling down a drop, riding a lift, or going down a stair into the deep. */
@@ -132,6 +143,8 @@ export interface AtlasHooks {
   onArea: (id: AreaId) => void;
   /** Tells the page which tier is in view, after a lift or a tab. */
   onTier: (id: TierId) => void;
+  /** A bonfire mark clicked on the atlas, by its index in the last `fires` call. */
+  onFire?: (i: number) => void;
   ready: (api: AtlasApi) => void;
   /** Once the clouds have parted and the map is in view. */
   opened?: () => void;
@@ -536,6 +549,9 @@ export class AtlasScene extends Phaser.Scene {
   private view: TierId = "surface";
   private cams!: Record<TierId, Phaser.Cameras.Scene2D.Camera>;
   private names: { text: Phaser.GameObjects.Text; px: number; tier: TierId }[] = [];
+  /** The atlas's bonfire marks, and where each stands for a click. */
+  private marks: Phaser.GameObjects.GameObject[] = [];
+  private markAt: { tier: TierId; cell: Cell }[] = [];
   private live: Tracked[] = [];
   private drag: { x: number; y: number; sx: number; sy: number; moved: boolean } | null = null;
   /** In an area's own map: that map. */
@@ -869,6 +885,7 @@ export class AtlasScene extends Phaser.Scene {
         useIsland(this.map.tiers[this.view].island);
         this.game.loop.wake();
       },
+      fires: (fires, pick) => this.markFires(fires, pick),
       choose: (i) => {
         if (!this.menu) return;
         this.menu.pick = i;
@@ -1133,7 +1150,9 @@ export class AtlasScene extends Phaser.Scene {
       if (!d || d.moved) return;
       const w = this.active.getWorldPoint(p.x, p.y);
       const cell = { col: Math.floor(w.x / CELL), row: Math.floor(w.y / CELL) };
-      // An exit travels, a lift's end rides it, else the area under the pointer.
+      // A bonfire mark, an exit travels, a lift's end rides it, else the area under the pointer.
+      const fire = this.markAt.findIndex((m) => m.tier === this.view && Math.abs(m.cell.col - cell.col) <= 2 && Math.abs(m.cell.row - cell.row) <= 2);
+      if (fire >= 0) return this.hooks.onFire?.(fire);
       for (const e of this.local?.exits ?? []) {
         if (Math.abs(e.at.col - cell.col) <= 2 && Math.abs(e.at.row - cell.row) <= 2) return this.depart(e);
       }
@@ -1145,6 +1164,58 @@ export class AtlasScene extends Phaser.Scene {
       const ch = this.map.tiers[this.view].areaAt[cell.row]?.[cell.col];
       if (ch && ch !== "-") this.hooks.onArea(AREAS[AREA_CODE.indexOf(ch)]!.id);
     });
+  }
+
+  /** Where a cell of an area's own map falls on the atlas: the same share of the way across the area's ground there. */
+  private onAtlas(area: AreaId, c: Cell): { tier: TierId; cell: Cell } {
+    const a = AREAS.find((x) => x.id === area)!;
+    const ch = AREA_CODE[AREAS.indexOf(a)];
+    const box = { c0: Infinity, c1: -Infinity, r0: Infinity, r1: -Infinity };
+    this.map.tiers[a.tier].areaAt.forEach((line, r) => {
+      for (let col = 0; col < line.length; col++) {
+        if (line[col] !== ch) continue;
+        Object.assign(box, { c0: Math.min(box.c0, col), c1: Math.max(box.c1, col), r0: Math.min(box.r0, r), r1: Math.max(box.r1, r) });
+      }
+    });
+    const rows = areaMap(area).island.rows;
+    // ponytail: a share of the bounding box, not the area's real layout; a fire can land off its true spot, even on water.
+    return {
+      tier: a.tier,
+      cell: { col: Math.round(box.c0 + ((c.col + 0.5) / rows[0]!.length) * (box.c1 - box.c0 + 1)), row: Math.round(box.r0 + ((c.row + 0.5) / rows.length) * (box.r1 - box.r0 + 1)) },
+    };
+  }
+
+  /** The lit bonfires on the atlas, after Elden Ring's graces: a glow each, the picked one ringed and named, the one sat at said so. */
+  private markFires(fires: FireMark[], pick: number): void {
+    const gone = new Set(this.marks);
+    this.names = this.names.filter((n) => !gone.has(n.text));
+    for (const o of this.marks) o.destroy();
+    this.marks = [];
+    this.markAt = fires.map((f) => this.onAtlas(f.area, f));
+    fires.forEach((f, i) => {
+      const { tier, cell } = this.markAt[i]!;
+      const [x, y] = [(cell.col + 0.5) * CELL, (cell.row + 0.5) * CELL];
+      const picked = i === pick;
+      const made: Phaser.GameObjects.GameObject[] = [
+        this.add.image(x, y, "glow").setBlendMode(Phaser.BlendModes.ADD).setTint(0xffd65a).setScale(picked ? 1.4 : 0.9).setDepth(DEPTH.fx + 1),
+        this.add.circle(x, y, picked ? 26 : 18, 0xffb347).setStrokeStyle(6, picked ? 0xfdfaf0 : 0x1c2634).setDepth(DEPTH.fx + 2),
+      ];
+      if (picked || f.here) {
+        const t = this.add
+          .text(x, y - 1.3 * CELL, f.here ? `${f.name} (you are here)` : f.name, { fontFamily: FONT, fontSize: "28px", fontStyle: "bold", color: "#f2d48a", stroke: "#1c2634", strokeThickness: 6 })
+          .setOrigin(0.5)
+          .setDepth(DEPTH.fx + 3);
+        this.names.push({ text: t, px: 14, tier });
+        made.push(t);
+      }
+      if (picked) this.tweens.add({ targets: made[1], scale: 1.25, duration: 700, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+      for (const other of TIERS) if (other !== tier) this.cams[other].ignore(made);
+      this.marks.push(...made);
+    });
+    const at = this.markAt[pick];
+    if (!at) return;
+    if (at.tier !== this.view) this.show(at.tier);
+    this.flyTo(at.cell, 24);
   }
 
   /** In play: an area map with the hero on it and dev mode off. */

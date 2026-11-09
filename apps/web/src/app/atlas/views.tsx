@@ -70,8 +70,8 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const [died, setDied] = useState<AreaId | null>(null);
   // Sat at a bonfire after a rest: its name, and the option picked.
   const [fire, setFire] = useState<{ name: string; pick: number } | null>(null);
-  // The bonfire's map, open over the area while the scene waits paused behind it.
-  const [atlas, setAtlas] = useState(false);
+  // The map, open over the area while the scene waits paused behind it: from a bonfire to travel, or on M only to look.
+  const [atlas, setAtlas] = useState<"travel" | "look" | null>(null);
   const api = useRef<AtlasApi | null>(null);
   const now = useRef({ area: first, cameFrom: undefined as AreaId | undefined, quiet: false, travelling: false });
 
@@ -114,7 +114,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
       label: "Travel",
       go: () => {
         api.current?.pause(true);
-        setAtlas(true);
+        setAtlas("travel");
       },
     },
     { label: "Leave", go: leaveFire },
@@ -180,8 +180,18 @@ export function AreaView({ area: first }: { area: AreaId }) {
   };
   const closeAtlas = (): void => {
     api.current?.pause(false);
-    setAtlas(false);
+    setAtlas(null);
   };
+  useEffect(() => {
+    if (atlas || fire || say || menu || died || warn) return;
+    const key = (e: KeyboardEvent): void => {
+      if (e.key.toLowerCase() !== "m" || e.repeat || now.current.travelling) return;
+      api.current?.pause(true);
+      setAtlas("look");
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [atlas, fire, say, menu, died, warn]);
   useEffect(() => {
     if (!fire || atlas) return;
     const key = (e: KeyboardEvent): void => {
@@ -253,6 +263,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
         {atlas && (
           <TravelMap
             from={now.current.area}
+            travel={atlas === "travel"}
             onBack={closeAtlas}
             onTravel={(f) => {
               closeAtlas();
