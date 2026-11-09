@@ -915,11 +915,11 @@ function burg(): AreaMap {
     { name: "The Creek", at: { col: 48, row: 46 }, levels: [1], palette: [4], dress: "greyfall", decor: 1 },
     { name: "The Tanneries", at: { col: 20, row: 39 }, levels: [1], palette: [4], dress: "greyfall", decor: 1.5 },
     { name: "The Mill", at: { col: 80, row: 40 }, levels: [1], palette: [4], dress: "greyfall", decor: 1.5 },
-    { name: "The Burg Square", at: { col: 52, row: 31 }, levels: [2], palette: [3], dress: "greyfall", decor: 1 },
-    { name: "The Upper Street", at: { col: 52, row: 18 }, levels: [2, 3], palette: [3, 2], dress: "greyfall", decor: 1.5 },
-    { name: "Church Hill", at: { col: 22, row: 20 }, levels: [2, 3], palette: [5, 4], dress: "barrowmoor", decor: 1.5 },
-    { name: "The Garrison", at: { col: 76, row: 18 }, levels: [2, 3, 4], palette: [3, 2, 2], dress: "greyfall", decor: 1 },
-    { name: "The Crest", at: { col: 52, row: 5 }, levels: [3], palette: [2], dress: "greyfall", decor: 1 },
+    { name: "The Burg Square", at: { col: 52, row: 31 }, levels: [2], palette: [4, 3], dress: "greyfall", decor: 1 },
+    { name: "The Upper Street", at: { col: 52, row: 18 }, levels: [2, 3], palette: [4, 3, 2], dress: "greyfall", decor: 1.5 },
+    { name: "Church Hill", at: { col: 22, row: 20 }, levels: [2, 3], palette: [4, 3, 2], dress: "barrowmoor", decor: 1.5 },
+    { name: "The Garrison", at: { col: 76, row: 18 }, levels: [2, 3, 4], palette: [4, 3, 2, 1], dress: "greyfall", decor: 1 },
+    { name: "The Crest", at: { col: 52, row: 5 }, levels: [3], palette: [4, 3, 2], dress: "greyfall", decor: 1 },
   ];
   const tier = t.finish({ burg: 0.02 }, [{ col: 48, row: 60 }]);
   return { ...tier, area: "burg", entry: { col: 48, row: 60 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: deck, streets: true, notes };
