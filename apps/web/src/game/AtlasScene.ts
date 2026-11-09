@@ -997,7 +997,7 @@ export class AtlasScene extends Phaser.Scene {
     this.gone = true;
     hero.way = [];
     // On out past the gate the way it leads, wherever the captain stood: never back onto its tile from beyond it.
-    const [dc, dr] = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }[dir];
+    const [dc, dr] = ({ left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] } as const)[dir];
     const [x, y] = [(e.at.col + 0.5 + 2 * dc) * CELL, (e.at.row + 0.75 + 2 * dr) * CELL];
     if (Math.abs(x - hero.s.x) > 2) hero.s.setFlipX(x < hero.s.x);
     this.play(hero.s, hero.move ?? hero.idle);
