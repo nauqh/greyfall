@@ -2846,12 +2846,21 @@ function wooded(m: AreaMap, top = Infinity): AreaMap {
   return { ...m, island: { ...m.island, rows: rows.map((l) => l.join("")) }, districtAt };
 }
 
+/** No scattered woods on a note or the two rows south of it, whose canopy would draw over the paper: the scatter in
+ *  finish() runs before an area's notes are known, so which tiles it wooded shifts with every prop added. */
+function clearNotes(m: AreaMap): AreaMap {
+  if (m.base === "rock" || !m.notes?.length) return m;
+  const rows = m.island.rows.map((l) => [...l]);
+  for (const n of m.notes) for (let dr = 0; dr <= 2; dr++) for (let dc = -1; dc <= 1; dc++) if (rows[n.at.row + dr]?.[n.at.col + dc] === "T") rows[n.at.row + dr]![n.at.col + dc] = ".";
+  return { ...m, island: { ...m.island, rows: rows.map((l) => l.join("")) } };
+}
+
 export function areaMap(id: AreaId): AreaMap {
   const build = BUILT[id];
   if (!build) throw new Error(`${AREAS.find((a) => a.id === id)?.name ?? id} has no map yet`);
   // A map on the sea or in the sky floats in it; underground, the rock round the caverns already does.
   if (!made.has(id)) {
-    const m = build();
+    const m = clearNotes(build());
     // The Harbour's north edge is the hill on up to the Burg, not the sea.
     made.set(id, m.base === "rock" ? m : HILL.has(id) ? wooded(pad(m, 3)) : id === "harbour" ? wooded(pad(m, 3), 6) : pad(m, 3));
   }
