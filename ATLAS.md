@@ -528,10 +528,10 @@ white shaft of light that marked every crossing are gone.
   where its foot is `shut` until then, and the Gun Bridge crosses the
   ravine under slingshot gnomes to the Chapel Ward's door. A crossing
   lands at the exit of the same name (`greyfall.via`), since two ways
-  join the Burg and the Ramparts. The bailey's back stair climbs to a
+  join the Burg and the Ramparts. The upper ward's back stair climbs to a
   landing on the Bull's Wall, fogged with the walk's two ends while he
   stands (an arena's `gate` holds any number of fog runs): a second way
-  into the boss room, and once he falls a loop home through the bailey,
+  into the boss room, and once he falls a loop home through the wards,
   its gold at the wall's foot where the walk looks down on it.
   The Chapel Ward (`chapel`), after the Undead Parish: the cloister walk
   round a square pond (dead monks on their rounds), up to the chapel
@@ -608,8 +608,9 @@ white shaft of light that marked every crossing are gone.
   tight). The Burg is a town of blocks, each a yard or house a height
   above three-wide lanes up its own stair, dead hedges closing some
   lanes, the square sunk in a bay of the upper town's wall; the Ramparts
-  a wall walk a height over the bailey, the east tower and Gun Bridge
-  reachable only along it; the Chapel a cloister, a terrace and the bell
+  three heights, the lower ward with its gate yard, drill yard and
+  stores, the upper ward's burned tenements under the wall, and the wall
+  walk over both, the east tower and Gun Bridge reachable only along it; the Chapel a cloister, a terrace and the bell
   roof, the forge yard raised with a pier to the Old Lift on its lip; the
   Keep a gate court, bailey and castle terrace. Every way out on foot is
   a path three wide to the map's edge (`edgeWay()`), its road painted,
