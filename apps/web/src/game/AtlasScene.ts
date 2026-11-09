@@ -2372,19 +2372,42 @@ export class AtlasScene extends Phaser.Scene {
       this.fence(e.at.col, e.at.row - 2, 1, 3);
     } else if (e.key && !remembered(KEYS).has(e.key)) {
       // Locked: the pack's fence across the way until its key is carried, then fog like any other.
-      const { dir } = this.crossing(e);
-      const across = dir === "left" || dir === "right";
-      this.gatehouse("locked", [-1, 0, 1].map((i) => (across ? { col: e.at.col, row: e.at.row + i } : { col: e.at.col + i, row: e.at.row })));
+      this.gatehouse("locked", this.doorway(e));
     } else if (!e.plain) {
       this.fogDoor(e);
     }
   }
 
-  /** A way out to the next area on foot: a fog gate across the way, three tiles wide. */
+  /** A way out to the next area on foot: a fog gate across the way. */
   private fogDoor(e: Exit): void {
+    this.fogVeil(this.doorway(e));
+  }
+
+  /** The cells a gate spans: the walkable run on the exit's own level across the narrower way through it, so it fills the
+   *  opening edge to edge and never hangs over water or cliff; open ground on both axes keeps three tiles, as before. */
+  private doorway(e: Exit): Cell[] {
+    const MAX = 4;
+    const lv = level(e.at.col, e.at.row);
+    const open = (c: Cell): boolean => isWalkable(c.col, c.row) && !isSlope(c.col, c.row) && level(c.col, c.row) === lv;
+    const run = (dc: number, dr: number): Cell[] => {
+      const cells = [e.at];
+      for (const s of [-1, 1]) {
+        for (let i = 1; i <= MAX; i++) {
+          const c = { col: e.at.col + dc * s * i, row: e.at.row + dr * s * i };
+          if (!open(c)) break;
+          cells.push(c);
+        }
+      }
+      return cells.sort((a, b) => a.col - b.col || a.row - b.row);
+    };
+    const [rowRun, colRun] = [run(1, 0), run(0, 1)];
+    const wide = 2 * MAX + 1;
+    if (rowRun.length < colRun.length && rowRun.length < wide) return rowRun;
+    if (colRun.length < rowRun.length && colRun.length < wide) return colRun;
     const { dir } = this.crossing(e);
     const across = dir === "left" || dir === "right";
-    this.fogVeil([-1, 0, 1].map((i) => (across ? { col: e.at.col, row: e.at.row + i } : { col: e.at.col + i, row: e.at.row })));
+    if ((across ? colRun : rowRun).length < wide) return across ? colRun : rowRun;
+    return [-1, 0, 1].map((i) => (across ? { col: e.at.col, row: e.at.row + i } : { col: e.at.col + i, row: e.at.row }));
   }
 
   /** After the Souls games' fog gates, from the pack's own dust: a bank of its white puffs packed close across the way,
