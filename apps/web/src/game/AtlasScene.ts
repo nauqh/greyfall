@@ -409,6 +409,9 @@ const REFUSE: Record<string, { poor: string; full: string }> = {
   corwin: { poor: "Lances cost gold, captain. Seventy-five.", full: "Three at your back already. I've none to spare." },
   wren: { poor: "Bows aren't free. Sixty gold, then we'll talk.", full: "You've a crowd already. Mine stay here." },
 };
+/** Who sells, after the Souls games' merchants: one thing each, bought once and kept. */
+const SELLER: Record<string, { item: string; cost: number }> = { mags: { item: "Ember Shard", cost: 300 } };
+const BOUGHT = "greyfall.bought";
 const BAND = "greyfall.band";
 const ORDER_WORD: Record<BandOrder, string> = { follow: "Follow me", attack: "Attack my target", hold: "Hold here" };
 /** One of the folk who talk, standing at their spot. */
@@ -464,7 +467,7 @@ function untint(s: Phaser.GameObjects.Sprite): void {
 }
 /** Flasks carried at full: the base, and one for each boss that gives one. */
 function maxFlasks(): number {
-  return HERO.flasks + [...remembered(SLAIN)].filter((k) => BOSS_FLASK.has(k)).length;
+  return HERO.flasks + [...remembered(SLAIN)].filter((k) => BOSS_FLASK.has(k)).length + (remembered(BOUGHT).has("Ember Shard") ? 1 : 0);
 }
 /** A way out shut until its guarding boss falls, or the captain has already rested on the far side; or a shortcut not
  *  yet opened from the far side. */
@@ -1576,6 +1579,21 @@ export class AtlasScene extends Phaser.Scene {
     this.hooks.onBand?.({ order: this.bandOrder, members: this.band.map((c) => ({ kind: c.kind, hp: c.dead ? 0 : c.hp, max: c.max })) });
   }
 
+  /** At a seller's menu: their one thing, for gold, once; an Ember Shard is a flask more for good, filled at once. */
+  private buyHere(): void {
+    const f = this.menu!.folk;
+    const sale = SELLER[f.npc.id]!;
+    if (remembered(BOUGHT).has(sale.item)) return this.callOut(f, "That was the only one, dearie.");
+    if (this.gold < sale.cost) return this.callOut(f, `${sale.cost} gold, dearie. Hehe. Come back richer.`);
+    this.setGold(this.gold - sale.cost);
+    remember(BOUGHT, remembered(BOUGHT).add(sale.item));
+    this.flasks += 1;
+    this.hooks.onFlasks?.(this.flasks);
+    const hero = this.hero!;
+    this.float(hero.s.x, hero.s.y - hero.lift - 30, `${sale.item}: a flask more`, "#f4cf6b");
+    this.showMenu();
+  }
+
   /** In a talk with someone who hires out: a companion joins, for gold, if there is room. */
   private hireHere(): void {
     const kind = this.menu && RECRUITER[this.menu.folk.npc.id];
@@ -1595,6 +1613,8 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   private menuOptions(f: Folk): MenuView["options"] {
+    const sale = SELLER[f.npc.id];
+    if (sale) return [{ label: "Talk" }, { label: `Buy ${sale.item}`, note: remembered(BOUGHT).has(sale.item) ? "Sold" : `${sale.cost} gold` }, { label: "Leave" }];
     const kind = RECRUITER[f.npc.id]!;
     const cost = COMPANIONS[kind].cost;
     return [{ label: "Talk" }, { label: `Hire ${kind === "lancer" ? "a Lancer" : "an Archer"}`, note: `${cost} gold` }, { label: "Leave" }];
@@ -1639,7 +1659,7 @@ export class AtlasScene extends Phaser.Scene {
       this.menu = null;
       this.showMenu();
       this.talkTo(f);
-    } else if (m.pick === 1) this.hireHere();
+    } else if (m.pick === 1) (SELLER[m.folk.npc.id] ? this.buyHere() : this.hireHere());
     else this.closeMenu(true);
   }
 
@@ -2692,7 +2712,7 @@ export class AtlasScene extends Phaser.Scene {
       if ("exit" in t!) return this.traverse(t.exit);
       if ("fog" in t!) return this.enterFog();
       if ("lock" in t!) return;
-      return RECRUITER[t!.folk.npc.id] ? this.openMenu(t!.folk) : this.talkTo(t!.folk);
+      return RECRUITER[t!.folk.npc.id] || SELLER[t!.folk.npc.id] ? this.openMenu(t!.folk) : this.talkTo(t!.folk);
     }
   }
 
@@ -2788,7 +2808,7 @@ export class AtlasScene extends Phaser.Scene {
       this.talk = null;
       this.say();
       // Talked out, a merchant's menu comes back, as in the Souls games.
-      if (RECRUITER[t.folk.npc.id]) this.openMenu(t.folk);
+      if (RECRUITER[t.folk.npc.id] || SELLER[t.folk.npc.id]) this.openMenu(t.folk);
       return;
     }
     this.say();

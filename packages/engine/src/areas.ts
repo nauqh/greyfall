@@ -844,6 +844,10 @@ function burg(): AreaMap {
   // Staggered, the back row a step off the front and the gaps uneven, so the row reads built over years, not laid out.
   for (let c = 14; c <= 82; c += 5 + (c % 3)) if (Math.abs(c - 48) > 4 && Math.abs(c - 40) > 3 && Math.abs(c - 64) > 3) for (const [dc, r] of [[0, 53], [2, 58 + (c % 2)]] as const) prop(`house${((c + r) % 3) + 1}`, c + dc, r, blue);
   for (const [c, r, art] of [[36, 55, "meat"], [42, 56, "tools"], [57, 55, "woodPile"], [62, 56, "meat"], [30, 56, "goldStone"]] as const) prop(art, c, r);
+  // The gallows at the market's head, where the Burg hanged its own once the bell stopped.
+  for (const [c, r] of [[44, 56], [44, 58], [45, 57]] as const) prop("skullSpike", c, r);
+  prop("bones", 46, 58);
+  prop("deadTree", 45, 55, { scale: 0.8 });
   for (const [c, r, tc, tr] of [[40, 55, 30, 55], [58, 55, 66, 55]] as const) who("thief", c, r, { to: { col: tc, row: tr } });
   who("skull", 18, 59, { to: { col: 26, row: 59 } });
   // The bridges, each held at its north end.
@@ -851,8 +855,14 @@ function burg(): AreaMap {
   // The north bank: the tanneries west, hides and racks in the yards; the mill east by the creek; houses under the wall.
   for (const [c, r, art] of [[14, 39, "house3"], [30, 40, "house1"], [46, 39, "house2"], [58, 39, "house3"], [80, 39, "house1"], [86, 42, "house2"]] as const) prop(art, c, r, blue);
   for (const [c, r, art] of [[18, 42, "meat"], [16, 37, "woodPile"], [34, 42, "meat"], [76, 41, "woodPile"], [78, 42, "tools"]] as const) prop(art, c, r);
-  for (const [c, r] of [[17, 39], [33, 40]] as const) who("skull", c, r, { to: { col: c + 4, row: r } });
+  for (const [c, r] of [[14, 41], [24, 41]] as const) who("skull", c, r, { to: { col: c + 4, row: r } });
   who("gnoll", 80, 43);
+  // The thieves' camp under the east bridge: their fire, their loot, three of them round it.
+  t.campfires.push({ col: 58, row: 42 });
+  for (const [c, r, art] of [[55, 41, "woodPile"], [61, 41, "meat"], [60, 43, "goldStone"]] as const) prop(art, c, r);
+  for (const [c, r] of [[56, 43], [59, 40], [61, 43]] as const) who("thief", c, r, { flip: c > 58 });
+  // Mags the Peddler's nook under the wall, by the west bridge's stair.
+  for (const [c, r, art] of [[32, 36, "woodPile"], [36, 35, "tools"]] as const) prop(art, c, r);
   prop("goldStone", 87, 37);
   // The square on the promontory: the Burg's fire over the creek, slingers on the wall either side shooting down onto the
   // stairs, a well of bones where the market's dead were thrown.
@@ -866,7 +876,7 @@ function burg(): AreaMap {
   for (const [c, r, art] of [[16, 5, "house1"], [22, 7, "house3"], [29, 5, "house2"], [35, 8, "house1"], [68, 5, "house2"], [74, 8, "house1"], [81, 5, "house3"], [86, 9, "house2"], [36, 20, "house2"], [62, 26, "house1"], [88, 28, "house3"], [20, 30, "house2"]] as const) prop(art, c, r, blue);
   t.fences.push({ col: 26, row: 28, w: 6, h: 4 });
   for (const [c, r] of [[28, 29], [30, 30]] as const) prop("deadTree", c, r, { scale: 0.6 });
-  for (const [c, r] of [[56, 13], [40, 28]] as const) who("skull", c, r, { to: { col: c, row: r + 3 } });
+  for (const [c, r] of [[56, 13], [42, 20]] as const) who("skull", c, r, { to: { col: c, row: r + 3 } });
   // Church Hill: the burned chapel, its graves, an archer on the hill over the west alley.
   prop("monastery", 22, 16, blue);
   for (const [c, r] of [[17, 21], [20, 23], [24, 22], [28, 20], [27, 24]] as const) prop("skullSpike", c, r);
@@ -881,7 +891,9 @@ function burg(): AreaMap {
   prop("barracks", 76, 15, blue);
   prop("archery", 77, 28, blue);
   for (const [c, r, art] of [[70, 21, "house2"], [84, 21, "house3"]] as const) prop(art, c, r, blue);
-  for (const [c, r] of [[74, 21], [80, 22], [77, 14]] as const) who("skull", c, r, { to: { col: c + 2, row: r } });
+  // The dead still drilling below the barracks, in ranks, and their sergeant.
+  for (const [c, r] of [[72, 21], [75, 21], [78, 21], [81, 21], [73, 22], [76, 22], [79, 22]] as const) who("skull", c, r);
+  who("skullGuard", 76, 14);
   prop("goldStone", 81, 13);
   // The crest: the castle's gate towers.
   for (const [c, r] of [[48, 5], [56, 5]] as const) prop("tower", c, r, blue);

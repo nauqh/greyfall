@@ -174,7 +174,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const newGame = (): void => {
     if (!window.confirm("Start a new game? Your gold, band, bonfires and slain bosses are lost.")) return;
     try {
-      for (const k of ["band", "flags", "gold", "heard", "keys", "kindled", "lost", "rest", "slain", "taken"]) localStorage.removeItem(`greyfall.${k}`);
+      for (const k of ["band", "bought", "flags", "gold", "heard", "keys", "kindled", "lost", "rest", "slain", "taken"]) localStorage.removeItem(`greyfall.${k}`);
     } catch {}
     window.location.assign("/atlas/landing?rest");
   };

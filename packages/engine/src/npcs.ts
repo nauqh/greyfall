@@ -666,6 +666,54 @@ export const NPCS: readonly Npc[] = [
       { when: ["anselAhead"], area: "greyfall", at: { col: 95, row: 25 }, dead: true },
     ],
   },
+  {
+    // After Dark Souls' Undead Merchant: tucked in a nook under the wall, trading through the end of the world.
+    id: "mags",
+    name: "Mags the Peddler",
+    short: "Mags",
+    area: "burg",
+    at: { col: 37, row: 39 },
+    kind: "pawn",
+    act: "gold",
+    greet: "Hehe. A live one.",
+    part: "Come back with coin, dearie.",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "Don't mind old Mags. The grey took the Burg, not my trade.",
+          "One thing worth selling, I've got. A shard of the old fire, ember still in it.",
+          "Set it in your flask and it holds a draught more. Three hundred gold. Hehe.",
+        ],
+      },
+      { id: "thieves", lines: ["The thieves in the market? Burg folk, all of them.", "Went bad when the bell stopped. Bad for business, worse for them."] },
+      { id: "rest", lines: ["Hehe. Still breathing, dearie? Good. Breathing folk buy things."] },
+    ],
+  },
+  {
+    // The square's last guard, after the Undead Burg's soldiers who held out: tired, and not hollow yet.
+    id: "hale",
+    name: "Hale of the Watch",
+    short: "Hale",
+    area: "burg",
+    at: { col: 51, row: 32 },
+    kind: "lancer",
+    greet: "Living? Then sit a while.",
+    part: "Mind the bridges.",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "You came over the creek? Then you've met the bridges' keepers.",
+          "I held this square with six men. The bell stopped, and they turned, one by one.",
+          "The castle's gate is up the street. Or through the graves on the hill, if you'd sooner the dead than the dying.",
+        ],
+      },
+      { id: "ladder", lines: ["There was a ladder down to here from the Ramparts, by the fire.", "Someone pulled it up. From above."] },
+      { id: "keep", when: "trollKey", lines: ["That's the troll's key on your belt?", "The Keep Gate's off the west alley. Corwin's lancers are behind it, if any are left."] },
+      { id: "rest", lines: ["Sit. The fire's the one thing in the Burg that's still ours."] },
+    ],
+  },
 ];
 
 export const talkKey = (npc: Npc, talk: Talk): string => `${npc.id}.${talk.id}`;
