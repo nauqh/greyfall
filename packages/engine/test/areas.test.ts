@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FLYING, MAPPED_AREAS, NPCS, districtOf, groundColours, SEA_KINDS, WATER_ART, areaMap, castsCliff, cellKey, footprint, isSlope, isWalkable, level, solidCells, stepsFrom, useIsland, type Cell } from "../src/index.ts";
+import { FLYING, MAPPED_AREAS, NPCS, districtOf, groundColours, SEA_KINDS, WATER_ART, areaMap, castsCliff, cellKey, footprint, isForest, isSlope, isWalkable, level, solidCells, stepsFrom, useIsland, type Cell } from "../src/index.ts";
 
 function reach(from: Cell, shut: ReadonlySet<number> = new Set()): Set<number> {
   const seen = new Set([cellKey(from)]);
@@ -138,4 +138,14 @@ it("shuts the Keep behind its gate off the Burg until the troll's key, and its W
   const lift = areaMap("keep").exits.find((e) => e.name === "Watch Lift")!;
   expect(lift.shut).toBe("watchLiftOpen");
   expect(areaMap("harbour").exits.some((e) => e.to === "steps")).toBe(false);
+});
+
+// A tree two rows south of a note draws its canopy over the paper; underground walls are only rubble.
+it.each(MAPPED_AREAS)("leaves every note in %s clear of woods that would stand over it", (id) => {
+  const m = areaMap(id);
+  if (m.base === "rock") return;
+  useIsland(m.island);
+  for (const n of m.notes ?? []) {
+    for (let dr = 0; dr <= 2; dr++) for (let dc = -1; dc <= 1; dc++) expect(isForest(n.at.col + dc, n.at.row + dr), `${id} note ${n.at.col},${n.at.row}`).toBe(false);
+  }
 });

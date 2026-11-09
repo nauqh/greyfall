@@ -521,37 +521,28 @@ white shaft of light that marked every crossing are gone.
 - **The Citadel is a region, not a terrace stack.** After the Undead
   Burg, the Undead Parish and Dark Souls 3's Undead Settlement, the
   castle above the Harbour splits into areas of their own, joined in a
-  climb: the Lower Burg, the Ramparts, the Chapel Ward, the Keep. Built
-  so far: the Lower Burg (`burg`), the castle's fallen outer town, in at
-  the Burg Gate on Old Town's north-west, where the Lantern Road now
-  ends. Its south gate between two towers, the Lower Streets (thieves,
-  skulls), a gorge crossed by the Dilapidated Bridge (spear goblins at
-  its south end) or a narrow far crossing east (a gnoll, gold), the
-  Burg's bonfire on the square past the bridge, a notch stair up to the
-  Upper Streets, and the crest at the foot of the Ramparts. Its ground is
-  the dark teal-grey (tileset 5) so the olive streets read. Citadel areas
-  are built, not open: only their own rooms, streets and walls stand in
-  the void (`ground()` pieces, `block()` terraces with stairs set by
-  hand), so each way is a chosen corridor. The Lower Burg is a gate
-  court, a main street, two lanes to their yards, the gorge as void with
-  two crossings, the square, and the Upper Streets walled on a terrace.
-  The Ramparts (`ramparts`): the gate yard, a bailey lane to a dead end
-  with gold, and the wall walk, a straight run three tiles wide over the
-  void with a stair at each end; its east end is the Bull's Wall, fogged
-  at both ends while the Rampart Bull (the minotaur's sheets, iron-tinted,
-  bigger, harder) holds it. Past him the Ladder (`opens: "ladderDown"`)
-  drops to the Burg's square, where its foot is `shut` until then, and the
-  Gun Bridge crosses the chasm under slingshot gnomes on two rocks to the
-  Chapel Ward's barred door. A crossing lands at the exit of the same name
-  (`greyfall.via`), since two ways now join the Burg and the Ramparts.
-  The Chapel Ward (`chapel`), after the Undead Parish: the Cloister Gate
-  court, the cloister walk round a square pond (dead monks on their
-  rounds), the chapel terrace (the monastery, the Old Lift down to
-  Lantern Point, opened by riding it), the bell roof a height above,
-  fogged while the Stone Warden (the troll's sheets in stone, no troll's
-  moves) holds it, the Postern to Emberwood off the roof, barred until he
-  falls; and the forge yard east, the Ward's bonfire and Brenna. The
-  town's Ember Gate is now a shortcut, opened from the wood: Emberwood
+  climb: the Lower Burg, the Ramparts, the Chapel Ward, the Keep (laid
+  out as hillsides now, below). On the Ramparts the Rampart Bull (the
+  minotaur's sheets, iron-tinted, bigger, harder) holds the Bull's Wall.
+  Past him the Ladder (`opens: "ladderDown"`) drops to the Burg's square,
+  where its foot is `shut` until then, and the Gun Bridge crosses the
+  ravine under slingshot gnomes to the Chapel Ward's door. A crossing
+  lands at the exit of the same name (`greyfall.via`), since two ways
+  join the Burg and the Ramparts. The bailey's back stair climbs to a
+  landing on the Bull's Wall, fogged with the walk's two ends while he
+  stands (an arena's `gate` holds any number of fog runs): a second way
+  into the boss room, and once he falls a loop home through the bailey,
+  its gold at the wall's foot where the walk looks down on it.
+  The Chapel Ward (`chapel`), after the Undead Parish: the cloister walk
+  round a square pond (dead monks on their rounds), up to the chapel
+  terrace and the Ward's bonfire at the monastery's door, after Dark
+  Souls 3's Cleansing Chapel, one fire every way starts from. West along
+  the terrace, the bell roof a height above, fogged while the Stone
+  Warden (the troll's sheets in stone, no troll's moves) holds it, the
+  Postern to Emberwood off the roof, barred until he falls; east along
+  the terrace at its own height, the forge yard, Brenna, and the pier to
+  the Old Lift (opened by riding it); the yard's stair down to the
+  cloister closes the loop. The town's Ember Gate is now a shortcut, opened from the wood: Emberwood
   comes after the Citadel. Every way between areas is a thing to see: a
   stair in the terrain's own tiles (the Burg Gate on its landing above
   Old Town), a gateway between towers or a bridge or causeway to it, and
@@ -562,8 +553,9 @@ white shaft of light that marked every crossing are gone.
   (`keep`), the Citadel's crown, its own area where the harbour's Citadel
   and Keep terraces used to be: in at the Keep Gate off the Burg's Upper
   Streets (an exit with a `key`, barred by the pack's fence until the
-  Troll Key is carried), the gate court, the bailey (the garrison, Corwin
-  at the barracks, the Keep's bonfire), and the castle on its terrace a
+  Troll Key is carried), the gate court, the bailey (Corwin at the
+  barracks, the Keep's bonfire; no guns or drill, so after the Burg and
+  the troll it reads as a rest, like Firelink), and the castle on its terrace a
   stair up, Ansel on the wall, the Watch Lift up to the Skyward Steps,
   shut until ridden down. The Landing is a sea cave on the underground
   tier, narrow tunnels from the grotto to the antechamber's fog; the

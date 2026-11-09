@@ -232,7 +232,9 @@ function pad(m: AreaMap, n: number): AreaMap {
     // At the exit's own height: a raised high road stays raised to the edge.
     const ground = grid[r]![c]!;
     let [x, y] = [c, r];
-    while (x + dc >= 1 && x + dc < W - 1 && y + dr >= 1 && y + dr < H - 1) {
+    let [ex, ey] = [c, r];
+    // Painted out to the frame itself, so a raised way never ends a tile short over low ground; the exit stays a tile in.
+    while (x + dc >= 0 && x + dc < W && y + dr >= 0 && y + dr < H) {
       [x, y] = [x + dc, y + dr];
       for (let k = -1; k <= 1; k++) {
         const [px, py] = dc ? [x, y + k] : [x + k, y];
@@ -241,8 +243,9 @@ function pad(m: AreaMap, n: number): AreaMap {
         district[py]![px] = district[r]![c]!;
       }
       roads.push({ col: x, row: y });
+      if (x >= 1 && x < W - 1 && y >= 1 && y < H - 1) [ex, ey] = [x, y];
     }
-    return { ...e, at: { col: x, row: y } };
+    return { ...e, at: { col: ex, row: ey } };
   });
   return {
     ...m,
@@ -525,9 +528,10 @@ function crowd(t: Builder, rng: Rng, kind: string, at: Cell, n: number, spread: 
 /**
  * The Keep, the Citadel's crown: the castle between the Harbour and the Burg, its
  * gate off the Burg's west ward shut until the troll's key is carried. In through
- * the Keep Gate court on the east, the bailey where the garrison still drills and
- * the Keep's fire burns, up the stair to the castle on its terrace, the wall Ansel
- * watches from, and the Watch Lift up to the sky, shut until ridden down from it.
+ * the Keep Gate court on the east, the quiet bailey where the Keep's fire burns,
+ * the rest after the climb and the troll; up the stair to the castle on its terrace,
+ * the wall Ansel watches from, and the Watch Lift up to the sky, shut until ridden
+ * down from it.
  */
 function keepArea(): AreaMap {
   const rng = makeRng("area:keep");
@@ -547,12 +551,8 @@ function keepArea(): AreaMap {
 
   // The Keep Gate court: a tower each side of the way in.
   for (const [c, r] of [[52, 27], [52, 34]] as const) prop("tower", c, r, blue);
-  // The bailey: the garrison's barracks and butts, the guns, soldiers drilling, the Keep's fire.
+  // The bailey, kept quiet after the Burg: the barracks Corwin keeps, the Keep's fire.
   prop("barracks", 16, 24, blue);
-  prop("archery", 38, 36, blue);
-  for (const [c, r] of [[10, 37], [42, 21]] as const) prop("cannon", c, r);
-  crowd(t, rng, "warrior", { col: 28, row: 33 }, 4, 2, blue);
-  who("archer", 34, 36, { ...blue, to: { col: 38, row: 33 } });
   t.fires.push({ col: 24, row: 28 });
   // The hall: the castle on its terrace, a guard at its door, the Watch Lift at the terrace's west end.
   prop("castle", 30, 10, blue);
@@ -575,10 +575,12 @@ function keepArea(): AreaMap {
 /**
  * The Chapel Ward, the Citadel's third area, after Dark Souls' Undead Parish: the
  * castle's monastery past the Gun Bridge. In through the Cloister Gate, round the
- * cloister walk about its still pond, up onto the chapel terrace; above, on the
- * bell roof, the Stone Warden, and past him the Postern out to Emberwood. East, up
- * a stair, the forge yard: the Ward's bonfire, Brenna at her anvil, and the Old
- * Lift on the pier at the yard's south lip, down the hill to the Harbour.
+ * cloister walk about its still pond, up onto the chapel terrace and the Ward's
+ * bonfire at the chapel door, after the Cleansing Chapel: every way in the Ward
+ * starts at it. West along the terrace, the bell roof, the Stone Warden, and past
+ * him the Postern out to Emberwood; east along the terrace, the forge yard, Brenna
+ * at her anvil, and the Old Lift on the pier at the yard's south lip, down the hill
+ * to the Harbour; the yard's own stair down to the cloister closes the loop.
  */
 function chapel(): AreaMap {
   const rng = makeRng("area:chapel");
@@ -604,11 +606,16 @@ function chapel(): AreaMap {
   t.block(2, 56, 18, 28, 23);
   t.block(2, 64, 41, 8, 15);
   t.stair(2, 55, 40, "L");
+  // The terrace carried east at its own height onto a shelf of the forge yard, so the yard is a walk from the fire.
+  t.ground("chapel", 52, 11, 14, 7);
+  t.block(2, 52, 11, 4, 3);
+  t.block(2, 56, 11, 10, 7);
   // The ways out to the map's edge: the Cloister Gate west, the Postern north off the bell roof.
   edgeWay(t, { col: 4, row: 30 }, { col: 1, row: 30 });
   edgeWay(t, { col: 22, row: 6 }, { col: 22, row: 1 }, 3);
   t.road([4, 30], [20, 30], [22, 20], [50, 18], [52, 17]);
   t.road([22, 20], [22, 40], [48, 40], [55, 40]);
+  t.road([46, 14], [53, 12], [60, 16], [64, 22]);
 
   // The Cloister Gate: a tower each side.
   for (const [c, r] of [[9, 27], [9, 33]] as const) prop("tower", c, r, blue);
@@ -620,15 +627,15 @@ function chapel(): AreaMap {
   // The alcove: gold left in the south wall, a thief who knows it.
   prop("goldStone", 33, 49);
   who("thief", 32, 45, { to: { col: 35, row: 45 } });
-  // The chapel on its terrace, the shaman who keeps its door.
+  // The chapel on its terrace, the Ward's fire at its door; the shaman keeps the stair up to it from the cloister.
   prop("monastery", 40, 11, blue);
-  who("shaman", 36, 14);
+  t.fires.push({ col: 46, row: 14 });
+  who("shaman", 48, 20);
   // The bell roof: the bell tower, the Stone Warden on the bell.
   prop("tower", 20, 7, blue);
   who("stoneWarden", 25, 8);
   t.bosses.push({ name: "The Stone Warden", area: "chapel", col: 25, row: 8 });
-  // The forge yard: the Ward's bonfire, the forge and its stock; the Old Lift at the pier's end over the drop.
-  t.fires.push({ col: 64, row: 28 });
+  // The forge yard: the forge and its stock; the Old Lift at the pier's end over the drop.
   prop("house3", 72, 23, blue);
   for (const [c, r, art] of [[75, 27, "tools"], [77, 31, "goldStone"], [70, 33, "woodPile"]] as const) prop(art, c, r);
   for (const [c, r] of [[60, 22], [80, 36]] as const) who("skull", c, r, { to: { col: c + 3, row: r } });
@@ -663,7 +670,8 @@ function chapel(): AreaMap {
  * the Bull's Wall, where an iron-shod bull holds the only way on behind fog. Past
  * him the east tower, where the Ladder drops back to the Burg's square, and the
  * Gun Bridge over the ravine under the slingers to the Chapel Ward's door. The
- * bailey under the wall is a dead end of yards, sheds and the dead.
+ * bailey under the wall, yards, sheds and the dead, has its own stair up onto the
+ * Bull's Wall, fogged while he stands: a back way in, and once he falls, a loop.
  */
 function ramparts(): AreaMap {
   const rng = makeRng("area:ramparts");
@@ -695,12 +703,16 @@ function ramparts(): AreaMap {
     prop(x % 2 ? "house2" : "house3", x + Math.floor(w / 2), y + Math.floor(h / 2) + 1, blue);
   }
   for (const [x, y] of [[56, 44], [22, 46], [44, 48]] as const) t.grove(x, y, 2, 1.5, 1);
+  // The back stair: a landing off the Bull's Wall's south side, down to the bailey's east lane.
+  t.ground("ramparts", 60, 18, 5, 6);
+  t.block(2, 60, 18, 3, 3);
+  t.stair(2, 63, 20, "R");
 
   // The ways out, each a path to the map's edge.
   edgeWay(t, { col: 12, row: 51 }, { col: 12, row: 54 });
   edgeWay(t, { col: 97, row: 16 }, { col: 98, row: 16 }, 2);
   t.road([12, 51], [12, 30], [20, 24]);
-  t.road([12, 30], [24, 28], [58, 28]);
+  t.road([12, 30], [24, 28], [58, 28], [60, 23], [63, 22], [63, 21]);
   t.road([20, 16], [96, 16]);
 
   // The gate yard: towers at the gate, the dead on watch; the gate tower's top, a goblin at the stair head.
@@ -711,10 +723,10 @@ function ramparts(): AreaMap {
   who("spear", 16, 20);
   // Along the walk: the goblins who took it.
   for (const [c, r] of [[26, 16], [32, 16]] as const) who("spear", c, r);
-  // The bailey: a thief in the lanes, the dead among the sheds, gold at its far dead end.
+  // The bailey: a thief in the lanes, the dead among the sheds, gold at the wall's foot, seen from the walk above.
   who("thief", 36, 32, { to: { col: 26, row: 32 } });
   for (const [c, r] of [[44, 30], [24, 42]] as const) who("skull", c, r, { to: { col: c + 3, row: r } });
-  prop("goldStone", 59, 48);
+  prop("goldStone", 37, 20);
   for (const [c, r] of [[46, 29], [38, 44]] as const) prop("bones", c, r);
   for (const [c, r] of [[54, 26], [36, 46]] as const) prop("woodPile", c, r);
   // The Bull's Wall: the walk's east half, bones of those who came before.
@@ -730,7 +742,7 @@ function ramparts(): AreaMap {
   prop("skullSpike", 89, 17);
 
   const notes: Note[] = [
-    { at: { col: 14, row: 50 }, text: "Up the tower and along the wall. What waits on it does not go round you, and you cannot go round it." },
+    { at: { col: 14, row: 49 }, text: "Up the tower and along the wall. What waits on it does not go round you, and you cannot go round it." },
     { at: { col: 76, row: 21 }, text: "A ladder down the tower to the Burg's square. Kick it loose and it stays down." },
     { at: { col: 92, row: 17 }, text: "The Chapel Ward. Its bell has not rung since the grey came." },
   ];
@@ -749,9 +761,10 @@ function ramparts(): AreaMap {
     { name: "The Chapel Door", at: { col: 92, row: 16 }, levels: [2], palette: [3], dress: "greyfall", decor: 1 },
   ];
   const tier = t.finish({ ramparts: 0.02 }, [{ col: 12, row: 52 }]);
-  // The Bull's Wall closes in fog at both ends while he stands: the walk across at its two edge columns.
+  // The Bull's Wall closes in fog while he stands: the walk across at its two edge columns, and the back stair's landing.
   const across = (c: number) => [15, 16, 17].map((row) => ({ col: c, row }));
-  const arena = { boss: "rampartBull", gate: [...across(43), ...across(69)], inside: { col: 46, row: 16 } };
+  const landing = [60, 61, 62].map((col) => ({ col, row: 18 }));
+  const arena = { boss: "rampartBull", gate: [...across(43), ...across(69), ...landing], inside: { col: 46, row: 16 } };
   return { ...tier, area: "ramparts", entry: { col: 12, row: 52 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], streets: true, notes, arena };
 }
 
@@ -874,7 +887,7 @@ function burg(): AreaMap {
   for (const [c, r] of [[48, 5], [56, 5]] as const) prop("tower", c, r, blue);
 
   const notes: Note[] = [
-    { at: { col: 50, row: 57 }, text: "The Burg fell before the town did. Thieves in the market: mind the stalls." },
+    { at: { col: 49, row: 57 }, text: "The Burg fell before the town did. Thieves in the market: mind the stalls." },
     { at: { col: 52, row: 52 }, text: "Two bridges over the creek. Take one up; the other is the way back." },
     { at: { col: 54, row: 33 }, text: "Up the street to the crest, or through the graves on Church Hill. The castle's gate is the same either way." },
     { at: { col: 52, row: 7 }, text: "Up: the Ramparts. A bull holds the wall." },
