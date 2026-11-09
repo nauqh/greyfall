@@ -46,7 +46,7 @@ history. If the directory is missing, create it.
 - At the start of a task, read **every** file in `.agents/status/`.
 - Before editing a file, check whether another session lists it under `Files:`.
   If it does, **leave it alone** until that session releases it. Ask the owner
-  directly (see Messaging); if it does not agree or does not answer, tell the
+  directly (see Herdr); if it does not agree or does not answer, tell the
   user and stop. Status files hold state, never conversation.
 - Update your own file when you start a task, when you start touching new files,
   and when you make a decision others need (API shape, renamed function, new env
@@ -89,11 +89,16 @@ finishes one task and picks up another deletes its file and starts a fresh one
 named after the new task. Waiting on the user to review finished work is still
 `blocked`, with `Notes:` saying what is ready.
 
-### Messaging (Herdr)
+### Herdr
 
-When `HERDR_ENV=1`, sessions can talk to each other. Outside Herdr, skip this
-section: the user relays anything another session needs to hear.
+When `HERDR_ENV=1`, sessions can see and talk to each other. Outside Herdr,
+skip this section: the user relays anything another session needs to hear.
 
+- **Name your tab first.** Before you start a task, rename your own tab to a
+  two or three word name for it in Title Case, so the user can tell the
+  sessions apart: `herdr tab rename <tab_id> "Bonfire Map"`, with `tab_id`
+  from `herdr agent get $HERDR_PANE_ID`. Rename it again when you switch
+  tasks. Only ever your own tab.
 - **Find peers.** `herdr agent list` shows every live agent with its `pane_id`,
   `cwd` and `agent_status`; peers in this repo share its `cwd`. Address a
   session by its pane id, taken from that list or its status file `Pane:`.
