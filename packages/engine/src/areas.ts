@@ -779,14 +779,12 @@ function burg(): AreaMap {
   t.stair(2, 61, 41, "L");
   // The town in blocks, three-wide lanes between them: each a walled yard or a house a height above its lane, up its own
   // stair. The Lower Streets' yards a height up from the lanes; the upper wards' blocks a height up again.
+  // Half the ground built on, so the blocks read against open yards and courts rather than as a grid.
   const yards: (readonly [number, number, number, number])[] = [
-    [8, 41, 9, 7], [20, 41, 11, 7], [34, 41, 12, 7], [51, 41, 11, 7], [65, 45, 11, 5], [79, 45, 11, 5],
-    [8, 51, 9, 6], [20, 51, 11, 6], [34, 51, 12, 6], [51, 51, 11, 6], [65, 53, 11, 5], [79, 53, 11, 5],
+    [8, 41, 9, 7], [34, 41, 12, 7], [65, 45, 11, 5], [20, 51, 11, 6], [51, 51, 11, 6], [79, 53, 11, 5],
   ];
   const wards: (readonly [number, number, number, number])[] = [
-    [11, 3, 9, 6], [23, 3, 10, 6], [11, 12, 9, 6], [23, 12, 10, 6], [11, 22, 9, 6], [23, 22, 10, 6], [11, 31, 9, 4], [23, 31, 10, 4],
-    [36, 13, 10, 6], [49, 13, 11, 6], [36, 22, 10, 5], [49, 22, 11, 5],
-    [64, 4, 10, 6], [77, 4, 11, 6], [64, 13, 23, 6], [64, 22, 10, 6], [77, 22, 11, 6], [64, 31, 10, 6], [77, 31, 11, 6],
+    [11, 12, 9, 6], [23, 12, 10, 6], [36, 12, 10, 6], [11, 26, 9, 6], [23, 31, 10, 4], [49, 22, 11, 5], [64, 4, 10, 6], [64, 31, 10, 6],
   ];
   for (const [list, level] of [[yards, 2], [wards, 3]] as const) {
     list.forEach(([x, y, w, h], k) => {
@@ -794,10 +792,22 @@ function burg(): AreaMap {
       // Alternate sides, but always the side facing into the town.
       const right = x < 10 || (k % 2 === 1 && x + w < 89);
       t.stair(level, right ? x + w : x - 1, y + h - 1, right ? "R" : "L");
-      // The garrison's barracks on the east ward's long block; a house on every other.
-      prop(level === 3 && w > 20 ? "barracks" : `house${(k % 3) + 1}`, x + Math.floor(w / 2), y + Math.floor(h / 2) + 1, blue);
+      prop(`house${(k % 3) + 1}`, x + Math.floor(w / 2), y + Math.floor(h / 2) + 1, blue);
     });
   }
+  // The East Ward's garrison: the one dense mass in the town, a block a height up from the ward with the barracks on a
+  // core a height above that, a stair up at each end of both, so it is crossed and not just climbed.
+  t.block(3, 64, 12, 24, 16);
+  t.stair(3, 63, 27, "L");
+  t.stair(3, 88, 27, "R");
+  t.block(4, 68, 12, 16, 9);
+  t.stair(4, 67, 20, "L");
+  t.stair(4, 84, 20, "R");
+  prop("barracks", 76, 16, blue);
+  for (const [c, r, art] of [[67, 25, "house2"], [84, 25, "house3"]] as const) prop(art, c, r, blue);
+  // The rooftop way: decks joining three ward tops and up onto the crest, from the Keep Gate's corner to the castle's gate
+  // without the square.
+  const roofs = [t.span(3, 20, 14, 3, 2), t.span(3, 33, 14, 3, 2), t.span(3, 40, 10, 2, 2)].flat();
   // The crest under the castle's wall, the gate passage through it.
   t.block(3, 38, 4, 22, 6);
   t.stair(3, 37, 9, "L");
@@ -834,6 +844,8 @@ function burg(): AreaMap {
   for (const [c, r] of [[42, 36], [55, 36]] as const) prop("bones", c, r);
   who("spear", 36, 38);
   who("spear", 60, 40);
+  // Slingers on the upper town's wall over the square, shooting down into the bay.
+  for (const [c, r] of [[40, 30], [55, 30]] as const) who("slingshot", c, r);
   // The wards: the dead and the thieves in the lanes between the blocks, gold in the far corners.
   for (const [c, r, tc, tr] of [[21, 19, 21, 10], [47, 20, 60, 20], [75, 20, 88, 20], [62, 28, 62, 38]] as const) who("thief", c, r, { to: { col: tc, row: tr } });
   for (const [c, r] of [[9, 28], [34, 28], [88, 10], [76, 37]] as const) who("skull", c, r, { to: { col: c, row: r + 3 } });
@@ -864,7 +876,7 @@ function burg(): AreaMap {
     { name: "The Crest", at: { col: 48, row: 6 }, levels: [3], palette: [2], dress: "greyfall", decor: 1 },
   ];
   const tier = t.finish({ burg: 0.02 }, [{ col: 48, row: 60 }]);
-  return { ...tier, area: "burg", entry: { col: 48, row: 60 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], streets: true, notes };
+  return { ...tier, area: "burg", entry: { col: 48, row: 60 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: roofs, streets: true, notes };
 }
 
 /**
