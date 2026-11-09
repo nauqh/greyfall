@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FOES, GOLD_STONE, HERO, PACE, TROLL, chargeLine, trollMove, mayEngage, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, swingWait, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
+import { FOES, GOLD_STONE, HERO, ITEMS, PACE, kit, onOffer, TROLL, chargeLine, trollMove, mayEngage, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, swingWait, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
 
 const goblin = FOES.torch!;
 const home = { col: 10, row: 10 };
@@ -130,6 +130,28 @@ describe("stamina", () => {
   it("pays for a blow on the shield, and breaks the guard when it cannot", () => {
     expect(block(100, 8)).toEqual({ stamina: 100 - 8 * STAMINA.block, broken: false });
     expect(block(10, 8)).toEqual({ stamina: 0, broken: true });
+    expect(block(100, 8, 1.75)).toEqual({ stamina: 86, broken: false });
+  });
+});
+
+describe("the merchants' goods", () => {
+  it("leave the captain as GAME.md has him with nothing bought", () => {
+    expect(kit(new Set())).toEqual({ hp: HERO.hp, attack: HERO.attack, flasks: HERO.flasks, flask: HERO.flask, block: STAMINA.block, greed: 1 });
+  });
+
+  it("add up: the edges on each other, both shards a flask each, an old save's Ember Shard by its name", () => {
+    const all = kit(new Set(Object.keys(ITEMS)));
+    expect(all).toEqual({ hp: 125, attack: 22, flasks: HERO.flasks + 2, flask: 55, block: 1.75, greed: 1.25 });
+    expect(kit(new Set(["Ember Shard"])).flasks).toBe(HERO.flasks + 1);
+  });
+
+  it("show each edge once the one before is owned and its boss has fallen", () => {
+    const stock = [{ item: "Brenna's Edge" }, { item: "Keener Edge", after: "stoneWarden" }, { item: "Grey-Iron Edge", after: "troll" }] as const;
+    const shown = (bought: string[], slain: string[]) => onOffer(stock, new Set(bought), new Set(slain)).map((s) => s.item);
+    expect(shown([], ["stoneWarden", "troll"])).toEqual(["Brenna's Edge"]);
+    expect(shown(["Brenna's Edge"], [])).toEqual(["Brenna's Edge"]);
+    expect(shown(["Brenna's Edge"], ["stoneWarden"])).toEqual(["Brenna's Edge", "Keener Edge"]);
+    expect(shown(["Brenna's Edge", "Keener Edge"], ["stoneWarden", "troll"])).toEqual(["Brenna's Edge", "Keener Edge", "Grey-Iron Edge"]);
   });
 });
 
@@ -137,6 +159,7 @@ describe("a flask", () => {
   it("heals its share, never past whole, and is used up", () => {
     expect(drink(30, HERO.hp, 3)).toEqual({ hp: 30 + HERO.flask, flasks: 2 });
     expect(drink(HERO.hp - 5, HERO.hp, 1)).toEqual({ hp: HERO.hp, flasks: 0 });
+    expect(drink(30, HERO.hp, 3, 55)).toEqual({ hp: 85, flasks: 2 });
   });
 
   it("is not drunk with none left or nothing to heal", () => {

@@ -147,10 +147,61 @@ export function swingWait(step: number): number {
   return step >= 3 ? HERO.every : HERO.chain;
 }
 
-/** A flask drunk: `HERO.flask` back, never past whole; none drunk with none left or nothing to heal. */
-export function drink(hp: number, max: number, flasks: number): { hp: number; flasks: number } {
+/** A flask drunk: `heal` back, never past whole; none drunk with none left or nothing to heal. */
+export function drink(hp: number, max: number, flasks: number, heal: number = HERO.flask): { hp: number; flasks: number } {
   if (flasks <= 0 || hp >= max) return { hp, flasks };
-  return { hp: Math.min(max, hp + HERO.flask), flasks: flasks - 1 };
+  return { hp: Math.min(max, hp + heal), flasks: flasks - 1 };
+}
+
+/** The captain's numbers that a merchant's goods raise. */
+export interface Kit {
+  hp: number;
+  attack: number;
+  flasks: number;
+  /** What a flask gives back. */
+  flask: number;
+  /** Stamina a blow on the shield costs, a point of its weight. */
+  block: number;
+  /** A felled monster's gold, times this. */
+  greed: number;
+}
+
+/**
+ * What the merchants sell, after the Souls games: upgrades bought once and kept, never a bag of clutter. Keyed by
+ * name, which is what a save keeps; each adds to the captain's numbers, an edge only on top of the one before.
+ */
+export const ITEMS = {
+  "Smoked Haunch": { cost: 250, adds: { hp: 25 } },
+  "Ember Shard": { cost: 300, adds: { flasks: 1 } },
+  "Brenna's Edge": { cost: 400, adds: { attack: 3 } },
+  "Keener Edge": { cost: 800, adds: { attack: 3 }, needs: "Brenna's Edge" },
+  "Grey-Iron Edge": { cost: 1200, adds: { attack: 4 }, needs: "Keener Edge" },
+  "Pine Resin": { cost: 450, adds: { flask: 15 } },
+  "Banded Shield": { cost: 600, adds: { block: -0.75 } },
+  "Kindled Shard": { cost: 900, adds: { flasks: 1 } },
+  "Prospector's Purse": { cost: 500, adds: { greed: 0.25 } },
+} as const satisfies Record<string, { cost: number; adds: Partial<Kit>; needs?: string }>;
+export type ItemName = keyof typeof ITEMS;
+
+/** The captain's numbers with what has been bought. */
+export function kit(bought: ReadonlySet<string>): Kit {
+  const k: Kit = { hp: HERO.hp, attack: HERO.attack, flasks: HERO.flasks, flask: HERO.flask, block: STAMINA.block, greed: 1 };
+  for (const [name, item] of Object.entries(ITEMS)) {
+    if (!bought.has(name)) continue;
+    for (const [stat, n] of Object.entries(item.adds) as [keyof Kit, number][]) k[stat] += n;
+  }
+  return k;
+}
+
+/** One line of a merchant's stock: on sale once `after`, a boss kind, has fallen. */
+export interface Stock {
+  item: ItemName;
+  after?: string;
+}
+
+/** What a merchant shows: each line whose boss has fallen and whose lesser edge is owned, bought ones included. */
+export function onOffer(stock: readonly Stock[], bought: ReadonlySet<string>, slain: ReadonlySet<string>): Stock[] {
+  return stock.filter((s) => (!s.after || slain.has(s.after)) && (!("needs" in ITEMS[s.item]) || bought.has((ITEMS[s.item] as { needs: string }).needs)));
 }
 
 /**
@@ -175,9 +226,9 @@ export function recover(stamina: number, dt: number, idle: number, guarding: boo
   return Math.min(STAMINA.max, stamina + STAMINA.regen * dt * (guarding ? STAMINA.guarded : 1));
 }
 
-/** A blow on the shield: it costs stamina by its weight, and with too little left the guard breaks and it lands whole. */
-export function block(stamina: number, attack: number): { stamina: number; broken: boolean } {
-  const cost = attack * STAMINA.block;
+/** A blow on the shield: it costs stamina by its weight, `rate` a point, and with too little left the guard breaks and it lands whole. */
+export function block(stamina: number, attack: number, rate: number = STAMINA.block): { stamina: number; broken: boolean } {
+  const cost = attack * rate;
   return stamina >= cost ? { stamina: stamina - cost, broken: false } : { stamina: 0, broken: true };
 }
 

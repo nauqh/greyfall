@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { footprint } from "../src/atlas.ts";
-import { areaMap, findPath, isWalkable, useIsland } from "../src/index.ts";
+import { ITEMS, areaMap, findPath, isWalkable, useIsland } from "../src/index.ts";
 import { NPCS, nextTalk, talkKey, whereabouts, type Npc, type WorldFlag } from "../src/npcs.ts";
 
 const ferrow = NPCS.find((n) => n.id === "ferrow")!;
@@ -37,6 +37,14 @@ describe("talking", () => {
   it("keys every conversation apart", () => {
     const keys = NPCS.flatMap((n) => stations(n).flatMap((s) => (s.talks ?? []).map((t) => talkKey(n, t))));
     expect(new Set(keys).size).toBe(keys.length);
+  });
+});
+
+describe("the merchants", () => {
+  it("sell every good, each by one merchant only, and none on the Ramparts", () => {
+    const sold = NPCS.flatMap((n) => (n.shop?.stock ?? []).map((s) => s.item));
+    expect(sold.sort()).toEqual(Object.keys(ITEMS).sort());
+    expect(NPCS.filter((n) => n.shop && n.area === "ramparts")).toEqual([]);
   });
 });
 

@@ -2,6 +2,7 @@
 // pages, the last one repeats, and something done out in the world turns up as a new thing to say.
 
 import type { AreaId } from "./atlas.ts";
+import type { Stock } from "./hero.ts";
 import type { Cell } from "./island.ts";
 
 /** What the world remembers that folk remark on, and that moves them on. */
@@ -17,6 +18,7 @@ export type WorldFlag =
   | "hornedKey"
   | "greyfallReached"
   | "warlordDead"
+  | "ladderDown"
   // Set by a talk, not by the world.
   | "tobinDown"
   | "tobinDeeper"
@@ -66,7 +68,11 @@ export interface Npc {
   at: Cell;
   kind: "pawn" | "lancer" | "archer" | "monk" | "warrior";
   act?: string;
+  /** Blue, the castle's, unless they are from elsewhere. */
+  color?: "blue" | "red" | "yellow" | "purple" | "black";
   flip?: boolean;
+  /** A merchant's goods, and what they say turning a sale down: short of gold, or already sold. */
+  shop?: { stock: readonly Stock[]; poor: string; sold: string };
   /** Called out as the captain comes near. */
   greet: string;
   /** Called after a captain who walks off mid-talk. */
@@ -175,6 +181,12 @@ export const NPCS: readonly Npc[] = [
     at: { col: 73, row: 29 },
     kind: "pawn",
     act: "hammer",
+    // Each edge a little later, as Andre's titanite and Elden Ring's bell bearings: the better one once a boss falls.
+    shop: {
+      stock: [{ item: "Brenna's Edge" }, { item: "Keener Edge", after: "stoneWarden" }, { item: "Grey-Iron Edge", after: "troll" }],
+      poor: "Gold first, captain. Then sparks.",
+      sold: "That edge is as keen as I can make it. For now.",
+    },
     greet: "Mind the sparks.",
     part: "Come back with ore.",
     talks: [
@@ -675,6 +687,8 @@ export const NPCS: readonly Npc[] = [
     at: { col: 37, row: 39 },
     kind: "pawn",
     act: "gold",
+    color: "yellow",
+    shop: { stock: [{ item: "Ember Shard" }], poor: "Three hundred, dearie. Hehe. Come back richer.", sold: "That was the only one, dearie." },
     greet: "Hehe. A live one.",
     part: "Come back with coin, dearie.",
     talks: [
@@ -712,6 +726,151 @@ export const NPCS: readonly Npc[] = [
       { id: "ladder", lines: ["There was a ladder down to here from the Ramparts, by the fire.", "Someone pulled it up. From above."] },
       { id: "keep", when: "trollKey", lines: ["That's the troll's key on your belt?", "The Keep Gate's off the west alley. Corwin's lancers are behind it, if any are left."] },
       { id: "rest", lines: ["Sit. The fire's the one thing in the Burg that's still ours."] },
+    ],
+  },
+  {
+    id: "hob",
+    name: "Hob the Cook",
+    short: "Hob",
+    area: "harbour",
+    at: { col: 59, row: 46 },
+    kind: "pawn",
+    act: "meat",
+    shop: { stock: [{ item: "Smoked Haunch" }], poor: "Two-fifty, captain. The pigs aren't free either.", sold: "That was the last haunch. Pot's all that's left." },
+    greet: "Hungry? Course you are.",
+    part: "Eat something, captain.",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "Last cook in the last town. Don't ask what's in the pot.",
+          "A smoked haunch, though. That's honest. Puts some weight back on a captain.",
+          "Two hundred and fifty. Cheap, for living longer.",
+        ],
+      },
+      { id: "died", when: "died", lines: ["You look thinner. Dying does that."] },
+      { id: "smoke", lines: ["Salt, smoke, time. Same as anything that keeps."] },
+    ],
+  },
+  {
+    id: "teasel",
+    name: "Teasel the Tapper",
+    short: "Teasel",
+    area: "emberwood",
+    at: { col: 27, row: 26 },
+    kind: "pawn",
+    act: "axe",
+    color: "red",
+    shop: { stock: [{ item: "Pine Resin" }], poor: "A summer's work, captain. Not a morning's.", sold: "That was all the weeping I had." },
+    greet: "Shh. The pines are weeping.",
+    part: "Don't let the goblins see you go.",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "Goblins burn the pines for room. I take what the pines cry first.",
+          "Pitch, captain. Seal a flask with it and the fire keeps better.",
+          "Four hundred and fifty. It took me a summer.",
+        ],
+      },
+      { id: "troll", when: "trollKey", lines: ["The big one's gone? Then the wood might grow back. Not in my time."] },
+      { id: "torches", lines: ["Every torch they light, another tree I'll never tap."] },
+    ],
+  },
+  {
+    id: "ivo",
+    name: "Ivo the Quartermaster",
+    short: "Ivo",
+    area: "keep",
+    at: { col: 19, row: 29 },
+    kind: "pawn",
+    act: "knife",
+    shop: { stock: [{ item: "Banded Shield" }], poor: "Six hundred, and I'll want a receipt.", sold: "One to a captain. Regulations." },
+    greet: "Sign for it or don't touch it.",
+    part: "Return it in one piece.",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "Forty spears, Corwin says. I issued forty shields. Got nine back.",
+          "Banded, oak and iron. Takes a blow without taking your arm.",
+          "Six hundred. The garrison has to eat, captain.",
+        ],
+      },
+      { id: "warlord", when: "warlordDead", lines: ["Nine shields back. I'll call it a good war."] },
+      { id: "straps", lines: ["Cut the straps short. Long straps, long dead."] },
+    ],
+  },
+  {
+    id: "kettle",
+    name: "Kettle",
+    area: "undercroft",
+    at: { col: 9, row: 10 },
+    kind: "pawn",
+    act: "wood",
+    color: "black",
+    shop: { stock: [{ item: "Kindled Shard" }], poor: "Nine hundred. I can wait. I've nowhere to be.", sold: "One fire, one shard. Don't ask for another." },
+    greet: "You didn't see me. I didn't see you.",
+    part: "Mind the spiders. They don't pay.",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "Smuggler. Was. Now I'm just under things.",
+          "Found this down where the old fire burned before the Harbour had one. Still warm.",
+          "Nine hundred. Nobody else down here's selling.",
+        ],
+      },
+      { id: "tobin", when: "tobinDown", lines: ["Tobin's down here now. Owes me. Everyone owes me."] },
+      { id: "under", lines: ["The well brings everything down, sooner or later. I just wait at the bottom."] },
+    ],
+  },
+  {
+    id: "pell",
+    name: "Pell the Prospector",
+    short: "Pell",
+    area: "crags",
+    at: { col: 49, row: 64 },
+    kind: "pawn",
+    act: "pickaxe",
+    color: "purple",
+    shop: { stock: [{ item: "Prospector's Purse" }], poor: "Five hundred. I'm a prospector, not a charity.", sold: "One purse. I'm keeping mine." },
+    greet: "Don't touch the rock. It's spoken for.",
+    part: "Be rude to the gnomes, now. It's polite.",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "Came for the gnomes' gold. The gnomes came for me.",
+          "Learned one thing: gold's in what falls, not what stands.",
+          "This purse sews itself fatter. Five hundred.",
+        ],
+      },
+      { id: "brenna", lines: ["Brenna wants Crags ore? Tell her the gnomes say no. Tell her rudely."] },
+    ],
+  },
+  {
+    // On the Ramparts' east tower past the bull, between the silent guns: the gunner who outlived his powder.
+    id: "odo",
+    name: "Odo the Gunner",
+    short: "Odo",
+    area: "ramparts",
+    at: { col: 70, row: 14 },
+    kind: "warrior",
+    greet: "Bull's dead, then. Good. I was running out of things to throw.",
+    part: "Mind the ladder. It sticks.",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "Two guns on this tower. No powder since the grey came.",
+          "The bull was the garrison's. The smiths shod him in iron for the parade.",
+          "Then the goblins came over the wall and he forgot who fed him.",
+        ],
+      },
+      { id: "ladder", lines: ["There's a ladder down the south face to the Burg's square.", "Kick it loose. Their fire is right under it, if you need one."] },
+      { id: "died", when: "died", lines: ["You came back. They don't, usually.", "The wall remembers everyone who crossed it. It just doesn't care."] },
+      { id: "kicked", when: "ladderDown", lines: ["You found it. The square's closer than it looks."] },
     ],
   },
 ];

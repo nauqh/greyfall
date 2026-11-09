@@ -4,7 +4,7 @@ import { AREAS, type AreaId } from "@greyfall/engine";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import type { AtlasApi, AtlasHooks, BandView, Departure, MenuView, Say, Vitals } from "../../game/AtlasScene";
+import type { AtlasApi, AtlasHooks, BandView, Departure, MenuView, Say, ShopIcon, Vitals } from "../../game/AtlasScene";
 import { Clouds } from "../../game/Clouds";
 import { packUrl } from "../../game/art";
 import { GameCanvas } from "../../game/GameCanvas";
@@ -48,6 +48,30 @@ function markWarned(name: string): void {
   try {
     localStorage.setItem(`greyfall.dropped.${name}`, "1");
   } catch {}
+}
+
+/** A good's picture in a merchant's menu: the cell of its sheet, and a tint multiplied over its shape, as Phaser tints. */
+function ItemIcon({ icon }: { icon: ShopIcon }) {
+  const size = 28;
+  const c = icon.crop;
+  const k = c ? size / c.w : 1;
+  const art = {
+    image: `url("${icon.url}")`,
+    position: c ? `${-c.x * k}px ${-c.y * k}px` : "0 0",
+    size: c ? `${c.sheetW * k}px ${c.sheetH * k}px` : "100% 100%",
+  };
+  return (
+    <span
+      aria-hidden="true"
+      style={{ position: "relative", display: "inline-block", width: size, height: size, marginRight: 8, verticalAlign: "middle", backgroundImage: art.image, backgroundPosition: art.position, backgroundSize: art.size, backgroundRepeat: "no-repeat", imageRendering: "pixelated" }}
+    >
+      {icon.tint && (
+        <span
+          style={{ position: "absolute", inset: 0, backgroundColor: icon.tint, mixBlendMode: "multiply", maskImage: art.image, maskPosition: art.position, maskSize: art.size, maskRepeat: "no-repeat", WebkitMaskImage: art.image, WebkitMaskPosition: art.position, WebkitMaskSize: art.size, WebkitMaskRepeat: "no-repeat" }}
+        />
+      )}
+    </span>
+  );
 }
 
 /** One area's own map, the camera kept inside it; its exits cross to the next without leaving the page. */
@@ -301,6 +325,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
                   e.currentTarget.blur();
                 }}
               >
+                {o.icon && <ItemIcon icon={o.icon} />}
                 {o.label}
                 {o.note && <span className="shopNote">{o.note}</span>}
               </button>

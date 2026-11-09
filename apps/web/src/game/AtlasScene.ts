@@ -24,6 +24,11 @@ import {
   type Note,
   GOLD_STONE,
   HERO,
+  ITEMS,
+  kit,
+  onOffer,
+  type ItemName,
+  type Kit,
   NPCS,
   PACE,
   mayEngage,
@@ -181,10 +186,17 @@ export interface Say {
   more: boolean;
 }
 
+/** A picture in a menu: a pack image, or one cell of a sheet, multiplied by a tint. */
+export interface ShopIcon {
+  url: string;
+  tint?: string;
+  crop?: { x: number; y: number; w: number; h: number; sheetW: number; sheetH: number };
+}
+
 /** After the Souls games' merchants: a name over a short list, one option picked. */
 export interface MenuView {
   name: string;
-  options: { label: string; note?: string }[];
+  options: { label: string; note?: string; icon?: ShopIcon }[];
   pick: number;
 }
 
@@ -466,9 +478,22 @@ const REFUSE: Record<string, { poor: string; full: string }> = {
   corwin: { poor: "Lances cost gold, captain. Seventy-five.", full: "Three at your back already. I've none to spare." },
   wren: { poor: "Bows aren't free. Sixty gold, then we'll talk.", full: "You've a crowd already. Mine stay here." },
 };
-/** Who sells, after the Souls games' merchants: one thing each, bought once and kept. */
-const SELLER: Record<string, { item: string; cost: number }> = { mags: { item: "Ember Shard", cost: 300 } };
+/** The goods bought, by name. */
 const BOUGHT = "greyfall.bought";
+const SWORDS = packUrl("UI Elements/UI Elements/Swords/Swords.png");
+/** Each good's picture in a merchant's menu. Swords.png is one sword a 128-tall row in five colours, the hilt its
+ *  first 128 across; blue is the captain's own. A gold stone sits small in the middle of its 128. */
+const ITEM_ICON: Record<ItemName, ShopIcon> = {
+  "Smoked Haunch": { url: packUrl("UI Elements/UI Elements/Icons/Icon_04.png") },
+  "Ember Shard": { url: packUrl("Terrain/Resources/Gold/Gold Stones/Gold Stone 1.png"), tint: "#ff7a3c", crop: { x: 44, y: 44, w: 40, h: 40, sheetW: 128, sheetH: 128 } },
+  "Brenna's Edge": { url: SWORDS, crop: { x: 0, y: 128, w: 128, h: 128, sheetW: 448, sheetH: 640 } },
+  "Keener Edge": { url: SWORDS, crop: { x: 0, y: 256, w: 128, h: 128, sheetW: 448, sheetH: 640 } },
+  "Grey-Iron Edge": { url: SWORDS, crop: { x: 0, y: 384, w: 128, h: 128, sheetW: 448, sheetH: 640 } },
+  "Pine Resin": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#e0a040" },
+  "Banded Shield": { url: packUrl("UI Elements/UI Elements/Icons/Icon_06.png") },
+  "Kindled Shard": { url: packUrl("Terrain/Resources/Gold/Gold Stones/Gold Stone 2.png"), tint: "#ff4a2a", crop: { x: 45, y: 41, w: 40, h: 40, sheetW: 128, sheetH: 128 } },
+  "Prospector's Purse": { url: packUrl("UI Elements/UI Elements/Icons/Icon_03.png") },
+};
 const BAND = "greyfall.band";
 const ORDER_WORD: Record<BandOrder, string> = { follow: "Follow me", attack: "Attack my target", hold: "Hold here" };
 /** One of the folk who talk, standing at their spot. */
@@ -522,9 +547,9 @@ function untint(s: Phaser.GameObjects.Sprite): void {
   if (tint) s.setTint(tint);
   else s.clearTint();
 }
-/** Flasks carried at full: the base, and one for each boss that gives one. */
+/** Flasks carried at full: the base and the shards bought, and one for each boss that gives one. */
 function maxFlasks(): number {
-  return HERO.flasks + [...remembered(SLAIN)].filter((k) => BOSS_FLASK.has(k)).length + (remembered(BOUGHT).has("Ember Shard") ? 1 : 0);
+  return kit(remembered(BOUGHT)).flasks + [...remembered(SLAIN)].filter((k) => BOSS_FLASK.has(k)).length;
 }
 /** A way out shut until its guarding boss falls, or the captain has already rested on the far side; or a shortcut not
  *  yet opened from the far side. */
@@ -562,7 +587,7 @@ interface Pile {
 /** No rest with a monster this near the fire. */
 const REST_CLEAR = 8;
 const FLAGS = "greyfall.flags";
-const npcLook = (n: Npc): Dweller => ({ kind: n.kind, col: n.at.col, row: n.at.row, color: "blue", act: n.act });
+const npcLook = (n: Npc): Dweller => ({ kind: n.kind, col: n.at.col, row: n.at.row, color: n.color ?? "blue", act: n.act });
 /**
  * Each underground map lit its own way: the rock's own dark, how much the open floor shows unlit, the colour its
  * lights cast. The Undercroft is torchlit masonry, the Deeps the darkest and lit ghost-green, the Hollow the
@@ -652,6 +677,8 @@ export class AtlasScene extends Phaser.Scene {
   /** Open with someone who hires out: Talk, Hire, Leave. */
   private menu: { folk: Folk; pick: number } | null = null;
   private flasks: number = HERO.flasks;
+  /** The captain's numbers with the goods bought. */
+  private gear: Kit = kit(new Set());
   private gold = 0;
   private band: Companion[] = [];
   private bandOrder: BandOrder = "follow";
@@ -714,6 +741,7 @@ export class AtlasScene extends Phaser.Scene {
     this.menu = null;
     this.heard = remembered(HEARD);
     this.flags = remembered(FLAGS);
+    this.gear = kit(remembered(BOUGHT));
     // What a crossing proves: down the well, the Watch Lift ridden down, the Moor Gate come through from the moor, the Greyfall reached.
     if (data.area === "undercroft") this.flag("wellDescended");
     if (data.area === "keep" && data.from === "steps") this.flag("watchLiftOpen");
@@ -1323,7 +1351,7 @@ export class AtlasScene extends Phaser.Scene {
     const y = (at.row + 0.75) * CELL;
     const s = this.add.sprite((at.col + 0.5) * CELL, y, look.idle.key).setOrigin(0.5, look.anchor).setDepth(standing(y));
     this.play(s, look.idle.key);
-    this.hero = { ...this.body(s, at, HERO.hp, HERO.speed, { idle: look.idle.key, move: look.move?.key, attack: HERO_ATTACK.key }) };
+    this.hero = { ...this.body(s, at, this.gear.hp, HERO.speed, { idle: look.idle.key, move: look.move?.key, attack: HERO_ATTACK.key }) };
     const k = this.input.keyboard;
     if (k) this.keys = k.addKeys({ up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT", w: "W", a: "A", s: "S", d: "D", shift: "SHIFT" }, false) as typeof this.keys;
     // Captured, so Space never scrolls the page or presses a focused button.
@@ -1415,7 +1443,7 @@ export class AtlasScene extends Phaser.Scene {
     if (to === this.hero && now < this.roll.until) return;
     let blocked = !open && to === this.hero && this.guarding && this.facing(to, from);
     if (blocked) {
-      const b = block(this.stamina, attack);
+      const b = block(this.stamina, attack, this.gear.block);
       this.stamina = b.stamina;
       this.spentAt = now;
       if (b.broken) {
@@ -1489,7 +1517,7 @@ export class AtlasScene extends Phaser.Scene {
     if (b !== this.hero) {
       this.tweens.add({ targets: b.s, alpha: 0, duration: 500, onComplete: () => b.s.destroy() });
       const gold = (b as Foe).stats?.gold;
-      if (gold) this.dropGold(b.at, gold);
+      if (gold) this.dropGold(b.at, Math.round(gold * this.gear.greed));
       if (this.isBoss(b as Foe)) this.felled((b as Foe).kind, BOSS_KEY[(b as Foe).kind]);
       return;
     }
@@ -1619,7 +1647,7 @@ export class AtlasScene extends Phaser.Scene {
     const time = this.time.now;
     if (!this.playing || hero.dead || this.gone || this.guarding || time < hero.busy) return;
     const was = hero.hp;
-    const d = drink(hero.hp, hero.max, this.flasks);
+    const d = drink(hero.hp, hero.max, this.flasks, this.gear.flask);
     if (d.flasks === this.flasks) return this.float(hero.s.x, hero.s.y - hero.lift - 30, this.flasks ? "Unhurt" : "No flasks", "#fdfaf0");
     Object.assign(hero, { hp: d.hp, way: [], busy: time + 600 });
     this.flasks = d.flasks;
@@ -1717,18 +1745,29 @@ export class AtlasScene extends Phaser.Scene {
     this.hooks.onBand?.({ order: this.bandOrder, members: this.band.map((c) => ({ kind: c.kind, hp: c.dead ? 0 : c.hp, max: c.max })) });
   }
 
-  /** At a seller's menu: their one thing, for gold, once; an Ember Shard is a flask more for good, filled at once. */
-  private buyHere(): void {
+  /** The goods a merchant shows now. */
+  private stock(f: Folk): ItemName[] {
+    return f.npc.shop ? onOffer(f.npc.shop.stock, remembered(BOUGHT), remembered(SLAIN)).map((s) => s.item) : [];
+  }
+
+  /** At a merchant's menu: a good, for gold, once, and kept; what it gives is the captain's at once. */
+  private buyHere(item: ItemName): void {
     const f = this.menu!.folk;
-    const sale = SELLER[f.npc.id]!;
-    if (remembered(BOUGHT).has(sale.item)) return this.callOut(f, "That was the only one, dearie.");
-    if (this.gold < sale.cost) return this.callOut(f, `${sale.cost} gold, dearie. Hehe. Come back richer.`);
-    this.setGold(this.gold - sale.cost);
-    remember(BOUGHT, remembered(BOUGHT).add(sale.item));
-    this.flasks += 1;
-    this.hooks.onFlasks?.(this.flasks);
+    const shop = f.npc.shop!;
+    const bought = remembered(BOUGHT);
+    if (bought.has(item)) return this.callOut(f, shop.sold);
+    if (this.gold < ITEMS[item].cost) return this.callOut(f, shop.poor);
+    this.setGold(this.gold - ITEMS[item].cost);
+    remember(BOUGHT, bought.add(item));
+    const was = this.gear;
+    this.gear = kit(bought);
     const hero = this.hero!;
-    this.float(hero.s.x, hero.s.y - hero.lift - 30, `${sale.item}: a flask more`, "#f4cf6b");
+    // A shard's flask comes filled, a haunch's health with it.
+    this.flasks += this.gear.flasks - was.flasks;
+    this.hooks.onFlasks?.(this.flasks);
+    hero.max = this.gear.hp;
+    hero.hp += this.gear.hp - was.hp;
+    this.float(hero.s.x, hero.s.y - hero.lift - 30, item, "#f4cf6b");
     this.showMenu();
   }
 
@@ -1751,8 +1790,11 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   private menuOptions(f: Folk): MenuView["options"] {
-    const sale = SELLER[f.npc.id];
-    if (sale) return [{ label: "Talk" }, { label: `Buy ${sale.item}`, note: remembered(BOUGHT).has(sale.item) ? "Sold" : `${sale.cost} gold` }, { label: "Leave" }];
+    if (f.npc.shop) {
+      const bought = remembered(BOUGHT);
+      const goods = this.stock(f).map((item) => ({ label: item, note: bought.has(item) ? "Sold" : `${ITEMS[item].cost} gold`, icon: ITEM_ICON[item] }));
+      return [{ label: "Talk" }, ...goods, { label: "Leave" }];
+    }
     const kind = RECRUITER[f.npc.id]!;
     const cost = COMPANIONS[kind].cost;
     return [{ label: "Talk" }, { label: `Hire ${kind === "lancer" ? "a Lancer" : "an Archer"}`, note: `${cost} gold` }, { label: "Leave" }];
@@ -1785,7 +1827,8 @@ export class AtlasScene extends Phaser.Scene {
   private movePick(d: number): void {
     const m = this.menu;
     if (!m) return;
-    m.pick = (m.pick + d + 3) % 3;
+    const n = this.menuOptions(m.folk).length;
+    m.pick = (m.pick + d + n) % n;
     this.showMenu();
   }
 
@@ -1797,8 +1840,9 @@ export class AtlasScene extends Phaser.Scene {
       this.menu = null;
       this.showMenu();
       this.talkTo(f);
-    } else if (m.pick === 1) (SELLER[m.folk.npc.id] ? this.buyHere() : this.hireHere());
-    else this.closeMenu(true);
+    } else if (m.pick === this.menuOptions(m.folk).length - 1) this.closeMenu(true);
+    else if (m.folk.npc.shop) this.buyHere(this.stock(m.folk)[m.pick - 1]!);
+    else this.hireHere();
   }
 
   /** A word or a number over a body: up and gone. */
@@ -2867,7 +2911,7 @@ export class AtlasScene extends Phaser.Scene {
       if ("exit" in t!) return this.traverse(t.exit);
       if ("fog" in t!) return this.enterFog();
       if ("lock" in t!) return;
-      return RECRUITER[t!.folk.npc.id] || SELLER[t!.folk.npc.id] ? this.openMenu(t!.folk) : this.talkTo(t!.folk);
+      return RECRUITER[t!.folk.npc.id] || t!.folk.npc.shop ? this.openMenu(t!.folk) : this.talkTo(t!.folk);
     }
   }
 
@@ -2900,7 +2944,7 @@ export class AtlasScene extends Phaser.Scene {
     // The blow lands partway through the swing, if the mark is still in reach.
     this.time.delayedCall(HERO.hit * 1000, () => {
       if (foe.dead || hero.dead || tileDistance(foe.at, hero.at) > 1 || Math.hypot(foe.s.x - hero.s.x, foe.s.y - hero.s.y) > 1.6 * CELL) return;
-      this.hurt(hero, foe, HERO.attack);
+      this.hurt(hero, foe, this.gear.attack);
       if (step === 3 && !foe.dead && !BOSSES.has(foe.kind)) this.knockBack(foe, this.time.now);
     });
   }
@@ -2963,7 +3007,7 @@ export class AtlasScene extends Phaser.Scene {
       this.talk = null;
       this.say();
       // Talked out, a merchant's menu comes back, as in the Souls games.
-      if (RECRUITER[t.folk.npc.id] || SELLER[t.folk.npc.id]) this.openMenu(t.folk);
+      if (RECRUITER[t.folk.npc.id] || t.folk.npc.shop) this.openMenu(t.folk);
       return;
     }
     this.say();
