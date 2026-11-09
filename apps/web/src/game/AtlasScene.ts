@@ -241,9 +241,53 @@ const PROP: Record<string, Sheet> = {
   woodPile: { file: "Terrain/Resources/Wood/Wood Resource/Wood Resource.png", frame: 64, anchor: 46 / 64, scale: 1.2 },
   tools: { file: "Terrain/Resources/Tools/Tool_01.png", frame: 64, anchor: 45 / 64 },
   meat: { file: "Terrain/Resources/Meat/Meat Resource/Meat Resource.png", frame: 64, anchor: 52 / 64 },
-  stump: { file: "Terrain/Resources/Wood/Trees/Stump 2.png", frame: 192, frameH: 256, anchor: 0.62, scale: 0.6 },
+  stump: { file: "Terrain/Resources/Wood/Trees/Stump 2.png", frame: 192, frameH: 256, anchor: 244 / 256, scale: 0.6 },
   boat: { file: "Enemy Pack/Extra/Boat/Boat_Idle.png", frame: 256, anchor: 0.7, scale: 0.7 },
 };
+
+/** A solid's base in world pixels, as the hero's feet meet it. */
+interface Box {
+  x0: number;
+  x1: number;
+  y0: number;
+  y1: number;
+}
+
+/** Each solid prop's base in source pixels, measured off the art: the ink's width at its foot and that ink's offset from
+ *  the frame's middle. Unlisted art falls back to its footprint's tiles. */
+const BASE: Record<string, { w: number; dx: number }> = {
+  castle: { w: 242, dx: 0 },
+  tower: { w: 87, dx: -1.5 },
+  barracks: { w: 170, dx: 0 },
+  archery: { w: 177, dx: -4.5 },
+  house1: { w: 98, dx: 0 },
+  house2: { w: 66, dx: -7 },
+  house3: { w: 118, dx: 0 },
+  monastery: { w: 146, dx: 0 },
+  goblinHut: { w: 98, dx: -2 },
+  gnomeHut: { w: 96, dx: 0 },
+  gnomeTower: { w: 89, dx: -0.5 },
+  cave: { w: 133, dx: 6.5 },
+  fishHut: { w: 113, dx: 0.5 },
+  skullSpike: { w: 28, dx: 3 },
+  deadTree: { w: 85, dx: 23.5 },
+  trollDead: { w: 140, dx: 2 },
+  goldMine: { w: 163, dx: 0.5 },
+  cannon: { w: 42, dx: 0 },
+  cannonSide: { w: 44, dx: 4 },
+  watchtower: { w: 42, dx: -2 },
+  woodPile: { w: 47, dx: 0.5 },
+  tools: { w: 28, dx: 2 },
+  meat: { w: 46, dx: 0 },
+  rock1: { w: 32, dx: -1 },
+  rock2: { w: 50, dx: 0 },
+  rock3: { w: 39, dx: 1.5 },
+  rock4: { w: 59, dx: -0.5 },
+  stump: { w: 43, dx: -1.5 },
+};
+
+/** The hero's feet: half their width, and how far they reach up and down from the point it stands on. */
+const FEET = { w: 12, up: 8, down: 4 } as const;
 
 /** Creatures: idle and moving sheets, frame size, feet. Flyers hover. */
 interface Beast {
@@ -582,6 +626,9 @@ export class AtlasScene extends Phaser.Scene {
   private locked = new Set<string>();
   /** What no one walks through: buildings, heaps, fence posts, and the rocks and stumps standing in open ground. */
   private solid = new Set<string>();
+  /** The solid tiles that are a prop's or a rock's: the hero's feet meet the art's base there, not the whole tile. */
+  private boxed = new Set<string>();
+  private bases: Box[] = [];
   private fog: Phaser.GameObjects.Sprite[] = [];
   /** Mist over the boss room, hiding it until the captain is inside. */
   private mist: Phaser.GameObjects.Image[] = [];
@@ -640,6 +687,8 @@ export class AtlasScene extends Phaser.Scene {
     this.sealed = new Set();
     this.locked = new Set();
     this.solid = new Set();
+    this.boxed = new Set();
+    this.bases = [];
     this.fog = [];
     this.mist = [];
     this.bossKey = "";
@@ -818,6 +867,7 @@ export class AtlasScene extends Phaser.Scene {
       this.spawn = near;
       for (const p of local.props) if (COVER_ART.has(p.art)) for (const c of footprint(p)) this.cover.add(`${c.col},${c.row}`);
       for (const k of solidCells(local)) this.solid.add(k);
+      for (const p of local.props) this.baseOf(p);
       this.notes = local.notes ?? [];
       for (const n of this.notes) this.addNote(n);
       this.spawnHero(near);
@@ -1216,6 +1266,20 @@ export class AtlasScene extends Phaser.Scene {
     if (!at) return;
     if (at.tier !== this.view) this.show(at.tier);
     this.flyTo(at.cell, 24);
+  }
+
+  /** A solid prop's base for the hero's feet: its art's measured ink at the foot, its footprint's rows deep less half a tile. */
+  private baseOf(p: Placed): void {
+    const tiles = [...solidCells({ props: [p], fences: [] })];
+    if (tiles.length === 0) return;
+    for (const k of tiles) this.boxed.add(k);
+    const cells = tiles.map((k) => k.split(",").map(Number) as [number, number]);
+    const b = BASE[p.art];
+    const scale = (p.scale ?? 1) * (p.color ? 1 : (PROP[p.art]?.scale ?? 1));
+    const cx = (p.col + 0.5) * CELL + (b?.dx ?? 0) * (p.flip ? -1 : 1) * scale;
+    const half = b ? (b.w * scale) / 2 : ((Math.max(...cells.map(([c]) => c)) - Math.min(...cells.map(([c]) => c)) + 1) * CELL) / 2;
+    const y1 = (p.row + 0.95) * CELL;
+    this.bases.push({ x0: cx - half, x1: cx + half, y0: y1 - (new Set(cells.map(([, r]) => r)).size - 0.5) * CELL, y1 });
   }
 
   /** In play: an area map with the hero on it and dev mode off. */
@@ -1771,11 +1835,15 @@ export class AtlasScene extends Phaser.Scene {
     const ahead = 0.3 * CELL;
     const open = (x: number, y: number): boolean => {
       const to = cellAt(x, y);
-      return (to.col === hero.at.col && to.row === hero.at.row) || (canStep(hero.at, to) && !this.shut(to));
+      const k = `${to.col},${to.row}`;
+      return (to.col === hero.at.col && to.row === hero.at.row) || (canStep(hero.at, to) && (this.boxed.has(k) ? !this.sealed.has(k) && !this.locked.has(k) : !this.shut(to)));
     };
+    // A prop or a rock stops the feet at its art's base, not at its tile's edge; feet already in one can always step out.
+    const hit = (b: Box, x: number, y: number): boolean => x + FEET.w > b.x0 && x - FEET.w < b.x1 && y + FEET.down > b.y0 && y - FEET.up < b.y1;
     let { x, y } = hero.s;
-    if (dx && open(x + Math.sign(dx) * ahead + dx * step, y)) x += dx * step;
-    if (dy && open(x, y + Math.sign(dy) * ahead + dy * step)) y += dy * step;
+    const clear = (nx: number, ny: number): boolean => !this.bases.some((b) => hit(b, nx, ny) && !hit(b, x, y));
+    if (dx && open(x + Math.sign(dx) * ahead + dx * step, y) && clear(x + dx * step, y)) x += dx * step;
+    if (dy && open(x, y + Math.sign(dy) * ahead + dy * step) && clear(x, y + dy * step)) y += dy * step;
     hero.s.setPosition(x, y).setDepth(standing(y));
     hero.at = cellAt(x, y);
     if (face && Math.abs(dx) > 0.01) hero.s.setFlipX(dx < 0);
@@ -2183,16 +2251,19 @@ export class AtlasScene extends Phaser.Scene {
       const ch = tier.areaAt[r]?.[c];
       return ch && ch !== "-" ? AREAS[AREA_CODE.indexOf(ch)]!.id : null;
     };
-    const spot = (c: number, r: number, k: string, sheet: Sheet, frame?: number): void => {
+    const spot = (c: number, r: number, k: string, sheet: Sheet, frame?: number): Phaser.GameObjects.Sprite => {
       const x = (c + 0.25 + r01() * 0.5) * CELL;
       const y = (r + 0.7 + r01() * 0.3) * CELL;
       const s = this.add.sprite(x, y, k, frame).setOrigin(0.5, sheet.anchor).setScale((sheet.scale ?? 1) * (0.85 + r01() * 0.3)).setDepth(standing(y));
       if (r01() < 0.5) s.setFlipX(true);
       if (frame === undefined) this.loop(s, k);
       this.track(s);
+      return s;
     };
-    const decor = (kind: "tree" | "bush" | "rock" | "waterRock", x: number, y: number, scale = 1): void => {
-      this.track(addDecor(this, kind, x, y, scale, `${tier.id}${Math.round(x)},${Math.round(y)}`));
+    const decor = (kind: "tree" | "bush" | "rock" | "waterRock", x: number, y: number, scale = 1): Phaser.GameObjects.Sprite => {
+      const s = addDecor(this, kind, x, y, scale, `${tier.id}${Math.round(x)},${Math.round(y)}`);
+      this.track(s);
+      return s;
     };
     // Nothing grows in a building's base or the ground round it.
     const built = new Set(tier.props.flatMap((p) => footprint(p, true).map((c) => c.row * STRAT_COLS + c.col)));
@@ -2285,11 +2356,21 @@ export class AtlasScene extends Phaser.Scene {
           const x = (c + 0.2 + r01() * 0.6) * CELL;
           const y = (r + 0.5 + r01() * 0.35) * CELL;
           // A rock or stump with open ground all round stands in the way; one at an edge stays scenery, or it could seal a pass.
-          const block = (): void => void (!edgy && this.local && this.solid.add(`${c},${r}`));
+          const block = (s: Phaser.GameObjects.Sprite, art: string): void => {
+            if (edgy || !this.local) return;
+            this.solid.add(`${c},${r}`);
+            this.boxed.add(`${c},${r}`);
+            const b = BASE[art]!;
+            const cx = s.x + b.dx * (s.flipX ? -1 : 1) * s.scaleX;
+            this.bases.push({ x0: cx - (b.w * s.scaleX) / 2, x1: cx + (b.w * s.scaleX) / 2, y0: s.y - 12, y1: s.y });
+          };
           if ((id === "barrowmoor" || tier.base === "rock") && r01() < 0.5) spot(c, r, "prop_bones", PROP.bones!, 0);
-          else if (id === "emberwood" && r01() < 0.35) (spot(c, r, "prop_stump", PROP.stump!, 0), block());
+          else if (id === "emberwood" && r01() < 0.35) block(spot(c, r, "prop_stump", PROP.stump!, 0), "stump");
           else if (roll < chance * 0.6 && tier.base !== "rock") decor("bush", x, y, 0.75);
-          else (decor("rock", x, y, 1), block());
+          else {
+            const rock = decor("rock", x, y, 1);
+            block(rock, rock.texture.key);
+          }
         }
       }
     }
