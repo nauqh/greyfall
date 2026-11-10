@@ -75,6 +75,31 @@
 	animation: prologueSkip 1000ms linear both;
 }
 
+/* The Gilded Reach beat: one paragraph, first sentence holds, then the last replaces it at the end. */
+.prologueReplace {
+	display: inline-block;
+	position: relative;
+	width: auto;
+	text-align: left;
+}
+
+.prologueFirst {
+	display: inline;
+}
+
+.prologueGone {
+	visibility: hidden;
+}
+
+.prologueLast {
+	position: absolute;
+	top: 0;
+	right: 0;
+	white-space: nowrap;
+	font: inherit;
+	color: inherit;
+}
+
 @keyframes prologueIn {
 	from { opacity: 0; }
 }

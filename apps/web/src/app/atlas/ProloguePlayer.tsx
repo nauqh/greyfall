@@ -12,6 +12,8 @@ const FADE_MS = 1800;
 const TAIL_MS = 1200;
 /** 360 ms a word is about 165 words a minute: the slow end of the 160-180 wpm reading band. */
 const WORD_MS = 360;
+/** The pause after the first half of the Gilded Reach beat, before the last sentence replaces it. */
+const SPECIAL_PAUSE_MS = 1500;
 
 /** The opening cutscene, after Dark Souls 1: narration on black, then the title, then the game. */
 export function Prologue({ onDone }: { onDone: () => void }) {
@@ -19,9 +21,18 @@ export function Prologue({ onDone }: { onDone: () => void }) {
   const [b, setB] = useState(0);
   const [end, setEnd] = useState(false);
   const [hold, setHold] = useState(false);
+  const [reveal, setReveal] = useState(false);
   const downAt = useRef(0);
   const beat = beats[b];
-  const ms = beat ? GAP_MS + FADE_MS + beat.split(/\s+/).length * WORD_MS + TAIL_MS : 0;
+  const special = typeof beat === "object" && beat !== null;
+  const first = typeof beat === "object" && beat !== null ? beat.first : "";
+  const last = typeof beat === "object" && beat !== null ? beat.last : "";
+  const gap = typeof beat === "object" && beat !== null ? beat.gap : GAP_MS;
+  const text = typeof beat === "string" ? beat : "";
+  const firstHold = first.split(/\s+/).length * WORD_MS;
+  const lastHold = last.split(/\s+/).length * WORD_MS;
+  const revealAt = gap + FADE_MS + firstHold + SPECIAL_PAUSE_MS;
+  const ms = special ? revealAt + lastHold + TAIL_MS : text ? gap + FADE_MS + text.split(/\s+/).length * WORD_MS + TAIL_MS : 0;
 
   const next = (): void => {
     if (end) return;
@@ -35,6 +46,13 @@ export function Prologue({ onDone }: { onDone: () => void }) {
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [b, end]);
+
+  useEffect(() => {
+    if (!special || end) return;
+    setReveal(false);
+    const t = setTimeout(() => setReveal(true), revealAt);
+    return () => clearTimeout(t);
+  }, [b, end, special, revealAt]);
 
   useEffect(() => {
     // Captured on the window ahead of the game's own keys, so nothing behind the cutscene hears them.
@@ -78,7 +96,19 @@ export function Prologue({ onDone }: { onDone: () => void }) {
           style={{ "--ms": `${ms}ms` } as React.CSSProperties}
           aria-live="polite"
         >
-          <p style={{ animationDelay: `${GAP_MS}ms` }}>{beat}</p>
+          <p
+            className={special ? "prologueReplace" : undefined}
+            style={{ animationDelay: `${gap}ms` }}
+          >
+            {special ? (
+              <>
+                <span className={reveal ? "prologueFirst prologueGone" : "prologueFirst"}>{first}</span>
+                {reveal && <span className="prologueLast">{last}</span>}
+              </>
+            ) : (
+              text
+            )}
+          </p>
         </div>
       ) : (
         <div className="prologueTitle" onAnimationEnd={(e) => e.target === e.currentTarget && setEnd(true)}>
