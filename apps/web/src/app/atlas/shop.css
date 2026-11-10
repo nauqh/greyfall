@@ -1,75 +1,117 @@
-/* The goods on paper, each on a blue key like Play's command card; the picked key lifts and glows. */
+/* The goods on paper, after Skyrim's barter: the list beside the picked good's card, low enough to leave the hero clear. */
 .shopGoods {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 6px;
-	max-width: calc(100vw - 32px);
-	padding: 0 6px 4px;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: 14px;
+	width: min(640px, calc(100vw - 32px));
+	padding: 0 4px 4px;
 	color: #4a3a28;
+	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-weight: 700;
+	font-size: 14px;
 	border: 30px solid transparent;
 	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 30px stretch;
 }
 
-.shopCards {
-	display: flex;
-	flex-wrap: wrap;
-	justify-content: center;
-	gap: 8px;
-}
-
-.shopCard {
+.shopList {
 	display: flex;
 	flex-direction: column;
+	gap: 4px;
+	max-height: min(240px, 30vh);
+	overflow-y: auto;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.shopRow {
+	display: flex;
 	align-items: center;
-	gap: 2px;
-	width: 76px;
-	padding: 0 0 2px;
-	background: none;
-	border: 14px solid transparent;
-	border-image: url("/tiny-swords/ui/blueButton.png") 64 fill / 14px stretch;
-	cursor: pointer;
-	transition: transform 140ms ease-out, filter 140ms ease-out;
-}
-
-.shopCard.picked {
-	transform: translateY(-4px);
-	outline: 3px solid #f2d48a;
-	outline-offset: 3px;
+	gap: 8px;
+	width: 100%;
+	padding: 2px 6px 2px 2px;
+	border: 2px solid transparent;
 	border-radius: 4px;
+	background: none;
+	color: inherit;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
 }
 
-.shopCard.sold {
-	filter: grayscale(0.8) brightness(0.8);
+.shopRow.picked {
+	border-color: #c9a35c;
+	background: rgb(242 212 138 / 0.35);
+}
+
+.shopRow.short,
+.shopRow.sold {
+	opacity: 0.55;
+}
+
+.shopRow.sold .shopKey {
+	filter: grayscale(0.8);
+}
+
+.shopRow.bought {
+	animation: shopBought 600ms ease-out;
+}
+
+@keyframes shopBought {
+	from {
+		background: rgb(255 226 138 / 0.95);
+		transform: scale(1.04);
+	}
+}
+
+/* Each good's picture on a blue key, like Play's command card. */
+.shopKey {
+	flex: none;
+	display: grid;
+	place-items: center;
+	border: 8px solid transparent;
+	border-image: url("/tiny-swords/ui/blueButton.png") 64 fill / 8px stretch;
+}
+
+.shopKey.big {
+	border-width: 14px;
+	border-image-width: 14px;
+}
+
+.shopRowName {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .shopPrice {
-	display: flex;
+	display: inline-flex;
 	align-items: center;
 	gap: 3px;
-	font-family: "Nunito", "Segoe UI", sans-serif;
 	font-weight: 800;
-	font-size: 14px;
-	color: #ffe28a;
-	-webkit-text-stroke: 4px #1c2634;
-	paint-order: stroke fill;
+	color: #8a5a10;
 }
 
-.shopCard:not(.sold) .shopPrice::before {
+.shopRow:not(.sold) .shopPrice::before,
+.shopCost .shopPrice::before {
 	content: "";
 	width: 14px;
 	height: 14px;
 	background: url("/tiny-swords/ui/icon_gold.png") center / contain no-repeat;
 }
 
+.short .shopPrice {
+	color: #b3261e;
+}
+
 .shopTell {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	min-height: 2.6em;
-	font-family: "Nunito", "Segoe UI", sans-serif;
-	font-weight: 700;
-	font-size: 14px;
+	gap: 4px;
+	min-height: min(240px, 30vh);
 	text-align: center;
 }
 
@@ -78,8 +120,61 @@
 	font-size: 16px;
 }
 
+.shopAbout {
+	font-weight: 600;
+	font-size: 13px;
+}
+
+.shopChange {
+	display: flex;
+	flex-direction: column;
+	align-self: stretch;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.shopChange li {
+	display: flex;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.shopChange b {
+	color: #2e6b2a;
+}
+
+.shopCost {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin-top: auto;
+}
+
+.shopCost.short > :last-child {
+	color: #b3261e;
+}
+
+.shopSold {
+	margin-top: auto;
+	font-weight: 800;
+}
+
+@media (max-width: 520px) {
+	.shopGoods {
+		gap: 8px;
+		font-size: 13px;
+		border-width: 22px;
+		border-image-width: 22px;
+	}
+
+	.shopAbout {
+		display: none;
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
-	.shopCard {
-		transition: none;
+	.shopRow.bought {
+		animation: none;
 	}
 }

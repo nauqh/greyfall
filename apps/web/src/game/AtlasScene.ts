@@ -538,6 +538,15 @@ function gives(item: ItemName): string {
   };
   return (Object.entries(ITEMS[item].adds) as [keyof Kit, number][]).map(([stat, n]) => words[stat](n)).join(", ");
 }
+/** Each of the captain's numbers, named and in words, as the sack and a good's card show it. */
+const STATS: Record<keyof Kit, { label: string; words: (n: number) => string }> = {
+  hp: { label: "Health", words: String },
+  attack: { label: "Attack", words: String },
+  flasks: { label: "Flasks", words: String },
+  flask: { label: "Flask heal", words: String },
+  block: { label: "Block cost", words: (n) => `${Math.round((n / STAMINA.block) * 100)}%` },
+  greed: { label: "Gold from kills", words: (n) => `${Math.round(n * 100)}%` },
+};
 const BAND = "greyfall.band";
 const ORDER_WORD: Record<BandOrder, string> = { follow: "Follow me", attack: "Attack my target", hold: "Hold here" };
 /** One of the folk who talk, standing at their spot. */
@@ -593,7 +602,14 @@ function untint(s: Phaser.GameObjects.Sprite): void {
 }
 /** Flasks carried at full: the base and the shards bought, and one for each boss that gives one. */
 function maxFlasks(): number {
-  return kit(remembered(BOUGHT)).flasks + [...remembered(SLAIN)].filter((k) => BOSS_FLASK.has(k)).length;
+  return kit(remembered(BOUGHT)).flasks + bossFlasks();
+}
+function bossFlasks(): number {
+  return [...remembered(SLAIN)].filter((k) => BOSS_FLASK.has(k)).length;
+}
+/** One of the captain's numbers in words, with `gear`: the flasks with those the bosses gave. */
+function statWords(k: keyof Kit, gear: Kit): string {
+  return STATS[k].words(k === "flasks" ? gear.flasks + bossFlasks() : gear[k]);
 }
 /** A way out shut until its guarding boss falls, or the captain has already rested on the far side; or a shortcut not
  *  yet opened from the far side. */
@@ -959,6 +975,7 @@ export class AtlasScene extends Phaser.Scene {
       k?.on("keydown-TWO", () => this.command("attack"));
       k?.on("keydown-THREE", () => this.command("hold"));
       for (const [key, d] of [["W", -1], ["UP", -1], ["A", -1], ["LEFT", -1], ["S", 1], ["DOWN", 1], ["D", 1], ["RIGHT", 1]] as const) k?.on(`keydown-${key}`, () => this.movePick(d));
+      k?.on("keydown-ESC", () => this.back());
       k?.on("keydown-SPACE", (e: KeyboardEvent) => !e.repeat && (this.spaceAt = this.time.now));
       k?.on("keyup-SPACE", () => {
         if (this.spaceAt >= 0 && this.time.now - this.spaceAt < TAP) this.dodge(this.time.now);
@@ -1022,13 +1039,7 @@ export class AtlasScene extends Phaser.Scene {
         this.menu.pick = i;
         this.showMenu();
       },
-      back: () => {
-        const m = this.menu;
-        if (!m) return;
-        if (!m.shopping) return this.closeMenu(true);
-        this.menu = { folk: m.folk, pick: 1 };
-        this.showMenu();
-      },
+      back: () => this.back(),
       tier: (id) => {
         this.show(id);
         // Onto the tier's ground, when the view would otherwise be open sky or solid rock.
@@ -1829,13 +1840,15 @@ export class AtlasScene extends Phaser.Scene {
     hero.hp += this.gear.hp - was.hp;
     this.float(hero.s.x, hero.s.y - hero.lift - 30, item, "#f4cf6b");
     this.emitSack();
+    this.menu!.pick = this.stock(f).indexOf(item);
     this.showMenu();
   }
 
   private emitSack(): void {
     const bought = remembered(BOUGHT);
     const items = (Object.keys(ITEMS) as ItemName[]).filter((item) => bought.has(item));
-    this.hooks.onSack?.({ items: items.map((item) => ({ label: item, icon: ITEM_ICON[item], gives: gives(item) })), stats: [] });
+    const stats = (Object.keys(STATS) as (keyof Kit)[]).map((k) => ({ label: STATS[k].label, now: statWords(k, this.gear) }));
+    this.hooks.onSack?.({ items: items.map((item) => ({ label: item, icon: ITEM_ICON[item], gives: gives(item), about: ITEMS[item].about })), stats });
   }
 
   /** In a talk with someone who hires out: a companion joins, for gold, if there is room. */
@@ -1859,7 +1872,12 @@ export class AtlasScene extends Phaser.Scene {
   private menuOptions(f: Folk): MenuView["options"] {
     if (this.menu?.shopping) {
       const bought = remembered(BOUGHT);
-      const goods = this.stock(f).map((item) => ({ label: item, note: `${ITEMS[item].cost}`, icon: ITEM_ICON[item], gives: gives(item), sold: bought.has(item) }));
+      const goods = this.stock(f).map((item) => {
+        const sold = bought.has(item);
+        const after = kit(new Set([...bought, item]));
+        const change = (Object.keys(ITEMS[item].adds) as (keyof Kit)[]).map((k) => ({ label: STATS[k].label, now: statWords(k, this.gear), after: statWords(k, after) }));
+        return { label: item, note: `${ITEMS[item].cost}`, icon: ITEM_ICON[item], gives: gives(item), sold, about: ITEMS[item].about, afford: !sold && this.gold >= ITEMS[item].cost, change };
+      });
       return [...goods, { label: "Back" }];
     }
     if (f.npc.shop) return [{ label: "Talk" }, { label: "Shop" }, { label: "Leave" }];
@@ -1870,7 +1888,7 @@ export class AtlasScene extends Phaser.Scene {
 
   private showMenu(): void {
     const m = this.menu;
-    this.hooks.onMenu?.(m ? { name: m.folk.npc.name, options: this.menuOptions(m.folk), pick: m.pick, shop: m.shopping } : null);
+    this.hooks.onMenu?.(m ? { name: m.folk.npc.name, options: this.menuOptions(m.folk), pick: m.pick, shop: m.shopping, gold: m.shopping ? this.gold : undefined } : null);
   }
 
   private openMenu(f: Folk): void {
@@ -1890,6 +1908,15 @@ export class AtlasScene extends Phaser.Scene {
     this.menu = null;
     this.showMenu();
     if (part) this.callOut(m.folk, m.folk.npc.part);
+  }
+
+  /** Esc in a menu: out of the goods to the menu, or out of the menu. */
+  private back(): void {
+    const m = this.menu;
+    if (!m) return;
+    if (!m.shopping) return this.closeMenu(true);
+    this.menu = { folk: m.folk, pick: 1 };
+    this.showMenu();
   }
 
   private movePick(d: number): void {

@@ -153,6 +153,10 @@ describe("the merchants' goods", () => {
     expect(shown(["Brenna's Edge"], ["stoneWarden"])).toEqual(["Brenna's Edge", "Keener Edge"]);
     expect(shown(["Brenna's Edge", "Keener Edge"], ["stoneWarden", "troll"])).toEqual(["Brenna's Edge", "Keener Edge", "Grey-Iron Edge"]);
   });
+
+  it("each say in one line what they are, with no dash", () => {
+    for (const item of Object.values(ITEMS)) expect(item.about).toMatch(/^[^—–\-\n]+$/);
+  });
 });
 
 describe("a flask", () => {

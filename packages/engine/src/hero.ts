@@ -171,16 +171,16 @@ export interface Kit {
  * name, which is what a save keeps; each adds to the captain's numbers, an edge only on top of the one before.
  */
 export const ITEMS = {
-  "Smoked Haunch": { cost: 250, adds: { hp: 25 } },
-  "Ember Shard": { cost: 300, adds: { flasks: 1 } },
-  "Brenna's Edge": { cost: 400, adds: { attack: 3 } },
-  "Keener Edge": { cost: 800, adds: { attack: 3 }, needs: "Brenna's Edge" },
-  "Grey-Iron Edge": { cost: 1200, adds: { attack: 4 }, needs: "Keener Edge" },
-  "Pine Resin": { cost: 450, adds: { flask: 15 } },
-  "Banded Shield": { cost: 600, adds: { block: -0.75 } },
-  "Kindled Shard": { cost: 900, adds: { flasks: 1 } },
-  "Prospector's Purse": { cost: 500, adds: { greed: 0.25 } },
-} as const satisfies Record<string, { cost: number; adds: Partial<Kit>; needs?: string }>;
+  "Smoked Haunch": { cost: 250, adds: { hp: 25 }, about: "Salt meat hung over a harbour fire, enough to keep a captain on their feet through one more bad night." },
+  "Ember Shard": { cost: 300, adds: { flasks: 1 }, about: "A splinter of the old flame, still warm. Pressed to a flask, it holds one more draught." },
+  "Brenna's Edge": { cost: 400, adds: { attack: 3 }, about: "Brenna ground this edge and will not say on what. It bites deeper than it looks." },
+  "Keener Edge": { cost: 800, adds: { attack: 3 }, needs: "Brenna's Edge", about: "Honed again once the warden on the bell roof fell silent, as if the stone had taught it something." },
+  "Grey-Iron Edge": { cost: 1200, adds: { attack: 4 }, needs: "Keener Edge", about: "Iron from the chapel's own bell, cold to hold. What it cuts does not quite mend." },
+  "Pine Resin": { cost: 450, adds: { flask: 15 }, about: "Sap boiled thick and stirred into the flask. Bitter, but it closes wounds the faster for it." },
+  "Banded Shield": { cost: 600, adds: { block: -0.75 }, about: "Oak bound in iron bands. A blow on it jars the arm far less than it ought to." },
+  "Kindled Shard": { cost: 900, adds: { flasks: 1 }, about: "A shard of the fire the troll sat on, burning again now it is gone. One more flask." },
+  "Prospector's Purse": { cost: 500, adds: { greed: 0.25 }, about: "A dead prospector's purse, never quite full. Coin finds its way into it." },
+} as const satisfies Record<string, { cost: number; adds: Partial<Kit>; needs?: string; about: string }>;
 export type ItemName = keyof typeof ITEMS;
 
 /** The captain's numbers with what has been bought. */
