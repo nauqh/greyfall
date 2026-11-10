@@ -580,7 +580,7 @@ function keepArea(): AreaMap {
   prop("castle", 30, 10, blue);
   who("lancer", 26, 14, { ...blue, to: { col: 36, row: 14 } });
 
-  const notes: Note[] = [{ at: { col: 44, row: 6 }, text: "Look east. That grey on the sky is the Greyfall, and the Warlord sits in it." }];
+  const notes: Note[] = [{ at: { col: 44, row: 6 }, text: "Look east. The Warlord waits in the grey." }];
   const exits: AreaExit[] = [
     { to: "burg", name: "Keep Gate", kind: "open", at: { col: 62, row: 30 }, plain: true },
     { to: "steps", name: "Watch Lift", kind: "shortcut", at: { col: 13, row: 6 }, shut: "watchLiftOpen" },
@@ -684,9 +684,8 @@ function chapel(): AreaMap {
   for (const [c, r] of [[60, 22], [80, 36]] as const) who("skull", c, r, { to: { col: c + 3, row: r } });
 
   const notes: Note[] = [
-    { at: { col: 6, row: 31 }, text: "The Chapel Ward. The bell has not rung since the grey came." },
-    { at: { col: 32, row: 14 }, text: "Something of stone squats on the bell. Up there, there is no room to run." },
-    { at: { col: 68, row: 52 }, text: "The Old Lift, down the hill to the Harbour. Ride it once and it runs both ways." },
+    { at: { col: 6, row: 31 }, text: "The bell has not rung since the grey came." },
+    { at: { col: 32, row: 14 }, text: "No room to run on the bell roof." },
   ];
   const exits: AreaExit[] = [
     { to: "ramparts", name: "Chapel Door", kind: "open", at: { col: 1, row: 30 }, plain: true },
@@ -839,9 +838,7 @@ function ramparts(): AreaMap {
   prop("skullSpike", 77, 10);
 
   const notes: Note[] = [
-    { at: { col: 10, row: 44 }, text: "Up the tower and along the wall. What waits on it does not go round you, and you cannot go round it." },
-    { at: { col: 66, row: 12 }, text: "A ladder down the tower to the Burg's square. Kick it loose and it stays down." },
-    { at: { col: 79, row: 7 }, text: "The Chapel Ward. Its bell has not rung since the grey came." },
+    { at: { col: 10, row: 44 }, text: "A narrow wall. What holds it does not turn aside." },
   ];
   const exits: AreaExit[] = [
     { to: "burg", name: "Rampart Gate", kind: "open", at: { col: 10, row: 48 }, plain: true },
@@ -1007,10 +1004,7 @@ function burg(): AreaMap {
   for (const [c, r] of [[48, 5], [56, 5]] as const) prop("tower", c, r, blue);
 
   const notes: Note[] = [
-    { at: { col: 49, row: 57 }, text: "The Burg fell before the town did. Thieves in the market: mind the stalls." },
-    { at: { col: 52, row: 52 }, text: "Two bridges over the creek. Take one up; the other is the way back." },
-    { at: { col: 54, row: 33 }, text: "Up the street to the crest, or through the graves on Church Hill. The castle's gate is the same either way." },
-    { at: { col: 52, row: 7 }, text: "Up: the Ramparts. A bull holds the wall." },
+    { at: { col: 49, row: 57 }, text: "Thieves in the stalls." },
   ];
   const exits: AreaExit[] = [
     { to: "harbour", name: "Burg Gate", kind: "open", at: { col: 48, row: 62 }, plain: true },
@@ -1302,13 +1296,11 @@ function harbour(): AreaMap {
     // The Graves read dark against the point's green: the hill's foot keeps the green, its slope and crest go grey-teal and olive.
     { name: "The Graves", at: { col: 97, row: 57 }, levels: [1, 2, 3], palette: [3, 5, 4], dress: "barrowmoor", decor: 1.5, gloom: true },
   ];
-  // Messages on the ground, after the Souls games: at the well's lip, on the pier, at the foot of the climb and at the
-  // Graves road's foot.
+  // Messages on the ground, after the Souls games: at the well's lip, on the pier and at the Graves road's foot.
   const notes: Note[] = [
-    { at: { col: 53, row: 47 }, text: "The rope is cut. Down is the only way, and down is deep." },
-    { at: { col: 51, row: 59 }, text: "The boat back to the sea cave and the Bull's Ring. If the bull still holds it, he is waiting." },
-    { at: { col: 57, row: 39 }, text: "Up the hill to the Citadel Gate: the Burg, the castle, the way on." },
-    { at: { col: 95, row: 67 }, text: "Up the hill: the graves, the dogs, and the Moor Gate, shut. Try the shore." },
+    { at: { col: 53, row: 47 }, text: "The rope is cut. No way back up." },
+    { at: { col: 51, row: 59 }, text: "Back to the Ring. If the bull lives, he waits." },
+    { at: { col: 95, row: 67 }, text: "Dogs on the hill, and its gate is shut. Not yet." },
   ];
   const tier = t.finish({}, [{ col: 56, row: 46 }]);
   return { ...tier, area: "harbour", entry: { col: 56, row: 47 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], streets: true, notes };
@@ -2853,13 +2845,12 @@ function landing(): AreaMap {
   for (const [c, r] of [[47, 15], [54, 15]] as const) prop("skullSpike", c, r);
 
   const notes: Note[] = [
-    { at: { col: 33, row: 43 }, text: "W A S D to walk. Hold Space while walking to sprint. The way out is the lit one." },
-    { at: { col: 36, row: 41 }, text: "E to rest at a bonfire: it heals you and refills your flasks, but every monster comes back." },
-    { at: { col: 30, row: 41 }, text: "R drinks a flask. You carry three, so save them for when it counts." },
-    { at: { col: 22, row: 32 }, text: "A goblin ahead. Left click swings toward the cursor. Three swings chain, and the third knocks back." },
-    { at: { col: 18, row: 18 }, text: "A monster flashes white as it winds up. Tap Space to roll through the blow." },
-    { at: { col: 49, row: 18 }, text: "Its blows are heavy: hold Shift to guard behind the shield, or roll and strike while it recovers." },
-    { at: { col: 52, row: 20 }, text: "Die and your gold stays where you fell. Fall to what waits here and you wash up on Lantern Point. It will wait." },
+    { at: { col: 33, row: 43 }, text: "Hold Space while walking to run." },
+    { at: { col: 30, row: 41 }, text: "R to drink a flask. Rest at a fire to refill." },
+    { at: { col: 22, row: 32 }, text: "Left click to attack." },
+    { at: { col: 18, row: 18 }, text: "Tap Space to roll." },
+    { at: { col: 49, row: 18 }, text: "Hold Shift to guard." },
+    { at: { col: 52, row: 20 }, text: "Die, and your gold stays where you fell." },
   ];
   const exits: AreaExit[] = [{ to: "ring", name: "Ring Gate", kind: "open", at: { col: 68, row: 18 }, plain: true }];
   const districts: District[] = [
