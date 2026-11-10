@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FLYING, MAPPED_AREAS, NPCS, districtOf, groundColours, SEA_KINDS, WATER_ART, areaMap, castsCliff, cellKey, footprint, isForest, isSlope, isWalkable, level, solidCells, stepsFrom, useIsland, type Cell } from "../src/index.ts";
+import { AREAS, FLYING, MAPPED_AREAS, NPCS, districtOf, groundColours, SEA_KINDS, WATER_ART, areaMap, castsCliff, cellKey, footprint, isForest, isSlope, isWalkable, level, solidCells, stepsFrom, useIsland, type Cell } from "../src/index.ts";
 
 function reach(from: Cell, shut: ReadonlySet<number> = new Set()): Set<number> {
   const seen = new Set([cellKey(from)]);
@@ -148,4 +148,32 @@ it.each(MAPPED_AREAS)("leaves every note in %s clear of woods that would stand o
   for (const n of m.notes ?? []) {
     for (let dr = 0; dr <= 2; dr++) for (let dc = -1; dc <= 1; dc++) expect(isForest(n.at.col + dc, n.at.row + dr), `${id} note ${n.at.col},${n.at.row}`).toBe(false);
   }
+});
+
+// One hill, not a stack of maps each starting from its floor: a crossing meets the height and the green it left.
+describe("crossings between the surface lands", () => {
+  // Ways that go down the hill by design: a lift, a ladder off a tower, and the Postern road down the Ward's back.
+  const DESCENTS = new Set(["The Old Lift", "The Ladder", "The Postern"]);
+  const LIGHT: Record<number, number> = { 5: 0, 4: 1, 3: 2, 2: 3, 1: 4 };
+  const area = (id: string) => AREAS.find((a) => a.id === id)!;
+  const ends = MAPPED_AREAS.flatMap((a) =>
+    areaMap(a).exits.flatMap((e) => {
+      const back = MAPPED_AREAS.includes(e.to) ? areaMap(e.to).exits.find((x) => x.to === a && x.name === e.name) : undefined;
+      return back && a < e.to && area(a).rise !== undefined && area(e.to).rise !== undefined ? [{ a, b: e.to, name: e.name, at: e.at, back: back.at }] : [];
+    }),
+  );
+  const side = (id: (typeof MAPPED_AREAS)[number], at: Cell) => {
+    const m = areaMap(id);
+    useIsland(m.island);
+    const shade = groundColours(m);
+    return { world: area(id).rise! + level(at.col, at.row), shade: shade[at.row]?.[at.col] ?? null };
+  };
+
+  it.each(ends.map((e) => [`${e.a} ${e.name} ${e.b}`, e] as const))("%s meets the height it left", (_, e) => {
+    const [x, y] = [side(e.a, e.at), side(e.b, e.back)];
+    if (DESCENTS.has(e.name)) return;
+    expect(Math.abs(x.world - y.world), `${x.world} against ${y.world}`).toBeLessThanOrEqual(1);
+    if (area(e.a).ownGround || area(e.b).ownGround || x.shade === null || y.shade === null) return;
+    expect(Math.abs(LIGHT[x.shade]! - LIGHT[y.shade]!), `shade ${x.shade} against ${y.shade}`).toBeLessThanOrEqual(1);
+  });
 });

@@ -296,19 +296,28 @@ function river(t: Builder, points: readonly (readonly [number, number])[], width
 const LIGHT: Record<number, number> = { 5: 0, 4: 1, 3: 2, 2: 3, 1: 4 };
 const SHADES = [5, 4, 3, 2, 1];
 const heightOf = (g: string): number => ("5()".includes(g) ? 5 : "4{}".includes(g) ? 4 : "^[]".includes(g) ? 3 : "#<>".includes(g) ? 2 : g === "~" ? 0 : 1);
+/** The green at a world height: two heights to a shade, the Harbour's floor green, the citadel's heights gold. */
+const worldShade = (h: number): number => (h <= 2 ? 3 : h <= 4 ? 2 : 1);
 
 /**
  * The tileset colour of every tile of an area map: its district's colour at its height, except that ground
  * reads lighter as it climbs. Each shelf (a district's ground at one height) resolved lowest first is at least
  * a shade lighter than any lower ground it stands over, gold being the lightest.
+ *
+ * In the green lands the starting colour is the world height instead (the area's rise and the tile's height),
+ * so a crossing meets the green it left: a map's floor is only as dark as where it stands on the hill.
  */
 export function groundColours(m: AreaMap): (number | null)[][] {
   const rows = m.island.rows;
   const [W, H] = [rows[0]!.length, rows.length];
+  const area = AREAS.find((a) => a.id === m.area)!;
+  const rise = area.rise !== undefined && !area.ownGround ? area.rise : null;
   const out: (number | null)[][] = rows.map((l, r) =>
     [...l].map((g, c) => {
       const d = districtOf(m, c, r);
-      return d ? d.palette[Math.min(d.palette.length - 1, Math.max(1, heightOf(g)) - 1)]! : null;
+      if (!d) return null;
+      if (rise !== null && !d.gloom) return worldShade(rise + heightOf(g));
+      return d.palette[Math.min(d.palette.length - 1, Math.max(1, heightOf(g)) - 1)]!;
     }),
   );
   const seen = rows.map((l) => [...l].map(() => false));
@@ -586,7 +595,7 @@ function keepArea(): AreaMap {
     { to: "steps", name: "Watch Lift", kind: "shortcut", at: { col: 13, row: 6 }, shut: "watchLiftOpen" },
   ];
   const districts: District[] = [
-    { name: "The Keep Gate", at: { col: 54, row: 30 }, levels: [1], palette: [3], dress: "harbour", decor: 1 },
+    { name: "The Keep Gate", at: { col: 54, row: 30 }, levels: [1], palette: [3], dress: "greyfall", decor: 1 },
     { name: "The Bailey", at: { col: 26, row: 30 }, levels: [1], palette: [3], dress: "harbour", decor: 1 },
     { name: "The Keep", at: { col: 30, row: 9 }, levels: [2], palette: [2], dress: "harbour", decor: 1 },
   ];
@@ -655,7 +664,19 @@ function chapel(): AreaMap {
   t.block(2, 56, 11, 10, 7);
   // The ways out to the map's edge: the Cloister Gate west, the Postern north off the bell roof.
   edgeWay(t, { col: 4, row: 30 }, { col: 1, row: 30 });
-  edgeWay(t, { col: 22, row: 6 }, { col: 22, row: 1 }, 3);
+  // The Postern road goes down the back of the hill, a stair at each step, so it leaves the Ward at its lowest, nearer
+  // the wood below: a walk north off the bell roof, west to a ledge a height down, and a ledge at the foot. None of
+  // it touches the terrace, so the fog stays the one way onto the roof.
+  t.ground("chapel", 21, 1, 3, 5);
+  t.ground("chapel", 14, 2, 7, 3);
+  t.ground("chapel", 10, 1, 4, 7);
+  t.ground("chapel", 4, 1, 6, 10);
+  t.block(3, 21, 2, 3, 4);
+  t.block(3, 14, 2, 7, 3);
+  t.block(2, 10, 1, 4, 7);
+  t.stair(3, 13, 4, "L");
+  t.stair(2, 9, 7, "L");
+  edgeWay(t, { col: 6, row: 4 }, { col: 6, row: 1 });
   t.road([4, 30], [20, 30], [22, 20], [50, 18], [52, 17]);
   t.road([22, 20], [22, 40], [48, 40], [55, 40]);
   t.road([46, 14], [53, 12], [60, 16], [64, 22]);
@@ -690,10 +711,10 @@ function chapel(): AreaMap {
   const exits: AreaExit[] = [
     { to: "ramparts", name: "Chapel Door", kind: "open", at: { col: 1, row: 30 }, plain: true },
     { to: "harbour", name: "The Old Lift", kind: "shortcut", at: { col: 68, row: 55 }, opens: "oldLiftDown" },
-    { to: "emberwood", name: "The Postern", kind: "gate", at: { col: 22, row: 1 }, guard: "stoneWarden", plain: true },
+    { to: "emberwood", name: "The Postern", kind: "gate", at: { col: 6, row: 1 }, guard: "stoneWarden", plain: true },
   ];
   const districts: District[] = [
-    { name: "The Cloister Gate", at: { col: 9, row: 30 }, levels: [1], palette: [4], dress: "harbour", decor: 1.5 },
+    { name: "The Cloister Gate", at: { col: 9, row: 30 }, levels: [1], palette: [4], dress: "greyfall", decor: 1.5 },
     { name: "The Cloister", at: { col: 34, row: 22 }, levels: [1], palette: [3], dress: "harbour", decor: 1 },
     { name: "The Chapel", at: { col: 40, row: 10 }, levels: [2], palette: [2], dress: "harbour", decor: 1 },
     { name: "The Bell Roof", at: { col: 24, row: 8 }, palette: [5, 3, 2], dress: "barrowmoor", decor: 0.3, box: { x: 18, y: 1, w: 12, h: 10 } },
@@ -1351,8 +1372,11 @@ function emberwood(): AreaMap {
   t.bridge({ col: 13, row: 34 }, { col: 13, row: 41 }, 2);
   t.bridge({ col: 88, row: 28 }, { col: 88, row: 37 }, 3);
   t.bridge({ col: 40, row: 64 }, { col: 40, row: 70 }, 3);
-  // The Postern's causeway: off the south-east clearing over the water to the Chapel Ward's back gate.
-  t.bridge({ col: 73, row: 62 }, { col: 73, row: 70 }, 3);
+  // The Postern Crag: the Chapel Ward stands high on its hill, so its back road comes down onto a crag's top ledge
+  // west of the Burn, and on down a stair at each step to the wood floor.
+  t.shape(2, 60, 59, 9, 6, 0.3, "Postern Crag");
+  t.shape(3, 60, 58, 5.5, 3.5, 0.25, "Postern Crag");
+  t.shape(4, 60, 57, 2.5, 1.5, 0.15, "Postern Crag");
   t.bridge({ col: 118, row: 18 }, { col: 126, row: 18 }, 3);
 
   // The Palisade: the Harbour's side of the gate, woodcutters and a watch fire.
@@ -1442,12 +1466,13 @@ function emberwood(): AreaMap {
     { name: "Troll's Hollow", at: { col: 63, row: 19 }, levels: [2], palette: [1], dress: "barrowmoor", decor: 2 },
     { name: "The Burn", at: { col: 72, row: 54 }, levels: [1, 2], palette: [3, 1], dress: "greyfall", decor: 2 },
     { name: "Crag Foot", at: { col: 94, row: 22 }, levels: [1, 2, 3], palette: [3], dress: "emberwood", decor: 2 },
+    { name: "Postern Crag", at: { col: 60, row: 58 }, levels: [2, 3, 4], palette: [3], dress: "crags", decor: 1 },
   ];
   const rooms = districts.map((d) => ({ at: d.at, r: d.clearing ?? 6 }));
   const tier = t.finish({}, [{ col: 40, row: 64 }], maze(t, rng, rooms));
   const exits: AreaExit[] = [
     { to: "harbour", name: "Ember Gate", kind: "gate", at: { col: 40, row: 70 }, opens: "emberGateOpen" },
-    { to: "chapel", name: "The Postern", kind: "open", at: { col: 73, row: 70 }, plain: true },
+    { to: "chapel", name: "The Postern", kind: "open", at: { col: 60, row: 57 }, plain: true },
     { to: "crags", name: "Crag Stair", kind: "open", at: { col: 126, row: 18 } },
   ];
   // Troll's Hollow is the troll's arena: a plateau ringed by cliffs, fog across every stair up onto it while he lives.

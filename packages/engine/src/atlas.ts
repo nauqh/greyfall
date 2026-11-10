@@ -45,6 +45,10 @@ export interface AtlasArea {
   palette: readonly [number, number, number];
   /** The light over it, as a multiply colour; white for plain daylight. */
   mood: number;
+  /** World height of its lowland, so ground shade and height agree on both sides of a crossing; none underground or in the sky. */
+  rise?: number;
+  /** A land of its own colour (moor, fen, crags, the Greyfall): its ground keeps its palette, a way into it a change of country. */
+  ownGround?: boolean;
   label: Cell;
 }
 
@@ -152,6 +156,7 @@ export const AREAS: readonly AtlasArea[] = [
     blurb: "Fishing isles on the west shore, where the boats put in. The yellow militia still hold the villages, just.",
     palette: [5, 5, 5],
     mood: 0xffffff,
+    rise: 0,
     label: { col: 13, row: 56 },
   },
   {
@@ -161,6 +166,7 @@ export const AREAS: readonly AtlasArea[] = [
     blurb: "The last free town, under the blue castle. Every road starts at the fire in its square, and every road comes back to it: down its old well, up its watchtower lift.",
     palette: [3, 3, 3],
     mood: 0xffffff,
+    rise: 0,
     label: { col: 40, row: 47 },
   },
   {
@@ -170,6 +176,7 @@ export const AREAS: readonly AtlasArea[] = [
     blurb: "Old pine the goblins burn for room. Warrens in every clearing, and a troll in the biggest one.",
     palette: [4, 4, 4],
     mood: 0xffe2c8,
+    rise: 0,
     label: { col: 38, row: 4 },
   },
   {
@@ -179,6 +186,8 @@ export const AREAS: readonly AtlasArea[] = [
     blurb: "Gnome country: a rock that climbs in five steps to the Tinker Peak, and a lift off the peak into the clouds. A bridge runs off the rock toward the grey.",
     palette: [2, 2, 2],
     mood: 0xfff8e6,
+    rise: 0,
+    ownGround: true,
     label: { col: 81, row: 24 },
   },
   {
@@ -188,6 +197,8 @@ export const AREAS: readonly AtlasArea[] = [
     blurb: "The old kings' barrows. The dead walk the moor at dusk, something with horns keeps the deepest grave, and the cave goes down further than anyone has followed it.",
     palette: [4, 4, 4],
     mood: 0xc4c4e4,
+    rise: 1,
+    ownGround: true,
     label: { col: 77, row: 57 },
   },
   {
@@ -197,6 +208,8 @@ export const AREAS: readonly AtlasArea[] = [
     blurb: "Reed and black water between the shore and the moor. A purple chapel prays to the grey in the middle of it, over a sinkhole that drinks the pools.",
     palette: [5, 5, 5],
     mood: 0xdcecdc,
+    rise: 1,
+    ownGround: true,
     label: { col: 66, row: 76 },
   },
   {
@@ -206,6 +219,8 @@ export const AREAS: readonly AtlasArea[] = [
     blurb: "The warlord's citadel, where the grey pours from, its keep on the fourth height. Two keys open its gate; the gnomes' high road is the other way in.",
     palette: [4, 4, 4],
     mood: 0x9c9fa8,
+    rise: 2,
+    ownGround: true,
     label: { col: 112, row: 46 },
   },
   {
@@ -269,6 +284,7 @@ export const AREAS: readonly AtlasArea[] = [
     blurb: "The castle's outer town on the hill above the Harbour, fallen to the grey before the town below. Thieves in the lanes, the dead in the yards, and the Ramparts above.",
     palette: [5, 5, 5],
     mood: 0xeee8e0,
+    rise: 3,
     label: { col: 45, row: 29 },
   },
   {
@@ -278,6 +294,7 @@ export const AREAS: readonly AtlasArea[] = [
     blurb: "The castle's curtain wall above the Burg, its walk too narrow to pass the bull that holds it, and past him the Gun Bridge over the chasm to the Chapel Ward.",
     palette: [4, 4, 4],
     mood: 0xeee8e0,
+    rise: 5,
     label: { col: 57, row: 28 },
   },
   {
@@ -287,6 +304,7 @@ export const AREAS: readonly AtlasArea[] = [
     blurb: "The castle's monastery behind the Gun Bridge: a cloister round a still pond, the chapel on its terrace, and on the bell roof a warden of stone. Its lift goes down to the point; its postern opens on Emberwood.",
     palette: [5, 5, 5],
     mood: 0xf2ece4,
+    rise: 7,
     label: { col: 70, row: 27 },
   },
   {
@@ -305,6 +323,7 @@ export const AREAS: readonly AtlasArea[] = [
     blurb: "The castle's crown over the Harbour: its bailey and garrison, the hall, and the Watch Lift up to the sky. Its gate off the Burg opens to the troll's key.",
     palette: [3, 3, 3],
     mood: 0xffffff,
+    rise: 3,
     label: { col: 41, row: 36 },
   },
 ];

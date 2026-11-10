@@ -436,6 +436,8 @@ const FONT = '"Nunito", "Segoe UI", sans-serif';
 
 /** The area a sea tile takes its light from: the nearest within this many tiles. */
 const MOOD_REACH = 6;
+/** How far from a way out its far side's light reaches in, in tiles. */
+const LEAN_REACH = 12;
 
 const LIFT_TONE: Record<LiftKind, string> = { lift: "#ffe9a8", drop: "#d6b8ff", shortcut: "#8fd3ff" };
 
@@ -2870,6 +2872,20 @@ export class AtlasScene extends Phaser.Scene {
         ]
       : null;
     const lit = (c: number, r: number): number => Math.max(0, ...lights!.map((l) => 1 - Math.hypot(c - l.c, r - l.r) / l.reach));
+    // Near a way out to a land on the same tier the light leans toward that land's, half way at the crossing, so
+    // the two maps meet in one light.
+    const tierOf = (id: AreaId) => AREAS.find((a) => a.id === id)?.tier;
+    const toward = this.local && !under ? this.local.exits.filter((e) => tierOf(e.to) === tierOf(this.local!.area)).map((e) => ({ c: e.at.col, r: e.at.row, mood: AREAS.find((a) => a.id === e.to)!.mood })) : [];
+    const lean = (c: number, r: number, m: number): number => {
+      let k = 0;
+      let to = m;
+      for (const e of toward) {
+        const f = 0.5 * (1 - Math.hypot(c - e.c, r - e.r) / LEAN_REACH);
+        if (f > k) [k, to] = [f, e.mood];
+      }
+      const mix = (shift: number) => Math.round(((m >> shift) & 255) + (((to >> shift) & 255) - ((m >> shift) & 255)) * k);
+      return k > 0 ? (mix(16) << 16) | (mix(8) << 8) | mix(0) : m;
+    };
     const tone = (c: number, r: number): number => {
       if (tier.base === "rock" && (rows[r]?.[c] ?? "%") === "%") return under?.rock ?? ROCK_MOOD;
       if (lights && under) {
@@ -2884,7 +2900,7 @@ export class AtlasScene extends Phaser.Scene {
       if (m === -1) return tier.base === "rock" ? ROCK_MOOD : 0xffffff;
       const f = tier.base === "rock" ? 0 : dist[k]! / (MOOD_REACH + 1);
       const mix = (shift: number) => Math.round(((m >> shift) & 255) + (255 - ((m >> shift) & 255)) * f);
-      return (mix(16) << 16) | (mix(8) << 8) | mix(0);
+      return lean(c, r, (mix(16) << 16) | (mix(8) << 8) | mix(0));
     };
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
