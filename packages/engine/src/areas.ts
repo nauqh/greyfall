@@ -609,16 +609,27 @@ function chapel(): AreaMap {
   t.ground("chapel", 20, 18, 30, 24);
   t.ground("chapel", 16, 6, 36, 12);
   t.ground("chapel", 50, 14, 6, 28);
-  t.ground("chapel", 56, 18, 28, 23);
-  t.ground("chapel", 64, 41, 8, 15);
+  // The forge yard a ragged spur of the hill, its pier a rocky tongue narrowing south to the lift.
+  t.ground("chapel", 56, 18, 10, 23);
+  t.blob("chapel", 70, 29, 16, 13);
+  t.blob("chapel", 68, 44, 7, 6);
+  t.blob("chapel", 68, 51, 4, 6);
   t.ground("chapel", 30, 42, 7, 9);
   t.pond(28, 24, 14, 10);
   t.block(2, 16, 6, 36, 11);
   t.stair(2, 52, 16, "R");
   t.block(3, 18, 6, 12, 5);
   t.stair(3, 30, 10, "R");
-  t.block(2, 56, 18, 28, 23);
-  t.block(2, 64, 41, 8, 15);
+  t.shape(2, 70, 29, 13, 10, 0.45, "The Forge Yard");
+  t.shape(2, 62, 21, 6, 4, 0.4, "The Forge Yard");
+  t.shape(2, 80, 36, 5, 4, 0.45, "The Forge Yard");
+  t.shape(2, 68, 43, 5, 4, 0.4, "The Forge Yard");
+  t.shape(2, 68, 49, 3, 4, 0.35, "The Forge Yard");
+  t.shape(2, 61, 37, 6, 3, 0.3, "The Forge Yard");
+  // The forge's own knoll a height up behind it; the stair's landing and the lift's head drawn exact.
+  t.shape(3, 78, 23, 4, 3, 0.35, "The Forge Yard");
+  t.block(2, 56, 38, 4, 3);
+  t.block(2, 67, 52, 3, 4);
   t.stair(2, 55, 40, "L");
   // The terrace carried east at its own height onto a shelf of the forge yard, so the yard is a walk from the fire.
   t.ground("chapel", 52, 11, 14, 7);
