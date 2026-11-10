@@ -19,7 +19,7 @@ export interface CompanionStats {
   cost: number;
 }
 
-/** GAME.md's band: the Lancer a tank who draws the monsters, the Archer shooting from five tiles back. */
+/** `ATLAS.md`'s band: the Lancer a tank who draws the monsters, the Archer shooting from five tiles back. */
 export const COMPANIONS: Record<CompanionKind, CompanionStats> = {
   lancer: { hp: 120, attack: 9, every: 2.0, speed: 2.8, range: 1, cost: 75 },
   archer: { hp: 70, attack: 7, every: 2.2, speed: 2.8, range: 5, cost: 60 },

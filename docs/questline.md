@@ -1,10 +1,14 @@
 # The folk's questline
 
-For checking. Generated from `packages/engine/src/npcs.ts`, so the lines and places here are the ones in the game.
+For checking. Generated from `../packages/engine/src/npcs.ts`, so the lines and places here are the ones in the game.
+
+## The grey
+
+The grey is a condition, not an army: a rot in the ground that gets into the water, then the blood, and takes the shape of whoever holds on longest. In the Greyfall it has worn the Warlord a long time. The Gilded Reach, the high city that glints above the clouds, shut its gates when the grey came and sent no aid. The wanderer comes ashore with the tide, nameless, and the folk of Last Harbour measure them by what they do, not by a rank.
 
 ## How it works
 
-After Dark Souls: no quest log, no choices, the captain never speaks.
+After Dark Souls: no quest log, no choices, the wanderer never speaks.
 
 - **Talks.** Each talk to someone plays their next conversation, a few short pages; once all are heard the last one repeats. A remark marked "once ... when" plays once, after the first talk there, when its flag has happened.
 - **Moving on.** Where someone stands depends on world flags. Each NPC has a home and a list of later stations; the last station whose flags have all happened wins. A station with no place means they are gone for good; a dead one lies there and says nothing.
@@ -16,7 +20,7 @@ After Dark Souls: no quest log, no choices, the captain never speaks.
 | Flag | Set by |
 | --- | --- |
 | died | dying (works now) |
-| bullWon | falling to the Shore Minotaur, which washes the captain up at the Harbour's fire |
+| bullWon | falling to the Shore Minotaur, which washes the wanderer up at the Harbour's fire |
 | wellDescended | arriving in the Undercroft (works now) |
 | moorGateOpen | coming into the Harbour through the Moor Gate (works now) |
 | watchLiftOpen | riding the Watch Lift down into the Harbour (works now) |
@@ -31,7 +35,7 @@ After Dark Souls: no quest log, no choices, the captain never speaks.
 
 | Who | Moved on by | Turns up | Ends |
 | --- | --- | --- | --- |
-| Tobin | his remark on the well, then a talk | Undercroft, Smugglers' Nook; then the Deeps, Robbers' Camp | Stays with his brother, who captains the thieves. The brother is never talked to |
+| Tobin | his remark on the well, then a talk | Undercroft, Smugglers' Nook; then the Deeps, Robbers' Camp | Stays with his brother, who leads the thieves. The brother is never talked to |
 | Mother Ysolde | the monk freed, then a talk | Undercroft, the Drowned Chapel; then the Hollow, Pilgrims' Rest | Kneels over her drowned sisters and will not come back |
 | Ansel of the Wall | his remark on the Troll Key | The Greyfall, the Ashen Approach | Hear him out twice and he goes ahead and dies in the High City, below the Warlord's Hall; kill the Warlord first and he is back on the wall |
 | Penny | reaching the Greyfall | The Greyfall, Gallows Yard, penned with her mum | Freed when the Warlord falls |
@@ -49,30 +53,30 @@ Greets you: *"Ah. Another one."* Walked away from: *"Mind the dark, then."*
 ### Home: Last Harbour, the Lower Town, by the bonfire (61, 48)
 
 - **first**
-  1. Another captain. Hm.
-  2. The last one sat right where you're standing. Warmed his hands, same as you.
-  3. Go on, then. The fire doesn't ask who you were. Nor do I.
+  1. Another one the tide spat out. Hm.
+  2. The last one sat where you're standing. Warmed his hands. Then he went east and did not come back.
+  3. Go on, then. The fire doesn't ask what you were. Nor do I.
 - **shore**
-  1. Follow the lanterns, captain. West along the shore, through the town, up to the Ember Gate. Someone lit them for you.
-  2. The path up the hill goes through the graves to the Moor Gate. Shut from this side, and the dogs up there don't care that it's shut.
+  1. Follow the lanterns west, through the lower town, up to the Ember Gate. Someone lit them before you came. They always do.
+  2. The path up the hill runs through the graves to the Moor Gate. It's barred from this side. The dogs on the moor don't care that it's barred.
 - **bull** (once, after meeting, when **bullWon**)
-  1. Washed up with the tide, did you? The bull did that.
-  2. He'll keep. Take the boat back when your arm's stronger. What he guards is worth a fall or two.
+  1. The tide brought you back. The bull in the Ring did that.
+  2. He'll keep. Go back by boat when your arm is stronger. What he guards is worth a fall or two.
 - **goal**
-  1. You'll be wanting the Grey Gate. East, past the moor. They all do.
+  1. You'll be wanting the Grey Gate, east past the moor. Everyone does, in the end.
   2. Two keys open it. The king under the barrows keeps one.
-  3. The other's down below, where the spider weaves. Down the well, and further down.
+  3. The other is down below, in the Weaver's web. Down the well, then further down.
 - **castle**
-  1. The castle? Shut since the grey came. The steward ran for the wood with its key.
-  2. A troll had him for supper, they say. It has the key still, I'd think.
+  1. The castle? Shut since the grey first fell. Its steward ran for the wood with the key.
+  2. The grey's no army. It's a rot in the ground. Gets into the water, then the blood. A troll had the steward for supper, they say. It still has the key, I'd wager.
 - **well**
   1. The well only goes one way. Down, to the drowned.
-  2. Not yet, captain. Not that way. Not yet.
+  2. Not yet. Not that way. Not with the grey still in the air.
 - **roads**
   1. Every road out of here comes back to this fire. The gates, the well, the lift.
   2. Folk think that's a comfort. I've never been sure.
 - **rest**
-  1. Rest, if you must. The roads are patient. Patient as stones.
+  1. Rest, if you must. The roads are patient as stones.
 - **died** (once, after meeting, when **died**)
   1. Back so soon? Don't look at me like that.
   2. Everyone comes back. That's the trouble with this place.
@@ -80,8 +84,8 @@ Greets you: *"Ah. Another one."* Walked away from: *"Mind the dark, then."*
   1. That key's warm. Troll's blood, or the fire inside it.
   2. Either way, keep it away from my kindling.
 - **warlord** (once, after meeting, when **warlordDead**)
-  1. So. The grey is lifting.
-  2. ...I'll keep the fire going anyway. Habit. Someone ought to.
+  1. So. The Warlord is dead.
+  2. He was only the shape the grey wore. ...I'll keep the fire going anyway. Habit. Someone ought to.
 - **ansel** (once, after meeting, when **anselRoused**)
   1. Ansel's stool is empty. First time in years.
   2. I'll leave it where it is. They come back, or they don't, and it's still a good stool.
@@ -109,7 +113,7 @@ Greets you: *"Mind the sparks."* Walked away from: *"Come back with ore."*
 
 ## Sergeant Corwin
 
-Greets you: *"Captain."* Walked away from: *"Dismissed, then."*
+Greets you: *"You're not one of mine."* Walked away from: *"Dismissed, then."*
 
 ### Home: The Keep, the Bailey, by the barracks (21, 29)
 
@@ -125,12 +129,12 @@ Greets you: *"Captain."* Walked away from: *"Dismissed, then."*
   2. Bring me the ones still breathing. Not their names.
 - **warlord** (once, after meeting, when **warlordDead**)
   1. Forty spears.
-  2. I'll carve them into the gate. Every one. Leave me to it, captain.
+  2. I'll carve them into the gate. Every one. Leave me to it.
 
 ### At Barrowmoor, Barrow Field (29, 22), once **hornedKey**
 
 - **barrows**
-  1. Captain. The king's dead, so the barrows are only barrows now.
+  1. The king's dead. The barrows are only barrows now.
   2. My forty went into them. I'm digging them out. One at a time.
 - **count**
   1. Twenty-two. Dace still had his pipe.
@@ -144,12 +148,12 @@ Greets you: *"Captain."* Walked away from: *"Dismissed, then."*
 
 ## Wren
 
-Greets you: *"You walk loud, captain."* Walked away from: *"Keep your head down!"*
+Greets you: *"You walk loud."* Walked away from: *"Keep your head down!"*
 
 ### Home: Last Harbour, West Fields (36, 58)
 
 - **first**
-  1. You walk loud for a captain. That's fine. Archers like a loud friend up front.
+  1. You walk loud. That's fine. Archers like a loud friend up front.
   2. Gold on the barrel, and I'll send you someone who doesn't miss. Much.
 - **goblins**
   1. Goblins at the Ember Gate camp in threes.
@@ -160,7 +164,7 @@ Greets you: *"You walk loud, captain."* Walked away from: *"Keep your head down!
 ### At Emberwood, Old Pines (29, 44), once **trollKey**
 
 - **bluff**
-  1. Captain! Troll's dead, the goblins don't know which way to run. Best shooting in years.
+  1. Troll's dead! The goblins don't know which way to run. Best shooting in years.
   2. Don't tell the Harbour. They'll want me back being useful.
 - **torches**
   1. Torches first. Always torches first.
@@ -183,7 +187,7 @@ Greets you: *"Don't lean on the rope."* Walked away from: *"...Right. Off you go
   2. A sword's no use on a thing that won't come down to meet it.
   3. Wren hires out bows, at the butts by the west road. Take one with you, if you go.
 - **chewed** (once, after meeting, when **died**)
-  1. You look chewed on, captain.
+  1. You look chewed on.
   2. If it had wings, your steel won't reach it. Wren's bows will.
 - **below** (once, after meeting, when **wellDescended**; heard to the end, sets **tobinDown**)
   1. You came back? From down there?
@@ -193,7 +197,7 @@ Greets you: *"Don't lean on the rope."* Walked away from: *"...Right. Off you go
 ### At The Undercroft, Smugglers' Nook (11, 9), once **tobinDown**
 
 - **nook**
-  1. Captain. Don't look so surprised. No rule against going down, is there?
+  1. Don't look so surprised. No rule against going down, is there?
   2. Smugglers keep this corner. One of them is wearing his coat. Said he swapped it, deeper in.
   3. Swapped it. Ha. He never swapped a thing in his life.
 - **deeper** (heard to the end, sets **tobinDeeper**)
@@ -203,7 +207,7 @@ Greets you: *"Don't lean on the rope."* Walked away from: *"...Right. Off you go
 ### At Barrow Deeps, Robbers' Camp (7, 69), once **tobinDeeper**
 
 - **camp**
-  1. Found him, captain. He runs this camp. Thin as ever. Smiling.
+  1. Found him. He runs this camp. Thin as ever. Smiling.
   2. He says the coin was never dropped. He threw it, to see who'd come after.
   3. ...I came after.
 - **stay**
@@ -212,12 +216,12 @@ Greets you: *"Don't lean on the rope."* Walked away from: *"...Right. Off you go
 
 ## Mother Ysolde
 
-Greets you: *"Peace on you."* Walked away from: *"Go gently, captain."*
+Greets you: *"Peace on you."* Walked away from: *"Go gently."*
 
 ### Home: Last Harbour, The Upper Town (54, 29)
 
 - **first**
-  1. My sisters went down to the Drowned Chapel, to pray the water clear.
+  1. My sisters went down to the Drowned Chapel, to pray the grey out of the water.
   2. The water did not clear. Nor did they come back.
 - **candle**
   1. I light a candle each night.
@@ -232,12 +236,12 @@ Greets you: *"Peace on you."* Walked away from: *"Go gently, captain."*
 - **lake** (heard to the end, sets **ysoldeDeeper**)
   1. She speaks in her sleep. Of a lake under all of this, clear as glass.
   2. The others went on to it. I must go too.
-  3. Do not follow, captain. Or do. I am too old to forbid things.
+  3. Do not follow. Or do. I am too old to forbid things.
 
 ### At The Drowned Hollow, Pilgrims' Rest (94, 49), once **ysoldeDeeper**
 
 - **clear**
-  1. Look, captain. The water is clear down here. Clear at last.
+  1. Look. The water is clear down here. Clear at last.
   2. I can see them at the bottom. All my sisters, kneeling. Still praying.
   3. ...No. Don't pull me back. I have only just found them.
 - **kneel**
@@ -274,7 +278,7 @@ Greets you: *"Gate stays shut."* Walked away from: *"Back to the wall, then."*
 ### Home: Last Harbour, the Moor Watch, by the Moor Gate on the hill (109, 49)
 
 - **first**
-  1. The gate stays barred from this side, captain. Orders.
+  1. The gate stays barred from this side. Orders.
   2. Whatever's on the moor stays on the moor.
   3. You want it open, you'll have to go round and lift the bar yourself.
 - **barrows**
@@ -288,7 +292,7 @@ Greets you: *"Gate stays shut."* Walked away from: *"Back to the wall, then."*
 ### At Barrowmoor, Gibbet Hill (38, 57), once **watchmanOut**
 
 - **lights**
-  1. Captain. Thought I'd see the lights for myself, since the gate's open anyway.
+  1. Thought I'd see the lights for myself, since the gate's open anyway.
   2. They're lanterns. Held by nobody. Swinging, all the same.
 - **look**
   1. I'll just look a little longer.
@@ -303,8 +307,8 @@ Greets you: *"Shh!"* Walked away from: *"Don't tell them I'm here!"*
 ### Home: Last Harbour, West Fields (24, 62)
 
 - **first**
-  1. Don't tell them I'm here. The black soldiers.
-  2. They took my mum. The whole east lane. Off to the castle with the grey walls.
+  1. Don't tell them I'm here. The grey men.
+  2. They took my mum. The whole east lane. Off to the citadel, where the grey falls.
   3. They keep them in a yard with ropes. I squeezed out under the gate.
 - **crows**
   1. I count the crows.
@@ -313,17 +317,17 @@ Greets you: *"Shh!"* Walked away from: *"Don't tell them I'm here!"*
 ### At The Greyfall, Gallows Yard (73, 67), once **greyfallReached**
 
 - **penned**
-  1. Shh! Captain! I followed you through the gate. You walk loud, it's easy.
+  1. Shh! I followed you through the gate. You walk loud, so it's easy.
   2. They caught me straight off. But they put me in the yard. Same yard as mum!
   3. So that's alright. Mostly.
 - **fewer**
   1. Fewer crows here today.
-  2. You're killing them, aren't you? The black ones, I mean.
+  2. You're killing them, aren't you? The grey ones, I mean.
 
 ### At The Greyfall, Gallows Yard (73, 67), once **warlordDead**
 
 - **free**
-  1. They ran! All the black soldiers, they just ran!
+  1. They ran! All the grey ones, they just ran!
   2. Mum says thank you. She says it twice. She's like that.
 - **home**
   1. We're walking home. Mum says slowly.
@@ -331,25 +335,25 @@ Greets you: *"Shh!"* Walked away from: *"Don't tell them I'm here!"*
 
 ## Ansel of the Wall
 
-Greets you: *"Look up, captain."* Walked away from: *"Go on. I'll keep watch. It's all I'm good for."*
+Greets you: *"Look up."* Walked away from: *"Go on. I'll keep watch. It's all I'm good for."*
 
 ### Home: The Keep, on the hall's terrace (43, 11)
 
 - **first**
-  1. Look up, captain. See that glint? Past the clouds.
-  2. Gold. A whole city of it, up there.
-  3. It never sent us a single spear when the grey came.
+  1. Look up. See that glint past the clouds?
+  2. The Gilded Reach. Gold walls, gold roofs, a city that never learned to bleed.
+  3. When the grey came, it shut its gates. Not one spear. Not one prayer.
 - **lift**
   1. The Watch Lift only comes down.
-  2. Someone up there decided who gets to visit.
-- **captain**
+  2. Someone in the high city decided who gets to visit.
+- **blue**
   1. I wore that blue once. Had a band, a banner. The fire knew my name.
   2. Then I stopped going out. You'd be surprised how easy it is.
 - **watch**
   1. Still here. Still watching. Someone ought to.
 - **lifted** (once, after meeting, when **watchLiftOpen**)
   1. So you went up. Were they kind?
-  2. ...No. Gold never is.
+  2. ...No. The high city never is.
 - **roused** (once, after meeting, when **trollKey**; heard to the end, sets **anselRoused**)
   1. The troll. You killed it. With that.
   2. ...I had a sword once. It's under the bed, I think.
@@ -358,10 +362,10 @@ Greets you: *"Look up, captain."* Walked away from: *"Go on. I'll keep watch. It
 ### At The Greyfall, The Ashen Approach (14, 54), once **anselRoused**
 
 - **out**
-  1. Captain. Don't look at me like that. I said I'd come out.
+  1. Don't look at me like that. I said I'd come out.
   2. I'd forgotten the smell of the grey. Wet ash and old iron.
 - **ahead** (heard to the end, sets **anselAhead**)
-  1. The warlord's hall is up past the High City. I'll go first, this time.
+  1. The Warlord's hall is up past the High City. I'll go first, this time.
   2. Let me have that. You've had all the others.
 
 ### At The Keep, on the hall's terrace (25, 10), once **warlordDead**
@@ -371,7 +375,7 @@ Greets you: *"Look up, captain."* Walked away from: *"Go on. I'll keep watch. It
   2. I'd only have been in the way. I'd only have been brave.
 - **wall**
   1. Back on the wall. It's a good wall.
-  2. You can see the gold from here. Doesn't glint so much now.
+  2. You can see the Gilded Reach from here. Doesn't glint so much now.
 
 ### Dead at The Greyfall, The High City (95, 25), once **anselAhead**
 

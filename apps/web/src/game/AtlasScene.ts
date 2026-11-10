@@ -406,7 +406,7 @@ const PAWN_ACT: Record<string, { idle: string; move?: string }> = {
   gold: { idle: "Pawn/Pawn_Idle Gold.png", move: "Pawn/Pawn_Run Gold.png" },
 };
 
-/** Trees by area: the big animated pines in Emberwood, dead wood on the moor and in the grey. */
+/** Trees by area: the big animated pines in the Emberwood, dead wood on the moor and in the grey. */
 const BIG_TREE: Sheet[] = [
   { file: "Terrain/Resources/Wood/Trees/Tree1.png", frame: 192, frameH: 256, anchor: 0.87, scale: 0.85 },
   { file: "Terrain/Resources/Wood/Trees/Tree2.png", frame: 192, frameH: 256, anchor: 0.87, scale: 0.85 },
@@ -509,7 +509,7 @@ const COMPANION_ATTACK: Record<CompanionKind, { key: string; file: string }> = {
 const RECRUITER: Record<string, CompanionKind> = { corwin: "lancer", wren: "archer" };
 /** What they say turning a hire down: short of gold, or the band already full. */
 const REFUSE: Record<string, { poor: string; full: string }> = {
-  corwin: { poor: "Lances cost gold, captain. Seventy-five.", full: "Three at your back already. I've none to spare." },
+  corwin: { poor: "Lances cost gold. Seventy-five.", full: "Three at your back already. I've none to spare." },
   wren: { poor: "Bows aren't free. Sixty gold, then we'll talk.", full: "You've a crowd already. Mine stay here." },
 };
 /** The goods bought, by name. */
@@ -1083,7 +1083,7 @@ export class AtlasScene extends Phaser.Scene {
   private exitWord(e: Exit): string {
     const { kind, dir } = this.crossing(e);
     if (kind === "fall") return "Drop";
-    if (kind === "ride") return e.name === "The Boat" ? `Sail to ${AREAS.find((a) => a.id === e.to)?.name ?? "the far shore"}` : `Ride the lift ${dir}`;
+    if (kind === "ride") return e.name === "The Boat" ? `Take the boat to ${AREAS.find((a) => a.id === e.to)?.name ?? "the far shore"}` : `Ride the lift ${dir}`;
     if (barred(e)) return e.key && !remembered(KEYS).has(e.key) ? `Locked: the ${BOSS_KEY[e.key] ?? "key"} opens it` : "Barred";
     const there = AREAS.find((a) => a.id === e.to)?.name;
     return there ? `Traverse the clouds to ${there}` : "Traverse the clouds";

@@ -11,8 +11,8 @@ import { useCloudExit } from "../game/Clouds";
 import { GameCanvas } from "../game/GameCanvas";
 
 const MENU = [
-  { href: "/map", label: "Play", hint: "The War. Raise a town, train an army, take the island." },
-  { href: "/atlas", label: "Atlas", hint: "Come ashore at the Landing and fight through the Shattered Reach, bonfire to bonfire." },
+  { href: "/map", label: "Play", hint: "The War. Raise a town, train an army, take the last island." },
+  { href: "/atlas", label: "Atlas", hint: "Begin at the Landing and carry the last fire through the Shattered Reach, bonfire to bonfire." },
   { href: "/battle", label: "Skirmish", hint: "Auto chess against three clans. Buy, merge, and outlast them." },
   { href: "/duel", label: "Duel", hint: "Open a room and send the code to a friend." },
 ] as const;
@@ -53,7 +53,7 @@ export default function Page() {
             <div className="titleMenu">
               <h1 className="logo">
                 Greyfall
-                <span className="logoSub">The last island before the grey</span>
+                <span className="logoSub">The last fire before the blight</span>
               </h1>
               <div className="menuScroll">
                 <nav className="menu" aria-label="Main menu">

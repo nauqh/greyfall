@@ -2,11 +2,11 @@
 
 export const PROLOGUE = {
   beats: [
-    "Before the grey, the Reach was whole. Every harbour kept a fire for the sailors who returned.",
-    "Then the grey came out of the east. The Grey Warlord led it. His soldiers burned the harbours.",
-    "The city above sent no spears. The sailors went out to meet the grey. None returned.",
-    "One fire is left, at Last Harbour. Old Ferrow keeps it lit. He watches the water and the roads.",
-    "You were taken in the grey. The tide carried you in. Another sailor.",
+    "Before the grey, the Reach was a realm of lords. Every town kept a fire for the soldiers who came home.",
+    "The grey came out of the east. It crowned the Grey Warlord. Where it passed, the fields went grey.",
+    "The Gilded Reach sent no aid. The lords rode out alone. Their banners did not return.",
+    "One fire is left, at Last Harbour. Old Ferrow keeps it. He still watches the roads and the water.",
+    "You survived the grey. The tide carried you in. Nameless. Alive.",
   ],
   title: "GREYFALL",
   subtitle: "The Shattered Reach",

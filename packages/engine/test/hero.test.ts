@@ -135,7 +135,7 @@ describe("stamina", () => {
 });
 
 describe("the merchants' goods", () => {
-  it("leave the captain as GAME.md has him with nothing bought", () => {
+  it("leave the hero as `ATLAS.md` has him with nothing bought", () => {
     expect(kit(new Set())).toEqual({ hp: HERO.hp, attack: HERO.attack, flasks: HERO.flasks, flask: HERO.flask, block: STAMINA.block, greed: 1 });
   });
 

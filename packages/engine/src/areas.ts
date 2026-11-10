@@ -296,7 +296,7 @@ function river(t: Builder, points: readonly (readonly [number, number])[], width
 const LIGHT: Record<number, number> = { 5: 0, 4: 1, 3: 2, 2: 3, 1: 4 };
 const SHADES = [5, 4, 3, 2, 1];
 const heightOf = (g: string): number => ("5()".includes(g) ? 5 : "4{}".includes(g) ? 4 : "^[]".includes(g) ? 3 : "#<>".includes(g) ? 2 : g === "~" ? 0 : 1);
-/** The green at a world height: two heights to a shade, the Harbour's floor green, the citadel's heights gold. */
+/** The green at a world height: two heights to a shade, the Harbour's floor green, the castle's heights gold. */
 const worldShade = (h: number): number => (h <= 2 ? 3 : h <= 4 ? 2 : 1);
 
 /**
@@ -549,7 +549,7 @@ function crowd(t: Builder, rng: Rng, kind: string, at: Cell, n: number, spread: 
 }
 
 /**
- * The Keep, the Citadel's crown: the castle between the Harbour and the Burg, its
+ * The Keep, the castle's crown: the castle between the Harbour and the Burg, its
  * gate off the Burg's west ward shut until the troll's key is carried. In through
  * the Keep Gate court on the east, the quiet bailey where the Keep's fire burns,
  * the rest after the climb and the troll; up the stair to the castle on its terrace,
@@ -589,7 +589,7 @@ function keepArea(): AreaMap {
   prop("castle", 30, 10, blue);
   who("lancer", 26, 14, { ...blue, to: { col: 36, row: 14 } });
 
-  const notes: Note[] = [{ at: { col: 44, row: 6 }, text: "Look east. The Warlord waits in the grey." }];
+  const notes: Note[] = [{ at: { col: 44, row: 6 }, text: "Look east. The grey wears a crown in the Citadel." }];
   const exits: AreaExit[] = [
     { to: "burg", name: "Keep Gate", kind: "open", at: { col: 62, row: 30 }, plain: true },
     { to: "steps", name: "Watch Lift", kind: "shortcut", at: { col: 13, row: 6 }, shut: "watchLiftOpen" },
@@ -604,12 +604,12 @@ function keepArea(): AreaMap {
 }
 
 /**
- * The Chapel Ward, the Citadel's third area, after Dark Souls' Undead Parish: the
+ * The Chapel Ward, the castle's third area, after Dark Souls' Undead Parish: the
  * castle's monastery past the Gun Bridge. In through the Cloister Gate, round the
  * cloister walk about its still pond, up onto the chapel terrace and the Ward's
  * bonfire at the chapel door, after the Cleansing Chapel: every way in the Ward
  * starts at it. West along the terrace, the bell roof, the Stone Warden, and past
- * him the Postern out to Emberwood; east along the terrace, the forge yard, Brenna
+ * him the Postern out to the Emberwood; east along the terrace, the forge yard, Brenna
  * at her anvil, and the Old Lift on the pier at the yard's south lip, down the hill
  * to the Harbour; the yard's own stair down to the cloister closes the loop.
  */
@@ -727,7 +727,7 @@ function chapel(): AreaMap {
 }
 
 /**
- * The Ramparts, the Citadel's second area, after Dark Souls' Undead Burg: the
+ * The Ramparts, the castle's second area, after Dark Souls' Undead Burg: the
  * castle's curtain wall over its bailey. In at the gate yard from the Burg's
  * crest, up the gate tower onto the wall, along its walk, too narrow to circle, to
  * the Bull's Wall, where an iron-shod bull holds the only way on behind fog. Past
@@ -886,7 +886,7 @@ function ramparts(): AreaMap {
 }
 
 /**
- * The Lower Burg, the first area of the Citadel, after Dark Souls' Undead Burg and
+ * The Lower Burg, the first area of the castle, after Dark Souls' Undead Burg and
  * Dark Souls 3's Undead Settlement: the castle's outer town on the hill north of
  * the Harbour, fallen to the grey, a warren of alleys walled by houses and dead
  * wood, small squares where they meet. In at the Burg Gate onto Market Row; the
@@ -1118,14 +1118,14 @@ function harbour(): AreaMap {
   t.pond(83, 56, 4, 10);
 
   // One climb from the bonfire, after Firelink's stair to the Burg: the bowl's north stairs onto Old Town, the Upper
-  // Town above it, and the Citadel Gate on the hill's crown, the Burg Gate through it and the road on north off the map
+  // Town above it, and the Castle Gate on the hill's crown, the Burg Gate through it and the road on north off the map
   // to the Lower Burg.
   t.shape(2, 57, 23, 21, 18, 0.3, "Old Town");
   t.shape(2, 70, 11, 8, 5, 0.3, "Old Town");
   t.shape(2, 56, 6, 16, 5, 0.2, "Old Town");
   t.shape(3, 56, 18, 13, 12, 0.3, "The Upper Town");
   edgeWay(t, { col: 56, row: 6 }, { col: 56, row: 1 });
-  t.shape(4, 56, 6, 8, 6, 0.15, "The Citadel Gate");
+  t.shape(4, 56, 6, 8, 6, 0.15, "The Castle Gate");
   // The Northwood: a wooded upland of its own west of the castle, a crag on its crown.
   t.shape(2, 18, 20, 14, 11, 0.45, "The Northwood");
   t.shape(3, 15, 14, 6, 4, 0.45, "The Northwood");
@@ -1152,7 +1152,7 @@ function harbour(): AreaMap {
   t.road([57, 48], [56, 52], [57, 56]);
   t.road([26, 47], [28, 54], [37, 58], [37, 66], [3, 66]);
   t.road([15, 66], [15, 61]);
-  // The Burg road: up from the bowl's north stairs, straight up the hill to the Citadel Gate.
+  // The Burg road: up from the bowl's north stairs, straight up the hill to the Castle Gate.
   t.road([55, 39], [56, 30], [56, 20], [56, 6]);
   // The path out to the mine, and Lantern Point's ways: the shore path west to the docks, the climb up the Graves to the
   // Moor Gate, and the Shore Road off its tip to the Landing.
@@ -1182,7 +1182,7 @@ function harbour(): AreaMap {
   // The bowl's fire is the hub, after Firelink: the Harbour's one bonfire, first, so a fall at the Ring wakes here.
   t.fires.push({ col: 56, row: 45 });
 
-  // The Citadel Gate: a tower either side of the road through it, the castle's keep looming over the wall beside it.
+  // The Castle Gate: a tower either side of the road through it, the castle's keep looming over the wall beside it.
   for (const [c, r] of [[53, 7], [59, 7]] as const) prop("tower", c, r, blue);
   prop("castle", 64, 9, blue);
   who("lancer", 55, 10, { ...blue, to: { col: 57, row: 10 } });
@@ -1359,7 +1359,7 @@ function harbour(): AreaMap {
     { name: "The Northwood", at: { col: 18, row: 30 }, levels: [1, 2, 3], palette: [3, 2, 1], dress: "emberwood", decor: 1.5, trees: 0.4 },
     { name: "Mine Hills", at: { col: 96, row: 34 }, levels: [1, 2, 3, 4], palette: [3, 2, 1, 1], dress: "crags", decor: 2.5, trees: 0.06 },
     { name: "Lantern Point", at: { col: 97, row: 71 }, levels: [1], palette: [3], dress: "saltreach", decor: 1.5 },
-    { name: "The Citadel Gate", at: { col: 56, row: 8 }, levels: [4], palette: [1], dress: "harbour", decor: 1 },
+    { name: "The Castle Gate", at: { col: 56, row: 8 }, levels: [4], palette: [1], dress: "harbour", decor: 1 },
     // The Graves read dark against the point's green: the hill's foot keeps the green, its slope and crest go grey-teal and olive.
     { name: "The Graves", at: { col: 97, row: 57 }, levels: [1, 2, 3], palette: [3, 5, 4], dress: "barrowmoor", decor: 1.5, gloom: true },
   ];
@@ -2886,7 +2886,7 @@ function landing(): AreaMap {
   const { prop, who } = t;
   const l = "landing";
 
-  // Where a new captain washes in, after the Asylum and the Stranded Graveyard: a sea cave, the way out of it narrow and
+  // Where you wake with the tide, after the Asylum and the Stranded Graveyard: a sea cave, the way out of it narrow and
   // found, not shown. The grotto the boat drifted into, the first fire; a tunnel to the goblins' chamber, another up to
   // the hall where they keep watch, a side passage to gold; and the long way round to the antechamber, the Ring Gate at
   // its end. Notes scratched on the rock by those who washed in before, each where its lesson is needed.
@@ -2939,7 +2939,7 @@ function landing(): AreaMap {
  * The Bull's Ring, the sea cave's end and its own area: a round cavern, an arena,
  * fog across both its ways while the Shore Minotaur holds it, the tunnel in from
  * the cave and the tunnel out to the sea channel, where the fishers' boat crosses to the Harbour.
- * Fall to him and the captain washes up in the Harbour; he waits, and the boat
+ * Fall to him and you wash up in the Harbour; he waits, and the boat
  * sails back to him.
  */
 function ring(): AreaMap {
@@ -2955,7 +2955,7 @@ function ring(): AreaMap {
   // The sea channel at the tunnel's end, the fishers' boat moored in it.
   t.pond(47, 18, 4, 5);
   rubble(t, rng, 26, 20, 13, 10, 7);
-  // Braziers round the floor, and the spikes and bones of the captains who washed in before.
+  // Braziers round the floor, and the spikes and bones of the drowned who washed in before.
   for (const [c, r] of [[17, 13], [35, 13], [17, 27], [35, 27], [26, 11], [26, 29], [14, 17], [14, 23], [38, 17], [38, 23]] as const) prop("sconce", c, r);
   for (const [c, r] of [[20, 15], [32, 15], [20, 25], [32, 25]] as const) prop("skullSpike", c, r);
   for (const [c, r] of [[23, 22], [29, 17], [27, 24], [22, 18]] as const) prop("bones", c, r);

@@ -2,63 +2,59 @@
 
 # Greyfall
 
-**A small real-time strategy game, built to run inside Discord.**
+**The Atlas: a dark medieval action RPG in the Shattered Reach.**
 
 [![CI](https://github.com/nauqh/greyfall/actions/workflows/ci.yml/badge.svg)](https://github.com/nauqh/greyfall/actions/workflows/ci.yml)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs&logoColor=white)
-![Phaser](https://img.shields.io/badge/Phaser-3.90-8B5CF6)
+![Phaser](https://img.shields.io/badge/Phaser-3.90-8B5CF6?logo=phaser&logoColor=white)
 
 ![The Greyfall title screen: a parchment menu beside the blue knights' island](landing.jpg)
 
 </div>
 
-Raise a town on your plateau, send Pawns to dig gold, train an army, and take
-the island before the monsters take your hall.
+The feudal lords are ash. The grey came out of the east, and the Gilded Reach
+sent no aid. One fire remains, and a nameless survivor wakes beside it.
 
-Greyfall is a town and an army on a tiny island, played in the browser and
-drawn entirely with Pixel Frog's
-[Tiny Swords](https://pixelfrog-assets.itch.io/tiny-swords) pack. It is headed
+The Atlas is the focus: a Souls-structured action RPG in the Shattered Reach.
+Come ashore at Last Harbour with no name and no lord, take the boss keys, open
+the Grey Gate, and put an end to the Grey Warlord. The design is in
+[ATLAS.md](ATLAS.md).
+
+Greyfall is played in the browser, drawn entirely with Pixel Frog's
+[Tiny Swords](https://pixelfrog-assets.itch.io/tiny-swords) pack, and headed
 for Discord as an Activity that friends launch from a voice call.
 
-## Highlights
+## The Atlas
 
-- Real-time war on a three-level island, bases in opposite corners. The High
-  Pass crosses the middle under the Crown, where the rich mine sits below the
-  monsters' Lair; a flank road runs through each of the other two corners,
-  past the expansion mines.
-- Fog of war in two layers, black until explored and grey out of
-  sight. Nobody sees up a cliff.
-- Pawns carry gold from mine to castle, 10 a trip, and buildings go
-  anywhere legal, counting down from the moment they are placed.
-- Five classes, Pawn, Warrior, Lancer, Archer and Monk, with a counter
-  triangle, training queues, rally points and control groups.
-- Every match ends: from minute 4 a monster wave comes down from the Crown
-  every minute, bigger each time, and goes for whoever is nearest. Kills pay
-  a bounty.
-- A deterministic engine. The same state, commands and seed always give the
-  same world, so a replay is a seed plus the commands.
+- **One world.** The Shattered Reach in three tiers: the sky, the surface, the
+  underneath. Every area its own map, joined by gates and lifts. `/atlas`
+  starts at the Landing; the world map opens from a bonfire.
+- **Souls structure.** Bonfires, shortcuts, keys, bosses, and gold you drop
+  when you die. A band of up to three: Lancer, Archer, Monk.
+- **The grey.** A condition, not an army. It crowned the Grey Warlord. The
+  Gilded Reach shut its gates and sent no aid. The player is a nameless
+  survivor.
+
+## Other modes
+
+The same engine runs three side modes: the real-time war (`/map`), the auto
+chess Skirmish (`/battle`) and the 20-gold Duel (`/duel`). The Skirmish design
+is in [docs/skirmish.md](docs/skirmish.md).
 
 ## Current state
 
-The real-time war is playable solo, blue knights against a red AI clan. It is
-not in Discord yet and has no multiplayer on the island. Red wins more often
-than it should, and the AI still plans with logic written for the older
-rounds mode.
+The Atlas is the focus. The Landing and Harbour are playable; the campaign is
+built area by area: Emberwood and the Cinder Troll are the next slice.
 
-**The Atlas** is the whole Shattered Reach on one map: seven areas, each its
-own landmass, joined only at gates the way a Souls map is, and full of the
-pack's buildings and creatures. It is the world, not a game yet; see
-[ATLAS.md](ATLAS.md).
-
-**Skirmish** is now auto chess: a lobby of four clans, you and three AI,
-buying from one shared pool, merging three copies into a star level and
-fighting a paired rival each round until one clan is left. Its design and
-numbers are in [AUTOCHESS.md](AUTOCHESS.md). **Duel**, the older 20-gold
-draft against a friend, still ships unchanged.
+The real-time war is playable solo against the red AI. Skirmish is auto chess.
+Duel still ships unchanged.
 
 ## Goals
 
+- Finish the Atlas first slice: the Harbour, Emberwood, the Cinder Troll, the
+  Troll Key.
+- Then the rest of the Reach: the Barrowmoor, the Tinkers' Crags, the Citadel.
 - Balance the war and give the AI real-time play of its own.
 - Lockstep multiplayer on the island. The engine already takes commands
   between ticks, so this adds networking without touching the rules.
@@ -67,21 +63,27 @@ draft against a friend, still ships unchanged.
   leaderboard.
 - A minimap, sound and polish.
 
-The design and the reasoning behind it are in [PRD.md](PRD.md) (the original
-rounds design), [RTS.md](RTS.md) (the move to real time) and
-[ENHANCE.md](ENHANCE.md) (the island plan, partly superseded).
-
 ## Play
 
 | Mode | Route | |
 | --- | --- | --- |
+| Atlas | `/atlas` | The focus: the Souls action RPG in the Shattered Reach |
 | Play | `/map` | The real-time war against the AI |
-| Atlas | `/atlas` | The Souls game: come ashore at the Landing; the world map (`/atlas/map`) opens from a bonfire |
-| Skirmish | `/battle` | Auto chess against three AI clans: five knights and seven monsters, star-ups and traits |
-| Duel | `/duel` | A 20-gold draft against a friend via a room code |
+| Skirmish | `/battle` | Auto chess against three AI clans |
+| Duel | `/duel` | A 20-gold draft against a friend |
 
-Left click selects, right click orders. Space pauses, and **H** opens the
-field guide, which lists every shortcut.
+The Atlas controls are in [ATLAS.md](ATLAS.md). The war uses left click to
+select and right click to order; **H** opens the field guide.
+
+## Docs
+
+| Doc | What it is |
+| --- | --- |
+| [ATLAS.md](ATLAS.md) | The Atlas: the game, the world, the areas, the opening. |
+| [docs/atlas-map.md](docs/atlas-map.md) | The map reference: terrain, buildings, tests, dressing. |
+| [docs/questline.md](docs/questline.md) | The folk's questline, generated from `npcs.ts`. |
+| [docs/skirmish.md](docs/skirmish.md) | Skirmish: the auto chess mode. |
+
 
 ## Getting started
 
@@ -166,6 +168,7 @@ aws s3 cp tiny-swords.zip s3://greyfall-assets/tiny-swords/tiny-swords.zip
 
 </details>
 
+
 ## Technical foundation
 
 | | |
@@ -176,15 +179,18 @@ aws s3 cp tiny-swords.zip s3://greyfall-assets/tiny-swords/tiny-swords.zip
 | Tooling | pnpm workspaces, GitHub Actions |
 
 ```
-packages/engine   the simulation: island, pathing and vision, the tick-stepped
-                  war (createSim, actions, economy, AI), the Skirmish battle,
+packages/engine   the simulation: the Atlas world and game, the island, pathing
+                  and vision, the tick-stepped war, the Skirmish battle,
                   balance tables, seeded rng, and the two CLIs
-apps/web          the Next.js app: Phaser scenes for the title, the island and
-                  the Skirmish board; React menus; tRPC and Drizzle for Duel
+apps/web          the Next.js app: Phaser scenes for the title, the Atlas, the
+                  island and the Skirmish board; React menus; tRPC and Drizzle
+                  for Duel
 ```
 
-The engine steps at 10 ticks a second and touches no I/O, so the same code
-can run on a server and keep every player's view in agreement.
+The engine steps at 10 ticks a second for the war and 20 for the Atlas, and
+touches no I/O, so the same code can run on a server and keep every player's
+view in agreement.
+
 
 ## Special thanks
 

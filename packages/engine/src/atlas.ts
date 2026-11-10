@@ -1,11 +1,11 @@
 /**
  * The Atlas: the whole Shattered Reach, in three tiers on one grid. The
  * Surface is seven areas, each its own landmass, joined only at named gates
- * the way a Souls map joins its areas. Over it floats the Gilded Reach, a sky
- * city you can see from below; under it the Underneath, caverns cut from the
- * rock. Lifts, wells and stairs join the tiers at the same spot on the grid,
- * so what is above a place is really above it, as in Dark Souls, where the
- * depths lie under the town and a city stands over the swamp.
+ * the way a Souls map joins its areas. Over it floats the Gilded Reach, the
+ * shut sky city; under it the Underneath, caverns cut from the rock. Lifts,
+ * wells and stairs join the tiers at the same spot on the grid, so what is
+ * above a place is really above it, as in Dark Souls, where the depths lie
+ * under the town and a city stands over the swamp.
  *
  * Each tier is pure data in the war island's height-map format (island.ts),
  * so the war's autotiler draws it and its pathing walks it. The web dresses it.
@@ -153,7 +153,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "saltreach",
     tier: "surface",
     name: "Saltreach",
-    blurb: "Fishing isles on the west shore, where the boats put in. The yellow militia still hold the villages, just.",
+    blurb: "Fishing isles off the west shore. The salt is still cut and the boats still put in; the yellow militia hold the villages, and the grey has not yet come down to the water.",
     palette: [5, 5, 5],
     mood: 0xffffff,
     rise: 0,
@@ -163,7 +163,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "harbour",
     tier: "surface",
     name: "Last Harbour",
-    blurb: "The last free town, under the blue castle. Every road starts at the fire in its square, and every road comes back to it: down its old well, up its watchtower lift.",
+    blurb: "The last town with a fire in it, under a castle the grey took ward by ward. Every road starts at the fire in its square and comes back to it: down the old well, up the watchtower lift.",
     palette: [3, 3, 3],
     mood: 0xffffff,
     rise: 0,
@@ -173,7 +173,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "emberwood",
     tier: "surface",
     name: "Emberwood",
-    blurb: "Old pine the goblins burn for room. Warrens in every clearing, and a troll in the biggest one.",
+    blurb: "Pine that caught when the grey left the Citadel and has burned without falling since. Goblins hold the clearings, a troll holds the hollow, and the cinder is still warm underfoot.",
     palette: [4, 4, 4],
     mood: 0xffe2c8,
     rise: 0,
@@ -183,7 +183,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "crags",
     name: "Tinker Crags",
     tier: "surface",
-    blurb: "Gnome country: a rock that climbs in five steps to the Tinker Peak, and a lift off the peak into the clouds. A bridge runs off the rock toward the grey.",
+    blurb: "Gnome country: a rock that climbs in five steps to the Tinker Peak, and a lift off the peak into the clouds. A high bridge runs off the rock to the Greyfall.",
     palette: [2, 2, 2],
     mood: 0xfff8e6,
     rise: 0,
@@ -194,7 +194,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "barrowmoor",
     tier: "surface",
     name: "Barrowmoor",
-    blurb: "The old kings' barrows. The dead walk the moor at dusk, something with horns keeps the deepest grave, and the cave goes down further than anyone has followed it.",
+    blurb: "The old kings' barrows. The dead keep their own roads after dusk, a horned thing keeps the deepest grave, and the cave goes down further than the moor has names for.",
     palette: [4, 4, 4],
     mood: 0xc4c4e4,
     rise: 1,
@@ -205,7 +205,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "fen",
     tier: "surface",
     name: "Lizard Fen",
-    blurb: "Reed and black water between the shore and the moor. A purple chapel prays to the grey in the middle of it, over a sinkhole that drinks the pools.",
+    blurb: "Reed and black water between the shore and the moor. A purple chapel in the middle of it prays to the grey as to a god, over a sinkhole that drinks the pools.",
     palette: [5, 5, 5],
     mood: 0xdcecdc,
     rise: 1,
@@ -216,7 +216,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "greyfall",
     tier: "surface",
     name: "The Greyfall",
-    blurb: "The warlord's citadel, where the grey pours from, its keep on the fourth height. Two keys open its gate; the gnomes' high road is the other way in.",
+    blurb: "The Citadel, where the grey took a lord and wears him still. His keep stands on the fourth height over a hall of ash, and what holds the walls was the garrison once. Two keys open the Grey Gate; the gnomes' high road is the other way in.",
     palette: [4, 4, 4],
     mood: 0x9c9fa8,
     rise: 2,
@@ -236,7 +236,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "gilded",
     tier: "sky",
     name: "The Gilded Reach",
-    blurb: "The sky city of the old gnome-kings, all gold and sunlight, still held by its yellow guard and the Sentinel on the high hall. The warlord's throne isle hangs off its east end.",
+    blurb: "The sky city of the old gnome-kings, gold and sunlight behind a shut gate. When the grey rose it sent no spears; its yellow guard still holds the walls, the Sentinel keeps the hall, and the Warlord's throne isle hangs off the east end.",
     palette: [1, 1, 1],
     mood: 0xfff0d0,
     label: { col: 93, row: 21 },
@@ -272,7 +272,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "landing",
     tier: "below",
     name: "The Landing",
-    blurb: "The sea cave under the Harbour where the captain washed in. Narrow ways through the rock, and notes scratched by those who washed in before.",
+    blurb: "The sea cave under the Harbour where you wake with the tide. Narrow ways through the rock, and notes scratched by those who woke there before.",
     palette: [5, 5, 5],
     mood: 0x8fb4c8,
     label: { col: 26, row: 64 },
@@ -301,7 +301,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "chapel",
     tier: "surface",
     name: "The Chapel Ward",
-    blurb: "The castle's monastery behind the Gun Bridge: a cloister round a still pond, the chapel on its terrace, and on the bell roof a warden of stone. Its lift goes down to the point; its postern opens on Emberwood.",
+    blurb: "The castle's monastery behind the Gun Bridge: a cloister round a still pond, the chapel on its terrace, and on the bell roof a warden of stone. Its lift goes down to the point; its postern opens on the Emberwood.",
     palette: [5, 5, 5],
     mood: 0xf2ece4,
     rise: 7,
@@ -329,7 +329,7 @@ export const AREAS: readonly AtlasArea[] = [
 ];
 
 export const TIER_INFO: Record<TierId, { name: string; blurb: string; base: TierBase }> = {
-  sky: { name: "The Gilded Reach", blurb: "The sky over the rock and the citadel, where the gnome-kings built in gold.", base: "sky" },
+  sky: { name: "The Gilded Reach", blurb: "The sky over the rock and the Greyfall, where the gnome-kings built in gold.", base: "sky" },
   surface: { name: "The Surface", blurb: "Eight lands on the sea, joined at their gates.", base: "sea" },
   below: { name: "The Underneath", blurb: "Caverns in the rock under the town, the moor and the fen.", base: "rock" },
 };
@@ -1299,7 +1299,7 @@ function surface(rng: Rng): AtlasTier {
   t.gate("old-bridge", "Old Bridge", "open", "saltreach", "harbour", { col: 22, row: 45 }, { col: 31, row: 44 }, "The way in from the shore, always open.");
   t.gate("keep-gate", "Keep Gate", "locked", "burg", "keep", { col: 43, row: 31 }, { col: 43, row: 35 }, "Off the Burg's Upper Streets into the castle's bailey. The troll's key fits it.");
   t.gate("chapel-door", "Chapel Door", "open", "ramparts", "chapel", { col: 61, row: 28 }, { col: 67, row: 28 }, "Over the Gun Bridge into the Chapel Ward's cloister.");
-  t.gate("chapel-postern", "The Postern", "open", "chapel", "emberwood", { col: 68, row: 23 }, { col: 60, row: 14 }, "The monks' back gate off the bell roof, out onto the edge of Emberwood.");
+  t.gate("chapel-postern", "The Postern", "open", "chapel", "emberwood", { col: 68, row: 23 }, { col: 60, row: 14 }, "The monks' back gate off the bell roof, out onto the edge of the Emberwood.");
   t.gate("rampart-gate", "Rampart Gate", "open", "burg", "ramparts", { col: 49, row: 28 }, { col: 55, row: 28 }, "Up off the Burg's crest through the gatehouse onto the castle's curtain wall.");
   t.gate("burg-gate", "Burg Gate", "open", "harbour", "burg", { col: 51, row: 37 }, { col: 48, row: 30 }, "Up out of Old Town, through the castle's outer wall into the Lower Burg.");
   t.gate("ember-gate", "Ember Gate", "shortcut", "harbour", "emberwood", { col: 30, row: 37 }, { col: 30, row: 22 }, "A palisade on the causeway north. The town bars it at night.");
@@ -1308,7 +1308,7 @@ function surface(rng: Rng): AtlasTier {
   t.gate("fen-causeway", "Fen Causeway", "open", "saltreach", "fen", { col: 27, row: 72 }, { col: 50, row: 72 }, "A long spit of shingle along the south shore.", 2);
   t.gate("barrow-path", "Barrow Path", "open", "fen", "barrowmoor", { col: 78, row: 67 }, { col: 82, row: 57 }, "Duckboards over the reeds, up onto the moor.");
   t.gate("grey-gate", "Grey Gate", "locked", "barrowmoor", "greyfall", { col: 93, row: 47 }, { col: 104, row: 47 }, "Two locks, one key from each way out of the Harbour: the barrow king's horned key, and the weaver's from below.");
-  t.gate("sky-bridge", "Sky Bridge", "high", "crags", "greyfall", { col: 92, row: 6 }, { col: 104, row: 6 }, "The gnomes' high road off the top of the rock, straight onto the citadel wall.", 2);
+  t.gate("sky-bridge", "Sky Bridge", "high", "crags", "greyfall", { col: 92, row: 6 }, { col: 104, row: 6 }, "The gnomes' high road off the top of the rock, straight onto the Greyfall's wall.", 2);
   // The high road turns down to the citadel, and is part of the gate till it lands there.
   const high = t.gates.find((g) => g.id === "sky-bridge")!;
   for (let r = 6; r <= 19; r++) {

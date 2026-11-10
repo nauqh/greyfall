@@ -25,7 +25,7 @@ describe("talking", () => {
     expect(nextTalk(ferrow, heardAll(["first", "died"]), died).id).toBe("shore");
   });
 
-  it("has Tobin warn of the flyers down the well, and point to Wren's bows, until the captain listens", () => {
+  it("has Tobin warn of the flyers down the well, and point to Wren's bows, until the wanderer listens", () => {
     const tobin = NPCS.find((n) => n.id === "tobin")!;
     const heard = new Set(["tobin.first", "tobin.rule"]);
     const wings = nextTalk(tobin, heard, new Set());
@@ -37,6 +37,16 @@ describe("talking", () => {
   it("keys every conversation apart", () => {
     const keys = NPCS.flatMap((n) => stations(n).flatMap((s) => (s.talks ?? []).map((t) => talkKey(n, t))));
     expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it("never calls the wanderer a captain or a sailor", () => {
+    const said = NPCS.flatMap((n) => [
+      n.greet,
+      n.part,
+      ...(n.shop ? [n.shop.poor, n.shop.sold] : []),
+      ...stations(n).flatMap((s) => (s.talks ?? []).flatMap((t) => t.lines)),
+    ]);
+    expect(said.join(" ")).not.toMatch(/\b(captain|sailor)\b/i);
   });
 });
 

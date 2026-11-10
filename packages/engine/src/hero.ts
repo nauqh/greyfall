@@ -1,9 +1,9 @@
-// The hero and the monsters it fights on an area map: their numbers (GAME.md's starting values) and the rules a
+// The hero and the monsters it fights on an area map: their numbers (`ATLAS.md`'s starting values) and the rules a
 // fight runs on. The scene moves the sprites; what a monster does next and what a blow takes off come from here.
 
 import { canStep, cellKey, stepsFrom, tileDistance, type Cell } from "./island.ts";
 
-/** The captain: a Warrior in blue. */
+/** The player: a Warrior in blue, nameless here. */
 /** A walk, not a sprint: 2.8 tiles a second (4 read as running everywhere). */
 /** Swings: the first two of a combo `chain` seconds apart, the finisher's recovery `every`; a swing within `combo` seconds of
  *  being ready again chains. A raised shield lets a fifth of a blow from the front through. */
@@ -71,7 +71,7 @@ export const FOES: Partial<Record<string, FoeStats>> = {
 };
 
 /**
- * The Cinder Troll's three blows, after GAME.md: a club slam on a ground circle, a charge down a line, embers tossed
+ * The Cinder Troll's three blows, after `ATLAS.md`: a club slam on a ground circle, a charge down a line, embers tossed
  * to burn. Each warns for its `windup` seconds, then it stands `recover` seconds, open. Tiles, seconds and points.
  */
 export const TROLL = {
@@ -168,14 +168,14 @@ export interface Kit {
 
 /**
  * What the merchants sell, after the Souls games: upgrades bought once and kept, never a bag of clutter. Keyed by
- * name, which is what a save keeps; each adds to the captain's numbers, an edge only on top of the one before.
+ * name, which is what a save keeps; each adds to the player's numbers, an edge only on top of the one before.
  */
 export const ITEMS = {
-  "Smoked Haunch": { cost: 250, adds: { hp: 25 }, about: "Salt meat hung over a harbour fire, enough to keep a captain on their feet through one more bad night." },
-  "Ember Shard": { cost: 300, adds: { flasks: 1 }, about: "A splinter of the old flame, still warm. Pressed to a flask, it holds one more draught." },
+  "Smoked Haunch": { cost: 250, adds: { hp: 25 }, about: "Salt meat hung over a harbour fire, enough to keep a wanderer on their feet through one more bad night." },
+  "Ember Shard": { cost: 300, adds: { flasks: 1 }, about: "A splinter of the fire that was old before the grey came. Pressed to a flask, it holds one more draught." },
   "Brenna's Edge": { cost: 400, adds: { attack: 3 }, about: "Brenna ground this edge and will not say on what. It bites deeper than it looks." },
   "Keener Edge": { cost: 800, adds: { attack: 3 }, needs: "Brenna's Edge", about: "Honed again once the warden on the bell roof fell silent, as if the stone had taught it something." },
-  "Grey-Iron Edge": { cost: 1200, adds: { attack: 4 }, needs: "Keener Edge", about: "Iron from the chapel's own bell, cold to hold. What it cuts does not quite mend." },
+  "Grey-Iron Edge": { cost: 1200, adds: { attack: 4 }, needs: "Keener Edge", about: "Iron from the chapel's own bell, quenched cold. What it cuts does not quite mend." },
   "Pine Resin": { cost: 450, adds: { flask: 15 }, about: "Sap boiled thick and stirred into the flask. Bitter, but it closes wounds the faster for it." },
   "Banded Shield": { cost: 600, adds: { block: -0.75 }, about: "Oak bound in iron bands. A blow on it jars the arm far less than it ought to." },
   "Kindled Shard": { cost: 900, adds: { flasks: 1 }, about: "A shard of the fire the troll sat on, burning again now it is gone. One more flask." },
@@ -183,7 +183,7 @@ export const ITEMS = {
 } as const satisfies Record<string, { cost: number; adds: Partial<Kit>; needs?: string; about: string }>;
 export type ItemName = keyof typeof ITEMS;
 
-/** The captain's numbers with what has been bought. */
+/** The player's numbers with what has been bought. */
 export function kit(bought: ReadonlySet<string>): Kit {
   const k: Kit = { hp: HERO.hp, attack: HERO.attack, flasks: HERO.flasks, flask: HERO.flask, block: STAMINA.block, greed: 1 };
   for (const [name, item] of Object.entries(ITEMS)) {
