@@ -1,17 +1,16 @@
 # Greyfall: the game
 
-A Souls-structured action RPG in which you lead a small warband through the
-Shattered Reach. Diablo-style control and maze maps, Dark Souls structure:
+A Souls-structured action RPG. You lead a small warband through the Shattered
+Reach with Diablo-style control and maze maps, and Dark Souls structure:
 bonfires, shortcuts, keys, bosses, and gold you drop when you die.
 
-The world it plays in is the Atlas (`ATLAS.md`): three tiers of areas joined
-by gates and lifts, each area its own large map. This file is the design of
-the game played on it. Numbers here are starting values, to be tuned once it
-is playable.
+The world is the Atlas (`ATLAS.md`): three tiers of areas joined by gates and
+lifts, each area its own large map. This file is the design of the game played
+on it. The numbers are starting values, to be tuned once it is playable.
 
 ## The pitch
 
-You are the last captain of Last Harbour. With a band of up to three
+You are a captain washed into Last Harbour. With a band of up to three
 companions you push out through the Reach, take the boss keys, open the Grey
 Gate and kill the Grey Warlord. Every road loops back to the bonfire in the
 Harbour square.
@@ -53,7 +52,7 @@ Levelling is Souls-style: spend gold at a bonfire. Each level adds +10 HP,
 
 Up to three companions at once, all Tiny Swords units already drawn in blue.
 
-A new game (the New game button on an area map) clears the save, so you
+A new game from the New game button on an area map clears the save. You
 come ashore alone.
 
 | Companion | Role | Behaviour | How you get one |
@@ -66,34 +65,34 @@ come ashore alone.
 
 - A companion who falls stays down until the next bonfire rest. On Hardcore,
   a fallen companion is gone for good.
-- Companion behaviour reuses the engine's existing combat rules (stats,
-  targeting, damage): a fight is the same simulation, run in real time with
-  the hero inside it.
+- Companions use the engine's own combat rules for stats, targeting and
+  damage. A fight is the same simulation, run in real time with the hero
+  inside it.
 
 ## The Souls loop
 
-- **Bonfires.** Resting fully heals the hero and the band, refills flasks,
-  saves, and respawns every enemy in the area, but not bosses or opened
-  shortcuts. Each area has 1 to 3; they already stand on the maps. After
-  the rest the captain sits by the fire, as in Dark Souls 3: Travel opens
-  the map, to go to any bonfire already lit, and Leave stands up.
-- **Death.** You wake at the last bonfire you rested at, except to a boss
-  that guards a way out (the Shore Minotaur): then you wake past it. Your carried gold
-  stays where you fell, marked on the map. Reach it again to get it back;
-  die on the way and it is gone.
+- **Bonfires.** Resting fully heals the hero and the band, refills flasks, saves,
+  and respawns every enemy in the area. Bosses and opened shortcuts stay as
+  they are. Each area has 1 to 3 bonfires, already standing on the maps.
+  After a rest the captain sits by the fire, as in Dark Souls 3: Travel opens
+  the map to any lit bonfire, and Leave stands him up.
+- **Death.** You wake at the last bonfire you rested at. The exception is a
+  boss who guards a way out, the Shore Minotaur: fall to him and you wake
+  past him. Your carried gold stays where you fell, marked on the map. Reach
+  it again and it is yours; die on the way and it is gone.
 - **Shortcuts.** Gates and lifts that open from one side only, such as the
   Moor Gate and the Watch Lift. Opening one is permanent and turns the area
   into a loop.
-- **Keys.** After Firelink's two bells, one up and one down. The Troll Key
-  is the Citadel's own: its steward fled into Emberwood with it when the
-  grey came, and the Cinder Troll has it now. It opens the Citadel Gate,
-  and above it the garrison (Corwin's Lancers), the Keep and the Watch
-  Lift to the sky. The Grey Gate takes two other keys, one from each way
-  out of the Harbour: the Barrow King's Horned Key (Barrowmoor, out the
-  Moor Gate) and the Weaver's key (the Barrow Deeps, down the Old Well).
-  The Sky Bridge from the Crags is the other, harder way into the
-  Greyfall. Not enforced yet: the Barrow King and the Weaver are not
-  fightable, so the Grey Gate stays open until they are.
+- **Keys.** Keys follow Firelink's two bells, one up and one down. The Troll
+  Key is the Citadel's own. Its steward fled into Emberwood with it when the
+  grey came, and the Cinder Troll has it now. It opens the Citadel Gate.
+  Above the gate stand the garrison (Corwin's Lancers), the Keep and the
+  Watch Lift to the sky. The Grey Gate takes two other keys, one from each
+  way out of the Harbour: the Barrow King's Horned Key, from Barrowmoor out
+  the Moor Gate, and the Weaver's key, from the Barrow Deeps down the Old
+  Well. The Sky Bridge from the Crags is the other, harder way into the
+  Greyfall. Not enforced yet: the Barrow King and the Weaver cannot be
+  fought, so the Grey Gate stays open until they can.
 
 ## Enemies by area
 
@@ -108,27 +107,27 @@ All from the Tiny Swords enemy pack.
 | The Greyfall | Black soldiers, gnolls | Minotaur champion | The Grey Warlord |
 | Gilded Reach | Yellow guard | Lancers | The Sun Sentinel |
 
-Gnolls, slingshot gnomes and hex shamans throw from four or five tiles
-off rather than close in. Bats, imps and bees fly: no blade reaches them,
-not the captain's nor a Lancer's, so only an Archer brings them down; a
-captain alone can guard and walk away.
-A thrown or shot missile needs a clear line: a house, a hut, a tower, a
-dead tree or the woods hide whoever stands behind them, and a thrower
-walks round for a clear shot. Archers in the band need one too.
+Gnolls, slingshot gnomes and hex shamans throw from four or five tiles away
+instead of closing in. Bats, imps and bees fly, and no blade reaches them,
+not the captain's nor a Lancer's. Only an Archer brings them down. A captain
+alone can guard and walk away.
+A thrown or shot missile needs a clear line. A house, a hut, a tower, a dead
+tree or the woods hide whoever stands behind them, and a thrower walks round
+for a clear shot. Archers in the band need a clear line too.
 
-A monster winds up before it strikes, its attack playing out with a
-white flash at the start: roll or raise the shield then, and strike back
-while it recovers. No more than two blades press one mark at a time;
-the rest hold back and wait their turn. A hit breaks a light monster's
-wind-up; gnolls, lizards and shamans do not flinch.
+A monster winds up before it strikes, its attack playing out with a white
+flash at the start. Roll or raise the shield then, and strike back while it
+recovers. No more than two blades press one mark at a time; the rest hold
+back and wait their turn. A hit breaks a light monster's wind-up. Gnolls,
+lizards and shamans do not flinch.
 
 Camps sit in the maze rooms. An enemy chases up to 10 tiles from its post,
-then walks back; the engine already has a guard leash.
+then walks back. The engine already has a guard leash.
 
 ## Loot and gold
 
-- **Gold** drops from enemies where they fall, and lies in gold stones
-  (25 each, taken once) and chests; walk up to it to pick it up. It is
+- **Gold** drops from enemies where they fall. It also lies in gold stones
+  (25 each, taken once) and in chests. Walk up to it to pick it up. Gold is
   the only currency: levels, recruits, sword upgrades.
 - **No gear.** The captain's sprite is fixed, so there are no weapons or
   armour to find or wear.
@@ -138,37 +137,43 @@ then walks back; the engine already has a guard leash.
 
 ## The first slice
 
-1. **The Landing:** a sea cave under the Harbour, where a new game
-   starts: the captain washes in and finds the way out through narrow
-   lit tunnels, past two goblins and the notes, to the antechamber's gate
-   and the Bull's Ring, its own cavern, then the boat out along the sea
-   channel to the Harbour's docks. (Earlier, the beach south of the Harbour up the Shore Road.) You come ashore alone. A bonfire, two goblins,
-   notes on the ground that teach the controls (read with E), and the
-   Shore Minotaur, a tutorial boss in the Bull's Ring: a round cavern,
-   walked straight into from the cave's tunnel, no fog; the Ring is the
-   arena, and the bull guards the boat on. A boss bar with its name
-   shows low and centred once you stand in the Ring with him in view. Kill it and the road opens;
-   fall to it and you wash up at the Harbour's fire, as after Elden Ring's
-   Grafted Scion: lost, not over. The bull keeps the Ring, the boat goes
-   back to him whenever the captain likes, and his fall is worth a fourth
-   flask for good. Either way the training is over.
-2. **The Harbour:** the hub is the village's bowl, after Firelink: the
-   Harbour's one bonfire at its centre, Old Ferrow beside it saying where
-   to go, the Old Well beside it going down (bats below; only bows reach
-   them), the boat's pier just south on the docks. The climb runs straight
-   up from the fire through Old Town and the Upper Town to the Citadel
-   Gate on the hill's crown, the road on north to the Burg: the main path.
-   The Lower Burg (a town of walled yards and lanes, the square's fire), the
-   Ramparts (the Rampart Bull on the wall walk), the Chapel Ward (the Stone
-   Warden, the Old Lift home to Old Town's foot, the Postern to Emberwood),
-   the Keep last, shut until the Troll Key. West, the Lantern Road to the
-   fields and the Old Bridge to Saltreach (hard); north-west, the Ember Gate,
-   shut from this side, opened later from the wood; east, past Lantern
-   Point's lighthouse, the Graves on the hill: gold in plain view, three
-   gnolls and a shaman among the graves, the Moor Gate on the hill's edge,
-   shut from this side, the way that kills a new captain. Every way out on
-   foot is a path running off the map's edge. Buildings, heaps, fence posts
-   and rocks in open ground are solid: no one walks through them.
+1. **The Landing:** a sea cave under the Harbour, where a new game starts.
+   The captain washes in and finds the way out through narrow lit tunnels,
+   past two goblins and the notes, to the antechamber's gate and the Bull's
+   Ring, a cavern of its own. From the Ring the boat goes out along the sea
+   channel to the Harbour's docks. (Earlier, the beach south of the Harbour
+   up the Shore Road.) You come ashore alone.
+
+   A bonfire, two goblins, notes on the ground that teach the controls (read
+   with E), and the Shore Minotaur, a tutorial boss in the Bull's Ring. The
+   Ring is a round cavern, walked straight into from the cave's tunnel, with
+   no fog. It is the arena, and the bull guards the boat on. A boss bar with
+   his name shows low and centred once you stand in the Ring with him in
+   view. Kill him and the road opens. Fall to him and you wash up at the
+   Harbour's fire, as after Elden Ring's Grafted Scion: lost, not over. The
+   bull keeps the Ring, the boat goes back to him whenever the captain
+   likes, and his fall is worth a fourth flask for good. Either way the
+   training is over.
+2. **The Harbour:** the hub is the village's bowl, after Firelink. The
+   Harbour's one bonfire stands at its centre, with Old Ferrow beside it
+   saying where to go and the Old Well beside it going down (bats below;
+   only bows reach them). The boat's pier lies just south, on the docks. The
+   climb runs straight up from the fire through Old Town and the Upper Town
+   to the Citadel Gate on the hill's crown. From there the road runs north
+   to the Burg, the main path.
+
+   The Lower Burg is a town of walled yards and lanes, with the square's
+   fire. The Ramparts hold the Rampart Bull on the wall walk. The Chapel
+   Ward holds the Stone Warden, the Old Lift home to Old Town's foot, and
+   the Postern to Emberwood. The Keep comes last, shut until the Troll Key.
+   West, the Lantern Road runs to the fields and the Old Bridge to Saltreach
+   (hard). North-west, the Ember Gate is shut from this side and opens later
+   from the wood. East, past Lantern Point's lighthouse, the Graves stand on
+   the hill: gold in plain view, three gnolls and a shaman among the graves,
+   and the Moor Gate on the hill's edge, shut from this side. That is the way
+   that kills a new captain. Every way out on foot is a path running off the
+   map's edge. Buildings, heaps, fence posts and rocks in open ground are
+   solid: no one walks through them.
 3. **Emberwood:** the first hostile area. Goblin camps through the maze, two
    bonfires, the Treetop Walk shortcut.
 4. **The Cinder Troll** in Troll's Hollow, with three attacks:

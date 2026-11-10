@@ -6,8 +6,8 @@ For checking. Generated from `packages/engine/src/npcs.ts`, so the lines and pla
 
 After Dark Souls: no quest log, no choices, the captain never speaks.
 
-- **Talks.** Each talk to someone plays their next conversation, a few short pages; once all are heard the last one repeats. A remark marked "once ... when" plays one time, after the first talk at that spot, once that has happened.
-- **Moving on.** Where someone stands depends on world flags. Each NPC has a home in the Harbour and a list of later stations; the last station whose flags have all happened wins. A station with no place means they are gone for good; a dead one lies there and says nothing.
+- **Talks.** Each talk to someone plays their next conversation, a few short pages; once all are heard the last one repeats. A remark marked "once ... when" plays once, after the first talk there, when its flag has happened.
+- **Moving on.** Where someone stands depends on world flags. Each NPC has a home and a list of later stations; the last station whose flags have all happened wins. A station with no place means they are gone for good; a dead one lies there and says nothing.
 - **Flags from talks.** Some talks set a flag when heard to the end: that is what moves a questline on.
 - **When they move.** Placement is worked out on entering an area, so someone moves between your visits, never in front of you.
 
@@ -31,7 +31,7 @@ After Dark Souls: no quest log, no choices, the captain never speaks.
 
 | Who | Moved on by | Turns up | Ends |
 | --- | --- | --- | --- |
-| Tobin | his remark on the well, then a talk | Undercroft, Smugglers' Nook; then the Deeps, Robbers' Camp | Stays with his brother, the thieves' captain. Never talked to, never leaves |
+| Tobin | his remark on the well, then a talk | Undercroft, Smugglers' Nook; then the Deeps, Robbers' Camp | Stays with his brother, who captains the thieves. The brother is never talked to |
 | Mother Ysolde | the monk freed, then a talk | Undercroft, the Drowned Chapel; then the Hollow, Pilgrims' Rest | Kneels over her drowned sisters and will not come back |
 | Ansel of the Wall | his remark on the Troll Key | The Greyfall, the Ashen Approach | Hear him out twice and he goes ahead and dies in the High City, below the Warlord's Hall; kill the Warlord first and he is back on the wall |
 | Penny | reaching the Greyfall | The Greyfall, Gallows Yard, penned with her mum | Freed when the Warlord falls |
@@ -40,6 +40,7 @@ After Dark Souls: no quest log, no choices, the captain never speaks.
 | Maren | her remark on the Warlord dead | | Sails on the first ship in three winters; missed if not talked to |
 | Wren | the Troll Key | Emberwood, Old Pines | Stays, shooting |
 | Old Ferrow, Brenna | | | Stay; both remark on Ansel leaving |
+| Mags, Hale, Odo | | | Stay at their posts in the Burg and on the Ramparts |
 
 ## Old Ferrow
 
@@ -56,14 +57,14 @@ Greets you: *"Ah. Another one."* Walked away from: *"Mind the dark, then."*
   2. The path up the hill goes through the graves to the Moor Gate. Shut from this side, and the dogs up there don't care that it's shut.
 - **bull** (once, after meeting, when **bullWon**)
   1. Washed up with the tide, did you? The bull did that.
-  2. He'll keep. Go back down the pier when your arm's stronger. What he guards is worth a fall or two.
+  2. He'll keep. Take the boat back when your arm's stronger. What he guards is worth a fall or two.
 - **goal**
   1. You'll be wanting the Grey Gate. East, past the moor. They all do.
   2. Two keys open it. The king under the barrows keeps one.
   3. The other's down below, where the spider weaves. Down the well, and further down.
 - **castle**
   1. The castle? Shut since the grey came. The steward ran for the wood with its key.
-  2. Troll had him for supper, they say. Has the key still, I'd think.
+  2. A troll had him for supper, they say. It has the key still, I'd think.
 - **well**
   1. The well only goes one way. Down, to the drowned.
   2. Not yet, captain. Not that way. Not yet.
@@ -183,7 +184,7 @@ Greets you: *"Don't lean on the rope."* Walked away from: *"...Right. Off you go
   3. Wren hires out bows, at the butts by the west road. Take one with you, if you go.
 - **chewed** (once, after meeting, when **died**)
   1. You look chewed on, captain.
-  2. If it had wings, steel won't reach it. Wren's bows will.
+  2. If it had wings, your steel won't reach it. Wren's bows will.
 - **below** (once, after meeting, when **wellDescended**; heard to the end, sets **tobinDown**)
   1. You came back? From down there?
   2. ...Did you see him? Thin fellow. Quick hands. Always smiling.
@@ -193,7 +194,7 @@ Greets you: *"Don't lean on the rope."* Walked away from: *"...Right. Off you go
 
 - **nook**
   1. Captain. Don't look so surprised. No rule against going down, is there?
-  2. Smugglers keep this corner. One of them wore his coat. Said he swapped it, deeper in.
+  2. Smugglers keep this corner. One of them is wearing his coat. Said he swapped it, deeper in.
   3. Swapped it. Ha. He never swapped a thing in his life.
 - **deeper** (heard to the end, sets **tobinDeeper**)
   1. I'm going on, through the cisterns.
@@ -216,12 +217,11 @@ Greets you: *"Peace on you."* Walked away from: *"Go gently, captain."*
 ### Home: Last Harbour, The Upper Town (54, 29)
 
 - **first**
-  1. Peace on you, captain.
-  2. My sisters went down to the chapel under the fen, to pray the water clear.
-  3. The water did not clear. Nor did they come back.
+  1. My sisters went down to the Drowned Chapel, to pray the water clear.
+  2. The water did not clear. Nor did they come back.
 - **candle**
   1. I light a candle each night.
-  2. It is not hope. It is habit, which outlasts hope.
+  2. The hour comes round and my hands are already there.
 
 ### At The Undercroft, The Drowned Chapel (49, 55), once **monkFreed**
 
@@ -361,7 +361,7 @@ Greets you: *"Look up, captain."* Walked away from: *"Go on. I'll keep watch. It
   1. Captain. Don't look at me like that. I said I'd come out.
   2. I'd forgotten the smell of the grey. Wet ash and old iron.
 - **ahead** (heard to the end, sets **anselAhead**)
-  1. The warlord's hall is up past the keep. I'll go first, this time.
+  1. The warlord's hall is up past the High City. I'll go first, this time.
   2. Let me have that. You've had all the others.
 
 ### At The Keep, on the hall's terrace (25, 10), once **warlordDead**

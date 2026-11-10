@@ -39,13 +39,13 @@ roads) and its pathing walks it. The data is
 | Sky | Skyward Steps | drifting isles with watch posts, a lift down onto the castle | |
 | Sky | The Gilded Reach | the gnome-kings' golden hall on its own height, yellow guard, a monastery, bees, the warlord's throne isle with imps | The Sun Sentinel |
 | Surface | Saltreach | yellow militia, fishing villages, turtles, sharks offshore, pirate towers | |
-| Surface | The Landing (start) | the beach a new game starts on, notes in the sand that teach the controls, two goblins to learn on | Shore Minotaur |
 | Surface | Last Harbour (hub) | the blue castle on its own height above the town, the bonfire square, the Old Well, pawns at work | |
 | Surface | Emberwood | goblin warrens, the big pines (standing still), gnolls on Smoke Ridge | Cinder Troll |
 | Surface | Tinker Crags | a mesa that steps up three heights to the Tinker Peak, gnomes, bears, pandas, the Gnome Lift up | Old Bamboo |
 | Surface | Barrowmoor | barrows, bones, the cave down to the Deeps | The Barrow King |
 | Surface | Lizard Fen | the purple chapel, lizards, the sinkhole | |
 | Surface | The Greyfall | the citadel, its keep on the fourth height, the black legion, the Throne Stair up | The Grey Warlord |
+| Below | The Landing (start) | the sea cave where a new game starts, notes in the tunnels that teach the controls, two goblins to learn on | Shore Minotaur |
 | Below | The Undercroft | cisterns and pillars under the well, a crypt, spiders, a thief | |
 | Below | Barrow Deeps | tomb daises, skull guards, a dead troll's bones | The Weaver (a giant spider) |
 | Below | The Drowned Hollow | the underground lake, stone trees, turtles, glowing gold | The Shell Below (a giant turtle) |
@@ -198,23 +198,23 @@ the next area's map. Resting at a bonfire sits the captain by it, with
 Travel and Leave: Travel opens the map, whose area cards list the
 bonfires lit there, each one a place to travel to.
 
-Crossing between areas never leaves the page: the scene rebuilds itself
-as the next map inside the same game (`travel` on its api) while the
-address follows quietly (`/atlas/<area>?from=<area>`), and you arrive at
-the exit back the way you came, not the area's front door. Each kind of
-crossing has its own cover, held while the next map is built: walking
-out draws the game's own cloud bank in and parts it on the next map
-(a dark wipe read as ugly); a drop closes the dark in on the
-hole, then the view falls onto the spot with a jolt; a lift passes rock
-upward going down and cloud downward going up; a stair into the deep
-closes in slowly on the stairway. The first time you take a one-way
-drop, it asks first. The area's name is not announced again when you
-step straight back into the area you just left. Each crossing is drawn as the
-thing it is: the Old Well a ring of stones with posts and a rope beam,
-the Fen Sinkhole a reed-ringed pool of black water drawing down, a lift
-by its own building (the cave, the gnomes' tower, the keep) nothing
-more, a lift standing alone a railed plank floor. The dark hole and the
-white shaft of light that marked every crossing are gone.
+Crossing between areas never leaves the page. The scene rebuilds itself as
+the next map inside the same game (`travel` on its api), while the address
+follows quietly (`/atlas/<area>?from=<area>`). You arrive at the exit back
+the way you came, not the area's front door. Each kind of crossing has its
+own cover, held while the next map is built. Walking out draws the game's
+own cloud bank in and parts it on the next map (a dark wipe read as ugly).
+A drop closes the dark in on the hole, then the view falls onto the spot
+with a jolt. A lift passes rock upward going down and cloud downward going
+up. A stair into the deep closes in slowly on the stairway. The first time
+you take a one-way drop, it asks first. The area's name is not announced
+again when you step straight back into the area you just left.
+Each crossing is drawn as the thing it is: the Old Well a ring of stones
+with posts and a rope beam, the Fen Sinkhole a reed-ringed pool of black
+water drawing down, a lift by its own building (the cave, the gnomes'
+tower, the keep) and nothing more, and a lift standing alone a railed plank
+floor. The dark hole and the white shaft of light that marked every
+crossing are gone.
 
 - `block(level, x, y, w, h)` lays out exact terraces. A castle is nested
   blocks, each with its own cliff faces. `block(1, ...)` cuts a notch back to
@@ -263,48 +263,50 @@ white shaft of light that marked every crossing are gone.
   rises off the summit, and the Sky Bridge runs off it east, raised, to the
   map's edge toward the Greyfall. Its terraces carry cannon batteries on every rim, watchtowers, a raised Gun Platform with
   its own stair, and fenced workshop yards with wood, tools and stores.
-  The Greyfall is the fourth, a castle that is the level, after Stormveil:
-  a walkable curtain wall with a bastion on each corner, the locked Grey
-  Gate a gap in its west side over the Ashen Approach, and the Sky Bridge
-  landing on the north rampart, which runs straight into the Middle Ward:
-  the other way in, past the bailey. Inside, the ruined Outer Bailey, the
-  Ruined Chapel and the Gallows Yard (the Harbour's folk penned); then the
-  Middle Ward, the Upper Ward with the Warlord's hall, and the Keep on the
-  fourth height, its stairs changing sides each step. `ground()` lays exact
-  rectangles of land, so walls stand on ground to their corners.
-  Reworked after Caelid and Sellia: a river of rot down the bailey into the Crater, a lake (`lake()`) with a
-  shrine and bonfire on its isle, crags standing out of the rot, gnolls for
-  its dogs; and the wards are now the High City: six raised blocks, each
-  standing alone with a street on every side and a stair at both front
-  corners (blocks that touched each other or the walls fused into one
-  slab and stranded their stairs), raised walkways over the streets, the
-  Warlord's Hall and the Keep's tier above, and the Keep on the fourth
-  height, each block furnished as its own quarter.
+  The Greyfall began as the fourth, a castle that is the level, after
+  Stormveil: a walkable curtain wall with a bastion on each corner, the
+  locked Grey Gate a gap in its west side over the Ashen Approach, and the
+  Sky Bridge landing on the north rampart. The rampart runs straight into
+  the Middle Ward, the other way in, past the bailey. Inside were the
+  ruined Outer Bailey, the Ruined Chapel and the Gallows Yard (the
+  Harbour's folk penned), then the Middle Ward, the Upper Ward with the
+  Warlord's hall, and the Keep on the fourth height, its stairs changing
+  sides each step. `ground()` lays exact rectangles of land, so walls stand
+  on ground to their corners.
+  It was reworked after Caelid and Sellia. A river of rot runs down the
+  bailey into the Crater. A lake (`lake()`) holds a shrine and bonfire on
+  its isle, crags stand out of the rot, and gnolls serve as its dogs. The
+  wards are now the High City: six raised blocks, each standing alone with
+  a street on every side and a stair at both front corners (blocks that
+  touched each other or the walls fused into one slab and stranded their
+  stairs), raised walkways over the streets, the Warlord's Hall and the
+  Keep's tier above, and the Keep on the fourth height, each block
+  furnished as its own quarter.
   The Harbour's citadel and Old Town and Emberwood's warrens got the same
   furnishing as the Crags: trails, guns on the walls, stores and trophies.
-  The Gilded Reach is the fifth, a city of isles in the sky after Anor
-  Londo and Leyndell: each quarter its own isle (Cloud Landing, the Gold
-  Market, the Bee Gardens, Gnome Landing, the Gilded Gate, the Sun Chapel)
-  joined by narrow bridges over open sky, and the capital climbing the Sun
-  Steps in three terraces to the Sun Hall, where the Sun Sentinel stands.
-  The Throne Isle hangs off the east end, reached only by the raised
-  Gilded Span.
-  All gold and sunlight: the city climbs from fresh green to gold, with
-  only the warlord's isle dark. The yellow guard hold the span's foot,
-  a tower either side and archers on its landing, because the span is
-  the one way the warlord's creatures can come in; the Gilded Gate isle
-  is their garrison. The market keeps its livestock in a pen.
+  The Gilded Reach is the fifth, a city of isles in the sky after Anor Londo
+  and Leyndell. Each quarter has its own isle (Cloud Landing, the Gold
+  Market, the Bee Gardens, Gnome Landing, the Gilded Gate, the Sun Chapel),
+  joined by narrow bridges over open sky. The capital climbs the Sun Steps
+  in three terraces to the Sun Hall, where the Sun Sentinel stands. The
+  Throne Isle hangs off the east end, reached only by the raised Gilded
+  Span.
+  The city climbs from fresh green to gold, and only the warlord's isle is
+  dark. The yellow guard hold the span's foot, with a tower either side and
+  archers on its landing, because the span is the one way the warlord's
+  creatures can come in. The Gilded Gate isle is their garrison. The market
+  keeps its livestock in a pen.
   Skyward Steps is the sixth, a descent after the Ringed City's broken
-  stairs: from the Cloud Pier up the Broken Stair, across the raised Old
-  Span to the Windward Rest, down its steps, then by rope bridges over the
-  Hanging Graves and the Bell Isle to the Watch Isle and its lift onto the
-  Harbour's castle; the Hermit's Rock and the Gold Wreck are dead ends off
-  the way. The Gold Wreck's barge hangs off the
-  isle's edge in the sky where it fell short, its timbers and gold
-  spilt across the rock for the imps. A stair onto the third height must rise from second-height
-  ground, so a high isle steps down through a ledge to its lowland; and a
-  bridge must run from well inside one isle, as a ragged rim leaves one
-  that stops at the edge joined to nothing.
+  stairs. From the Cloud Pier, the way runs up the Broken Stair, across the
+  raised Old Span to the Windward Rest, down its steps, then by rope bridges
+  over the Hanging Graves and the Bell Isle to the Watch Isle and its lift
+  onto the Harbour's castle. The Hermit's Rock and the Gold Wreck are dead
+  ends off the way. The Gold Wreck's barge hangs off the isle's edge where
+  it fell short, its timbers and gold spilt across the rock for the imps. A
+  stair onto the third height must rise from second-height ground, so a high
+  isle steps down through a ledge to its lowland. A bridge must run from
+  well inside one isle, as a ragged rim leaves one that stops at the edge
+  joined to nothing.
   The Undercroft is the seventh and the first underground: a chain of
   caverns joined by tunnels (Well Bottom, Cisterns, Spider Pillars,
   Drowned Chapel, the raised Ossuary, Smugglers' Nook, the Dig), its maze
@@ -383,37 +385,36 @@ white shaft of light that marked every crossing are gone.
   fifth height at the centre over the sinkhole). The engine's heights stop
   at five, so five districts. A tier ends where the coil runs east-west,
   the only place a stair can stand (stairs sit beside a table's bottom
-  row), and the higher tier's first two columns are cut back below the
-  coil's centre line in a straight notch so the stair has lower ground
-  above and below it; a notch following the ragged edge put the stair
-  over water, and the engine then erased every tier above.
-  The fen tells its story inward along the causeway, and each thing
-  stands where its people would put it (`spot(turns, along, out)` places
-  on the coil, `out` toward the water side): Saltreach's militia at the
-  landing with a jetty, hut over the water and its boat below; the
-  moor's dead buried at the Barrow Rise beside the Barrow Path, stakes in
-  rows; the fishers' stilt village along Eel Shallows, each hut with its
-  boat and catch, one shared fire; the Drowned Village's houses still
-  lining both sides of its old street, no fire lit, reed closing over its
-  end; the lizard-folk's stakes at the top of the stair, their huts
-  ringing one fire; the cult's ring of stakes round the sinkhole under
-  the chapel. Sharks keep to the deep channels, out of the shallows.
+  row). The higher tier's first two columns are cut back below the coil's
+  centre line in a straight notch, so the stair has lower ground above and
+  below it. A notch that followed the ragged edge put the stair over water,
+  and the engine then erased every tier above.
+  The fen tells its story inward along the causeway, and each thing stands
+  where its people would put it (`spot(turns, along, out)` places on the
+  coil, `out` toward the water side). Saltreach's militia hold the landing,
+  with a jetty, a hut over the water and its boat below. The moor's dead
+  are buried at the Barrow Rise beside the Barrow Path, stakes in rows. The
+  fishers' stilt village runs along Eel Shallows, each hut with its boat and
+  catch, one shared fire. The Drowned Village's houses still line both
+  sides of its old street, no fire lit, reed closing over its end. The
+  lizard-folk's stakes stand at the top of the stair, their huts ringing
+  one fire. The cult's ring of stakes circles the sinkhole under the chapel.
+  Sharks keep to the deep channels, out of the shallows.
 - **Saltreach** is a stilt town: no land to speak of, a web of a dozen
   small timber platforms on the shallows knotted by boardwalks into short
-  ways and loops, each platform a room with one job (the toll landing,
+  ways and loops. Each platform is a room with one job (the toll landing,
   the fish market, the saltworks, the net lofts, the village, Gull Rock,
   Pirate Cove, the raised Lighthouse Rock and Militia Fort, Smugglers'
-  Steps, the eel pens, the Shingle Spit out to the Fen). Compact, not an
-  open world: the boardwalks are the only ways.
-  The walks tell its story: the catch and the salt go out over the Old
-  Bridge, so the market and saltworks crowd the landing; the fishers
-  live at the heart where every walk meets; the pirates hold the far
-  west, joined to the town by one plank off Gull Rock, where the
-  militia keep a watch, and the fort's guns face the cove; the
-  smugglers' landing under the village has no way on but the water.
-  Boats are moored at the platforms, sharks keep offshore past the
-  pirates, and the town stands on one green timber, the pirates' and
-  smugglers' ground a shade darker.
+  Steps, the eel pens, the Shingle Spit out to the Fen). It is compact, not
+  an open world: the boardwalks are the only ways.
+  The walks tell its story. The catch and the salt go out over the Old
+  Bridge, so the market and saltworks crowd the landing. The fishers live
+  at the heart, where every walk meets. The pirates hold the far west,
+  joined to the town by one plank off Gull Rock, where the militia keep a
+  watch, and the fort's guns face the cove. The smugglers' landing under
+  the village has no way on but the water. Boats are moored at the
+  platforms, sharks keep offshore past the pirates, and the town stands on
+  one green timber, the pirates' and smugglers' ground a shade darker.
 - **Barrowmoor is clearings in dead thicket**, about a screen each, so
   every few steps is a new place: the Moor Gate, the Wayshrine (the first
   fire), Barrow Field's four mounds, Gibbet Hill, the Burned Hamlet, the
@@ -426,12 +427,12 @@ white shaft of light that marked every crossing are gone.
   read as empty, and woods grow only on lowland, so nothing could wall
   it. Ground a landform names is never absorbed as a pocket, so a small
   barrow keeps its district's colour.
-- **The Greyfall is a citadel-crag**: no walls or blocks, but one great
-  rock rising out of the rot-marsh in four ragged tiers (the Lower City,
-  the High City, the Warlord's Hall, the Keep on its crown), the tiers
-  alternating stone colours, with a spur west for the gnomes' Sky Bridge
-  to land on. Rotfield, the Crater shrine, the Ruined Chapel, the Gallows
-  Yard and the Ashen Approach lie in the marsh round its foot.
+- **The Greyfall is now a citadel-crag**: no walls or blocks, but one
+  great rock rising out of the rot-marsh in four ragged tiers (the Lower
+  City, the High City, the Warlord's Hall, the Keep on its crown), the
+  tiers alternating stone colours, with a spur west for the gnomes' Sky
+  Bridge to land on. Rotfield, the Crater shrine, the Ruined Chapel, the
+  Gallows Yard and the Ashen Approach lie in the marsh round its foot.
 - **Emberwood** keeps its maze, but its hills and Troll's Hollow (once a
   rectangular ring of blocks, now a raised arena of ash) are landforms.
   The whole wood has one floor colour: per-district colours met in
@@ -463,61 +464,61 @@ white shaft of light that marked every crossing are gone.
 - **Districts are landforms, packed like the atlas.** `shape(level, cx,
   cy, rx, ry)` lays irregular ground at an exact height, an ellipse whose
   rim wanders by noise, with a corner squared off on each lower flank so a
-  stair can stand there; each landform finds its own stairs onto the
-  ground under it. The Harbour is built from them: the Keep on the
-  Citadel on the Upper Town on Old Town, the Northwood and the Mine Hills
-  as uplands either side, the Moor Watch's bluff, with land run to the
-  frame's edge (sea and sky maps keep a margin of only 3 tiles), except
-  behind the castle, where open sea puts the Keep on a sea cliff. West
-  Fields owns a `box` edged on its hedgerows: by nearest seed, flat
-  ground met the Lower Town in a straight diagonal. A market of stock
-  heaps and traders' houses fills the square's east side. The capital's
-  tiers nest, each wholly inside the one below with ground all round,
-  so a tier is reached only from the tier under it: overhanging tiers
-  stood on the lowland with stairs from the ground to the third and
-  fourth heights. The hub is the brightest map, green ground climbing
-  through fresh green to a gold capital. The capital is a hill town, not
-  a cake: the castle on a headland with the sea on two sides, the tiers
-  stepping down to the south-east, each tier its own work (the garrison's
-  soldiers drilling, the chapel and gardens, Old Town's market and trades). The
-  Lower Town is clusters after the Witcher's Oxenfurt: a paved market
-  round the Old Well, a west quarter thinning toward the archery butts,
-  an east quarter of smithy, garden and barracks, the docks, a
-  watchtower at each gate, joined by bending streets the map draws
-  (`streets: true` on the area); a grid of houses read as two rows. Roads
-  run on to the farm, the lumber camp, the miners' camp and the
-  lighthouse, and carriers walk between them. West Fields is a farm of
-  fenced fields drawn in crop rows (`crops` on a district) and fenced
-  pastures, on the town's own green: painted field colours read as flat
-  patches, and tree hedgerows as walls. Stacked
+  stair can stand there. Each landform finds its own stairs onto the ground
+  under it. The Harbour is built from them: the Keep on the Citadel on the
+  Upper Town on Old Town, the Northwood and the Mine Hills as uplands either
+  side, and the Moor Watch's bluff. Land runs to the frame's edge (sea and
+  sky maps keep a margin of only 3 tiles), except behind the castle, where
+  open sea puts the Keep on a sea cliff. West Fields owns a `box` edged on
+  its hedgerows: by nearest seed, flat ground met the Lower Town in a
+  straight diagonal. A market of stock heaps and traders' houses fills the
+  square's east side.
+  The capital's tiers nest, each wholly inside the one below with ground all
+  round, so a tier is reached only from the tier under it. Overhanging tiers
+  stood on the lowland with stairs from the ground to the third and fourth
+  heights. The hub is the brightest map, green ground climbing through fresh
+  green to a gold capital. The capital is a hill town: the castle on a
+  headland with the sea on two sides, the tiers stepping down to the
+  south-east, each tier its own work (the garrison's soldiers drilling, the
+  chapel and gardens, Old Town's market and trades). The Lower Town is
+  clusters after the Witcher's Oxenfurt: a paved market round the Old Well,
+  a west quarter thinning toward the archery butts, an east quarter of
+  smithy, garden and barracks, the docks, and a watchtower at each gate,
+  joined by bending streets the map draws (`streets: true` on the area). A
+  grid of houses read as two rows. Roads run on to the farm, the lumber
+  camp, the miners' camp and the lighthouse, and carriers walk between them.
+  West Fields is a farm of fenced fields drawn in crop rows (`crops` on a
+  district) and fenced pastures, on the town's own green: painted field
+  colours read as flat patches, and tree hedgerows as walls. Stacked
   rectangles and full-width bands both read as slabs and were dropped. A
-  landform names its district (`shape(..., owner)`) and gives it every
-  tile it covers, so one landform is one colour; a district's `levels`
-  names the heights it takes on the lowland and elsewhere. Any patch of a
-  district under 60 tiles that is not its main piece goes to the district
-  round it, so the noise in the borders leaves no islands. `districtAt` is base-36, read with `districtOf()`.
-- **One bonfire in the Harbour.** The market square's; the town's other
-  fires are `campfires`, lit but no rest. The Lower Town is a bowl after
-  Firelink: `rim()` rings the square with raised ground, cut a tile clear
-  of every road, so the main road west and east and the docks lane south
-  are the passes out, Old Town's cliff closes the north, and the rim's
-  stairs stand in the passes. The houses sit on the rim; the Old Well is
-  on its east ledge, off the square but in view of the fire. The two back
-  lanes that cut the rim's corners are gone. The bonfire stands at the
-  bowl's centre, copses on the rim and in its corners. Every way out
-  starts on the bowl's floor; the high ground is the climb, after
-  Firelink's stair to the Burg: twin stairs up the bowl's north wall onto
-  Old Town, then the Upper Town, the Citadel and the Keep stacked up the
-  bonfire's column to the castle on its sea cliff. Rim arms reaching out
-  as ridges (`ridge()`) were tried and dropped: they read as nowhere.
-  Lantern Point holds five ways, each with a tell: the Lantern Road
-  west (`lanterns()` along it; golden motes drifting off the fire along
-  it, after Elden Ring's guidance of grace, were tried and dropped as
-  odd), the Graves up the hill north, the Old Well by the fire, the pier
-  south and the cove east. `solidCells()` is what no one walks through
-  (props but gold, bones and boats; fence posts); the scene adds rocks
-  and stumps standing in open ground, never at an edge, so none seals a
-  pass, and a test walks every area round the solid props.
+  landform names its district (`shape(..., owner)`) and gives it every tile
+  it covers, so one landform is one colour. A district's `levels` names the
+  heights it takes on the lowland and elsewhere. Any patch of a district
+  under 60 tiles that is not its main piece goes to the district round it,
+  so the noise in the borders leaves no islands. `districtAt` is base-36,
+  read with `districtOf()`.
+- **One bonfire in the Harbour.** It stands in the market square; the
+  town's other fires are `campfires`, lit but no rest. The Lower Town is a
+  bowl after Firelink: `rim()` rings the square with raised ground, cut a
+  tile clear of every road. The main road west and east and the docks lane
+  south are the passes out, Old Town's cliff closes the north, and the
+  rim's stairs stand in the passes. The houses sit on the rim. The Old Well
+  is on its east ledge, off the square but in view of the fire. The two
+  back lanes that cut the rim's corners are gone. The bonfire stands at the
+  bowl's centre, with copses on the rim and in its corners.
+  Every way out starts on the bowl's floor. The high ground is the climb,
+  after Firelink's stair to the Burg: twin stairs up the bowl's north wall
+  onto Old Town, then the Upper Town, the Citadel and the Keep stacked up
+  the bonfire's column to the castle on its sea cliff. Rim arms reaching
+  out as ridges (`ridge()`) were tried and dropped: they read as nowhere.
+  Lantern Point holds five ways, each with a tell: the Lantern Road west
+  (`lanterns()` along it; golden motes drifting off the fire along it,
+  after Elden Ring's guidance of grace, were tried and dropped as odd), the
+  Graves up the hill north, the Old Well by the fire, the pier south and the
+  cove east. `solidCells()` is what no one walks through (props but gold,
+  bones and boats; fence posts). The scene adds rocks and stumps standing
+  in open ground, never at an edge, so none seals a pass, and a test walks
+  every area round the solid props.
 - **The Citadel is a region, not a terrace stack.** After the Undead
   Burg, the Undead Parish and Dark Souls 3's Undead Settlement, the
   castle above the Harbour splits into areas of their own, joined in a
@@ -567,8 +568,8 @@ white shaft of light that marked every crossing are gone.
   bell roof, Troll's Hollow); walking into its fog walks the captain two
   steps in, and it holds until the boss or the captain falls. The side a
   crossing comes out on is `plain`, no fog.
-  The hub moved off the town to Lantern Point, a headland in the
-  south-east corner (Firelink is a ledge at the edge, not the middle):
+  For a time, the hub moved off the town to Lantern Point, a headland in
+  the south-east corner (Firelink is a ledge at the edge, not the middle):
   the Shore Road from the Landing lands on it, the lighthouse fire is the
   Harbour's first bonfire, an inlet against the Moor Watch's bluff leaves
   the shore path the one way west, and the Moor Watch's hill behind the
@@ -655,23 +656,22 @@ white shaft of light that marked every crossing are gone.
 
 ## Playing an area map
 
-An area map is played: the hero (a blue Warrior) stands where you
-arrived, the camera holds on it 15 rows tall; there is no minimap (dev mode
-shows the whole map). The hero walks at 2.8 tiles a second, in straight legs (the grid
-path pulled taut, `smoothPath`) at a steady speed rather than a hop a
-cell; hold the mouse to keep walking toward it, or steer with WASD or
+An area map is played. The hero (a blue Warrior) stands where you arrived,
+and the camera holds on it 15 rows tall. There is no minimap (dev mode
+shows the whole map). The hero walks at 2.8 tiles a second in straight legs
+(the grid path pulled taut, `smoothPath`), at a steady speed rather than a
+hop a cell. Hold the mouse to keep walking toward it, or steer with WASD or
 the arrows, sliding along what blocks. A click on the woods or the sea
 walks to the nearest ground beside it (`routeToward`), and a ring marks
-where a walk ends. Click the ground to walk there by the engine's own path, a
-monster to walk up and fight it until it dies, an exit to
-walk to it and through. With nothing else to do the hero turns on a
-monster beside it. Monsters (`FOES` in `packages/engine/src/hero.ts`,
-GAME.md's numbers) wait at their posts, chase a hero within their aggro
-range, strike when beside it, and walk home past their leash. A hero at
-nothing wakes where it arrived, whole; bonfires and dropped gold come
-next. The first fight is the goblins' camp outside the Harbour's Ember
-Gate: two torches and a spear, winnable with the sword alone (three
-met at once killed in five seconds).
+where a walk ends. Click the ground to walk there by the engine's own path,
+a monster to walk up and fight it until it dies, an exit to walk to it and
+through. With nothing else to do, the hero turns on a monster beside it.
+Monsters (`FOES` in `packages/engine/src/hero.ts`, GAME.md's numbers) wait
+at their posts, chase a hero within their aggro range, strike when beside
+it, and walk home past their leash. A hero at nothing wakes where it
+arrived, whole. Bonfires and dropped gold come next. The first fight is the
+goblins' camp outside the Harbour's Ember Gate: two torches and a spear,
+winnable with the sword alone (three met at once killed in five seconds).
 
 Dev mode (the backquote key, or "Dev: whole map" at the top) frees the
 camera to show the whole area map, centred, with the wheel and drag
@@ -716,7 +716,7 @@ tool icons and ore laid out beside it.
 
 ## The folk's questline
 
-The Harbour's ten move out into the Reach as the captain does, after Dark Souls: no log, no choices, the captain never speaks. Where each stands is `whereabouts()` in `npcs.ts`, from world flags; some flags are set by hearing a talk to its end (`Talk.sets`). Positions change only on entering an area.
+The Harbour's ten move out into the Reach as the captain does, after Dark Souls. There is no log and no choice, and the captain never speaks. Where each stands comes from `whereabouts()` in `npcs.ts`, read from world flags. Some flags are set by hearing a talk to its end (`Talk.sets`). Positions change only on entering an area.
 
 | Who | Moved on by | Turns up | Ends |
 | --- | --- | --- | --- |

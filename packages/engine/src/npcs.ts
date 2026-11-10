@@ -130,7 +130,7 @@ export const NPCS: readonly Npc[] = [
         id: "castle",
         lines: [
           "The castle? Shut since the grey came. The steward ran for the wood with its key.",
-          "Troll had him for supper, they say. Has the key still, I'd think.",
+          "A troll had him for supper, they say. It has the key still, I'd think.",
         ],
       },
       {
@@ -347,7 +347,7 @@ export const NPCS: readonly Npc[] = [
       {
         id: "chewed",
         when: "died",
-        lines: ["You look chewed on, captain.", "If it had wings, steel won't reach it. Wren's bows will."],
+        lines: ["You look chewed on, captain.", "If it had wings, your steel won't reach it. Wren's bows will."],
       },
       {
         id: "below",
@@ -370,7 +370,7 @@ export const NPCS: readonly Npc[] = [
             id: "nook",
             lines: [
               "Captain. Don't look so surprised. No rule against going down, is there?",
-              "Smugglers keep this corner. One of them wore his coat. Said he swapped it, deeper in.",
+              "Smugglers keep this corner. One of them is wearing his coat. Said he swapped it, deeper in.",
               "Swapped it. Ha. He never swapped a thing in his life.",
             ],
           },
@@ -412,12 +412,11 @@ export const NPCS: readonly Npc[] = [
       {
         id: "first",
         lines: [
-          "Peace on you, captain.",
-          "My sisters went down to the chapel under the fen, to pray the water clear.",
+          "My sisters went down to the Drowned Chapel, to pray the water clear.",
           "The water did not clear. Nor did they come back.",
         ],
       },
-      { id: "candle", lines: ["I light a candle each night.", "It is not hope. It is habit, which outlasts hope."] },
+      { id: "candle", lines: ["I light a candle each night.", "The hour comes round and my hands are already there."] },
     ],
     later: [
       {
@@ -658,7 +657,7 @@ export const NPCS: readonly Npc[] = [
             id: "ahead",
             sets: "anselAhead",
             lines: [
-              "The warlord's hall is up past the keep. I'll go first, this time.",
+              "The warlord's hall is up past the High City. I'll go first, this time.",
               "Let me have that. You've had all the others.",
             ],
           },
