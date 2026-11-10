@@ -49,6 +49,12 @@
 	border-bottom: 2px solid rgb(74 58 40 / 0.25);
 }
 
+@media (max-width: 400px) {
+	.sackStats {
+		grid-template-columns: 1fr;
+	}
+}
+
 .sackStats div {
 	display: flex;
 	justify-content: space-between;

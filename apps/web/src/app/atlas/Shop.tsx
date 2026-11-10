@@ -16,10 +16,11 @@ export function Shop({ menu, api }: { menu: MenuView; api: RefObject<AtlasApi | 
   return (
     // A merchant's menu, after the Souls games: the name, the options, the one picked marked. Its Shop opens the
     // goods after Skyrim's barter: the list on one side, the picked good told out on the other.
-    <div className="shop" role="menu" aria-label={menu.name}>
-      <span className="talkName">{menu.name}</span>
+    <div className={`shop${menu.shop ? " open" : ""}`} role="menu" aria-label={menu.name}>
+      {!menu.shop && <span className="talkName">{menu.name}</span>}
       {menu.shop && (
         <div className="shopGoods">
+          <span className="shopHead">{menu.name}</span>
           <ul className="shopList">
             {menu.options.map(
               (o, i) =>
@@ -48,7 +49,7 @@ export function Shop({ menu, api }: { menu: MenuView; api: RefObject<AtlasApi | 
             {pick?.icon && (
               <>
                 <span className="shopKey big">
-                  <ItemIcon icon={pick.icon} size={56} />
+                  <ItemIcon icon={pick.icon} size={40} />
                 </span>
                 <span className="shopTellName">{pick.label}</span>
                 {pick.about && <i className="shopAbout">{pick.about}</i>}

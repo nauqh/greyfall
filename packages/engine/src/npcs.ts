@@ -195,6 +195,7 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "You want an edge on that? Bring me gold and ore.",
           "The gold's for me. The ore's for the blade. Mostly.",
+          "There's a banded shield on the wall too, oak and iron. Takes a blow so your arm doesn't.",
         ],
       },
       {
