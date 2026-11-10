@@ -556,9 +556,17 @@ function keepArea(): AreaMap {
   // The castle's own ground, the hill's woods round it: the gate court, the bailey, and the hall's terrace a height up.
   t.ground("keep", 44, 24, 16, 13);
   t.ground("keep", 8, 18, 44, 21);
-  t.ground("keep", 10, 4, 40, 14);
-  t.ground("keep", 50, 15, 2, 3);
-  t.block(2, 10, 4, 40, 13);
+  // The hall's terrace a ragged hill shoulder: the castle's pad, the lift's head and the stair's landing drawn exact.
+  t.blob("keep", 30, 11, 22, 9);
+  t.ground("keep", 10, 3, 7, 6);
+  t.ground("keep", 44, 12, 8, 6);
+  t.shape(2, 29, 10, 15, 5, 0.45, "The Keep");
+  t.shape(2, 15, 8, 5, 4, 0.4, "The Keep");
+  t.shape(2, 43, 9, 6, 5, 0.4, "The Keep");
+  t.shape(2, 22, 14, 5, 2, 0.35, "The Keep");
+  t.block(2, 26, 6, 12, 9);
+  t.block(2, 11, 4, 5, 4);
+  t.block(2, 46, 13, 4, 4);
   t.stair(2, 50, 16, "R");
   edgeWay(t, { col: 59, row: 30 }, { col: 62, row: 30 });
   t.road([59, 30], [40, 30], [30, 26], [50, 18], [50, 17]);
@@ -607,7 +615,10 @@ function chapel(): AreaMap {
   // and its pier running to the cliff; an alcove off the cloister's south walk.
   t.ground("chapel", 4, 26, 16, 9);
   t.ground("chapel", 20, 18, 30, 24);
-  t.ground("chapel", 16, 6, 36, 12);
+  t.blob("chapel", 33, 11, 19, 7);
+  t.ground("chapel", 16, 6, 14, 6);
+  t.ground("chapel", 44, 12, 8, 6);
+  t.ground("chapel", 20, 16, 30, 2);
   t.ground("chapel", 50, 14, 6, 28);
   // The forge yard a ragged spur of the hill, its pier a rocky tongue narrowing south to the lift.
   t.ground("chapel", 56, 18, 10, 23);
@@ -616,9 +627,16 @@ function chapel(): AreaMap {
   t.blob("chapel", 68, 51, 4, 6);
   t.ground("chapel", 30, 42, 7, 9);
   t.pond(28, 24, 14, 10);
-  t.block(2, 16, 6, 36, 11);
+  // The chapel terrace and the bell roof over it ragged rock; the chapel's pad, the bell tower's and the stairs' landings exact.
+  t.shape(2, 34, 11, 15, 5, 0.45, "The Chapel");
+  t.shape(2, 21, 10, 6, 5, 0.4, "The Chapel");
+  t.shape(2, 46, 13, 6, 4, 0.4, "The Chapel");
+  t.block(2, 37, 8, 9, 6);
+  t.block(2, 47, 13, 5, 4);
   t.stair(2, 52, 16, "R");
-  t.block(3, 18, 6, 12, 5);
+  t.shape(3, 24, 9, 6, 3, 0.35, "The Bell Roof");
+  t.block(3, 18, 6, 6, 3);
+  t.block(3, 26, 8, 4, 3);
   t.stair(3, 30, 10, "R");
   t.shape(2, 70, 29, 13, 10, 0.45, "The Forge Yard");
   t.shape(2, 62, 21, 6, 4, 0.4, "The Forge Yard");
@@ -713,9 +731,17 @@ function ramparts(): AreaMap {
   t.ground("ramparts", 62, 3, 10, 13);
   t.ground("ramparts", 72, 7, 4, 3);
   t.ground("ramparts", 76, 4, 6, 10);
-  // The upper ward: the gate tower's foot and the tenement terrace under the wall, a stair up at each end.
-  t.block(2, 4, 5, 14, 15);
-  t.block(2, 18, 10, 40, 14);
+  // The upper ward: the gate tower's foot and the tenement terrace under the wall, a ragged shelf of earth and rock,
+  // a stair up at each end; the stair pads and the tower stair's footing drawn exact.
+  t.shape(2, 10, 15, 8, 5, 0.4, "The Upper Ward");
+  t.shape(2, 28, 15, 12, 8, 0.4, "The Upper Ward");
+  t.shape(2, 46, 15, 12, 8, 0.45, "The Upper Ward");
+  t.shape(2, 34, 21, 8, 3, 0.4, "The Upper Ward");
+  t.shape(2, 51, 20, 6, 4, 0.4, "The Upper Ward");
+  t.block(2, 18, 20, 4, 4);
+  t.block(2, 54, 20, 4, 4);
+  t.block(2, 17, 12, 4, 5);
+  t.block(2, 53, 10, 3, 5);
   t.stair(2, 17, 23, "L");
   t.stair(2, 58, 23, "R");
   // The gate tower a height up again off the ward, the walk off its top, the east tower, the Gun Bridge and the door's landing.
@@ -728,11 +754,12 @@ function ramparts(): AreaMap {
   // The back stair: a landing off the Bull's Wall down onto the upper ward.
   t.block(3, 50, 10, 3, 3);
   t.stair(3, 53, 12, "R");
-  // The lower ward's two raised yards, each crossed by a stair at either end.
-  t.block(2, 24, 28, 14, 6);
+  // The lower ward's two raised yards, rocky knolls each crossed by a stair at either end, its pads drawn exact.
+  t.shape(2, 31, 30, 8, 4, 0.4, "The Drill Yard");
+  t.shape(2, 48, 30, 7, 4, 0.4, "The Drill Yard");
+  for (const x of [24, 35, 42, 51]) t.block(2, x, 31, 3, 3);
   t.stair(2, 23, 33, "L");
   t.stair(2, 38, 33, "R");
-  t.block(2, 42, 28, 12, 6);
   t.stair(2, 41, 33, "L");
   t.stair(2, 54, 33, "R");
 
@@ -867,25 +894,34 @@ function burg(): AreaMap {
   t.bridge({ col: 40, row: 41 }, { col: 40, row: 50 }, 3);
   t.bridge({ col: 64, row: 42 }, { col: 64, row: 51 }, 3);
 
-  // The upper town's wall: one height up across the north, its face stepping in and out, the promontory jutting out
-  // over the creek in the middle with a stair up either side of it.
-  t.block(2, 12, 2, 28, 32);
-  t.block(2, 40, 2, 24, 34);
-  t.block(2, 64, 2, 26, 30);
+  // The upper town's high ground: one height up across the north, a ragged bluff of bays and spurs, the promontory
+  // jutting out over the creek in the middle with a stair up either side of it. Only the stairs' landings are exact.
+  for (const [x, y, rx, ry, w] of [[24, 9, 13, 9, 0.4], [26, 23, 12, 8, 0.45], [15, 24, 4, 9, 0.4], [37, 7, 6, 6, 0.35], [43, 5, 4, 5, 0.3], [36, 18, 6, 12, 0.3], [34, 30, 5, 3, 0.3], [37, 31, 3, 2, 0.2], [42, 26, 4, 7, 0.15], [20, 30, 5, 3, 0.3], [63, 27, 3, 3, 0.2], [52, 16, 12, 16, 0.25], [62, 6, 6, 6, 0.3], [69, 4, 5, 4, 0.3], [41, 9, 3, 3, 0.2], [52, 31, 11, 4, 0.25], [70, 28, 5, 3, 0.3], [79, 28, 5, 3, 0.3], [87, 28, 4, 3, 0.3], [77, 9, 13, 9, 0.4], [76, 22, 12, 7, 0.45], [86, 17, 4, 10, 0.4], [66, 20, 5, 9, 0.3]] as const) t.shape(2, x, y, rx, ry, w);
+  t.block(2, 12, 29, 5, 5);
+  t.block(2, 40, 32, 4, 4);
+  t.block(2, 60, 32, 4, 4);
   t.stair(2, 11, 33, "L");
   t.stair(2, 39, 35, "L");
   t.stair(2, 64, 35, "R");
-  // Church Hill, a height up again in the west, and the crest under the castle's wall, its arm reaching down the
-  // upper street's west side; a deck from the hill's top across the street to the arm, the second way up.
-  t.block(3, 14, 12, 18, 14);
+  // Church Hill, a knoll a height up again in the west, and the crest under the castle's wall, its arm reaching down
+  // the upper street's west side; a deck from the hill's top across the street to the arm, the second way up.
+  t.shape(3, 22, 18, 8, 6, 0.35, "Church Hill");
+  t.shape(3, 17, 23, 3, 3, 0.3, "Church Hill");
+  t.shape(3, 27, 20, 4, 4, 0.3, "Church Hill");
+  t.block(3, 26, 23, 6, 3);
+  t.block(3, 29, 11, 3, 4);
   t.stair(3, 32, 25, "R");
-  t.block(3, 42, 2, 22, 7);
-  t.block(3, 42, 9, 6, 5);
+  t.shape(3, 52, 3, 11, 5, 0.4, "The Crest");
+  t.shape(3, 45, 8, 3, 4, 0.3, "The Crest");
+  t.block(3, 42, 11, 6, 3);
   t.stair(3, 48, 13, "R");
   const deck = t.span(3, 32, 12, 10, 2);
-  // The garrison: a block a height up in the east ward, the barracks on a core a height above it, a stair at each end
+  // The garrison: a rise a height up in the east ward, the barracks on a core a height above it, a stair at each end
   // of both, so it is crossed and not just climbed.
-  t.block(3, 68, 12, 18, 12);
+  t.shape(3, 77, 16, 9, 5, 0.35, "The Garrison");
+  t.shape(3, 77, 21, 9, 3, 0.2, "The Garrison");
+  t.block(3, 68, 21, 3, 3);
+  t.block(3, 83, 21, 3, 3);
   t.stair(3, 67, 23, "L");
   t.stair(3, 86, 23, "R");
   t.block(4, 72, 12, 10, 7);
