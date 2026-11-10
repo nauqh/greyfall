@@ -1,0 +1,85 @@
+/* The goods on paper, each on a blue key like Play's command card; the picked key lifts and glows. */
+.shopGoods {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	max-width: calc(100vw - 32px);
+	padding: 0 6px 4px;
+	color: #4a3a28;
+	border: 30px solid transparent;
+	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 30px stretch;
+}
+
+.shopCards {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 8px;
+}
+
+.shopCard {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	width: 76px;
+	padding: 0 0 2px;
+	background: none;
+	border: 14px solid transparent;
+	border-image: url("/tiny-swords/ui/blueButton.png") 64 fill / 14px stretch;
+	cursor: pointer;
+	transition: transform 140ms ease-out, filter 140ms ease-out;
+}
+
+.shopCard.picked {
+	transform: translateY(-4px);
+	outline: 3px solid #f2d48a;
+	outline-offset: 3px;
+	border-radius: 4px;
+}
+
+.shopCard.sold {
+	filter: grayscale(0.8) brightness(0.8);
+}
+
+.shopPrice {
+	display: flex;
+	align-items: center;
+	gap: 3px;
+	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-weight: 800;
+	font-size: 14px;
+	color: #ffe28a;
+	-webkit-text-stroke: 4px #1c2634;
+	paint-order: stroke fill;
+}
+
+.shopCard:not(.sold) .shopPrice::before {
+	content: "";
+	width: 14px;
+	height: 14px;
+	background: url("/tiny-swords/ui/icon_gold.png") center / contain no-repeat;
+}
+
+.shopTell {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	min-height: 2.6em;
+	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-weight: 700;
+	font-size: 14px;
+	text-align: center;
+}
+
+.shopTellName {
+	font-weight: 800;
+	font-size: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.shopCard {
+		transition: none;
+	}
+}

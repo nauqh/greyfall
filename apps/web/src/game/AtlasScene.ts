@@ -100,6 +100,10 @@ export interface AtlasApi {
   sit: (on: boolean) => string | null;
   /** In a menu with someone who hires out: pick an option, as E on it would. */
   choose: (i: number) => void;
+  /** In a menu: mark an option picked without choosing it, as the pointer over it does. */
+  hover: (i: number) => void;
+  /** In a menu: out of the goods to the menu, or out of the menu. */
+  back: () => void;
   /** Stop the scene while another game (the bonfire map) runs on the page, or go on; that game swaps the shared walk grid. */
   pause: (on: boolean) => void;
   /** On the atlas: mark the lit bonfires, ring `pick` and fly to it. */
@@ -157,8 +161,8 @@ export interface AtlasHooks {
   onSay?: (say: Say | null) => void;
   /** The menu of someone who hires out, or null when it closes. */
   onMenu?: (menu: MenuView | null) => void;
-  /** The goods bought and kept, shown in the captain's sack. */
-  onSack?: (items: SackItem[]) => void;
+  /** The goods bought and kept, and the captain's numbers with them: the sack. */
+  onSack?: (sack: SackView) => void;
   /** What E would do where the captain stands, other than swing: talk, or rest at a bonfire. */
   onNear?: (action: string | null) => void;
   /** The flasks left. */
@@ -195,18 +199,35 @@ export interface ShopIcon {
   crop?: { x: number; y: number; w: number; h: number; sheetW: number; sheetH: number };
 }
 
+/** One of the captain's numbers in words: `after`, what a good would make it. */
+export interface StatLine {
+  label: string;
+  now: string;
+  after?: string;
+}
+
 /** One good in the captain's sack. */
 export interface SackItem {
   label: ItemName;
   icon: ShopIcon;
   gives: string;
+  /** One line of what it is, after a Souls item's description. */
+  about?: string;
+}
+
+/** The sack: the goods kept, and every number of the captain's. */
+export interface SackView {
+  items: SackItem[];
+  stats: StatLine[];
 }
 
 /** After the Souls games' merchants: a name over a short list, one option picked; a good says what it gives. */
 export interface MenuView {
   name: string;
-  options: { label: string; note?: string; icon?: ShopIcon; gives?: string; sold?: boolean }[];
+  options: { label: string; note?: string; icon?: ShopIcon; gives?: string; sold?: boolean; about?: string; afford?: boolean; change?: StatLine[] }[];
   pick: number;
+  /** Gold carried, while the goods are open. */
+  gold?: number;
   /** A merchant's goods, opened from Shop: drawn as cards rather than a list. */
   shop?: boolean;
 }
@@ -995,6 +1016,18 @@ export class AtlasScene extends Phaser.Scene {
         if (!this.menu) return;
         this.menu.pick = i;
         this.choose();
+      },
+      hover: (i) => {
+        if (!this.menu || this.menu.pick === i) return;
+        this.menu.pick = i;
+        this.showMenu();
+      },
+      back: () => {
+        const m = this.menu;
+        if (!m) return;
+        if (!m.shopping) return this.closeMenu(true);
+        this.menu = { folk: m.folk, pick: 1 };
+        this.showMenu();
       },
       tier: (id) => {
         this.show(id);
@@ -1802,7 +1835,7 @@ export class AtlasScene extends Phaser.Scene {
   private emitSack(): void {
     const bought = remembered(BOUGHT);
     const items = (Object.keys(ITEMS) as ItemName[]).filter((item) => bought.has(item));
-    this.hooks.onSack?.(items.map((item) => ({ label: item, icon: ITEM_ICON[item], gives: gives(item) })));
+    this.hooks.onSack?.({ items: items.map((item) => ({ label: item, icon: ITEM_ICON[item], gives: gives(item) })), stats: [] });
   }
 
   /** In a talk with someone who hires out: a companion joins, for gold, if there is room. */

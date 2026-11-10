@@ -4,10 +4,12 @@ import { AREAS, type AreaId } from "@greyfall/engine";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import type { AtlasApi, AtlasHooks, BandView, Departure, MenuView, SackItem, Say, ShopIcon, Vitals } from "../../game/AtlasScene";
+import type { AtlasApi, AtlasHooks, BandView, Departure, MenuView, SackView, Say, Vitals } from "../../game/AtlasScene";
 import { Clouds } from "../../game/Clouds";
 import { packUrl } from "../../game/art";
 import { GameCanvas } from "../../game/GameCanvas";
+import { Sack } from "./Sack";
+import { Shop } from "./Shop";
 import { TravelMap } from "./TravelMap";
 
 /** The HUD shown or hidden with the H key, remembered on this browser. */
@@ -50,29 +52,6 @@ function markWarned(name: string): void {
   } catch {}
 }
 
-/** A good's picture in a merchant's menu: the cell of its sheet, and a tint multiplied over its shape, as Phaser tints. */
-function ItemIcon({ icon, size }: { icon: ShopIcon; size: number }) {
-  const c = icon.crop;
-  const k = c ? size / c.w : 1;
-  const art = {
-    image: `url("${icon.url}")`,
-    position: c ? `${-c.x * k}px ${-c.y * k}px` : "0 0",
-    size: c ? `${c.sheetW * k}px ${c.sheetH * k}px` : "100% 100%",
-  };
-  return (
-    <span
-      aria-hidden="true"
-      style={{ position: "relative", display: "inline-block", width: size, height: size, verticalAlign: "middle", backgroundImage: art.image, backgroundPosition: art.position, backgroundSize: art.size, backgroundRepeat: "no-repeat", imageRendering: "pixelated" }}
-    >
-      {icon.tint && (
-        <span
-          style={{ position: "absolute", inset: 0, backgroundColor: icon.tint, mixBlendMode: "multiply", maskImage: art.image, maskPosition: art.position, maskSize: art.size, maskRepeat: "no-repeat", WebkitMaskImage: art.image, WebkitMaskPosition: art.position, WebkitMaskSize: art.size, WebkitMaskRepeat: "no-repeat" }}
-        />
-      )}
-    </span>
-  );
-}
-
 /** One area's own map, the camera kept inside it; its exits cross to the next without leaving the page. */
 export function AreaView({ area: first }: { area: AreaId }) {
   const router = useRouter();
@@ -89,8 +68,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const [boss, setBoss] = useState<{ name: string; hp: number; max: number } | null>(null);
   const [band, setBand] = useState<BandView | null>(null);
   const [menu, setMenu] = useState<MenuView | null>(null);
-  const [sack, setSack] = useState<SackItem[] | null>(null);
-  const [sackOpen, setSackOpen] = useState(false);
+  const [sack, setSack] = useState<SackView | null>(null);
   // Died: the words, then the dark, then waking at the bonfire in this area.
   const [died, setDied] = useState<AreaId | null>(null);
   // Sat at a bonfire after a rest: its name, and the option picked.
@@ -234,15 +212,6 @@ export function AreaView({ area: first }: { area: AreaId }) {
   }, [fire, atlas]);
   useEffect(() => {
     const key = (e: KeyboardEvent): void => {
-      if (e.target instanceof HTMLInputElement || e.repeat) return;
-      if (e.key.toLowerCase() === "i") setSackOpen((o) => !o);
-      else if (e.key === "Escape") setSackOpen(false);
-    };
-    window.addEventListener("keydown", key);
-    return () => window.removeEventListener("keydown", key);
-  }, []);
-  useEffect(() => {
-    const key = (e: KeyboardEvent): void => {
       if (e.key === "`" && !(e.target instanceof HTMLInputElement)) toggleDev();
     };
     window.addEventListener("keydown", key);
@@ -321,64 +290,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
             </span>
           </div>
         )}
-        {menu && (
-          // A merchant's menu, after the Souls games: the name, the options, the one picked marked. Its Shop opens the
-          // goods on the blue keys of Play's command card, the picked one told out under them.
-          <div className="shop" role="menu" aria-label={menu.name}>
-            <span className="talkName">{menu.name}</span>
-            {menu.shop && (
-              <div className="shopGoods">
-                <div className="shopCards">
-                  {menu.options.map(
-                    (o, i) =>
-                      o.icon && (
-                        <button
-                          key={o.label}
-                          type="button"
-                          role="menuitem"
-                          aria-label={`${o.label}, ${o.sold ? "sold" : `${o.note} gold`}`}
-                          className={`shopCard${i === menu.pick ? " picked" : ""}${o.sold ? " sold" : ""}`}
-                          onClick={(e) => {
-                            api.current?.choose(i);
-                            e.currentTarget.blur();
-                          }}
-                        >
-                          <ItemIcon icon={o.icon} size={40} />
-                          <span className="shopPrice">{o.sold ? "Sold" : o.note}</span>
-                        </button>
-                      ),
-                  )}
-                </div>
-                {/* Blank on Talk or Leave rather than gone, so the panel does not jump. */}
-                <div className="shopTell">
-                  <span className="shopTellName">{menu.options[menu.pick]?.gives ? menu.options[menu.pick]!.label : " "}</span>
-                  <span>{menu.options[menu.pick]?.gives ?? " "}</span>
-                </div>
-              </div>
-            )}
-            {menu.options.map(
-              (o, i) =>
-                !o.icon && (
-                  <button
-                    key={o.label}
-                    type="button"
-                    role="menuitem"
-                    className={`shopOption${i === menu.pick ? " picked" : ""}`}
-                    onClick={(e) => {
-                      api.current?.choose(i);
-                      e.currentTarget.blur();
-                    }}
-                  >
-                    {o.label}
-                    {o.note && <span className="shopNote">{o.note}</span>}
-                  </button>
-                ),
-            )}
-            <span className="talkNext" aria-hidden="true">
-              WASD, E
-            </span>
-          </div>
-        )}
+        {menu && <Shop menu={menu} api={api} />}
         {say?.note ? (
           // A note on the ground: its words on the same paper it lies on.
           <button key={say.text} type="button" className="noteRead" onClick={() => api.current?.next()} aria-live="polite">
@@ -478,35 +390,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
               <b>{gold}</b>
             </div>
           )}
-          {sack && (
-            <button type="button" className="sackButton" aria-expanded={sackOpen} onClick={() => setSackOpen((o) => !o)}>
-              Sack <kbd>I</kbd>
-            </button>
-          )}
-          {sack && sackOpen && (
-            // What the merchants sold, kept for good: each good and what it gives.
-            <div className="sack" role="dialog" aria-label="Sack">
-              <span className="shopTellName">Sack</span>
-              {sack.length === 0 ? (
-                <span className="sackEmpty">Empty. Merchants sell goods you keep for good.</span>
-              ) : (
-                <ul>
-                  {sack.map((s) => (
-                    <li key={s.label}>
-                      <span className="sackKey">
-                        <ItemIcon icon={s.icon} size={32} />
-                      </span>
-                      <span>
-                        <b>{s.label}</b>
-                        <br />
-                        {s.gives}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
+          {sack && <Sack sack={sack} />}
           {band && band.members.length > 0 && (
             <div className="bandPanel">
               <div className="bandOrder">
