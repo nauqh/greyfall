@@ -986,7 +986,7 @@ Ansel's plain claim: the Gilded Reach sent no aid.
 | 2 | The grey came out of the east. It crowned the Grey Warlord. Where it passed, the fields went grey. | The cause, and where the grey came from. The Warlord is the grey's crown, not its general |
 | 3 | The Gilded Reach sent no aid. The lords rode out alone. Their banners did not return. | The city's refusal, and why the lords are gone when the survivor arrives |
 | 4 | One fire is left, at Last Harbour. Old Ferrow keeps it. He still watches the roads and the water. | The last fire, its keeper, and the watch he keeps for whoever comes in |
-| 5 | You survived the grey. The tide carried you in. Nameless. Alive. | The turn to the player: the fire kept for the soldiers finally gets one |
+| 5 | One survivor of the grey. The tide carried them in. Nameless. Alive. | The turn to the player: the fire kept for the soldiers finally gets one |
 
 Then the title card, **GREYFALL**, *The Shattered Reach*, and the black fades
 out on the Landing: the sea cave behind the overlay is the arrival.

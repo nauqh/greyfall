@@ -6,7 +6,7 @@ export const PROLOGUE = {
     "The grey came out of the east. It crowned the Grey Warlord. Where it passed, the fields went grey.",
     "The Gilded Reach sent no aid. The lords rode out alone. Their banners did not return.",
     "One fire is left, at Last Harbour. Old Ferrow keeps it. He still watches the roads and the water.",
-    "You survived the grey. The tide carried you in. Nameless. Alive.",
+    "One survivor of the grey. The tide carried them in. Nameless. Alive.",
   ],
   title: "GREYFALL",
   subtitle: "The Shattered Reach",
