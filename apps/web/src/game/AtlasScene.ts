@@ -718,7 +718,9 @@ export class AtlasScene extends Phaser.Scene {
     this.bases = [];
     this.fog = [];
     this.mist = [];
+    // The page keeps the last area's bar through a crossing; clear it, or a key of "" never sends the null.
     this.bossKey = "";
+    this.hooks.onBoss?.(null);
     this.shieldUp = false;
     this.aim = null;
     this.keys = null;
@@ -3076,7 +3078,8 @@ export class AtlasScene extends Phaser.Scene {
         const arena = this.local?.arena;
         const inRoom = !!arena && this.mist.length === 0 && districtOf(this.local!, hero.at.col, hero.at.row)?.name === this.roomOf(arena);
         const seen = (f: Foe): boolean => this.active.worldView.contains(f.s.x, f.s.y);
-        const boss = hero.dead
+        // No fight in dev mode, and its whole-map camera has every boss in view.
+        const boss = hero.dead || this.dev
           ? undefined
           : this.foes.find((f) => this.isBoss(f) && !f.dead && (f.kind === arena?.boss ? inRoom && seen(f) : tileDistance(f.at, hero.at) <= f.stats.leash));
         const name = boss && this.local?.bosses.slice().sort((a, b) => tileDistance(a, boss.home) - tileDistance(b, boss.home))[0]?.name;
