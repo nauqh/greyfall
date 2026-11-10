@@ -1,0 +1,94 @@
+/* The opening cutscene, after Dark Souls 1: brief paragraphs of narration on black, then the title. */
+.prologue {
+	position: fixed;
+	inset: 0;
+	z-index: 20;
+	display: grid;
+	place-items: center;
+	background: #000;
+	cursor: default;
+	user-select: none;
+}
+
+.prologueEnd {
+	animation: prologueOut 1600ms ease-in both;
+}
+
+.prologueText {
+	position: absolute;
+	inset: 0;
+	display: grid;
+	place-content: center;
+	padding: 24px;
+	pointer-events: none;
+	animation: prologueOut 1200ms ease-in calc(var(--ms) - 1200ms) both;
+}
+
+.prologueText p {
+	width: min(46rem, 88vw);
+	margin: 0;
+	font: 400 clamp(17px, 2.1vw, 25px) Georgia, "Times New Roman", serif;
+	line-height: 1.55;
+	text-align: left;
+	text-wrap: pretty;
+	color: #e9e1cc;
+	animation: prologueIn 1800ms ease-out both;
+}
+
+.prologueTitle {
+	position: relative;
+	text-align: center;
+	padding: 16px;
+	color: #e9e1cc;
+	animation: prologueTitle 5200ms linear both;
+}
+
+.prologueTitle h1 {
+	margin: 0;
+	font: 900 clamp(40px, 9vw, 112px) var(--display), serif;
+	letter-spacing: 0.18em;
+}
+
+.prologueTitle p {
+	margin: 0.6em 0 0;
+	font: 700 clamp(14px, 2vw, 22px) var(--display), serif;
+	letter-spacing: 0.3em;
+	text-transform: uppercase;
+	color: #a89c84;
+}
+
+.prologueSkip {
+	position: absolute;
+	right: 24px;
+	bottom: 20px;
+	font: 700 13px var(--display), serif;
+	letter-spacing: 0.1em;
+	color: #a89c84;
+}
+
+.prologueSkip i {
+	display: block;
+	height: 2px;
+	margin-top: 6px;
+	background: #e9e1cc;
+	transform-origin: left;
+	animation: prologueSkip 1000ms linear both;
+}
+
+@keyframes prologueIn {
+	from { opacity: 0; }
+}
+
+@keyframes prologueOut {
+	to { opacity: 0; }
+}
+
+@keyframes prologueTitle {
+	0%, 8% { opacity: 0; }
+	30%, 80% { opacity: 1; }
+	100% { opacity: 0; }
+}
+
+@keyframes prologueSkip {
+	from { transform: scaleX(0); }
+}

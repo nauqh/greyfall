@@ -8,6 +8,7 @@ import type { AtlasApi, AtlasHooks, BandView, Departure, MenuView, SackView, Say
 import { Clouds } from "../../game/Clouds";
 import { packUrl } from "../../game/art";
 import { GameCanvas } from "../../game/GameCanvas";
+import { Prologue } from "./ProloguePlayer";
 import { Sack } from "./Sack";
 import { Shop } from "./Shop";
 import { TravelMap } from "./TravelMap";
@@ -75,8 +76,10 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const [fire, setFire] = useState<{ name: string; pick: number } | null>(null);
   // The map, open over the area while the scene waits paused behind it: from a bonfire to travel, or on M only to look.
   const [atlas, setAtlas] = useState<"travel" | "look" | null>(null);
+  // The opening cutscene, once per game, over a Landing paused behind it.
+  const [prologue, setPrologue] = useState(false);
   const api = useRef<AtlasApi | null>(null);
-  const now = useRef({ area: first, cameFrom: undefined as AreaId | undefined, quiet: false, travelling: false });
+  const now = useRef({ area: first, cameFrom: undefined as AreaId | undefined, quiet: false, travelling: false, prologue: false });
 
   const depart = (d: Departure): void => {
     now.current.travelling = true;
@@ -135,7 +138,10 @@ export function AreaView({ area: first }: { area: AreaId }) {
     },
     onArea: () => {},
     onTier: () => {},
-    ready: (a) => (api.current = a),
+    ready: (a) => {
+      api.current = a;
+      if (now.current.prologue) a.pause(true);
+    },
     onSay: setSay,
     onNear: setNear,
     onFlasks: setFlasks,
@@ -178,9 +184,17 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const newGame = (): void => {
     if (!window.confirm("Start a new game? Your gold, band, bonfires and slain bosses are lost.")) return;
     try {
-      for (const k of ["band", "bought", "flags", "gold", "heard", "keys", "kindled", "lost", "rest", "slain", "taken"]) localStorage.removeItem(`greyfall.${k}`);
+      for (const k of ["band", "bought", "flags", "gold", "heard", "keys", "kindled", "lost", "prologue", "rest", "slain", "taken"]) localStorage.removeItem(`greyfall.${k}`);
     } catch {}
     window.location.assign("/atlas/landing?rest");
+  };
+  const endPrologue = (): void => {
+    try {
+      localStorage.setItem("greyfall.prologue", "1");
+    } catch {}
+    now.current.prologue = false;
+    setPrologue(false);
+    api.current?.pause(false);
   };
   const closeAtlas = (): void => {
     api.current?.pause(false);
@@ -228,7 +242,9 @@ export function AreaView({ area: first }: { area: AreaId }) {
           if (q.has("rest")) hooks.arrive = "rest";
           try {
             hooks.dev = localStorage.getItem("greyfall.dev") === "1";
+            now.current.prologue = first === "landing" && localStorage.getItem("greyfall.prologue") !== "1";
           } catch {}
+          setPrologue(now.current.prologue);
           setDev(!!hooks.dev);
           return import("../../game/AtlasScene").then(({ startAtlas }) => startAtlas(el, hooks));
         }}
@@ -421,6 +437,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
           </header>
         </div>
       </GameCanvas>
+      {prologue && <Prologue onDone={endPrologue} />}
     </main>
   );
 }
