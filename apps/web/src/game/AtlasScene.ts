@@ -111,10 +111,10 @@ export interface AtlasApi {
   /** On the atlas: outline a land on its own tier and fly to it; null clears the outline. */
   select: (id: AreaId | null) => void;
   devState: () => DevState;
-  /** Dev: that NPC's talk, or their menu if they have one, wherever the hero stands. */
+  /** Dev: the camera flown to that NPC, and their talk, or their menu if they have one, wherever the hero stands. */
   devTalk: (npcId: string) => void;
-  /** Dev: the hero set down on the walkable cell nearest this one. */
-  devGo: (col: number, row: number) => void;
+  /** Dev: the camera flown in on a cell at the play zoom. */
+  devLook: (col: number, row: number) => void;
   /** Dev: writes the save and the live scene. */
   devSet: (patch: { gold?: number; flags?: WorldFlag[]; keys?: string[]; slain?: string[] }) => void;
 }
@@ -1093,7 +1093,7 @@ export class AtlasScene extends Phaser.Scene {
       back: () => this.back(),
       devState: () => this.devState(),
       devTalk: (id) => this.devTalk(id),
-      devGo: (col, row) => this.devGo(col, row),
+      devLook: (col, row) => this.flyTo({ col: col + 0.5, row: row + 0.5 }, AREA_ROWS),
       devSet: (patch) => this.devSet(patch),
       tier: (id) => this.show(id),
     });
@@ -1354,7 +1354,6 @@ export class AtlasScene extends Phaser.Scene {
       for (const e of this.local?.exits ?? []) {
         if (Math.abs(e.at.col - cell.col) <= 2 && Math.abs(e.at.row - cell.row) <= 2) return this.depart(e);
       }
-      if (this.dev && this.hero) return this.devGo(cell.col, cell.row);
       const ch = this.map.tiers[this.view].areaAt[cell.row]?.[cell.col];
       if (ch && ch !== "-") this.hooks.onArea(AREAS[AREA_CODE.indexOf(ch)]!.id);
     });
@@ -3349,30 +3348,12 @@ export class AtlasScene extends Phaser.Scene {
   private devTalk(id: string): void {
     const f = this.folk.find((x) => x.npc.id === id);
     if (!f || !this.hero) return;
+    this.flyTo({ col: f.at.col + 0.5, row: f.at.row + 0.5 }, AREA_ROWS);
     this.closeMenu(false);
     this.talk = null;
     this.read(null);
     if (RECRUITER[id] || f.npc.shop) this.openMenu(f);
     else this.talkTo(f);
-  }
-
-  private devGo(col: number, row: number): void {
-    const hero = this.hero;
-    if (!hero || hero.dead || this.gone) return;
-    let to: Cell | null = null;
-    let best = Infinity;
-    for (let r = 0; r < STRAT_ROWS; r++) {
-      for (let c = 0; c < STRAT_COLS; c++) {
-        const d = (c - col) ** 2 + (r - row) ** 2;
-        if (d < best && isWalkable(c, r) && !isSlope(c, r) && !this.shut({ col: c, row: r })) [best, to] = [d, { col: c, row: r }];
-      }
-    }
-    if (!to) return;
-    hero.way = [];
-    hero.at = to;
-    const y = (to.row + 0.75) * CELL;
-    hero.s.setPosition((to.col + 0.5) * CELL, y).setDepth(standing(y));
-    this.emitDev();
   }
 
   private devSet(patch: { gold?: number; flags?: WorldFlag[]; keys?: string[]; slain?: string[] }): void {

@@ -67,6 +67,20 @@
 	padding: 1px 0;
 }
 
+.devLink {
+	width: 100%;
+	border: 0;
+	background: none;
+	color: inherit;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.devLink:hover {
+	text-decoration: underline;
+}
+
 .devRow select {
 	flex: 1;
 }

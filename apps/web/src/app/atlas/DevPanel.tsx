@@ -143,15 +143,10 @@ export function DevPanel({ state: s, api, onArea, onMap }: { state: DevState; ap
           Exits <b>{s.exits.length}</b>
         </summary>
         {s.exits.map((x) => (
-          <div key={`${x.name}${x.col},${x.row}`} className="devRow">
-            <span>
-              {x.name}
-              {x.barred && " (barred)"}
-            </span>
-            <button type="button" className="devBtn" onClick={() => api.current?.devGo(x.col, x.row)}>
-              Go
-            </button>
-          </div>
+          <button key={`${x.name}${x.col},${x.row}`} type="button" className="devRow devLink" onClick={() => api.current?.devLook(x.col, x.row)}>
+            {x.name}
+            {x.barred && " (barred)"}
+          </button>
         ))}
       </details>
       <Checks title="Flags" all={FLAGS} on={s.flags} set={(flags) => api.current?.devSet({ flags })} />
