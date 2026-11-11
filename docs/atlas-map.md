@@ -111,9 +111,12 @@ so they never wall a ledge off.
 - **The Underneath** is bare rock in near-black, with its caverns lit by
   their area's light. Its lakes are dark water, and the gold in the walls
   and the bonfires glow.
-- **The page:** the map fills it and does one job, travel. The lit bonfires
-  glow, and a click on one travels there; nothing else floats over the map.
-  The tier tabs switch tiers. Lifts are the only way between tiers.
+- **The page:** the map fills it. A click on a land outlines it and opens its
+  panel: tier, blurb, keeper, and every bonfire in it as a checkpoint. A
+  checkpoint is active once its bonfire is lit (rested at,
+  `greyfall.kindled`); a lit one glows and travels on click, an unlit one is a
+  grey ember marked "Unlit". Lifts, drops and shortcuts are not shown: the
+  player finds them. The tier tabs switch tiers.
 
 ## Adding to it
 

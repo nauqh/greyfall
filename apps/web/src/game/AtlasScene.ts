@@ -104,17 +104,20 @@ export interface AtlasApi {
   back: () => void;
   /** Stop the scene while another game (the bonfire map) runs on the page, or go on; that game swaps the shared walk grid. */
   pause: (on: boolean) => void;
-  /** On the atlas: mark the lit bonfires, ring `pick` and fly to it. */
+  /** On the atlas: mark the bonfires, lit or not, ring `pick` and fly to it. */
   fires: (fires: FireMark[], pick: number) => void;
+  /** On the atlas: outline a land on its own tier and fly to it; null clears the outline. */
+  select: (id: AreaId | null) => void;
 }
 
-/** A lit bonfire as the atlas marks it: on its area's own map, named, and whether the captain sits at it. */
+/** A bonfire as the atlas marks it: on its area's own map, named, whether the captain sits at it, and whether it is lit. */
 export interface FireMark {
   area: AreaId;
   col: number;
   row: number;
   name: string;
   here?: boolean;
+  lit: boolean;
 }
 
 /** How a crossing feels: walking out over a gate, falling down a drop, riding a lift, or going down a stair into the deep. */
@@ -677,6 +680,8 @@ export class AtlasScene extends Phaser.Scene {
   /** The atlas's bonfire marks, and where each stands for a click. */
   private marks: Phaser.GameObjects.GameObject[] = [];
   private markAt: { tier: TierId; cell: Cell }[] = [];
+  /** The selected land's outline on the atlas. */
+  private outline: Phaser.GameObjects.Graphics | null = null;
   private live: Tracked[] = [];
   private drag: { x: number; y: number; sx: number; sy: number; moved: boolean } | null = null;
   /** In an area's own map: that map. */
@@ -1021,6 +1026,7 @@ export class AtlasScene extends Phaser.Scene {
         this.game.loop.wake();
       },
       fires: (fires, pick) => this.markFires(fires, pick),
+      select: (id) => this.select(id),
       choose: (i) => {
         if (!this.menu) return;
         this.menu.pick = i;
@@ -1324,19 +1330,23 @@ export class AtlasScene extends Phaser.Scene {
       const { tier, cell } = this.markAt[i]!;
       const [x, y] = [(cell.col + 0.5) * CELL, (cell.row + 0.5) * CELL];
       const picked = i === pick;
-      const made: Phaser.GameObjects.GameObject[] = [
-        this.add.image(x, y, "glow").setBlendMode(Phaser.BlendModes.ADD).setTint(0xffd65a).setScale(picked ? 1.4 : 0.9).setDepth(DEPTH.fx + 1),
-        this.add.circle(x, y, picked ? 26 : 18, 0xffb347).setStrokeStyle(6, picked ? 0xfdfaf0 : 0x1c2634).setDepth(DEPTH.fx + 2),
-      ];
+      const lit = f.lit;
+      // Unlit: a small grey ember, no glow, named only when picked.
+      const made: Phaser.GameObjects.GameObject[] = lit
+        ? [
+            this.add.image(x, y, "glow").setBlendMode(Phaser.BlendModes.ADD).setTint(0xffd65a).setScale(picked ? 1.4 : 0.9).setDepth(DEPTH.fx + 1),
+            this.add.circle(x, y, picked ? 26 : 18, 0xffb347).setStrokeStyle(6, picked ? 0xfdfaf0 : 0x1c2634).setDepth(DEPTH.fx + 2),
+          ]
+        : [this.add.circle(x, y, picked ? 16 : 11, 0x6b6e76, picked ? 0.95 : 0.7).setStrokeStyle(4, picked ? 0xfdfaf0 : 0x1c2634).setDepth(DEPTH.fx + 1)];
       if (picked || f.here) {
         const t = this.add
-          .text(x, y - 1.3 * CELL, f.here ? `${f.name} (you are here)` : f.name, { fontFamily: FONT, fontSize: "28px", fontStyle: "bold", color: "#f2d48a", stroke: "#1c2634", strokeThickness: 6 })
+          .text(x, y - 1.3 * CELL, f.here ? `${f.name} (you are here)` : lit ? f.name : `${f.name} (unlit)`, { fontFamily: FONT, fontSize: "28px", fontStyle: "bold", color: lit ? "#f2d48a" : "#b8bcc6", stroke: "#1c2634", strokeThickness: 6 })
           .setOrigin(0.5)
           .setDepth(DEPTH.fx + 3);
         this.names.push({ text: t, px: 14, tier });
         made.push(t);
       }
-      if (picked) this.tweens.add({ targets: made[1], scale: 1.25, duration: 700, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+      if (picked) this.tweens.add({ targets: made[lit ? 1 : 0], scale: 1.25, duration: 700, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
       for (const other of TIERS) if (other !== tier) this.cams[other].ignore(made);
       this.marks.push(...made);
     });
@@ -1344,6 +1354,32 @@ export class AtlasScene extends Phaser.Scene {
     if (!at) return;
     if (at.tier !== this.view) this.show(at.tier);
     this.flyTo(at.cell, 24);
+  }
+
+  /** Outlines a land on its own tier, every edge of its cells against another's, and flies to it. */
+  private select(id: AreaId | null): void {
+    this.outline?.destroy();
+    this.outline = null;
+    if (!id) return;
+    const a = AREAS.find((x) => x.id === id)!;
+    const ch = AREA_CODE[AREAS.indexOf(a)];
+    const rows = this.map.tiers[a.tier].areaAt;
+    const g = this.add.graphics().lineStyle(8, 0xfdfaf0, 0.85).setDepth(DEPTH.fx);
+    const at = (c: number, r: number): boolean => rows[r]?.[c] === ch;
+    rows.forEach((line, r) => {
+      for (let c = 0; c < line.length; c++) {
+        if (line[c] !== ch) continue;
+        const [x, y] = [c * CELL, r * CELL];
+        if (!at(c, r - 1)) g.lineBetween(x, y, x + CELL, y);
+        if (!at(c, r + 1)) g.lineBetween(x, y + CELL, x + CELL, y + CELL);
+        if (!at(c - 1, r)) g.lineBetween(x, y, x, y + CELL);
+        if (!at(c + 1, r)) g.lineBetween(x + CELL, y, x + CELL, y + CELL);
+      }
+    });
+    for (const other of TIERS) if (other !== a.tier) this.cams[other].ignore(g);
+    this.outline = g;
+    this.show(a.tier);
+    this.flyTo(this.centre(id), 24);
   }
 
   /** A solid prop's base for the hero's feet: its art's measured ink at the foot, its footprint's rows deep less half a tile. */

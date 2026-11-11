@@ -913,11 +913,103 @@ textarea {
 	margin-top: -2px;
 }
 
-/* The map's one control: out of it, back to the fire. */
+/* The way out, back to the fire. */
 .mapClose {
 	position: absolute;
 	right: 14px;
 	bottom: 14px;
+}
+
+/* A land, on the map's parchment: its name, where it sits, its lore, its keeper and its bonfires. */
+.landPanel {
+	position: absolute;
+	top: 96px;
+	right: 14px;
+	width: min(380px, calc(100vw - 28px));
+	max-height: calc(100% - 96px - 64px);
+	min-width: 0;
+	overflow-y: auto;
+	align-items: stretch;
+	gap: 8px;
+	font-size: 15px;
+}
+
+.landPanel h2 {
+	margin: 0;
+	text-align: center;
+	font-size: 22px;
+}
+
+.landPanel p {
+	margin: 0;
+	line-height: 1.45;
+}
+
+.landWhere {
+	text-align: center;
+	font-size: 13px;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #8a6a3a;
+}
+
+.landLore {
+	font-style: italic;
+	color: #5a4630;
+}
+
+.landFires {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	border-top: 1px solid rgb(138 106 58 / 0.4);
+	padding-top: 6px;
+}
+
+.landFire {
+	display: flex;
+	width: 100%;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 6px 8px;
+	border: 0;
+	border-radius: 4px;
+	background: none;
+	color: inherit;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.landFire:hover:not(:disabled),
+.landFire.picked {
+	background: rgb(138 106 58 / 0.18);
+}
+
+.landFire:disabled {
+	opacity: 0.45;
+	cursor: default;
+}
+
+.landFireState {
+	font-size: 12px;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #8a6a3a;
+}
+
+@media (max-width: 720px) {
+	.landPanel {
+		top: auto;
+		left: 8px;
+		right: 8px;
+		bottom: 56px;
+		width: auto;
+		max-height: 42vh;
+	}
 }
 
 /* The bonfire's map: its own game over the area's, which waits paused beneath, under the crossing cover. */
