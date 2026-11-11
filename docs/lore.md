@@ -77,7 +77,7 @@ How we tell it, taken from Dark Souls (1) and Skyrim.
     kings) stay off screen.
 14. **Narration is the Harbour's voice.** The prologue and the blurbs say
     what the Harbour knows and how it would put it, so "out of the east" is
-    true from the Harbour even though the grey rose from below.
+    true from the Harbour even though the Grey rose from below.
 
 ## Canon
 
@@ -92,36 +92,36 @@ roads ran from one hall to the next.
 The first among them was the lord of the Citadel, the fortress on the crag
 of the Greyfall. His house kept the Grey Gate and the two seals: one in the
 barrows, one in the deep places under them. For a long age the seals held.
-What they held back is the grey.
+What they held back is the Grey.
 
 Above the Reach floats the Gilded City, built in gold by the old gnome-kings.
-The Reach's lords owed it nothing and asked nothing of it, until the grey.
+The Reach's lords owed it nothing and asked nothing of it, until the Grey.
 
-### The grey
+### The Grey
 
-The grey is a condition, not an army: like rust or frost or a fever that will
+The Grey is a condition, not an army: like rust or frost or a fever that will
 not break. It starts at the edge of a thing and works inward until the thing
 is grey through, and then the thing goes on moving after its name is gone. It
 gets into the ground, then the water, then the blood.
 
 It rose out of the old deeps under the Greyfall. The Harbour lies west of
 the Greyfall, so to the Harbour it came out of the east, and that is how the
-Harbour tells it. The Citadel took it first. Its last lord took the grey into
+Harbour tells it. The Citadel took it first. Its last lord took the Grey into
 himself to keep it from the Reach. It kept him instead, and crowned him: the
-Grey Warlord is the grey wearing a lord's shape, thickest where he stands
+Grey Warlord is the Grey wearing a lord's shape, thickest where he stands
 and thinner the further it reaches. He holds no key. He is the lock.
 
 The soldiers on the Citadel's walls were its garrison once. They are the
 taken: they keep their posts because the posts are all they remember.
-Gnolls run with the grey as its dogs.
+Gnolls run with the Grey as its dogs.
 
-Kill the Warlord and the shape goes out of the grey. The grey does not go
+Kill the Warlord and the shape goes out of the Grey. The Grey does not go
 with it. It thins, the way a fever thins, and the Reach is left to bury what
 it lost.
 
 ### The refusal and the lost banners
 
-When the grey rose the Reach sent up to the Gilded City for spears. The City
+When the Grey rose the Reach sent up to the Gilded City for spears. The City
 shut its gates and sent none, and the lords rode out alone. The castle over
 the Harbour sent its forty spears under Sergeant Corwin to the moor, to hold
 the barrow seal. Their banners did not return. Corwin did.
@@ -129,18 +129,18 @@ the barrow seal. Their banners did not return. Corwin did.
 The Throne Isle is the Citadel's hall in the sky: the seat its lords kept at
 the gnome-kings' court, joined to the Citadel's keep by the Throne Stair.
 When the Citadel fell the City barred the Gilded Span against it and left
-the isle to the grey. Imps hold it now, round a seat the Warlord does not
+the isle to the Grey. Imps hold it now, round a seat the Warlord does not
 sit in, and the City's guard hold the span's foot. That is why a black isle
 hangs off the City that refused him.
 
 ### The castle falls, the town holds
 
-The grey came down off the crag. The pines it passed caught and never fell:
+The Grey came down off the crag. The pines it passed caught and never fell:
 that is the Emberwood, where goblins took the clearings and a troll took the
 hollow.
 
 The castle over the Harbour fell ward by ward, from the outside in, the way
-the grey takes anything. First the chapel's bell stopped; nobody below knows
+the Grey takes anything. First the chapel's bell stopped; nobody below knows
 why, and a warden of stone squats on the bell roof now. With the bell
 silent the Lower Burg turned, its watch one man at a time and its folk to
 thieving. The Ramparts went next: the garrison's iron-shod bull forgot who
@@ -183,7 +183,7 @@ Gate to the Warlord.
 
 - **Saltreach.** A stilt town of platforms and boardwalks on the western
   shallows. Its militia wear the City's yellow and take the City's pay to
-  keep the sea road; the grey has not come down to the water. Pirates hold
+  keep the sea road; the Grey has not come down to the water. Pirates hold
   the far cove, smugglers the steps under the village.
 - **Last Harbour.** The hub: a town in a bowl round the one bonfire, with
   the Old Well beside it, the docks below and the castle above. It held.
@@ -192,7 +192,7 @@ Gate to the Warlord.
   square, the Ramparts and the Rampart Bull, the Chapel Ward's cloister,
   forge yard and the Stone Warden on the bell roof, and the Keep behind the
   Keep Gate.
-- **Emberwood.** Pine the grey burned and left standing, still warm under
+- **Emberwood.** Pine the Grey burned and left standing, still warm under
   the ash. Goblin warrens, gnolls on Smoke Bluff, and the Cinder Troll in
   Troll's Hollow with the steward's key.
 - **Tinker Crags.** Gnome country: a rock that climbs in five steps to the
@@ -203,7 +203,7 @@ Gate to the Warlord.
   after dusk, Corwin's forty somewhere under Barrow Field, and the Barrow
   King on the King's Barrow keeping the barrow seal and the Horned Key.
 - **Lizard Fen.** Reed and black water coiling inward to a chapel of the
-  Order that prays to the grey as to a god, over a sinkhole that drinks the
+  Order that prays to the Grey as to a god, over a sinkhole that drinks the
   pools. Lizard-folk guard its stair; a drowned village lies on the way.
 - **The Greyfall.** A crag over a rot marsh, and the Citadel on it: the
   Lower City, the High City, the Warlord's Hall and the Grey Keep on its
@@ -216,7 +216,7 @@ Gate to the Warlord.
   before, and the Shore Minotaur keeping the fishers' boat out.
 - **The Undercroft.** The Harbour's cisterns and catacombs under the Old
   Well: black water, spiders in the pillars, smugglers in their nook, the
-  Drowned Chapel where Ysolde's sisters went to pray the grey out of the
+  Drowned Chapel where Ysolde's sisters went to pray the Grey out of the
   water, and the Dig nobody admits to.
 - **Barrow Deeps.** The tombs under the moor, down to the Weaver's Web. The
   Weaver keeps the deep seal and the second key. Tobin's brother runs the
@@ -252,13 +252,13 @@ Castle, Tower, Barracks, Archery, Monastery and three houses.
 | Colour | People | Seen in |
 | --- | --- | --- |
 | Blue | The Harbour and its castle, and the wanderer's band | Last Harbour, Burg, Ramparts, Chapel Ward, Keep; every companion |
-| Black | The taken, and whatever the grey holds (the Greying set) | The Citadel's garrison, the Grey Road, the Throne Isle, the Burned Hamlet |
+| Black | The taken, and whatever the Grey holds (the Greying set) | The Citadel's garrison, the Grey Road, the Throne Isle, the Burned Hamlet |
 | Yellow | The Gilded City, and those in its pay | The City's guard; Saltreach's militia; Mags |
 | Purple | The Order: monks and sisters in all their houses | The Drowned Chapel, Pilgrims' Rest, the Great Barrow's chapel, the fen chapel, the Greyfall's Ruined Chapel, the hermit in Old Pines |
 | Red | Unused in the Atlas (the war mode's enemy) | Proposed: Saltreach's pirates (see Open questions) |
 
 The Order broke three ways and the colour does not say which: the houses
-that kept faith (the Drowned Chapel), the ones that pray to the grey (the
+that kept faith (the Drowned Chapel), the ones that pray to the Grey (the
 fen chapel, the Ruined Chapel), and the pilgrims who pray to what sleeps in
 the Hollow. A freed monk joins the band in blue.
 
@@ -281,14 +281,14 @@ eels, the old kings, the gnome-kings, the steward.
 | the Shattered Reach, the Reach | The whole world | the kingdom, the country, the realm under one crown |
 | a realm of lords; a lord's hold | How the Reach was ruled | feudal, kingdom, jarl |
 | the old kings | The dead in the barrows | for any living ruler |
-| the grey | The condition, always lower case in prose | the Grey (outside names), gray, the Greying (code only), the plague |
-| the taken | People and soldiers the grey has kept | grey-bound, zombies, undead, hollows; "grey men" and "grey ones" only in a child's mouth |
-| the grey's dogs, dogs (folk) | Gnolls | |
+| the Grey | The condition: a name, always capitalised. Lower-case grey is only a colour ("the fields went grey"), or a child's "grey men" | the grey (for the condition), gray, the Greying (code only), the plague |
+| the taken | People and soldiers the Grey has kept | grey-bound, zombies, undead, hollows; "grey men" and "grey ones" only in a child's mouth |
+| the Grey's dogs, dogs (folk) | Gnolls | |
 | the Greyfall | The land: the crag and the rot marsh round it | |
 | the Citadel | The fortress on the Greyfall's crag, and only that | the citadel (lower case), for the Harbour's castle |
 | the Grey Keep | The keep on the Citadel's crown | the Keep (that is the Harbour's) |
 | the castle; the Lower Burg (the Burg), the Ramparts, the Chapel Ward, the Keep | The Harbour's castle and its wards | the Citadel, the Harbour's citadel |
-| the Grey Warlord, the Warlord | The grey wearing the Citadel's last lord | warlord (lower case), the Grey King, his name |
+| the Grey Warlord, the Warlord | The Grey wearing the Citadel's last lord | warlord (lower case), the Grey King, his name |
 | the Gilded City; the sky city (folk) | The city in the sky | the high city (that is the Greyfall's High City) |
 | the sky | The tier | the Gilded City (as the tier's name) |
 | the Throne Isle | The Citadel's old hall in the sky | the Warlord's isle, his throne isle |
@@ -319,24 +319,24 @@ this worker may not edit (`AtlasScene.ts`, `views.tsx`, `TravelMap.tsx`,
 | --- | --- | --- | --- |
 | ATLAS.md:242 | "The Reach was one country once: holds and moors and fishing towns under a single crown, and the crown's seat was the Greyfall" | Clashes with "a realm of lords" (prologue.ts:5, ATLAS.md:910) | "The Reach was a realm of lords once: holds and moors and fishing towns, each under its own lord, and the first of them sat in the Citadel on the Greyfall's crag above the rot marsh." |
 | ATLAS.md:251 | "It rose out of the old deeps." | Reads as a clash with "came out of the east" (README.md:16, prologue.ts:6, ATLAS.md:960) | Keep, and add: "It rose out of the old deeps under the Greyfall, east of the Harbour, so the Harbour says it came out of the east." |
-| ATLAS.md:960 | "The grey is a condition out of the east" | Same clash from the other side | "The grey rose from the deeps under the Greyfall; the Harbour, west of it, says it came out of the east." |
-| ATLAS.md:261-262 | "That refusal is older than the rot and harder to forgive." | The refusal happened when the grey rose, so it cannot be older than it | "The rot was the grey's doing. The refusal was theirs, and that is harder to forgive." |
+| ATLAS.md:960 | "The Grey is a condition out of the east" | Same clash from the other side | "The Grey rose from the deeps under the Greyfall; the Harbour, west of it, says it came out of the east." |
+| ATLAS.md:261-262 | "That refusal is older than the rot and harder to forgive." | The refusal happened when the Grey rose, so it cannot be older than it | "The rot was the Grey's doing. The refusal was theirs, and that is harder to forgive." |
 | ATLAS.md:269-270 | "The castle over Last Harbour is the town's castle, not the Citadel." | Right, but `areas.ts:1834` still names the Greyfall's crown "The Keep", the same as the Harbour's Keep area | Keep the line; rename the Greyfall district (next row) |
 | packages/engine/src/areas.ts:1834 | `name: "The Keep"` (Greyfall district) | Same name as the Harbour castle's Keep area (`atlas.ts:322`, `areas.ts:600`) | `"The Grey Keep"` |
 | ATLAS.md:985-987 | "'the Citadel' names two different places in the world" | No longer true once the canon holds: the Citadel is only the Greyfall's fortress | "...and 'the Citadel' was easy to confuse with the Harbour's castle" |
 | README.md:57 | "the Barrowmoor, the Tinkers' Crags, the Citadel" | Wrong names: no article on Barrowmoor, Tinker Crags, and the land is the Greyfall | "Barrowmoor, the Tinker Crags, the Greyfall" |
 | README.md:16 | "The feudal lords are ash." | "feudal" is an outside word (Rule 12) | "The lords are ash." |
-| packages/engine/src/atlas.ts:239 | "the Warlord's throne isle hangs off the east end" | Why does his isle hang off the City that refused him? | "and off its east end hangs the Throne Isle, the Citadel's old hall at court, barred off and left to the grey." |
+| packages/engine/src/atlas.ts:239 | "the Warlord's throne isle hangs off the east end" | Why does his isle hang off the City that refused him? | "and off its east end hangs the Throne Isle, the Citadel's old hall at court, barred off and left to the Grey." |
 | packages/engine/src/atlas.ts:1238 | "From the warlord's keep, a stair of floating stones up to his throne isle." | Same; also lower-case "warlord" | "From the Grey Keep, a stair of floating stones up to the Throne Isle, the Citadel's old seat at the gnome-kings' court." |
-| ATLAS.md:289 | "the Warlord's throne isle with imps" | Same | "the Throne Isle, given up to the grey, with imps" |
-| ATLAS.md:430-435 | "only the warlord's isle is dark ... the one way the warlord's creatures can come in" | Same; lower-case "warlord" | "only the Throne Isle is dark ... the one way the grey's creatures can come in" |
+| ATLAS.md:289 | "the Warlord's throne isle with imps" | Same | "the Throne Isle, given up to the Grey, with imps" |
+| ATLAS.md:430-435 | "only the warlord's isle is dark ... the one way the warlord's creatures can come in" | Same; lower-case "warlord" | "only the Throne Isle is dark ... the one way the Grey's creatures can come in" |
 | packages/engine/src/areas.ts:1865, 1953 | "the warlord's black plaza", "the warlord's empty seat" (comments) | Same | "the Throne Isle's black plaza", "a seat the Warlord does not sit in" |
-| packages/engine/src/atlas.ts:166 | "under a castle the grey took ward by ward ... up the watchtower lift" | "ward by ward" unexplained in-game; "watchtower lift" is not a name, and the Watch Lift is in the Keep, not the town | "under a castle the grey took ward by ward from the outside in. Every road starts at the fire in its square and comes back to it: down the Old Well, up through the castle to the Watch Lift." The why is in Canon, told by Hale, Mags, Odo and the bell note |
-| packages/engine/src/atlas.ts:284 | "fallen to the grey before the town below" | The town below never fell | "fallen to the grey while the town below held" |
+| packages/engine/src/atlas.ts:166 | "under a castle the Grey took ward by ward ... up the watchtower lift" | "ward by ward" unexplained in-game; "watchtower lift" is not a name, and the Watch Lift is in the Keep, not the town | "under a castle the Grey took ward by ward from the outside in. Every road starts at the fire in its square and comes back to it: down the Old Well, up through the castle to the Watch Lift." The why is in Canon, told by Hale, Mags, Odo and the bell note |
+| packages/engine/src/atlas.ts:284 | "fallen to the Grey before the town below" | The town below never fell | "fallen to the Grey while the town below held" |
 | packages/engine/src/atlas.ts:304 | "Its lift goes down to the point" | The Old Lift lands at Old Town's east foot (ATLAS.md:742), not Lantern Point | "Its lift goes down to Old Town" |
 | packages/engine/src/atlas.ts:333 | "Eight lands on the sea" | ATLAS.md:230 says seven; the code has seven lands plus the four castle wards | "Seven lands on the sea and the castle over the Harbour, joined at their gates." |
 | packages/engine/src/atlas.ts:332 | sky tier `name: "The Gilded City"` | The tier and one of its areas share a name | `name: "The Sky"`; ATLAS.md:228 likewise |
-| packages/engine/src/atlas.ts:208 | "A purple chapel in the middle of it prays to the grey" | An art colour as description; the chapel is the Order's | "A chapel of the Order in the middle of it prays to the grey" |
+| packages/engine/src/atlas.ts:208 | "A purple chapel in the middle of it prays to the Grey" | An art colour as description; the chapel is the Order's | "A chapel of the Order in the middle of it prays to the Grey" |
 | packages/engine/src/atlas.ts:156 | "the yellow militia hold the villages" | Colour as a name; shares yellow with the City's guard unexplained | "the militia, in the Gilded City's yellow and pay, hold the villages" |
 | packages/engine/src/atlas.ts:1320 | "the barrow king's horned key, and the weaver's from below" | Lower-case names | "the Barrow King's Horned Key, and the Weaver's from below" |
 | ATLAS.md:293 | "a mesa that steps up three heights to the Tinker Peak" | atlas.ts:186 and ATLAS.md:396 say five steps | "a rock that climbs in five steps to the Tinker Peak" |
@@ -346,24 +346,24 @@ this worker may not edit (`AtlasScene.ts`, `views.tsx`, `TravelMap.tsx`,
 | ATLAS.md:115 | "Grey-bound soldiers" | Glossary term is "the taken" | "The taken, gnolls" |
 | ATLAS.md:145-147, 829, 832-858 | "The blacksmith in the Harbour ... (see 'Planned')"; "No blacksmith in the Harbour yet" | Brenna already stands in the Chapel Ward's forge yard (`npcs.ts:178`) | "Brenna, in the Chapel Ward's forge yard, puts an edge on your sword"; drop the "not done" bullet and mark the plan as built there |
 | packages/engine/src/areas.ts:2299, 2541 | Two districts named "Robbers' Camp" (Deeps) and "The Robbers' Camp" (Barrowmoor) | Two places, one name; Tobin's ending names the Deeps one | Rename Barrowmoor's to "The Diggings"; ATLAS.md:560 likewise |
-| packages/engine/src/areas.ts:2821 | Pirate Cove shacks in `{ color: "black" }` | Black is the taken; the pirates are not the grey's | Red (the one colour the Atlas does not use); see Open questions |
+| packages/engine/src/areas.ts:2821 | Pirate Cove shacks in `{ color: "black" }` | Black is the taken; the pirates are not the Grey's | Red (the one colour the Atlas does not use); see Open questions |
 | packages/engine/src/npcs.ts:109 | "Follow the lanterns west, through the lower town, up to the Ember Gate." | The Lantern Road west goes to the Old Bridge; the Ember Gate is north-west and barred from this side; the way on is up to the Burg | "Follow the lanterns up through Old Town, to the Burg Gate. Someone lit them before you came. They always do." |
 | packages/engine/src/npcs.ts:110 | "The dogs on the moor don't care that it's barred." | The gnolls are on the Graves hill this side of the gate (`areas.ts:1370`: "Dogs on the hill") | "The dogs on that hill don't care that it's barred." |
-| packages/engine/src/npcs.ts:132 | "The castle? Shut since the grey first fell." | The Burg, Ramparts and Chapel Ward are open; only the Keep is shut | "The Keep? Shut since the Burg turned. Its steward ran for the wood with the key." |
+| packages/engine/src/npcs.ts:132 | "The castle? Shut since the Grey first fell." | The Burg, Ramparts and Chapel Ward are open; only the Keep is shut | "The Keep? Shut since the Burg turned. Its steward ran for the wood with the key." |
 | packages/engine/src/npcs.ts:170 | "Ansel's stool is empty. First time in years." | Ansel sits on the Keep's wall (`npcs.ts:602`), not at Ferrow's fire | "Ansel's off the wall. I can see it from here. First time in years." |
 | packages/engine/src/npcs.ts:617, 630 | "Someone in the high city decided..."; "The high city never is." | "the High City" is the Greyfall's ward (`areas.ts`, ATLAS.md:870) | "the sky city" in both |
-| packages/engine/src/npcs.ts:560 | "Off to the citadel, where the grey falls." | Lower-case "citadel"; a child would not know the name | "Off to the Greyfall, where the grey comes from." |
+| packages/engine/src/npcs.ts:560 | "Off to the citadel, where the Grey falls." | Lower-case "citadel"; a child would not know the name | "Off to the Greyfall, where the Grey comes from." |
 | packages/engine/src/npcs.ts:704 | "a pot of pitch" | The item is Pine Resin | "a pot of resin" |
 | docs/questline.md:7 | "The Gilded City, the high city that glints above the clouds" | Same "high city" clash | "the sky city that glints above the clouds" |
 | docs/questline.md:99-101, 348, 356, 371 | Brenna's first talk lacks the shield line; Ansel's after-Warlord spot is (25, 10); no sections for Mags, Hale, Odo | Stale against `npcs.ts` (shield line at `npcs.ts:198`, Ansel at (43, 11), `npcs.ts:669`) | Regenerate from `npcs.ts` after the dialogue fixes above |
 | apps/web/src/app/atlas/prologue.ts:5-6 | "a realm of lords ... out of the east ... crowned the lord of the Citadel" | Consistent with this canon | No change. Kept as the Harbour's telling (Rule 14) |
 | apps/web/src/game/AtlasScene.ts:3097 (**other team**) | `name: "A note in the sand"` for every note | The Keep, Burg, Chapel and Ramparts notes are not in sand; the Landing blurb says they are scratched | Title by area: "A note in the sand" below ground, "A note scratched in the stone" in the castle, or plain "A note" |
-| apps/web/src/game/terrain.ts:193 | "the desaturated Greying set" (comment) | Code-only word for the grey | Fine in code; never in player text |
+| apps/web/src/game/terrain.ts:193 | "the desaturated Greying set" (comment) | Code-only word for the Grey | Fine in code; never in player text |
 
 ## Open questions
 
 1. **Saltreach and the City's yellow.** The canon makes Saltreach's militia
-   the City's paid men (which also explains why the grey has not reached
+   the City's paid men (which also explains why the Grey has not reached
    them and why the salt men's prices sting). The alternative is to give
    Saltreach its own colour. Which?
 2. **Red for the pirates.** Pirate Cove is drawn in Black Buildings, which

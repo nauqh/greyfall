@@ -18,7 +18,7 @@ on it. The numbers are starting values, to be tuned once it is playable.
 
 You come ashore at Last Harbour with no name and no lord. With a band of up
 to three companions you push out through the Reach, take the boss keys, open
-the Grey Gate, and put an end to the thing the grey made of the Citadel's
+the Grey Gate, and put an end to the thing the Grey made of the Citadel's
 last lord. Every road loops back to the bonfire in the Harbour square.
 
 
@@ -92,7 +92,7 @@ come ashore alone.
   into a loop.
 - **Keys.** Keys follow Firelink's two bells, one up and one down. The Troll
   Key is the castle's own. Its steward fled into the Emberwood with it when
-  the grey came, and the Cinder Troll has it now. It opens the Keep Gate.
+  the Grey came, and the Cinder Troll has it now. It opens the Keep Gate.
   Above it stand the bailey and the garrison (Corwin's Lancers), the Keep and
   the Watch Lift to the sky. The Grey Gate takes two other keys, one from each
   way out of the Harbour: the Barrow King's Horned Key, from Barrowmoor out
@@ -115,7 +115,7 @@ All from the Tiny Swords enemy pack.
 | The Greyfall | The taken, gnolls | Minotaur champion | The Grey Warlord |
 | Gilded City | Yellow guard | Lancers | The Sun Sentinel |
 
-The soldiers on the Greyfall's walls are what the grey left of the Citadel's
+The soldiers on the Greyfall's walls are what the Grey left of the Citadel's
 garrison. They keep their posts because the posts are all they remember.
 
 Gnolls, slingshot gnomes and hex shamans throw from four or five tiles away
@@ -244,31 +244,31 @@ Greyfall's crag above the rot marsh. The old kings lie in the barrows of
 Barrowmoor, and no crown has sat in the Reach since. The Citadel's house
 kept the Grey Gate and two seals, one in the barrows and one in the deep
 places under them, and for a long age the seals held. What they held back is
-the grey.
+the Grey.
 
-The grey is not an army. It is a condition, like rust or frost or a fever
+The Grey is not an army. It is a condition, like rust or frost or a fever
 that will not break. It starts at the edge of a thing and works inward until
 the thing is grey through, and then the thing goes on moving after its name
 is gone. It rose out of the old deeps under the Greyfall, east of the
 Harbour, so the Harbour says it came out of the east. The Citadel took it
 first, and the Citadel's last lord took it into himself to keep it from the
 Reach. It kept him instead, and crowned him. What sits in the Grey Keep now
-is the grey wearing a lord's shape, thickest where he is and thinner the
+is the Grey wearing a lord's shape, thickest where he is and thinner the
 further it reaches. He holds no key. He is the lock. The soldiers on his
 walls were the garrison once. They are the taken now, no more his than the
 rain is.
 
-Kill him and the shape goes out of the grey. The grey does not go with it. It
+Kill him and the shape goes out of the Grey. The Grey does not go with it. It
 thins, the way a fever thins, and the Reach is left to bury what it lost.
 
 Above the Reach, the Gilded City kept its gates shut. The Reach sent to it
-for spears when the grey rose, and the sky city sent none. The rot was the
+for spears when the Grey rose, and the sky city sent none. The rot was the
 grey's doing. The refusal was theirs, and that is harder to forgive. When
 the Citadel fell, the City barred the Gilded Span against it and left the
-Throne Isle, the Citadel's old hall at court, to the grey. Its gold has not
+Throne Isle, the Citadel's old hall at court, to the Grey. Its gold has not
 made it safe. It has only made it quiet.
 
-The Emberwood is what the grey left when it came down off the crag: pine
+The Emberwood is what the Grey left when it came down off the crag: pine
 that caught and never fell, still warm under the ash. Goblins took the
 clearings because nothing else wanted them, and the troll took the hollow.
 
@@ -295,14 +295,14 @@ crag, and only that.
 | Tier | Area | Who's there | Keeper |
 | --- | --- | --- | --- |
 | Sky | Skyward Steps | drifting isles with watch posts, a lift down onto the castle | |
-| Sky | The Gilded City | the gnome-kings' sky city, its gate shut, yellow guard, a monastery, bees, the Throne Isle, given up to the grey, with imps | The Sun Sentinel |
+| Sky | The Gilded City | the gnome-kings' sky city, its gate shut, yellow guard, a monastery, bees, the Throne Isle, given up to the Grey, with imps | The Sun Sentinel |
 | Surface | Saltreach | militia in the City's yellow and pay, fishing villages, turtles, sharks offshore, pirate towers | |
 | Surface | Last Harbour (hub) | the town's castle on its own height above the town, the bonfire square, the Old Well, pawns at work | |
-| Surface | Emberwood | goblin warrens in pine the grey burned, the big pines (standing still), gnolls on Smoke Bluff | Cinder Troll |
+| Surface | Emberwood | goblin warrens in pine the Grey burned, the big pines (standing still), gnolls on Smoke Bluff | Cinder Troll |
 | Surface | Tinker Crags | a rock that climbs in five steps to the Tinker Peak, gnomes, bears, pandas, the Gnome Lift up | Old Bamboo |
 | Surface | Barrowmoor | barrows, bones, the cave down to the Deeps | The Barrow King |
-| Surface | Lizard Fen | a chapel of the Order that prays to the grey, lizards, the sinkhole | |
-| Surface | The Greyfall | the Citadel, the Grey Keep on its crown, the grey wearing its lord, the Throne Stair up | The Grey Warlord |
+| Surface | Lizard Fen | a chapel of the Order that prays to the Grey, lizards, the sinkhole | |
+| Surface | The Greyfall | the Citadel, the Grey Keep on its crown, the Grey wearing its lord, the Throne Stair up | The Grey Warlord |
 | Below | The Landing (start) | the sea cave where a new game starts, notes in the tunnels that teach the controls, two goblins to learn on | Shore Minotaur |
 | Below | The Undercroft | cisterns and pillars under the well, a crypt, spiders, a thief | |
 | Below | Barrow Deeps | tomb daises, skull guards, a dead troll's bones | The Weaver (a giant spider) |
@@ -440,7 +440,7 @@ crossing are gone.
   Span.
   The city climbs from fresh green to gold, and only the Throne Isle is
   dark. The yellow guard hold the span's foot, with a tower either side and
-  archers on its landing, because the span is the one way the grey's
+  archers on its landing, because the span is the one way the Grey's
   creatures can come in. The Gilded Gate isle is their garrison. The market
   keeps its livestock in a pen.
   Skyward Steps is the sixth, a descent after the Ringed City's broken
@@ -904,8 +904,10 @@ file is the why.
   [Game Rant: the opening scene](https://gamerant.com/skyrim-15th-anniversary-opening-scene/),
   [Symbolically Speaking: In the Beginning](https://symbolicallyspeaking.substack.com/p/symbolism-in-skyrim-in-the-beginning).
 
-Taken from both: plain declaratives, no simile, no explanation, and a turn to
-the player as a captive given to the tide. The cart becomes the tide. Every
+Taken from both: plain declaratives, no simile, and a turn to the player as a
+captive given to the tide. Unlike Dark Souls, each name is said with what it
+does (the Grey takes, the Warlord is what it wears, the Gilded City refused),
+because a cold reader lost the thread when names were only dropped. The cart becomes the tide. Every
 paragraph earns its place by carrying one fact: what the realm was, what broke
 it, who did not come, what is left, who the player is.
 
@@ -916,30 +918,29 @@ black. The wording and the pace of its reveal are the whole cutscene.
 
 #### The story it tells
 
-The old kings slept in their barrows, and the Reach was a realm of lords. They
-kept their oaths, and the roads ran from one hall to the next. Then the grey came out of the east.
-It was not an army. It was a rot that took the land, and it crowned the lord of
-the Citadel as its Warlord. The fields it passed went grey, and the men it took
-went on walking. The Gilded City shut its gates and sent no aid, so the lords
-rode out alone. Their banners did not return. Last Harbour alone held. Its people
-barred the gates and kept the harbour, and Old Ferrow kept the watch. The tide
-carried one more in, to the caves beneath the Harbour, nameless and alive. That
-is the whole opening: a realm, a grey, a refusal, a last hold, and the one left
-at its foot, who still has to climb to its fire.
+The Reach was a land of lords, bound by oaths and roads. The Grey rose in the
+east: not an army but a rot, and what it took went on walking. In the Citadel
+it took the first of the lords and wears him still, as the Grey Warlord. The
+lords asked the Gilded City for aid, were refused, and rode against him alone.
+They did not come back. Only Last Harbour held, with one fire still burning.
+Now the tide has carried a stranger into the caves beneath it. That is the
+whole opening: a realm, the Grey, its Warlord, a refusal, a last fire, and the
+one left at its foot, who still has to climb to it.
 
 ### Storytelling and pacing
 
 - **Reach the game quickly.** A common exercise puts an opening cutscene under
-  300 words from fade in to gameplay; this one is 130. Fewer words also mean
+  300 words from fade in to gameplay; this one is 145. Fewer words also mean
   fewer facts to hold before the first choice.
   [Opening Cutscene, Kelsey Reyes](https://www.kelseyfoxreyes.com/post/opening-cutscene)
 - **Leave something unknown.** Mystery holds attention better than a complete
   explanation; each paragraph should open a question it does not answer.
   [Writing a More Compelling Game Narrative](https://www.gamedeveloper.com/game-platforms/writing-a-more-compelling-game-narrative)
 - **One idea per paragraph.** Readers skip the rest once they lose the thread,
-  so each paragraph carries one turn: the realm of lords, the grey and its
-  crowned Warlord, the Gilded City's refusal, the last fire, the nameless
-  survivor.
+  so each paragraph carries one turn: the realm of lords, the Grey, the
+  Warlord it wears, the Gilded City's refusal, the last fire, the nameless
+  survivor. The Grey and its Warlord used to share one paragraph, and readers
+  could not tell who the Warlord was; they have one each now.
   [How Users Read on the Web, NN/g](https://www.nngroup.com/articles/how-users-read-on-the-web/)
 - **Read off the screen, not the page.** BBC guidance is 160-180 words a minute
   (about 0.3 s a word) with at least a 1.5 s gap between captions; Netflix caps
@@ -959,26 +960,26 @@ at its foot, who still has to climb to its fire.
 ### Lore it rests on
 
 The game and world sections above are the authority for places and mechanics. The opening is the
-front-facing telling, and it uses the names survivors would use: the grey, the
+front-facing telling, and it uses the names survivors would use: the Grey, the
 Gilded City, a nameless survivor for the hero the game later gives a class.
 Where it chooses different words, it says why.
 
 - The Reach is a realm of lords in the world section above; Last
   Harbour is its hub, and every road out of it comes back to the Harbour's
   fire (Ferrow: "Every road out of here comes back to this fire").
-- The grey rose from the deeps under the Greyfall; the Harbour, west of it,
+- The Grey rose from the deeps under the Greyfall; the Harbour, west of it,
   says it came out of the east, and the script keeps the Harbour's telling.
   It is thickest in the Greyfall. It crowned the Grey Warlord. The black
-  soldiers are the taken, and the gnolls run with the grey as its dogs. Ansel
-  says the grey smells of "wet ash and old iron".
+  soldiers are the taken, and the gnolls run with the Grey as its dogs. Ansel
+  says the Grey smells of "wet ash and old iron".
 - The Gilded City is the sky city. Ansel says it "never sent us a single
-  spear when the grey came"; the script turns that into "sent no aid", which is
+  spear when the Grey came"; the script turns that into "sent no aid", which is
   what the Reach remembers.
-- Old Ferrow keeps the Harbour's fire. He greets a newcomer with "Ah. Another
-  one.", watches the roads and the water, and knows the tide: "Washed up with
-  the tide, did you?" The script's keeper is his watch, not his words.
+- Old Ferrow keeps the Harbour's fire, and the script's "one fire still
+  burning" is his. He is not named in it: the player meets him a minute later
+  and hears "Ah. Another one." from him, which the opening should not spoil.
 - The Grey Warlord has no personal name in the world; the script calls him
-  only by his title. He is the grey's crown, not its general.
+  only by his title. He is the Grey's crown, not its general.
 - The player is the survivor the tide brings in. The game's docs give the hero
   a class, not a rank; the opening refuses even the name. It ends in the
   caves, not the town, because that is where the game starts: the Landing,
@@ -986,12 +987,17 @@ Where it chooses different words, it says why.
 
 ### The beats
 
-Five short paragraphs, shown one at a time, then the title. The spine is a
-chain anyone can follow: the old kings lay in their barrows, the Reach's lords
-kept their oaths and roads, the grey crowned the Citadel's lord as its Warlord,
-the Gilded City sent no aid, the lords rode out alone, their banners did not
-return, Last Harbour alone held, Old Ferrow kept the watch, and the tide left
-one more, nameless, in the caves beneath it.
+Six short paragraphs, shown one at a time, then the title. The spine is a
+chain anyone can follow: the lords held the Reach, the Grey rose, it took the
+first lord and wears him as the Grey Warlord, the Gilded City sent no aid, the
+lords rode against him alone and did not return, Last Harbour held with one
+fire, and the tide left a stranger in the caves beneath it.
+
+Six names at most: the Reach, the Grey, the Citadel, the Grey Warlord, the
+Gilded City, Last Harbour. An earlier draft also named the old kings, their
+barrows and Old Ferrow; none paid off inside the opening, and a cold reader
+could not hold them all. Each beat is shown alone on black, so none leans on
+the one before it for its meaning ("the town", not "it").
 
 The forty spears and the Citadel were cut from an earlier draft. Corwin's forty
 died in the barrows, not at the Citadel, and "the Citadel" was easy to confuse
@@ -1000,11 +1006,12 @@ Ansel's plain claim: the Gilded City sent no aid.
 
 | # | Paragraph | Why |
 | --- | --- | --- |
-| 1 | The old kings slept in their barrows, and the Reach was a realm of lords. They kept their oaths, and the roads ran from one hall to the next. | The dead kings, the lords after them, and the roads between their halls |
-| 2 | Then the grey came out of the east. It was not an army. It was a rot that took the land, and it crowned the lord of the Citadel as its Warlord. The fields it passed went grey, and the men it took went on walking. | The grey, and how it made the Warlord |
-| 3 | The Gilded City shut its gates and sent no aid, so the lords rode out alone. Their banners did not return. | The refusal, then the cost after a pause |
-| 4 | Last Harbour alone held. Its people barred the gates and kept the harbour, and Old Ferrow kept the watch. | The last hold and its keeper |
-| 5 | The tide carried one more in, to the caves beneath the Harbour. Nameless, and alive. | The survivor, left below the last hold, not yet in it |
+| 1 | The Reach was a land of lords. Each kept his own hall, and oaths and roads bound the halls together. | The world before |
+| 2 | Then the Grey rose in the east. It was no army. It was a rot. The fields it touched went grey, and the men it took went on walking after their names were gone. | What the Grey is, and what it does to people |
+| 3 | In the Citadel it took the first of the lords, and wears him still. He is called the Grey Warlord, and where he stands, the Grey is thickest. | Who the Warlord is, and where the player must go |
+| 4 | The lords asked the Gilded City in the sky for aid. Its gates stayed shut, and they rode against the Warlord alone. Their banners did not return. | The refusal, then the cost after a pause |
+| 5 | Only Last Harbour held: a town at the edge of the sea, its gates barred, one fire still burning. | The last hold, and the fire the player will rest at |
+| 6 | Now the tide has carried a stranger into the caves beneath the town. Nameless, half-drowned, and alive. | The player, below the last hold, not yet in it; "Now" marks the turn from history to the present |
 
 Then the title card, **GREYFALL**, *The Shattered Reach*, and the black fades
 out on the Landing: the sea cave behind the overlay is the arrival.
@@ -1016,7 +1023,7 @@ out on the Landing: the sea cave behind the overlay is the arrival.
   paragraph starts on black again, so nothing is read while it moves. The
   Gilded City card opens on 2.5 s of black; its first sentence holds, then
   after 1.5 s the first is replaced by the last at the end of the first. The
-  whole run is about 75 s including the title.
+  whole run is about 90 s including the title.
 - The title holds 5.2 s, then the overlay fades over 1.6 s into the Landing.
 - A click or any key moves to the next card; holding Esc, Space or Enter for a
   second skips to the end.

@@ -172,7 +172,7 @@ export interface Kit {
  */
 export const ITEMS = {
   "Smoked Haunch": { cost: 250, adds: { hp: 25 }, about: "Salt meat hung over a harbour fire, enough to keep a wanderer on their feet through one more bad night." },
-  "Ember Shard": { cost: 300, adds: { flasks: 1 }, about: "A splinter of the fire that was old before the grey came. Pressed to a flask, it holds one more draught." },
+  "Ember Shard": { cost: 300, adds: { flasks: 1 }, about: "A splinter of the fire that was old before the Grey came. Pressed to a flask, it holds one more draught." },
   "Brenna's Edge": { cost: 400, adds: { attack: 3 }, about: "Brenna ground this edge and will not say on what. It bites deeper than it looks." },
   "Keener Edge": { cost: 800, adds: { attack: 3 }, needs: "Brenna's Edge", about: "Honed again once the warden on the bell roof fell silent, as if the stone had taught it something." },
   "Grey-Iron Edge": { cost: 1200, adds: { attack: 4 }, needs: "Keener Edge", about: "Iron from the chapel's own bell, quenched cold. What it cuts does not quite mend." },

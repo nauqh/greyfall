@@ -589,7 +589,7 @@ function keepArea(): AreaMap {
   prop("castle", 30, 10, blue);
   who("lancer", 26, 14, { ...blue, to: { col: 36, row: 14 } });
 
-  const notes: Note[] = [{ at: { col: 44, row: 6 }, text: "Look east. The grey wears a crown in the Citadel." }];
+  const notes: Note[] = [{ at: { col: 44, row: 6 }, text: "Look east. The Grey wears a crown in the Citadel." }];
   const exits: AreaExit[] = [
     { to: "burg", name: "Keep Gate", kind: "open", at: { col: 62, row: 30 }, plain: true },
     { to: "steps", name: "Watch Lift", kind: "shortcut", at: { col: 13, row: 6 }, shut: "watchLiftOpen" },
@@ -705,7 +705,7 @@ function chapel(): AreaMap {
   for (const [c, r] of [[60, 22], [80, 36]] as const) who("skull", c, r, { to: { col: c + 3, row: r } });
 
   const notes: Note[] = [
-    { at: { col: 6, row: 31 }, text: "The bell has not rung since the grey came." },
+    { at: { col: 6, row: 31 }, text: "The bell has not rung since the Grey came." },
     { at: { col: 32, row: 14 }, text: "No room to run on the bell roof." },
   ];
   const exits: AreaExit[] = [
@@ -888,7 +888,7 @@ function ramparts(): AreaMap {
 /**
  * The Lower Burg, the first area of the castle, after Dark Souls' Undead Burg and
  * Dark Souls 3's Undead Settlement: the castle's outer town on the hill north of
- * the Harbour, fallen to the grey, a warren of alleys walled by houses and dead
+ * the Harbour, fallen to the Grey, a warren of alleys walled by houses and dead
  * wood, small squares where they meet. In at the Burg Gate onto Market Row; the
  * creek across the town, its two bridges found only through the alleys; the
  * tanneries and the mill on its north bank, and the square on its promontory over
@@ -1739,14 +1739,14 @@ function greyfall(): AreaMap {
   who("troll", 45, 27, { to: { col: 47, row: 30 } });
   for (const [c, r] of [[32, 40], [28, 22]] as const) who("snake", c, r);
 
-  // The Crater: the rot lake, and on its isle the shrine where the grey is prayed to, a fire to rest by.
+  // The Crater: the rot lake, and on its isle the shrine where the Grey is prayed to, a fire to rest by.
   t.fires.push({ col: 37, row: 55 });
   for (const [c, r] of [[35, 54], [39, 54], [35, 56], [39, 56]] as const) prop("skullSpike", c, r);
   who("skullGuard", 38, 55);
   who("bombFish", 31, 56);
   who("bombFish", 43, 54);
 
-  // The Ruined Chapel: a purple monastery praying to the grey, and its graves.
+  // The Ruined Chapel: a purple monastery praying to the Grey, and its graves.
   prop("monastery", 38, 13, { color: "purple" });
   for (const [c, r] of [[33, 17], [36, 19], [42, 18], [45, 15], [32, 12]] as const) prop("skullSpike", c, r);
   who("monk", 40, 17, { color: "purple", to: { col: 44, row: 18 } });
@@ -2632,7 +2632,7 @@ function fen(): AreaMap {
 
   // The fen's story runs inward along the causeway, from the living to the cult at its heart:
   // the militia's landing, the moor's dead buried at the Barrow Rise, the fishers of Eel Shallows, the village the
-  // water took, the lizard-folk who guard the way, and the chapel praying to the grey over the sinkhole.
+  // water took, the lizard-folk who guard the way, and the chapel praying to the Grey over the sinkhole.
 
   // Reed along the coil's outer edge where no one lives, and closing over the drowned village's end.
   for (const turns of [0.13, 0.28, 0.72, 1.06, 1.12, 1.18, 1.66]) {
@@ -2697,7 +2697,7 @@ function fen(): AreaMap {
   for (const out of [-1.5, 1.5]) who("lizard", ...spot(1.32, 0, out));
   who("monk", ...spot(1.6, 0, 0), { ...purple, to: to(spot(1.66, 0, 0)) });
 
-  // The Chapel Mound: the purple chapel on its crown prays to the grey over the sinkhole at its foot. A ring of stakes
+  // The Chapel Mound: the purple chapel on its crown prays to the Grey over the sinkhole at its foot. A ring of stakes
   // round the sinkhole, offerings of bones at its rim, the cult's houses facing it, monks between, a guard on the stair.
   prop("monastery", cx, cy - 2, purple);
   t.fires.push({ col: cx - 4, row: cy + 3 });

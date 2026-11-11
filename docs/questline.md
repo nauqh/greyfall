@@ -2,9 +2,9 @@
 
 For checking. Generated from `../packages/engine/src/npcs.ts`, so the lines and places here are the ones in the game.
 
-## The grey
+## The Grey
 
-The grey is a condition, not an army: a rot in the ground that gets into the water, then the blood, and takes the shape of whoever holds on longest. In the Greyfall it has worn the Warlord a long time. The Gilded City, the sky city that glints above the clouds, shut its gates when the grey came and sent no aid. The wanderer comes ashore with the tide, nameless, and the folk of Last Harbour measure them by what they do, not by a rank.
+The Grey is a condition, not an army: a rot in the ground that gets into the water, then the blood, and takes the shape of whoever holds on longest. In the Greyfall it has worn the Warlord a long time. The Gilded City, the sky city that glints above the clouds, shut its gates when the Grey came and sent no aid. The wanderer comes ashore with the tide, nameless, and the folk of Last Harbour measure them by what they do, not by a rank.
 
 ## How it works
 
@@ -71,7 +71,7 @@ Greets you: *"Ah. Another one."* Walked away from: *"Mind the dark, then."*
   2. A troll had him for supper, they say. Still has the key, I'd wager.
 - **well**
   1. The well only goes one way. Down.
-  2. Don't drink what's at the bottom. The grey's in the water, then it's in you.
+  2. Don't drink what's at the bottom. The Grey's in the water, then it's in you.
 - **roads**
   1. Every road out of here comes back to this fire. The gates, the well, the lift.
   2. Folk think that's a comfort. I've never been sure.
@@ -85,7 +85,7 @@ Greets you: *"Ah. Another one."* Walked away from: *"Mind the dark, then."*
   2. Either way, keep it away from my kindling.
 - **warlord** (once, after meeting, when **warlordDead**)
   1. So the Warlord's dead, they're saying.
-  2. The grey's still in the ground. I'll keep the fire going anyway. Habit. Someone ought to.
+  2. The Grey's still in the ground. I'll keep the fire going anyway. Habit. Someone ought to.
 - **ansel** (once, after meeting, when **anselRoused**)
   1. Ansel's off the wall. I can see it from here. First time in years.
   2. They come back, or they don't. The wall will keep.
@@ -144,7 +144,7 @@ Greets you: *"You're not one of mine."* Walked away from: *"Dismissed, then."*
   1. Thirty-nine.
   2. The fortieth was me, I think. I ought to be down there with them.
 - **done** (once, after meeting, when **warlordDead**)
-  1. So it's finished. Up in the grey.
+  1. So it's finished. Up in the Grey.
   2. Tell them at the gate. I've no hands left for carving.
 
 ## Wren
@@ -222,7 +222,7 @@ Greets you: *"Peace on you."* Walked away from: *"Go gently."*
 ### Home: Last Harbour, The Upper Town (54, 29)
 
 - **first**
-  1. My sisters went down to the Drowned Chapel, to pray the grey out of the water.
+  1. My sisters went down to the Drowned Chapel, to pray the Grey out of the water.
   2. The water did not clear. Nor did they come back.
 - **candle**
   1. I light a candle each night.
@@ -309,7 +309,7 @@ Greets you: *"Shh!"* Walked away from: *"Don't tell them I'm here!"*
 
 - **first**
   1. Don't tell them I'm here. The grey men.
-  2. They took my mum. The whole east lane. Off to the Greyfall, where the grey comes from.
+  2. They took my mum. The whole east lane. Off to the Greyfall, where the Grey comes from.
   3. They keep them in a yard with ropes. I squeezed out under the gate.
 - **crows**
   1. I count the crows.
@@ -343,7 +343,7 @@ Greets you: *"Look up."* Walked away from: *"Go on. I'll keep watch. It's all I'
 - **first**
   1. Look up. See that glint past the clouds?
   2. The Gilded City. Gold walls, gold roofs, a city that never learned to bleed.
-  3. When the grey came, it shut its gates. Not one spear. Not one prayer.
+  3. When the Grey came, it shut its gates. Not one spear. Not one prayer.
 - **lift**
   1. The Watch Lift only comes down.
   2. Someone in the sky city decided who gets to visit.
@@ -364,7 +364,7 @@ Greets you: *"Look up."* Walked away from: *"Go on. I'll keep watch. It's all I'
 
 - **out**
   1. Don't look at me like that. I said I'd come out.
-  2. I'd forgotten the smell of the grey. Wet ash and old iron.
+  2. I'd forgotten the smell of the Grey. Wet ash and old iron.
 - **ahead** (heard to the end, sets **anselAhead**)
   1. The Warlord's Hall is up past the High City. I'll go first, this time.
   2. Let me have that. You've had all the others.
@@ -389,7 +389,7 @@ Greets you: *"Hehe. A live one."* Walked away from: *"Come back with coin, deari
 ### Home: The Lower Burg, Market Row, in a nook under the wall (37, 39)
 
 - **first**
-  1. Don't mind old Mags. The grey took the Burg, not my trade.
+  1. Don't mind old Mags. The Grey took the Burg, not my trade.
   2. A shard of the old fire, a haunch, a pot of resin, a purse that sews itself fatter. One of each, mind.
   3. Kill whatever sits in the Emberwood and I'll find you a warmer shard. Hehe.
 - **thieves**
@@ -424,7 +424,7 @@ Greets you: *"Bull's dead, then. Good. I was running out of things to throw."* W
 ### Home: The Ramparts, The East Tower (70, 14)
 
 - **first**
-  1. Two guns on this tower. No powder since the grey came.
+  1. Two guns on this tower. No powder since the Grey came.
   2. The bull was the garrison's. The smiths shod him in iron for the parade.
   3. Then he forgot who fed him, and the goblins came over the wall.
 - **ladder**

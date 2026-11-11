@@ -12,7 +12,7 @@ const FADE_MS = 1800;
 const TAIL_MS = 1200;
 /** 360 ms a word is about 165 words a minute: the slow end of the 160-180 wpm reading band. */
 const WORD_MS = 360;
-/** The pause after the first half of the Gilded Reach beat, before the last sentence replaces it. */
+/** The pause after the first half of the Gilded City beat, before the last sentence replaces it. */
 const SPECIAL_PAUSE_MS = 1500;
 
 /** The opening cutscene, after Dark Souls 1: narration on black, then the title, then the game. */

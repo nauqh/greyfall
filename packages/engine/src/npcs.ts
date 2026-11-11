@@ -135,7 +135,7 @@ export const NPCS: readonly Npc[] = [
       },
       {
         id: "well",
-        lines: ["The well only goes one way. Down.", "Don't drink what's at the bottom. The grey's in the water, then it's in you."],
+        lines: ["The well only goes one way. Down.", "Don't drink what's at the bottom. The Grey's in the water, then it's in you."],
       },
       {
         id: "roads",
@@ -161,7 +161,7 @@ export const NPCS: readonly Npc[] = [
       {
         id: "warlord",
         when: "warlordDead",
-        lines: ["So the Warlord's dead, they're saying.", "The grey's still in the ground. I'll keep the fire going anyway. Habit. Someone ought to."],
+        lines: ["So the Warlord's dead, they're saying.", "The Grey's still in the ground. I'll keep the fire going anyway. Habit. Someone ought to."],
       },
       {
         id: "ansel",
@@ -269,7 +269,7 @@ export const NPCS: readonly Npc[] = [
           {
             id: "done",
             when: "warlordDead",
-            lines: ["So it's finished. Up in the grey.", "Tell them at the gate. I've no hands left for carving."],
+            lines: ["So it's finished. Up in the Grey.", "Tell them at the gate. I've no hands left for carving."],
           },
         ],
       },
@@ -412,7 +412,7 @@ export const NPCS: readonly Npc[] = [
       {
         id: "first",
         lines: [
-          "My sisters went down to the Drowned Chapel, to pray the grey out of the water.",
+          "My sisters went down to the Drowned Chapel, to pray the Grey out of the water.",
           "The water did not clear. Nor did they come back.",
         ],
       },
@@ -557,7 +557,7 @@ export const NPCS: readonly Npc[] = [
         id: "first",
         lines: [
           "Don't tell them I'm here. The grey men.",
-          "They took my mum. The whole east lane. Off to the Greyfall, where the grey comes from.",
+          "They took my mum. The whole east lane. Off to the Greyfall, where the Grey comes from.",
           "They keep them in a yard with ropes. I squeezed out under the gate.",
         ],
       },
@@ -609,7 +609,7 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "Look up. See that glint past the clouds?",
           "The Gilded City. Gold walls, gold roofs, a city that never learned to bleed.",
-          "When the grey came, it shut its gates. Not one spear. Not one prayer.",
+          "When the Grey came, it shut its gates. Not one spear. Not one prayer.",
         ],
       },
       {
@@ -650,7 +650,7 @@ export const NPCS: readonly Npc[] = [
             id: "out",
             lines: [
               "Don't look at me like that. I said I'd come out.",
-              "I'd forgotten the smell of the grey. Wet ash and old iron.",
+              "I'd forgotten the smell of the Grey. Wet ash and old iron.",
             ],
           },
           {
@@ -700,7 +700,7 @@ export const NPCS: readonly Npc[] = [
       {
         id: "first",
         lines: [
-          "Don't mind old Mags. The grey took the Burg, not my trade.",
+          "Don't mind old Mags. The Grey took the Burg, not my trade.",
           "A shard of the old fire, a haunch, a pot of resin, a purse that sews itself fatter. One of each, mind.",
           "Kill whatever sits in the Emberwood and I'll find you a warmer shard. Hehe.",
         ],
@@ -747,7 +747,7 @@ export const NPCS: readonly Npc[] = [
       {
         id: "first",
         lines: [
-          "Two guns on this tower. No powder since the grey came.",
+          "Two guns on this tower. No powder since the Grey came.",
           "The bull was the garrison's. The smiths shod him in iron for the parade.",
           "Then he forgot who fed him, and the goblins came over the wall.",
         ],

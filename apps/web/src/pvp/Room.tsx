@@ -211,7 +211,7 @@ function Outcome({ view }: { view: RoomView }) {
       ? "A draw"
       : winner === mine
         ? "You hold"
-        : "The grey takes you";
+        : "The Grey takes you";
   const how = view.battle === null ? " - nobody fielded an army against you" : "";
   return (
     <span className="outcome">

@@ -13,7 +13,7 @@
 
 </div>
 
-The lords are ash. The grey came out of the east, and the Gilded City
+The lords are ash. The Grey came out of the east, and the Gilded City
 sent no aid. One fire remains, and a nameless survivor wakes beside it.
 
 The Atlas is the focus: a Souls-structured action RPG in the Shattered Reach.
@@ -32,7 +32,7 @@ for Discord as an Activity that friends launch from a voice call.
   starts at the Landing; the world map opens from a bonfire.
 - **Souls structure.** Bonfires, shortcuts, keys, bosses, and gold you drop
   when you die. A band of up to three: Lancer, Archer, Monk.
-- **The grey.** A condition, not an army. It crowned the Grey Warlord. The
+- **The Grey.** A condition, not an army. It crowned the Grey Warlord. The
   Gilded City shut its gates and sent no aid. The player is a nameless
   survivor.
 
