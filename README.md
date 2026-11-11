@@ -13,7 +13,7 @@
 
 </div>
 
-The feudal lords are ash. The grey came out of the east, and the Gilded City
+The lords are ash. The grey came out of the east, and the Gilded City
 sent no aid. One fire remains, and a nameless survivor wakes beside it.
 
 The Atlas is the focus: a Souls-structured action RPG in the Shattered Reach.
@@ -54,7 +54,7 @@ Duel still ships unchanged.
 
 - Finish the Atlas first slice: the Harbour, Emberwood, the Cinder Troll, the
   Troll Key.
-- Then the rest of the Reach: the Barrowmoor, the Tinkers' Crags, the Citadel.
+- Then the rest of the Reach: Barrowmoor, the Tinker Crags, the Greyfall.
 - Balance the war and give the AI real-time play of its own.
 - Lockstep multiplayer on the island. The engine already takes commands
   between ticks, so this adds networking without touching the rules.

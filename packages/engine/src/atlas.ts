@@ -153,7 +153,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "saltreach",
     tier: "surface",
     name: "Saltreach",
-    blurb: "Fishing isles off the west shore. The salt is still cut and the boats still put in; the yellow militia hold the villages, and the grey has not yet come down to the water.",
+    blurb: "Fishing isles off the west shore. The salt is still cut and the boats still put in; the militia, in the Gilded City's yellow and pay, hold the villages, and the grey has not yet come down to the water.",
     palette: [5, 5, 5],
     mood: 0xffffff,
     rise: 0,
@@ -163,7 +163,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "harbour",
     tier: "surface",
     name: "Last Harbour",
-    blurb: "The last town with a fire in it, under a castle the grey took ward by ward. Every road starts at the fire in its square and comes back to it: down the old well, up the watchtower lift.",
+    blurb: "The last town with a fire in it, under a castle the grey took ward by ward from the outside in. Every road starts at the fire in its square and comes back to it: down the Old Well, up through the castle to the Watch Lift.",
     palette: [3, 3, 3],
     mood: 0xffffff,
     rise: 0,
@@ -205,7 +205,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "fen",
     tier: "surface",
     name: "Lizard Fen",
-    blurb: "Reed and black water between the shore and the moor. A purple chapel in the middle of it prays to the grey as to a god, over a sinkhole that drinks the pools.",
+    blurb: "Reed and black water between the shore and the moor. A chapel of the Order in the middle of it prays to the grey as to a god, over a sinkhole that drinks the pools.",
     palette: [5, 5, 5],
     mood: 0xdcecdc,
     rise: 1,
@@ -216,7 +216,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "greyfall",
     tier: "surface",
     name: "The Greyfall",
-    blurb: "The Citadel, where the grey took a lord and wears him still. His keep stands on the fourth height over a hall of ash, and what holds the walls was the garrison once. Two keys open the Grey Gate; the gnomes' high road is the other way in.",
+    blurb: "The Citadel, where the grey took a lord and wears him still. The Grey Keep stands on its crown over a hall of ash, and what holds the walls was the garrison once. Two keys open the Grey Gate; the gnomes' high road is the other way in.",
     palette: [4, 4, 4],
     mood: 0x9c9fa8,
     rise: 2,
@@ -227,7 +227,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "steps",
     tier: "sky",
     name: "Skyward Steps",
-    blurb: "A chain of drifting isles from the cloud bridge west to a lift that drops onto the Harbour's castle. Nobody below can open it; whoever comes down it can.",
+    blurb: "A chain of drifting isles from the Cloud Bridge west to a lift that drops onto the Harbour's castle. Nobody below can open it; whoever comes down it can.",
     palette: [1, 1, 1],
     mood: 0xfff4e0,
     label: { col: 50, row: 30 },
@@ -236,7 +236,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "gilded",
     tier: "sky",
     name: "The Gilded City",
-    blurb: "The sky city of the old gnome-kings, gold and sunlight behind a shut gate. When the grey rose it sent no spears; its yellow guard still holds the walls, the Sentinel keeps the hall, and the Warlord's throne isle hangs off the east end.",
+    blurb: "The sky city of the old gnome-kings, gold and sunlight behind a shut gate. When the grey rose it sent no spears; its yellow guard still holds the walls, the Sentinel keeps the hall, and off its east end hangs the Throne Isle, the Citadel's old hall at court, barred off and left to the grey.",
     palette: [1, 1, 1],
     mood: 0xfff0d0,
     label: { col: 93, row: 21 },
@@ -281,7 +281,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "burg",
     tier: "surface",
     name: "The Lower Burg",
-    blurb: "The castle's outer town on the hill above the Harbour, fallen to the grey before the town below. Thieves in the lanes, the dead in the yards, and the Ramparts above.",
+    blurb: "The castle's outer town on the hill above the Harbour, fallen to the grey while the town below held. Thieves in the lanes, the dead in the yards, and the Ramparts above.",
     palette: [5, 5, 5],
     mood: 0xeee8e0,
     rise: 3,
@@ -301,7 +301,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "chapel",
     tier: "surface",
     name: "The Chapel Ward",
-    blurb: "The castle's monastery behind the Gun Bridge: a cloister round a still pond, the chapel on its terrace, and on the bell roof a warden of stone. Its lift goes down to the point; its postern opens on the Emberwood.",
+    blurb: "The castle's monastery behind the Gun Bridge: a cloister round a still pond, the chapel on its terrace, and on the bell roof a warden of stone. Its lift goes down to Old Town; its postern opens on the Emberwood.",
     palette: [5, 5, 5],
     mood: 0xf2ece4,
     rise: 7,
@@ -320,7 +320,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "keep",
     tier: "surface",
     name: "The Keep",
-    blurb: "The castle's crown over the Harbour: its bailey and garrison, the hall, and the Watch Lift up to the sky. Its gate off the Burg opens to the troll's key.",
+    blurb: "The castle's crown over the Harbour: its bailey and garrison, the hall, and the Watch Lift up to the sky. Its gate off the Burg opens to the Troll Key.",
     palette: [3, 3, 3],
     mood: 0xffffff,
     rise: 3,
@@ -329,8 +329,8 @@ export const AREAS: readonly AtlasArea[] = [
 ];
 
 export const TIER_INFO: Record<TierId, { name: string; blurb: string; base: TierBase }> = {
-  sky: { name: "The Gilded City", blurb: "The sky over the rock and the Greyfall, where the gnome-kings built in gold.", base: "sky" },
-  surface: { name: "The Surface", blurb: "Eight lands on the sea, joined at their gates.", base: "sea" },
+  sky: { name: "The Sky", blurb: "The sky over the rock and the Greyfall, where the gnome-kings built in gold.", base: "sky" },
+  surface: { name: "The Surface", blurb: "Seven lands on the sea and the castle over the Harbour, joined at their gates.", base: "sea" },
   below: { name: "The Underneath", blurb: "Caverns in the rock under the town, the moor and the fen.", base: "rock" },
 };
 
@@ -1235,7 +1235,7 @@ export const LIFTS: readonly AtlasLift[] = [
     id: "throne-stair",
     name: "Throne Stair",
     kind: "lift",
-    note: "From the warlord's keep, a stair of floating stones up to his throne isle.",
+    note: "From the Grey Keep, a stair of floating stones up to the Throne Isle, the Citadel's old seat at the gnome-kings' court.",
     up: { tier: "sky", area: "gilded", at: { col: 112, row: 18 } },
     down: { tier: "surface", area: "greyfall", at: { col: 112, row: 22 } },
   },
@@ -1251,7 +1251,7 @@ export const LIFTS: readonly AtlasLift[] = [
     id: "watch-lift",
     name: "Watch Lift",
     kind: "shortcut",
-    note: "The castle's old sky-lift, chained from above. Ride it down once from the Steps and it runs both ways for good: the road home.",
+    note: "The castle's old lift to its watch posts in the sky, chained from above. Ride it down once from the Steps and it runs both ways for good: the road home.",
     up: { tier: "sky", area: "steps", at: { col: 41, row: 31 } },
     down: { tier: "surface", area: "keep", at: { col: 41, row: 35 } },
   },
@@ -1290,7 +1290,7 @@ function surface(rng: Rng): AtlasTier {
   t.stair(2, 61, 27, "R");
   t.block(2, 73, 25, 3, 3);
   t.stair(2, 72, 27, "L");
-  // Emberwood: Smoke Ridge, the western knolls, and a tarn.
+  // Emberwood: Smoke Bluff, the western knolls, and a tarn.
   t.relief({ area: "emberwood", at: { col: 51, row: 15 }, rx: 7, ry: 5, levels: 2 });
   t.relief({ area: "emberwood", at: { col: 33, row: 8 }, rx: 6, ry: 4, levels: 2 });
   t.pond(43, 21, 4, 2);
@@ -1302,12 +1302,12 @@ function surface(rng: Rng): AtlasTier {
   t.relief({ area: "barrowmoor", at: { col: 73, row: 51 }, rx: 4.5, ry: 3, levels: 2 });
   // Lizard Fen: black pools.
   for (const [x, y, w, h] of [[53, 67, 3, 2], [59, 71, 3, 2], [65, 66, 2, 2], [69, 73, 3, 2], [75, 68, 2, 2], [82, 74, 3, 2], [57, 75, 2, 1]] as const) t.pond(x, y, w, h);
-  // The Greyfall: the citadel rock, the keep on its fourth height, a spur out to the high road.
+  // The Greyfall: the Citadel's crag, the Grey Keep on its fourth height, a spur out to the high road.
   t.relief({ area: "greyfall", at: { col: 113, row: 29 }, rx: 10, ry: 14, levels: 3, core: { at: { col: 112, row: 23 }, r: 2.2 } });
   t.relief({ area: "greyfall", at: { col: 106, row: 18 }, rx: 4, ry: 3, levels: 2 });
 
   t.gate("old-bridge", "Old Bridge", "open", "saltreach", "harbour", { col: 22, row: 45 }, { col: 31, row: 44 }, "The way in from the shore, always open.");
-  t.gate("keep-gate", "Keep Gate", "locked", "burg", "keep", { col: 43, row: 31 }, { col: 43, row: 35 }, "Off the Burg's Upper Streets into the castle's bailey. The troll's key fits it.");
+  t.gate("keep-gate", "Keep Gate", "locked", "burg", "keep", { col: 43, row: 31 }, { col: 43, row: 35 }, "Off the Burg's Upper Streets into the castle's bailey. The Troll Key fits it.");
   t.gate("chapel-door", "Chapel Door", "open", "ramparts", "chapel", { col: 61, row: 28 }, { col: 67, row: 28 }, "Over the Gun Bridge into the Chapel Ward's cloister.");
   t.gate("chapel-postern", "The Postern", "open", "chapel", "emberwood", { col: 68, row: 23 }, { col: 60, row: 14 }, "The monks' back gate off the bell roof, out onto the edge of the Emberwood.");
   t.gate("rampart-gate", "Rampart Gate", "open", "burg", "ramparts", { col: 49, row: 28 }, { col: 55, row: 28 }, "Up off the Burg's crest through the gatehouse onto the castle's curtain wall.");
@@ -1317,9 +1317,9 @@ function surface(rng: Rng): AtlasTier {
   t.gate("moor-gate", "Moor Gate", "shortcut", "harbour", "barrowmoor", { col: 52, row: 42 }, { col: 65, row: 44 }, "Barred from the moor side. Whoever comes through the moor can open it, and come home the short way.");
   t.gate("fen-causeway", "Fen Causeway", "open", "saltreach", "fen", { col: 27, row: 72 }, { col: 50, row: 72 }, "A long spit of shingle along the south shore.", 2);
   t.gate("barrow-path", "Barrow Path", "open", "fen", "barrowmoor", { col: 78, row: 67 }, { col: 82, row: 57 }, "Duckboards over the reeds, up onto the moor.");
-  t.gate("grey-gate", "Grey Gate", "locked", "barrowmoor", "greyfall", { col: 93, row: 47 }, { col: 104, row: 47 }, "Two locks, one key from each way out of the Harbour: the barrow king's horned key, and the weaver's from below.");
+  t.gate("grey-gate", "Grey Gate", "locked", "barrowmoor", "greyfall", { col: 93, row: 47 }, { col: 104, row: 47 }, "Two locks, one key from each way out of the Harbour: the Barrow King's Horned Key, and the Weaver's Silk Key from below.");
   t.gate("sky-bridge", "Sky Bridge", "high", "crags", "greyfall", { col: 92, row: 6 }, { col: 104, row: 6 }, "The gnomes' high road off the top of the rock, straight onto the Greyfall's wall.", 2);
-  // The high road turns down to the citadel, and is part of the gate till it lands there.
+  // The high road turns down to the Citadel, and is part of the gate till it lands there.
   const high = t.gates.find((g) => g.id === "sky-bridge")!;
   for (let r = 6; r <= 19; r++) {
     for (const c of [103, 104]) {
@@ -1546,7 +1546,7 @@ function sky(rng: Rng): AtlasTier {
   const t = tierBuilder("sky", rng);
   // The Steps: isles drifting west from the cloud bridge to over the castle.
   for (const [x, y, rx, ry] of [[41, 29, 5, 3], [53, 24, 4, 3], [65, 17, 4, 3]] as const) t.blob("steps", x, y, rx, ry);
-  // The Gilded City: the high hall's isle, the lift's isle off the peak, the throne isle.
+  // The Gilded City: the high hall's isle, the lift's isle off the peak, the Throne Isle.
   for (const [x, y, rx, ry] of [[93, 13, 13, 8], [80, 9, 4, 3], [112, 16, 6, 4]] as const) t.blob("gilded", x, y, rx, ry);
   t.separate();
   t.bridge({ col: 45, row: 28 }, { col: 50, row: 25 });
@@ -1575,7 +1575,7 @@ function sky(rng: Rng): AtlasTier {
   who("bee", 92, 18);
   who("bee", 101, 13);
   who("gnome", 81, 10, { to: { col: 78, row: 10 } });
-  // The throne isle: black stone over the gold, imps round the warlord's empty seat.
+  // The Throne Isle: black stone over the gold, imps round a seat the Warlord does not sit in.
   prop("tower", 114, 15, { color: "black" });
   prop("skullSpike", 110, 18);
   prop("skullSpike", 116, 18);

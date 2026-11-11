@@ -550,7 +550,7 @@ function crowd(t: Builder, rng: Rng, kind: string, at: Cell, n: number, spread: 
 
 /**
  * The Keep, the castle's crown: the castle between the Harbour and the Burg, its
- * gate off the Burg's west ward shut until the troll's key is carried. In through
+ * gate off the Burg's west ward shut until the Troll Key is carried. In through
  * the Keep Gate court on the east, the quiet bailey where the Keep's fire burns,
  * the rest after the climb and the troll; up the stair to the castle on its terrace,
  * the wall Ansel watches from, and the Watch Lift up to the sky, shut until ridden
@@ -1682,7 +1682,7 @@ function greyfall(): AreaMap {
   const { prop, who } = t;
   const black = { color: "black" } as const;
 
-  // The rot-marsh round the citadel's rock, and the ashen ground before its gate.
+  // The rot-marsh round the Citadel's rock, and the ashen ground before its gate.
   t.blob("greyfall", 62, 36, 58, 34);
   for (const [x, y, rx, ry] of [[24, 62, 18, 10], [96, 8, 20, 7], [92, 64, 22, 8]] as const) t.blob("greyfall", x, y, rx, ry);
   t.blob("greyfall", 11, 44, 12, 18);
@@ -1695,14 +1695,14 @@ function greyfall(): AreaMap {
   lake(t, 37, 55, 9, 5);
   t.ground("greyfall", 35, 54, 5, 3);
 
-  // The citadel-crag, after Stormveil and Sellia: one great rock rising out of the rot in four ragged tiers,
-  // the Lower City on its skirts, the High City, the Warlord's Hall, the Keep on its crown. A spur runs west
+  // The Citadel's crag, after Stormveil and Sellia: one great rock rising out of the rot in four ragged tiers,
+  // the Lower City on its skirts, the High City, the Warlord's Hall, the Grey Keep on its crown. A spur runs west
   // from it as a ridge for the gnomes' Sky Bridge to land on.
   t.shape(2, 78, 33, 30, 24, 0.45, "The Lower City");
   t.shape(2, 42, 9, 18, 4, 0.35, "The Lower City");
   t.shape(3, 79, 28, 20, 15, 0.4, "The High City");
   t.shape(4, 79, 21, 11, 8, 0.35, "The Warlord's Hall");
-  t.shape(5, 79, 15, 6, 3.5, 0.25, "The Keep");
+  t.shape(5, 79, 15, 6, 3.5, 0.25, "The Grey Keep");
   // The Sky Bridge: the gnomes' high road from the west, landing on the spur.
   const decks = t.span(2, 1, 8, 36, 2);
 
@@ -1752,7 +1752,7 @@ function greyfall(): AreaMap {
   who("monk", 40, 17, { color: "purple", to: { col: 44, row: 18 } });
   who("shaman", 44, 12);
 
-  // The Gallows Yard: gibbets in rows, the warlord's barracks, and the Harbour's folk penned.
+  // The Gallows Yard: gibbets in rows, the Warlord's barracks, and the Harbour's folk penned.
   for (let c = 56; c <= 76; c += 4) prop("skullSpike", c, 59);
   prop("barracks", 62, 48, black);
   prop("archery", 76, 48, black);
@@ -1816,7 +1816,7 @@ function greyfall(): AreaMap {
   who("skull", 88, 24, { to: { col: 88, row: 38 } });
   who("lancer", 55, 24, { ...black, to: { col: 85, row: 24 } });
 
-  // The Keep: the black castle on the fourth height, the Warlord on the tier before it, his guard, guns on the tier.
+  // The Grey Keep: the black castle on the fourth height, the Warlord on the tier before it, his guard, guns on the tier.
   prop("castle", 78, 13, black);
   t.bosses.push({ name: "The Grey Warlord", area: "greyfall", col: 78, row: 18 });
   who("warrior", 78, 18, black);
@@ -1831,7 +1831,7 @@ function greyfall(): AreaMap {
   ];
   // The rock's tiers alternate stone colours so each step reads; the marsh below in its own.
   const districts: District[] = [
-    { name: "The Keep", at: { col: 79, row: 8 }, levels: [5], palette: [1], dress: "greyfall", decor: 1.5 },
+    { name: "The Grey Keep", at: { col: 79, row: 8 }, levels: [5], palette: [1], dress: "greyfall", decor: 1.5 },
     { name: "The Warlord's Hall", at: { col: 92, row: 22 }, levels: [4], palette: [2], dress: "greyfall", decor: 1.5 },
     { name: "The High City", at: { col: 64, row: 34 }, levels: [3], palette: [3], dress: "greyfall", decor: 2 },
     { name: "The Lower City", at: { col: 96, row: 48 }, levels: [2], palette: [5, 4], dress: "greyfall", decor: 2 },
@@ -1862,7 +1862,7 @@ function gilded(): AreaMap {
   t.blob("gilded", 64, 34, 22, 17);
   t.blob("gilded", 70, 8, 11, 5);
   t.blob("gilded", 64, 61, 11, 6);
-  // The throne isle: nothing but the warlord's black plaza, hung off the city's east end.
+  // The Throne Isle: nothing but its black plaza, hung off the city's east end.
   t.blob("gilded", 98, 34, 8, 7);
 
   t.bridge({ col: 17, row: 36 }, { col: 23, row: 35 });
@@ -1878,7 +1878,7 @@ function gilded(): AreaMap {
   t.shape(2, 64, 32, 16, 12, 0.4, "The Sun Steps");
   t.shape(3, 65, 29, 11, 8, 0.35, "The Sun Steps");
   t.shape(4, 65, 26, 6, 4, 0.3, "The Sun Steps");
-  // The throne isle, raised to the lower city's height and reached only by the Gilded Span.
+  // The Throne Isle, raised to the lower city's height and reached only by the Gilded Span.
   t.shape(2, 98, 34, 7, 6, 0.3, "The Throne Isle");
   const decks = t.span(2, 79, 33, 13, 2);
 
@@ -1945,12 +1945,12 @@ function gilded(): AreaMap {
   for (const [c, r] of [[58, 62], [70, 62]] as const) prop("goldStone", c, r);
   crowd(t, rng, "monk", { col: 64, row: 63 }, 3, 4, gold);
 
-  // The span's head: the guard hold the one way in from the warlord's isle, a tower either side, archers watching it.
+  // The span's head: the guard hold the one way in from the Throne Isle, a tower either side, archers watching it.
   for (const [c, r] of [[83, 31], [81, 37]] as const) prop("tower", c, r, gold);
   for (const [c, r] of [[79, 32], [79, 35]] as const) who("archer", c, r, gold);
   who("lancer", 78, 34, { ...gold, to: { col: 75, row: 34 } });
 
-  // The Throne Isle: black stone over the gold, imps round the warlord's empty seat.
+  // The Throne Isle: black stone over the gold, imps round a seat the Warlord does not sit in.
   for (const [c, r] of [[95, 31], [102, 31]] as const) prop("tower", c, r, black);
   for (const [c, r] of [[94, 37], [98, 38], [102, 37]] as const) prop("skullSpike", c, r);
   crowd(t, rng, "imp", { col: 98, row: 34 }, 3, 3);
@@ -1963,7 +1963,7 @@ function gilded(): AreaMap {
   ];
   const districts: District[] = [
     // All gold and sunlight: the city in fresh green climbing to gold, the market, gate and chapel gold; the gardens
-    // green; only the warlord's isle dark.
+    // green; only the Throne Isle dark.
     { name: "The Sun Steps", at: { col: 64, row: 48 }, levels: [1, 2, 3, 4], palette: [2, 1, 1, 1], dress: "gilded", decor: 2 },
     { name: "The Throne Isle", at: { col: 98, row: 43 }, levels: [1, 2], palette: [4], dress: "greyfall", decor: 2 },
     { name: "Cloud Landing", at: { col: 12, row: 40 }, palette: [2], dress: "gilded", clearing: 4 },
@@ -2056,7 +2056,7 @@ function steps(): AreaMap {
   who("warrior", 36, 32, { ...blue, to: { col: 38, row: 32 } });
   who("bat", 32, 36);
 
-  // Watch Isle: the Harbour castle's old sky-lift, chained from here.
+  // Watch Isle: the Watch Lift down to the Keep, chained from here.
   t.fires.push({ col: 12, row: 47 });
   prop("tower", 17, 43, blue);
   prop("house2", 9, 44, blue);
@@ -2411,7 +2411,7 @@ function barrowmoor(): AreaMap {
     [56, 61, 7, 5], // the Burned Hamlet
     [58, 42, 6, 5], // the Mourners' Way
     [62, 18, 13, 9], // the King's Barrow
-    [92, 18, 8, 6], // the Robbers' Camp
+    [92, 18, 8, 6], // the Diggings
     [88, 40, 7, 5], // the Troll's Grave
     [82, 59, 8, 6], // the Dead Mere
     [110, 36, 5, 5], // the Grey Road
@@ -2493,7 +2493,7 @@ function barrowmoor(): AreaMap {
   prop("cave", 62, 25);
   t.fires.push({ col: 67, row: 26 });
 
-  // The Robbers' Camp: grave-robbers dug in by the barrow, their spoil and their tools.
+  // The Diggings: grave-robbers dug in by the barrow, their spoil and their tools.
   t.fires.push({ col: 92, row: 19 });
   for (const [c, r] of [[88, 16], [96, 16]] as const) prop("woodPile", c, r);
   prop("tools", 89, 21);
@@ -2512,7 +2512,7 @@ function barrowmoor(): AreaMap {
   for (const [c, r] of [[75, 62], [89, 59]] as const) who("lizard", c, r, { to: { col: c + 2, row: r } });
   who("bombFish", 82, 60, { to: { col: 85, row: 60 } });
 
-  // The Grey Road: skulls staked along it, the warlord's outpost before his gate.
+  // The Grey Road: skulls staked along it, the Warlord's outpost before his gate.
   for (const c of [106, 110, 114]) for (const r of [33, 39]) prop("skullSpike", c, r);
   prop("tower", 107, 31, black);
   crowd(t, rng, "warrior", { col: 111, row: 36 }, 3, 2, black);
@@ -2538,7 +2538,7 @@ function barrowmoor(): AreaMap {
     { name: "The Burned Hamlet", at: { col: 56, row: 60 }, levels: [1], palette: [3], dress: "greyfall", decor: 1.5 },
     { name: "The Mourners' Way", at: { col: 58, row: 41 }, levels: [1], palette: [4], dress: "barrowmoor", decor: 2.5 },
     { name: "The King's Barrow", at: { col: 62, row: 10 }, levels: [1, 2, 3], palette: [3], dress: "barrowmoor", decor: 1.5 },
-    { name: "The Robbers' Camp", at: { col: 92, row: 14 }, levels: [1], palette: [3], dress: "harbour", decor: 2 },
+    { name: "The Diggings", at: { col: 92, row: 14 }, levels: [1], palette: [3], dress: "harbour", decor: 2 },
     { name: "The Troll's Grave", at: { col: 88, row: 36 }, levels: [1], palette: [4], dress: "barrowmoor", decor: 2.5 },
     { name: "The Dead Mere", at: { col: 82, row: 54 }, levels: [1], palette: [4], dress: "fen", decor: 2 },
     { name: "The Grey Road", at: { col: 110, row: 41 }, levels: [1], palette: [4], dress: "greyfall", decor: 2 },

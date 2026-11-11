@@ -4,7 +4,7 @@ For checking. Generated from `../packages/engine/src/npcs.ts`, so the lines and 
 
 ## The grey
 
-The grey is a condition, not an army: a rot in the ground that gets into the water, then the blood, and takes the shape of whoever holds on longest. In the Greyfall it has worn the Warlord a long time. The Gilded City, the high city that glints above the clouds, shut its gates when the grey came and sent no aid. The wanderer comes ashore with the tide, nameless, and the folk of Last Harbour measure them by what they do, not by a rank.
+The grey is a condition, not an army: a rot in the ground that gets into the water, then the blood, and takes the shape of whoever holds on longest. In the Greyfall it has worn the Warlord a long time. The Gilded City, the sky city that glints above the clouds, shut its gates when the grey came and sent no aid. The wanderer comes ashore with the tide, nameless, and the folk of Last Harbour measure them by what they do, not by a rank.
 
 ## How it works
 
@@ -57,21 +57,21 @@ Greets you: *"Ah. Another one."* Walked away from: *"Mind the dark, then."*
   2. The last one sat where you're standing. Warmed his hands. Then he went east and did not come back.
   3. Go on, then. The fire doesn't ask what you were. Nor do I.
 - **shore**
-  1. Follow the lanterns west, through the lower town, up to the Ember Gate. Someone lit them before you came. They always do.
-  2. The path up the hill runs through the graves to the Moor Gate. It's barred from this side. The dogs on the moor don't care that it's barred.
+  1. Follow the lanterns up through Old Town, to the Burg Gate. Someone lit them before you came. They always do.
+  2. The path up the hill runs through the graves to the Moor Gate. It's barred from this side. The dogs on that hill don't care that it's barred.
 - **bull** (once, after meeting, when **bullWon**)
   1. The tide brought you back. The bull in the Ring did that.
   2. He'll keep. Go back by boat when your arm is stronger. What he guards is worth a fall or two.
 - **goal**
   1. You'll be wanting the Grey Gate, east past the moor. Everyone does, in the end.
   2. Two keys open it. The king under the barrows keeps one.
-  3. The other is down below, in the Weaver's web. Down the well, then further down.
+  3. The other's down below, they say, in the Weaver's web. Down the well, then further down.
 - **castle**
-  1. The castle? Shut since the grey first fell. Its steward ran for the wood with the key.
-  2. The grey's no army. It's a rot in the ground. Gets into the water, then the blood. A troll had the steward for supper, they say. It still has the key, I'd wager.
+  1. The Keep? Shut since the Burg turned. Its steward ran for the wood with the key.
+  2. A troll had him for supper, they say. Still has the key, I'd wager.
 - **well**
-  1. The well only goes one way. Down, to the drowned.
-  2. Not yet. Not that way. Not with the grey still in the air.
+  1. The well only goes one way. Down.
+  2. Don't drink what's at the bottom. The grey's in the water, then it's in you.
 - **roads**
   1. Every road out of here comes back to this fire. The gates, the well, the lift.
   2. Folk think that's a comfort. I've never been sure.
@@ -84,11 +84,11 @@ Greets you: *"Ah. Another one."* Walked away from: *"Mind the dark, then."*
   1. That key's warm. Troll's blood, or the fire inside it.
   2. Either way, keep it away from my kindling.
 - **warlord** (once, after meeting, when **warlordDead**)
-  1. So. The Warlord is dead.
-  2. He was only the shape the grey wore. ...I'll keep the fire going anyway. Habit. Someone ought to.
+  1. So the Warlord's dead, they're saying.
+  2. The grey's still in the ground. I'll keep the fire going anyway. Habit. Someone ought to.
 - **ansel** (once, after meeting, when **anselRoused**)
-  1. Ansel's stool is empty. First time in years.
-  2. I'll leave it where it is. They come back, or they don't, and it's still a good stool.
+  1. Ansel's off the wall. I can see it from here. First time in years.
+  2. They come back, or they don't. The wall will keep.
 
 ## Brenna the Smith
 
@@ -99,14 +99,15 @@ Greets you: *"Mind the sparks."* Walked away from: *"Come back with ore."*
 - **first**
   1. You want an edge on that? Bring me gold and ore.
   2. The gold's for me. The ore's for the blade. Mostly.
+  3. There's a banded shield on the wall too, oak and iron. Takes a blow so your arm doesn't.
 - **ore**
   1. Mine Hills ore is soft, but honest. The Crags have better, under the gnomes.
   2. Go and be rude to them. They'll understand. It's how they talk to each other.
 - **hammer**
   1. Heat, hit. Heat, hit. Same as fighting, only the iron never hits back.
 - **key** (once, after meeting, when **trollKey**)
-  1. Let me see that key. ...No. I won't touch it.
-  2. Whatever forged that wasn't a smith.
+  1. Let me see that key. ...The Keep's. I cut that blank myself, years back.
+  2. Smells of troll now. Wash it.
 - **ansel** (once, after meeting, when **anselRoused**)
   1. Ansel came by. Wanted an edge on a sword I'd forgotten he had.
   2. He didn't haggle. That worried me.
@@ -134,7 +135,7 @@ Greets you: *"You're not one of mine."* Walked away from: *"Dismissed, then."*
 ### At Barrowmoor, Barrow Field (29, 22), once **hornedKey**
 
 - **barrows**
-  1. The king's dead. The barrows are only barrows now.
+  1. The Barrow King's dead. The barrows are only barrows now.
   2. My forty went into them. I'm digging them out. One at a time.
 - **count**
   1. Twenty-two. Dace still had his pipe.
@@ -177,7 +178,7 @@ Greets you: *"Don't lean on the rope."* Walked away from: *"...Right. Off you go
 
 - **first**
   1. Don't lean on the rope. It's older than me.
-  2. That well doesn't go to water. My brother went down it after a dropped coin.
+  2. That well's not for drawing water. My brother went down it after a dropped coin.
   3. Never came up. Says something about the coin, doesn't it?
 - **rule**
   1. No climbing back. That's the rule of the well.
@@ -308,7 +309,7 @@ Greets you: *"Shh!"* Walked away from: *"Don't tell them I'm here!"*
 
 - **first**
   1. Don't tell them I'm here. The grey men.
-  2. They took my mum. The whole east lane. Off to the citadel, where the grey falls.
+  2. They took my mum. The whole east lane. Off to the Greyfall, where the grey comes from.
   3. They keep them in a yard with ropes. I squeezed out under the gate.
 - **crows**
   1. I count the crows.
@@ -345,7 +346,7 @@ Greets you: *"Look up."* Walked away from: *"Go on. I'll keep watch. It's all I'
   3. When the grey came, it shut its gates. Not one spear. Not one prayer.
 - **lift**
   1. The Watch Lift only comes down.
-  2. Someone in the high city decided who gets to visit.
+  2. Someone in the sky city decided who gets to visit.
 - **blue**
   1. I wore that blue once. Had a band, a banner. The fire knew my name.
   2. Then I stopped going out. You'd be surprised how easy it is.
@@ -353,7 +354,7 @@ Greets you: *"Look up."* Walked away from: *"Go on. I'll keep watch. It's all I'
   1. Still here. Still watching. Someone ought to.
 - **lifted** (once, after meeting, when **watchLiftOpen**)
   1. So you went up. Were they kind?
-  2. ...No. The high city never is.
+  2. ...No. The sky city never is.
 - **roused** (once, after meeting, when **trollKey**; heard to the end, sets **anselRoused**)
   1. The troll. You killed it. With that.
   2. ...I had a sword once. It's under the bed, I think.
@@ -365,10 +366,10 @@ Greets you: *"Look up."* Walked away from: *"Go on. I'll keep watch. It's all I'
   1. Don't look at me like that. I said I'd come out.
   2. I'd forgotten the smell of the grey. Wet ash and old iron.
 - **ahead** (heard to the end, sets **anselAhead**)
-  1. The Warlord's hall is up past the High City. I'll go first, this time.
+  1. The Warlord's Hall is up past the High City. I'll go first, this time.
   2. Let me have that. You've had all the others.
 
-### At The Keep, on the hall's terrace (25, 10), once **warlordDead**
+### At The Keep, on the hall's terrace (43, 11), once **warlordDead**
 
 - **without**
   1. You went up without me. Good.
@@ -380,3 +381,57 @@ Greets you: *"Look up."* Walked away from: *"Go on. I'll keep watch. It's all I'
 ### Dead at The Greyfall, The High City (95, 25), once **anselAhead**
 
 Says nothing.
+
+## Mags the Peddler
+
+Greets you: *"Hehe. A live one."* Walked away from: *"Come back with coin, dearie."*
+
+### Home: The Lower Burg, Market Row, in a nook under the wall (37, 39)
+
+- **first**
+  1. Don't mind old Mags. The grey took the Burg, not my trade.
+  2. A shard of the old fire, a haunch, a pot of resin, a purse that sews itself fatter. One of each, mind.
+  3. Kill whatever sits in the Emberwood and I'll find you a warmer shard. Hehe.
+- **thieves**
+  1. The thieves in the market? Burg folk, all of them.
+  2. Went bad when the bell stopped. Bad for business, worse for them.
+- **rest**
+  1. Hehe. Still breathing, dearie? Good. Breathing folk buy things.
+
+## Hale of the Watch
+
+Greets you: *"Living? Then sit a while."* Walked away from: *"Mind the bridges."*
+
+### Home: The Lower Burg, The Burg Square, by the fire (51, 32)
+
+- **first**
+  1. You came over the creek? Then you've met the bridges' keepers.
+  2. I held this square with six men. The bell stopped, and they turned, one by one.
+  3. The Rampart Gate's up the street. Or through the graves on the hill, if you'd sooner the dead than the dying.
+- **ladder**
+  1. There was a ladder down to here from the Ramparts, by the fire.
+  2. Someone pulled it up. From above.
+- **keep** (once, after meeting, when **trollKey**)
+  1. That's the troll's key on your belt?
+  2. The Keep Gate's off the west alley. Corwin's lancers are behind it, if any are left.
+- **rest**
+  1. Sit. The fire's the one thing in the Burg that's still ours.
+
+## Odo the Gunner
+
+Greets you: *"Bull's dead, then. Good. I was running out of things to throw."* Walked away from: *"Mind the ladder. It sticks."*
+
+### Home: The Ramparts, The East Tower (70, 14)
+
+- **first**
+  1. Two guns on this tower. No powder since the grey came.
+  2. The bull was the garrison's. The smiths shod him in iron for the parade.
+  3. Then he forgot who fed him, and the goblins came over the wall.
+- **ladder**
+  1. There's a ladder down the south face to the Burg's square.
+  2. Kick it loose. Their fire is right under it, if you need one.
+- **died** (once, after meeting, when **died**)
+  1. You came back. They don't, usually.
+  2. The wall remembers everyone who crossed it. It just doesn't care.
+- **kicked** (once, after meeting, when **ladderDown**)
+  1. You found it. The square's closer than it looks.

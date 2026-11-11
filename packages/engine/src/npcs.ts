@@ -106,8 +106,8 @@ export const NPCS: readonly Npc[] = [
       {
         id: "shore",
         lines: [
-          "Follow the lanterns west, through the lower town, up to the Ember Gate. Someone lit them before you came. They always do.",
-          "The path up the hill runs through the graves to the Moor Gate. It's barred from this side. The dogs on the moor don't care that it's barred.",
+          "Follow the lanterns up through Old Town, to the Burg Gate. Someone lit them before you came. They always do.",
+          "The path up the hill runs through the graves to the Moor Gate. It's barred from this side. The dogs on that hill don't care that it's barred.",
         ],
       },
       {
@@ -123,19 +123,19 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "You'll be wanting the Grey Gate, east past the moor. Everyone does, in the end.",
           "Two keys open it. The king under the barrows keeps one.",
-          "The other is down below, in the Weaver's web. Down the well, then further down.",
+          "The other's down below, they say, in the Weaver's web. Down the well, then further down.",
         ],
       },
       {
         id: "castle",
         lines: [
-          "The castle? Shut since the grey first fell. Its steward ran for the wood with the key.",
-          "The grey's no army. It's a rot in the ground. Gets into the water, then the blood. A troll had the steward for supper, they say. It still has the key, I'd wager.",
+          "The Keep? Shut since the Burg turned. Its steward ran for the wood with the key.",
+          "A troll had him for supper, they say. Still has the key, I'd wager.",
         ],
       },
       {
         id: "well",
-        lines: ["The well only goes one way. Down, to the drowned.", "Not yet. Not that way. Not with the grey still in the air."],
+        lines: ["The well only goes one way. Down.", "Don't drink what's at the bottom. The grey's in the water, then it's in you."],
       },
       {
         id: "roads",
@@ -161,14 +161,14 @@ export const NPCS: readonly Npc[] = [
       {
         id: "warlord",
         when: "warlordDead",
-        lines: ["So. The Warlord is dead.", "He was only the shape the grey wore. ...I'll keep the fire going anyway. Habit. Someone ought to."],
+        lines: ["So the Warlord's dead, they're saying.", "The grey's still in the ground. I'll keep the fire going anyway. Habit. Someone ought to."],
       },
       {
         id: "ansel",
         when: "anselRoused",
         lines: [
-          "Ansel's stool is empty. First time in years.",
-          "I'll leave it where it is. They come back, or they don't, and it's still a good stool.",
+          "Ansel's off the wall. I can see it from here. First time in years.",
+          "They come back, or they don't. The wall will keep.",
         ],
       },
     ],
@@ -209,7 +209,7 @@ export const NPCS: readonly Npc[] = [
       {
         id: "key",
         when: "trollKey",
-        lines: ["Let me see that key. ...No. I won't touch it.", "Whatever forged that wasn't a smith."],
+        lines: ["Let me see that key. ...The Keep's. I cut that blank myself, years back.", "Smells of troll now. Wash it."],
       },
       {
         id: "ansel",
@@ -260,7 +260,7 @@ export const NPCS: readonly Npc[] = [
           {
             id: "barrows",
             lines: [
-              "The king's dead. The barrows are only barrows now.",
+              "The Barrow King's dead. The barrows are only barrows now.",
               "My forty went into them. I'm digging them out. One at a time.",
             ],
           },
@@ -331,7 +331,7 @@ export const NPCS: readonly Npc[] = [
         id: "first",
         lines: [
           "Don't lean on the rope. It's older than me.",
-          "That well doesn't go to water. My brother went down it after a dropped coin.",
+          "That well's not for drawing water. My brother went down it after a dropped coin.",
           "Never came up. Says something about the coin, doesn't it?",
         ],
       },
@@ -557,7 +557,7 @@ export const NPCS: readonly Npc[] = [
         id: "first",
         lines: [
           "Don't tell them I'm here. The grey men.",
-          "They took my mum. The whole east lane. Off to the citadel, where the grey falls.",
+          "They took my mum. The whole east lane. Off to the Greyfall, where the grey comes from.",
           "They keep them in a yard with ropes. I squeezed out under the gate.",
         ],
       },
@@ -614,7 +614,7 @@ export const NPCS: readonly Npc[] = [
       },
       {
         id: "lift",
-        lines: ["The Watch Lift only comes down.", "Someone in the high city decided who gets to visit."],
+        lines: ["The Watch Lift only comes down.", "Someone in the sky city decided who gets to visit."],
       },
       {
         id: "blue",
@@ -627,7 +627,7 @@ export const NPCS: readonly Npc[] = [
       {
         id: "lifted",
         when: "watchLiftOpen",
-        lines: ["So you went up. Were they kind?", "...No. The high city never is."],
+        lines: ["So you went up. Were they kind?", "...No. The sky city never is."],
       },
       {
         id: "roused",
@@ -657,7 +657,7 @@ export const NPCS: readonly Npc[] = [
             id: "ahead",
             sets: "anselAhead",
             lines: [
-              "The Warlord's hall is up past the High City. I'll go first, this time.",
+              "The Warlord's Hall is up past the High City. I'll go first, this time.",
               "Let me have that. You've had all the others.",
             ],
           },
@@ -701,7 +701,7 @@ export const NPCS: readonly Npc[] = [
         id: "first",
         lines: [
           "Don't mind old Mags. The grey took the Burg, not my trade.",
-          "A shard of the old fire, a haunch, a pot of pitch, a purse that sews itself fatter. One of each, mind.",
+          "A shard of the old fire, a haunch, a pot of resin, a purse that sews itself fatter. One of each, mind.",
           "Kill whatever sits in the Emberwood and I'll find you a warmer shard. Hehe.",
         ],
       },
@@ -710,7 +710,7 @@ export const NPCS: readonly Npc[] = [
     ],
   },
   {
-    // The square's last guard, after the Undead Burg's soldiers who held out: tired, and not hollow yet.
+    // The square's last guard, after the Undead Burg's soldiers who held out: tired, and not taken yet.
     id: "hale",
     name: "Hale of the Watch",
     short: "Hale",
@@ -725,7 +725,7 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "You came over the creek? Then you've met the bridges' keepers.",
           "I held this square with six men. The bell stopped, and they turned, one by one.",
-          "The castle's gate is up the street. Or through the graves on the hill, if you'd sooner the dead than the dying.",
+          "The Rampart Gate's up the street. Or through the graves on the hill, if you'd sooner the dead than the dying.",
         ],
       },
       { id: "ladder", lines: ["There was a ladder down to here from the Ramparts, by the fire.", "Someone pulled it up. From above."] },
@@ -749,7 +749,7 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "Two guns on this tower. No powder since the grey came.",
           "The bull was the garrison's. The smiths shod him in iron for the parade.",
-          "Then the goblins came over the wall and he forgot who fed him.",
+          "Then he forgot who fed him, and the goblins came over the wall.",
         ],
       },
       { id: "ladder", lines: ["There's a ladder down the south face to the Burg's square.", "Kick it loose. Their fire is right under it, if you need one."] },
