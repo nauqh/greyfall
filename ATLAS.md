@@ -904,19 +904,19 @@ black. The wording and the pace of its reveal are the whole cutscene.
 
 #### The story it tells
 
-The Reach was not one kingdom but a realm of lords, each town keeping a fire
-for the soldiers who came home from its wars. The grey came out of the east,
-crowned the Grey Warlord, and left the fields grey where it passed. The Gilded
-Reach, the sky city, sent no aid, so the lords rode out alone. Their banners did
-not return. One fire is left at Last Harbour, where Old Ferrow keeps it and
-watches the roads and the water. A nameless survivor is carried in by the tide.
-That is the whole opening: a fallen realm, a grey, a refusal, a last fire, and
-the one who wakes beside it.
+The Reach was not one kingdom but a realm of lords, each town keeping a fire lit
+so its soldiers could find their way home from its wars. The grey came out of
+the east, crowned the Grey Warlord, and left the fields grey where it passed.
+The Gilded Reach, the sky city, sent no aid, so the lords rode out alone. Their
+banners did not return. One fire is left at Last Harbour, where Old Ferrow keeps
+it and watches the roads and the water. A nameless survivor is carried in by the
+tide. That is the whole opening: a fallen realm, a grey, a refusal, a last fire,
+and the one who wakes beside it.
 
 ### Storytelling and pacing
 
 - **Reach the game quickly.** A common exercise puts an opening cutscene under
-  300 words from fade in to gameplay; this one is 91. Fewer words also mean
+  300 words from fade in to gameplay; this one is 94. Fewer words also mean
   fewer facts to hold before the first choice.
   [Opening Cutscene, Kelsey Reyes](https://www.kelseyfoxreyes.com/post/opening-cutscene)
 - **Leave something unknown.** Mystery holds attention better than a complete
@@ -971,10 +971,10 @@ Where it chooses different words, it says why.
 ### The beats
 
 Five short paragraphs, shown one at a time, then the title. The spine is a
-chain anyone can follow: the towns kept fires for the soldiers, the grey
-crowned the Warlord and left the fields grey, the Gilded Reach sent no aid,
-the lords rode out alone, their banners did not return, one fire is left, the
-tide brings a nameless survivor to it.
+chain anyone can follow: the towns kept fires lit so their soldiers could find
+their way home, the grey crowned the Warlord and left the fields grey, the
+Gilded Reach sent no aid, the lords rode out alone, their banners did not
+return, one fire is left, the tide brings a nameless survivor to it.
 
 The forty spears and the Citadel were cut from an earlier draft. Corwin's forty
 died in the barrows, not at the Citadel, and "the Citadel" names two different
@@ -983,7 +983,7 @@ Ansel's plain claim: the Gilded Reach sent no aid.
 
 | # | Paragraph | Why |
 | --- | --- | --- |
-| 1 | Before the grey, the Reach was a realm of lords, and every town kept a fire for the soldiers who came home. | The world before, and the promise the rest of the story breaks |
+| 1 | Before the grey, the Reach was a realm of lords, and every town kept a fire lit so its soldiers could find their way home. | The world before, and the promise the rest of the story breaks |
 | 2 | The grey came out of the east, crowned the Grey Warlord, and left the fields grey where it passed. | The cause, and where the grey came from. The Warlord is the grey's crown, not its general |
 | 3 | The Gilded Reach sent no aid, so the lords rode out alone. Their banners did not return. | The refusal, then the cost after a pause |
 | 4 | One fire is left at Last Harbour, where Old Ferrow keeps it and watches the roads and the water. | The last fire, its keeper, and the watch he keeps for whoever comes in |
@@ -999,7 +999,7 @@ out on the Landing: the sea cave behind the overlay is the arrival.
   paragraph starts on black again, so nothing is read while it moves. The
   Gilded Reach card opens on 2.5 s of black; its first sentence holds, then
   after 1.5 s the first is replaced by the last at the end of the first. The
-  whole run is about 64 s including the title.
+  whole run is about 65 s including the title.
 - The title holds 5.2 s, then the overlay fades over 1.6 s into the Landing.
 - A click or any key moves to the next card; holding Esc, Space or Enter for a
   second skips to the end.
