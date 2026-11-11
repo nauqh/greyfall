@@ -330,8 +330,8 @@ Every area has its own large map (`areas.ts`, 112 x 72 tiles), built with
 the same `tierBuilder`, at `/atlas/<area>`, and the camera stays inside
 that map. An exit at its edge, or a lift or well inside it, takes you to
 the next area's map. Resting at a bonfire sits you by it, with
-Travel and Leave: Travel opens the map, whose area cards list the
-bonfires lit there, each one a place to travel to.
+Travel and Leave: Travel opens the map, and a click on a lit bonfire
+travels there.
 
 Crossing between areas never leaves the page. The scene rebuilds itself as
 the next map inside the same game (`travel` on its api), while the address
@@ -904,19 +904,21 @@ black. The wording and the pace of its reveal are the whole cutscene.
 
 #### The story it tells
 
-The Reach was not one kingdom but a realm of lords, each town keeping a fire lit
-so its soldiers could find their way home from its wars. The grey came out of
-the east, crowned the Grey Warlord, and left the fields grey where it passed.
-The Gilded City, the sky city, sent no aid, so the lords rode out alone. Their
-banners did not return. One fire is left at Last Harbour, where Old Ferrow keeps
-it and watches the roads and the water. A nameless survivor is carried in by the
-tide. That is the whole opening: a fallen realm, a grey, a refusal, a last fire,
-and the one who wakes beside it.
+The Reach was not one kingdom but a realm of lords. Its lords kept their oaths,
+and its roads ran from one hall to the next. Then the grey came out of the east.
+It was not an army. It was a rot that took the land, and it crowned the lord of
+the Citadel as its Warlord. The fields it passed went grey, and the men it took
+went on walking. The Gilded City shut its gates and sent no aid, so the lords
+rode out alone. Their banners did not return. Last Harbour alone held. Its people
+barred the gates and kept the harbour, and Old Ferrow kept the watch. A survivor
+was carried in by the tide, nameless and alive. Last Harbour took them in. That
+is the whole opening: a realm, a grey, a refusal, a last hold, and the one it
+takes in.
 
 ### Storytelling and pacing
 
 - **Reach the game quickly.** A common exercise puts an opening cutscene under
-  300 words from fade in to gameplay; this one is 94. Fewer words also mean
+  300 words from fade in to gameplay; this one is 127. Fewer words also mean
   fewer facts to hold before the first choice.
   [Opening Cutscene, Kelsey Reyes](https://www.kelseyfoxreyes.com/post/opening-cutscene)
 - **Leave something unknown.** Mystery holds attention better than a complete
@@ -949,7 +951,7 @@ front-facing telling, and it uses the names survivors would use: the grey, the
 Gilded City, a nameless survivor for the hero the game later gives a class.
 Where it chooses different words, it says why.
 
-- The Reach is a realm of feudal holds in the world section above; Last
+- The Reach is a realm of lords in the world section above; Last
   Harbour is its hub, and every road out of it comes back to the Harbour's
   fire (Ferrow: "Every road out of here comes back to this fire").
 - The grey is a condition out of the east, thickest in the Greyfall. It crowned
@@ -971,10 +973,10 @@ Where it chooses different words, it says why.
 ### The beats
 
 Five short paragraphs, shown one at a time, then the title. The spine is a
-chain anyone can follow: the towns kept fires lit so their soldiers could find
-their way home, the grey crowned the Warlord and left the fields grey, the
-Gilded City sent no aid, the lords rode out alone, their banners did not
-return, one fire is left, the tide brings a nameless survivor to it.
+chain anyone can follow: the Reach's lords kept their oaths and roads, the grey
+crowned the Citadel's lord as its Warlord, the Gilded City sent no aid, the lords
+rode out alone, their banners did not return, Last Harbour alone held, Old
+Ferrow kept the watch, and the tide brought a nameless survivor in.
 
 The forty spears and the Citadel were cut from an earlier draft. Corwin's forty
 died in the barrows, not at the Citadel, and "the Citadel" names two different
@@ -983,11 +985,11 @@ Ansel's plain claim: the Gilded City sent no aid.
 
 | # | Paragraph | Why |
 | --- | --- | --- |
-| 1 | Before the grey, the Reach was a realm of lords, and every town kept a fire lit so its soldiers could find their way home. | The world before, and the promise the rest of the story breaks |
-| 2 | The grey came out of the east, crowned the Grey Warlord, and left the fields grey where it passed. | The cause, and where the grey came from. The Warlord is the grey's crown, not its general |
-| 3 | The Gilded City sent no aid, so the lords rode out alone. Their banners did not return. | The refusal, then the cost after a pause |
-| 4 | One fire is left at Last Harbour, where Old Ferrow keeps it and watches the roads and the water. | The last fire, its keeper, and the watch he keeps for whoever comes in |
-| 5 | One survivor of the grey was carried in by the tide, nameless and alive. | The turn to the player: the fire kept for the soldiers finally gets one |
+| 1 | Before the grey, the Reach was a realm of lords. Its lords kept their oaths, and its roads ran from one hall to the next. | The world before, and the roads between the halls |
+| 2 | Then the grey came out of the east. It was not an army. It was a rot that took the land, and it crowned the lord of the Citadel as its Warlord. The fields it passed went grey, and the men it took went on walking. | The grey, and how it made the Warlord |
+| 3 | The Gilded City shut its gates and sent no aid, so the lords rode out alone. Their banners did not return. | The refusal, then the cost after a pause |
+| 4 | Last Harbour alone held. Its people barred the gates and kept the harbour, and Old Ferrow kept the watch. | The last hold and its keeper |
+| 5 | A survivor was carried in by the tide, nameless and alive. Last Harbour took them in. | The survivor the last hold takes in |
 
 Then the title card, **GREYFALL**, *The Shattered Reach*, and the black fades
 out on the Landing: the sea cave behind the overlay is the arrival.
@@ -999,7 +1001,7 @@ out on the Landing: the sea cave behind the overlay is the arrival.
   paragraph starts on black again, so nothing is read while it moves. The
   Gilded City card opens on 2.5 s of black; its first sentence holds, then
   after 1.5 s the first is replaced by the last at the end of the first. The
-  whole run is about 65 s including the title.
+  whole run is about 75 s including the title.
 - The title holds 5.2 s, then the overlay fades over 1.6 s into the Landing.
 - A click or any key moves to the next card; holding Esc, Space or Enter for a
   second skips to the end.
