@@ -1391,6 +1391,24 @@ function surface(rng: Rng): AtlasTier {
   who("warrior", 51, 41, { color: "blue", to: { col: 51, row: 43 } });
   who("pawn", 39, 52, { color: "yellow", act: "meat", to: { col: 33, row: 51 } });
 
+  // The castle wards on the hill between the town and the wood, each dressed as its own map is.
+  // The Lower Burg: the fallen outer town, its yards spiked, thieves in the lanes.
+  prop("house1", 40, 29, { color: "blue" });
+  prop("house3", 45, 29, { color: "blue" });
+  prop("skullSpike", 48, 28);
+  prop("deadTree", 42, 31, { scale: 0.8 });
+  who("thief", 47, 30, { to: { col: 43, row: 30 } });
+  who("skull", 41, 31);
+  // The Ramparts: the curtain wall's towers, a gun at the bridge, the bull's leavings.
+  prop("tower", 54, 28, { color: "blue" });
+  prop("tower", 61, 28, { color: "blue" });
+  prop("cannon", 58, 29);
+  prop("bones", 57, 31);
+  prop("skullSpike", 59, 26);
+  // The Chapel Ward: the monastery and its bell tower behind the Gun Bridge.
+  prop("monastery", 68, 28, { color: "blue" });
+  prop("tower", 70, 30, { color: "blue" });
+
   // Emberwood: three warrens, the troll's clearing, logging at the gate.
   for (const [c, r, f] of [[23, 9, 0], [27, 11, 3], [24, 13, 6], [42, 6, 9], [46, 8, 12], [55, 8, 2], [58, 11, 5]] as const) prop("goblinHut", c, r, { frame: f });
   prop("deadTree", 34, 21);
