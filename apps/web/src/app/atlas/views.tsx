@@ -77,8 +77,8 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const [fire, setFire] = useState<{ name: string; pick: number } | null>(null);
   // The map, open over the area while the scene waits paused behind it: from a bonfire to travel, or on M only to look.
   const [atlas, setAtlas] = useState<"travel" | "look" | null>(null);
-  // Opening the map on M: the cloud bank draws in first, then the map is under it.
-  const [mapCover, setMapCover] = useState(false);
+  // Opening the map, on M or from a bonfire: the cloud bank draws in first, then that map is under it.
+  const [mapCover, setMapCover] = useState<"travel" | "look" | null>(null);
   // The opening cutscene, once per game, over a Landing paused behind it.
   const [prologue, setPrologue] = useState(false);
   // The camera's flight in after the prologue, the HUD away until it lands.
@@ -126,7 +126,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
       label: "Travel",
       go: () => {
         api.current?.pause(true);
-        setAtlas("travel");
+        setMapCover("travel");
       },
     },
     { label: "Leave", go: leaveFire },
@@ -220,13 +220,13 @@ export function AreaView({ area: first }: { area: AreaId }) {
     const key = (e: KeyboardEvent): void => {
       if (e.key.toLowerCase() !== "m" || e.repeat || now.current.travelling) return;
       api.current?.pause(true);
-      setMapCover(true);
+      setMapCover("look");
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
   }, [atlas, mapCover, fire, say, menu, died, warn]);
   useEffect(() => {
-    if (!fire || atlas) return;
+    if (!fire || atlas || mapCover) return;
     const key = (e: KeyboardEvent): void => {
       const k = e.key.toLowerCase();
       if (k === "w" || k === "arrowup" || k === "s" || k === "arrowdown") {
@@ -238,7 +238,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fire, atlas]);
+  }, [fire, atlas, mapCover]);
   useEffect(() => {
     const key = (e: KeyboardEvent): void => {
       if (e.key === "`" && !(e.target instanceof HTMLInputElement)) toggleDev();
@@ -296,12 +296,12 @@ export function AreaView({ area: first }: { area: AreaId }) {
           />
         )}
         {mapCover && (
-          // The map opens on M under the bank: the clouds draw in over the area, then the map is there.
+          // The map opens under the bank: the clouds draw in over the area, then the map is there.
           <Clouds
             mode="close"
             onDone={() => {
-              setMapCover(false);
-              setAtlas("look");
+              setAtlas(mapCover);
+              setMapCover(null);
             }}
           />
         )}
@@ -318,7 +318,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
             }}
           />
         )}
-        {fire && !atlas && (
+        {fire && !atlas && !mapCover && (
           // Sat at a bonfire, after Dark Souls 3: the dark drawn in round the fire, its name, travel or stand.
           <div className="bonfire" role="menu" aria-label={fire.name}>
             <span className="bonfireName">{fire.name}</span>
