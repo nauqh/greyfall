@@ -113,7 +113,7 @@ All from the Tiny Swords enemy pack.
 | Undercroft | Skeletons, spiders | Skull guard | Ossuary Warden (mini-boss) |
 | Barrowmoor | Skeletons, bats | Skull guard | The Barrow King (minotaur) |
 | The Greyfall | Grey-bound soldiers, gnolls | Minotaur champion | The Grey Warlord |
-| Gilded Reach | Yellow guard | Lancers | The Sun Sentinel |
+| Gilded City | Yellow guard | Lancers | The Sun Sentinel |
 
 The soldiers on the Greyfall's walls are what the grey left of the Citadel's
 garrison. They keep their posts because the posts are all they remember.
@@ -226,7 +226,7 @@ The Shattered Reach as one world. `/atlas` starts the game on the Landing;
 the whole world is the travel map at `/atlas/map`, opened from a bonfire.
 It stands in three tiers on one grid:
 
-- **The Gilded Reach (sky):** a sky city overhead.
+- **The Gilded City (sky):** a sky city overhead.
 - **The Surface:** seven lands on the sea.
 - **The Underneath:** caverns cut from the rock below.
 
@@ -257,7 +257,7 @@ walls were the garrison once. They are no more his than the rain is.
 Kill him and the shape goes out of the grey. The grey does not go with it. It
 thins, the way a fever thins, and the Reach is left to bury what it lost.
 
-Above the whole country, the Gilded Reach kept its gates shut. The Reach
+Above the whole country, the Gilded City kept its gates shut. The Reach
 sent to it for spears when the grey rose, and the sky city sent none. That
 refusal is older than the rot and harder to forgive. Its gold has not made
 it safe. It has only made it quiet.
@@ -274,7 +274,7 @@ Citadel is the Greyfall, and only the Greyfall.
 
 | Dark Souls | Here |
 | --- | --- |
-| Areas stacked over each other: Anor Londo over Blighttown, the Depths under the Burg ([TheGamer](https://www.thegamer.com/dark-souls-1-fromsoftwares-magnum-opus-of-interconnected-level-design/), [James Roha](https://medium.com/@Jamesroha/world-design-lessons-from-fromsoftware-78cadc8982df)) | The Gilded Reach floats over the Crags and the Greyfall; the Undercroft lies under the town, the Deeps under the moor, the Hollow under the fen |
+| Areas stacked over each other: Anor Londo over Blighttown, the Depths under the Burg ([TheGamer](https://www.thegamer.com/dark-souls-1-fromsoftwares-magnum-opus-of-interconnected-level-design/), [James Roha](https://medium.com/@Jamesroha/world-design-lessons-from-fromsoftware-78cadc8982df)) | The Gilded City floats over the Crags and the Greyfall; the Undercroft lies under the town, the Deeps under the moor, the Hollow under the fen |
 | Firelink as the hub every road returns to | Last Harbour: the Old Bridge, the Ember Gate, the Moor Gate, the Old Well down and the Watch Lift up all start in it |
 | Elevators that open as shortcuts home | The Moor Gate opens from the moor; the Watch Lift opens from the sky and drops you on the castle |
 | Ash Lake: a quiet wonder at the very bottom ([Medium](https://medium.com/@bramasolejm030206/preface-ec08bc1459d0)) | The Drowned Hollow: a still lake under the fen, stone trees, gold in the rock, and the Shell Below asleep |
@@ -286,7 +286,7 @@ Citadel is the Greyfall, and only the Greyfall.
 | Tier | Area | Who's there | Keeper |
 | --- | --- | --- | --- |
 | Sky | Skyward Steps | drifting isles with watch posts, a lift down onto the castle | |
-| Sky | The Gilded Reach | the gnome-kings' sky city, its gate shut, yellow guard, a monastery, bees, the Warlord's throne isle with imps | The Sun Sentinel |
+| Sky | The Gilded City | the gnome-kings' sky city, its gate shut, yellow guard, a monastery, bees, the Warlord's throne isle with imps | The Sun Sentinel |
 | Surface | Saltreach | yellow militia, fishing villages, turtles, sharks offshore, pirate towers | |
 | Surface | Last Harbour (hub) | the town's castle on its own height above the town, the bonfire square, the Old Well, pawns at work | |
 | Surface | Emberwood | goblin warrens in pine the grey burned, the big pines (standing still), gnolls on Smoke Ridge | Cinder Troll |
@@ -303,7 +303,7 @@ Citadel is the Greyfall, and only the Greyfall.
 ## Gates and lifts
 
 ```
-SKY       Skyward Steps ──Cloud Bridge── The Gilded Reach
+SKY       Skyward Steps ──Cloud Bridge── The Gilded City
                │ Watch Lift (shortcut)       │ Gnome Lift      │ Throne Stair
 SURFACE   Last Harbour ...(gates as before)... Tinker Crags ... The Greyfall
                │ Old Well (drop)      │ Barrow Cave (lift)  │ Fen Sinkhole (drop)
@@ -419,7 +419,7 @@ crossing are gone.
   furnished as its own quarter.
   The Harbour's castle and Old Town and the Emberwood's warrens got the same
   furnishing as the Crags: trails, guns on the walls, stores and trophies.
-  The Gilded Reach is the fifth, a city of isles in the sky after Anor Londo
+  The Gilded City is the fifth, a city of isles in the sky after Anor Londo
   and Leyndell. Each quarter has its own isle (Cloud Landing, the Gold
   Market, the Bee Gardens, Gnome Landing, the Gilded Gate, the Sun Chapel),
   joined by narrow bridges over open sky. The capital climbs the Sun Steps
@@ -510,7 +510,7 @@ crossing are gone.
   is shaped to its place: the Harbour an open town with hedgerowed fields
   (`hedge()`), the Crags knolls, outcrops and scrub copses round the
   mountain's foot, the Greyfall open courts with clumps of dead wood in
-  its bailey, the Gilded Reach plazas with tree avenues (`avenue()`) and
+  its bailey, the Gilded City plazas with tree avenues (`avenue()`) and
   one hanging garden, the Steps bare isles with lone trees, Barrowmoor
   clearings walled by dead thicket.
 - **Lizard Fen** is a spiral that climbs: one causeway of reed coiling two
@@ -579,7 +579,7 @@ crossing are gone.
   tiles off, so two districts' woods mingle at their border. A fire at
   the Cinder Ford is the rest before the troll, and goblin posts hold the
   ford and the climb to Crag Foot.
-- **No rectangles left.** The Gilded Reach's Sun Steps and Throne Isle,
+- **No rectangles left.** The Gilded City's Sun Steps and Throne Isle,
   the Skyward Steps' Broken Stair, Windward Rest and Bell Isle, the
   Undercroft's Ossuary, the Deeps' Great Barrow and the Hollow's Shell
   Isle are landforms now; no area map calls `block()`.
@@ -907,7 +907,7 @@ black. The wording and the pace of its reveal are the whole cutscene.
 The Reach was not one kingdom but a realm of lords, each town keeping a fire lit
 so its soldiers could find their way home from its wars. The grey came out of
 the east, crowned the Grey Warlord, and left the fields grey where it passed.
-The Gilded Reach, the sky city, sent no aid, so the lords rode out alone. Their
+The Gilded City, the sky city, sent no aid, so the lords rode out alone. Their
 banners did not return. One fire is left at Last Harbour, where Old Ferrow keeps
 it and watches the roads and the water. A nameless survivor is carried in by the
 tide. That is the whole opening: a fallen realm, a grey, a refusal, a last fire,
@@ -924,7 +924,7 @@ and the one who wakes beside it.
   [Writing a More Compelling Game Narrative](https://www.gamedeveloper.com/game-platforms/writing-a-more-compelling-game-narrative)
 - **One idea per paragraph.** Readers skip the rest once they lose the thread,
   so each paragraph carries one turn: the realm of lords, the grey and its
-  crowned Warlord, the Gilded Reach's refusal, the last fire, the nameless
+  crowned Warlord, the Gilded City's refusal, the last fire, the nameless
   survivor.
   [How Users Read on the Web, NN/g](https://www.nngroup.com/articles/how-users-read-on-the-web/)
 - **Read off the screen, not the page.** BBC guidance is 160-180 words a minute
@@ -946,7 +946,7 @@ and the one who wakes beside it.
 
 The game and world sections above are the authority for places and mechanics. The opening is the
 front-facing telling, and it uses the names survivors would use: the grey, the
-Gilded Reach, a nameless survivor for the hero the game later gives a class.
+Gilded City, a nameless survivor for the hero the game later gives a class.
 Where it chooses different words, it says why.
 
 - The Reach is a realm of feudal holds in the world section above; Last
@@ -955,7 +955,7 @@ Where it chooses different words, it says why.
 - The grey is a condition out of the east, thickest in the Greyfall. It crowned
   the Grey Warlord. The black soldiers and gnolls are the taken. Ansel says the
   grey smells of "wet ash and old iron".
-- The Gilded Reach is the sky city. Ansel says it "never sent us a single
+- The Gilded City is the sky city. Ansel says it "never sent us a single
   spear when the grey came"; the script turns that into "sent no aid", which is
   what the Reach remembers.
 - Old Ferrow keeps the Harbour's fire. He greets a newcomer with "Ah. Another
@@ -973,19 +973,19 @@ Where it chooses different words, it says why.
 Five short paragraphs, shown one at a time, then the title. The spine is a
 chain anyone can follow: the towns kept fires lit so their soldiers could find
 their way home, the grey crowned the Warlord and left the fields grey, the
-Gilded Reach sent no aid, the lords rode out alone, their banners did not
+Gilded City sent no aid, the lords rode out alone, their banners did not
 return, one fire is left, the tide brings a nameless survivor to it.
 
 The forty spears and the Citadel were cut from an earlier draft. Corwin's forty
 died in the barrows, not at the Citadel, and "the Citadel" names two different
 places in the world, so the line was both confusing and wrong. What remains is
-Ansel's plain claim: the Gilded Reach sent no aid.
+Ansel's plain claim: the Gilded City sent no aid.
 
 | # | Paragraph | Why |
 | --- | --- | --- |
 | 1 | Before the grey, the Reach was a realm of lords, and every town kept a fire lit so its soldiers could find their way home. | The world before, and the promise the rest of the story breaks |
 | 2 | The grey came out of the east, crowned the Grey Warlord, and left the fields grey where it passed. | The cause, and where the grey came from. The Warlord is the grey's crown, not its general |
-| 3 | The Gilded Reach sent no aid, so the lords rode out alone. Their banners did not return. | The refusal, then the cost after a pause |
+| 3 | The Gilded City sent no aid, so the lords rode out alone. Their banners did not return. | The refusal, then the cost after a pause |
 | 4 | One fire is left at Last Harbour, where Old Ferrow keeps it and watches the roads and the water. | The last fire, its keeper, and the watch he keeps for whoever comes in |
 | 5 | One survivor of the grey was carried in by the tide, nameless and alive. | The turn to the player: the fire kept for the soldiers finally gets one |
 
@@ -997,7 +997,7 @@ out on the Landing: the sea cave behind the overlay is the arrival.
 - Each paragraph opens on 1.5 s of black, fades in whole over 1.8 s, holds
   fully visible for 360 ms a word, then fades out over 1.2 s. The next
   paragraph starts on black again, so nothing is read while it moves. The
-  Gilded Reach card opens on 2.5 s of black; its first sentence holds, then
+  Gilded City card opens on 2.5 s of black; its first sentence holds, then
   after 1.5 s the first is replaced by the last at the end of the first. The
   whole run is about 65 s including the title.
 - The title holds 5.2 s, then the overlay fades over 1.6 s into the Landing.

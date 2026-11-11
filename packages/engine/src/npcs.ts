@@ -608,7 +608,7 @@ export const NPCS: readonly Npc[] = [
         id: "first",
         lines: [
           "Look up. See that glint past the clouds?",
-          "The Gilded Reach. Gold walls, gold roofs, a city that never learned to bleed.",
+          "The Gilded City. Gold walls, gold roofs, a city that never learned to bleed.",
           "When the grey came, it shut its gates. Not one spear. Not one prayer.",
         ],
       },
@@ -672,7 +672,7 @@ export const NPCS: readonly Npc[] = [
             id: "without",
             lines: ["You went up without me. Good.", "I'd only have been in the way. I'd only have been brave."],
           },
-          { id: "wall", lines: ["Back on the wall. It's a good wall.", "You can see the Gilded Reach from here. Doesn't glint so much now."] },
+          { id: "wall", lines: ["Back on the wall. It's a good wall.", "You can see the Gilded City from here. Doesn't glint so much now."] },
         ],
       },
       { when: ["anselAhead"], area: "greyfall", at: { col: 95, row: 25 }, dead: true },

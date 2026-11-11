@@ -1,7 +1,7 @@
 /**
  * The Atlas: the whole Shattered Reach, in three tiers on one grid. The
  * Surface is seven areas, each its own landmass, joined only at named gates
- * the way a Souls map joins its areas. Over it floats the Gilded Reach, the
+ * the way a Souls map joins its areas. Over it floats the Gilded City, the
  * shut sky city; under it the Underneath, caverns cut from the rock. Lifts,
  * wells and stairs join the tiers at the same spot on the grid, so what is
  * above a place is really above it, as in Dark Souls, where the depths lie
@@ -235,7 +235,7 @@ export const AREAS: readonly AtlasArea[] = [
   {
     id: "gilded",
     tier: "sky",
-    name: "The Gilded Reach",
+    name: "The Gilded City",
     blurb: "The sky city of the old gnome-kings, gold and sunlight behind a shut gate. When the grey rose it sent no spears; its yellow guard still holds the walls, the Sentinel keeps the hall, and the Warlord's throne isle hangs off the east end.",
     palette: [1, 1, 1],
     mood: 0xfff0d0,
@@ -329,7 +329,7 @@ export const AREAS: readonly AtlasArea[] = [
 ];
 
 export const TIER_INFO: Record<TierId, { name: string; blurb: string; base: TierBase }> = {
-  sky: { name: "The Gilded Reach", blurb: "The sky over the rock and the Greyfall, where the gnome-kings built in gold.", base: "sky" },
+  sky: { name: "The Gilded City", blurb: "The sky over the rock and the Greyfall, where the gnome-kings built in gold.", base: "sky" },
   surface: { name: "The Surface", blurb: "Eight lands on the sea, joined at their gates.", base: "sea" },
   below: { name: "The Underneath", blurb: "Caverns in the rock under the town, the moor and the fen.", base: "rock" },
 };
@@ -1511,7 +1511,7 @@ function sky(rng: Rng): AtlasTier {
   const t = tierBuilder("sky", rng);
   // The Steps: isles drifting west from the cloud bridge to over the castle.
   for (const [x, y, rx, ry] of [[41, 29, 5, 3], [53, 24, 4, 3], [65, 17, 4, 3]] as const) t.blob("steps", x, y, rx, ry);
-  // The Gilded Reach: the high hall's isle, the lift's isle off the peak, the throne isle.
+  // The Gilded City: the high hall's isle, the lift's isle off the peak, the throne isle.
   for (const [x, y, rx, ry] of [[93, 13, 13, 8], [80, 9, 4, 3], [112, 16, 6, 4]] as const) t.blob("gilded", x, y, rx, ry);
   t.separate();
   t.bridge({ col: 45, row: 28 }, { col: 50, row: 25 });

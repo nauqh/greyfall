@@ -13,7 +13,7 @@
 
 </div>
 
-The feudal lords are ash. The grey came out of the east, and the Gilded Reach
+The feudal lords are ash. The grey came out of the east, and the Gilded City
 sent no aid. One fire remains, and a nameless survivor wakes beside it.
 
 The Atlas is the focus: a Souls-structured action RPG in the Shattered Reach.
@@ -33,7 +33,7 @@ for Discord as an Activity that friends launch from a voice call.
 - **Souls structure.** Bonfires, shortcuts, keys, bosses, and gold you drop
   when you die. A band of up to three: Lancer, Archer, Monk.
 - **The grey.** A condition, not an army. It crowned the Grey Warlord. The
-  Gilded Reach shut its gates and sent no aid. The player is a nameless
+  Gilded City shut its gates and sent no aid. The player is a nameless
   survivor.
 
 ## Other modes

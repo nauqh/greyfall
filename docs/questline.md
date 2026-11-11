@@ -4,7 +4,7 @@ For checking. Generated from `../packages/engine/src/npcs.ts`, so the lines and 
 
 ## The grey
 
-The grey is a condition, not an army: a rot in the ground that gets into the water, then the blood, and takes the shape of whoever holds on longest. In the Greyfall it has worn the Warlord a long time. The Gilded Reach, the high city that glints above the clouds, shut its gates when the grey came and sent no aid. The wanderer comes ashore with the tide, nameless, and the folk of Last Harbour measure them by what they do, not by a rank.
+The grey is a condition, not an army: a rot in the ground that gets into the water, then the blood, and takes the shape of whoever holds on longest. In the Greyfall it has worn the Warlord a long time. The Gilded City, the high city that glints above the clouds, shut its gates when the grey came and sent no aid. The wanderer comes ashore with the tide, nameless, and the folk of Last Harbour measure them by what they do, not by a rank.
 
 ## How it works
 
@@ -341,7 +341,7 @@ Greets you: *"Look up."* Walked away from: *"Go on. I'll keep watch. It's all I'
 
 - **first**
   1. Look up. See that glint past the clouds?
-  2. The Gilded Reach. Gold walls, gold roofs, a city that never learned to bleed.
+  2. The Gilded City. Gold walls, gold roofs, a city that never learned to bleed.
   3. When the grey came, it shut its gates. Not one spear. Not one prayer.
 - **lift**
   1. The Watch Lift only comes down.
@@ -375,7 +375,7 @@ Greets you: *"Look up."* Walked away from: *"Go on. I'll keep watch. It's all I'
   2. I'd only have been in the way. I'd only have been brave.
 - **wall**
   1. Back on the wall. It's a good wall.
-  2. You can see the Gilded Reach from here. Doesn't glint so much now.
+  2. You can see the Gilded City from here. Doesn't glint so much now.
 
 ### Dead at The Greyfall, The High City (95, 25), once **anselAhead**
 

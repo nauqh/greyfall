@@ -2023,7 +2023,7 @@ function steps(): AreaMap {
   t.road([76, 18], [64, 18]);
   t.road([31, 32], [41, 32]);
 
-  // Cloud Pier: where the rope bridge from the Gilded Reach lands; the guard's last post.
+  // Cloud Pier: where the rope bridge from the Gilded City lands; the guard's last post.
   t.fires.push({ col: 99, row: 18 });
   prop("tower", 103, 13, gold);
   who("archer", 102, 15, gold);
