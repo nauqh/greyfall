@@ -11,6 +11,27 @@ roads) and its pathing walks it. The data is
 `../packages/engine/src/atlas.ts`; the dressing is
 `../apps/web/src/game/AtlasScene.ts`.
 
+### Lands in their real shape
+
+Every land on the atlas is its own area map, shrunk: `t.real(area, x0, y0,
+scale)` crops the area map to its land, shrinks it `scale` times (an atlas tile
+is land where over a quarter of its block is, so a causeway a tile or two wide
+survives) and lays it as the area's lowland with its top left at `x0, y0`.
+
+- **One scale:** 4 for every land, 8 for the castle wards (Burg, Ramparts,
+  Chapel, Keep) and the Ring, which sit as small lands between the Harbour and
+  the north.
+- **Placement is recorded** on the tier as `real[area] = { x0, y0, c0, r0,
+  scale }`: an area map's cell (`col`, `row`) is atlas cell (`x0 + (col - c0) /
+  scale`, `y0 + (row - r0) / scale`). Gates, lift ends and the scene's bonfire
+  marks all use it.
+- **Lands stand at least three tiles apart,** or `separate()` eats the shore
+  between them.
+- **Lifts line up on the grid,** so the lands of the sky and the Underneath are
+  placed under or over the surface land each lift joins. The Gilded City's two
+  lifts are too far apart on the surface for one city to span, so the Gnome
+  Lift lands on a small Gilded islet over the Crags, bridged to the city.
+
 
 ## Heights
 

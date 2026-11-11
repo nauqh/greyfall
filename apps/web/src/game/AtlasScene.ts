@@ -1360,6 +1360,8 @@ export class AtlasScene extends Phaser.Scene {
   /** Where a cell of an area's own map falls on the atlas: the same share of the way across the area's ground there. */
   private onAtlas(area: AreaId, c: Cell): { tier: TierId; cell: Cell } {
     const a = AREAS.find((x) => x.id === area)!;
+    const p = this.map.tiers[a.tier].real?.[area];
+    if (p) return { tier: a.tier, cell: { col: Math.floor(p.x0 + (c.col - p.c0) / p.scale), row: Math.floor(p.y0 + (c.row - p.r0) / p.scale) } };
     const ch = AREA_CODE[AREAS.indexOf(a)];
     const box = { c0: Infinity, c1: -Infinity, r0: Infinity, r1: -Infinity };
     this.map.tiers[a.tier].areaAt.forEach((line, r) => {
@@ -1369,7 +1371,7 @@ export class AtlasScene extends Phaser.Scene {
       }
     });
     const rows = areaMap(area).island.rows;
-    // ponytail: a share of the bounding box, not the area's real layout; a fire can land off its true spot, even on water.
+    // ponytail: a land not laid by real() falls back to a share of its bounding box, which can put a fire on water.
     return {
       tier: a.tier,
       cell: { col: Math.round(box.c0 + ((c.col + 0.5) / rows[0]!.length) * (box.c1 - box.c0 + 1)), row: Math.round(box.r0 + ((c.row + 0.5) / rows.length) * (box.r1 - box.r0 + 1)) },
