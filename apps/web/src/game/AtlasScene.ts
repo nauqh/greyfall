@@ -8,6 +8,7 @@
 import {
   AREAS,
   AREA_CODE,
+  ATLAS_SIZE,
   BAND_SIZE,
   COMPANIONS,
   companionPlan,
@@ -800,8 +801,8 @@ export class AtlasScene extends Phaser.Scene {
   private dev = false;
   private devKey = "";
   private devText: Phaser.GameObjects.Text[] = [];
-  /** Dev: the area's land with a margin, in px; the camera's centre is kept inside it. */
-  private devBox: Phaser.Geom.Rectangle | null = null;
+  /** Where the free camera (dev mode, the world map) is kept, in px: the island with a margin, or the whole atlas. */
+  private freeBox: Phaser.Geom.Rectangle | null = null;
 
   constructor() {
     super("atlas");
@@ -869,7 +870,7 @@ export class AtlasScene extends Phaser.Scene {
     this.dev = !!data.dev;
     this.devKey = "";
     this.devText = [];
-    this.devBox = null;
+    this.freeBox = null;
   }
 
   preload(): void {
@@ -1051,6 +1052,7 @@ export class AtlasScene extends Phaser.Scene {
       const hub = AREAS.find((a) => a.id === "harbour")!.label;
       main.setZoom(this.zoomFor(22));
       main.centerOn(hub.col * CELL, (hub.row - 4) * CELL);
+      this.freeBox = new Phaser.Geom.Rectangle(0, 0, ATLAS_SIZE.cols * CELL, ATLAS_SIZE.rows * CELL);
       this.show("surface");
     }
     this.controls();
@@ -1312,7 +1314,7 @@ export class AtlasScene extends Phaser.Scene {
     this.input.on("wheel", (_p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
       if (this.playing) return;
       const cam = this.active;
-      const widest = this.devBox ? this.devFit() : this.local ? Math.max(this.zoomFor(STRAT_ROWS), cam.width / (STRAT_COLS * CELL)) : this.zoomFor(STRAT_ROWS + 6);
+      const widest = this.freeBox ? this.freeFit() : Math.max(this.zoomFor(STRAT_ROWS), cam.width / (STRAT_COLS * CELL));
       cam.zoomTo(Phaser.Math.Clamp(cam.zoom * (dy > 0 ? 0.85 : 1.18), widest, this.zoomFor(9)), 160, "Sine.easeOut", true);
     });
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
@@ -1467,6 +1469,14 @@ export class AtlasScene extends Phaser.Scene {
     const cam = this.active;
     if (!this.hero) return;
     this.hero.s.setVisible(!on);
+    if (on) {
+      this.hooks.onNear?.((this.nearName = null));
+      for (const f of this.folk) {
+        f.near = false;
+        f.bubble?.destroy();
+        f.bubble = null;
+      }
+    }
     // At once, not eased: a zoom still running when play resumes would carry on over the play zoom.
     cam.zoomEffect.reset();
     cam.panEffect.reset();
@@ -1474,15 +1484,15 @@ export class AtlasScene extends Phaser.Scene {
       cam.stopFollow();
       // Unbounded, so a map smaller than the screen sits in its middle rather than against an edge.
       cam.removeBounds();
-      if (!this.devBox) {
+      if (!this.freeBox) {
         let [c0, c1, r0, r1] = [Infinity, -Infinity, Infinity, -Infinity];
         for (let r = 0; r < STRAT_ROWS; r++) for (let c = 0; c < STRAT_COLS; c++) if (isLand(c, r)) [c0, c1, r0, r1] = [Math.min(c0, c), Math.max(c1, c), Math.min(r0, r), Math.max(r1, r)];
         const m = 3;
-        this.devBox = c0 > c1 ? new Phaser.Geom.Rectangle(0, 0, STRAT_COLS * CELL, STRAT_ROWS * CELL) : new Phaser.Geom.Rectangle((c0 - m) * CELL, (r0 - m) * CELL, (c1 - c0 + 1 + 2 * m) * CELL, (r1 - r0 + 1 + 2 * m) * CELL);
+        this.freeBox = c0 > c1 ? new Phaser.Geom.Rectangle(0, 0, STRAT_COLS * CELL, STRAT_ROWS * CELL) : new Phaser.Geom.Rectangle((c0 - m) * CELL, (r0 - m) * CELL, (c1 - c0 + 1 + 2 * m) * CELL, (r1 - r0 + 1 + 2 * m) * CELL);
       }
       // The whole island in view, its longer side to the screen's edge.
-      cam.setZoom(this.devFit());
-      cam.centerOn(this.devBox.centerX, this.devBox.centerY);
+      cam.setZoom(this.freeFit());
+      cam.centerOn(this.freeBox.centerX, this.freeBox.centerY);
     } else {
       cam.setBounds(0, 0, STRAT_COLS * CELL, STRAT_ROWS * CELL);
       cam.setZoom(this.zoomFor(AREA_ROWS));
@@ -2431,8 +2441,12 @@ export class AtlasScene extends Phaser.Scene {
       return `tilesetC${p[Math.min(2, lv - 1)]}`;
     });
     if (tier.base === "sky") this.skyBeneath();
-    // Under the rock, black water: the Underneath's lakes.
-    if (tier.base === "rock") this.add.rectangle(0, 0, STRAT_COLS * CELL, STRAT_ROWS * CELL, 0x1f4656).setOrigin(0).setDepth(DEPTH.water);
+    // Under the rock, black water: the Underneath's lakes. On the atlas it runs past the grid, as the sky does, so a
+    // screen wider than the atlas shows lake at its sides, not the camera's black.
+    if (tier.base === "rock") {
+      const [W, H, wide] = [STRAT_COLS * CELL, STRAT_ROWS * CELL, this.local ? 1 : 3];
+      this.add.rectangle(W / 2, H / 2, W * wide, H * wide, 0x1f4656).setDepth(DEPTH.water);
+    }
     this.dress(tier, roads);
     for (const p of tier.props) this.addProp(p, tier.base);
     for (const f of tier.fences) this.fence(f.col, f.row, f.w, f.h);
@@ -3202,7 +3216,6 @@ export class AtlasScene extends Phaser.Scene {
         f.near = true;
         f.s.setFlipX(hero.s.x < f.s.x);
       } else if (d > TALK_RANGE + 1) f.near = false;
-      if (this.dev) continue;
       if (this.talk?.folk === f && d > TALK_RANGE) {
         this.talk = null;
         this.say();
@@ -3231,15 +3244,15 @@ export class AtlasScene extends Phaser.Scene {
     }
   }
 
-  private devFit(): number {
+  private freeFit(): number {
     const cam = this.active;
-    return Math.min(cam.height / this.devBox!.height, cam.width / this.devBox!.width);
+    return Math.min(cam.height / this.freeBox!.height, cam.width / this.freeBox!.width);
   }
 
-  /** Dev: the view's edges held inside the island, or the island centred on an axis the view is wider than. */
-  private clampDev(): void {
-    const b = this.devBox;
-    if (!this.dev || !b) return;
+  /** Off play, the view's edges held inside the free box, or the box centred on an axis the view is wider than. */
+  private clampFree(): void {
+    const b = this.freeBox;
+    if (!b || this.playing) return;
     const cam = this.active;
     const axis = (mid: number, view: number, lo: number, hi: number): number =>
       view >= hi - lo ? (lo + hi) / 2 : Phaser.Math.Clamp(mid, lo + view / 2, hi - view / 2);
@@ -3332,15 +3345,18 @@ export class AtlasScene extends Phaser.Scene {
 
   update(time: number, delta: number): void {
     // Each frame, so a wheel zoom easing out is held to the island as well as a drag.
-    this.clampDev();
+    this.clampFree();
     const act = this.active;
     if (this.hero) {
-      // A long stall (a tab in the background) is not a long stride.
-      this.fight(time, Math.min(delta, 100));
-      this.mind();
-      this.gather();
-      this.whereabouts(time);
-      this.partMist();
+      // Dev mode takes the hero out of the world: nothing walks, greets, prompts, picks up or parts for it.
+      if (!this.dev) {
+        // A long stall (a tab in the background) is not a long stride.
+        this.fight(time, Math.min(delta, 100));
+        this.mind();
+        this.gather();
+        this.whereabouts(time);
+        this.partMist();
+      }
       for (const b of [this.hero, ...this.foes, ...this.band]) this.drawBar(b);
       // The HUD's bars, a few times a second and only when they change.
       if (time - this.vitalsAt > 80) {
