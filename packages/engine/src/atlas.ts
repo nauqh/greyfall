@@ -1280,6 +1280,16 @@ function surface(rng: Rng): AtlasTier {
   t.relief({ area: "saltreach", at: { col: 8, row: 60 }, rx: 5, ry: 4, levels: 2 });
   // The Keep: the castle on its own height above the town.
   t.relief({ area: "keep", at: { col: 40, row: 36 }, rx: 2.5, ry: 1.5, levels: 2 });
+  // The castle chain: the Ramparts' wall walk and the Chapel's bell terrace. Exact pads, so each keeps its shape on
+  // the narrow wards; each pad's ground is claimed by its ward, so its tiles take the ward's colour.
+  t.ground("ramparts", 53, 25, 9, 3);
+  t.ground("chapel", 72, 25, 4, 3);
+  // A ramp's high ground stands to the right of `<` and the left of `>`: west stairs are L, east stairs are R.
+  t.block(2, 54, 25, 7, 3);
+  t.stair(2, 53, 27, "L");
+  t.stair(2, 61, 27, "R");
+  t.block(2, 73, 25, 3, 3);
+  t.stair(2, 72, 27, "L");
   // Emberwood: Smoke Ridge, the western knolls, and a tarn.
   t.relief({ area: "emberwood", at: { col: 51, row: 15 }, rx: 7, ry: 5, levels: 2 });
   t.relief({ area: "emberwood", at: { col: 33, row: 8 }, rx: 6, ry: 4, levels: 2 });
@@ -1326,6 +1336,8 @@ function surface(rng: Rng): AtlasTier {
   t.road([18, 66], [27, 72], [50, 72], [62, 70], [78, 70], [80, 62]);
   t.road([37, 17], [44, 10], [56, 10], [62, 12], [69, 16]);
   t.road([93, 47], [101, 47], [102, 45]);
+  // The castle chain, ward by ward along the foot of each height, from Old Town up to the wood.
+  t.road([52, 42], [52, 38], [51, 37], [48, 30], [49, 28], [55, 28], [57, 30], [60, 30], [61, 28], [67, 28], [68, 23], [60, 14], [62, 12]);
   const { prop, who } = t;
 
   // Saltreach: Netmend and Gull Point, the lighthouse bluff, pirates offshore.
@@ -1394,20 +1406,29 @@ function surface(rng: Rng): AtlasTier {
   // The castle wards on the hill between the town and the wood, each dressed as its own map is.
   // The Lower Burg: the fallen outer town, its yards spiked, thieves in the lanes.
   prop("house1", 40, 29, { color: "blue" });
-  prop("house3", 45, 29, { color: "blue" });
+  prop("house3", 47, 32, { color: "blue" });
   prop("skullSpike", 48, 28);
   prop("deadTree", 42, 31, { scale: 0.8 });
   who("thief", 47, 30, { to: { col: 43, row: 30 } });
+  who("thief", 50, 29, { to: { col: 46, row: 30 } });
   who("skull", 41, 31);
-  // The Ramparts: the curtain wall's towers, a gun at the bridge, the bull's leavings.
-  prop("tower", 54, 28, { color: "blue" });
-  prop("tower", 61, 28, { color: "blue" });
+  // The Ramparts: the curtain wall's towers and guns at its foot.
+  prop("tower", 55, 26, { color: "blue" });
+  prop("tower", 59, 26, { color: "blue" });
   prop("cannon", 58, 29);
+  prop("cannonSide", 56, 26);
   prop("bones", 57, 31);
-  prop("skullSpike", 59, 26);
-  // The Chapel Ward: the monastery and its bell tower behind the Gun Bridge.
+  prop("skullSpike", 59, 30);
+  prop("skullSpike", 61, 26);
+  t.bosses.push({ name: "The Rampart Bull", area: "ramparts", col: 57, row: 25 });
+  // The Chapel Ward: the monastery, its bell tower and the forge yard.
   prop("monastery", 68, 28, { color: "blue" });
   prop("tower", 70, 30, { color: "blue" });
+  prop("tools", 71, 30);
+  prop("woodPile", 72, 30);
+  who("skull", 65, 29, { to: { col: 68, row: 29 } });
+  who("thief", 70, 29, { to: { col: 68, row: 30 } });
+  t.bosses.push({ name: "The Stone Warden", area: "chapel", col: 72, row: 26 });
 
   // Emberwood: three warrens, the troll's clearing, logging at the gate.
   for (const [c, r, f] of [[23, 9, 0], [27, 11, 3], [24, 13, 6], [42, 6, 9], [46, 8, 12], [55, 8, 2], [58, 11, 5]] as const) prop("goblinHut", c, r, { frame: f });
@@ -1426,7 +1447,6 @@ function surface(rng: Rng): AtlasTier {
   who("thief", 33, 15, { to: { col: 30, row: 19 } });
   who("gnoll", 50, 13);
   who("gnoll", 53, 13, { flip: true });
-  who("troll", 39, 16);
   t.bosses.push({ name: "Cinder Troll", area: "emberwood", col: 39, row: 16 });
 
   // Tinker Crags: huts on the low rock, gold on the steps, the tower and the lift on the peak.
@@ -1448,7 +1468,6 @@ function surface(rng: Rng): AtlasTier {
   who("bee", 76, 18);
   who("panda", 93, 23);
   who("panda", 90, 25, { flip: true });
-  who("pandaGuard", 92, 21);
   t.bosses.push({ name: "Old Bamboo", area: "crags", col: 92, row: 21 });
 
   // Barrowmoor: barrows, bones, the cave, and the minotaur's grave.
@@ -1468,7 +1487,6 @@ function surface(rng: Rng): AtlasTier {
   who("bat", 76, 42);
   who("bat", 88, 44);
   who("bat", 74, 53);
-  who("minotaurGuard", 88, 54);
   t.bosses.push({ name: "The Barrow King", area: "barrowmoor", col: 88, row: 54 });
 
   // Lizard Fen: the purple chapel among the pools.
@@ -1513,7 +1531,6 @@ function surface(rng: Rng): AtlasTier {
   who("imp", 110, 23);
   who("imp", 116, 22);
   who("imp", 107, 29);
-  who("troll", 114, 47);
   who("bombFish", 126, 30, { to: { col: 126, row: 40 } });
   who("bombFish", 100, 60);
   who("monk", 110, 57, { color: "purple" });
@@ -1554,7 +1571,6 @@ function sky(rng: Rng): AtlasTier {
   who("archer", 98, 10, { color: "yellow", flip: true });
   who("warrior", 88, 15, { color: "yellow", to: { col: 99, row: 17 } });
   who("monk", 85, 17, { color: "yellow" });
-  who("lancer", 93, 13, { color: "yellow", scale: 1.8 });
   t.bosses.push({ name: "The Sun Sentinel", area: "gilded", col: 93, row: 13 });
   who("bee", 92, 18);
   who("bee", 101, 13);
@@ -1626,7 +1642,6 @@ function below(rng: Rng): AtlasTier {
   who("shaman", 83, 52);
   who("skull", 74, 50, { to: { col: 78, row: 51 } });
   who("bat", 86, 51);
-  who("spider", 91, 56, { scale: 1.9 });
   t.bosses.push({ name: "The Weaver", area: "deeps", col: 91, row: 56 });
   // The Drowned Hollow.
   for (const [c, r] of [[52, 69], [57, 67], [72, 67], [83, 69], [50, 74]] as const) prop("deadTree", c, r, { scale: 0.55 });
@@ -1639,7 +1654,6 @@ function below(rng: Rng): AtlasTier {
   who("lizard", 66, 67, { to: { col: 70, row: 67 } });
   who("bombFish", 64, 71, { to: { col: 72, row: 71 } });
   who("bombFish", 60, 72);
-  who("turtleGuard", 79, 67, { scale: 1.5 });
   t.bosses.push({ name: "The Shell Below", area: "hollow", col: 79, row: 67 });
   return t.finish({ undercroft: 0.02, deeps: 0.03, hollow: 0.06 }, LIFTS.flatMap((l) => [l.up, l.down]).filter((e) => e.tier === "below").map((e) => e.at));
 }

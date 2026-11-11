@@ -113,8 +113,6 @@ export function TravelMap({ from, travel: canTravel, onTravel, onBack }: { from:
     return () => window.removeEventListener("keydown", key);
   });
 
-  const keepers = land && MAPPED_AREAS.includes(land.id) ? areaMap(land.id).bosses.map((b) => b.name) : [];
-
   return (
     <div className="travelMap">
       <GameCanvas start={(el) => import("../../game/AtlasScene").then(({ startAtlas }) => startAtlas(el, hooks))}>
@@ -137,11 +135,6 @@ export function TravelMap({ from, travel: canTravel, onTravel, onBack }: { from:
               <h2>{land.name}</h2>
               <p className="landWhere">{TIER_INFO[land.tier].name}</p>
               <p className="landLore">{land.blurb}</p>
-              {keepers.length > 0 && (
-                <p>
-                  <b>Keeper:</b> {keepers.join(", ")}
-                </p>
-              )}
               {landFires.length > 0 ? (
                 <ul className="landFires">
                   {landFires.map((f) => (

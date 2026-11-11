@@ -676,7 +676,8 @@ export class AtlasScene extends Phaser.Scene {
   private building: TierId = "surface";
   private view: TierId = "surface";
   private cams!: Record<TierId, Phaser.Cameras.Scene2D.Camera>;
-  private names: { text: Phaser.GameObjects.Text; px: number; tier: TierId }[] = [];
+  // `rows`: shown only while no more than that many rows are in view.
+  private names: { text: Phaser.GameObjects.Text; px: number; tier: TierId; rows?: number }[] = [];
   /** The atlas's bonfire marks, and where each stands for a click. */
   private marks: Phaser.GameObjects.GameObject[] = [];
   private markAt: { tier: TierId; cell: Cell }[] = [];
@@ -2938,21 +2939,23 @@ export class AtlasScene extends Phaser.Scene {
 
   /** The area names, large and centred on their land; they grow back to readable when zoomed out. */
   private labels(tier: AtlasTier): void {
-    const text = (x: number, y: number, s: string, size: number, color: string, min: number): Phaser.GameObjects.Text => {
+    const text = (x: number, y: number, s: string, size: number, color: string, min: number, rows?: number): Phaser.GameObjects.Text => {
       const t = this.add
         .text(x, y, s, { fontFamily: FONT, fontSize: `${size}px`, fontStyle: "bold", color, stroke: "#1c2634", strokeThickness: Math.round(size / 5) })
         .setOrigin(0.5)
         .setDepth(DEPTH.fx + 3);
-      this.names.push({ text: t, px: min, tier: this.building });
+      this.names.push({ text: t, px: min, tier: this.building, rows });
       return t;
     };
     if (this.local) return;
-    // The four castle wards stand on the Harbour's land; their names would crowd it, so it keeps one name.
-    const castle = new Set<AreaId>(["burg", "ramparts", "chapel", "keep"]);
+    // The castle wards get short, smaller names, only when close enough to read them apart; the Keep goes unnamed.
+    const castle: Partial<Record<AreaId, string>> = { burg: "THE BURG", ramparts: "RAMPARTS", chapel: "CHAPEL" };
     for (const a of AREAS) {
-      if (a.tier !== tier.id || castle.has(a.id)) continue;
+      if (a.tier !== tier.id || a.id === "keep") continue;
       const mid = this.centre(a.id);
-      text(mid.col * CELL, mid.row * CELL, a.name.toUpperCase(), 64, "#fdfaf0", 22).setLetterSpacing(10);
+      const ward = castle[a.id];
+      if (ward) text(mid.col * CELL, mid.row * CELL, ward, 36, "#e6dcc4", 12, 40).setLetterSpacing(6);
+      else text(mid.col * CELL, mid.row * CELL, a.name.toUpperCase(), 64, "#fdfaf0", 22).setLetterSpacing(10);
     }
   }
 
@@ -3200,8 +3203,8 @@ export class AtlasScene extends Phaser.Scene {
         }
       }
     }
-    for (const { text, px, tier } of this.names) {
-      text.setVisible(tier === this.view);
+    for (const { text, px, tier, rows } of this.names) {
+      text.setVisible(tier === this.view && (rows === undefined || act.zoom >= this.zoomFor(rows)));
       text.setScale(Math.max(1, (px * DPR) / (Number.parseInt(String(text.style.fontSize)) * act.zoom)));
     }
     // Off screen, and on the tiers not in view, sprites skip drawing and animating.

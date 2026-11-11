@@ -104,6 +104,16 @@ describe("the atlas's tiers", () => {
     }
   });
 
+  it("runs the castle road through the Burg, the Ramparts and the Chapel", () => {
+    const s = map.tiers.surface;
+    const roads = new Set(s.roads.map(cellKey));
+    for (const id of ["burg", "ramparts", "chapel"] as AreaId[]) {
+      const ch = code[id];
+      const tiles = s.areaAt.flatMap((line, r) => [...line].flatMap((x, c) => (x === ch ? [{ col: c, row: r }] : [])));
+      expect(tiles.some((t) => roads.has(cellKey(t))), id).toBe(true);
+    }
+  });
+
   it("is one world from the hub: every area of every tier, walking and riding the lifts the way they go", () => {
     expect([...world("harbour")].sort()).toEqual(AREAS.map((a) => a.id).sort());
   });

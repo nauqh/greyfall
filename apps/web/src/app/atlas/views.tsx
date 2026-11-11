@@ -76,6 +76,8 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const [fire, setFire] = useState<{ name: string; pick: number } | null>(null);
   // The map, open over the area while the scene waits paused behind it: from a bonfire to travel, or on M only to look.
   const [atlas, setAtlas] = useState<"travel" | "look" | null>(null);
+  // Opening the map on M: the cloud bank draws in first, then the map is under it.
+  const [mapCover, setMapCover] = useState(false);
   // The opening cutscene, once per game, over a Landing paused behind it.
   const [prologue, setPrologue] = useState(false);
   const api = useRef<AtlasApi | null>(null);
@@ -201,15 +203,15 @@ export function AreaView({ area: first }: { area: AreaId }) {
     setAtlas(null);
   };
   useEffect(() => {
-    if (atlas || fire || say || menu || died || warn) return;
+    if (atlas || mapCover || fire || say || menu || died || warn) return;
     const key = (e: KeyboardEvent): void => {
       if (e.key.toLowerCase() !== "m" || e.repeat || now.current.travelling) return;
       api.current?.pause(true);
-      setAtlas("look");
+      setMapCover(true);
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [atlas, fire, say, menu, died, warn]);
+  }, [atlas, mapCover, fire, say, menu, died, warn]);
   useEffect(() => {
     if (!fire || atlas) return;
     const key = (e: KeyboardEvent): void => {
@@ -277,6 +279,16 @@ export function AreaView({ area: first }: { area: AreaId }) {
               if (e.target !== e.currentTarget) return;
               if (travel.phase === "cover") covered(travel);
               else if (travel.phase === "uncover") landed();
+            }}
+          />
+        )}
+        {mapCover && (
+          // The map opens on M under the bank: the clouds draw in over the area, then the map is there.
+          <Clouds
+            mode="close"
+            onDone={() => {
+              setMapCover(false);
+              setAtlas("look");
             }}
           />
         )}
