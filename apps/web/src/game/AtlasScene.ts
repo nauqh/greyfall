@@ -1466,6 +1466,7 @@ export class AtlasScene extends Phaser.Scene {
     this.emitDev();
     const cam = this.active;
     if (!this.hero) return;
+    this.hero.s.setVisible(!on);
     // At once, not eased: a zoom still running when play resumes would carry on over the play zoom.
     cam.zoomEffect.reset();
     cam.panEffect.reset();
