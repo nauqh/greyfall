@@ -12,8 +12,8 @@ const FADE_MS = 1800;
 const TAIL_MS = 1200;
 /** 360 ms a word is about 165 words a minute: the slow end of the 160-180 wpm reading band. */
 const WORD_MS = 360;
-/** The pause after the first half of the Gilded City beat, before the last sentence replaces it. */
-const SPECIAL_PAUSE_MS = 1500;
+/** Black between the Gilded City paragraph fading out and its last sentence fading in. */
+const SPECIAL_PAUSE_MS = 1000;
 
 /** The opening cutscene, after Dark Souls 1: narration on black, then the title, then the game. */
 export function Prologue({ onDone }: { onDone: () => void }) {
@@ -31,8 +31,10 @@ export function Prologue({ onDone }: { onDone: () => void }) {
   const text = typeof beat === "string" ? beat : "";
   const firstHold = first.split(/\s+/).length * WORD_MS;
   const lastHold = last.split(/\s+/).length * WORD_MS;
-  const revealAt = gap + FADE_MS + firstHold + SPECIAL_PAUSE_MS;
-  const ms = special ? revealAt + lastHold + TAIL_MS : text ? gap + FADE_MS + text.split(/\s+/).length * WORD_MS + TAIL_MS : 0;
+  const revealAt = gap + FADE_MS + firstHold;
+  const lastDelay = TAIL_MS + SPECIAL_PAUSE_MS;
+  const gone = special && reveal;
+  const ms = special ? revealAt + lastDelay + FADE_MS + lastHold + TAIL_MS : text ? gap + FADE_MS + text.split(/\s+/).length * WORD_MS + TAIL_MS : 0;
 
   const next = (): void => {
     if (end) return;
@@ -96,19 +98,14 @@ export function Prologue({ onDone }: { onDone: () => void }) {
           style={{ "--ms": `${ms}ms` } as React.CSSProperties}
           aria-live="polite"
         >
-          <p
-            className={special ? "prologueReplace" : undefined}
-            style={{ animationDelay: `${gap}ms` }}
-          >
-            {special ? (
-              <>
-                <span className={reveal ? "prologueFirst prologueGone" : "prologueFirst"}>{first}</span>
-                {reveal && <span className="prologueLast">{last}</span>}
-              </>
-            ) : (
-              text
-            )}
+          <p className={gone ? "prologueGone" : undefined} style={{ animationDelay: gone ? "0ms" : `${gap}ms` }}>
+            {special ? first : text}
           </p>
+          {gone && (
+            <p className="prologueLast" style={{ animationDelay: `${lastDelay}ms` }}>
+              {last}
+            </p>
+          )}
         </div>
       ) : (
         <div className="prologueTitle" onAnimationEnd={(e) => e.target === e.currentTarget && setEnd(true)}>

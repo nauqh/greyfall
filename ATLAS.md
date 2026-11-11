@@ -1021,9 +1021,10 @@ out on the Landing: the sea cave behind the overlay is the arrival.
 - Each paragraph opens on 1.5 s of black, fades in whole over 1.8 s, holds
   fully visible for 360 ms a word, then fades out over 1.2 s. The next
   paragraph starts on black again, so nothing is read while it moves. The
-  Gilded City card opens on 2.5 s of black; its first sentence holds, then
-  after 1.5 s the first is replaced by the last at the end of the first. The
-  whole run is about 90 s including the title.
+  Gilded City card opens on 2.5 s of black; its paragraph holds, fades out
+  over 1.2 s, and after 1 s of black its last sentence fades in alone in the
+  same place, the cost given a card of its own. The whole run is about 90 s
+  including the title.
 - The title holds 5.2 s, then the overlay fades over 1.6 s into the Landing.
 - A click or any key moves to the next card; holding Esc, Space or Enter for a
   second skips to the end.

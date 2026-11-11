@@ -75,29 +75,17 @@
 	animation: prologueSkip 1000ms linear both;
 }
 
-/* The Gilded Reach beat: one paragraph, first sentence holds, then the last replaces it at the end. */
-.prologueReplace {
-	display: inline-block;
-	position: relative;
-	width: auto;
-	text-align: left;
+/* The Gilded City beat: the paragraph fades out, then its last sentence fades in alone in the same cell. */
+.prologueText > p {
+	grid-area: 1 / 1;
 }
 
-.prologueFirst {
-	display: inline;
-}
-
-.prologueGone {
-	visibility: hidden;
+.prologueText .prologueGone {
+	animation: prologueOut 1200ms ease-in both;
 }
 
 .prologueLast {
-	position: absolute;
-	top: 0;
-	right: 0;
-	white-space: nowrap;
-	font: inherit;
-	color: inherit;
+	align-self: center;
 }
 
 @keyframes prologueIn {
