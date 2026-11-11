@@ -81,6 +81,8 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const [mapCover, setMapCover] = useState(false);
   // The opening cutscene, once per game, over a Landing paused behind it.
   const [prologue, setPrologue] = useState(false);
+  // The camera's flight in after the prologue, the HUD away until it lands.
+  const [intro, setIntro] = useState(false);
   const [devState, setDevState] = useState<DevState | null>(null);
   const api = useRef<AtlasApi | null>(null);
   const now = useRef({ area: first, cameFrom: undefined as AreaId | undefined, quiet: false, travelling: false, prologue: false });
@@ -170,7 +172,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
     onDistrict: (d) => !now.current.travelling && setReveal(d),
     opened: () => {
       if (now.current.travelling) setTravel((t) => (t ? { ...t, phase: "uncover" } : t));
-      else announce();
+      else if (!now.current.prologue) announce();
     },
   }).current;
   // The HUD hides with H; there is no button for it on an area map.
@@ -193,13 +195,21 @@ export function AreaView({ area: first }: { area: AreaId }) {
     } catch {}
     window.location.assign("/atlas/landing?rest");
   };
-  const endPrologue = (): void => {
+  // The title gone, the black lifts on the whole Landing and the camera flies in; the name comes up as it lands.
+  const revealLanding = (): void => {
     try {
       localStorage.setItem("greyfall.prologue", "1");
     } catch {}
-    now.current.prologue = false;
-    setPrologue(false);
-    api.current?.pause(false);
+    const landed = (): void => {
+      now.current.prologue = false;
+      setIntro(false);
+      announce();
+    };
+    const a = api.current;
+    if (!a) return landed();
+    setIntro(true);
+    a.pause(false);
+    a.intro(2200, 3400, landed);
   };
   const closeAtlas = (): void => {
     api.current?.pause(false);
@@ -396,7 +406,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
             </div>
           </div>
         )}
-        <div className="worldHud" hidden={!hud}>
+        <div className={intro ? "worldHud worldHudIntro" : "worldHud"} hidden={!hud}>
           {vitals && (
             // After Dark Souls 1: a round badge holding the flasks, and beside it health over stamina, the health bar as long as
             // the captain's health is deep; a paler trail lingers where a blow took it.
@@ -464,7 +474,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
           </header>
         </div>
       </GameCanvas>
-      {prologue && <Prologue onDone={endPrologue} />}
+      {prologue && <Prologue onReveal={revealLanding} onDone={() => setPrologue(false)} />}
     </main>
   );
 }

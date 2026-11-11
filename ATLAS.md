@@ -1025,6 +1025,16 @@ out on the Landing: the sea cave behind the overlay is the arrival.
   over 1.2 s, and after 1 s of black its last sentence fades in alone in the
   same place, the cost given a card of its own. The whole run is about 90 s
   including the title.
-- The title holds 5.2 s, then the overlay fades over 1.6 s into the Landing.
+- The title holds 5.2 s, then the overlay fades over 1.6 s, not onto the
+  hero but onto the whole Landing at once, the camera pulled out to fit it
+  (`intro()` in `AtlasScene.ts`). The wide shot holds 2.2 s from the title's
+  end, then the camera flies in to the hero over 3.4 s, eased in and out,
+  and lands exactly where the bounded follow camera sits, so play takes over
+  without a jump. Only then do the HUD fade up (0.9 s), the Landing's name
+  rise, and the hero answer the keys. This is the camera handoff of
+  cutscene-led games (Uncharted 4, God of War 2018): the scripted camera
+  blends into the gameplay one, and the interface comes last.
+  [Game Anim: Interactive Cinematics in Uncharted 4](https://www.gameanim.com/2018/03/09/interactive-cinematics-in-uncharted-4/),
+  [80.lv: the evolution of game cinematics](https://80.lv/articles/from-pixel-scenes-to-one-shot-cameras-the-evolution-of-game-cinematics)
 - A click or any key moves to the next card; holding Esc, Space or Enter for a
   second skips to the end.

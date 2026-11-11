@@ -16,7 +16,7 @@ const WORD_MS = 360;
 const SPECIAL_PAUSE_MS = 1000;
 
 /** The opening cutscene, after Dark Souls 1: narration on black, then the title, then the game. */
-export function Prologue({ onDone }: { onDone: () => void }) {
+export function Prologue({ onReveal, onDone }: { onReveal: () => void; onDone: () => void }) {
   const { beats, title, subtitle } = PROLOGUE;
   const [b, setB] = useState(0);
   const [end, setEnd] = useState(false);
@@ -48,6 +48,12 @@ export function Prologue({ onDone }: { onDone: () => void }) {
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [b, end]);
+
+  // The black starts to lift: the game behind it begins its opening shot.
+  useEffect(() => {
+    if (end) onReveal();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [end]);
 
   useEffect(() => {
     if (!special || end) return;

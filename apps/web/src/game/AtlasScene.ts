@@ -96,6 +96,8 @@ export interface AtlasApi {
   next: () => void;
   /** At a bonfire just rested at: sit by it, the camera drawn in, or stand again; sitting gives the bonfire's name. */
   sit: (on: boolean) => string | null;
+  /** After the prologue: open on the whole area, hold, then fly in to the hero; play starts when it lands. */
+  intro: (hold: number, fly: number, done: () => void) => void;
   /** In a menu with someone who hires out: pick an option, as E on it would. */
   choose: (i: number) => void;
   /** In a menu: mark an option picked without choosing it, as the pointer over it does. */
@@ -1069,6 +1071,7 @@ export class AtlasScene extends Phaser.Scene {
       dev: (on) => this.setDev(on),
       next: () => (this.reading ? this.read(null) : this.nextPage()),
       sit: (on) => this.sit(on),
+      intro: (hold, fly, done) => this.intro(hold, fly, done),
       pause: (on) => {
         // The whole loop, not the scene: a paused scene still draws every frame under the other game.
         if (on) return this.game.loop.sleep();
@@ -1794,6 +1797,36 @@ export class AtlasScene extends Phaser.Scene {
     this.play(hero.s, hero.idle);
     this.active.zoomTo(this.zoomFor(AREA_ROWS) * (on ? 1.7 : 1), 900, "Sine.easeInOut", true);
     return districtOf(this.local, fire.col, fire.row)?.name || (AREAS.find((a) => a.id === this.local!.area)?.name ?? null);
+  }
+
+  /** The opening shot, after the camera handoffs of cutscene-led games: the whole area, then down onto the hero, held still till it lands. */
+  private intro(hold: number, fly: number, done: () => void): void {
+    const hero = this.hero;
+    if (!hero || !this.local || this.dev) return done();
+    const cam = this.active;
+    this.gone = true;
+    hero.way = [];
+    this.play(hero.s, hero.idle);
+    cam.stopFollow();
+    cam.removeBounds();
+    const box = this.landBox(this.local);
+    cam.setZoom(Math.min(cam.height / box.height, cam.width / box.width));
+    cam.centerOn(box.centerX, box.centerY);
+    // Onto where the bounded follow camera will sit, so nothing jumps when play takes it over.
+    const zoom = this.zoomFor(AREA_ROWS);
+    const [w, h] = [cam.width / zoom / 2, cam.height / zoom / 2];
+    const x = Phaser.Math.Clamp(hero.s.x, w, STRAT_COLS * CELL - w);
+    const y = Phaser.Math.Clamp(hero.s.y, h, STRAT_ROWS * CELL - h);
+    this.time.delayedCall(hold, () => {
+      cam.pan(x, y, fly, "Sine.easeInOut", true);
+      cam.zoomTo(zoom, fly, "Sine.easeInOut", true);
+    });
+    this.time.delayedCall(hold + fly, () => {
+      cam.setBounds(0, 0, STRAT_COLS * CELL, STRAT_ROWS * CELL);
+      cam.startFollow(this.hero!.s, true, 0.15, 0.15);
+      this.gone = false;
+      done();
+    });
   }
 
   /** R: a flask, if there is one and anything to heal; the hero stands still a moment to drink it. */

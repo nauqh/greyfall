@@ -733,6 +733,7 @@ textarea {
 	position: absolute;
 	inset: 0;
 	pointer-events: none;
+	transition: opacity 900ms ease-out;
 }
 
 .worldHud > * {
@@ -741,6 +742,16 @@ textarea {
 
 .worldHud[hidden] {
 	display: none;
+}
+
+/* Under the opening flight the HUD is away; it comes up once the camera lands. */
+.worldHudIntro {
+	opacity: 0;
+	transition: none;
+}
+
+.worldHudIntro > * {
+	pointer-events: none;
 }
 
 /* An area's name as you arrive, once the clouds have parted: up, held, gone. */
