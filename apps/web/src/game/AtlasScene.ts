@@ -108,6 +108,44 @@ export interface AtlasApi {
   fires: (fires: FireMark[], pick: number) => void;
   /** On the atlas: outline a land on its own tier and fly to it; null clears the outline. */
   select: (id: AreaId | null) => void;
+  devState: () => DevState;
+  /** Dev: that NPC's talk, or their menu if they have one, wherever the hero stands. */
+  devTalk: (npcId: string) => void;
+  /** Dev: the hero set down on the walkable cell nearest this one. */
+  devGo: (col: number, row: number) => void;
+  /** Dev: writes the save and the live scene. */
+  devSet: (patch: { gold?: number; flags?: WorldFlag[]; keys?: string[]; slain?: string[] }) => void;
+}
+
+export interface DevNpc {
+  id: string;
+  name: string;
+  col: number;
+  row: number;
+  shop: boolean;
+  here: boolean;
+}
+export interface DevExit {
+  name: string;
+  to: AreaId;
+  col: number;
+  row: number;
+  barred: boolean;
+}
+export interface DevState {
+  area: AreaId;
+  hero: { col: number; row: number } | null;
+  district: string | null;
+  gold: number;
+  flags: WorldFlag[];
+  keys: string[];
+  slain: string[];
+  /** "area:col,row" */
+  kindled: string[];
+  heard: string[];
+  /** The folk standing on this area's map. */
+  npcs: DevNpc[];
+  exits: DevExit[];
 }
 
 /** A bonfire as the atlas marks it: on its area's own map, named, whether the captain sits at it, and whether it is lit. */
@@ -182,6 +220,8 @@ export interface AtlasHooks {
   onDeath?: (area: AreaId) => void;
   /** The captain has walked into a named quarter of the area. */
   onDistrict?: (name: string) => void;
+  /** Dev mode toggled, or the dev state changed. */
+  onDev?: (s: DevState) => void;
 }
 
 export interface Say {
@@ -758,6 +798,10 @@ export class AtlasScene extends Phaser.Scene {
   private heard = new Set<string>();
   private flags = new Set<WorldFlag>();
   private dev = false;
+  private devKey = "";
+  private devText: Phaser.GameObjects.Text[] = [];
+  /** Dev: the area's land with a margin, in px; the camera's centre is kept inside it. */
+  private devBox: Phaser.Geom.Rectangle | null = null;
 
   constructor() {
     super("atlas");
@@ -823,6 +867,9 @@ export class AtlasScene extends Phaser.Scene {
     this.gone = false;
     this.district = { name: "", next: "", since: 0, shown: new Set<string>() };
     this.dev = !!data.dev;
+    this.devKey = "";
+    this.devText = [];
+    this.devBox = null;
   }
 
   preload(): void {
@@ -1039,6 +1086,10 @@ export class AtlasScene extends Phaser.Scene {
         this.showMenu();
       },
       back: () => this.back(),
+      devState: () => this.devState(),
+      devTalk: (id) => this.devTalk(id),
+      devGo: (col, row) => this.devGo(col, row),
+      devSet: (patch) => this.devSet(patch),
       tier: (id) => {
         this.show(id);
         // Onto the tier's ground, when the view would otherwise be open sky or solid rock.
@@ -1261,7 +1312,7 @@ export class AtlasScene extends Phaser.Scene {
     this.input.on("wheel", (_p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
       if (this.playing) return;
       const cam = this.active;
-      const widest = this.local ? Math.max(this.zoomFor(STRAT_ROWS), cam.width / (STRAT_COLS * CELL)) : this.zoomFor(STRAT_ROWS + 6);
+      const widest = this.devBox ? this.devFit() : this.local ? Math.max(this.zoomFor(STRAT_ROWS), cam.width / (STRAT_COLS * CELL)) : this.zoomFor(STRAT_ROWS + 6);
       cam.zoomTo(Phaser.Math.Clamp(cam.zoom * (dy > 0 ? 0.85 : 1.18), widest, this.zoomFor(9)), 160, "Sine.easeOut", true);
     });
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
@@ -1291,11 +1342,14 @@ export class AtlasScene extends Phaser.Scene {
       const w = this.active.getWorldPoint(p.x, p.y);
       const cell = { col: Math.floor(w.x / CELL), row: Math.floor(w.y / CELL) };
       // A bonfire mark, an exit travels, else the area under the pointer.
+      const folk = this.dev && this.hero ? this.folk.filter((f) => tileDistance(f.at, cell) <= 1).sort((a, b) => tileDistance(a.at, cell) - tileDistance(b.at, cell))[0] : undefined;
+      if (folk) return this.devTalk(folk.npc.id);
       const fire = this.markAt.findIndex((m) => m.tier === this.view && Math.abs(m.cell.col - cell.col) <= 2 && Math.abs(m.cell.row - cell.row) <= 2);
       if (fire >= 0) return this.hooks.onFire?.(fire);
       for (const e of this.local?.exits ?? []) {
         if (Math.abs(e.at.col - cell.col) <= 2 && Math.abs(e.at.row - cell.row) <= 2) return this.depart(e);
       }
+      if (this.dev && this.hero) return this.devGo(cell.col, cell.row);
       const ch = this.map.tiers[this.view].areaAt[cell.row]?.[cell.col];
       if (ch && ch !== "-") this.hooks.onArea(AREAS[AREA_CODE.indexOf(ch)]!.id);
     });
@@ -1407,6 +1461,9 @@ export class AtlasScene extends Phaser.Scene {
     this.dev = on;
     this.shieldUp = false;
     this.hooks.dev = on;
+    this.devLabels();
+    this.devKey = "";
+    this.emitDev();
     const cam = this.active;
     if (!this.hero) return;
     // At once, not eased: a zoom still running when play resumes would carry on over the play zoom.
@@ -1416,9 +1473,15 @@ export class AtlasScene extends Phaser.Scene {
       cam.stopFollow();
       // Unbounded, so a map smaller than the screen sits in its middle rather than against an edge.
       cam.removeBounds();
-      // The whole map in view, its longer side to the screen's edge.
-      cam.setZoom(Math.min(this.zoomFor(STRAT_ROWS), cam.width / (STRAT_COLS * CELL)));
-      cam.centerOn((STRAT_COLS * CELL) / 2, (STRAT_ROWS * CELL) / 2);
+      if (!this.devBox) {
+        let [c0, c1, r0, r1] = [Infinity, -Infinity, Infinity, -Infinity];
+        for (let r = 0; r < STRAT_ROWS; r++) for (let c = 0; c < STRAT_COLS; c++) if (isLand(c, r)) [c0, c1, r0, r1] = [Math.min(c0, c), Math.max(c1, c), Math.min(r0, r), Math.max(r1, r)];
+        const m = 3;
+        this.devBox = c0 > c1 ? new Phaser.Geom.Rectangle(0, 0, STRAT_COLS * CELL, STRAT_ROWS * CELL) : new Phaser.Geom.Rectangle((c0 - m) * CELL, (r0 - m) * CELL, (c1 - c0 + 1 + 2 * m) * CELL, (r1 - r0 + 1 + 2 * m) * CELL);
+      }
+      // The whole island in view, its longer side to the screen's edge.
+      cam.setZoom(this.devFit());
+      cam.centerOn(this.devBox.centerX, this.devBox.centerY);
     } else {
       cam.setBounds(0, 0, STRAT_COLS * CELL, STRAT_ROWS * CELL);
       cam.setZoom(this.zoomFor(AREA_ROWS));
@@ -3014,20 +3077,20 @@ export class AtlasScene extends Phaser.Scene {
 
   /** E: on in a talk, else talk to whoever stands near, else swing; held, it keeps swinging but never skips a page. */
   private interact(repeat: boolean): void {
-    if (!this.playing || this.hero!.dead || this.gone) return;
+    if (!this.hero || this.hero.dead || this.gone) return;
     if (this.menu) return void (!repeat && this.choose());
     if (this.reading) return void (!repeat && this.read(null));
-    const t = this.talk ? undefined : this.eTarget();
-    if (this.talk || t) {
-      if (repeat) return;
-      if (this.talk) return this.nextPage();
-      if ("fire" in t!) return this.rest(t.fire);
-      if ("note" in t!) return this.read(t.note);
-      if ("exit" in t!) return this.traverse(t.exit);
-      if ("fog" in t!) return this.enterFog();
-      if ("lock" in t!) return;
-      return RECRUITER[t!.folk.npc.id] || t!.folk.npc.shop ? this.openMenu(t!.folk) : this.talkTo(t!.folk);
-    }
+    if (this.talk) return void (!repeat && this.nextPage());
+    // Dev mode carries on a talk or menu opened by a click, but starts nothing on E.
+    if (!this.playing) return;
+    const t = this.eTarget();
+    if (!t || repeat) return;
+    if ("fire" in t) return this.rest(t.fire);
+    if ("note" in t) return this.read(t.note);
+    if ("exit" in t) return this.traverse(t.exit);
+    if ("fog" in t) return this.enterFog();
+    if ("lock" in t) return;
+    return RECRUITER[t.folk.npc.id] || t.folk.npc.shop ? this.openMenu(t.folk) : this.talkTo(t.folk);
   }
 
   /** A swing, turned toward the cursor: at the monster in reach nearest where it points, else the air. */
@@ -3080,7 +3143,7 @@ export class AtlasScene extends Phaser.Scene {
 
   private talkTo(f: Folk): void {
     const hero = this.hero!;
-    if (tileDistance(f.at, hero.at) > TALK_RANGE) return;
+    if (!this.dev && tileDistance(f.at, hero.at) > TALK_RANGE) return;
     hero.way = [];
     f.bubble?.destroy();
     f.bubble = null;
@@ -3138,6 +3201,7 @@ export class AtlasScene extends Phaser.Scene {
         f.near = true;
         f.s.setFlipX(hero.s.x < f.s.x);
       } else if (d > TALK_RANGE + 1) f.near = false;
+      if (this.dev) continue;
       if (this.talk?.folk === f && d > TALK_RANGE) {
         this.talk = null;
         this.say();
@@ -3166,7 +3230,108 @@ export class AtlasScene extends Phaser.Scene {
     }
   }
 
+  private devFit(): number {
+    const cam = this.active;
+    return Math.min(cam.height / this.devBox!.height, cam.width / this.devBox!.width);
+  }
+
+  /** Dev: the view's edges held inside the island, or the island centred on an axis the view is wider than. */
+  private clampDev(): void {
+    const b = this.devBox;
+    if (!this.dev || !b) return;
+    const cam = this.active;
+    const axis = (mid: number, view: number, lo: number, hi: number): number =>
+      view >= hi - lo ? (lo + hi) / 2 : Phaser.Math.Clamp(mid, lo + view / 2, hi - view / 2);
+    cam.centerOn(
+      axis(cam.scrollX + cam.width / 2, cam.width / cam.zoom, b.left, b.right),
+      axis(cam.scrollY + cam.height / 2, cam.height / cam.zoom, b.top, b.bottom),
+    );
+  }
+
+  private devState(): DevState {
+    const hero = this.hero;
+    const local = this.local;
+    return {
+      area: local?.area ?? "landing",
+      hero: hero && { col: hero.at.col, row: hero.at.row },
+      district: (hero && local && districtOf(local, hero.at.col, hero.at.row)?.name) || null,
+      gold: this.gold,
+      flags: [...this.flags],
+      keys: [...remembered<string>(KEYS)],
+      slain: [...remembered<string>(SLAIN)],
+      kindled: [...remembered<string>(KINDLED)],
+      heard: [...this.heard],
+      npcs: this.folk.map((f) => ({ id: f.npc.id, name: f.npc.name, col: f.at.col, row: f.at.row, shop: !!f.npc.shop, here: true })),
+      exits: (local?.exits ?? []).map((e) => ({ name: e.name, to: e.to, col: e.at.col, row: e.at.row, barred: barred(e) })),
+    };
+  }
+
+  private emitDev(): void {
+    if (!this.local || !this.hooks.onDev) return;
+    const s = this.devState();
+    const key = JSON.stringify(s);
+    if (key === this.devKey) return;
+    this.devKey = key;
+    this.hooks.onDev(s);
+  }
+
+  /** Dev: the folk's and the exits' names over the map, kept readable at the whole-map zoom. */
+  private devLabels(): void {
+    const gone = new Set<Phaser.GameObjects.GameObject>(this.devText);
+    this.names = this.names.filter((n) => !gone.has(n.text));
+    for (const t of this.devText) t.destroy();
+    this.devText = [];
+    if (!this.dev || !this.local) return;
+    const label = (x: number, y: number, s: string, color: string): void => {
+      const t = this.add.text(x, y, s, { fontFamily: FONT, fontSize: "24px", fontStyle: "bold", color, stroke: "#1c2634", strokeThickness: 5 }).setOrigin(0.5, 1).setDepth(DEPTH.fx + 3);
+      this.names.push({ text: t, px: 12, tier: this.view });
+      this.devText.push(t);
+    };
+    for (const f of this.folk) label(f.s.x, f.s.y - 1.4 * CELL, f.npc.name, "#f2d48a");
+    for (const e of this.local.exits) label((e.at.col + 0.5) * CELL, e.at.row * CELL, barred(e) ? `${e.name} (barred)` : e.name, "#9cdcff");
+  }
+
+  private devTalk(id: string): void {
+    const f = this.folk.find((x) => x.npc.id === id);
+    if (!f || !this.hero) return;
+    this.closeMenu(false);
+    this.talk = null;
+    this.read(null);
+    if (RECRUITER[id] || f.npc.shop) this.openMenu(f);
+    else this.talkTo(f);
+  }
+
+  private devGo(col: number, row: number): void {
+    const hero = this.hero;
+    if (!hero || hero.dead || this.gone) return;
+    let to: Cell | null = null;
+    let best = Infinity;
+    for (let r = 0; r < STRAT_ROWS; r++) {
+      for (let c = 0; c < STRAT_COLS; c++) {
+        const d = (c - col) ** 2 + (r - row) ** 2;
+        if (d < best && isWalkable(c, r) && !isSlope(c, r) && !this.shut({ col: c, row: r })) [best, to] = [d, { col: c, row: r }];
+      }
+    }
+    if (!to) return;
+    hero.way = [];
+    hero.at = to;
+    const y = (to.row + 0.75) * CELL;
+    hero.s.setPosition((to.col + 0.5) * CELL, y).setDepth(standing(y));
+    this.emitDev();
+  }
+
+  private devSet(patch: { gold?: number; flags?: WorldFlag[]; keys?: string[]; slain?: string[] }): void {
+    if (patch.gold !== undefined) this.setGold(patch.gold);
+    if (patch.flags) remember(FLAGS, (this.flags = new Set(patch.flags)));
+    if (patch.keys) remember(KEYS, new Set(patch.keys));
+    if (patch.slain) remember(SLAIN, new Set(patch.slain));
+    this.devLabels();
+    this.emitDev();
+  }
+
   update(time: number, delta: number): void {
+    // Each frame, so a wheel zoom easing out is held to the island as well as a drag.
+    this.clampDev();
     const act = this.active;
     if (this.hero) {
       // A long stall (a tab in the background) is not a long stride.
@@ -3185,6 +3350,7 @@ export class AtlasScene extends Phaser.Scene {
           this.vitalsKey = key;
           this.hooks.onVitals?.(v);
         }
+        if (this.dev) this.emitDev();
         // A boss shows its bar as its fight opens: a room's boss once the captain stands in its room, mist parted, and has it
         // in view; any other within its leash.
         const hero = this.hero;

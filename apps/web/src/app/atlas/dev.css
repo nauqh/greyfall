@@ -1,0 +1,94 @@
+/* Dev mode's panel: the band panel's dark glass, docked right, above the purse and clear of the talk at the foot. */
+.devPanel {
+	position: absolute;
+	top: 16px;
+	right: 16px;
+	z-index: 6;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	width: min(280px, calc(100vw - 32px));
+	max-height: calc(100dvh - 96px);
+	overflow-y: auto;
+	padding: 8px 12px 10px;
+	border-radius: 4px;
+	background: rgb(7 10 16 / 0.8);
+	color: #fdfaf0;
+	font: 700 13px "Nunito", "Segoe UI", sans-serif;
+}
+
+.devPanel summary {
+	cursor: pointer;
+	color: #c9a35c;
+}
+
+.devPanel summary b {
+	color: #fdfaf0;
+}
+
+.devPanel dl {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 2px 10px;
+	margin: 0;
+}
+
+.devPanel dd {
+	margin: 0;
+}
+
+.devPanel ul {
+	margin: 2px 0 0;
+	padding-left: 16px;
+	font-weight: 400;
+	word-break: break-all;
+}
+
+.devPanel select,
+.devPanel input[type="number"] {
+	min-width: 0;
+	padding: 1px 4px;
+	border: 1px solid #6b5740;
+	border-radius: 3px;
+	background: #1c2634;
+	color: inherit;
+	font: inherit;
+}
+
+.devPanel input[type="number"] {
+	width: 90px;
+}
+
+.devRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 1px 0;
+}
+
+.devRow select {
+	flex: 1;
+}
+
+.devCheck {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-weight: 400;
+}
+
+.devBtn {
+	flex: none;
+	padding: 0 8px;
+	border: 1px solid #c9a35c;
+	border-radius: 3px;
+	background: rgb(242 212 138 / 0.15);
+	color: inherit;
+	font: inherit;
+	cursor: pointer;
+}
+
+.devBtn:hover {
+	background: rgb(242 212 138 / 0.35);
+}

@@ -18,15 +18,16 @@ const REST = "greyfall.rest";
 
 const areaOf = (id: AreaId) => AREAS.find((a) => a.id === id)!;
 
-/** Every bonfire in the Reach, in the atlas's order of areas, lit if rested at in this browser; a blocked store lights none. */
-function checkpoints(): Fire[] {
+/** Every bonfire in the Reach, in the atlas's order of areas, lit if rested at in this browser (or all of them in dev
+ *  mode); a blocked store lights none. */
+function checkpoints(dev: boolean): Fire[] {
   let lit = new Set<string>();
   try {
     lit = new Set(JSON.parse(localStorage.getItem(KINDLED) ?? "[]") as string[]);
   } catch {}
   return AREAS.filter((a) => MAPPED_AREAS.includes(a.id)).flatMap((a) => {
     const m = areaMap(a.id);
-    return m.fires.map((f) => ({ area: a.id, col: f.col, row: f.row, name: districtOf(m, f.col, f.row)?.name || a.name, lit: lit.has(`${a.id}:${f.col},${f.row}`) }));
+    return m.fires.map((f) => ({ area: a.id, col: f.col, row: f.row, name: districtOf(m, f.col, f.row)?.name || a.name, lit: dev || lit.has(`${a.id}:${f.col},${f.row}`) }));
   });
 }
 
@@ -40,11 +41,12 @@ function restedAt(): { area: AreaId; col: number; row: number } | null {
 }
 
 /** Opened at a bonfire in `from`, or anywhere with M to look (`travel` false): a click on a lit bonfire travels to it
- *  (or, looking, rings and names it); `onBack` closes the map. */
-export function TravelMap({ from, travel: canTravel, onTravel, onBack }: { from: AreaId; travel: boolean; onTravel: (f: Fire) => void; onBack: () => void }) {
-  const [fires] = useState(checkpoints);
+ *  (or, looking, rings and names it); `onBack` closes the map. `dev` lights every bonfire and travels even when looking. */
+export function TravelMap({ from, travel: atFire, dev = false, onTravel, onBack }: { from: AreaId; travel: boolean; dev?: boolean; onTravel: (f: Fire) => void; onBack: () => void }) {
+  const canTravel = atFire || dev;
+  const [fires] = useState(() => checkpoints(dev));
   const at = useMemo(restedAt, []);
-  const isHere = (f: Fire): boolean => canTravel && f.area === at?.area && f.col === at.col && f.row === at.row;
+  const isHere = (f: Fire): boolean => atFire && f.area === at?.area && f.col === at.col && f.row === at.row;
   const [pick, setPick] = useState(() => {
     const sat = fires.findIndex(isHere);
     return sat >= 0 ? sat : Math.max(0, fires.findIndex((f) => f.area === from && f.lit));
@@ -99,7 +101,7 @@ export function TravelMap({ from, travel: canTravel, onTravel, onBack }: { from:
   useEffect(() => {
     const key = (e: KeyboardEvent): void => {
       const k = e.key.toLowerCase();
-      if (k === "escape" || (k === "m" && !canTravel)) return onBack();
+      if (k === "escape" || (k === "m" && !atFire)) return onBack();
       if (e.repeat) return;
       if ((k === "w" || k === "arrowup" || k === "s" || k === "arrowdown") && steps.length > 0) {
         const i = steps.indexOf(fires[pick]!);
@@ -158,7 +160,7 @@ export function TravelMap({ from, travel: canTravel, onTravel, onBack }: { from:
           )}
 
           <button className="btn small mapClose" type="button" onClick={onBack}>
-            {canTravel ? "Back to the bonfire" : "Close the map"}
+            {atFire ? "Back to the bonfire" : "Close the map"}
           </button>
         </div>
       </GameCanvas>

@@ -4,10 +4,11 @@ import { AREAS, type AreaId } from "@greyfall/engine";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import type { AtlasApi, AtlasHooks, BandView, Departure, MenuView, SackView, Say, Vitals } from "../../game/AtlasScene";
+import type { AtlasApi, AtlasHooks, BandView, Departure, DevState, MenuView, SackView, Say, Vitals } from "../../game/AtlasScene";
 import { Clouds } from "../../game/Clouds";
 import { packUrl } from "../../game/art";
 import { GameCanvas } from "../../game/GameCanvas";
+import { DevPanel } from "./DevPanel";
 import { Prologue } from "./ProloguePlayer";
 import { Sack } from "./Sack";
 import { Shop } from "./Shop";
@@ -80,6 +81,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const [mapCover, setMapCover] = useState(false);
   // The opening cutscene, once per game, over a Landing paused behind it.
   const [prologue, setPrologue] = useState(false);
+  const [devState, setDevState] = useState<DevState | null>(null);
   const api = useRef<AtlasApi | null>(null);
   const now = useRef({ area: first, cameFrom: undefined as AreaId | undefined, quiet: false, travelling: false, prologue: false });
 
@@ -153,6 +155,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
     onBand: setBand,
     onMenu: setMenu,
     onSack: setSack,
+    onDev: setDevState,
     // The scene rests in place: no dark, only the camera drawing in on the fire.
     onRest: () => {
       if (now.current.travelling) return;
@@ -296,6 +299,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
           <TravelMap
             from={now.current.area}
             travel={atlas === "travel"}
+            dev={dev}
             onBack={closeAtlas}
             onTravel={(f) => {
               closeAtlas();
@@ -317,6 +321,17 @@ export function AreaView({ area: first }: { area: AreaId }) {
               W/S, E
             </span>
           </div>
+        )}
+        {dev && devState && !atlas && (
+          <DevPanel
+            state={devState}
+            api={api}
+            onArea={(to) => !now.current.travelling && depart({ to, name: AREAS.find((a) => a.id === to)?.name ?? to, kind: "rest", dir: "down", x: 0.5, y: 0.5 })}
+            onMap={() => {
+              api.current?.pause(true);
+              setAtlas("travel");
+            }}
+          />
         )}
         {menu && <Shop menu={menu} api={api} />}
         {say?.note ? (
