@@ -481,6 +481,8 @@ const LEAN_REACH = 12;
 
 /** Ground under the rock of the Underneath: dark, and darker than the caverns. */
 const ROCK_MOOD = 0x1e1e2a;
+/** How far past its grid the Underneath's rock runs, in tiles, lake and mood alike, so no zoom out sees its edge. */
+const ROCK_PAD = 128;
 
 /** An area map's view in play: this many rows tall, held on the hero. */
 const AREA_ROWS = 15;
@@ -2443,11 +2445,11 @@ export class AtlasScene extends Phaser.Scene {
       return `tilesetC${p[Math.min(2, lv - 1)]}`;
     });
     if (tier.base === "sky") this.skyBeneath();
-    // Under the rock, black water: the Underneath's lakes. On the atlas it runs past the grid, as the sky does, so a
-    // screen wider than the atlas shows lake at its sides, not the camera's black.
+    // Under the rock, black water: the Underneath's lakes. Rock draws no tile of its own, so this under the mood is
+    // the rock too, and it runs ROCK_PAD past the grid with the mood.
     if (tier.base === "rock") {
-      const [W, H, wide] = [STRAT_COLS * CELL, STRAT_ROWS * CELL, this.local ? 1 : 3];
-      this.add.rectangle(W / 2, H / 2, W * wide, H * wide, 0x1f4656).setDepth(DEPTH.water);
+      const [W, H, P] = [STRAT_COLS * CELL, STRAT_ROWS * CELL, ROCK_PAD * CELL];
+      this.add.rectangle(W / 2, H / 2, W + 2 * P, H + 2 * P, 0x1f4656).setDepth(DEPTH.water);
     }
     this.dress(tier, roads);
     for (const p of tier.props) this.addProp(p, tier.base);
@@ -2888,7 +2890,7 @@ export class AtlasScene extends Phaser.Scene {
 
   /** The light over each area, soft across the water between: one texel a tile, multiplied in. Rock is near black. */
   private mood(tier: AtlasTier): void {
-    const pad = 6;
+    const pad = tier.base === "rock" ? ROCK_PAD : 6;
     const w = STRAT_COLS + 2 * pad;
     const h = STRAT_ROWS + 2 * pad;
     // Every map on one tier shares the key: a crossing to another lays its own light.
