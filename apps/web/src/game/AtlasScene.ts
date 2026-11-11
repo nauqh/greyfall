@@ -8,7 +8,6 @@
 import {
   AREAS,
   AREA_CODE,
-  ATLAS_SIZE,
   BAND_SIZE,
   COMPANIONS,
   companionPlan,
@@ -1054,7 +1053,6 @@ export class AtlasScene extends Phaser.Scene {
       const hub = AREAS.find((a) => a.id === "harbour")!.label;
       main.setZoom(this.zoomFor(22));
       main.centerOn(hub.col * CELL, (hub.row - 4) * CELL);
-      this.freeBox = new Phaser.Geom.Rectangle(0, 0, ATLAS_SIZE.cols * CELL, ATLAS_SIZE.rows * CELL);
       this.show("surface");
     }
     this.controls();
@@ -1094,16 +1092,7 @@ export class AtlasScene extends Phaser.Scene {
       devTalk: (id) => this.devTalk(id),
       devGo: (col, row) => this.devGo(col, row),
       devSet: (patch) => this.devSet(patch),
-      tier: (id) => {
-        this.show(id);
-        // Onto the tier's ground, when the view would otherwise be open sky or solid rock.
-        const cam = this.active;
-        const ch = this.map.tiers[id].areaAt[Math.floor((cam.scrollY + cam.height / 2) / CELL)]?.[Math.floor((cam.scrollX + cam.width / 2) / CELL)];
-        if (!ch || ch === "-") {
-          const first = AREAS.find((a) => a.tier === id)!;
-          this.flyTo({ col: first.label.col, row: first.label.row - 5 }, 24);
-        }
-      },
+      tier: (id) => this.show(id),
     });
     // A crossing's own cover is the page's; only a first arrival opens on the clouds.
     if (this.hooks.arrive) this.time.delayedCall(0, () => this.hooks.opened?.());
@@ -1296,11 +1285,20 @@ export class AtlasScene extends Phaser.Scene {
     const from = this.active;
     const centre = { x: from.scrollX + from.width / 2, y: from.scrollY + from.height / 2 };
     const zoom = from.zoom;
+    const was = this.view;
     this.view = id;
     for (const t of ["sky", "surface", "below"] as const) this.cams[t].setVisible(t === id);
     const to = this.active;
     to.setZoom(zoom);
     to.centerOn(centre.x, centre.y);
+    if (!this.local) {
+      // Each tier's lands lie in their own part of the grid: the camera keeps to them, and a new tier opens on all of them.
+      this.freeBox = this.landBox(this.map.tiers[id]);
+      if (id !== was) {
+        to.setZoom(this.freeFit());
+        to.centerOn(this.freeBox.centerX, this.freeBox.centerY);
+      }
+    }
     this.hooks.onTier(id);
   }
 
@@ -1488,12 +1486,7 @@ export class AtlasScene extends Phaser.Scene {
       cam.stopFollow();
       // Unbounded, so a map smaller than the screen sits in its middle rather than against an edge.
       cam.removeBounds();
-      if (!this.freeBox) {
-        let [c0, c1, r0, r1] = [Infinity, -Infinity, Infinity, -Infinity];
-        for (let r = 0; r < STRAT_ROWS; r++) for (let c = 0; c < STRAT_COLS; c++) if (isLand(c, r)) [c0, c1, r0, r1] = [Math.min(c0, c), Math.max(c1, c), Math.min(r0, r), Math.max(r1, r)];
-        const m = 3;
-        this.freeBox = c0 > c1 ? new Phaser.Geom.Rectangle(0, 0, STRAT_COLS * CELL, STRAT_ROWS * CELL) : new Phaser.Geom.Rectangle((c0 - m) * CELL, (r0 - m) * CELL, (c1 - c0 + 1 + 2 * m) * CELL, (r1 - r0 + 1 + 2 * m) * CELL);
-      }
+      this.freeBox ??= this.landBox(this.local!);
       // The whole island in view, its longer side to the screen's edge.
       cam.setZoom(this.freeFit());
       cam.centerOn(this.freeBox.centerX, this.freeBox.centerY);
@@ -3246,6 +3239,17 @@ export class AtlasScene extends Phaser.Scene {
       if (!d.shown.has(here)) this.hooks.onDistrict?.(here);
       d.shown.add(here);
     }
+  }
+
+  /** A tier's ground, every tile some area's, with a 3 tile margin, in px; rock and open sky are not ground. */
+  private landBox(tier: AtlasTier): Phaser.Geom.Rectangle {
+    let [c0, c1, r0, r1] = [Infinity, -Infinity, Infinity, -Infinity];
+    tier.areaAt.forEach((line, r) => {
+      for (let c = 0; c < line.length; c++) if (line[c] !== "-") [c0, c1, r0, r1] = [Math.min(c0, c), Math.max(c1, c), Math.min(r0, r), Math.max(r1, r)];
+    });
+    const m = 3;
+    if (c0 > c1) return new Phaser.Geom.Rectangle(0, 0, STRAT_COLS * CELL, STRAT_ROWS * CELL);
+    return new Phaser.Geom.Rectangle((c0 - m) * CELL, (r0 - m) * CELL, (c1 - c0 + 1 + 2 * m) * CELL, (r1 - r0 + 1 + 2 * m) * CELL);
   }
 
   private freeFit(): number {
