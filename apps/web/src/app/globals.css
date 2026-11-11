@@ -726,8 +726,8 @@ textarea {
 }
 
 /* --- atlas --------------------------------------------------------------
-   The whole world as one map; the index, the area card and the gate key sit
-   in three corners, the title ribbon in the fourth. */
+   The whole world as one travel map: the title ribbon at the top, the way
+   out in the bottom right corner, the lit bonfires on the map itself. */
 
 .worldHud {
 	position: absolute;
@@ -913,44 +913,11 @@ textarea {
 	margin-top: -2px;
 }
 
-.atlasTiers {
-	display: flex;
-	gap: 4px;
-	margin-top: -4px;
-}
-
-.atlasWhere {
-	margin-top: -6px !important;
-	text-align: center;
-	font-size: 13px;
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-	color: #8a6a3a;
-}
-
-.atlasCard {
+/* The map's one control: out of it, back to the fire. */
+.mapClose {
 	position: absolute;
 	right: 14px;
 	bottom: 14px;
-	width: min(400px, calc(100vw - 28px));
-	align-items: stretch;
-	font-size: 15px;
-}
-
-.atlasCard h2 {
-	margin: 0;
-	text-align: center;
-	font-size: 22px;
-}
-
-.atlasCard p {
-	margin: 0;
-	line-height: 1.45;
-}
-
-.atlasCard .lore {
-	font-style: italic;
-	color: #5a4630;
 }
 
 /* The bonfire's map: its own game over the area's, which waits paused beneath, under the crossing cover. */
@@ -965,23 +932,6 @@ textarea {
 	color: #f2d48a;
 	text-decoration: none;
 	opacity: 1;
-}
-
-/* The bonfires lit in an area, each a place to travel to. */
-.atlasFires {
-	display: flex;
-	flex-wrap: wrap;
-	justify-content: center;
-	gap: 8px;
-}
-
-@media (max-width: 720px) {
-	.atlasCard {
-		left: 8px;
-		right: 8px;
-		bottom: 8px;
-		width: auto;
-	}
 }
 
 /* A talk, after the Souls games: no box, the words at the foot of the screen in the map labels' outline, the name above. */

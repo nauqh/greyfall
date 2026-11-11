@@ -111,12 +111,9 @@ so they never wall a ledge off.
 - **The Underneath** is bare rock in near-black, with its caverns lit by
   their area's light. Its lakes are dark water, and the gold in the walls
   and the bonfires glow.
-- **Lift ends:** an up end is a shaft of light, a down end a dark mouth in
-  the ground. Each is labelled with where it goes and which way it runs.
-  Click one to ride it.
-- **The page:** the map fills it, and the selected area's card floats over
-  it: name, tier, blurb, keeper, and "Enter" to its own map. H hides the
-  HUD. Lifts are the only way between tiers.
+- **The page:** the map fills it and does one job, travel. The lit bonfires
+  glow, and a click on one travels there; nothing else floats over the map.
+  The tier tabs switch tiers. Lifts are the only way between tiers.
 
 ## Adding to it
 

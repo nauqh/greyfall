@@ -60,7 +60,6 @@ import {
   useIsland,
   type AreaId,
   type AreaMap,
-  type AtlasLift,
   type AtlasMap,
   type AtlasTier,
   type BandOrder,
@@ -69,7 +68,6 @@ import {
   type Dweller,
   type FoeStats,
   type GateKind,
-  type LiftKind,
   type Npc,
   type Placed,
   type TierId,
@@ -430,16 +428,12 @@ const HOVER = 0.28;
 const FIRE: Sheet = { file: "Effects/Fire/Fire.png", frame: 128, anchor: 0.8 };
 const FENCE = "Enemy Pack/Extra/Wooden Fence/Wooden Fence_64x64 tile.png";
 
-const GATE_TONE: Record<GateKind, string> = { open: "#fdfaf0", gate: "#f4cf6b", shortcut: "#8fd3ff", locked: "#ff9a8a", high: "#c8f08a" };
-const GATE_WORD: Record<GateKind, string> = { open: "", gate: "barred", shortcut: "shortcut", locked: "locked", high: "high road" };
 const FONT = '"Nunito", "Segoe UI", sans-serif';
 
 /** The area a sea tile takes its light from: the nearest within this many tiles. */
 const MOOD_REACH = 6;
 /** How far from a way out its far side's light reaches in, in tiles. */
 const LEAN_REACH = 12;
-
-const LIFT_TONE: Record<LiftKind, string> = { lift: "#ffe9a8", drop: "#d6b8ff", shortcut: "#8fd3ff" };
 
 /** Ground under the rock of the Underneath: dark, and darker than the caverns. */
 const ROCK_MOOD = 0x1e1e2a;
@@ -1011,11 +1005,7 @@ export class AtlasScene extends Phaser.Scene {
       focus: (id) => {
         const a = AREAS.find((x) => x.id === id)!;
         this.show(a.tier);
-        // The middle of the area's own ground: a label can sit on its shore.
-        const ch = AREA_CODE[AREAS.indexOf(a)];
-        const tiles = this.map.tiers[a.tier].areaAt.flatMap((line, r) => [...line].flatMap((x, c) => (x === ch ? [{ c, r }] : [])));
-        const mid = (k: "c" | "r") => tiles.reduce((n, t) => n + t[k], 0) / Math.max(1, tiles.length);
-        this.flyTo({ col: mid("c"), row: mid("r") }, 24);
+        this.flyTo(this.centre(id), 24);
       },
       travel: (to, from, arrive) => {
         const carry = arrive === "rest" || !this.hero ? undefined : { hp: this.hero.hp, flasks: this.flasks, band: this.band.map((c) => (c.dead ? 0 : c.hp)) };
@@ -1258,17 +1248,6 @@ export class AtlasScene extends Phaser.Scene {
     cam.zoomTo(this.zoomFor(rows), 900, "Sine.easeInOut", true);
   }
 
-  /** Ride a lift: the view changes tier, and lands on the lift's other end. */
-  private ride(l: AtlasLift, from: TierId): void {
-    const end = l.up.tier === from ? l.down : l.up;
-    const cam = this.active;
-    this.show(end.tier);
-    const to = this.active;
-    to.setZoom(cam.zoom * (end.tier === l.up.tier ? 0.8 : 1.25));
-    to.centerOn(end.at.col * CELL, end.at.row * CELL);
-    to.zoomTo(cam.zoom, 700, "Sine.easeOut", true);
-  }
-
   private controls(): void {
     this.input.setDefaultCursor(HAND);
     this.input.mouse?.disableContextMenu();
@@ -1304,16 +1283,11 @@ export class AtlasScene extends Phaser.Scene {
       if (!d || d.moved) return;
       const w = this.active.getWorldPoint(p.x, p.y);
       const cell = { col: Math.floor(w.x / CELL), row: Math.floor(w.y / CELL) };
-      // A bonfire mark, an exit travels, a lift's end rides it, else the area under the pointer.
+      // A bonfire mark, an exit travels, else the area under the pointer.
       const fire = this.markAt.findIndex((m) => m.tier === this.view && Math.abs(m.cell.col - cell.col) <= 2 && Math.abs(m.cell.row - cell.row) <= 2);
       if (fire >= 0) return this.hooks.onFire?.(fire);
       for (const e of this.local?.exits ?? []) {
         if (Math.abs(e.at.col - cell.col) <= 2 && Math.abs(e.at.row - cell.row) <= 2) return this.depart(e);
-      }
-      for (const l of this.map.lifts) {
-        for (const end of [l.up, l.down]) {
-          if (end.tier === this.view && Math.abs(end.at.col - cell.col) <= 2 && Math.abs(end.at.row - cell.row) <= 2) return this.ride(l, this.view);
-        }
       }
       const ch = this.map.tiers[this.view].areaAt[cell.row]?.[cell.col];
       if (ch && ch !== "-") this.hooks.onArea(AREAS[AREA_CODE.indexOf(ch)]!.id);
@@ -2364,7 +2338,6 @@ export class AtlasScene extends Phaser.Scene {
     for (const g of tier.gates) this.gatehouse(g.kind, g.cells);
     for (const f of [...tier.fires, ...tier.campfires]) this.bonfire(f);
     for (const d of tier.dwellers) this.addDweller(d);
-    for (const l of this.map.lifts) for (const end of [l.up, l.down]) if (end.tier === tier.id) this.liftMark(l, end === l.up);
     for (const e of this.local?.exits ?? []) this.exitMark(e);
     this.mood(tier);
     this.ambience(tier);
@@ -2630,32 +2603,6 @@ export class AtlasScene extends Phaser.Scene {
     if (ghost) fire.setTint(0x8cffc0);
     this.loop(fire, "fire");
     this.track(fire);
-  }
-
-  /**
-   * A lift's end: going up, a shaft of light; going down, a dark mouth in
-   * the ground. Its name says where it goes and which way it runs.
-   */
-  private liftMark(l: AtlasLift, upper: boolean): void {
-    const end = upper ? l.up : l.down;
-    const x = (end.at.col + 0.5) * CELL;
-    const y = (end.at.row + 0.8) * CELL;
-    if (upper) {
-      this.add.ellipse(x, y, 110, 52, 0x05050a, 0.85).setStrokeStyle(5, 0x3a3f4a).setDepth(DEPTH.ground + 1);
-      this.add.ellipse(x, y + 4, 70, 30, 0x000000, 0.9).setDepth(DEPTH.ground + 2);
-    } else {
-      const beam = this.add.image(x, y, "beam").setOrigin(0.5, 1).setScale(1.6, 2.4).setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.clouds - 2);
-      this.tweens.add({ targets: beam, alpha: 0.55, duration: 1400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
-      this.add.ellipse(x, y, 90, 40, 0xfff2c0, 0.5).setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.ground + 1);
-    }
-    const other = upper ? l.down : l.up;
-    const where = AREAS.find((a) => a.id === other.area)!.name;
-    const way = upper ? "down" : l.kind === "drop" ? "from above" : l.kind === "shortcut" ? "up, once opened" : "up";
-    const t = this.add
-      .text(x, y - 2.4 * CELL, `${l.name} (${way})\n${where}`, { fontFamily: FONT, fontSize: "24px", fontStyle: "bold", color: LIFT_TONE[l.kind], stroke: "#1c2634", strokeThickness: 5, align: "center" })
-      .setOrigin(0.5)
-      .setDepth(DEPTH.fx + 3);
-    this.names.push({ text: t, px: 12, tier: this.building });
   }
 
   /**
@@ -2944,7 +2891,16 @@ export class AtlasScene extends Phaser.Scene {
     }
   }
 
-  /** Area names large, gates and bosses small; all grow back to readable when zoomed out. */
+  /** The middle of an area's ground on the atlas, by the average of its cells. */
+  private centre(id: AreaId): Cell {
+    const a = AREAS.find((x) => x.id === id)!;
+    const ch = AREA_CODE[AREAS.indexOf(a)];
+    const tiles = this.map.tiers[a.tier].areaAt.flatMap((line, r) => [...line].flatMap((x, c) => (x === ch ? [{ col: c, row: r }] : [])));
+    const mid = (k: "col" | "row"): number => tiles.reduce((n, t) => n + t[k], 0) / Math.max(1, tiles.length);
+    return { col: mid("col"), row: mid("row") };
+  }
+
+  /** The area names, large and centred on their land; they grow back to readable when zoomed out. */
   private labels(tier: AtlasTier): void {
     const text = (x: number, y: number, s: string, size: number, color: string, min: number): Phaser.GameObjects.Text => {
       const t = this.add
@@ -2954,13 +2910,14 @@ export class AtlasScene extends Phaser.Scene {
       this.names.push({ text: t, px: min, tier: this.building });
       return t;
     };
-    if (!this.local) for (const a of AREAS) if (a.tier === tier.id) text(a.label.col * CELL, a.label.row * CELL, a.name.toUpperCase(), 64, "#fdfaf0", 22).setLetterSpacing(10);
-    for (const g of tier.gates) {
-      const word = GATE_WORD[g.kind];
-      text((g.at.col + 0.5) * CELL, (g.at.row - 1.2) * CELL, word ? `${g.name} (${word})` : g.name, 26, GATE_TONE[g.kind], 12);
+    if (this.local) return;
+    // The four castle wards stand on the Harbour's land; their names would crowd it, so it keeps one name.
+    const castle = new Set<AreaId>(["burg", "ramparts", "chapel", "keep"]);
+    for (const a of AREAS) {
+      if (a.tier !== tier.id || castle.has(a.id)) continue;
+      const mid = this.centre(a.id);
+      text(mid.col * CELL, mid.row * CELL, a.name.toUpperCase(), 64, "#fdfaf0", 22).setLetterSpacing(10);
     }
-    // In an area the boss bar names it, once the fight is on.
-    if (!this.local) for (const b of tier.bosses) text((b.col + 0.5) * CELL, (b.row - 2.6) * CELL, b.name, 28, "#ff8f7a", 13);
   }
 
   private flag(f: WorldFlag): void {
