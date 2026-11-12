@@ -101,8 +101,8 @@ export interface AtlasApi {
   next: () => void;
   /** At a bonfire just rested at: sit by it, the camera drawn in, or stand again; sitting gives the bonfire's name. */
   sit: (on: boolean) => string | null;
-  /** Sat at a bonfire: the levels bought, and the gold the next one costs. */
-  levels: () => { levels: Levels; cost: number };
+  /** Sat at a bonfire: the levels bought, the gold the next one costs, the gold carried and the numbers they raise. */
+  levels: () => LevelView;
   /** Sat at a bonfire: buy a level in `stat`, if the gold is there. */
   levelUp: (stat: keyof Levels) => boolean;
   /** After the prologue: open on the whole area, hold, then fly in to the hero; play starts when it lands. */
@@ -289,6 +289,13 @@ export interface Vitals {
   max: number;
   stamina: number;
   staminaMax: number;
+}
+
+export interface LevelView {
+  levels: Levels;
+  cost: number;
+  gold: number;
+  now: Levels;
 }
 
 export interface BandView {
@@ -1113,7 +1120,7 @@ export class AtlasScene extends Phaser.Scene {
       dev: (on) => this.setDev(on),
       next: () => (this.reading ? this.read(null) : this.nextPage()),
       sit: (on) => this.sit(on),
-      levels: () => ({ levels: levels(), cost: levelCost(levels()) }),
+      levels: () => ({ levels: levels(), cost: levelCost(levels()), gold: this.gold, now: { hp: this.gear.hp, attack: this.gear.attack, stamina: this.gear.stamina } }),
       levelUp: (stat) => this.levelUp(stat),
       intro: (hold, fly, done) => this.intro(hold, fly, done),
       pause: (on) => {

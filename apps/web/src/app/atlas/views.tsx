@@ -9,6 +9,7 @@ import { Clouds } from "../../game/Clouds";
 import { packUrl } from "../../game/art";
 import { GameCanvas } from "../../game/GameCanvas";
 import { DevPanel } from "./DevPanel";
+import { LevelUp } from "./LevelUp";
 import { Prologue } from "./ProloguePlayer";
 import { Sack } from "./Sack";
 import { Shop } from "./Shop";
@@ -40,9 +41,6 @@ export function useHud(): [boolean, () => void] {
 }
 
 /** A one-way drop is warned of once, on this browser; the warning is a convenience, so a blocked store just warns again. */
-/** The level up list, after Dark Souls' attributes: what each raises, in words. */
-const LEVEL_WORD: Record<keyof Levels, string> = { hp: "Vigour, +10 health", attack: "Strength, +2 attack", stamina: "Endurance, +10 stamina" };
-
 function warned(name: string): boolean {
   try {
     return localStorage.getItem(`greyfall.dropped.${name}`) === "1";
@@ -76,8 +74,8 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const [sack, setSack] = useState<SackView | null>(null);
   // Died: the words, then the dark, then waking at the bonfire in this area.
   const [died, setDied] = useState<AreaId | null>(null);
-  // Sat at a bonfire after a rest: its name, the option picked, and whether the level up list is open.
-  const [fire, setFire] = useState<{ name: string; pick: number; levelling?: boolean } | null>(null);
+  // Sat at a bonfire after a rest: its name, the option picked, whether the level up card is open, and when a level was last bought.
+  const [fire, setFire] = useState<{ name: string; pick: number; levelling?: boolean; bought?: { stat: keyof Levels; at: number } } | null>(null);
   // The map, open over the area while the scene waits paused behind it: from a bonfire to travel, or on M only to look.
   const [atlas, setAtlas] = useState<"travel" | "look" | null>(null);
   // Opening the map, on M or from a bonfire: the cloud bank draws in first, then that map is under it.
@@ -128,10 +126,9 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const bonfire = level
     ? [
         ...(["hp", "attack", "stamina"] as const).map((stat) => ({
-          label: `${LEVEL_WORD[stat]} (${level.levels[stat]}): ${level.cost} gold`,
-          go: () => api.current?.levelUp(stat) && setFire((f) => f && { ...f }),
+          label: stat,
+          go: () => api.current?.levelUp(stat) && setFire((f) => f && { ...f, bought: { stat, at: Date.now() } }),
         })),
-        { label: "Back", go: () => setFire((f) => f && { ...f, pick: 1, levelling: false }) },
       ]
     : [
         {
@@ -141,7 +138,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
             setMapCover("travel");
           },
         },
-        { label: "Level up", go: () => setFire((f) => f && { ...f, pick: 0, levelling: true }) },
+        { label: "Level up", go: () => setFire((f) => f && { ...f, pick: 0, levelling: true, bought: undefined }) },
         { label: "Leave", go: leaveFire },
       ];
   // The name mounts two painted frames after the map is in view, so its clock never runs while the first frames are still drawing.
@@ -335,13 +332,17 @@ export function AreaView({ area: first }: { area: AreaId }) {
           // Sat at a bonfire, after Dark Souls 3: the dark drawn in round the fire, its name, travel or stand.
           <div className="bonfire" role="menu" aria-label={fire.name}>
             <span className="bonfireName">{fire.name}</span>
-            {bonfire.map((o, i) => (
-              <button key={o.label} type="button" role="menuitem" className={`shopOption${i === fire.pick ? " picked" : ""}`} onClick={o.go}>
-                {o.label}
-              </button>
-            ))}
+            {level ? (
+              <LevelUp view={level} pick={fire.pick} bought={fire.bought} onPick={(pick) => setFire({ ...fire, pick })} onBuy={(i) => bonfire[i]!.go()} />
+            ) : (
+              bonfire.map((o, i) => (
+                <button key={o.label} type="button" role="menuitem" className={`shopOption${i === fire.pick ? " picked" : ""}`} onClick={o.go}>
+                  {o.label}
+                </button>
+              ))
+            )}
             <span className="talkNext" aria-hidden="true">
-              W/S, E
+              {level ? "W/S, E, Esc" : "W/S, E"}
             </span>
           </div>
         )}
