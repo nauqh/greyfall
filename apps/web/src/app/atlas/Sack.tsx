@@ -15,7 +15,7 @@ const MAIN: Partial<Record<SackView["stats"][number]["key"], string>> = { hp: ST
 
 /**
  * The captain's sack, after a Souls inventory: in the side panel the rests and merchants use, without stopping the world
- * or moving the camera, since it is opened in the field. I or Tab opens and closes it.
+ * or moving the camera, since it is opened in the field. Tab opens and closes it.
  */
 export function Sack({ sack, gold }: { sack: SackView; gold: number }) {
   const [open, setOpen] = useState(false);
@@ -23,9 +23,10 @@ export function Sack({ sack, gold }: { sack: SackView; gold: number }) {
   useEffect(() => {
     const key = (e: KeyboardEvent): void => {
       if (typing(e.target) || e.repeat || e.ctrlKey || e.altKey || e.metaKey) return;
-      if (e.key === "Tab") e.preventDefault();
-      if (e.key === "Tab" || e.key.toLowerCase() === "i") setOpen((o) => !o);
-      else if (e.key === "Escape") setOpen(false);
+      if (e.key === "Tab") {
+        e.preventDefault();
+        setOpen((o) => !o);
+      } else if (e.key === "Escape") setOpen(false);
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
@@ -37,7 +38,7 @@ export function Sack({ sack, gold }: { sack: SackView; gold: number }) {
     <>
       {/* Keeps focus off the buttons, so Space rolls rather than pressing them. */}
       <button type="button" className="sackButton" aria-expanded={open} onMouseDown={(e) => e.preventDefault()} onClick={() => setOpen((o) => !o)}>
-        Sack <kbd>I</kbd>
+        Sack <kbd>Tab</kbd>
       </button>
       {open && (
         <div className="sideDock">
@@ -50,7 +51,7 @@ export function Sack({ sack, gold }: { sack: SackView; gold: number }) {
             pick={-1}
             onPick={() => {}}
             onChoose={() => {}}
-            keys="I or Tab close"
+            keys="Tab or Esc close"
             role="dialog"
             compact
           >
