@@ -329,20 +329,31 @@ export function AreaView({ area: first }: { area: AreaId }) {
           />
         )}
         {fire && !atlas && !mapCover && (
-          // Sat at a bonfire, after Dark Souls 3: the dark drawn in round the fire, its name, travel or stand.
-          <div className="bonfire" role="menu" aria-label={fire.name}>
-            <span className="bonfireName">{fire.name}</span>
+          // Sat at a bonfire, after Dark Souls 3 and Elden Ring: the camera in on the fire, a panel at the side, the world left lit.
+          <div className="bonfire">
             {level ? (
               <LevelUp view={level} pick={fire.pick} bought={fire.bought} onPick={(pick) => setFire({ ...fire, pick })} onBuy={(i) => bonfire[i]!.go()} />
             ) : (
-              bonfire.map((o, i) => (
-                <button key={o.label} type="button" role="menuitem" className={`shopOption${i === fire.pick ? " picked" : ""}`} onClick={o.go}>
-                  {o.label}
-                </button>
-              ))
+              <div className="bonfirePanel" role="menu" aria-label={fire.name}>
+                <span className="bonfireKicker">Bonfire</span>
+                <span className="bonfireName">{fire.name}</span>
+                <i className="bonfireRested">Health and flasks restored. The dead walk again.</i>
+                {bonfire.map((o, i) => (
+                  <button
+                    key={o.label}
+                    type="button"
+                    role="menuitem"
+                    className={`bonfireOption${i === fire.pick ? " picked" : ""}`}
+                    onMouseEnter={() => setFire({ ...fire, pick: i })}
+                    onClick={o.go}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
             )}
             <span className="talkNext" aria-hidden="true">
-              {level ? "W/S, E, Esc" : "W/S, E"}
+              W/S, E, Esc
             </span>
           </div>
         )}

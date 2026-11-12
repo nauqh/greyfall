@@ -1860,7 +1860,12 @@ export class AtlasScene extends Phaser.Scene {
     const fire = restPoint();
     if (on) hero.s.setFlipX((fire.col + 0.5) * CELL < hero.s.x);
     this.play(hero.s, hero.idle);
-    this.active.zoomTo(this.zoomFor(AREA_ROWS) * (on ? 1.7 : 1), 900, "Sine.easeInOut", true);
+    const cam = this.active;
+    const base = this.zoomFor(AREA_ROWS);
+    // A whole-number zoom, so the pixel art lands crisp; the captain drawn right of centre, clear of the rest panel on the left.
+    const zoom = on ? Math.ceil(base * 1.5) : base;
+    cam.zoomTo(zoom, 900, "Sine.easeInOut", true);
+    cam.setFollowOffset(on && cam.width > 640 ? (cam.width * 0.16) / zoom : 0, 0);
     return districtOf(this.local, fire.col, fire.row)?.name || (AREAS.find((a) => a.id === this.local!.area)?.name ?? null);
   }
 
