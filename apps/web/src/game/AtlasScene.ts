@@ -1791,7 +1791,7 @@ export class AtlasScene extends Phaser.Scene {
     this.foes = [];
     this.band = [];
     this.lastHit = null;
-    for (const d of this.local!.dwellers) if (FOES[d.kind] && !remembered(SLAIN).has(d.kind)) this.addFoe(d);
+    for (const d of this.local!.dwellers) if (FOES[d.kind] && !this.slain(d)) this.addFoe(d);
     stored<CompanionKind[]>(BAND, []).forEach((kind) => this.addCompanion(kind));
     this.emitBand();
     this.hooks.onRest?.(this.local!.area);
@@ -2371,6 +2371,11 @@ export class AtlasScene extends Phaser.Scene {
     return BOSSES.has(f.kind) && !!this.local?.bosses.some((b) => tileDistance(b, f.home) <= 2);
   }
 
+  /** A boss that has fallen; one of its kind elsewhere, like the Greyfall's troll, still stands. */
+  private slain(d: Dweller): boolean {
+    return remembered(SLAIN).has(d.kind) && !!this.local?.bosses.some((b) => tileDistance(b, d) <= 2);
+  }
+
   /** A boss down: it stays down for good, and its key, if it has one, is the captain's. */
   private felled(kind: string, key?: string): void {
     remember(SLAIN, remembered(SLAIN).add(kind));
@@ -2888,7 +2893,7 @@ export class AtlasScene extends Phaser.Scene {
   /** Creatures and knights, idle at their spot or walking their beat. */
   private addDweller(d: Dweller): void {
     if (this.local && FOES[d.kind]) {
-      if (!remembered(SLAIN).has(d.kind)) this.addFoe(d);
+      if (!this.slain(d)) this.addFoe(d);
       return;
     }
     const look = this.look(d);
