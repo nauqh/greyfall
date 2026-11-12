@@ -2750,6 +2750,8 @@ export class AtlasScene extends Phaser.Scene {
     const built = new Set(tier.props.flatMap((p) => footprint(p, true).map((c) => c.row * STRAT_COLS + c.col)));
     // Nor on a fence's line or the tile outside it, so no bush or rock tangles with the posts.
     for (const f of tier.fences) for (let r = f.row - 1; r <= f.row + f.h; r++) for (let c = f.col - 1; c <= f.col + f.w; c++) if (r <= f.row || r >= f.row + f.h - 1 || c <= f.col || c >= f.col + f.w - 1) built.add(r * STRAT_COLS + c);
+    // Nor on a fire or the ring round it, where a rock would block the way to it.
+    for (const f of [...tier.fires, ...tier.campfires]) for (let r = f.row - 1; r <= f.row + 1; r++) for (let c = f.col - 1; c <= f.col + 1; c++) built.add(r * STRAT_COLS + c);
     // Nor on a note or the two rows south of it, whose art would stand over the paper; woods keep their trees.
     for (const n of this.local?.notes ?? []) for (let r = n.at.row; r <= n.at.row + 2; r++) for (let c = n.at.col - 1; c <= n.at.col + 1; c++) if (!isForest(c, r)) built.add(r * STRAT_COLS + c);
     for (let r = 0; r < STRAT_ROWS; r++) {

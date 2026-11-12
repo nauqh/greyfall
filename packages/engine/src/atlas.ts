@@ -431,8 +431,8 @@ export function footprint(p: Placed, ring = false): Cell[] {
   return out;
 }
 
-/** Props walked over, not into: gold to pick up, bones in the grass, and whatever floats. */
-const UNDERFOOT: ReadonlySet<string> = new Set(["goldStone", "bones", "boat", "pirateTowerWater"]);
+/** Props walked over, not into: gold to pick up, bones in the grass, a torch on the wall, and whatever floats. */
+const UNDERFOOT: ReadonlySet<string> = new Set(["goldStone", "bones", "sconce", "boat", "pirateTowerWater"]);
 
 /** The tiles no one walks through: every prop's base but those underfoot, and every fence post, as "col,row". A base
  *  stands centred under the art, drawn on its tile's middle: an even width rounds down, so none juts out to one side. */
