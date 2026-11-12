@@ -110,7 +110,7 @@ describe("the atlas's tiers", () => {
     expect(Object.keys(real).sort()).toEqual(AREAS.filter((a) => a.tier === "surface").map((a) => a.id).sort());
     for (const [a, x, y, s] of [
       ["emberwood", 10, 2, 4], ["crags", 50, 2, 4], ["greyfall", 92, 2, 4],
-      ["burg", 34, 23, 8], ["ramparts", 50, 26, 8], ["chapel", 65, 27, 8], ["keep", 80, 28, 8],
+      ["burg", 38, 25, 8], ["ramparts", 41, 17, 8], ["chapel", 54, 24, 8], ["keep", 30, 22, 8],
       ["saltreach", 3, 38, 4], ["harbour", 29, 35, 4], ["barrowmoor", 62, 38, 4], ["fen", 30, 60, 4],
     ] as const) expect(at(a), a).toEqual([x, y, s]);
   });

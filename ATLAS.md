@@ -399,9 +399,10 @@ crossing are gone.
   Treetop Walk raised from Smoke Bluff to the goblins' Warren Hill. The Cinder
   Troll waits in Troll's Hollow, a ring of rock with one gap. Exits carry no
   sign: a cloud bank lies across each, and E's prompt names where it goes.
-  The three castle wards sit on the atlas as a chain of their own: the Burg's
-  fallen streets, the Ramparts' raised wall walk and the Chapel's bell terrace,
-  joined by the drawn road from the Burg Gate to the Postern.
+  The castle wards sit on the atlas where their gates say: the Burg over the
+  Burg Gate, the Keep west of it, the Ramparts north of it, and the Chapel
+  east past the Gun Bridge, joined by the drawn road from the Burg Gate into
+  the Chapel.
   Tinker Crags is the third: the Tinker Rock climbs in five gnome-built
   steps, each two overlapping blocks so no ledge runs an even width, with
   every stair at the far end from the last, so the climb walks each ledge

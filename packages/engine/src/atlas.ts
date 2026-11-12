@@ -243,7 +243,7 @@ export const AREAS: readonly AtlasArea[] = [
     blurb: "A chain of drifting isles from the Cloud Bridge west to a lift that drops onto the Harbour's castle. Nobody below can open it; whoever comes down it can.",
     palette: [1, 1, 1],
     mood: 0xfff4e0,
-    label: { col: 93, row: 27 },
+    label: { col: 42, row: 21 },
   },
   {
     id: "gilded",
@@ -298,7 +298,7 @@ export const AREAS: readonly AtlasArea[] = [
     palette: [5, 5, 5],
     mood: 0xeee8e0,
     rise: 3,
-    label: { col: 40, row: 27 },
+    label: { col: 44, row: 29 },
   },
   {
     id: "ramparts",
@@ -308,7 +308,7 @@ export const AREAS: readonly AtlasArea[] = [
     palette: [4, 4, 4],
     mood: 0xeee8e0,
     rise: 5,
-    label: { col: 55, row: 29 },
+    label: { col: 44, row: 19 },
   },
   {
     id: "chapel",
@@ -318,7 +318,7 @@ export const AREAS: readonly AtlasArea[] = [
     palette: [5, 5, 5],
     mood: 0xf2ece4,
     rise: 7,
-    label: { col: 70, row: 31 },
+    label: { col: 60, row: 28 },
   },
   {
     id: "ring",
@@ -337,7 +337,7 @@ export const AREAS: readonly AtlasArea[] = [
     palette: [3, 3, 3],
     mood: 0xffffff,
     rise: 3,
-    label: { col: 84, row: 31 },
+    label: { col: 33, row: 24 },
   },
 ];
 
@@ -927,11 +927,11 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
     /**
      * An area's own map, cropped to its land and shrunk `scale` times, laid down as its lowland with its top left
      * at `x0`, `y0`: an atlas tile is land where over a quarter of its `scale` by `scale` block is, so a causeway
-     * a tile or two wide survives the shrink. Returns the size laid.
+     * a tile or two wide survives the shrink. With `framed`, the map's woods are its frame, not its land. Returns the size laid.
      */
-    real(a: AreaId, x0: number, y0: number, scale = 4): { cols: number; rows: number } {
+    real(a: AreaId, x0: number, y0: number, scale = 4, framed = false): { cols: number; rows: number } {
       const src = areaMap(a).island.rows;
-      const land = (c: number, r: number): boolean => !"~%".includes(src[r]?.[c] ?? "~");
+      const land = (c: number, r: number): boolean => !(framed ? "~%T" : "~%").includes(src[r]?.[c] ?? "~");
       let [c0, c1, r0, r1] = [Infinity, -Infinity, Infinity, -Infinity];
       src.forEach((l, r) => [...l].forEach((_, c) => land(c, r) && ([c0, c1, r0, r1] = [Math.min(c0, c), Math.max(c1, c), Math.min(r0, r), Math.max(r1, r)])));
       t.placed[a] = { x0, y0, c0, r0, scale };
@@ -1292,8 +1292,8 @@ export const LIFTS: readonly AtlasLift[] = [
     name: "Watch Lift",
     kind: "shortcut",
     note: "The castle's old lift to its watch posts in the sky, chained from above. Ride it down once from the Steps and it runs both ways for good: the road home.",
-    up: { tier: "sky", area: "steps", at: { col: 82, row: 29 } },
-    down: { tier: "surface", area: "keep", at: { col: 82, row: 29 } },
+    up: { tier: "sky", area: "steps", at: { col: 31, row: 22 } },
+    down: { tier: "surface", area: "keep", at: { col: 31, row: 22 } },
   },
 ];
 
@@ -1302,10 +1302,11 @@ function surface(rng: Rng): AtlasTier {
   // Each land in its own map's shape, all at one scale; the castle wards at half that, as insets.
   const LAY: [AreaId, number, number, number][] = [
     ["emberwood", 10, 2, 4], ["crags", 50, 2, 4], ["greyfall", 92, 2, 4],
-    ["burg", 34, 23, 8], ["ramparts", 50, 26, 8], ["chapel", 65, 27, 8], ["keep", 80, 28, 8],
+    ["burg", 38, 25, 8], ["ramparts", 41, 17, 8], ["chapel", 54, 24, 8], ["keep", 30, 22, 8],
     ["saltreach", 3, 38, 4], ["harbour", 29, 35, 4], ["barrowmoor", 62, 38, 4], ["fen", 30, 60, 4],
   ];
-  for (const [a, x, y, s] of LAY) t.real(a, x, y, s);
+  // The wards' maps are framed in woods; the Keep west of the Burg, the Ramparts over it, the Chapel past the Gun Bridge.
+  for (const [a, x, y, s] of LAY) t.real(a, x, y, s, s === 8);
   // Saltreach's isles are joined by causeways too thin to survive the shrink: a tile of each.
   for (const [c, r] of [[6, 41], [16, 40], [20, 44], [13, 41], [14, 43], [10, 46], [4, 41], [4, 42], [13, 47], [14, 47]] as const) t.ground("saltreach", c, r, 1, 1);
   t.separate();
@@ -1320,19 +1321,10 @@ function surface(rng: Rng): AtlasTier {
   t.relief({ area: "greyfall", at: { col: 112, row: 7 }, rx: 9, ry: 5, levels: 3, core: { at: { col: 112, row: 5 }, r: 2.2 } });
 
   t.gate("old-bridge", "Old Bridge", "open", "saltreach", "harbour", { col: 25, row: 40 }, { col: 33, row: 46 }, "The way in from the shore, always open.");
-  t.gate("burg-gate", "Burg Gate", "open", "harbour", "burg", { col: 43, row: 35 }, { col: 41, row: 31 }, "Up out of Old Town, through the castle's outer wall into the Lower Burg.");
-  t.gate("rampart-gate", "Rampart Gate", "open", "burg", "ramparts", { col: 46, row: 29 }, { col: 50, row: 30 }, "Up off the Burg's crest through the gatehouse onto the castle's curtain wall.");
-  t.gate("chapel-door", "Chapel Door", "open", "ramparts", "chapel", { col: 60, row: 28 }, { col: 65, row: 30 }, "Over the Gun Bridge into the Chapel Ward's cloister.");
-  t.gate("keep-gate", "Keep Gate", "locked", "burg", "keep", { col: 46, row: 24 }, { col: 66, row: 24 }, "Off the Burg's Upper Streets, along under the Crags, into the castle's bailey. The Troll Key fits it.", 1);
-  // The strait between the Crags and the wards is too narrow for a straight way: the Keep Gate turns along it.
-  const keepWay = t.gates.find((g) => g.id === "keep-gate")!;
-  for (const [a, b] of [[[66, 24], [66, 25]], [[66, 25], [79, 25]], [[79, 25], [79, 28]]] as const) {
-    t.cut({ col: a[0], row: a[1] }, { col: b[0], row: b[1] }, 1, (c, through) => {
-      if (!through) return;
-      t.put(c.col, c.row, ".");
-      keepWay.cells.push(c);
-    });
-  }
+  t.gate("burg-gate", "Burg Gate", "open", "harbour", "burg", { col: 43, row: 35 }, { col: 44, row: 32 }, "Up out of Old Town, through the castle's outer wall into the Lower Burg.");
+  t.gate("rampart-gate", "Rampart Gate", "open", "burg", "ramparts", { col: 45, row: 26 }, { col: 43, row: 21 }, "Up off the Burg's crest through the gatehouse onto the castle's curtain wall.");
+  t.gate("chapel-door", "Chapel Door", "open", "ramparts", "chapel", { col: 49, row: 18 }, { col: 56, row: 28 }, "Over the Gun Bridge into the Chapel Ward's cloister.");
+  t.gate("keep-gate", "Keep Gate", "locked", "burg", "keep", { col: 40, row: 27 }, { col: 35, row: 25 }, "Off the Burg's Upper Streets, west into the castle's bailey. The Troll Key fits it.");
   t.gate("ember-gate", "Ember Gate", "shortcut", "harbour", "emberwood", { col: 33, row: 36 }, { col: 19, row: 17 }, "A palisade on the causeway north. The town bars it at night.");
   t.gate("crag-stair", "Crag Stair", "open", "emberwood", "crags", { col: 40, row: 5 }, { col: 55, row: 12 }, "A gnome path out of the smoke, up to the rock.");
   t.gate("moor-gate", "Moor Gate", "shortcut", "harbour", "barrowmoor", { col: 56, row: 47 }, { col: 63, row: 47 }, "Barred from the moor side. Whoever comes through the moor can open it, and come home the short way.");
@@ -1342,7 +1334,7 @@ function surface(rng: Rng): AtlasTier {
   t.gate("sky-bridge", "Sky Bridge", "high", "crags", "greyfall", { col: 79, row: 5 }, { col: 96, row: 5 }, "The gnomes' high road off the top of the rock, straight onto the Greyfall's wall.", 2);
 
   t.road([22, 41], [25, 40], [33, 46], [40, 45], [44, 47]);
-  t.road([44, 47], [43, 40], [43, 35], [41, 31], [41, 28], [46, 29], [50, 30], [55, 30], [60, 28], [65, 30], [70, 31]);
+  t.road([44, 47], [43, 40], [43, 35], [44, 31], [45, 26], [43, 21], [46, 18], [49, 18], [56, 28], [60, 27]);
   t.road([43, 40], [36, 38], [33, 36], [19, 17], [20, 15]);
   t.road([20, 15], [28, 9], [40, 5], [55, 12], [60, 15]);
   t.road([44, 47], [50, 47], [56, 47], [63, 47], [70, 47], [78, 46], [92, 45], [97, 18]);
@@ -1381,28 +1373,26 @@ function surface(rng: Rng): AtlasTier {
 
   // The castle wards over the town, each dressed as its own map is.
   // The Lower Burg: the fallen outer town, its yards spiked, thieves in the lanes.
-  prop("house1", 37, 25, { color: "blue" });
-  prop("house3", 44, 26, { color: "blue" });
-  prop("skullSpike", 37, 29);
-  t.fires.push({ col: 41, row: 27 });
-  who("thief", 38, 28, { to: { col: 44, row: 29 } });
-  who("skull", 36, 30);
+  prop("skullSpike", 40, 32);
+  t.fires.push({ col: 45, row: 29 });
+  who("thief", 42, 30, { to: { col: 48, row: 32 } });
+  who("skull", 43, 32);
   // The Ramparts: the curtain wall's towers and guns, the bull on the walk.
-  prop("tower", 52, 28, { color: "blue" });
-  prop("tower", 59, 31, { color: "blue" });
-  prop("cannon", 55, 32);
-  prop("bones", 53, 31);
-  t.bosses.push({ name: "The Rampart Bull", area: "ramparts", col: 57, row: 27 });
+  prop("tower", 42, 18, { color: "blue" });
+  prop("tower", 45, 21, { color: "blue" });
+  prop("cannon", 42, 21);
+  prop("bones", 45, 19);
+  t.bosses.push({ name: "The Rampart Bull", area: "ramparts", col: 47, row: 17 });
   // The Chapel Ward: the monastery, its bell tower and the cloister.
-  prop("monastery", 70, 29, { color: "blue" });
-  prop("tower", 74, 32, { color: "blue" });
-  t.fires.push({ col: 67, row: 32 });
-  who("thief", 72, 31, { to: { col: 68, row: 30 } });
-  t.bosses.push({ name: "The Stone Warden", area: "chapel", col: 73, row: 29 });
+  prop("monastery", 60, 28, { color: "blue" });
+  prop("tower", 57, 27, { color: "blue" });
+  t.fires.push({ col: 63, row: 28 });
+  who("thief", 58, 29, { to: { col: 62, row: 29 } });
+  t.bosses.push({ name: "The Stone Warden", area: "chapel", col: 63, row: 26 });
   // The Keep: the castle's crown, its bailey round it.
-  prop("castle", 85, 30, { color: "blue" });
-  t.fires.push({ col: 82, row: 32 });
-  who("archer", 87, 32, { color: "blue" });
+  prop("castle", 32, 24, { color: "blue" });
+  t.fires.push({ col: 31, row: 25 });
+  who("archer", 35, 26, { color: "blue" });
 
   // Emberwood: goblin warrens, the troll's hollow, cinders.
   for (const [c, r, f] of [[15, 12, 0], [17, 6, 3], [26, 12, 6], [30, 7, 9]] as const) prop("goblinHut", c, r, { frame: f });
@@ -1473,12 +1463,12 @@ function sky(rng: Rng): AtlasTier {
   const t = tierBuilder("sky", rng);
   // The Gilded City over the Greyfall, its Throne Stair over the Grey Keep's; the Steps over the castle, the Watch Lift over the Keep's.
   t.real("gilded", 88, 2);
-  t.real("steps", 80, 19);
+  t.real("steps", 29, 13);
   // The Gnome Landing: an islet over the Tinker Peak, out of the city's line, the lift's basket at it.
   t.blob("gilded", 70, 6, 4, 3);
   t.separate();
   t.bridge({ col: 73, row: 7 }, { col: 89, row: 10 });
-  t.gate("cloud-bridge", "Cloud Bridge", "open", "steps", "gilded", { col: 105, row: 21 }, { col: 104, row: 16 }, "A rope bridge over nothing at all, from the Steps to the gnome-kings' city.", 2);
+  t.gate("cloud-bridge", "Cloud Bridge", "open", "steps", "gilded", { col: 54, row: 15 }, { col: 67, row: 7 }, "A rope bridge over nothing at all, from the Steps to the gnome-kings' landing.", 2);
 
   const { prop, who } = t;
   // The Gilded City: the high hall, its gnomes and guards; the Throne Isle's black stone at its east end.
@@ -1495,10 +1485,10 @@ function sky(rng: Rng): AtlasTier {
   who("gnome", 71, 7, { to: { col: 68, row: 7 } });
   who("imp", 112, 10);
   // The Steps: a watch post on the big isle, the lift's isle over the Keep.
-  prop("tower", 97, 22, { color: "yellow" });
-  t.fires.push({ col: 93, row: 27 }, { col: 82, row: 28 });
-  who("archer", 88, 26, { color: "blue" });
-  who("bat", 90, 20);
+  prop("tower", 46, 16, { color: "yellow" });
+  t.fires.push({ col: 42, row: 21 }, { col: 31, row: 23 });
+  who("archer", 37, 20, { color: "blue" });
+  who("bat", 39, 14);
   return t.finish({ steps: 0.05, gilded: 0.04 }, LIFTS.flatMap((l) => [l.up, l.down]).filter((e) => e.tier === "sky").map((e) => e.at));
 }
 

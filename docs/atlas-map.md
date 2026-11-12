@@ -20,7 +20,8 @@ survives) and lays it as the area's lowland with its top left at `x0, y0`.
 
 - **One scale:** 4 for every land, 8 for the castle wards (Burg, Ramparts,
   Chapel, Keep) and the Ring, which sit as small lands between the Harbour and
-  the north.
+  the north. The wards' maps are framed in woods, so `real(..., framed)`
+  leaves woods out of their land and each takes its walkable ground's shape.
 - **Placement is recorded** on the tier as `real[area] = { x0, y0, c0, r0,
   scale }`: an area map's cell (`col`, `row`) is atlas cell (`x0 + (col - c0) /
   scale`, `y0 + (row - r0) / scale`). Gates, lift ends and the scene's bonfire
