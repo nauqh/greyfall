@@ -59,7 +59,7 @@ export function Sack({ sack, gold }: { sack: SackView; gold: number }) {
         <div className={`sideDock sackDock${shown ? " shown" : ""}`} onTransitionEnd={(e) => e.propertyName === "transform" && !shown && setMounted(false)}>
           <SidePanel
             kicker="Sack"
-            name="The Wanderer"
+            name={sack.name ?? "The Wanderer"}
             sub={`${sack.items.length} ${sack.items.length === 1 ? "good" : "goods"} kept`}
             badge={<LevelBadge level={sack.level} />}
             options={[]}

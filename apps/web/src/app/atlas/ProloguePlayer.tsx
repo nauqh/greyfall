@@ -64,6 +64,8 @@ export function Prologue({ onReveal, onDone }: { onReveal: () => void; onDone: (
 
   useEffect(() => {
     // Captured on the window ahead of the game's own keys, so nothing behind the cutscene hears them.
+    // Once it ends, the keys are the creation screen's.
+    if (end) return;
     const down = (e: KeyboardEvent): void => {
       e.stopPropagation();
       if (HOLD_KEYS.includes(e.key)) {

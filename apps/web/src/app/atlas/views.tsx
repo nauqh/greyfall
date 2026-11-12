@@ -11,6 +11,7 @@ import { GameCanvas } from "../../game/GameCanvas";
 import { DevPanel } from "./DevPanel";
 import { LevelUp } from "./LevelUp";
 import { RestPanel } from "./RestPanel";
+import { Creation } from "./Creation";
 import { Prologue } from "./ProloguePlayer";
 import { Sack } from "./Sack";
 import { Shop } from "./Shop";
@@ -83,6 +84,8 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const [mapCover, setMapCover] = useState<"travel" | "look" | null>(null);
   // The opening cutscene, once per game, over a Landing paused behind it.
   const [prologue, setPrologue] = useState(false);
+  // The class, gift and name, on the prologue's black once it ends.
+  const [picking, setPicking] = useState(false);
   // The camera's flight in after the prologue, the HUD away until it lands.
   const [intro, setIntro] = useState(false);
   const [devState, setDevState] = useState<DevState | null>(null);
@@ -205,7 +208,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const newGame = (): void => {
     if (!window.confirm("Start a new game? Your gold, band, bonfires and slain bosses are lost.")) return;
     try {
-      for (const k of ["band", "bought", "flags", "gold", "heard", "keys", "kindled", "levels", "lost", "prologue", "rest", "slain", "taken"]) localStorage.removeItem(`greyfall.${k}`);
+      for (const k of ["band", "bought", "class", "flags", "gold", "heard", "hero", "keys", "kindled", "levels", "lost", "prologue", "rest", "slain", "taken"]) localStorage.removeItem(`greyfall.${k}`);
     } catch {}
     window.location.assign("/atlas/landing?rest");
   };
@@ -494,9 +497,19 @@ export function AreaView({ area: first }: { area: AreaId }) {
           </header>
         </div>
         {/* Outside the HUD, so Tab opens the sack with the HUD hidden too, from the first step, goods or none. */}
-        {sack && !fire && !menu && !intro && !prologue && <Sack sack={sack} gold={gold ?? 0} />}
+        {sack && !fire && !menu && !intro && !prologue && !picking && <Sack sack={sack} gold={gold ?? 0} />}
       </GameCanvas>
-      {prologue && <Prologue onReveal={revealLanding} onDone={() => setPrologue(false)} />}
+      {prologue && <Prologue onReveal={() => setPicking(true)} onDone={() => setPrologue(false)} />}
+      {picking && (
+        <Creation
+          gifts={() => api.current?.gifts() ?? []}
+          onBegin={(cls, gift, name) => {
+            api.current?.begin(cls, gift, name);
+            revealLanding();
+          }}
+          onDone={() => setPicking(false)}
+        />
+      )}
     </main>
   );
 }

@@ -1,0 +1,400 @@
+/* A new game's creation on the prologue's black: the steps across the top, paper either side, the captain by a fire. */
+.creation {
+	place-items: safe center;
+	overflow-y: auto;
+	padding: 18px 16px;
+	background: #000;
+}
+
+.crScreen {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	width: min(1180px, 100%);
+	animation: prologueIn 900ms ease-out both;
+}
+
+/* The steps, left to right, joined by a rule that fills as they are reached. */
+.crSteps {
+	display: flex;
+	justify-content: center;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.crSteps li {
+	display: flex;
+	align-items: center;
+}
+
+.crSteps li + li::before {
+	content: "";
+	width: clamp(28px, 8vw, 110px);
+	height: 2px;
+	margin: 0 12px;
+	background: #3a352b;
+	transition: background 300ms ease-out;
+}
+
+.crSteps li.done::before,
+.crSteps li.now::before {
+	background: #c9a35c;
+}
+
+.crSteps button {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 4px 6px;
+	border: 0;
+	background: none;
+	color: #6a604e;
+	font: 800 13px "Nunito", "Segoe UI", sans-serif;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	cursor: pointer;
+	transition: color 200ms ease-out;
+}
+
+.crSteps button:disabled {
+	cursor: default;
+}
+
+.crSteps b {
+	display: grid;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	border: 2px solid currentColor;
+	border-radius: 50%;
+	font: 700 12px var(--display), serif;
+	letter-spacing: 0;
+}
+
+.crSteps .done button {
+	color: #a89c84;
+}
+
+.crSteps .now button {
+	color: #f2d48a;
+}
+
+.crSteps .now b {
+	background: rgb(242 212 138 / 0.12);
+	box-shadow: 0 0 14px rgb(242 180 80 / 0.35);
+}
+
+.crSteps button:not(:disabled):hover {
+	color: #fdfaf0;
+}
+
+.crStage {
+	display: grid;
+	grid-template-columns: minmax(240px, 300px) minmax(0, 1fr) minmax(220px, 270px);
+	align-items: start;
+	gap: 8px;
+}
+
+.crPaper {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 6px 10px 10px;
+	color: #4a3a28;
+	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-weight: 700;
+	font-size: 15px;
+	border: 28px solid transparent;
+	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 28px stretch;
+	animation: prologueIn 400ms ease-out both;
+}
+
+.crPaper .panelName {
+	margin-top: -6px;
+	font-size: 20px;
+}
+
+.crPaper .panelOptions {
+	margin-top: 4px;
+}
+
+/* The pointer lights a row, as a merchant's picked row is lit, and the chosen one stays lit. */
+.creation .panelOption {
+	position: relative;
+}
+
+.creation .panelOption:hover,
+.creation .panelOption.chosen {
+	border-color: #c9a35c;
+	background: rgb(242 212 138 / 0.45);
+}
+
+.creation .panelOption:focus {
+	outline: none;
+}
+
+.creation .panelOption:focus-visible {
+	outline: 2px solid #c9a35c;
+	outline-offset: 1px;
+}
+
+.crThumb {
+	flex: none;
+	width: 48px;
+	height: 48px;
+	border: 2px solid rgb(107 87 64 / 0.3);
+	border-radius: 6px;
+	background-color: rgb(255 255 255 / 0.18);
+	background-repeat: no-repeat;
+	image-rendering: pixelated;
+}
+
+.crName {
+	display: grid;
+	gap: 6px;
+	margin-top: 4px;
+}
+
+.crName input {
+	width: 100%;
+	padding: 8px 12px;
+	border: 2px solid rgb(107 87 64 / 0.35);
+	border-radius: 6px;
+	background: rgb(255 255 255 / 0.35);
+	color: #3a2c1c;
+	font: 800 22px "Nunito", "Segoe UI", sans-serif;
+}
+
+.crName input:focus {
+	border-color: #c9a35c;
+	outline: none;
+	box-shadow: 0 0 0 3px rgb(242 212 138 / 0.5);
+}
+
+.crName input::placeholder {
+	color: rgb(74 58 40 / 0.4);
+}
+
+/* The middle: night on the shore, the fire's light on the ground, the captain standing at it. */
+.crScene {
+	position: relative;
+	align-self: stretch;
+	min-height: 520px;
+	overflow: hidden;
+}
+
+.crGlow {
+	position: absolute;
+	left: 50%;
+	bottom: 14%;
+	width: 120%;
+	height: 70%;
+	transform: translateX(-50%);
+	background:
+		radial-gradient(ellipse 30% 22% at 58% 78%, rgb(255 150 60 / 0.42), transparent 70%),
+		radial-gradient(ellipse 55% 30% at 55% 82%, rgb(120 70 30 / 0.45), transparent 75%),
+		radial-gradient(ellipse 50% 60% at 55% 70%, rgb(60 40 25 / 0.5), transparent 80%);
+	animation: crFlicker 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes crFlicker {
+	0%, 100% { opacity: 0.88; }
+	30% { opacity: 1; }
+	60% { opacity: 0.8; }
+}
+
+/* A window 220 by 200 on the idle sheet, the feet 180 down it, facing the fire; drawn at its zoom `--k` rather than
+   scaled after, since a scaled layer is drawn small and stretched, which blurs it. */
+.crFigure {
+	position: absolute;
+	left: calc(42% - 110px * var(--k));
+	bottom: calc(24% - 20px * var(--k));
+	width: calc(220px * var(--k));
+	height: calc(200px * var(--k));
+	background: var(--sheet) no-repeat;
+	background-size: calc(var(--frames) * var(--frame) * var(--k)) calc(var(--frame) * var(--k));
+	background-position: calc((110px - var(--frame) / 2) * var(--k)) calc((180px - var(--feet)) * var(--k));
+	image-rendering: pixelated;
+	animation:
+		crFrames calc(var(--frames) * 110ms) steps(var(--frames)) infinite,
+		crStep 450ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes crFrames {
+	to { background-position-x: calc((110px - var(--frame) / 2 - var(--frames) * var(--frame)) * var(--k)); }
+}
+
+/* Called up, as Diablo II's heroes step to the fire: in from a little back and out of the dark. */
+@keyframes crStep {
+	from {
+		opacity: 0;
+		translate: -18px 0;
+		filter: brightness(0.3);
+	}
+}
+
+/* Its base a fifth up the 128 px frame, set on the ground a little behind the captain's feet. */
+.crFire {
+	position: absolute;
+	left: calc(64% - 64px * var(--k));
+	bottom: calc(24% + 20px - 25.6px * var(--k));
+	width: calc(128px * var(--k));
+	height: calc(128px * var(--k));
+	background: var(--sheet) no-repeat 0 0;
+	background-size: calc(896px * var(--k)) calc(128px * var(--k));
+	image-rendering: pixelated;
+	animation: crFireFrames 700ms steps(7) infinite;
+}
+
+@keyframes crFireFrames {
+	to { background-position-x: calc(-896px * var(--k)); }
+}
+
+/* The gift at the captain's feet, catching the light. */
+.crGift {
+	position: absolute;
+	left: calc(53% - 20px);
+	bottom: calc(24% - 18px);
+	filter: drop-shadow(0 0 8px rgb(255 200 120 / 0.55));
+	animation: crGiftIn 450ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes crGiftIn {
+	from {
+		opacity: 0;
+		translate: 0 -14px;
+	}
+}
+
+.crTold {
+	position: absolute;
+	left: 6%;
+	right: 6%;
+	bottom: 2%;
+	margin: 0;
+	font: italic 400 clamp(14px, 1.5vw, 16px) / 1.55 Georgia, "Times New Roman", serif;
+	color: #e2dac6;
+	text-align: center;
+	text-wrap: pretty;
+	text-shadow: 0 2px 6px #000;
+	animation: prologueIn 300ms ease-out both;
+}
+
+.crStats .restStats {
+	grid-template-columns: 1fr;
+	padding: 10px 0;
+}
+
+/* What the pointer is on, against what is chosen: more in green, less in red. */
+.crStats .restStats b.up {
+	color: #3f7a2a;
+}
+
+.crStats .restStats b.down {
+	color: #b0402e;
+}
+
+.crNoIcon {
+	width: 22px;
+}
+
+.crSlot {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.crSlotIcon {
+	flex: none;
+	display: grid;
+	place-items: center;
+	width: 46px;
+	height: 46px;
+	border: 2px solid rgb(107 87 64 / 0.3);
+	border-radius: 6px;
+	background: rgb(255 255 255 / 0.18);
+}
+
+.crFoot {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 12px;
+}
+
+.crBack {
+	padding: 8px 16px;
+	border: 1px solid #4a4336;
+	border-radius: 6px;
+	background: none;
+	color: #b8ab8e;
+	font: 800 14px "Nunito", "Segoe UI", sans-serif;
+	letter-spacing: 0.08em;
+	cursor: pointer;
+}
+
+.crBack:hover:not(:disabled) {
+	border-color: #c9b98f;
+	color: #fdfaf0;
+}
+
+.crBack:disabled {
+	visibility: hidden;
+}
+
+.crNext {
+	padding: 6px 22px 10px;
+	border: 14px solid transparent;
+	border-image: url("/tiny-swords/ui/blueButton.png") 64 fill / 14px stretch;
+	background: none;
+	color: #fdfaf0;
+	font: 800 17px "Nunito", "Segoe UI", sans-serif;
+	letter-spacing: 0.04em;
+	text-shadow: 0 2px 0 #1c2634;
+	cursor: pointer;
+	transition: filter 140ms ease-out, transform 140ms ease-out;
+}
+
+.crNext:hover:not(:disabled) {
+	filter: brightness(1.12);
+}
+
+.crNext:active:not(:disabled) {
+	transform: translateY(2px);
+}
+
+.crNext:disabled {
+	filter: grayscale(0.8) brightness(0.6);
+	cursor: default;
+}
+
+.crBack:focus-visible,
+.crNext:focus-visible,
+.crSteps button:focus-visible {
+	outline: 2px solid #c9b98f;
+	outline-offset: 2px;
+}
+
+@media (max-width: 960px) {
+	.crStage {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.crScene {
+		order: -1;
+		min-height: 440px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.crScreen,
+	.crPaper,
+	.crGlow,
+	.crFigure,
+	.crFire,
+	.crGift,
+	.crTold {
+		animation: none;
+	}
+}

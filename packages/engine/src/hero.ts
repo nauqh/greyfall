@@ -10,6 +10,15 @@ import type { WorldFlag } from "./npcs.ts";
  *  being ready again chains. A raised shield lets a fifth of a blow from the front through. */
 export const HERO = { hp: 100, attack: 12, chain: 0.65, every: 1.1, hit: 0.2, speed: 2.8, sprint: 1.6, guard: 0.2, combo: 1.4, flasks: 3, flask: 40 } as const;
 
+/** The class picked at a new game's start. */
+export type HeroClass = "warrior" | "lancer";
+/** What a class changes of `HERO`: the Lancer's thrust reaches two tiles and bites deeper, but it recovers and walks
+ *  slower, on more health; about the Warrior's damage a second, traded for reach. */
+export const CLASSES: Record<HeroClass, { hp: number; attack: number; chain: number; every: number; speed: number; reach: number }> = {
+  warrior: { hp: HERO.hp, attack: HERO.attack, chain: HERO.chain, every: HERO.every, speed: HERO.speed, reach: 1 },
+  lancer: { hp: 120, attack: 15, chain: 0.85, every: 1.4, speed: 2.5, reach: 2 },
+};
+
 /**
  * The pace of a fight, after Dark Souls: a monster stands this long after striking, open to a punish, and no more
  * than `engage` close in on one mark at a time; the rest hold back and wait their turn.
@@ -152,8 +161,8 @@ export function comboStep(last: number, secondsReady: number): number {
 }
 
 /** Seconds until the hero can swing again after swing `step`: quick between the first two, a longer recovery after the finisher. */
-export function swingWait(step: number): number {
-  return step >= 3 ? HERO.every : HERO.chain;
+export function swingWait(step: number, cls: HeroClass = "warrior"): number {
+  return step >= 3 ? CLASSES[cls].every : CLASSES[cls].chain;
 }
 
 /** A flask drunk: `heal` back, never past whole; none drunk with none left or nothing to heal. */
@@ -211,14 +220,21 @@ export const ITEMS = {
   "Hollow Water": { cost: 0, adds: { flasks: 1 }, about: "Lake water from under the fen, clear as glass. The Order's pilgrims drink nothing else. Ferrow would not." },
   "Mum's Bread": { cost: 0, adds: { hp: 20 }, about: "Baked in an east lane oven that sat cold a long while. Mostly ash. Eaten anyway." },
   "Salt-Glass Flask": { cost: 600, adds: { flasks: 1 }, about: "Blown on the salt coast, thick as a thumb. It came in on the first ship in three winters." },
+  // The gifts: one picked at a new game's start, come ashore with the captain; never sold.
+  "Drowned Locket": { cost: 0, adds: { hp: 20 }, about: "Salt in the hinge. Whoever's face was in it, the sea kept. It still sits warm against the chest." },
+  "Notched Whetstone": { cost: 0, adds: { attack: 2 }, about: "Worn hollow by a hand that is not yours. An edge kept on it bites a little deeper." },
+  "Brine Flask": { cost: 0, adds: { flasks: 1 }, about: "Stoppered tight before the ship went down. One more draught, and it tastes of the sea." },
+  "Gull-Picked Purse": { cost: 0, adds: { greed: 0.25 }, about: "The gulls had the coins and left the purse. It has a knack for filling again." },
 } as const satisfies Record<string, { cost: number; adds: Partial<Kit>; needs?: string; about: string }>;
 export type ItemName = keyof typeof ITEMS;
+/** The gifts a new game offers: one taken ashore, kept for the run. */
+export const GIFTS: readonly ItemName[] = ["Drowned Locket", "Notched Whetstone", "Brine Flask", "Gull-Picked Purse"];
 
-/** The player's numbers with what has been bought, and the levels. */
-export function kit(bought: ReadonlySet<string>, levels: Levels = NO_LEVELS): Kit {
+/** The player's numbers with their class, what has been bought, and the levels. */
+export function kit(bought: ReadonlySet<string>, levels: Levels = NO_LEVELS, cls: HeroClass = "warrior"): Kit {
   const k: Kit = {
-    hp: HERO.hp + levels.hp * LEVEL_UP.hp,
-    attack: HERO.attack + levels.attack * LEVEL_UP.attack,
+    hp: CLASSES[cls].hp + levels.hp * LEVEL_UP.hp,
+    attack: CLASSES[cls].attack + levels.attack * LEVEL_UP.attack,
     flasks: HERO.flasks,
     flask: HERO.flask,
     block: STAMINA.block,

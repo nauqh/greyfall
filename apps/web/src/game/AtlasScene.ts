@@ -25,7 +25,10 @@ import {
   type Note,
   GOLD_STONE,
   HERO,
+  CLASSES,
+  type HeroClass,
   ITEMS,
+  GIFTS,
   kit,
   levelCost,
   NO_LEVELS,
@@ -105,6 +108,10 @@ export interface AtlasApi {
   levels: () => LevelView;
   /** Sat at a bonfire: buy a level in `stat`, if the gold is there. */
   levelUp: (stat: keyof Levels) => boolean;
+  /** After the prologue: the gifts on offer, as the sack shows a good. */
+  gifts: () => SackItem[];
+  /** After the prologue: the class, the gift and the name picked, kept for the run; the hero dressed and numbered for them. */
+  begin: (cls: HeroClass, gift: ItemName, name: string) => void;
   /** After the prologue: open on the whole area, hold, then fly in to the hero; play starts when it lands. */
   intro: (hold: number, fly: number, done: () => void) => void;
   /** In a menu with someone who hires out: pick an option, as E on it would. */
@@ -269,6 +276,8 @@ export interface SackItem {
 
 /** The sack: the goods kept, and every number of the captain's. */
 export interface SackView {
+  /** What the captain was called at the start; an old save's has none. */
+  name: string | null;
   items: SackItem[];
   stats: (StatLine & { key: keyof Kit })[];
   level: number;
@@ -512,14 +521,25 @@ const ROCK_PAD = 128;
 
 /** An area map's view in play: this many rows tall, held on the hero. */
 const AREA_ROWS = 15;
-/** The captain, drawn from the knights' sheets. */
-const HERO_LOOK: Dweller = { kind: "warrior", col: 0, row: 0, color: "blue" };
-const HERO_ATTACK = { key: "blue_Warrior/Warrior_Attack1.png", file: "Units/Blue Units/Warrior/Warrior_Attack1.png" };
-const HERO_ATTACK2 = { key: "blue_Warrior/Warrior_Attack2.png", file: "Units/Blue Units/Warrior/Warrior_Attack2.png" };
+/** The captain, drawn from the knights' sheets, by class. */
+const HERO_ART: Record<HeroClass, { look: Dweller; attack: { key: string; file: string }; attack2: { key: string; file: string }; guard: { key: string; file: string } }> = {
+  warrior: {
+    look: { kind: "warrior", col: 0, row: 0, color: "blue" },
+    attack: { key: "blue_Warrior/Warrior_Attack1.png", file: "Units/Blue Units/Warrior/Warrior_Attack1.png" },
+    attack2: { key: "blue_Warrior/Warrior_Attack2.png", file: "Units/Blue Units/Warrior/Warrior_Attack2.png" },
+    guard: { key: "blue_Warrior/Warrior_Guard.png", file: "Units/Blue Units/Warrior/Warrior_Guard.png" },
+  },
+  // One thrust, drawn facing right, for every swing of the combo.
+  lancer: {
+    look: { kind: "lancer", col: 0, row: 0, color: "blue" },
+    attack: { key: "blue_Lancer/Lancer_Right_Attack.png", file: "Units/Blue Units/Lancer/Lancer_Right_Attack.png" },
+    attack2: { key: "blue_Lancer/Lancer_Right_Attack.png", file: "Units/Blue Units/Lancer/Lancer_Right_Attack.png" },
+    guard: { key: "blue_Lancer/Lancer_Right_Defence.png", file: "Units/Blue Units/Lancer/Lancer_Right_Defence.png" },
+  },
+};
 /** A flask drunk: the Monk's healing swirl round the feet, and the green drop over the head (the pack has no flask). */
 const HEAL_FX = { key: "healFx", file: "Units/Blue Units/Monk/Heal_Effect.png" };
 const FLASK_ICON = { key: "flaskIcon", file: "ui/icon_heal.png" };
-const HERO_GUARD = { key: "blue_Warrior/Warrior_Guard.png", file: "Units/Blue Units/Warrior/Warrior_Guard.png" };
 
 /** One body in a fight on an area map: the hero or a monster. */
 interface Body {
@@ -603,7 +623,14 @@ const ITEM_ICON: Record<ItemName, ShopIcon> = {
   "Hollow Water": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#8fd8f0" },
   "Mum's Bread": { url: packUrl("UI Elements/UI Elements/Icons/Icon_04.png"), tint: "#c8a070" },
   "Salt-Glass Flask": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#d8f0f0" },
+  "Drowned Locket": { url: packUrl("UI Elements/UI Elements/Icons/Icon_06.png"), tint: "#9fc8d8" },
+  "Notched Whetstone": { url: packUrl("UI Elements/UI Elements/Icons/Icon_05.png") },
+  "Brine Flask": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#a8e0d0" },
+  "Gull-Picked Purse": { url: packUrl("UI Elements/UI Elements/Icons/Icon_03.png"), tint: "#d8b060" },
 };
+function sackItem(item: ItemName): SackItem {
+  return { label: item, icon: ITEM_ICON[item], gives: gives(item), about: ITEMS[item].about };
+}
 /** What a good does to the captain's numbers, in words. */
 function gives(item: ItemName): string {
   const words: Record<keyof Kit, (n: number) => string> = {
@@ -683,9 +710,16 @@ function untint(s: Phaser.GameObjects.Sprite): void {
   if (tint) s.setTint(tint);
   else s.clearTint();
 }
-/** The captain's numbers from the goods owned and the levels bought. */
+/** The class picked at the start; a save from before the pick is a Warrior. */
+const CLASS = "greyfall.class";
+/** What the captain was called at the start. Not `greyfall.name`, the duel's name, which a new game keeps. */
+const NAME = "greyfall.hero";
+function heroClass(): HeroClass {
+  return stored<HeroClass>(CLASS, "warrior");
+}
+/** The captain's numbers from the class, the goods owned and the levels bought. */
 function gearNow(): Kit {
-  return kit(remembered(BOUGHT), levels());
+  return kit(remembered(BOUGHT), levels(), heroClass());
 }
 function levels(): Levels {
   return stored(LEVELS, NO_LEVELS);
@@ -839,6 +873,7 @@ export class AtlasScene extends Phaser.Scene {
   /** The camera in close: at a bonfire, or on a merchant through their menu and the talks it opens. */
   private close: "fire" | "folk" | null = null;
   private flasks: number = HERO.flasks;
+  private cls: HeroClass = "warrior";
   /** The captain's numbers with the goods bought. */
   private gear: Kit = kit(new Set());
   private gold = 0;
@@ -909,6 +944,7 @@ export class AtlasScene extends Phaser.Scene {
     this.close = null;
     this.heard = remembered(HEARD);
     this.flags = remembered(FLAGS);
+    this.cls = heroClass();
     this.gear = gearNow();
     this.stamina = this.gear.stamina;
     // What a crossing proves: down the well, the Watch Lift ridden down, the Moor Gate come through from the moor, the Greyfall reached.
@@ -960,12 +996,13 @@ export class AtlasScene extends Phaser.Scene {
       }
     }
     if (this.local) {
-      const { idle, move, frame } = this.look(HERO_LOOK);
-      sheet(idle.key, { file: idle.file, frame, anchor: 0 });
-      if (move) sheet(move.key, { file: move.file, frame, anchor: 0 });
-      sheet(HERO_ATTACK.key, { file: HERO_ATTACK.file, frame, anchor: 0 });
-      sheet(HERO_GUARD.key, { file: HERO_GUARD.file, frame, anchor: 0 });
-      sheet(HERO_ATTACK2.key, { file: HERO_ATTACK2.file, frame, anchor: 0 });
+      // Every class's sheets: the pick comes after the scene is built, behind the prologue.
+      for (const art of Object.values(HERO_ART)) {
+        const { idle, move, frame } = this.look(art.look);
+        sheet(idle.key, { file: idle.file, frame, anchor: 0 });
+        if (move) sheet(move.key, { file: move.file, frame, anchor: 0 });
+        for (const a of [art.attack, art.attack2, art.guard]) sheet(a.key, { file: a.file, frame, anchor: 0 });
+      }
       sheet(HEAL_FX.key, { file: HEAL_FX.file, frame: 192, anchor: 0 });
       if (!this.textures.exists(FLASK_ICON.key)) this.load.image(FLASK_ICON.key, packUrl(FLASK_ICON.file));
       for (const kind of ["lancer", "archer", "monk"] as const) {
@@ -1130,6 +1167,8 @@ export class AtlasScene extends Phaser.Scene {
       sit: (on) => this.sit(on),
       levels: () => ({ levels: levels(), cost: levelCost(levels()), gold: this.gold, now: { hp: this.gear.hp, attack: this.gear.attack, stamina: this.gear.stamina } }),
       levelUp: (stat) => this.levelUp(stat),
+      gifts: () => GIFTS.map(sackItem),
+      begin: (cls, gift, name) => this.begin(cls, gift, name),
       intro: (hold, fly, done) => this.intro(hold, fly, done),
       pause: (on) => {
         // The whole loop, not the scene: a paused scene still draws every frame under the other game.
@@ -1566,11 +1605,12 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   private spawnHero(at: Cell): void {
-    const look = this.look(HERO_LOOK);
+    const art = HERO_ART[this.cls];
+    const look = this.look(art.look);
     const y = (at.row + 0.75) * CELL;
     const s = this.add.sprite((at.col + 0.5) * CELL, y, look.idle.key).setOrigin(0.5, look.anchor).setDepth(standing(y));
     this.play(s, look.idle.key);
-    this.hero = { ...this.body(s, at, this.gear.hp, HERO.speed, { idle: look.idle.key, move: look.move?.key, attack: HERO_ATTACK.key }) };
+    this.hero = { ...this.body(s, at, this.gear.hp, CLASSES[this.cls].speed, { idle: look.idle.key, move: look.move?.key, attack: art.attack.key }) };
     const k = this.input.keyboard;
     if (k) this.keys = k.addKeys({ up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT", w: "W", a: "A", s: "S", d: "D", shift: "SHIFT" }, false) as typeof this.keys;
     // Captured, so Space never scrolls the page or presses a focused button.
@@ -2076,6 +2116,23 @@ export class AtlasScene extends Phaser.Scene {
     if (first) this.time.delayedCall(900, () => this.float(hero.s.x, hero.s.y - hero.lift - 30, "Kept in your sack. Tab.", "#fdfaf0", 2600));
   }
 
+  /** The captain as `cls`, with `gift` in the sack and called `name`, kept for the run: its sheets, feet and numbers. */
+  private begin(cls: HeroClass, gift: ItemName, name: string): void {
+    store(CLASS, cls);
+    store(NAME, name);
+    remember(BOUGHT, remembered<ItemName>(BOUGHT).add(gift));
+    this.cls = cls;
+    const hero = this.hero;
+    if (!hero) return;
+    const look = this.look(HERO_ART[cls].look);
+    Object.assign(hero, { idle: look.idle.key, move: look.move?.key, attack: HERO_ART[cls].attack.key, speed: CLASSES[cls].speed });
+    hero.s.anims.stop();
+    hero.s.setOrigin(0.5, look.anchor);
+    this.play(hero.s, hero.idle);
+    hero.lift = hero.s.displayHeight * hero.s.originY * 0.78;
+    this.regear();
+  }
+
   /** The numbers again after a good or a level: a shard's flask comes filled, a haunch's health with it. */
   private regear(): void {
     const was = this.gear;
@@ -2095,7 +2152,7 @@ export class AtlasScene extends Phaser.Scene {
     const stats = (Object.keys(STATS) as (keyof Kit)[]).map((k) => ({ key: k, label: STATS[k].label, now: statWords(k, this.gear) }));
     const lv = levels();
     const level = 1 + lv.hp + lv.attack + lv.stamina;
-    this.hooks.onSack?.({ items: items.map((item) => ({ label: item, icon: ITEM_ICON[item], gives: gives(item), about: ITEMS[item].about })), stats, level });
+    this.hooks.onSack?.({ name: stored<string | null>(NAME, null), items: items.map(sackItem), stats, level });
   }
 
   /** In a talk with someone who hires out: a companion joins, for gold, if there is room. */
@@ -2309,18 +2366,18 @@ export class AtlasScene extends Phaser.Scene {
         const [kx, ky] = this.keyDir();
         const foe = this.foes.filter((f) => !f.dead && tileDistance(f.at, hero.at) <= 3).sort((a, b) => tileDistance(a.at, hero.at) - tileDistance(b.at, hero.at))[0];
         if (kx || ky) {
-          this.slide(kx, ky, (HERO.speed * CELL * dt) / 1000, !foe);
+          this.slide(kx, ky, (CLASSES[this.cls].speed * CELL * dt) / 1000, !foe);
           // The pack has no guarding walk: the guard pose rocks foot to foot about the feet, a step each swing.
           hero.s.setAngle(Math.sin((time / 1000) * Math.PI * 5) * 6);
         }
         if (foe && Math.abs(foe.s.x - hero.s.x) > 4) hero.s.setFlipX(foe.s.x < hero.s.x);
-        this.play(hero.s, HERO_GUARD.key);
+        this.play(hero.s, HERO_ART[this.cls].guard.key);
       }
     } else if (!hero.dead && !this.gone) {
       // Space held past a tap, while moving: a sprint, for as long as the stamina lasts.
       const [kx, ky] = this.keyDir();
       const sprinting = this.spaceAt >= 0 && time - this.spaceAt >= TAP && (kx || ky || hero.way.length > 0) && canAct(this.stamina) && time >= hero.busy;
-      hero.speed = HERO.speed * (sprinting ? HERO.sprint : 1);
+      hero.speed = CLASSES[this.cls].speed * (sprinting ? HERO.sprint : 1);
       if (sprinting) {
         this.stamina = spend(this.stamina, (STAMINA.sprint * dt) / 1000);
         this.spentAt = time;
@@ -2545,11 +2602,11 @@ export class AtlasScene extends Phaser.Scene {
   /** Loops for every sheet with more than one frame: props, beasts, knights. */
   private makeAnims(): void {
     for (const key of this.textures.getTextureKeys()) {
-      const once = /_(attack|windup|recovery)$/.test(key) || [HERO_ATTACK.key, HERO_ATTACK2.key, COMPANION_ATTACK.lancer.key, COMPANION_ATTACK.archer.key, COMPANION_ATTACK.monk.key, HEAL_FX.key].includes(key);
+      const once = /_(attack|windup|recovery)$/.test(key) || [HERO_ART.warrior.attack.key, HERO_ART.warrior.attack2.key, COMPANION_ATTACK.lancer.key, COMPANION_ATTACK.archer.key, COMPANION_ATTACK.monk.key, HEAL_FX.key].includes(key);
       if (once && !this.anims.exists(`${key}_once`)) {
         // The hero's swings fill the wait to the next one (4 frames, 0.4 s) rather than snap through and stand idle.
         // The hero's swings fill the wait to the next; a monster's attack plays out over its wind-up.
-        const rate = key === HERO_ATTACK.key || key === HERO_ATTACK2.key || (key.startsWith("beast_") && /_(attack|windup|recovery)$/.test(key)) ? 10 : key === HEAL_FX.key ? 12 : 16;
+        const rate = key === HERO_ART.warrior.attack.key || key === HERO_ART.warrior.attack2.key || (key.startsWith("beast_") && /_(attack|windup|recovery)$/.test(key)) ? 10 : key === HEAL_FX.key ? 12 : 16;
         this.anims.create({ key: `${key}_once`, frames: this.anims.generateFrameNumbers(key), frameRate: rate, repeat: 0 });
       }
       const frames = this.textures.get(key).frameTotal - 1;
@@ -3309,7 +3366,8 @@ export class AtlasScene extends Phaser.Scene {
     this.queued = false;
     const at = this.aim ?? { x: hero.s.x + (hero.s.flipX ? -1 : 1), y: hero.s.y };
     if (Math.abs(at.x - hero.s.x) > 4) hero.s.setFlipX(at.x < hero.s.x);
-    const reach = this.foes.filter((f) => !f.dead && canReach(1, f.stats) && tileDistance(f.at, hero.at) <= 1 && Math.hypot(f.s.x - hero.s.x, f.s.y - hero.s.y) < 1.5 * CELL);
+    const { reach: r } = CLASSES[this.cls];
+    const reach = this.foes.filter((f) => !f.dead && canReach(1, f.stats) && tileDistance(f.at, hero.at) <= r && Math.hypot(f.s.x - hero.s.x, f.s.y - hero.s.y) < (r + 0.5) * CELL);
     const foe = reach.sort((a, b) => Math.hypot(a.s.x - at.x, a.s.y - at.y) - Math.hypot(b.s.x - at.x, b.s.y - at.y))[0];
     this.heroSwing(foe ?? null, time);
   }
@@ -3320,15 +3378,16 @@ export class AtlasScene extends Phaser.Scene {
     const step = (this.combo = comboStep(this.combo, (time - hero.next) / 1000));
     this.stamina = spend(this.stamina, STAMINA.swing);
     this.spentAt = time;
-    const anim = step === 2 ? HERO_ATTACK2.key : HERO_ATTACK.key;
-    this.swing(hero, foe, swingWait(step), time, anim);
+    const anim = step === 2 ? HERO_ART[this.cls].attack2.key : HERO_ART[this.cls].attack.key;
+    this.swing(hero, foe, swingWait(step, this.cls), time, anim);
     // Committed until the swing is through: no roll out of it.
     hero.busy = time + (HERO.hit + 0.25) * 1000;
     if (!foe) return;
     this.lastHit = foe;
     // The blow lands partway through the swing, if the mark is still in reach.
     this.time.delayedCall(HERO.hit * 1000, () => {
-      if (foe.dead || hero.dead || tileDistance(foe.at, hero.at) > 1 || Math.hypot(foe.s.x - hero.s.x, foe.s.y - hero.s.y) > 1.6 * CELL) return;
+      const { reach } = CLASSES[this.cls];
+      if (foe.dead || hero.dead || tileDistance(foe.at, hero.at) > reach || Math.hypot(foe.s.x - hero.s.x, foe.s.y - hero.s.y) > (reach + 0.6) * CELL) return;
       this.hurt(hero, foe, this.gear.attack);
       if (step === 3 && !foe.dead && !BOSSES.has(foe.kind)) this.knockBack(foe, this.time.now);
     });

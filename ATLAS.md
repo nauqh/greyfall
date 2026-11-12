@@ -44,13 +44,35 @@ inside the area map.
 
 ### The hero
 
-A Warrior in blue. You have no name here and no banner.
+A knight in blue, with no banner. On the prologue's black before the
+Landing, after Dark Souls' character creation, the player picks a class, a
+gift and a name, all kept for the run. The name is the player's own; the
+Reach does not know it, and the folk still never say it. Blank, it is
+Nameless. A save from before the pick is a Warrior with no gift, and the
+sack calls it the Wanderer.
+
+| Class | HP | Attack | Swings | Reach | Walk |
+| --- | --- | --- | --- | --- | --- |
+| Warrior | 100 | 12 | 0.65 s, finisher 1.1 s | 1 tile | 2.8 tiles/s |
+| Lancer | 120 | 15 | 0.85 s, finisher 1.4 s | 2 tiles | 2.5 tiles/s |
+
+Both carry a shield. The Lancer trades pace for reach at about the
+Warrior's damage a second; neither reaches what flies.
+
+The gifts, one taken ashore, are goods like the merchants', never sold:
+
+| Gift | Gives |
+| --- | --- |
+| Drowned Locket | +20 max health |
+| Notched Whetstone | +2 attack |
+| Brine Flask | +1 flask |
+| Gull-Picked Purse | +25% gold from kills |
 
 | Stat | Start | Notes |
 | --- | --- | --- |
-| HP | 100 | |
+| HP | 100 | The Warrior's; the class sets it |
 | Stamina | 100 | As in Dark Souls: a swing 14, a roll 22, sprinting 15 a second, a blow on the shield 2.5 times its weight (too little left breaks the guard: it lands whole and staggers). Comes back 45 a second after half a second unspent, a third as fast behind the shield. At nothing, no swing or roll |
-| Attack | 12 a swing | Combo of 3: the first two 0.65 s apart, the third knocks back and takes 1.1 s to recover |
+| Attack | 12 a swing | The Warrior's. Combo of 3: the first two 0.65 s apart, the third knocks back and takes 1.1 s to recover |
 | Flasks | 3 | Each heals 40 HP; refilled at a bonfire |
 
 Levelling is Souls-style: spend gold at a bonfire. Each level adds +10 HP,
@@ -217,11 +239,9 @@ Emberwood and the Troll.
 
 Defaults in brackets, used until decided.
 
-1. Hero class: Warrior only, or a pick at the start (Warrior, Lancer,
-   Archer)? [Warrior only]
-2. Fallen companions: back at the next bonfire, or gone for good outside
+1. Fallen companions: back at the next bonfire, or gone for good outside
    Hardcore? [Back at the bonfire]
-3. After the Warlord: a single campaign, or New Game+? [Single campaign]
+2. After the Warlord: a single campaign, or New Game+? [Single campaign]
 
 ## Summary
 
@@ -808,7 +828,7 @@ crossing are gone.
 
 ## Playing an area map
 
-An area map is played. The hero (a blue Warrior) stands where you arrived,
+An area map is played. The hero (a blue Warrior or Lancer) stands where you arrived,
 and the camera holds on it 15 rows tall. There is no minimap (dev mode
 shows the whole map). The hero walks at 2.8 tiles a second in straight legs
 (the grid path pulled taut, `smoothPath`), at a steady speed rather than a

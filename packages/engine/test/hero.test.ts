@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FOES, GOLD_STONE, HERO, ITEMS, LEVEL_UP, PACE, kit, levelCost, onOffer, TROLL, chargeLine, trollMove, mayEngage, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, swingWait, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
+import { CLASSES, FOES, GIFTS, GOLD_STONE, HERO, ITEMS, LEVEL_UP, PACE, kit, levelCost, onOffer, TROLL, chargeLine, trollMove, mayEngage, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, swingWait, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
 
 const goblin = FOES.torch!;
 const home = { col: 10, row: 10 };
@@ -142,7 +142,7 @@ describe("the merchants' goods", () => {
   });
 
   it("add up: the edges on each other, both shards a flask each, an old save's Ember Shard by its name", () => {
-    const all = kit(new Set(Object.keys(ITEMS)));
+    const all = kit(new Set(Object.keys(ITEMS).filter((k) => !GIFTS.includes(k as keyof typeof ITEMS))));
     expect(all).toEqual({ hp: 210, attack: 24, flasks: HERO.flasks + 4, flask: 70, block: 1.75, greed: 1.5, stamina: STAMINA.max });
     expect(kit(new Set(["Ember Shard"])).flasks).toBe(HERO.flasks + 1);
   });
@@ -224,6 +224,28 @@ describe("the cinder troll", () => {
     useIsland(island(["~~~~~~~~~~", "~........~", "~...T....~", "~~~~~~~~~~"]));
     expect(chargeLine({ col: 1, row: 1 }, { col: 3, row: 1 }).at(-1)).toEqual({ col: 7, row: 1 });
     expect(chargeLine({ col: 1, row: 2 }, { col: 8, row: 2 })).toEqual([{ col: 2, row: 2 }, { col: 3, row: 2 }]);
+  });
+});
+
+describe("the class picked at the start", () => {
+  it("gives the Lancer more health, reach and bite, but slower swings, at about the Warrior's damage a second", () => {
+    const [w, l] = [kit(new Set()), kit(new Set(), undefined, "lancer")];
+    expect(l.hp).toBeGreaterThan(w.hp);
+    expect(l.attack).toBeGreaterThan(w.attack);
+    expect(swingWait(3, "lancer")).toBeGreaterThan(swingWait(3));
+    expect(CLASSES.lancer.reach).toBeGreaterThan(CLASSES.warrior.reach);
+    const perSecond = (c: "warrior" | "lancer"): number => (3 * CLASSES[c].attack) / (swingWait(1, c) + swingWait(2, c) + swingWait(3, c));
+    expect(perSecond("lancer") / perSecond("warrior")).toBeCloseTo(1, 0);
+  });
+});
+
+describe("the gift taken ashore", () => {
+  it("offers goods never sold, each raising one number", () => {
+    for (const g of GIFTS) {
+      expect(ITEMS[g].cost).toBe(0);
+      expect(Object.keys(ITEMS[g].adds)).toHaveLength(1);
+    }
+    expect(kit(new Set(["Drowned Locket"])).hp).toBe(HERO.hp + 20);
   });
 });
 

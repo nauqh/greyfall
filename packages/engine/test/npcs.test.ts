@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { footprint } from "../src/atlas.ts";
-import { ITEMS, areaMap, findPath, isWalkable, onOffer, useIsland } from "../src/index.ts";
+import { GIFTS, ITEMS, areaMap, findPath, isWalkable, onOffer, useIsland } from "../src/index.ts";
 import { NPCS, nextTalk, talkKey, whereabouts, type Npc, type WorldFlag } from "../src/npcs.ts";
 
 const ferrow = NPCS.find((n) => n.id === "ferrow")!;
@@ -51,11 +51,11 @@ describe("talking", () => {
 });
 
 describe("the merchants", () => {
-  it("sell or give every good, each sold by one merchant only, and none on the Ramparts", () => {
+  it("sell or give every good but the gifts, each sold by one merchant only, and none on the Ramparts", () => {
     const sold = NPCS.flatMap((n) => (n.shop?.stock ?? []).map((s) => s.item));
     const given = NPCS.flatMap((n) => stations(n).flatMap((s) => (s.talks ?? []).flatMap((t) => (t.gives ? [t.gives] : []))));
     expect(new Set(sold).size).toBe(sold.length);
-    expect([...new Set([...sold, ...given])].sort()).toEqual(Object.keys(ITEMS).sort());
+    expect([...new Set([...sold, ...given, ...GIFTS])].sort()).toEqual(Object.keys(ITEMS).sort());
     expect(NPCS.filter((n) => n.shop && n.area === "ramparts")).toEqual([]);
   });
 });
