@@ -171,8 +171,8 @@ then walks back. The engine already has a guard leash.
    saying where to go and the Old Well beside it going down (bats below;
    only bows reach them). The boat's pier lies just south, on the docks. The
    climb runs straight up from the fire through Old Town and the Upper Town
-   to the Castle Gate on the hill's crown. From there the road runs north
-   to the Burg, the main path.
+   to the Castle Gate on the hill's crown. The main path to the Burg leaves
+   the climb on Old Town and runs round the hill's east side to its back.
 
    The Lower Burg is a town of walled yards and lanes, with the square's
    fire. The Ramparts hold the Rampart Bull on the wall walk. The Chapel
@@ -695,8 +695,7 @@ crossing are gone.
   the Old Lift (opened by riding it); the yard's stair down to the
   cloister closes the loop. The town's Ember Gate is now a shortcut, opened from the wood: the Emberwood
   comes after the castle. Every way between areas is a thing to see: a
-  stair in the terrain's own tiles (the Burg Gate on its landing above
-  Old Town), a gateway between towers or a bridge or causeway to it, and
+  stair in the terrain's own tiles, a gateway between towers or a bridge or causeway to it, and
   across it a fog gate from the pack's art, fence end-posts with the
   pack's white clouds banked between; a ladder is a run of fence, a lift
   its platform. Solid props block a base centred under their art (an
@@ -748,8 +747,8 @@ crossing are gone.
   a `lift` crossing drawn as a moored boat, E says "Take the boat to"), not a lift
   up through the rock, landing on the docks' pier below the bowl. The
   climb runs straight up from the fire to the Castle Gate on the hill's
-  crown, towers and the castle's keep beside it, and the road on north
-  off the map's edge to the Burg; the sea behind the castle is gone, the
+  crown, towers and the castle's keep beside it. The road to the Burg leaves
+  from Old Town's height at the hill's back, off the map's north edge; the sea is gone, the
   Harbour's north border woods (`wooded(m, top)`), since a gate to an
   inland area must not lead into the sea. The Old Lift from the Chapel
   lands at Old Town's east foot, near the hub. The castle areas are no

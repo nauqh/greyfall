@@ -77,7 +77,7 @@ Greets you: *"Ah. Another one."* Walked away from: *"Mind the dark, then."*
   2. The last one sat where you're standing. Warmed his hands. Then he went east and did not come back.
   3. Go on, then. The fire doesn't ask what you were. Nor do I.
 - **shore**
-  1. Follow the lanterns up through Old Town, to the Burg Gate. Someone lit them before you came. They always do.
+  1. Follow the lanterns up through Old Town and round the back of the hill, to the Burg Gate. Someone lit them before you came. They always do.
   2. The path up the hill runs through the graves to the Moor Gate. It's barred from this side. The dogs on that hill don't care that it's barred.
 - **bull** (once, after meeting, when **bullWon**)
   1. The tide brought you back. The bull in the Ring did that.

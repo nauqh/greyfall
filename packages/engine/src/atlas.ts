@@ -297,7 +297,7 @@ export const AREAS: readonly AtlasArea[] = [
     blurb: "The castle's outer town on the hill above the Harbour, fallen to the Grey while the town below held. Thieves in the lanes, the dead in the yards, and the Ramparts above.",
     palette: [5, 5, 5],
     mood: 0xeee8e0,
-    rise: 3,
+    rise: 1,
     label: { col: 44, row: 29 },
   },
   {
@@ -307,7 +307,7 @@ export const AREAS: readonly AtlasArea[] = [
     blurb: "The castle's curtain wall above the Burg, its walk too narrow to pass the bull that holds it, and past him the Gun Bridge over the chasm to the Chapel Ward.",
     palette: [4, 4, 4],
     mood: 0xeee8e0,
-    rise: 5,
+    rise: 3,
     label: { col: 44, row: 19 },
   },
   {
@@ -317,7 +317,7 @@ export const AREAS: readonly AtlasArea[] = [
     blurb: "The castle's monastery behind the Gun Bridge: a cloister round a still pond, the chapel on its terrace, and on the bell roof a warden of stone. Its lift goes down to Old Town; its postern opens on the Emberwood.",
     palette: [5, 5, 5],
     mood: 0xf2ece4,
-    rise: 7,
+    rise: 5,
     label: { col: 60, row: 28 },
   },
   {
@@ -336,7 +336,7 @@ export const AREAS: readonly AtlasArea[] = [
     blurb: "The castle's crown over the Harbour: its bailey and garrison, the hall, and the Watch Lift up to the sky. Its gate off the Burg opens to the Troll Key.",
     palette: [3, 3, 3],
     mood: 0xffffff,
-    rise: 3,
+    rise: 1,
     label: { col: 33, row: 24 },
   },
 ];

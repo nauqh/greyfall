@@ -137,7 +137,7 @@ export const NPCS: readonly Npc[] = [
       {
         id: "shore",
         lines: [
-          "Follow the lanterns up through Old Town, to the Burg Gate. Someone lit them before you came. They always do.",
+          "Follow the lanterns up through Old Town and round the back of the hill, to the Burg Gate. Someone lit them before you came. They always do.",
           "The path up the hill runs through the graves to the Moor Gate. It's barred from this side. The dogs on that hill don't care that it's barred.",
         ],
       },

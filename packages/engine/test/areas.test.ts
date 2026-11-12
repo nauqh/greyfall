@@ -118,8 +118,9 @@ it("stands the castle on the Keep's raised terrace, a height above its bailey", 
   expect(level(m.entry.col, m.entry.row)).toBe(1);
 });
 
-it("puts the harbour's hub in the village: the boat's pier and the climb to the Burg Gate near its one bonfire, the Graves held, the Moor Gate shut", () => {
+it("puts the harbour's hub in the village: the boat's pier near its one bonfire, the Burg Gate on Old Town's height, the Graves held, the Moor Gate shut", () => {
   const m = areaMap("harbour");
+  useIsland(m.island);
   const near = (a: Cell, b: Cell, d: number) => Math.max(Math.abs(a.col - b.col), Math.abs(a.row - b.row)) <= d;
   const boat = m.exits.find((e) => e.name === "The Boat")!;
   const burg = m.exits.find((e) => e.name === "Burg Gate")!;
@@ -127,7 +128,7 @@ it("puts the harbour's hub in the village: the boat's pier and the climb to the 
   expect(m.fires).toHaveLength(1);
   expect(near(m.fires[0]!, boat.at, 18)).toBe(true);
   expect(near(m.fires[0]!, m.entry, 3)).toBe(true);
-  expect(Math.abs(burg.at.col - m.fires[0]!.col)).toBeLessThanOrEqual(3);
+  expect(level(burg.at.col, burg.at.row)).toBe(2);
   expect(moor.shut).toBe("moorGateOpen");
   expect(m.dwellers.filter((d) => d.kind === "gnoll" && d.col > m.fires[0]!.col + 30).length).toBeGreaterThanOrEqual(3);
 });
