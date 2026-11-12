@@ -124,3 +124,30 @@
 		display: none;
 	}
 }
+
+/* The sack slides in from the right edge like a drawer, and back out: opened in the field, it never fades. Out is
+   quicker than in, and Tab mid-slide turns it round where it is. */
+.sackDock > * {
+	animation: none;
+	transform: translateX(calc(100% + max(16px, 5vw) + 8px));
+	transition: transform 200ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+.sackDock.shown > * {
+	transform: none;
+	transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Narrow screens: the panel is the foot of the screen, so it rises from below instead. */
+@media (max-width: 640px) {
+	.sackDock > * {
+		transform: translateY(calc(100% + 24px));
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.sackDock > *,
+	.sackDock.shown > * {
+		transition: none;
+	}
+}

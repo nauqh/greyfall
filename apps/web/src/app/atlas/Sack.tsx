@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { SackView } from "../../game/AtlasScene";
 import { packUrl } from "../../game/art";
@@ -19,7 +19,22 @@ const MAIN: Partial<Record<SackView["stats"][number]["key"], string>> = { hp: ST
  */
 export function Sack({ sack, gold }: { sack: SackView; gold: number }) {
   const [open, setOpen] = useState(false);
+  // Open is what was asked; the panel stays mounted while it slides out, and `shown` is where it slides to.
+  const [mounted, setMounted] = useState(false);
+  const [shown, setShown] = useState(false);
+  const wasShown = useRef(false);
   const [pick, setPick] = useState(0);
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      // Two frames, so the panel is laid out off the edge before it slides in.
+      let id = requestAnimationFrame(() => (id = requestAnimationFrame(() => setShown((wasShown.current = true)))));
+      return () => cancelAnimationFrame(id);
+    }
+    // Nothing to slide back if it never slid in, or if motion is reduced.
+    if (!wasShown.current || matchMedia("(prefers-reduced-motion: reduce)").matches) setMounted(false);
+    setShown((wasShown.current = false));
+  }, [open]);
   useEffect(() => {
     const key = (e: KeyboardEvent): void => {
       if (typing(e.target) || e.repeat || e.ctrlKey || e.altKey || e.metaKey) return;
@@ -40,8 +55,8 @@ export function Sack({ sack, gold }: { sack: SackView; gold: number }) {
       <button type="button" className="sackButton" aria-expanded={open} onMouseDown={(e) => e.preventDefault()} onClick={() => setOpen((o) => !o)}>
         Sack <kbd>Tab</kbd>
       </button>
-      {open && (
-        <div className="sideDock">
+      {mounted && (
+        <div className={`sideDock sackDock${shown ? " shown" : ""}`} onTransitionEnd={(e) => e.propertyName === "transform" && !shown && setMounted(false)}>
           <SidePanel
             kicker="Sack"
             name="The Wanderer"
