@@ -2,7 +2,7 @@
 
 // The map, opened from a bonfire over the area it was opened in: the Shattered Reach in three tiers and every bonfire
 // on it, lit or not. A click on a land opens its panel; a lit bonfire travels. W/S steps through the land's bonfires,
-// A/D through the tiers, E travels, Esc goes back to the fire.
+// A/D through the tiers, Esc goes back to the fire. Only a bonfire in the land panel travels.
 
 import { AREAS, MAPPED_AREAS, TIERS, TIER_INFO, areaMap, districtOf, type AreaId, type TierId } from "@greyfall/engine";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -61,7 +61,7 @@ export function TravelMap({ from, travel: atFire, dev = false, onTravel, onBack 
   // W/S walk the open land's bonfires, or every lit one with no land open.
   const steps = landFires.length > 0 ? landFires : fires.filter((f) => f.lit);
 
-  const choose = (id: AreaId): void => {
+  const choose = (id: AreaId | null): void => {
     setSelected(id);
     api.current?.select(id);
   };
@@ -83,8 +83,8 @@ export function TravelMap({ from, travel: atFire, dev = false, onTravel, onBack 
   const hooks = useRef<AtlasHooks>({
     onArea: (id) => live.current.choose(id),
     onTier: setTier,
-    // From a fire a lit bonfire travels; an unlit one, or any while looking, is only rung and named.
-    onFire: (i) => (canTravel && fires[i]?.lit ? live.current.travel(fires[i]) : live.current.pickFire(i)),
+    // A bonfire on the map opens its land, as the land under it would: only the panel travels.
+    onFire: (i) => live.current.choose(fires[i]!.area),
     ready: (a) => {
       api.current = a;
       if (fires.length > 0) a.fires(marks, pick);
@@ -109,7 +109,7 @@ export function TravelMap({ from, travel: atFire, dev = false, onTravel, onBack 
         pickFire(fires.indexOf(steps[next]!));
       } else if (k === "a" || k === "arrowleft" || k === "d" || k === "arrowright") {
         api.current?.tier(TIERS[(TIERS.indexOf(tier) + (k === "a" || k === "arrowleft" ? -1 : 1) + TIERS.length) % TIERS.length]!);
-      } else if ((k === "e" || k === "enter") && fires[pick]) travel(fires[pick]);
+      }
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
@@ -120,7 +120,6 @@ export function TravelMap({ from, travel: atFire, dev = false, onTravel, onBack 
       <GameCanvas start={(el) => import("../../game/AtlasScene").then(({ startAtlas }) => startAtlas(el, hooks))}>
         <div className="worldHud">
           <header className="atlasTop">
-            <h1 className="banner">The Shattered Reach</h1>
             {/* The tiers, after Elden Ring's underground toggle; a dot where a bonfire is lit. */}
             <nav className="worldLinks">
               {TIERS.map((t) => (

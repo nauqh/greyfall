@@ -189,8 +189,8 @@ export interface AtlasHooks {
   dev?: boolean;
   /** Asks the page to travel through an exit to another area. */
   onExit?: (exit: Departure) => void;
-  /** Asks the page to show an area's card. */
-  onArea: (id: AreaId) => void;
+  /** Asks the page to show an area's card, or with null (a click on no land) to close it. */
+  onArea: (id: AreaId | null) => void;
   /** Tells the page which tier is in view, after a lift or a tab. */
   onTier: (id: TierId) => void;
   /** A bonfire mark clicked on the atlas, by its index in the last `fires` call. */
@@ -1355,7 +1355,7 @@ export class AtlasScene extends Phaser.Scene {
         if (Math.abs(e.at.col - cell.col) <= 2 && Math.abs(e.at.row - cell.row) <= 2) return this.depart(e);
       }
       const ch = this.map.tiers[this.view].areaAt[cell.row]?.[cell.col];
-      if (ch && ch !== "-") this.hooks.onArea(AREAS[AREA_CODE.indexOf(ch)]!.id);
+      this.hooks.onArea(ch && ch !== "-" ? AREAS[AREA_CODE.indexOf(ch)]!.id : null);
     });
   }
 
@@ -2474,7 +2474,10 @@ export class AtlasScene extends Phaser.Scene {
     // the rock too, and it runs ROCK_PAD past the grid with the mood.
     if (tier.base === "rock") {
       const [W, H, P] = [STRAT_COLS * CELL, STRAT_ROWS * CELL, ROCK_PAD * CELL];
-      this.add.rectangle(W / 2, H / 2, W + 2 * P, H + 2 * P, 0x1f4656).setDepth(DEPTH.water);
+      // In an area's own map the rock past the grid is its ground in the dark, as the rock tiles inside it are.
+      const edge = shade ? this.textures.getPixel(80, 80, `tilesetC${shade[0]?.[0] ?? 4}`, "__BASE")?.color : undefined;
+      this.add.rectangle(W / 2, H / 2, W + 2 * P, H + 2 * P, edge ?? 0x1f4656).setDepth(DEPTH.water);
+      if (edge !== undefined) this.add.rectangle(W / 2, H / 2, W, H, 0x1f4656).setDepth(DEPTH.water);
     }
     this.dress(tier, roads);
     for (const p of tier.props) this.addProp(p, tier.base);
