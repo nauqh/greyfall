@@ -131,6 +131,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
           label: stat,
           go: () => api.current?.levelUp(stat) && setFire((f) => f && { ...f, bought: { stat, at: Date.now() } }),
         })),
+        { label: "Back", go: () => setFire((f) => f && { ...f, pick: 1, levelling: false }) },
       ]
     : [
         {
@@ -333,9 +334,9 @@ export function AreaView({ area: first }: { area: AreaId }) {
         )}
         {fire && !atlas && !mapCover && (
           // Sat at a bonfire, after Dark Souls 3 and Elden Ring: the camera in on the fire, a panel at the side, the world left lit.
-          <div className="bonfire">
+          <div className="sideDock">
             {level ? (
-              <LevelUp view={level} pick={fire.pick} bought={fire.bought} onPick={(pick) => setFire({ ...fire, pick })} onBuy={(i) => bonfire[i]!.go()} />
+              <LevelUp name={fire.name} view={level} pick={fire.pick} bought={fire.bought} onPick={(pick) => setFire({ ...fire, pick })} onChoose={(i) => bonfire[i]!.go()} />
             ) : (
               sat && (
                 <RestPanel
@@ -343,17 +344,12 @@ export function AreaView({ area: first }: { area: AreaId }) {
                   area={AREAS.find((a) => a.id === area)?.name ?? ""}
                   view={sat}
                   flasks={flasks ?? 0}
-                  options={bonfire.map((o) => ({ label: o.label, note: "note" in o ? o.note : "" }))}
+                  options={bonfire.map((o) => ({ label: o.label, note: "note" in o ? o.note : undefined }))}
                   pick={fire.pick}
                   onPick={(pick) => setFire({ ...fire, pick })}
                   onChoose={(i) => bonfire[i]!.go()}
                 />
               )
-            )}
-            {level && (
-              <span className="talkNext" aria-hidden="true">
-                W/S, E, Esc
-              </span>
             )}
           </div>
         )}
@@ -461,14 +457,14 @@ export function AreaView({ area: first }: { area: AreaId }) {
               </span>
             </div>
           )}
-          {gold !== null && !fire && (
+          {gold !== null && !fire && !menu && (
             // The souls counter's place: gold carried, bottom right.
             <div className="purse" title="Gold">
               <img src={packUrl("ui/icon_gold.png")} alt="Gold" />
               <b>{gold}</b>
             </div>
           )}
-          {sack && !fire && <Sack sack={sack} />}
+          {sack && !fire && !menu && <Sack sack={sack} />}
           {band && band.members.length > 0 && (
             <div className="bandPanel">
               <div className="bandOrder">

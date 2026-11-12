@@ -276,10 +276,13 @@ export interface SackView {
 /** After the Souls games' merchants: a name over a short list, one option picked; a good says what it gives. */
 export interface MenuView {
   name: string;
+  role: string;
+  /** What they called out as the captain came near. */
+  greet: string;
   options: { label: string; note?: string; icon?: ShopIcon; gives?: string; sold?: boolean; about?: string; afford?: boolean; change?: StatLine[] }[];
   pick: number;
-  /** Gold carried, while the goods are open. */
-  gold?: number;
+  /** Gold carried. */
+  gold: number;
   /** A merchant's goods, opened from Shop: drawn as cards rather than a list. */
   shop?: boolean;
 }
@@ -832,6 +835,8 @@ export class AtlasScene extends Phaser.Scene {
   /** Open with someone who hires out: Talk, Hire, Leave. */
   /** `shopping`: a merchant's goods are open, picked from the menu's Shop. */
   private menu: { folk: Folk; pick: number; shopping?: boolean } | null = null;
+  /** The camera in close: at a bonfire, or on a merchant through their menu and the talks it opens. */
+  private close: "fire" | "folk" | null = null;
   private flasks: number = HERO.flasks;
   /** The captain's numbers with the goods bought. */
   private gear: Kit = kit(new Set());
@@ -900,6 +905,7 @@ export class AtlasScene extends Phaser.Scene {
     this.talk = null;
     this.nearName = null;
     this.menu = null;
+    this.close = null;
     this.heard = remembered(HEARD);
     this.flags = remembered(FLAGS);
     this.gear = gearNow();
@@ -1861,19 +1867,29 @@ export class AtlasScene extends Phaser.Scene {
     const fire = restPoint();
     if (on) hero.s.setFlipX((fire.col + 0.5) * CELL < hero.s.x);
     this.play(hero.s, hero.idle);
-    const cam = this.active;
-    const base = this.zoomFor(AREA_ROWS);
-    // A whole-number zoom, so the pixel art lands crisp; the captain drawn left of centre, clear of the rest panel on the right.
-    const zoom = on ? Math.ceil(base * 2.2) : base;
-    cam.zoomTo(zoom, 900, "Sine.easeInOut", true);
-    cam.setFollowOffset(on && cam.width > 640 ? (-cam.width * 0.18) / zoom : 0, 0);
-    // The folk step out of the shot while the captain rests: only the fire and the band.
-    for (const f of this.folk) {
-      if (on) f.bubble?.destroy();
-      if (on) f.bubble = null;
-      this.tweens.add({ targets: [f.s, f.tag], alpha: on ? 0 : 1, duration: 500 });
-    }
+    this.closeUp(on ? { x: (hero.s.x + (fire.col + 0.5) * CELL) / 2, y: hero.s.y } : null);
     return districtOf(this.local, fire.col, fire.row)?.name || (AREAS.find((a) => a.id === this.local!.area)?.name ?? null);
+  }
+
+  /**
+   * The camera in close, for a rest or a merchant: a whole-number zoom so the pixel art lands crisp, `at` drawn left of
+   * centre, clear of the side panel on the right. The folk step out of the shot, all but `keep`.
+   */
+  private closeUp(at: { x: number; y: number } | null, keep?: Folk): void {
+    const cam = this.active;
+    const hero = this.hero!;
+    const base = this.zoomFor(AREA_ROWS);
+    const zoom = at ? Math.ceil(base * 2.2) : base;
+    cam.zoomTo(zoom, 900, "Sine.easeInOut", true);
+    const shift = at && cam.width > 640 ? (cam.width * 0.18) / zoom : 0;
+    cam.setFollowOffset(at ? hero.s.x - at.x - shift : 0, at ? hero.s.y - at.y : 0);
+    for (const f of this.folk) {
+      const out = !!at && f !== keep;
+      if (out) f.bubble?.destroy();
+      if (out) f.bubble = null;
+      this.tweens.add({ targets: [f.s, f.tag], alpha: out ? 0 : 1, duration: 500 });
+    }
+    this.close = at ? (keep ? "folk" : "fire") : null;
   }
 
   /** The opening shot, after the camera handoffs of cutscene-led games: the whole area, then down onto the hero, held still till it lands. */
@@ -2104,15 +2120,30 @@ export class AtlasScene extends Phaser.Scene {
       });
       return [...goods, { label: "Back" }];
     }
-    if (f.npc.shop) return [{ label: "Talk" }, { label: "Shop" }, { label: "Leave" }];
+    const talk = { label: "Talk", note: "Hear them out" };
+    const leave = { label: "Leave", note: "Go on your way" };
+    if (f.npc.shop) return [talk, { label: "Shop", note: "See the goods" }, leave];
     const kind = RECRUITER[f.npc.id]!;
     const cost = COMPANIONS[kind].cost;
-    return [{ label: "Talk" }, { label: `Hire ${kind === "lancer" ? "a Lancer" : "an Archer"}`, note: `${cost} gold` }, { label: "Leave" }];
+    const room = this.band.length < BAND_SIZE;
+    return [talk, { label: `Hire ${kind === "lancer" ? "a Lancer" : "an Archer"}`, note: room ? `${cost} gold, ${this.band.length} of ${BAND_SIZE} in the band` : "The band is full" }, leave];
   }
 
   private showMenu(): void {
     const m = this.menu;
-    this.hooks.onMenu?.(m ? { name: m.folk.npc.name, options: this.menuOptions(m.folk), pick: m.pick, shop: m.shopping, gold: m.shopping ? this.gold : undefined } : null);
+    this.hooks.onMenu?.(
+      m
+        ? {
+            name: m.folk.npc.name,
+            role: m.folk.npc.shop ? "Merchant" : "Hires out",
+            greet: m.folk.npc.greet,
+            options: this.menuOptions(m.folk),
+            pick: m.pick,
+            shop: m.shopping,
+            gold: this.gold,
+          }
+        : null,
+    );
   }
 
   private openMenu(f: Folk): void {
@@ -2123,6 +2154,7 @@ export class AtlasScene extends Phaser.Scene {
     f.s.setFlipX(hero.s.x < f.s.x);
     hero.s.setFlipX(f.s.x < hero.s.x);
     this.menu = { folk: f, pick: 0 };
+    this.closeUp({ x: (hero.s.x + f.s.x) / 2, y: (hero.s.y + f.s.y) / 2 }, f);
     this.showMenu();
   }
 
@@ -3501,6 +3533,8 @@ export class AtlasScene extends Phaser.Scene {
         // A long stall (a tab in the background) is not a long stride.
         this.fight(time, Math.min(delta, 100));
         this.mind();
+        // Done with a merchant, menu and talk both over: the camera draws back out.
+        if (this.close === "folk" && !this.menu && !this.talk) this.closeUp(null);
         this.gather();
         this.whereabouts(time);
         this.partMist();

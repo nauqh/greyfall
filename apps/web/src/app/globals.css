@@ -1176,46 +1176,10 @@ textarea {
 	}
 }
 
-/* Sat at a bonfire: the world stays lit; the panel stands at the right, the captain and the fire left of centre. */
-.bonfire {
-	position: absolute;
-	inset: 0;
-	z-index: 5;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: flex-end;
-	gap: 8px;
-	padding: 16px max(16px, 5vw) 16px 16px;
-	pointer-events: none;
-}
-
-.bonfire > * {
-	pointer-events: auto;
-	animation: bonfire 600ms 300ms ease-out both;
-}
-
-@keyframes bonfire {
-	from {
-		opacity: 0;
-		transform: translateX(16px);
-	}
-}
-
-/* Narrow screens: the panel low and centred, under the captain rather than beside. */
-@media (max-width: 640px) {
-	.bonfire {
-		justify-content: flex-end;
-		align-items: center;
-		padding: 16px 16px 36px;
-	}
-}
-
 @media (prefers-reduced-motion: reduce) {
 	.talkText,
 	.talkPrompt,
-	.noteRead,
-	.bonfire > * {
+	.noteRead {
 		animation: none;
 	}
 }
@@ -1452,46 +1416,4 @@ textarea {
 	height: 100%;
 	background: #6fb0e0;
 }
-
-/* A merchant's menu: like a talk, at the foot of the screen in the labels' outline, the picked option marked. */
-.shop {
-	position: absolute;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	z-index: 5;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 6px;
-	padding: 48px 16px 36px;
-}
-
-.shopOption {
-	border: 0;
-	background: none;
-	padding: 2px 12px;
-	font-family: "Nunito", "Segoe UI", sans-serif;
-	font-weight: 800;
-	font-size: clamp(17px, 2vw, 22px);
-	color: rgb(253 250 240 / 0.7);
-	-webkit-text-stroke: 6px #1c2634;
-	paint-order: stroke fill;
-	cursor: pointer;
-}
-
-.shopOption.picked {
-	color: #f2d48a;
-}
-
-.shopOption.picked::before {
-	content: "> ";
-}
-
-.shopNote {
-	margin-left: 10px;
-	font-size: 0.8em;
-	color: #ffd65a;
-}
-
 
