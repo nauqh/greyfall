@@ -26,8 +26,8 @@ export interface AreaExit {
   opens?: string;
   /** No fog across it: the side a crossing comes out on, or a passage straight to a boss's own fog. */
   plain?: boolean;
-  /** A boss's kind: shut until the key that boss drops is carried. */
-  key?: string;
+  /** Bosses' kinds: shut until every key those bosses drop is carried. */
+  keys?: readonly string[];
 }
 
 /** A quarter of an area with its own ground, dressing and name on the land. */
@@ -1077,7 +1077,7 @@ function burg(): AreaMap {
     { to: "harbour", name: "Burg Gate", kind: "open", at: { col: 48, row: 62 }, plain: true },
     { to: "ramparts", name: "Rampart Gate", kind: "open", at: { col: 52, row: 1 }, plain: true },
     { to: "ramparts", name: "The Ladder", kind: "shortcut", at: { col: 56, row: 32 }, shut: "ladderDown" },
-    { to: "keep", name: "Keep Gate", kind: "locked", at: { col: 1, row: 20 }, key: "troll" },
+    { to: "keep", name: "Keep Gate", kind: "locked", at: { col: 1, row: 20 }, keys: ["troll"] },
   ];
   const districts: District[] = [
     { name: "Market Row", at: { col: 48, row: 56 }, levels: [1], palette: [4], dress: "greyfall", decor: 1.5 },
@@ -1819,7 +1819,7 @@ function greyfall(): AreaMap {
   // The Grey Keep: the black castle on the fourth height, the Warlord on the tier before it, his guard, guns on the tier.
   prop("castle", 78, 13, black);
   t.bosses.push({ name: "The Grey Warlord", area: "greyfall", col: 78, row: 18 });
-  who("warrior", 78, 18, black);
+  who("warlord", 78, 18);
   for (const [c, r] of [[75, 18], [81, 18]] as const) who("skullGuard", c, r);
   for (const [c, r] of [[72, 17], [84, 17], [73, 12], [84, 12]] as const) prop("skullSpike", c, r);
   for (const c of [70, 86]) prop("cannon", c, 21);
@@ -2283,7 +2283,7 @@ function deeps(): AreaMap {
   for (const [c, r] of [[34, 76], [42, 76], [32, 80], [44, 81], [38, 84]] as const) prop("bones", c, r);
   crowd(t, rng, "spider", { col: 38, row: 78 }, 5, 6);
   t.bosses.push({ name: "The Weaver", area: "deeps", col: 38, row: 78 });
-  who("spider", 38, 78, { scale: 2.2 });
+  who("weaver", 38, 78, { scale: 2.2 });
   for (const [c, r] of [[30, 79], [46, 79]] as const) prop("goldStone", c, r);
 
   const exits: AreaExit[] = [
@@ -2376,7 +2376,7 @@ function hollow(): AreaMap {
   for (const [c, r] of [[48, 44], [60, 44]] as const) prop("goldStone", c, r);
   who("turtle", 54, 45);
   t.bosses.push({ name: "The Shell Below", area: "hollow", col: 54, row: 38 });
-  who("turtleGuard", 54, 38, { scale: 2.4 });
+  who("shellBelow", 54, 38, { scale: 2.4 });
   for (const [c, r] of [[40, 40], [74, 42]] as const) prop("goldStone", c, r);
 
   const exits: AreaExit[] = [{ to: "deeps", name: "Sinking Stair", kind: "open", at: { col: 50, row: 2 } }];
@@ -2488,7 +2488,7 @@ function barrowmoor(): AreaMap {
   for (const [c, r] of [[52, 15], [72, 15], [54, 24], [70, 24]] as const) prop("skullSpike", c, r);
   for (const [c, r] of [[58, 14], [66, 14], [62, 21]] as const) prop("bones", c, r);
   t.bosses.push({ name: "The Barrow King", area: "barrowmoor", col: 62, row: 15 });
-  who("minotaurGuard", 62, 15, { scale: 1.6 });
+  who("barrowKing", 62, 15, { scale: 1.6 });
   for (const [c, r] of [[52, 20], [72, 20]] as const) who("skullGuard", c, r);
   prop("cave", 62, 25);
   t.fires.push({ col: 67, row: 26 });
@@ -2525,7 +2525,8 @@ function barrowmoor(): AreaMap {
 
   const exits: AreaExit[] = [
     { to: "harbour", name: "Moor Gate", kind: "shortcut", at: { col: 1, row: 40 } },
-    { to: "greyfall", name: "Grey Gate", kind: "locked", at: { col: 118, row: 36 } },
+    // After the Lordvessel: the King's horn and the Weaver's silk, one from each way out of the Harbour. Open from the Greyfall's side.
+    { to: "greyfall", name: "Grey Gate", kind: "locked", at: { col: 118, row: 36 }, keys: ["barrowKing", "weaver"] },
     { to: "fen", name: "Barrow Path", kind: "open", at: { col: 60, row: 78 } },
     { to: "deeps", name: "Barrow Cave", kind: "lift", at: { col: 62, row: 26 } },
   ];

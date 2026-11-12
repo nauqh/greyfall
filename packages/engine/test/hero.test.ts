@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FOES, GOLD_STONE, HERO, ITEMS, PACE, kit, onOffer, TROLL, chargeLine, trollMove, mayEngage, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, swingWait, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
+import { FOES, GOLD_STONE, HERO, ITEMS, LEVEL_UP, PACE, kit, levelCost, onOffer, TROLL, chargeLine, trollMove, mayEngage, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, swingWait, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
 
 const goblin = FOES.torch!;
 const home = { col: 10, row: 10 };
@@ -105,11 +105,12 @@ describe("a thrower and a flyer", () => {
 
 describe("gold", () => {
   it("drops from every monster, and a stone is worth more than any but a boss", () => {
+    const bosses = ["troll", "minotaur", "rampartBull", "stoneWarden", "barrowKing", "weaver", "shellBelow", "warlord"];
     for (const [kind, foe] of Object.entries(FOES)) {
       expect(foe!.gold).toBeGreaterThan(0);
-      if (!["troll", "minotaur", "rampartBull", "stoneWarden"].includes(kind)) expect(foe!.gold).toBeLessThan(GOLD_STONE);
+      if (!bosses.includes(kind)) expect(foe!.gold).toBeLessThan(GOLD_STONE);
     }
-    for (const boss of ["troll", "minotaur", "rampartBull", "stoneWarden"]) expect(FOES[boss]!.gold).toBeGreaterThan(GOLD_STONE);
+    for (const boss of bosses) expect(FOES[boss]!.gold).toBeGreaterThan(GOLD_STONE);
   });
 });
 
@@ -125,6 +126,7 @@ describe("stamina", () => {
     expect(recover(50, 1, STAMINA.delay, false)).toBe(50 + STAMINA.regen);
     expect(recover(50, 1, STAMINA.delay, true)).toBeCloseTo(50 + STAMINA.regen * STAMINA.guarded);
     expect(recover(99, 1, 5, false)).toBe(STAMINA.max);
+    expect(recover(105, 1, 5, false, 120)).toBe(120);
   });
 
   it("pays for a blow on the shield, and breaks the guard when it cannot", () => {
@@ -136,12 +138,12 @@ describe("stamina", () => {
 
 describe("the merchants' goods", () => {
   it("leave the hero as `ATLAS.md` has him with nothing bought", () => {
-    expect(kit(new Set())).toEqual({ hp: HERO.hp, attack: HERO.attack, flasks: HERO.flasks, flask: HERO.flask, block: STAMINA.block, greed: 1 });
+    expect(kit(new Set())).toEqual({ hp: HERO.hp, attack: HERO.attack, flasks: HERO.flasks, flask: HERO.flask, block: STAMINA.block, greed: 1, stamina: STAMINA.max });
   });
 
   it("add up: the edges on each other, both shards a flask each, an old save's Ember Shard by its name", () => {
     const all = kit(new Set(Object.keys(ITEMS)));
-    expect(all).toEqual({ hp: 210, attack: 24, flasks: HERO.flasks + 4, flask: 70, block: 1.75, greed: 1.5 });
+    expect(all).toEqual({ hp: 210, attack: 24, flasks: HERO.flasks + 4, flask: 70, block: 1.75, greed: 1.5, stamina: STAMINA.max });
     expect(kit(new Set(["Ember Shard"])).flasks).toBe(HERO.flasks + 1);
   });
 
@@ -222,5 +224,15 @@ describe("the cinder troll", () => {
     useIsland(island(["~~~~~~~~~~", "~........~", "~...T....~", "~~~~~~~~~~"]));
     expect(chargeLine({ col: 1, row: 1 }, { col: 3, row: 1 }).at(-1)).toEqual({ col: 7, row: 1 });
     expect(chargeLine({ col: 1, row: 2 }, { col: 8, row: 2 })).toEqual([{ col: 2, row: 2 }, { col: 3, row: 2 }]);
+  });
+});
+
+describe("levelling at a bonfire", () => {
+  it("adds each level's share to the kit, and every level costs more than the last", () => {
+    const k = kit(new Set(), { hp: 2, attack: 1, stamina: 3 });
+    expect([k.hp, k.attack, k.stamina]).toEqual([HERO.hp + 2 * LEVEL_UP.hp, HERO.attack + LEVEL_UP.attack, STAMINA.max + 3 * LEVEL_UP.stamina]);
+    const costs = [0, 1, 2, 5, 10].map((n) => levelCost({ hp: n, attack: 0, stamina: 0 }));
+    expect(costs[0]).toBe(150);
+    expect(costs.every((c, i) => i === 0 || c > costs[i - 1]!)).toBe(true);
   });
 });

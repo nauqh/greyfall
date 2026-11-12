@@ -13,6 +13,7 @@ import {
   companionPlan,
   foeTarget,
   hire,
+  mendTarget,
   TIERS,
   areaMap,
   districtOf,
@@ -26,6 +27,9 @@ import {
   HERO,
   ITEMS,
   kit,
+  levelCost,
+  NO_LEVELS,
+  type Levels,
   onOffer,
   type ItemName,
   type Kit,
@@ -65,6 +69,7 @@ import {
   type BandOrder,
   type Cell,
   type CompanionKind,
+  type CompanionStats,
   type Dweller,
   type FoeStats,
   type GateKind,
@@ -96,6 +101,10 @@ export interface AtlasApi {
   next: () => void;
   /** At a bonfire just rested at: sit by it, the camera drawn in, or stand again; sitting gives the bonfire's name. */
   sit: (on: boolean) => string | null;
+  /** Sat at a bonfire: the levels bought, and the gold the next one costs. */
+  levels: () => { levels: Levels; cost: number };
+  /** Sat at a bonfire: buy a level in `stat`, if the gold is there. */
+  levelUp: (stat: keyof Levels) => boolean;
   /** After the prologue: open on the whole area, hold, then fly in to the hero; play starts when it lands. */
   intro: (hold: number, fly: number, done: () => void) => void;
   /** In a menu with someone who hires out: pick an option, as E on it would. */
@@ -279,6 +288,7 @@ export interface Vitals {
   hp: number;
   max: number;
   stamina: number;
+  staminaMax: number;
 }
 
 export interface BandView {
@@ -417,7 +427,11 @@ const BEAST: Record<string, Beast> = {
   panda: { idle: `${EP}Panda/Panda_Idle.png`, move: `${EP}Panda/Panda_Run.png`, frame: 256, anchor: 0.68 },
   pandaGuard: { idle: `${EP}Extra/Panda Guard/Panda_Guard.png`, frame: 256, anchor: 0.68, scale: 1.2 },
   minotaurGuard: { idle: `${EP}Extra/Minotaur Guard/Minotaur_Guard.png`, frame: 320, anchor: 213 / 320, scale: 1.1 },
-  turtleGuard: { idle: `${EP}Extra/Turtle Guard/Turtle_Guard_In.png`, frame: 320, anchor: 0.66 },
+  // The late bosses on the sheets they share with the rank and file, set apart by size and colour.
+  barrowKing: { idle: `${EP}Minotaur/Minotaur_Idle.png`, move: `${EP}Minotaur/Minotaur_Walk.png`, attack: `${EP}Minotaur/Minotaur_Attack.png`, frame: 320, anchor: 213 / 320, tint: 0x8c9a7c },
+  weaver: { idle: `${EP}Spider/Spider_Idle.png`, move: `${EP}Spider/Spider_Run.png`, attack: `${EP}Spider/Spider_Attack.png`, frame: 192, anchor: 0.68, tint: 0xe4dccb },
+  shellBelow: { idle: `${EP}Turtle/Turtle_Idle.png`, move: `${EP}Turtle/Turtle_Walk.png`, attack: `${EP}Turtle/Turtle_Attack.png`, frame: 320, anchor: 0.66, tint: 0x9cc0b0 },
+  warlord: { idle: "Units/Black Units/Warrior/Warrior_Idle.png", move: "Units/Black Units/Warrior/Warrior_Run.png", attack: "Units/Black Units/Warrior/Warrior_Attack1.png", frame: 192, anchor: 136 / 192, scale: 1.5, tint: 0xb8b8b8 },
   gnome: { idle: `${EP}Gnome/Gnome_Idle.png`, move: `${EP}Gnome/Gnome_Run.png`, frame: 192, anchor: 0.68 },
   slingshot: { idle: `${EP}Slingshot Gnome/Slingshot Gnome_Idle.png`, move: `${EP}Slingshot Gnome/Slingshot Gnome_Run.png`, attack: `${EP}Slingshot Gnome/Slingshot Gnome_Shoot.png`, frame: 192, anchor: 0.68 },
   turtle: { idle: `${EP}Turtle/Turtle_Idle.png`, move: `${EP}Turtle/Turtle_Walk.png`, frame: 320, anchor: 0.66, scale: 0.8 },
@@ -545,7 +559,9 @@ interface Companion extends Body {
 const COMPANION_ATTACK: Record<CompanionKind, { key: string; file: string }> = {
   lancer: { key: "blue_Lancer/Lancer_Right_Attack.png", file: "Units/Blue Units/Lancer/Lancer_Right_Attack.png" },
   archer: { key: "blue_Archer/Archer_Shoot.png", file: "Units/Blue Units/Archer/Archer_Shoot.png" },
+  monk: { key: "blue_Monk/Heal.png", file: "Units/Blue Units/Monk/Heal.png" },
 };
+const COMPANION_NAME: Record<CompanionKind, string> = { lancer: "Lancer", archer: "Archer", monk: "Monk" };
 /** Who hires out which companion, by the dweller's id. */
 const RECRUITER: Record<string, CompanionKind> = { corwin: "lancer", wren: "archer" };
 /** What they say turning a hire down: short of gold, or the band already full. */
@@ -586,6 +602,7 @@ function gives(item: ItemName): string {
     flask: (n) => `+${n} healing per flask`,
     block: (n) => `Blocking costs ${Math.round((-n / STAMINA.block) * 100)}% less stamina`,
     greed: (n) => `+${Math.round(n * 100)}% gold from kills`,
+    stamina: (n) => `+${n} stamina`,
   };
   return (Object.entries(ITEMS[item].adds) as [keyof Kit, number][]).map(([stat, n]) => words[stat](n)).join(", ");
 }
@@ -597,6 +614,7 @@ const STATS: Record<keyof Kit, { label: string; words: (n: number) => string }> 
   flask: { label: "Flask heal", words: String },
   block: { label: "Block cost", words: (n) => `${Math.round((n / STAMINA.block) * 100)}%` },
   greed: { label: "Gold from kills", words: (n) => `${Math.round(n * 100)}%` },
+  stamina: { label: "Stamina", words: String },
 };
 const BAND = "greyfall.band";
 const ORDER_WORD: Record<BandOrder, string> = { follow: "Follow me", attack: "Attack my target", hold: "Hold here" };
@@ -639,10 +657,10 @@ const GOLD = "greyfall.gold";
 /** Bosses slain, which never come back, and the keys they drop, by the boss's kind. */
 const SLAIN = "greyfall.slain";
 const KEYS = "greyfall.keys";
-const BOSS_KEY: Partial<Record<string, string>> = { troll: "Troll Key" };
+const BOSS_KEY: Partial<Record<string, string>> = { troll: "Troll Key", barrowKing: "Horned Key", weaver: "Silk Key" };
 /** What a boss's fall proves, raised from SLAIN on each entry so old saves have it too. */
-const BOSS_FLAG: Partial<Record<string, WorldFlag>> = { troll: "trollKey", barrowKing: "hornedKey", warlord: "warlordDead", turtleGuard: "shellDead" };
-const BOSSES = new Set(["troll", "minotaur", "rampartBull", "stoneWarden"]);
+const BOSS_FLAG: Partial<Record<string, WorldFlag>> = { troll: "trollKey", barrowKing: "hornedKey", warlord: "warlordDead", shellBelow: "shellDead" };
+const BOSSES = new Set(["troll", "minotaur", "rampartBull", "stoneWarden", "barrowKing", "weaver", "shellBelow", "warlord"]);
 /** The exit last gone through, so a crossing lands at the way of the same name when two ways join the same areas. */
 const VIA = "greyfall.via";
 /** A boss whose fall is worth a flask more, for good: the Landing's bull, the reward for going back to him. */
@@ -653,9 +671,16 @@ function untint(s: Phaser.GameObjects.Sprite): void {
   if (tint) s.setTint(tint);
   else s.clearTint();
 }
+/** The captain's numbers from the goods owned and the levels bought. */
+function gearNow(): Kit {
+  return kit(remembered(BOUGHT), levels());
+}
+function levels(): Levels {
+  return stored(LEVELS, NO_LEVELS);
+}
 /** Flasks carried at full: the base and the shards bought, and one for each boss that gives one. */
 function maxFlasks(): number {
-  return kit(remembered(BOUGHT)).flasks + bossFlasks();
+  return gearNow().flasks + bossFlasks();
 }
 function bossFlasks(): number {
   return [...remembered(SLAIN)].filter((k) => BOSS_FLASK.has(k)).length;
@@ -666,13 +691,19 @@ function statWords(k: keyof Kit, gear: Kit): string {
 }
 /** A way out shut until its guarding boss falls, or the captain has already rested on the far side; or a shortcut not
  *  yet opened from the far side. */
+/** The keys a locked way still wants, by the names they carry. */
+function missingKeys(e: Exit): string[] {
+  const keys = remembered(KEYS);
+  return (e.keys ?? []).filter((k) => !keys.has(k)).map((k) => BOSS_KEY[k] ?? "key");
+}
 function barred(e: Exit): boolean {
   if (e.shut && !remembered(FLAGS).has(e.shut)) return true;
-  if (e.key && !remembered(KEYS).has(e.key)) return true;
+  if (missingKeys(e).length) return true;
   return !!e.guard && !remembered(SLAIN).has(e.guard) && ![...remembered(KINDLED)].some((k) => k.startsWith(`${e.to}:`));
 }
 const TAKEN = "greyfall.taken";
 const LOST = "greyfall.lost";
+const LEVELS = "greyfall.levels";
 type Lost = { area: AreaId; col: number; row: number; gold: number };
 function stored<T>(key: string, empty: T): T {
   try {
@@ -851,7 +882,6 @@ export class AtlasScene extends Phaser.Scene {
     this.reading = null;
     this.guarding = false;
     this.queued = false;
-    this.stamina = STAMINA.max;
     this.spentAt = -1e9;
     this.spaceAt = -1;
     this.roll = { until: 0, dx: 0, dy: 0, speed: 0, trail: 0, back: false };
@@ -864,7 +894,8 @@ export class AtlasScene extends Phaser.Scene {
     this.menu = null;
     this.heard = remembered(HEARD);
     this.flags = remembered(FLAGS);
-    this.gear = kit(remembered(BOUGHT));
+    this.gear = gearNow();
+    this.stamina = this.gear.stamina;
     // What a crossing proves: down the well, the Watch Lift ridden down, the Moor Gate come through from the moor, the Greyfall reached.
     if (data.area === "undercroft") this.flag("wellDescended");
     if (data.area === "keep" && data.from === "steps") this.flag("watchLiftOpen");
@@ -922,7 +953,7 @@ export class AtlasScene extends Phaser.Scene {
       sheet(HERO_ATTACK2.key, { file: HERO_ATTACK2.file, frame, anchor: 0 });
       sheet(HEAL_FX.key, { file: HEAL_FX.file, frame: 192, anchor: 0 });
       if (!this.textures.exists(FLASK_ICON.key)) this.load.image(FLASK_ICON.key, packUrl(FLASK_ICON.file));
-      for (const kind of ["lancer", "archer"] as const) {
+      for (const kind of ["lancer", "archer", "monk"] as const) {
         const l = this.look({ kind, col: 0, row: 0, color: "blue" });
         sheet(l.idle.key, { file: l.idle.file, frame: l.frame, anchor: 0 });
         if (l.move) sheet(l.move.key, { file: l.move.file, frame: l.frame, anchor: 0 });
@@ -1082,6 +1113,8 @@ export class AtlasScene extends Phaser.Scene {
       dev: (on) => this.setDev(on),
       next: () => (this.reading ? this.read(null) : this.nextPage()),
       sit: (on) => this.sit(on),
+      levels: () => ({ levels: levels(), cost: levelCost(levels()) }),
+      levelUp: (stat) => this.levelUp(stat),
       intro: (hold, fly, done) => this.intro(hold, fly, done),
       pause: (on) => {
         // The whole loop, not the scene: a paused scene still draws every frame under the other game.
@@ -1139,7 +1172,10 @@ export class AtlasScene extends Phaser.Scene {
     const { kind, dir } = this.crossing(e);
     if (kind === "fall") return "Drop";
     if (kind === "ride") return e.name === "The Boat" ? `Take the boat to ${AREAS.find((a) => a.id === e.to)?.name ?? "the far shore"}` : `Ride the lift ${dir}`;
-    if (barred(e)) return e.key && !remembered(KEYS).has(e.key) ? `Locked: the ${BOSS_KEY[e.key] ?? "key"} opens it` : "Barred";
+    if (barred(e)) {
+      const missing = missingKeys(e);
+      return missing.length ? `Locked: the ${missing.join(" and the ")} ${missing.length > 1 ? "open" : "opens"} it` : "Barred";
+    }
     const there = AREAS.find((a) => a.id === e.to)?.name;
     return there ? `Traverse the clouds to ${there}` : "Traverse the clouds";
   }
@@ -1797,6 +1833,17 @@ export class AtlasScene extends Phaser.Scene {
     this.hooks.onRest?.(this.local!.area);
   }
 
+  /** A level bought by the fire, after the Souls games' level up: gold for health, attack or stamina. */
+  private levelUp(stat: keyof Levels): boolean {
+    const now = levels();
+    const cost = levelCost(now);
+    if (this.gold < cost) return false;
+    this.setGold(this.gold - cost);
+    store(LEVELS, { ...now, [stat]: now[stat] + 1 });
+    this.regear();
+    return true;
+  }
+
   /** Sat by the bonfire last rested at, after the Souls games: still, turned to the fire, the camera drawn in close. */
   private sit(on: boolean): string | null {
     const hero = this.hero;
@@ -1894,8 +1941,9 @@ export class AtlasScene extends Phaser.Scene {
         continue;
       }
       const stats = COMPANIONS[c.kind];
-      // A lancer cannot reach what flies: it fights only what walks, and leaves the rest to the bows.
-      const mine = live.filter((f) => canReach(stats.range, f.stats));
+      if (c.kind === "monk" && time >= c.next && this.mend(c, stats, time)) continue;
+      // A lancer cannot reach what flies: it fights only what walks, and leaves the rest to the bows. The Monk fights nothing.
+      const mine = c.kind === "monk" ? [] : live.filter((f) => canReach(stats.range, f.stats));
       let plan = companionPlan(c.at, c.kind, this.bandOrder, hero.at, target >= 0 ? mine.indexOf(live[target]!) : -1, mine.map((f) => f.at), c.post);
       // An archer with no clear line moves for one.
       if (plan.do === "strike" && c.kind === "archer" && !clearShot(c.at, mine[plan.foe]!.at, this.blocks)) plan = { do: "close", foe: plan.foe };
@@ -1928,6 +1976,23 @@ export class AtlasScene extends Phaser.Scene {
       }
       this.advance(c, dt);
     }
+  }
+
+  /** The Monk's prayer over whoever is lowest and in reach: their health back, under the heal's swirl. */
+  private mend(c: Companion, stats: CompanionStats, time: number): boolean {
+    const bodies = [this.hero!, ...this.band].filter((b) => !b.dead);
+    const i = mendTarget(c.at, stats.range, bodies);
+    if (i < 0) return false;
+    const to = bodies[i]!;
+    this.swing(c, to, stats.every, time);
+    c.busy = time + 900;
+    const was = to.hp;
+    to.hp = Math.min(to.max, to.hp + stats.attack);
+    const fx = this.add.sprite(to.s.x, to.s.y + 14, HEAL_FX.key).setOrigin(0.5, 0.72).setDepth(standing(to.s.y) + 1);
+    fx.play(`${HEAL_FX.key}_once`).once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => fx.destroy());
+    this.float(to.s.x, to.s.y - to.lift - 10, `+${to.hp - was}`, "#8fe08a");
+    if (to !== this.hero) this.emitBand();
+    return true;
   }
 
   /** 1, 2, 3: the band's order; on hold, each keeps the spot it stands on. */
@@ -1967,15 +2032,20 @@ export class AtlasScene extends Phaser.Scene {
     const bought = remembered(BOUGHT);
     if (bought.has(item)) return;
     remember(BOUGHT, bought.add(item));
+    this.regear();
+    this.float(this.hero!.s.x, this.hero!.s.y - this.hero!.lift - 30, item, "#f4cf6b");
+  }
+
+  /** The numbers again after a good or a level: a shard's flask comes filled, a haunch's health with it. */
+  private regear(): void {
     const was = this.gear;
-    this.gear = kit(bought);
+    this.gear = gearNow();
     const hero = this.hero!;
-    // A shard's flask comes filled, a haunch's health with it.
     this.flasks += this.gear.flasks - was.flasks;
     this.hooks.onFlasks?.(this.flasks);
     hero.max = this.gear.hp;
     hero.hp += this.gear.hp - was.hp;
-    this.float(hero.s.x, hero.s.y - hero.lift - 30, item, "#f4cf6b");
+    this.stamina += this.gear.stamina - was.stamina;
     this.emitSack();
   }
 
@@ -2000,7 +2070,7 @@ export class AtlasScene extends Phaser.Scene {
     store(BAND, h.band);
     this.addCompanion(kind);
     this.emitBand();
-    this.float(hero.s.x, hero.s.y - hero.lift - 30, `A ${kind === "lancer" ? "Lancer" : "Archer"} joins`, "#9cc4e8");
+    this.float(hero.s.x, hero.s.y - hero.lift - 30, `A ${COMPANION_NAME[kind]} joins`, "#9cc4e8");
     this.showMenu();
   }
 
@@ -2009,7 +2079,7 @@ export class AtlasScene extends Phaser.Scene {
       const bought = remembered(BOUGHT);
       const goods = this.stock(f).map((item) => {
         const sold = bought.has(item);
-        const after = kit(new Set([...bought, item]));
+        const after = kit(new Set([...bought, item]), levels());
         const change = (Object.keys(ITEMS[item].adds) as (keyof Kit)[]).map((k) => ({ label: STATS[k].label, now: statWords(k, this.gear), after: statWords(k, after) }));
         return { label: item, note: `${ITEMS[item].cost}`, icon: ITEM_ICON[item], gives: gives(item), sold, about: ITEMS[item].about, afford: !sold && this.gold >= ITEMS[item].cost, change };
       });
@@ -2206,7 +2276,7 @@ export class AtlasScene extends Phaser.Scene {
         // Mid-swing: it holds still.
       } else this.advance(hero, dt);
     }
-    this.stamina = recover(this.stamina, dt / 1000, (time - this.spentAt) / 1000, this.guarding);
+    this.stamina = recover(this.stamina, dt / 1000, (time - this.spentAt) / 1000, this.guarding, this.gear.stamina);
     this.lead(time, dt);
     this.burn(time);
     this.foes.forEach((f, i) => {
@@ -2417,7 +2487,7 @@ export class AtlasScene extends Phaser.Scene {
   /** Loops for every sheet with more than one frame: props, beasts, knights. */
   private makeAnims(): void {
     for (const key of this.textures.getTextureKeys()) {
-      const once = /_(attack|windup|recovery)$/.test(key) || [HERO_ATTACK.key, HERO_ATTACK2.key, COMPANION_ATTACK.lancer.key, COMPANION_ATTACK.archer.key, HEAL_FX.key].includes(key);
+      const once = /_(attack|windup|recovery)$/.test(key) || [HERO_ATTACK.key, HERO_ATTACK2.key, COMPANION_ATTACK.lancer.key, COMPANION_ATTACK.archer.key, COMPANION_ATTACK.monk.key, HEAL_FX.key].includes(key);
       if (once && !this.anims.exists(`${key}_once`)) {
         // The hero's swings fill the wait to the next one (4 frames, 0.4 s) rather than snap through and stand idle.
         // The hero's swings fill the wait to the next; a monster's attack plays out over its wind-up.
@@ -2821,7 +2891,7 @@ export class AtlasScene extends Phaser.Scene {
     } else if (e.name.includes("Ladder")) {
       // A ladder, from the pack's fence: one upright run of it against the wall, rails and rungs.
       this.fence(e.at.col, e.at.row - 2, 1, 3);
-    } else if (e.key && !remembered(KEYS).has(e.key)) {
+    } else if (missingKeys(e).length) {
       // Locked: the pack's fence across the way until its key is carried, then fog like any other.
       this.gatehouse("locked", this.doorway(e));
     } else if (!e.plain) {
@@ -3096,6 +3166,14 @@ export class AtlasScene extends Phaser.Scene {
   private flag(f: WorldFlag): void {
     this.flags.add(f);
     remember(FLAGS, this.flags);
+    // Freed, the sister walks with the captain for good, past the band's three if need be.
+    const band = stored<CompanionKind[]>(BAND, []);
+    if (f === "monkFreed" && !band.includes("monk") && this.hero) {
+      store(BAND, [...band, "monk"]);
+      this.addCompanion("monk");
+      this.emitBand();
+      this.float(this.hero.s.x, this.hero.s.y - this.hero.lift - 30, "The Monk joins", "#9cc4e8");
+    }
   }
 
   /** The folk in this area as it was entered, with where each stands. */
@@ -3412,8 +3490,8 @@ export class AtlasScene extends Phaser.Scene {
       // The HUD's bars, a few times a second and only when they change.
       if (time - this.vitalsAt > 80) {
         this.vitalsAt = time;
-        const v = { hp: this.hero.hp, max: this.hero.max, stamina: Math.round(this.stamina) };
-        const key = `${v.hp},${v.max},${v.stamina}`;
+        const v = { hp: this.hero.hp, max: this.hero.max, stamina: Math.round(this.stamina), staminaMax: this.gear.stamina };
+        const key = `${v.hp},${v.max},${v.stamina},${v.staminaMax}`;
         if (key !== this.vitalsKey) {
           this.vitalsKey = key;
           this.hooks.onVitals?.(v);

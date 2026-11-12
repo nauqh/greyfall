@@ -69,6 +69,14 @@ export const FOES: Partial<Record<string, FoeStats>> = {
   // The Chapel Ward's bell boss, after the Bell Gargoyles: a stone warden squatting on the bell roof, slow and very heavy.
   stoneWarden: { hp: 380, attack: 26, every: 2.8, windup: 1.0, poise: true, aggro: 6, leash: 8, speed: 1.6, gold: 160 },
   troll: { hp: 320, attack: 24, every: 2.4, windup: 1.1, poise: true, aggro: 7, leash: 9, speed: 1.6, gold: 150 },
+  // Barrowmoor's crown, after Gaping Dragon's slowness and Ornstein's weight: the Horned Key.
+  barrowKing: { hp: 480, attack: 28, every: 2.6, windup: 1.0, poise: true, aggro: 6, leash: 9, speed: 1.8, gold: 220 },
+  // The Deeps' web, after Quelaag: quick and often, lighter blows. The Silk Key.
+  weaver: { hp: 360, attack: 18, every: 1.6, windup: 0.6, poise: true, aggro: 6, leash: 8, speed: 2.6, gold: 200 },
+  // Optional, asleep on its isle: slow, the heaviest blows in the Reach. Killing it greys the lake.
+  shellBelow: { hp: 600, attack: 32, every: 3.4, windup: 1.3, poise: true, aggro: 5, leash: 7, speed: 1.2, gold: 260 },
+  // The last: a knight the Grey wore longest, quick for his weight.
+  warlord: { hp: 700, attack: 30, every: 2.0, windup: 0.75, poise: true, aggro: 7, leash: 10, speed: 2.2, gold: 400 },
 };
 
 /**
@@ -165,6 +173,19 @@ export interface Kit {
   block: number;
   /** A felled monster's gold, times this. */
   greed: number;
+  stamina: number;
+}
+
+/** Levels bought at a bonfire, by what each raised. */
+export type Levels = Record<"hp" | "attack" | "stamina", number>;
+export const NO_LEVELS: Levels = { hp: 0, attack: 0, stamina: 0 };
+/** What one level adds, `ATLAS.md`'s choice of three. */
+export const LEVEL_UP: Levels = { hp: 10, attack: 2, stamina: 10 };
+
+/** Gold for the next level, rising with every one bought, as souls do. */
+export function levelCost(levels: Levels): number {
+  const n = levels.hp + levels.attack + levels.stamina;
+  return Math.round((150 * 1.15 ** n) / 10) * 10;
 }
 
 /**
@@ -193,9 +214,17 @@ export const ITEMS = {
 } as const satisfies Record<string, { cost: number; adds: Partial<Kit>; needs?: string; about: string }>;
 export type ItemName = keyof typeof ITEMS;
 
-/** The player's numbers with what has been bought. */
-export function kit(bought: ReadonlySet<string>): Kit {
-  const k: Kit = { hp: HERO.hp, attack: HERO.attack, flasks: HERO.flasks, flask: HERO.flask, block: STAMINA.block, greed: 1 };
+/** The player's numbers with what has been bought, and the levels. */
+export function kit(bought: ReadonlySet<string>, levels: Levels = NO_LEVELS): Kit {
+  const k: Kit = {
+    hp: HERO.hp + levels.hp * LEVEL_UP.hp,
+    attack: HERO.attack + levels.attack * LEVEL_UP.attack,
+    flasks: HERO.flasks,
+    flask: HERO.flask,
+    block: STAMINA.block,
+    greed: 1,
+    stamina: STAMINA.max + levels.stamina * LEVEL_UP.stamina,
+  };
   for (const [name, item] of Object.entries(ITEMS)) {
     if (!bought.has(name)) continue;
     for (const [stat, n] of Object.entries(item.adds) as [keyof Kit, number][]) k[stat] += n;
@@ -231,10 +260,10 @@ export function spend(stamina: number, cost: number): number {
   return Math.max(0, stamina - cost);
 }
 
-/** Stamina after `dt` seconds, `idle` seconds since any was last spent, the shield up or not. */
-export function recover(stamina: number, dt: number, idle: number, guarding: boolean): number {
+/** Stamina after `dt` seconds, `idle` seconds since any was last spent, the shield up or not; never past `max`. */
+export function recover(stamina: number, dt: number, idle: number, guarding: boolean, max: number = STAMINA.max): number {
   if (idle < STAMINA.delay) return stamina;
-  return Math.min(STAMINA.max, stamina + STAMINA.regen * dt * (guarding ? STAMINA.guarded : 1));
+  return Math.min(max, stamina + STAMINA.regen * dt * (guarding ? STAMINA.guarded : 1));
 }
 
 /** A blow on the shield: it costs stamina by its weight, `rate` a point, and with too little left the guard breaks and it lands whole. */

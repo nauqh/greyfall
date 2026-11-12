@@ -3,7 +3,7 @@
 
 import { tileDistance, type Cell } from "./island.ts";
 
-export type CompanionKind = "lancer" | "archer";
+export type CompanionKind = "lancer" | "archer" | "monk";
 export type BandOrder = "follow" | "attack" | "hold";
 
 export interface CompanionStats {
@@ -23,7 +23,22 @@ export interface CompanionStats {
 export const COMPANIONS: Record<CompanionKind, CompanionStats> = {
   lancer: { hp: 120, attack: 9, every: 2.0, speed: 2.8, range: 1, cost: 75 },
   archer: { hp: 70, attack: 7, every: 2.2, speed: 2.8, range: 5, cost: 60 },
+  // Never hired, never strikes: freed from the Drowned Chapel, she mends instead, `attack` the health given back.
+  monk: { hp: 60, attack: 30, every: 8, speed: 2.8, range: 4, cost: 0 },
 };
+
+/** Below this share of their health, the Monk mends someone. */
+const MEND_BELOW = 0.6;
+
+/** Whom the Monk mends now: the lowest share of health below 60% within her reach, -1 when none. */
+export function mendTarget(me: Cell, range: number, bodies: readonly { at: Cell; hp: number; max: number }[]): number {
+  let best = -1;
+  bodies.forEach((b, i) => {
+    const share = b.hp / b.max;
+    if (b.hp > 0 && share < MEND_BELOW && tileDistance(b.at, me) <= range && (best < 0 || share < bodies[best]!.hp / bodies[best]!.max)) best = i;
+  });
+  return best;
+}
 
 export const BAND_SIZE = 3;
 /** On follow, a companion defends the captain against monsters this near them, and keeps this close. */

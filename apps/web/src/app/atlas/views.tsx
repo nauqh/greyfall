@@ -1,6 +1,6 @@
 "use client";
 
-import { AREAS, type AreaId } from "@greyfall/engine";
+import { AREAS, type AreaId, type Levels } from "@greyfall/engine";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -40,6 +40,9 @@ export function useHud(): [boolean, () => void] {
 }
 
 /** A one-way drop is warned of once, on this browser; the warning is a convenience, so a blocked store just warns again. */
+/** The level up list, after Dark Souls' attributes: what each raises, in words. */
+const LEVEL_WORD: Record<keyof Levels, string> = { hp: "Vigour, +10 health", attack: "Strength, +2 attack", stamina: "Endurance, +10 stamina" };
+
 function warned(name: string): boolean {
   try {
     return localStorage.getItem(`greyfall.dropped.${name}`) === "1";
@@ -73,8 +76,8 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const [sack, setSack] = useState<SackView | null>(null);
   // Died: the words, then the dark, then waking at the bonfire in this area.
   const [died, setDied] = useState<AreaId | null>(null);
-  // Sat at a bonfire after a rest: its name, and the option picked.
-  const [fire, setFire] = useState<{ name: string; pick: number } | null>(null);
+  // Sat at a bonfire after a rest: its name, the option picked, and whether the level up list is open.
+  const [fire, setFire] = useState<{ name: string; pick: number; levelling?: boolean } | null>(null);
   // The map, open over the area while the scene waits paused behind it: from a bonfire to travel, or on M only to look.
   const [atlas, setAtlas] = useState<"travel" | "look" | null>(null);
   // Opening the map, on M or from a bonfire: the cloud bank draws in first, then that map is under it.
@@ -121,16 +124,26 @@ export function AreaView({ area: first }: { area: AreaId }) {
     api.current?.sit(false);
     setFire(null);
   };
-  const bonfire = [
-    {
-      label: "Travel",
-      go: () => {
-        api.current?.pause(true);
-        setMapCover("travel");
-      },
-    },
-    { label: "Leave", go: leaveFire },
-  ];
+  const level = fire?.levelling ? api.current?.levels() : undefined;
+  const bonfire = level
+    ? [
+        ...(["hp", "attack", "stamina"] as const).map((stat) => ({
+          label: `${LEVEL_WORD[stat]} (${level.levels[stat]}): ${level.cost} gold`,
+          go: () => api.current?.levelUp(stat) && setFire((f) => f && { ...f }),
+        })),
+        { label: "Back", go: () => setFire((f) => f && { ...f, pick: 1, levelling: false }) },
+      ]
+    : [
+        {
+          label: "Travel",
+          go: () => {
+            api.current?.pause(true);
+            setMapCover("travel");
+          },
+        },
+        { label: "Level up", go: () => setFire((f) => f && { ...f, pick: 0, levelling: true }) },
+        { label: "Leave", go: leaveFire },
+      ];
   // The name mounts two painted frames after the map is in view, so its clock never runs while the first frames are still drawing.
   const announce = (): void => {
     if (!now.current.quiet) requestAnimationFrame(() => requestAnimationFrame(() => setReveal(AREAS.find((a) => a.id === now.current.area)?.name ?? null)));
@@ -191,7 +204,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const newGame = (): void => {
     if (!window.confirm("Start a new game? Your gold, band, bonfires and slain bosses are lost.")) return;
     try {
-      for (const k of ["band", "bought", "flags", "gold", "heard", "keys", "kindled", "lost", "prologue", "rest", "slain", "taken"]) localStorage.removeItem(`greyfall.${k}`);
+      for (const k of ["band", "bought", "flags", "gold", "heard", "keys", "kindled", "levels", "lost", "prologue", "rest", "slain", "taken"]) localStorage.removeItem(`greyfall.${k}`);
     } catch {}
     window.location.assign("/atlas/landing?rest");
   };
@@ -233,7 +246,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
         const d = k === "w" || k === "arrowup" ? -1 : 1;
         setFire((f) => f && { ...f, pick: (f.pick + d + bonfire.length) % bonfire.length });
       } else if ((k === "e" || k === "enter") && !e.repeat) bonfire[fire.pick]!.go();
-      else if (k === "escape") leaveFire();
+      else if (k === "escape") fire.levelling ? setFire({ ...fire, pick: 1, levelling: false }) : leaveFire();
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
@@ -420,8 +433,8 @@ export function AreaView({ area: first }: { area: AreaId }) {
                   <i style={{ width: `${(100 * vitals.hp) / vitals.max}%` }} />
                   <span style={{ width: `${(100 * vitals.hp) / vitals.max}%` }} />
                 </span>
-                <span className="vitalBar stamina">
-                  <span style={{ width: `${vitals.stamina}%` }} />
+                <span className="vitalBar stamina" style={{ width: `${vitals.staminaMax * 2.4}px` }}>
+                  <span style={{ width: `${(100 * vitals.stamina) / vitals.staminaMax}%` }} />
                 </span>
               </span>
             </div>
@@ -451,7 +464,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
               </div>
               {band.members.map((m, i) => (
                 <div key={i} className={`bandMember${m.hp === 0 ? " down" : ""}`}>
-                  <span>{m.kind === "lancer" ? "Lancer" : "Archer"}</span>
+                  <span>{m.kind === "lancer" ? "Lancer" : m.kind === "archer" ? "Archer" : "Monk"}</span>
                   <span className="bandBar">
                     <span style={{ width: `${(100 * m.hp) / m.max}%` }} />
                   </span>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { BAND_SIZE, COMPANIONS, companionPlan, foeTarget, hire } from "../src/band.ts";
+import { BAND_SIZE, COMPANIONS, companionPlan, foeTarget, hire, mendTarget } from "../src/band.ts";
 
 const at = (col: number, row: number) => ({ col, row });
 
@@ -51,5 +51,13 @@ describe("a monster's mark", () => {
     const bodies = [{ at: at(15, 10), draws: false }, { at: at(12, 10), draws: false }];
     expect(foeTarget(at(10, 10), 6, bodies)).toBe(1);
     expect(foeTarget(at(10, 10), 1, bodies)).toBe(-1);
+  });
+});
+
+describe("the Monk", () => {
+  const at = (col: number) => ({ col, row: 0 });
+  it("mends the lowest share of health below 60% in reach, and no one whole, fallen or far", () => {
+    expect(mendTarget(at(0), 4, [{ at: at(1), hp: 50, max: 100 }, { at: at(2), hp: 30, max: 120 }])).toBe(1);
+    expect(mendTarget(at(0), 4, [{ at: at(1), hp: 70, max: 100 }, { at: at(1), hp: 0, max: 100 }, { at: at(9), hp: 10, max: 100 }])).toBe(-1);
   });
 });

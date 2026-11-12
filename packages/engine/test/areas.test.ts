@@ -134,7 +134,7 @@ it("puts the harbour's hub in the village: the boat's pier and the climb to the 
 
 it("shuts the Keep behind its gate off the Burg until the troll's key, and its Watch Lift until ridden down from the sky", () => {
   const gate = areaMap("burg").exits.find((e) => e.to === "keep")!;
-  expect(gate.key).toBe("troll");
+  expect(gate.keys).toEqual(["troll"]);
   const lift = areaMap("keep").exits.find((e) => e.name === "Watch Lift")!;
   expect(lift.shut).toBe("watchLiftOpen");
   expect(areaMap("harbour").exits.some((e) => e.to === "steps")).toBe(false);

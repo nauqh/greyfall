@@ -80,7 +80,7 @@ export function DevPanel({ state: s, api, onArea, onMap }: { state: DevState; ap
   const keys = useMemo(() => {
     const asked = MAPPED_AREAS.flatMap((a) => {
       const m = areaMap(a);
-      return [...m.exits.map((e) => e.key), ...(m.locks ?? []).map((l) => l.key)];
+      return [...m.exits.flatMap((e) => e.keys ?? []), ...(m.locks ?? []).map((l) => l.key)];
     });
     return [...new Set(asked.filter((k): k is string => !!k))];
   }, []);

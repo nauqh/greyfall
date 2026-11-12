@@ -29,10 +29,10 @@ After Dark Souls: no quest log, no choices, the wanderer never speaks.
 | greyfallReached | arriving in the Greyfall |
 | ladderDown | kicking the Ramparts Ladder down to the Burg |
 | trollKey | the Cinder Troll slain, raised on entering any area |
-| hornedKey | the Barrow King (kind `barrowKing`) slain, raised on entering any area; not fightable yet |
-| warlordDead | the Grey Warlord (kind `warlord`) slain, raised on entering any area; not fightable yet |
-| shellDead | the Shell Below (kind `turtleGuard`) slain; not fightable yet |
-| monkFreed | hearing the Drowned Sister's second talk to its end |
+| hornedKey | the Barrow King (kind `barrowKing`) slain, raised on entering any area |
+| warlordDead | the Grey Warlord (kind `warlord`) slain, raised on entering any area |
+| shellDead | the Shell Below (kind `shellBelow`) slain, raised on entering any area |
+| monkFreed | hearing the Drowned Sister's second talk to its end; the Monk joins the band at once |
 | tobinDown, tobinDeeper, ysoldeDeeper, anselRoused, anselAhead, watchmanOut, marenSails, pennyFollows, drankClear | hearing a talk to its end (marked below) |
 
 ## At a glance

@@ -53,7 +53,9 @@ A Warrior in blue. You have no name here and no banner.
 | Flasks | 3 | Each heals 40 HP; refilled at a bonfire |
 
 Levelling is Souls-style: spend gold at a bonfire. Each level adds +10 HP,
-+2 attack or +10 stamina, the player's choice.
++2 attack or +10 stamina, the player's choice (Vigour, Strength, Endurance
+under Level up when sat by the fire). The first costs 150 gold and each one
+after costs 15% more.
 
 ### The band
 
@@ -66,7 +68,7 @@ come ashore alone.
 | --- | --- | --- | --- |
 | Lancer | Tank | Charges your target and draws aggro | Hire from Sergeant Corwin at the barracks, 75 gold: E beside him opens Talk / Hire / Leave |
 | Archer | Ranged | Keeps 5 tiles back and shoots | Hire from Wren at the archery range, 60 gold, the same way |
-| Monk | Healer | Heals whoever is lowest below 60%, 8 s cooldown | Freed from the Drowned Chapel (Undercroft) |
+| Monk | Healer | Heals whoever is lowest below 60% within 4 tiles for 30, 8 s cooldown; never fights | Joins free, for good, once the Drowned Sister in the Drowned Chapel (Undercroft) is heard out, even past a full band |
 | Pawn | Utility | Carries more loot, picks up gold, repairs bridges | Recruit in Old Town, cheap |
 | Gnome | Special | Throws bombs | Won after Old Bamboo (Tinker Crags) |
 
@@ -98,9 +100,9 @@ come ashore alone.
   way out of the Harbour: the Barrow King's Horned Key, from Barrowmoor out
   the Moor Gate, and the Weaver's Silk Key, from the Barrow Deeps down the Old
   Well. The Sky Bridge from the Crags is the other, harder way into the
-  Greyfall. The Warlord holds no key. He is the lock. Not enforced yet: the
-  Barrow King and the Weaver cannot be fought, so the Grey Gate stays open
-  until they can.
+  Greyfall. The Warlord holds no key. He is the lock. The Grey Gate is
+  locked from Barrowmoor until both keys are carried, and opens freely from
+  the Greyfall's side.
 
 ### Enemies by area
 
@@ -832,9 +834,11 @@ back; it is remembered on the browser and carries across crossings.
 - The hero walks, fights, rolls, rests at bonfires, drinks flasks, picks
   up gold and leads a band hired in the Harbour. The Cinder Troll drops
   the Troll Key, which opens the Keep Gate.
-- The Minotaur, Rampart Bull, Stone Warden and Cinder Troll can be
-  killed. The Barrow King, Warlord, Weaver and Shell Below are not
-  fightable yet, so the questline stages that wait on them wait too.
+- Eight bosses can be killed: the Minotaur, Rampart Bull, Stone Warden,
+  Cinder Troll, Barrow King, Weaver, Shell Below and Grey Warlord. The
+  last four fight with plain blows on borrowed sheets (minotaur, spider,
+  turtle, black warrior), with no moves of their own like the troll's.
+  Old Bamboo and the Sun Sentinel are still scenery.
 - No minimap. Zoom out with the wheel; ride a lift to change tier.
 
 
