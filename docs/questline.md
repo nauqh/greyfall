@@ -542,7 +542,7 @@ Sells: Ember Shard; Smoked Haunch; Pine Resin; Prospector's Purse; Kindled Shard
 
 - **first**
   1. Don't mind old Mags. The Grey took the Burg, not my trade.
-  2. A shard of the old fire, a haunch, a pot of resin, a purse that sews itself fatter. One of each, mind.
+  2. A shard of the old fire, a haunch, a pot of resin, a purse that sews itself fatter. One of each, mind. Keep them in your sack, where your hands can find them.
   3. Kill whatever sits in the Emberwood and I'll find you a warmer shard. Hehe.
 - **thieves**
   1. The thieves in the market? Burg folk, all of them.

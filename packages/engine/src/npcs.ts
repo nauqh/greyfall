@@ -892,7 +892,7 @@ export const NPCS: readonly Npc[] = [
         id: "first",
         lines: [
           "Don't mind old Mags. The Grey took the Burg, not my trade.",
-          "A shard of the old fire, a haunch, a pot of resin, a purse that sews itself fatter. One of each, mind.",
+          "A shard of the old fire, a haunch, a pot of resin, a purse that sews itself fatter. One of each, mind. Keep them in your sack, where your hands can find them.",
           "Kill whatever sits in the Emberwood and I'll find you a warmer shard. Hehe.",
         ],
       },

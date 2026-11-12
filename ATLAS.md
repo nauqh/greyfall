@@ -40,6 +40,7 @@ inside the area map.
 | 2 | Band: Attack the monster you last struck |
 | 3 | Band: Hold here (guard the spot) |
 | M | The map, to look at; travel is from a bonfire |
+| Tab | The sack: your numbers and the goods kept, beside play without pausing it. Told once, with the first good. A touch screen gets a Sack button instead |
 
 ### The hero
 

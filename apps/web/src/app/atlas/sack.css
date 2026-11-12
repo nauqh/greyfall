@@ -117,3 +117,10 @@
 		display: none;
 	}
 }
+
+/* With a keyboard, Tab opens the sack and the corner stays clear; a touch screen keeps the button. */
+@media (hover: hover) and (pointer: fine) {
+	.sackButton {
+		display: none;
+	}
+}

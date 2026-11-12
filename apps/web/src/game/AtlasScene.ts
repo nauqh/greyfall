@@ -2067,9 +2067,13 @@ export class AtlasScene extends Phaser.Scene {
   private gain(item: ItemName): void {
     const bought = remembered(BOUGHT);
     if (bought.has(item)) return;
+    const first = bought.size === 0;
     remember(BOUGHT, bought.add(item));
     this.regear();
-    this.float(this.hero!.s.x, this.hero!.s.y - this.hero!.lift - 30, item, "#f4cf6b");
+    const hero = this.hero!;
+    this.float(hero.s.x, hero.s.y - hero.lift - 30, item, "#f4cf6b");
+    // The sack has no button on a keyboard: its key is told once, with the first good it holds.
+    if (first) this.time.delayedCall(900, () => this.float(hero.s.x, hero.s.y - hero.lift - 30, "Kept in your sack. Tab.", "#fdfaf0", 2600));
   }
 
   /** The numbers again after a good or a level: a shard's flask comes filled, a haunch's health with it. */
@@ -2208,9 +2212,9 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** A word or a number over a body: up and gone. */
-  private float(x: number, y: number, text: string, color: string): void {
+  private float(x: number, y: number, text: string, color: string, ms = 900): void {
     const n = this.add.text(x, y, text, { fontFamily: FONT, fontSize: "26px", fontStyle: "bold", color, stroke: "#1c2634", strokeThickness: 6 }).setOrigin(0.5).setDepth(DEPTH.fx + 1);
-    this.tweens.add({ targets: n, y: y - 40, alpha: 0, duration: 900, ease: "Sine.easeOut", onComplete: () => n.destroy() });
+    this.tweens.add({ targets: n, y: y - 40, alpha: 0, duration: ms, ease: "Sine.easeOut", onComplete: () => n.destroy() });
   }
 
   /**
