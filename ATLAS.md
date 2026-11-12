@@ -172,7 +172,8 @@ then walks back. The engine already has a guard leash.
    only bows reach them). The boat's pier lies just south, on the docks. The
    climb runs straight up from the fire through Old Town and the Upper Town
    to the Castle Gate on the hill's crown. The main path to the Burg leaves
-   the climb on Old Town and runs round the hill's east side to its back.
+   the climb on Old Town and runs round the hill's east side to its back,
+   leaving on Old Town's height straight behind the crown.
 
    The Lower Burg is a town of walled yards and lanes, with the square's
    fire. The Ramparts hold the Rampart Bull on the wall walk. The Chapel
@@ -748,7 +749,7 @@ crossing are gone.
   up through the rock, landing on the docks' pier below the bowl. The
   climb runs straight up from the fire to the Castle Gate on the hill's
   crown, towers and the castle's keep beside it. The road to the Burg leaves
-  from Old Town's height at the hill's back, off the map's north edge; the sea is gone, the
+  from Old Town's height straight behind the crown, off the map's north edge; the sea is gone, the
   Harbour's north border woods (`wooded(m, top)`), since a gate to an
   inland area must not lead into the sea. The Old Lift from the Chapel
   lands at Old Town's east foot, near the hub. The castle areas are no

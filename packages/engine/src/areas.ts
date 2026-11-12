@@ -1123,7 +1123,7 @@ function harbour(): AreaMap {
   t.shape(2, 70, 11, 8, 5, 0.3, "Old Town");
   t.shape(2, 56, 6, 16, 5, 0.2, "Old Town");
   t.shape(3, 56, 18, 13, 12, 0.3, "The Upper Town");
-  t.shape(4, 56, 6, 8, 6, 0.15, "The Castle Gate");
+  t.shape(4, 56, 9, 8, 5, 0.15, "The Castle Gate");
   // The Northwood: a wooded upland of its own west of the castle, a crag on its crown.
   t.shape(2, 18, 20, 14, 11, 0.45, "The Northwood");
   t.shape(3, 15, 14, 6, 4, 0.45, "The Northwood");
@@ -1153,8 +1153,8 @@ function harbour(): AreaMap {
   // The castle road: up from the bowl's north stairs, straight up the hill to the Castle Gate.
   t.road([55, 39], [56, 30], [56, 20], [56, 6]);
   // The Burg road: off the climb onto Old Town, round the Upper Town's east side to the hill's back.
-  t.road([57, 36], [70, 30], [72, 18], [70, 10], [66, 6]);
-  edgeWay(t, { col: 66, row: 6 }, { col: 66, row: 1 }, 2);
+  t.road([57, 36], [70, 30], [72, 18], [70, 10], [66, 3], [56, 3]);
+  edgeWay(t, { col: 56, row: 3 }, { col: 56, row: 1 }, 2);
   // The path out to the mine, and Lantern Point's ways: the shore path west to the docks, the climb up the Graves to the
   // Moor Gate, and the Shore Road off its tip to the Landing.
   t.road([86, 47], [86, 34]);
@@ -1185,7 +1185,7 @@ function harbour(): AreaMap {
 
   // The Castle Gate: a tower either side of the road through it, the castle's keep looming over the wall beside it.
   for (const [c, r] of [[53, 7], [59, 7]] as const) prop("tower", c, r, blue);
-  prop("castle", 64, 9, blue);
+  prop("castle", 61, 10, blue);
   who("lancer", 55, 10, { ...blue, to: { col: 57, row: 10 } });
 
   // The Upper Town: the chapel and its close of trees, the old families' houses along the terrace, a garden.
@@ -1343,7 +1343,7 @@ function harbour(): AreaMap {
     { to: "barrowmoor", name: "Moor Gate", kind: "shortcut", at: { col: 109, row: 50 }, shut: "moorGateOpen" },
     { to: "emberwood", name: "Ember Gate", kind: "gate", at: { col: 26, row: 1 }, shut: "emberGateOpen" },
     { to: "chapel", name: "The Old Lift", kind: "shortcut", at: { col: 72, row: 41 }, shut: "oldLiftDown" },
-    { to: "burg", name: "Burg Gate", kind: "open", at: { col: 66, row: 1 }, plain: true },
+    { to: "burg", name: "Burg Gate", kind: "open", at: { col: 56, row: 1 }, plain: true },
     { to: "undercroft", name: "Old Well", kind: "drop", at: { col: 52, row: 48 } },
     { to: "ring", name: "The Boat", kind: "lift", at: { col: 50, row: 61 } },
   ];
