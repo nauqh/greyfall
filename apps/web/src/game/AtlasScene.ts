@@ -632,6 +632,7 @@ interface Folk {
   s: Phaser.GameObjects.Sprite;
   near: boolean;
   bubble: Phaser.GameObjects.Text | null;
+  tag: Phaser.GameObjects.Text;
 }
 
 /** What the captain has heard and done, kept on this browser; a blocked store only means folk repeat themselves. */
@@ -1866,6 +1867,12 @@ export class AtlasScene extends Phaser.Scene {
     const zoom = on ? Math.ceil(base * 2.2) : base;
     cam.zoomTo(zoom, 900, "Sine.easeInOut", true);
     cam.setFollowOffset(on && cam.width > 640 ? (-cam.width * 0.18) / zoom : 0, 0);
+    // The folk step out of the shot while the captain rests: only the fire and the band.
+    for (const f of this.folk) {
+      if (on) f.bubble?.destroy();
+      if (on) f.bubble = null;
+      this.tweens.add({ targets: [f.s, f.tag], alpha: on ? 0 : 1, duration: 500 });
+    }
     return districtOf(this.local, fire.col, fire.row)?.name || (AREAS.find((a) => a.id === this.local!.area)?.name ?? null);
   }
 
@@ -3207,11 +3214,11 @@ export class AtlasScene extends Phaser.Scene {
     }
     this.loop(s, look.idle.key);
     // Named over their heads, so they stand out from the villagers at work round them.
-    this.add
+    const tag = this.add
       .text(s.x, y - 1.05 * CELL, n.short ?? n.name, { fontFamily: FONT, fontSize: "20px", fontStyle: "bold", color: "#f2d48a", stroke: "#1c2634", strokeThickness: 5 })
       .setOrigin(0.5, 1)
       .setDepth(DEPTH.fx);
-    this.folk.push({ npc: n, at: w.at, s, near: false, bubble: null });
+    this.folk.push({ npc: n, at: w.at, s, near: false, bubble: null, tag });
   }
 
   /** A line called out over a dweller's head: up, held, gone. */

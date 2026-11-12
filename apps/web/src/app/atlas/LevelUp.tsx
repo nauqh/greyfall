@@ -8,7 +8,7 @@ import "./shop.css";
 const STATS: { stat: keyof Levels; name: string; raises: string; icon: string }[] = [
   { stat: "hp", name: "Vigour", raises: "Health", icon: "ui/icon_hp.png" },
   { stat: "attack", name: "Strength", raises: "Attack", icon: "ui/icon_damage.png" },
-  { stat: "stamina", name: "Endurance", raises: "Stamina", icon: "ui/icon_heal.png" },
+  { stat: "stamina", name: "Endurance", raises: "Stamina", icon: "UI Elements/UI Elements/Icons/Icon_08.png" },
 ];
 
 /** Levelling at a bonfire, after Dark Souls 3's: the attributes on one side, what the picked one raises on the other, the gold below. */

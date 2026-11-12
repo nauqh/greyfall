@@ -10,6 +10,7 @@ import { packUrl } from "../../game/art";
 import { GameCanvas } from "../../game/GameCanvas";
 import { DevPanel } from "./DevPanel";
 import { LevelUp } from "./LevelUp";
+import { RestPanel } from "./RestPanel";
 import { Prologue } from "./ProloguePlayer";
 import { Sack } from "./Sack";
 import { Shop } from "./Shop";
@@ -122,7 +123,8 @@ export function AreaView({ area: first }: { area: AreaId }) {
     api.current?.sit(false);
     setFire(null);
   };
-  const level = fire?.levelling ? api.current?.levels() : undefined;
+  const sat = fire ? api.current?.levels() : undefined;
+  const level = fire?.levelling ? sat : undefined;
   const bonfire = level
     ? [
         ...(["hp", "attack", "stamina"] as const).map((stat) => ({
@@ -133,13 +135,14 @@ export function AreaView({ area: first }: { area: AreaId }) {
     : [
         {
           label: "Travel",
+          note: "To any bonfire you have lit",
           go: () => {
             api.current?.pause(true);
             setMapCover("travel");
           },
         },
-        { label: "Level up", go: () => setFire((f) => f && { ...f, pick: 0, levelling: true, bought: undefined }) },
-        { label: "Leave", go: leaveFire },
+        { label: "Level up", note: sat ? `Next level ${sat.cost} gold` : "", go: () => setFire((f) => f && { ...f, pick: 0, levelling: true, bought: undefined }) },
+        { label: "Leave", note: "Stand, and go on", go: leaveFire },
       ];
   // The name mounts two painted frames after the map is in view, so its clock never runs while the first frames are still drawing.
   const announce = (): void => {
@@ -334,27 +337,24 @@ export function AreaView({ area: first }: { area: AreaId }) {
             {level ? (
               <LevelUp view={level} pick={fire.pick} bought={fire.bought} onPick={(pick) => setFire({ ...fire, pick })} onBuy={(i) => bonfire[i]!.go()} />
             ) : (
-              <div className="bonfirePanel" role="menu" aria-label={fire.name}>
-                <span className="bonfireKicker">Bonfire</span>
-                <span className="bonfireName">{fire.name}</span>
-                <i className="bonfireRested">Health and flasks restored. The dead walk again.</i>
-                {bonfire.map((o, i) => (
-                  <button
-                    key={o.label}
-                    type="button"
-                    role="menuitem"
-                    className={`bonfireOption${i === fire.pick ? " picked" : ""}`}
-                    onMouseEnter={() => setFire({ ...fire, pick: i })}
-                    onClick={o.go}
-                  >
-                    {o.label}
-                  </button>
-                ))}
-              </div>
+              sat && (
+                <RestPanel
+                  name={fire.name}
+                  area={AREAS.find((a) => a.id === area)?.name ?? ""}
+                  view={sat}
+                  flasks={flasks ?? 0}
+                  options={bonfire.map((o) => ({ label: o.label, note: "note" in o ? o.note : "" }))}
+                  pick={fire.pick}
+                  onPick={(pick) => setFire({ ...fire, pick })}
+                  onChoose={(i) => bonfire[i]!.go()}
+                />
+              )
             )}
-            <span className="talkNext" aria-hidden="true">
-              W/S, E, Esc
-            </span>
+            {level && (
+              <span className="talkNext" aria-hidden="true">
+                W/S, E, Esc
+              </span>
+            )}
           </div>
         )}
         {dev && devState && !atlas && (
@@ -461,14 +461,14 @@ export function AreaView({ area: first }: { area: AreaId }) {
               </span>
             </div>
           )}
-          {gold !== null && (
+          {gold !== null && !fire && (
             // The souls counter's place: gold carried, bottom right.
             <div className="purse" title="Gold">
               <img src={packUrl("ui/icon_gold.png")} alt="Gold" />
               <b>{gold}</b>
             </div>
           )}
-          {sack && <Sack sack={sack} />}
+          {sack && !fire && <Sack sack={sack} />}
           {band && band.members.length > 0 && (
             <div className="bandPanel">
               <div className="bandOrder">
