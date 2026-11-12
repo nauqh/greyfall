@@ -1,5 +1,4 @@
-/* A new game's creation on the Reach's sea, as the title screen sits on it: one sheet of the merchants' paper, the steps
-   across its top, the choices, the numbers and the class on show, and the keys along the foot. */
+/* A new game's creation on the Reach's sea, as the title screen sits on it: one sheet of the merchants' paper, the choices, the numbers and the class on show, and the keys along the foot. */
 .creation {
 	--gold: #8a5a10;
 	--goldDim: rgb(107 87 64 / 0.45);
@@ -12,6 +11,7 @@
 	--sans: "Nunito", "Segoe UI", sans-serif;
 	place-items: safe center;
 	overflow: auto;
+	cursor: none;
 	padding: 16px;
 	background: #47aba9;
 	color: var(--ink);
@@ -32,13 +32,17 @@
 	animation: prologueIn 900ms ease-out both;
 }
 
+/* Keys only: the overlay still catches the pointer, so nothing under it is clicked, but nothing on it answers. */
+.creation * {
+	pointer-events: none;
+}
+
 .crHead {
 	display: flex;
 	align-items: center;
 	gap: 12px;
 	margin: 0;
 	padding-bottom: 4px;
-	border-bottom: 1px solid var(--hair);
 	font: 800 22px var(--sans);
 	letter-spacing: 0.02em;
 }
@@ -50,11 +54,21 @@
 	background-position-y: 2px;
 }
 
+.crThumb {
+	flex: none;
+	width: 48px;
+	height: 48px;
+	border: 1px solid var(--hair);
+	background-color: rgb(255 255 255 / 0.3);
+	background-repeat: no-repeat;
+	image-rendering: pixelated;
+}
+
 .crStage {
 	flex: 1;
 	min-height: 0;
 	display: grid;
-	grid-template: "steps steps" auto "list sheet" minmax(0, 1fr) / 320px minmax(0, 1fr);
+	grid-template: "list sheet" minmax(0, 1fr) / 320px minmax(0, 1fr);
 	gap: 10px 18px;
 }
 
@@ -63,30 +77,45 @@
 	animation: prologueIn 400ms ease-out both;
 }
 
-/* The numbers and the class on show in one framed sheet, the numbers down its left as Dark Souls III sets them. */
+/* The class on show and its numbers in one pane, the numbers laid over its left as Dark Souls III sets them. */
 .crSheet {
+	--stats: 270px;
 	grid-area: sheet;
 	position: relative;
 	display: grid;
-	grid-template-columns: 250px minmax(0, 1fr);
+	grid-template: minmax(0, 1fr) / minmax(0, 1fr);
 	min-height: 0;
-	padding: 8px 0 8px 18px;
-	border: 1px solid var(--goldDim);
 }
 
-.crSheet::before {
-	content: "";
-	position: absolute;
-	inset: 4px;
-	border: 1px solid var(--hair);
-	pointer-events: none;
+.crSheet > * {
+	grid-area: 1 / 1;
 }
 
 .crSheet > .crScene {
 	min-height: 0;
 }
 
-/* What the pointer is on, told above the choices. */
+.crSheet .crView {
+	margin: 0;
+}
+
+/* The rock in the sea clear of the numbers. */
+.crSheet .crStand {
+	left: calc(50% + var(--stats) / 2);
+}
+
+.crSheet > .crStats {
+	z-index: 2;
+	align-self: start;
+	width: calc(var(--stats) - 30px);
+	margin: 12px;
+	padding: 8px 12px 10px;
+	border: 1px solid var(--goldDim);
+	background: rgb(242 230 205 / 0.9);
+	box-shadow: 0 2px 10px rgb(0 0 0 / 0.2);
+}
+
+/* What the cursor is on, told above the choices. */
 .crAbout {
 	min-height: 4.65em;
 	margin: 0;
@@ -94,62 +123,6 @@
 	color: var(--mute);
 	text-wrap: pretty;
 	animation: prologueIn 300ms ease-out both;
-}
-
-/* The steps across the top on one hairline, the current one lit gold. */
-.crSteps {
-	grid-area: steps;
-	display: flex;
-	gap: 6px;
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
-
-.crSteps li {
-	position: relative;
-	flex: 1;
-	border-bottom: 1px solid var(--hair);
-}
-
-.crSteps li.now::after {
-	content: "";
-	position: absolute;
-	inset: auto 0 -1px;
-	height: 2px;
-	background: var(--ember);
-}
-
-.crSteps button {
-	display: flex;
-	align-items: baseline;
-	justify-content: center;
-	gap: 10px;
-	width: 100%;
-	padding: 8px 6px 6px;
-	border: 0;
-	background: none;
-	color: rgb(74 58 40 / 0.4);
-	font: 800 17px var(--sans);
-	cursor: pointer;
-	transition: color 200ms ease-out;
-}
-
-.crSteps button:disabled {
-	cursor: default;
-}
-
-.crSteps .done button {
-	color: var(--mute);
-}
-
-.crSteps .now button {
-	color: var(--deep);
-	background: var(--lit);
-}
-
-.crSteps button:not(:disabled):hover {
-	color: var(--deep);
 }
 
 .crTitle {
@@ -171,7 +144,30 @@
 }
 
 .crList {
+	--corner: 16px;
 	grid-area: list;
+	position: relative;
+	padding: 12px 16px;
+	border: 1px solid var(--hair);
+}
+
+/* Gold brackets on the four corners, as Dark Souls III frames its panels. */
+.crList::before {
+	content: "";
+	position: absolute;
+	inset: -3px;
+	pointer-events: none;
+	--g: linear-gradient(var(--gold), var(--gold));
+	background:
+		var(--g) top left / var(--corner) 2px,
+		var(--g) top left / 2px var(--corner),
+		var(--g) top right / var(--corner) 2px,
+		var(--g) top right / 2px var(--corner),
+		var(--g) bottom left / var(--corner) 2px,
+		var(--g) bottom left / 2px var(--corner),
+		var(--g) bottom right / var(--corner) 2px,
+		var(--g) bottom right / 2px var(--corner);
+	background-repeat: no-repeat;
 }
 
 .crList,
@@ -186,15 +182,25 @@
 	margin-top: 0;
 }
 
-/* The choices on hairlines, the pointer's row and the chosen one lit gold from below. */
+/* The choices on hairlines: the cursor's row lit from below with its E cap, the chosen one marked gold on its left. */
 .creation .panelOption {
 	position: relative;
-	padding: 8px 6px;
+	padding: 8px 6px 8px 12px;
 	border: 0;
 	border-bottom: 1px solid var(--hair);
 	border-radius: 0;
 	background: none;
 	color: var(--ink);
+	transition: none;
+}
+
+.creation .panelOption::before {
+	content: "";
+	position: absolute;
+	inset: 6px auto 6px 0;
+	width: 3px;
+	background: var(--gold);
+	opacity: 0;
 }
 
 .creation .panelOption::after {
@@ -204,29 +210,22 @@
 	height: 2px;
 	background: var(--ember);
 	opacity: 0;
-	transition: opacity 160ms ease-out;
-}
-
-.creation .panelOption:hover,
-.creation .panelOption.chosen {
-	background: var(--lit);
-}
-
-.creation .panelOption:hover::after {
-	opacity: 0.5;
-}
-
-.creation .panelOption.chosen::after {
-	opacity: 1;
+	transition: opacity 140ms ease-out;
 }
 
 .creation .panelOption:focus {
 	outline: none;
+	background: var(--lit);
 }
 
-.creation .panelOption:focus-visible {
-	outline: 1px solid var(--gold);
-	outline-offset: -1px;
+.creation .panelOption:focus::after,
+.creation .panelOption.chosen::before,
+.creation .panelOption:focus .crCap {
+	opacity: 1;
+}
+
+.creation .panelOption.chosen .panelOptionName {
+	color: var(--gold);
 }
 
 .creation .panelOptionName,
@@ -242,16 +241,6 @@
 
 .creation .panelOptionNote {
 	color: var(--mute);
-}
-
-.crThumb {
-	flex: none;
-	width: 48px;
-	height: 48px;
-	border: 1px solid var(--hair);
-	background-color: rgb(255 255 255 / 0.3);
-	background-repeat: no-repeat;
-	image-rendering: pixelated;
 }
 
 .crAbout:has(+ .crName) {
@@ -348,81 +337,46 @@
 .crFoot {
 	display: flex;
 	align-items: center;
-	gap: 12px;
 	padding-top: 6px;
-	border-top: 1px solid var(--hair);
 }
 
 .crKeys {
-	margin-right: auto;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 18px;
 	color: var(--mute);
 	font-size: 13px;
-	word-spacing: 2px;
 }
 
-.crKeys kbd {
-	margin: 0 2px 0 10px;
-	padding: 1px 6px;
+.crKey {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+/* A key on the paper: square for a letter, wider for a named key. */
+.creation kbd {
+	display: inline-grid;
+	place-items: center;
+	min-width: 20px;
+	height: 20px;
+	padding: 0 4px;
 	border: 1px solid var(--goldDim);
+	border-bottom-width: 2px;
 	border-radius: 3px;
+	background: rgb(255 255 255 / 0.25);
 	color: var(--ink);
-	font: 800 11px var(--sans);
+	font: 800 11px / 1 var(--sans);
 }
 
-.crKeys kbd:first-child {
-	margin-left: 0;
+.creation kbd.wide {
+	padding: 0 7px;
 }
 
-/* Back on the paper, the way on on a blue key, as the game's own buttons are. */
-.crBack,
-.crNext {
-	min-width: 150px;
-	padding: 8px 20px;
-	border: 2px solid var(--goldDim);
-	border-radius: 6px;
-	background: rgb(255 255 255 / 0.2);
-	color: var(--ink);
-	font: 800 16px var(--sans);
-	cursor: pointer;
-	transition:
-		background 160ms ease-out,
-		border-color 160ms ease-out,
-		filter 160ms ease-out;
-}
-
-.crNext {
-	padding: 2px 14px;
-	border: 12px solid transparent;
-	border-radius: 0;
-	border-image: url("/tiny-swords/ui/blueButton.png") 64 fill / 12px stretch;
-	background: none;
-	color: #fdfaf0;
-}
-
-.crBack:hover:not(:disabled) {
-	border-color: #c9a35c;
-	background: rgb(242 212 138 / 0.45);
-}
-
-.crNext:hover:not(:disabled) {
-	filter: brightness(1.1);
-}
-
-.crNext:active:not(:disabled) {
-	transform: translateY(1px);
-}
-
-.crBack:disabled,
-.crNext:disabled {
-	opacity: 0.4;
-	cursor: default;
-}
-
-.crBack:focus-visible,
-.crNext:focus-visible,
-.crSteps button:focus-visible {
-	outline: 2px solid #c9a35c;
-	outline-offset: 2px;
+.crCap {
+	flex: none;
+	opacity: 0;
+	transition: opacity 140ms ease-out;
 }
 
 @media (max-width: 1100px) {
@@ -432,12 +386,11 @@
 	}
 
 	.crSheet {
-		grid-template-columns: 210px minmax(0, 1fr);
-		padding-left: 14px;
+		--stats: 240px;
 	}
 }
 
-/* A phone: the steps across the top, the scene under them, the choices and the numbers side by side. */
+/* A phone: the scene, then the choices under it. */
 @media (max-width: 760px) {
 	.creation {
 		padding: 8px;
@@ -456,30 +409,12 @@
 	}
 
 	.crStage {
-		grid-template: "steps" auto "sheet" auto "list" auto / minmax(0, 1fr);
+		grid-template: "sheet" auto "list" auto / minmax(0, 1fr);
 		gap: 10px 14px;
 	}
 
-	.crSteps {
-		gap: 4px;
-	}
-
-	.crSteps button {
-		padding: 4px;
-		font-size: 15px;
-	}
-
-	.crSheet {
-		grid-template-columns: minmax(170px, 0.8fr) minmax(0, 1fr);
-		padding: 10px 0 10px 12px;
-	}
-
 	.crSheet > .crScene {
-		min-height: 250px;
-	}
-
-	.crSheet .crView {
-		margin-left: 12px;
+		min-height: 320px;
 	}
 
 	.crAbout {
@@ -501,37 +436,35 @@
 	}
 
 	.crKeys {
-		display: none;
-	}
-
-	.crFoot {
-		justify-content: space-between;
-	}
-
-	.crBack,
-	.crNext {
-		flex: 1;
-		min-width: 0;
+		gap: 4px 12px;
+		font-size: 12px;
 	}
 }
 
 @media (max-width: 480px) {
 	.crStage {
-		grid-template: "steps" auto "sheet" auto "list" auto / minmax(0, 1fr);
+		grid-template: "sheet" auto "list" auto / minmax(0, 1fr);
 	}
 
+	/* Too narrow to lay the numbers over: the scene, then the numbers under it. */
 	.crSheet {
-		grid-template-columns: minmax(0, 1fr);
-		padding: 0 12px 10px;
+		grid-template: auto auto / minmax(0, 1fr);
 	}
 
 	.crSheet > .crScene {
-		order: -1;
+		grid-area: 1 / 1;
 		min-height: 200px;
 	}
 
-	.crSheet .crView {
-		margin: 12px 0 4px;
+	.crSheet .crStand {
+		left: 50%;
+	}
+
+	.crSheet > .crStats {
+		grid-area: 2 / 1;
+		width: auto;
+		margin: 6px 0 0;
+		box-shadow: none;
 	}
 
 	.crRows {
@@ -546,5 +479,10 @@
 	.crStage > *,
 	.crAbout {
 		animation: none;
+	}
+
+	.creation .panelOption::after,
+	.crCap {
+		transition: none;
 	}
 }

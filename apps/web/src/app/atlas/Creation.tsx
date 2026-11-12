@@ -44,6 +44,11 @@ const STEPS = [
 
 const NAMELESS = "Nameless";
 
+/** A keycap; the word keys (Esc, Enter) are drawn wide. */
+function Key({ k }: { k: string }) {
+  return <kbd className={k.length > 1 ? "wide" : undefined}>{k}</kbd>;
+}
+
 /** The numbers on the right, as a rest shows them; Walk's icon is the second frame of a dust burst. */
 const STATS: { label: string; icon: string; frame?: number; of: (k: ReturnType<typeof kit>, cls: HeroClass) => number }[] = [
   { label: "Health", icon: "ui/icon_hp.png", of: (k) => k.hp },
@@ -67,31 +72,29 @@ function Thumb({ row }: { row: (typeof CLASS_ROWS)[number] }) {
 
 /**
  * After the prologue: the class, a gift and a name, kept for the run. Laid out after Dark Souls III's Create Character on
- * the title screen's paper and sea: the steps across the top, the choices, then the numbers beside the class on show,
- * either one showing whatever the pointer is on, and the keys along the foot.
+ * the title screen's paper and sea: the step named over its choices, the numbers laid over the class on show,
+ * either one showing whatever row has focus, and the keys along the foot. Keyboard only, on the play keys, so it is practice.
  */
 export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => SackItem[]; onBegin: (cls: HeroClass, gift: ItemName, name: string) => void; onDone: () => void }) {
   const [step, setStep] = useState(0);
-  const [reached, setReached] = useState(0);
   const [cls, setCls] = useState<HeroClass>("warrior");
   const [gift, setGift] = useState<ItemName | null>(null);
   const [name, setName] = useState("");
   const [begun, setBegun] = useState(false);
-  // What the pointer is on, shown on the rock and in the numbers; the chosen one when it is on nothing.
-  const [hoverCls, setHoverCls] = useState<HeroClass | null>(null);
-  const [hoverGift, setHoverGift] = useState<ItemName | null>(null);
+  // The focused row of this step's list, shown on the rock and in the numbers; the chosen one until a row has focus.
+  const [at, setAt] = useState<number | null>(null);
   // Read at each render, so a scene still loading when this opened has its gifts by the time they are looked at.
   const gifts = giftsNow();
 
-  const showCls = hoverCls ?? cls;
-  const showGift = hoverGift ?? gift;
+  const showCls = (step === 0 && at !== null && CLASS_ROWS[at]?.cls) || cls;
+  const showGift = (step === 1 && at !== null && gifts[at]?.label) || gift;
   const row = CLASS_ROWS.find((c) => c.cls === showCls)!;
   const now = kit(new Set(showGift ? [showGift] : []), undefined, showCls);
   const was = kit(new Set(gift ? [gift] : []), undefined, cls);
   const giftShown = gifts.find((g) => g.label === showGift);
   const ready = step !== 1 || !!gift;
 
-  // Each list opens with its chosen row (or its first) in focus, so the arrows and Enter work without a click first.
+  // Each list opens with its chosen row (or its first) in focus, so the keys work at once.
   const list = useRef<HTMLElement>(null);
   useEffect(() => {
     const rows = list.current;
@@ -100,10 +103,8 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
 
   const go = (to: number): void => {
     if (begun || to < 0) return;
-    setHoverCls(null);
-    setHoverGift(null);
+    setAt(null);
     setStep(to);
-    setReached((r) => Math.max(r, to));
   };
   const next = (): void => {
     if (!ready || begun) return;
@@ -112,15 +113,39 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
     onBegin(cls, gift!, name.trim() || NAMELESS);
   };
 
-  // The game behind hears none of it (its Space capture would eat a space typed in the name); up and down walk the list.
+  const choose = (): void => {
+    if (step === 0) {
+      setCls(showCls);
+      go(1);
+    } else if (showGift) {
+      setGift(showGift);
+      go(2);
+    }
+  };
+
+  // The play keys: W S walk the list, E chooses and goes on, Esc backs. The game behind hears none of it (its
+  // Space capture would eat a space typed in the name). In the name field the letters are the field's own.
   const keys = (e: React.KeyboardEvent): void => {
     e.stopPropagation();
-    if (e.key === "Escape") return go(step - 1);
-    if (!["ArrowUp", "ArrowDown"].includes(e.key) || e.target instanceof HTMLInputElement) return;
-    const items = [...e.currentTarget.querySelectorAll<HTMLButtonElement>(".crList .panelOption")];
-    const at = items.indexOf(document.activeElement as HTMLButtonElement);
-    items[(at + (e.key === "ArrowUp" ? -1 : 1) + items.length) % items.length]?.focus();
+    if (begun) return e.preventDefault();
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    if (e.target instanceof HTMLInputElement) {
+      if (k === "Escape" || (k === "Enter" && !e.nativeEvent.isComposing)) {
+        e.preventDefault();
+        if (!e.repeat) (k === "Enter" ? next : () => go(step - 1))();
+      }
+      return;
+    }
+    if (k === "Tab") return;
     e.preventDefault();
+    if (e.repeat) return;
+    if (k === "w" || k === "s") {
+      const items = [...e.currentTarget.querySelectorAll<HTMLButtonElement>(".crList .panelOption")];
+      const i = items.indexOf(document.activeElement as HTMLButtonElement);
+      items[(i + (k === "w" ? -1 : 1) + items.length) % items.length]?.focus();
+    } else if (k === "Escape") go(step - 1);
+    else if (k === "e" || k === "Enter") choose();
   };
 
   const told =
@@ -136,6 +161,8 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
       role="dialog"
       aria-label={STEPS[step]!.title}
       onKeyDown={keys}
+      // A click would blur the focused row and leave the keys to the game behind.
+      onMouseDown={(e) => e.preventDefault()}
       onAnimationEnd={(e) => e.target === e.currentTarget && begun && onDone()}
     >
       <div className="crScreen">
@@ -145,77 +172,40 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
         </h1>
 
         <div className="crStage">
-          <ol className="crSteps" aria-label="Steps">
-            {STEPS.map((s, i) => (
-              <li key={s.label} className={i === step ? "now" : i <= reached ? "done" : undefined}>
-                <button type="button" disabled={i > reached || begun} aria-current={i === step ? "step" : undefined} onClick={() => go(i)}>
-                  {s.label}
-                </button>
-              </li>
-            ))}
-          </ol>
-
           <section ref={list} className="crList" aria-label={STEPS[step]!.label}>
-            <span className="crTitle">{STEPS[step]!.title}</span>
+            <span className="crTitle">{STEPS[step]!.label}</span>
             <p key={`${step}:${showCls}:${showGift}`} className="crAbout">
               {told}
             </p>
             {step === 0 && (
-              <div className="panelOptions" onMouseLeave={() => setHoverCls(null)}>
-                {CLASS_ROWS.map((c) => (
-                  <button
-                    key={c.cls}
-                    type="button"
-                    className={`panelOption${c.cls === cls ? " chosen" : ""}`}
-                    aria-pressed={c.cls === cls}
-                    onMouseEnter={() => setHoverCls(c.cls)}
-                    onFocus={() => setHoverCls(c.cls)}
-                    onClick={(e) => {
-                      setCls(c.cls);
-                      if (e.detail === 0) go(1);
-                    }}
-                  >
-                    <Thumb row={c} />
+              <div className="panelOptions">
+                {CLASS_ROWS.map((c, i) => (
+                  <button key={c.cls} type="button" className={`panelOption${c.cls === cls ? " chosen" : ""}`} aria-pressed={c.cls === cls} onFocus={() => setAt(i)}>
                     <span className="panelOptionText">
                       <span className="panelOptionName">{c.name}</span>
                       <span className="panelOptionNote">{c.kit}</span>
                     </span>
+                    <kbd className="crCap">E</kbd>
                   </button>
                 ))}
               </div>
             )}
             {step === 1 && (
-              <div className="panelOptions" onMouseLeave={() => setHoverGift(null)}>
-                {gifts.map((g) => (
-                  <button
-                    key={g.label}
-                    type="button"
-                    className={`panelOption${g.label === gift ? " chosen" : ""}`}
-                    aria-pressed={g.label === gift}
-                    onMouseEnter={() => setHoverGift(g.label)}
-                    onFocus={() => setHoverGift(g.label)}
-                    onClick={(e) => {
-                      setGift(g.label);
-                      if (e.detail === 0) go(2);
-                    }}
-                  >
+              <div className="panelOptions">
+                {gifts.map((g, i) => (
+                  <button key={g.label} type="button" className={`panelOption${g.label === gift ? " chosen" : ""}`} aria-pressed={g.label === gift} onFocus={() => setAt(i)}>
                     <ItemIcon icon={g.icon} size={36} />
                     <span className="panelOptionText">
                       <span className="panelOptionName">{g.label}</span>
                       <span className="panelOptionNote">{g.gives}</span>
                     </span>
+                    <kbd className="crCap">E</kbd>
                   </button>
                 ))}
               </div>
             )}
             {step === 2 && (
-              <form
-                className="crName"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  next();
-                }}
-              >
+              <form className="crName" onSubmit={(e) => e.preventDefault()}>
                 <input autoFocus aria-label="Name" value={name} maxLength={16} placeholder={NAMELESS} spellCheck={false} autoComplete="off" onChange={(e) => setName(e.target.value)} />
                 <span className="panelOptionNote">Up to 16 letters. Left blank, you are {NAMELESS}.</span>
               </form>
@@ -256,14 +246,30 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
 
         <div className="crFoot">
           <span className="crKeys">
-            <kbd>Enter</kbd> OK <kbd>Esc</kbd> Back
+            {step < 2 ? (
+              <>
+                <span className="crKey">
+                  <Key k="W" />
+                  <Key k="S" /> Move
+                </span>
+                <span className="crKey">
+                  <Key k="E" /> Choose
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="crKey">Type a name</span>
+                <span className="crKey">
+                  <Key k="Enter" /> Come ashore
+                </span>
+              </>
+            )}
+            {step > 0 && (
+              <span className="crKey">
+                <Key k="Esc" /> Back
+              </span>
+            )}
           </span>
-          <button type="button" className="crBack" onClick={() => go(step - 1)} disabled={step === 0 || begun}>
-            Back
-          </button>
-          <button type="button" className="crNext" onClick={next} disabled={!ready || begun}>
-            {step === 0 ? "Next: Gift" : step === 1 ? "Next: Name" : "Come ashore"}
-          </button>
         </div>
       </div>
     </div>
