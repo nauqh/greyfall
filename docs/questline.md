@@ -13,38 +13,58 @@ After Dark Souls: no quest log, no choices, the wanderer never speaks.
 - **Talks.** Each talk to someone plays their next conversation, a few short pages; once all are heard the last one repeats. A remark marked "once ... when" plays once, after the first talk there, when its flag has happened.
 - **Moving on.** Where someone stands depends on world flags. Each NPC has a home and a list of later stations; the last station whose flags have all happened wins. A station with no place means they are gone for good; a dead one lies there and says nothing.
 - **Flags from talks.** Some talks set a flag when heard to the end: that is what moves a questline on.
+- **Gifts.** Some talks give an item when heard to the end the first time, free. Where a questline can end two ways, the same item reaches the wanderer either way: given by the one who lived, or sold by a merchant after the loss.
+- **Stock.** A merchant's line can wait on a boss falling or on a world flag.
 - **When they move.** Placement is worked out on entering an area, so someone moves between your visits, never in front of you.
 
 ## What sets each flag
 
 | Flag | Set by |
 | --- | --- |
-| died | dying (works now) |
+| died | dying |
 | bullWon | falling to the Shore Minotaur, which washes the wanderer up at the Harbour's fire |
-| wellDescended | arriving in the Undercroft (works now) |
-| moorGateOpen | coming into the Harbour through the Moor Gate (works now) |
-| watchLiftOpen | riding the Watch Lift down into the Harbour (works now) |
-| greyfallReached | arriving in the Greyfall (works now) |
-| trollKey | killing the Cinder Troll (not built yet) |
-| hornedKey | killing the Barrow King (not built yet) |
-| warlordDead | killing the Grey Warlord (not built yet) |
-| monkFreed | freeing the Monk in the Drowned Chapel (not built yet) |
-| tobinDown, tobinDeeper, ysoldeDeeper, anselRoused, anselAhead, watchmanOut, marenSails | hearing a talk to its end (marked below) |
+| wellDescended | arriving in the Undercroft |
+| moorGateOpen | coming into the Harbour through the Moor Gate |
+| watchLiftOpen | riding the Watch Lift from the Steps into the Keep |
+| greyfallReached | arriving in the Greyfall |
+| ladderDown | kicking the Ramparts Ladder down to the Burg |
+| trollKey | the Cinder Troll slain, raised on entering any area |
+| hornedKey | the Barrow King (kind `barrowKing`) slain, raised on entering any area; not fightable yet |
+| warlordDead | the Grey Warlord (kind `warlord`) slain, raised on entering any area; not fightable yet |
+| shellDead | the Shell Below (kind `turtleGuard`) slain; not fightable yet |
+| monkFreed | hearing the Drowned Sister's second talk to its end |
+| tobinDown, tobinDeeper, ysoldeDeeper, anselRoused, anselAhead, watchmanOut, marenSails, pennyFollows, drankClear | hearing a talk to its end (marked below) |
 
 ## At a glance
 
 | Who | Moved on by | Turns up | Ends |
 | --- | --- | --- | --- |
-| Tobin | his remark on the well, then a talk | Undercroft, Smugglers' Nook; then the Deeps, Robbers' Camp | Stays with his brother, who leads the thieves. The brother is never talked to |
-| Mother Ysolde | the monk freed, then a talk | Undercroft, the Drowned Chapel; then the Hollow, Pilgrims' Rest | Kneels over her drowned sisters and will not come back |
-| Ansel of the Wall | his remark on the Troll Key | The Greyfall, the Ashen Approach | Hear him out twice and he goes ahead and dies in the High City, below the Warlord's Hall; kill the Warlord first and he is back on the wall |
-| Penny | reaching the Greyfall | The Greyfall, Gallows Yard, penned with her mum | Freed when the Warlord falls |
-| Sergeant Corwin | the Barrow King dead | Barrowmoor, Barrow Field, digging out his forty | Stays with them |
-| The Moor Watchman | his remark on the open Moor Gate | Barrowmoor, Gibbet Hill, watching the lights | Gone into the barrows once the King is dead |
-| Maren | her remark on the Warlord dead | | Sails on the first ship in three winters; missed if not talked to |
-| Wren | the Troll Key | Emberwood, Old Pines | Stays, shooting |
-| Old Ferrow, Brenna | | | Stay; both remark on Ansel leaving |
-| Mags, Hale, Odo | | | Stay at their posts in the Burg and on the Ramparts |
+| Tobin | his remark on the well, then a talk | Undercroft, Smugglers' Nook; then the Deeps, Robbers' Camp | Stays below counting what his brother steals; gives the Thrown Coin |
+| Jory | Tobin gone deeper and the Warlord dead | Barrow Deeps, Robbers' Camp, selling what his camp robbed; then the Old Well in Tobin's place | Stands at the well, Tobin left below |
+| Mother Ysolde | the sister freed, then a talk | Undercroft, the Drowned Chapel; then the Hollow, Pilgrims' Rest | Shell Below alive: kneels over her sisters for good, and Jory sells her candle. Shell Below dead: walks home to the Upper Town and gives the Sister's Candle |
+| A Drowned Sister | her second talk | Undercroft, the Drowned Chapel | Freed, walks with the wanderer as the Monk |
+| The Pilgrim | | the Hollow, Pilgrims' Rest | Gives Hollow Water; lies dead once the Shell Below is killed |
+| Ansel of the Wall | his remark on the Troll Key | The Greyfall, the Ashen Approach | Hear him out twice and he goes ahead and dies in the High City, and Brenna sells his edge; kill the Warlord first and he is back on the wall and gives Ansel's Edge |
+| Penny | her crows talk, then reaching the Greyfall | The Greyfall, Gallows Yard, penned with her mum | Talked to: freed in the Yard when the Warlord falls. Never talked to: stays hidden, her mum walks home. Mum's Bread either way |
+| Sergeant Corwin | the Barrow King dead | Barrowmoor, Barrow Field, digging out his forty | Watchman heard out: finds the fortieth and gives the Forty's Banner. Otherwise: stops at thirty-nine |
+| The Moor Watchman | his remark on the open Moor Gate | Barrowmoor, Gibbet Hill, watching the lights | Lies dead in Barrow Field once the King is dead, the fortieth of Corwin's spears |
+| Maren | her remark on the Warlord dead | | Sails on the first ship in three winters, and Mags stocks the Salt-Glass Flask; missed only by never hearing her sail talk |
+| Wren | the Troll Key | Emberwood, Old Pines | Stays, shooting; remarks on Penny gone |
+| The Last One | | Barrowmoor, the Grey Road, dead from the start | Ferrow's last one, who went east; never named |
+| Old Ferrow, Brenna, Mags | | | Stay; remark on the folk's news. Brenna and Mags sell what the questlines turn up |
+| Hale, Odo | | | Stay at their posts in the Burg and on the Ramparts |
+
+## Forks
+
+Each turns on one thing the wanderer does, never on a choice in a menu.
+
+| Fork | The player's action | Outcomes |
+| --- | --- | --- |
+| The Fortieth Spear | hear the Watchman out after opening the Moor Gate, or don't | forty and the Forty's Banner, or thirty-nine and nothing |
+| Ansel | hear his `ahead` talk in the Greyfall, or kill the Warlord first | dead and Ansel's Edge from Brenna for gold, or alive and the Edge free |
+| The Clear Water | kill the Shell Below, or leave it | Ysolde home, the Sister's Candle free and the Pilgrim dead; or Ysolde kneeling, the Pilgrim's Hollow Water, and the Candle from Jory for gold. Drink first, then kill it, and both are had |
+| The Loud Walker | talk Penny through her crows, or don't | penned in the Gallows Yard then freed, or safe at home; Mum's Bread either way |
+| The First Sail | hear Maren's sail talk after the Warlord, or don't | she sails and Mags stocks the Salt-Glass Flask, or she stays |
 
 ## Old Ferrow
 
@@ -89,10 +109,18 @@ Greets you: *"Ah. Another one."* Walked away from: *"Mind the dark, then."*
 - **ansel** (once, after meeting, when **anselRoused**)
   1. Ansel's off the wall. I can see it from here. First time in years.
   2. They come back, or they don't. The wall will keep.
+- **east** (once, after meeting, when **greyfallReached**)
+  1. You went east. You came back.
+  2. That's one more than the last one managed.
+- **gone** (once, after meeting, when **anselAhead**)
+  1. Ansel's not come back off the moor road. Nor will he, I'd wager.
+  2. They go east. They always go east.
 
 ## Brenna the Smith
 
 Greets you: *"Mind the sparks."* Walked away from: *"Come back with ore."*
+
+Sells: Brenna's Edge; Keener Edge (once the Stone Warden falls); Grey-Iron Edge (once the Cinder Troll falls); Banded Shield; Ansel's Edge (once **anselAhead**).
 
 ### Home: The Chapel Ward, the Forge Yard (73, 29)
 
@@ -109,8 +137,11 @@ Greets you: *"Mind the sparks."* Walked away from: *"Come back with ore."*
   1. Let me see that key. ...The Keep's. I cut that blank myself, years back.
   2. Smells of troll now. Wash it.
 - **ansel** (once, after meeting, when **anselRoused**)
-  1. Ansel came by. Wanted an edge on a sword I'd forgotten he had.
-  2. He didn't haggle. That worried me.
+  1. Ansel came by. Paid for two edges on that old sword of his. Didn't haggle.
+  2. Took the sword with one. Said he'd be back for the other.
+- **second** (once, after meeting, when **anselAhead**)
+  1. He hasn't come back for the second edge.
+  2. I don't keep things for the dead. I sell them. Gold first.
 
 ## Sergeant Corwin
 
@@ -131,6 +162,12 @@ Greets you: *"You're not one of mine."* Walked away from: *"Dismissed, then."*
 - **warlord** (once, after meeting, when **warlordDead**)
   1. Forty spears.
   2. I'll carve them into the gate. Every one. Leave me to it.
+- **post** (once, after meeting, when **watchmanOut**)
+  1. The Watch on the Moor Gate's gone off his post. Good.
+  2. He barred it on my orders, he'll tell you. I never gave him any.
+- **ansel** (once, after meeting, when **anselRoused**)
+  1. Ansel's got his sword out. Took him long enough.
+  2. Took me forty men. Don't tell him I said so.
 
 ### At Barrowmoor, Barrow Field (29, 22), once **hornedKey**
 
@@ -143,6 +180,22 @@ Greets you: *"You're not one of mine."* Walked away from: *"Dismissed, then."*
 - **last**
   1. Thirty-nine.
   2. The fortieth was me, I think. I ought to be down there with them.
+- **done** (once, after meeting, when **warlordDead**)
+  1. So it's finished. Up in the Grey.
+  2. Tell them at the gate. I've no hands left for carving.
+
+### At Barrowmoor, Barrow Field (29, 22), once **hornedKey** and **watchmanOut**
+
+- **barrows**
+  1. The Barrow King's dead. The barrows are only barrows now.
+  2. My forty went into them. I'm digging them out. One at a time.
+- **count**
+  1. Twenty-two. Dace still had his pipe.
+  2. Holm had nothing. Holm always had nothing.
+- **forty** (heard to the end the first time, gives *The Forty's Banner*)
+  1. Forty. Found him this morning, lying down among them like he'd never left.
+  2. He ran, the night the King came up. I let him. I'd have run, if I'd been quicker.
+  3. This was rolled up under him. Take it. It never did come home. Take it further.
 - **done** (once, after meeting, when **warlordDead**)
   1. So it's finished. Up in the Grey.
   2. Tell them at the gate. I've no hands left for carving.
@@ -161,6 +214,12 @@ Greets you: *"You walk loud."* Walked away from: *"Keep your head down!"*
   2. Shoot the torch first. Spears are slow. Torches are rude.
 - **back**
   1. Five paces back, always. If you can smell it, you're too close.
+- **wings** (once, after meeting, when **died**)
+  1. Tobin sent you for a bow, didn't he? Wings?
+  2. Steel goes up. Steel comes down. Arrows only go up.
+- **penny** (once, after meeting, when **greyfallReached**)
+  1. Penny's gone from behind the butts. She'd sit there and count crows.
+  2. If you see her, tell her I kept her seat. Don't tell her I said kept.
 
 ### At Emberwood, Old Pines (29, 44), once **trollKey**
 
@@ -169,6 +228,9 @@ Greets you: *"You walk loud."* Walked away from: *"Keep your head down!"*
   2. Don't tell the Harbour. They'll want me back being useful.
 - **torches**
   1. Torches first. Always torches first.
+- **penny** (once, after meeting, when **greyfallReached**)
+  1. Penny's gone from behind the butts. She'd sit there and count crows.
+  2. If you see her, tell her I kept her seat. Don't tell her I said kept.
 
 ## Tobin
 
@@ -211,9 +273,31 @@ Greets you: *"Don't lean on the rope."* Walked away from: *"...Right. Off you go
   1. Found him. He runs this camp. Thin as ever. Smiling.
   2. He says the coin was never dropped. He threw it, to see who'd come after.
   3. ...I came after.
-- **stay**
+- **stay** (heard to the end the first time, gives *The Thrown Coin*)
   1. I'm staying. Someone has to count what he steals.
-  2. Quick hands run in the family. Turns out.
+  2. Here. The coin. I found it at the bottom, the day I came down. He never looked for it.
+  3. Quick hands run in the family. Turns out.
+
+## Jory
+
+Greets you: *"Ha. Walk soft, friend."* Walked away from: *"Mind your purse."*
+
+Sells: Smuggler's Coat; Sister's Candle (once **ysoldeDeeper**).
+
+### Home: Barrow Deeps, Robbers' Camp (8, 68)
+
+- **first**
+  1. Tobin's friend? Anyone who comes this deep is a friend. Friends buy things.
+  2. Don't mind the lads. They only take what's not watched.
+- **coin**
+  1. The coin? I threw it. Down the well, a long time ago. To see who'd come after.
+  2. Two did. Him and you. I didn't expect you.
+
+### At Last Harbour, the Lower Town, by the Old Well (57, 51), once **tobinDeeper** and **warlordDead**
+
+- **well**
+  1. Tobin? Down there. Counting. Someone has to.
+  2. Don't lean on the rope. It's older than both of us.
 
 ## Mother Ysolde
 
@@ -227,17 +311,23 @@ Greets you: *"Peace on you."* Walked away from: *"Go gently."*
 - **candle**
   1. I light a candle each night.
   2. The hour comes round and my hands are already there.
+- **clean** (once, after meeting, when **drankClear**)
+  1. You drank from the lake. I can smell it on you. Clean, like nothing is.
+  2. Nothing down here is clean, child.
 
 ### At The Undercroft, The Drowned Chapel (49, 55), once **monkFreed**
 
 - **freed**
-  1. You found one of us. Living. So I came down the well. Old knees, long drop.
-  2. She does not remember her name yet. I tell it to her, and she thanks me, every time.
-  3. One is a mercy. I'll not ask the dark for more than it gives.
+  1. You found one of us. Living. She walks with you now, so I came down to see where.
+  2. I told her her name. She thanked me. She'll have lost it again by the next fire.
+  3. Tell it to her, some nights. One is a mercy. I'll not ask the dark for more.
 - **lake** (heard to the end, sets **ysoldeDeeper**)
   1. She speaks in her sleep. Of a lake under all of this, clear as glass.
   2. The others went on to it. I must go too.
   3. Do not follow. Or do. I am too old to forbid things.
+- **clean** (once, after meeting, when **drankClear**)
+  1. You drank from the lake. I can smell it on you. Clean, like nothing is.
+  2. Nothing down here is clean, child.
 
 ### At The Drowned Hollow, Pilgrims' Rest (94, 49), once **ysoldeDeeper**
 
@@ -248,6 +338,51 @@ Greets you: *"Peace on you."* Walked away from: *"Go gently."*
 - **kneel**
   1. I have stopped lighting candles.
   2. There is light enough down here. Cold, but enough.
+- **clean** (once, after meeting, when **drankClear**)
+  1. You drank from the lake. I can smell it on you. Clean, like nothing is.
+  2. Nothing down here is clean, child.
+
+### At Last Harbour, The Upper Town (54, 29), once **ysoldeDeeper** and **shellDead**
+
+- **ash** (heard to the end the first time, gives *Sister's Candle*)
+  1. The water went grey when it died. Then my sisters were only bones.
+  2. I can leave bones. I couldn't leave them kneeling.
+  3. Take this. I've stopped lighting it. Light it for the ones you lose.
+- **clean** (once, after meeting, when **drankClear**)
+  1. You drank from the lake. I can smell it on you. Clean, like nothing is.
+  2. Nothing down here is clean, child.
+
+## A Drowned Sister
+
+Greets you: *"...Mother?"* Walked away from: *"Don't go far."*
+
+### Home: The Undercroft, The Drowned Chapel (51, 55)
+
+- **first**
+  1. Is it night? It's always night, down here.
+  2. We came to pray the water clear. I don't remember the others' faces.
+- **warm** (heard to the end, sets **monkFreed**)
+  1. You're warm. Nothing down here is warm.
+  2. I'll walk with you. I've forgotten the way up. You haven't.
+
+### Gone, once **monkFreed**
+
+## The Pilgrim
+
+Greets you: *"Softly. It sleeps."* Walked away from: *"Softly, going."*
+
+### Home: The Drowned Hollow, Pilgrims' Rest (95, 49)
+
+- **first**
+  1. The sisters came to pray the Grey out of the water. It went out of the water. Look.
+  2. It sleeps on the isle, and the lake stays clear while it sleeps.
+- **water** (heard to the end, sets **drankClear**; heard to the end the first time, gives *Hollow Water*)
+  1. Drink. It is clear. Nothing clear is left up there.
+  2. The old one by the harbour fire says not to. He has never been down.
+
+### Dead at The Drowned Hollow, Pilgrims' Rest (95, 49), once **shellDead**
+
+Says nothing.
 
 ## Maren the Harbourmaster
 
@@ -298,8 +433,13 @@ Greets you: *"Gate stays shut."* Walked away from: *"Back to the wall, then."*
 - **look**
   1. I'll just look a little longer.
   2. Looking is how it starts. I know. I said that.
+- **spear**
+  1. Sergeant Corwin. Is he still drilling boys at the Keep?
+  2. Don't tell him you saw me. He'd want a count. He always wanted a count.
 
-### Gone, once **watchmanOut** and **hornedKey**
+### Dead at Barrowmoor, Barrow Field, beside Corwin's dig (31, 23), once **watchmanOut** and **hornedKey**
+
+Says nothing.
 
 ## Penny
 
@@ -311,11 +451,12 @@ Greets you: *"Shh!"* Walked away from: *"Don't tell them I'm here!"*
   1. Don't tell them I'm here. The grey men.
   2. They took my mum. The whole east lane. Off to the Greyfall, where the Grey comes from.
   3. They keep them in a yard with ropes. I squeezed out under the gate.
-- **crows**
+- **crows** (heard to the end, sets **pennyFollows**)
   1. I count the crows.
   2. When there's more of them, they're bringing more people.
+  3. Wren says you walk loud. You do. I could follow you anywhere.
 
-### At The Greyfall, Gallows Yard (73, 67), once **greyfallReached**
+### At The Greyfall, Gallows Yard (73, 67), once **pennyFollows** and **greyfallReached**
 
 - **penned**
   1. Shh! I followed you through the gate. You walk loud, so it's easy.
@@ -325,12 +466,20 @@ Greets you: *"Shh!"* Walked away from: *"Don't tell them I'm here!"*
   1. Fewer crows here today.
   2. You're killing them, aren't you? The grey ones, I mean.
 
-### At The Greyfall, Gallows Yard (73, 67), once **warlordDead**
+### At Last Harbour, West Fields (24, 62), once **warlordDead**
+
+- **mum**
+  1. Mum came home! On her own feet!
+  2. She says the grey ones just ran. She says it twice.
+- **bread** (heard to the end the first time, gives *Mum's Bread*)
+  1. Mum made bread. It's mostly ash. Here.
+
+### At The Greyfall, Gallows Yard (73, 67), once **pennyFollows** and **warlordDead**
 
 - **free**
   1. They ran! All the grey ones, they just ran!
   2. Mum says thank you. She says it twice. She's like that.
-- **home**
+- **home** (heard to the end the first time, gives *Mum's Bread*)
   1. We're walking home. Mum says slowly.
   2. She's had enough of being hurried by ropes.
 
@@ -365,18 +514,19 @@ Greets you: *"Look up."* Walked away from: *"Go on. I'll keep watch. It's all I'
 - **out**
   1. Don't look at me like that. I said I'd come out.
   2. I'd forgotten the smell of the Grey. Wet ash and old iron.
+  3. Talk to me again and I'll go on up. So don't. Not unless you mean it.
 - **ahead** (heard to the end, sets **anselAhead**)
   1. The Warlord's Hall is up past the High City. I'll go first, this time.
   2. Let me have that. You've had all the others.
 
-### At The Keep, on the hall's terrace (43, 11), once **warlordDead**
+### At The Keep, on the hall's terrace (43, 11), once **anselRoused** and **warlordDead**
 
 - **without**
   1. You went up without me. Good.
   2. I'd only have been in the way. I'd only have been brave.
-- **wall**
+- **wall** (heard to the end the first time, gives *Ansel's Edge*)
   1. Back on the wall. It's a good wall.
-  2. You can see the Gilded City from here. Doesn't glint so much now.
+  2. Brenna's holding an edge I paid for. Here. Tell her I sent you, she'll want it in writing.
 
 ### Dead at The Greyfall, The High City (95, 25), once **anselAhead**
 
@@ -385,6 +535,8 @@ Says nothing.
 ## Mags the Peddler
 
 Greets you: *"Hehe. A live one."* Walked away from: *"Come back with coin, dearie."*
+
+Sells: Ember Shard; Smoked Haunch; Pine Resin; Prospector's Purse; Kindled Shard (once the Cinder Troll falls); Salt-Glass Flask (once **marenSails**).
 
 ### Home: The Lower Burg, Market Row, in a nook under the wall (37, 39)
 
@@ -397,6 +549,12 @@ Greets you: *"Hehe. A live one."* Walked away from: *"Come back with coin, deari
   2. Went bad when the bell stopped. Bad for business, worse for them.
 - **rest**
   1. Hehe. Still breathing, dearie? Good. Breathing folk buy things.
+- **fence** (once, after meeting, when **tobinDeeper**)
+  1. Tobin's gone down after his brother? Hehe. Then he'll meet my best supplier.
+  2. Don't ask what I buy from below, dearie. I don't.
+- **ship** (once, after meeting, when **marenSails**)
+  1. A ship in, and Maren off on it. Thirty years she waited. Hehe. Some of us don't wait.
+  2. The salt men left me a crate. Glass, dearie. Salt-glass. One, mind.
 
 ## Hale of the Watch
 
@@ -435,3 +593,9 @@ Greets you: *"Bull's dead, then. Good. I was running out of things to throw."* W
   2. The wall remembers everyone who crossed it. It just doesn't care.
 - **kicked** (once, after meeting, when **ladderDown**)
   1. You found it. The square's closer than it looks.
+
+## The Last One
+
+### Dead at Barrowmoor, The Grey Road, short of the Grey Gate (113, 37), from the start
+
+Says nothing.

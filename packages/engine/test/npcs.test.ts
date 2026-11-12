@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { footprint } from "../src/atlas.ts";
-import { ITEMS, areaMap, findPath, isWalkable, useIsland } from "../src/index.ts";
+import { ITEMS, areaMap, findPath, isWalkable, onOffer, useIsland } from "../src/index.ts";
 import { NPCS, nextTalk, talkKey, whereabouts, type Npc, type WorldFlag } from "../src/npcs.ts";
 
 const ferrow = NPCS.find((n) => n.id === "ferrow")!;
@@ -34,8 +34,8 @@ describe("talking", () => {
     expect(nextTalk(tobin, new Set([...heard, "tobin.wings"]), new Set()).id).toBe("wings");
   });
 
-  it("keys every conversation apart", () => {
-    const keys = NPCS.flatMap((n) => stations(n).flatMap((s) => (s.talks ?? []).map((t) => talkKey(n, t))));
+  it("keys every conversation apart, one said at several stations keeping its one key", () => {
+    const keys = NPCS.flatMap((n) => [...new Set(stations(n).flatMap((s) => s.talks ?? []))].map((t) => talkKey(n, t)));
     expect(new Set(keys).size).toBe(keys.length);
   });
 
@@ -51,9 +51,11 @@ describe("talking", () => {
 });
 
 describe("the merchants", () => {
-  it("sell every good, each by one merchant only, and none on the Ramparts", () => {
+  it("sell or give every good, each sold by one merchant only, and none on the Ramparts", () => {
     const sold = NPCS.flatMap((n) => (n.shop?.stock ?? []).map((s) => s.item));
-    expect(sold.sort()).toEqual(Object.keys(ITEMS).sort());
+    const given = NPCS.flatMap((n) => stations(n).flatMap((s) => (s.talks ?? []).flatMap((t) => (t.gives ? [t.gives] : []))));
+    expect(new Set(sold).size).toBe(sold.length);
+    expect([...new Set([...sold, ...given])].sort()).toEqual(Object.keys(ITEMS).sort());
     expect(NPCS.filter((n) => n.shop && n.area === "ramparts")).toEqual([]);
   });
 });
@@ -91,13 +93,13 @@ describe("the questline", () => {
     expect(whereabouts(npc("tobin"), flags("wellDescended"))?.area).toBe("harbour");
     expect(whereabouts(npc("tobin"), flags("tobinDown"))?.area).toBe("undercroft");
     expect(whereabouts(npc("tobin"), flags("tobinDown", "tobinDeeper"))?.area).toBe("deeps");
-    expect(whereabouts(npc("penny"), flags("greyfallReached", "warlordDead"))?.talks[0]?.id).toBe("free");
+    expect(whereabouts(npc("penny"), flags("pennyFollows", "greyfallReached", "warlordDead"))?.talks[0]?.id).toBe("free");
   });
 
   it("asks for every flag a station names", () => {
     expect(whereabouts(npc("watchman"), flags("hornedKey"))?.area).toBe("harbour");
     expect(whereabouts(npc("watchman"), flags("watchmanOut"))?.area).toBe("barrowmoor");
-    expect(whereabouts(npc("watchman"), flags("watchmanOut", "hornedKey"))).toBeNull();
+    expect(whereabouts(npc("watchman"), flags("watchmanOut", "hornedKey"))?.dead).toBe(true);
   });
 
   it("lets Ansel live only if the warlord falls before he goes ahead", () => {
@@ -105,6 +107,61 @@ describe("the questline", () => {
     expect(whereabouts(ansel, flags("anselRoused", "warlordDead"))).toMatchObject({ area: "keep", dead: false });
     expect(whereabouts(ansel, flags("anselRoused", "anselAhead"))).toMatchObject({ area: "greyfall", dead: true, talks: [] });
     expect(whereabouts(ansel, flags("anselRoused", "anselAhead", "warlordDead"))?.dead).toBe(true);
+    expect(whereabouts(ansel, flags("warlordDead"))?.talks.map((t) => t.id)).toContain("roused");
+  });
+
+  it("pays Ansel's Edge either way: from Ansel alive, or from Brenna once he has gone ahead", () => {
+    const brenna = npc("brenna").shop!.stock;
+    expect(whereabouts(npc("ansel"), flags("anselRoused", "warlordDead"))?.talks.find((t) => t.gives)?.gives).toBe("Ansel's Edge");
+    expect(onOffer(brenna, new Set(), new Set(), flags()).map((s) => s.item)).not.toContain("Ansel's Edge");
+    expect(onOffer(brenna, new Set(), new Set(), flags("anselAhead")).map((s) => s.item)).toContain("Ansel's Edge");
+  });
+
+  it("counts Corwin forty only if the Watchman was heard out, and lays the Watchman beside him", () => {
+    const corwin = npc("corwin");
+    expect(whereabouts(corwin, flags("hornedKey"))?.talks.map((t) => t.id)).toContain("last");
+    const forty = whereabouts(corwin, flags("hornedKey", "watchmanOut"))!;
+    expect(forty.talks.find((t) => t.id === "forty")?.gives).toBe("The Forty's Banner");
+    expect(forty.talks.map((t) => t.id)).not.toContain("last");
+    expect(whereabouts(npc("watchman"), flags("watchmanOut", "hornedKey"))).toMatchObject({ area: "barrowmoor", dead: true });
+  });
+
+  it("brings Penny to the Greyfall only if she was talked to, and her bread home either way", () => {
+    const penny = npc("penny");
+    expect(whereabouts(penny, flags("greyfallReached"))?.area).toBe("harbour");
+    expect(whereabouts(penny, flags("pennyFollows", "greyfallReached"))?.area).toBe("greyfall");
+    for (const f of [flags("greyfallReached", "warlordDead"), flags("pennyFollows", "greyfallReached", "warlordDead")])
+      expect(whereabouts(penny, f)?.talks.some((t) => t.gives === "Mum's Bread")).toBe(true);
+    expect(whereabouts(penny, flags("greyfallReached", "warlordDead"))?.area).toBe("harbour");
+  });
+
+  it("turns the Clear Water on the Shell Below: Ysolde home and the Pilgrim dead, or Ysolde kneeling and the candle sold", () => {
+    expect(whereabouts(npc("ysolde"), flags("monkFreed", "ysoldeDeeper"))?.area).toBe("hollow");
+    const home = whereabouts(npc("ysolde"), flags("monkFreed", "ysoldeDeeper", "shellDead"))!;
+    expect(home).toMatchObject({ area: "harbour", dead: false });
+    expect(home.talks.find((t) => t.gives)?.gives).toBe("Sister's Candle");
+    expect(whereabouts(npc("pilgrim"), flags())?.talks.find((t) => t.sets === "drankClear")?.gives).toBe("Hollow Water");
+    expect(whereabouts(npc("pilgrim"), flags("shellDead"))?.dead).toBe(true);
+    const jory = npc("jory").shop!.stock;
+    expect(onOffer(jory, new Set(), new Set(), flags("ysoldeDeeper")).map((s) => s.item)).toContain("Sister's Candle");
+  });
+
+  it("frees the drowned sister on her second talk, and she is gone after", () => {
+    const sister = npc("sister");
+    expect(nextTalk(sister, new Set(["sister.first"]), flags()).sets).toBe("monkFreed");
+    expect(whereabouts(sister, flags("monkFreed"))).toBeNull();
+  });
+
+  it("puts Jory at the Old Well once Tobin is below and the Warlord dead, and Mags's flask on sale once Maren sails", () => {
+    expect(whereabouts(npc("jory"), flags("tobinDeeper"))?.area).toBe("deeps");
+    expect(whereabouts(npc("jory"), flags("tobinDeeper", "warlordDead"))?.area).toBe("harbour");
+    const mags = npc("mags").shop!.stock;
+    expect(onOffer(mags, new Set(), new Set(), flags()).map((s) => s.item)).not.toContain("Salt-Glass Flask");
+    expect(onOffer(mags, new Set(), new Set(), flags("marenSails")).map((s) => s.item)).toContain("Salt-Glass Flask");
+  });
+
+  it("leaves the last one dead on the Grey Road from the start", () => {
+    expect(whereabouts(npc("last"), flags())).toMatchObject({ area: "barrowmoor", dead: true });
   });
 
   it("talks where they stand, a remark waiting on the first talk there", () => {
@@ -129,6 +186,9 @@ describe("the questline", () => {
       anselAhead: "ansel.ahead",
       watchmanOut: "watchman.open",
       marenSails: "maren.sail",
+      monkFreed: "sister.warm",
+      drankClear: "pilgrim.water",
+      pennyFollows: "penny.crows",
     });
   });
 });

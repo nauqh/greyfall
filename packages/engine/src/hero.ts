@@ -2,6 +2,7 @@
 // fight runs on. The scene moves the sprites; what a monster does next and what a blow takes off come from here.
 
 import { canStep, cellKey, stepsFrom, tileDistance, type Cell } from "./island.ts";
+import type { WorldFlag } from "./npcs.ts";
 
 /** The player: a Warrior in blue, nameless here. */
 /** A walk, not a sprint: 2.8 tiles a second (4 read as running everywhere). */
@@ -180,6 +181,15 @@ export const ITEMS = {
   "Banded Shield": { cost: 600, adds: { block: -0.75 }, about: "Oak bound in iron bands. A blow on it jars the arm far less than it ought to." },
   "Kindled Shard": { cost: 900, adds: { flasks: 1 }, about: "A shard of the fire the troll sat on, burning again now it is gone. One more flask." },
   "Prospector's Purse": { cost: 500, adds: { greed: 0.25 }, about: "A dead prospector's purse, never quite full. Coin finds its way into it." },
+  // Given by the folk, or sold once their questline goes the hard way; a cost of nothing is never sold.
+  "The Forty's Banner": { cost: 0, adds: { hp: 40 }, about: "The forty's banner, kept dry under the one who ran. It has been carried further since." },
+  "Ansel's Edge": { cost: 700, adds: { attack: 2 }, about: "The second of two edges a wall sitter paid for. He came back for one." },
+  "The Thrown Coin": { cost: 0, adds: { greed: 0.25 }, about: "Thrown down the Old Well to see who would come after. Coin follows it now." },
+  "Smuggler's Coat": { cost: 400, adds: { hp: 25 }, about: "Swapped, its last wearer said, deeper in. Nobody down there ever swapped a thing." },
+  "Sister's Candle": { cost: 600, adds: { flask: 15 }, about: "A sister's candle, burned down a winter of nights. Its light closes wounds, or seems to." },
+  "Hollow Water": { cost: 0, adds: { flasks: 1 }, about: "Lake water from under the fen, clear as glass. The Order's pilgrims drink nothing else. Ferrow would not." },
+  "Mum's Bread": { cost: 0, adds: { hp: 20 }, about: "Baked in an east lane oven that sat cold a long while. Mostly ash. Eaten anyway." },
+  "Salt-Glass Flask": { cost: 600, adds: { flasks: 1 }, about: "Blown on the salt coast, thick as a thumb. It came in on the first ship in three winters." },
 } as const satisfies Record<string, { cost: number; adds: Partial<Kit>; needs?: string; about: string }>;
 export type ItemName = keyof typeof ITEMS;
 
@@ -193,15 +203,16 @@ export function kit(bought: ReadonlySet<string>): Kit {
   return k;
 }
 
-/** One line of a merchant's stock: on sale once `after`, a boss kind, has fallen. */
+/** One line of a merchant's stock: on sale once `after`, a boss kind, has fallen, and once `flag`, a world flag, has happened. */
 export interface Stock {
   item: ItemName;
   after?: string;
+  flag?: WorldFlag;
 }
 
 /** What a merchant shows: each line whose boss has fallen and whose lesser edge is owned, bought ones included. */
-export function onOffer(stock: readonly Stock[], bought: ReadonlySet<string>, slain: ReadonlySet<string>): Stock[] {
-  return stock.filter((s) => (!s.after || slain.has(s.after)) && (!("needs" in ITEMS[s.item]) || bought.has((ITEMS[s.item] as { needs: string }).needs)));
+export function onOffer(stock: readonly Stock[], bought: ReadonlySet<string>, slain: ReadonlySet<string>, flags: ReadonlySet<string>): Stock[] {
+  return stock.filter((s) => (!s.after || slain.has(s.after)) && (!s.flag || flags.has(s.flag)) && (!("needs" in ITEMS[s.item]) || bought.has((ITEMS[s.item] as { needs: string }).needs)));
 }
 
 /**

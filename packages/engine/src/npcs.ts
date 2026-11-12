@@ -2,7 +2,7 @@
 // pages, the last one repeats, and something done out in the world turns up as a new thing to say.
 
 import type { AreaId } from "./atlas.ts";
-import type { Stock } from "./hero.ts";
+import type { ItemName, Stock } from "./hero.ts";
 import type { Cell } from "./island.ts";
 
 /** What the world remembers that folk remark on, and that moves them on. */
@@ -19,6 +19,9 @@ export type WorldFlag =
   | "greyfallReached"
   | "warlordDead"
   | "ladderDown"
+  | "oldLiftDown"
+  | "emberGateOpen"
+  | "shellDead"
   // Set by a talk, not by the world.
   | "tobinDown"
   | "tobinDeeper"
@@ -26,7 +29,9 @@ export type WorldFlag =
   | "anselRoused"
   | "anselAhead"
   | "watchmanOut"
-  | "marenSails";
+  | "marenSails"
+  | "pennyFollows"
+  | "drankClear";
 
 export interface Talk {
   id: string;
@@ -34,6 +39,8 @@ export interface Talk {
   when?: WorldFlag;
   /** Heard to the end, this happens: how a questline moves on. */
   sets?: WorldFlag;
+  /** Heard to the end the first time, the wanderer is given this. */
+  gives?: ItemName;
   /** One page each. */
   lines: readonly string[];
 }
@@ -84,6 +91,30 @@ export interface Npc {
 
 /** Within this many tiles a dweller greets the wanderer and can be talked to. */
 export const TALK_RANGE = 2;
+
+// Said at more than one station, so heard once wherever it was heard.
+const corwinDig: readonly Talk[] = [
+  {
+    id: "barrows",
+    lines: ["The Barrow King's dead. The barrows are only barrows now.", "My forty went into them. I'm digging them out. One at a time."],
+  },
+  { id: "count", lines: ["Twenty-two. Dace still had his pipe.", "Holm had nothing. Holm always had nothing."] },
+];
+const corwinDone: Talk = {
+  id: "done",
+  when: "warlordDead",
+  lines: ["So it's finished. Up in the Grey.", "Tell them at the gate. I've no hands left for carving."],
+};
+const wrenPenny: Talk = {
+  id: "penny",
+  when: "greyfallReached",
+  lines: ["Penny's gone from behind the butts. She'd sit there and count crows.", "If you see her, tell her I kept her seat. Don't tell her I said kept."],
+};
+const ysoldeClean: Talk = {
+  id: "clean",
+  when: "drankClear",
+  lines: ["You drank from the lake. I can smell it on you. Clean, like nothing is.", "Nothing down here is clean, child."],
+};
 
 export const NPCS: readonly Npc[] = [
   {
@@ -171,6 +202,12 @@ export const NPCS: readonly Npc[] = [
           "They come back, or they don't. The wall will keep.",
         ],
       },
+      { id: "east", when: "greyfallReached", lines: ["You went east. You came back.", "That's one more than the last one managed."] },
+      {
+        id: "gone",
+        when: "anselAhead",
+        lines: ["Ansel's not come back off the moor road. Nor will he, I'd wager.", "They go east. They always go east."],
+      },
     ],
   },
   {
@@ -183,7 +220,7 @@ export const NPCS: readonly Npc[] = [
     act: "hammer",
     // Each edge a little later, as Andre's titanite and Elden Ring's bell bearings: the better one once a boss falls.
     shop: {
-      stock: [{ item: "Brenna's Edge" }, { item: "Keener Edge", after: "stoneWarden" }, { item: "Grey-Iron Edge", after: "troll" }, { item: "Banded Shield" }],
+      stock: [{ item: "Brenna's Edge" }, { item: "Keener Edge", after: "stoneWarden" }, { item: "Grey-Iron Edge", after: "troll" }, { item: "Banded Shield" }, { item: "Ansel's Edge", flag: "anselAhead" }],
       poor: "Gold first. Then sparks.",
       sold: "That's done. I don't make the same thing twice.",
     },
@@ -215,9 +252,14 @@ export const NPCS: readonly Npc[] = [
         id: "ansel",
         when: "anselRoused",
         lines: [
-          "Ansel came by. Wanted an edge on a sword I'd forgotten he had.",
-          "He didn't haggle. That worried me.",
+          "Ansel came by. Paid for two edges on that old sword of his. Didn't haggle.",
+          "Took the sword with one. Said he'd be back for the other.",
         ],
+      },
+      {
+        id: "second",
+        when: "anselAhead",
+        lines: ["He hasn't come back for the second edge.", "I don't keep things for the dead. I sell them. Gold first."],
       },
     ],
   },
@@ -250,27 +292,36 @@ export const NPCS: readonly Npc[] = [
         when: "warlordDead",
         lines: ["Forty spears.", "I'll carve them into the gate. Every one. Leave me to it."],
       },
+      {
+        id: "post",
+        when: "watchmanOut",
+        lines: ["The Watch on the Moor Gate's gone off his post. Good.", "He barred it on my orders, he'll tell you. I never gave him any."],
+      },
+      { id: "ansel", when: "anselRoused", lines: ["Ansel's got his sword out. Took him long enough.", "Took me forty men. Don't tell him I said so."] },
     ],
     later: [
       {
         when: ["hornedKey"],
         area: "barrowmoor",
         at: { col: 29, row: 22 },
+        talks: [...corwinDig, { id: "last", lines: ["Thirty-nine.", "The fortieth was me, I think. I ought to be down there with them."] }, corwinDone],
+      },
+      {
+        when: ["hornedKey", "watchmanOut"],
+        area: "barrowmoor",
+        at: { col: 29, row: 22 },
         talks: [
+          ...corwinDig,
           {
-            id: "barrows",
+            id: "forty",
+            gives: "The Forty's Banner",
             lines: [
-              "The Barrow King's dead. The barrows are only barrows now.",
-              "My forty went into them. I'm digging them out. One at a time.",
+              "Forty. Found him this morning, lying down among them like he'd never left.",
+              "He ran, the night the King came up. I let him. I'd have run, if I'd been quicker.",
+              "This was rolled up under him. Take it. It never did come home. Take it further.",
             ],
           },
-          { id: "count", lines: ["Twenty-two. Dace still had his pipe.", "Holm had nothing. Holm always had nothing."] },
-          { id: "last", lines: ["Thirty-nine.", "The fortieth was me, I think. I ought to be down there with them."] },
-          {
-            id: "done",
-            when: "warlordDead",
-            lines: ["So it's finished. Up in the Grey.", "Tell them at the gate. I've no hands left for carving."],
-          },
+          corwinDone,
         ],
       },
     ],
@@ -299,6 +350,8 @@ export const NPCS: readonly Npc[] = [
         ],
       },
       { id: "back", lines: ["Five paces back, always. If you can smell it, you're too close."] },
+      { id: "wings", when: "died", lines: ["Tobin sent you for a bow, didn't he? Wings?", "Steel goes up. Steel comes down. Arrows only go up."] },
+      wrenPenny,
     ],
     later: [
       {
@@ -314,6 +367,7 @@ export const NPCS: readonly Npc[] = [
             ],
           },
           { id: "torches", lines: ["Torches first. Always torches first."] },
+          wrenPenny,
         ],
       },
     ],
@@ -394,8 +448,50 @@ export const NPCS: readonly Npc[] = [
               "...I came after.",
             ],
           },
-          { id: "stay", lines: ["I'm staying. Someone has to count what he steals.", "Quick hands run in the family. Turns out."] },
+          {
+            id: "stay",
+            gives: "The Thrown Coin",
+            lines: [
+              "I'm staying. Someone has to count what he steals.",
+              "Here. The coin. I found it at the bottom, the day I came down. He never looked for it.",
+              "Quick hands run in the family. Turns out.",
+            ],
+          },
         ],
+      },
+    ],
+  },
+  {
+    // Tobin's brother, after Patches: smiles, robs, sells it back.
+    id: "jory",
+    name: "Jory",
+    area: "deeps",
+    at: { col: 8, row: 68 },
+    kind: "pawn",
+    act: "gold",
+    shop: {
+      stock: [{ item: "Smuggler's Coat" }, { item: "Sister's Candle", flag: "ysoldeDeeper" }],
+      poor: "Ha. Come back heavier.",
+      sold: "Gone. Things go, down here.",
+    },
+    greet: "Ha. Walk soft, friend.",
+    part: "Mind your purse.",
+    talks: [
+      {
+        id: "first",
+        lines: ["Tobin's friend? Anyone who comes this deep is a friend. Friends buy things.", "Don't mind the lads. They only take what's not watched."],
+      },
+      {
+        id: "coin",
+        lines: ["The coin? I threw it. Down the well, a long time ago. To see who'd come after.", "Two did. Him and you. I didn't expect you."],
+      },
+    ],
+    later: [
+      {
+        when: ["tobinDeeper", "warlordDead"],
+        area: "harbour",
+        at: { col: 57, row: 51 },
+        talks: [{ id: "well", lines: ["Tobin? Down there. Counting. Someone has to.", "Don't lean on the rope. It's older than both of us."] }],
       },
     ],
   },
@@ -417,6 +513,7 @@ export const NPCS: readonly Npc[] = [
         ],
       },
       { id: "candle", lines: ["I light a candle each night.", "The hour comes round and my hands are already there."] },
+      ysoldeClean,
     ],
     later: [
       {
@@ -427,9 +524,9 @@ export const NPCS: readonly Npc[] = [
           {
             id: "freed",
             lines: [
-              "You found one of us. Living. So I came down the well. Old knees, long drop.",
-              "She does not remember her name yet. I tell it to her, and she thanks me, every time.",
-              "One is a mercy. I'll not ask the dark for more than it gives.",
+              "You found one of us. Living. She walks with you now, so I came down to see where.",
+              "I told her her name. She thanked me. She'll have lost it again by the next fire.",
+              "Tell it to her, some nights. One is a mercy. I'll not ask the dark for more.",
             ],
           },
           {
@@ -441,6 +538,7 @@ export const NPCS: readonly Npc[] = [
               "Do not follow. Or do. I am too old to forbid things.",
             ],
           },
+          ysoldeClean,
         ],
       },
       {
@@ -457,9 +555,78 @@ export const NPCS: readonly Npc[] = [
             ],
           },
           { id: "kneel", lines: ["I have stopped lighting candles.", "There is light enough down here. Cold, but enough."] },
+          ysoldeClean,
+        ],
+      },
+      {
+        when: ["ysoldeDeeper", "shellDead"],
+        area: "harbour",
+        at: { col: 54, row: 29 },
+        talks: [
+          {
+            id: "ash",
+            gives: "Sister's Candle",
+            lines: [
+              "The water went grey when it died. Then my sisters were only bones.",
+              "I can leave bones. I couldn't leave them kneeling.",
+              "Take this. I've stopped lighting it. Light it for the ones you lose.",
+            ],
+          },
+          ysoldeClean,
         ],
       },
     ],
+  },
+  {
+    // A sister of the Order, kept below by what she prayed to: freed, she walks with the wanderer as the Monk.
+    id: "sister",
+    name: "A Drowned Sister",
+    short: "Sister",
+    area: "undercroft",
+    at: { col: 51, row: 55 },
+    kind: "monk",
+    color: "purple",
+    greet: "...Mother?",
+    part: "Don't go far.",
+    talks: [
+      {
+        id: "first",
+        lines: ["Is it night? It's always night, down here.", "We came to pray the water clear. I don't remember the others' faces."],
+      },
+      {
+        id: "warm",
+        sets: "monkFreed",
+        lines: ["You're warm. Nothing down here is warm.", "I'll walk with you. I've forgotten the way up. You haven't."],
+      },
+    ],
+    later: [{ when: ["monkFreed"] }],
+  },
+  {
+    id: "pilgrim",
+    name: "The Pilgrim",
+    short: "Pilgrim",
+    area: "hollow",
+    at: { col: 95, row: 49 },
+    kind: "monk",
+    color: "purple",
+    greet: "Softly. It sleeps.",
+    part: "Softly, going.",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "The sisters came to pray the Grey out of the water. It went out of the water. Look.",
+          "It sleeps on the isle, and the lake stays clear while it sleeps.",
+        ],
+      },
+      {
+        id: "water",
+        sets: "drankClear",
+        gives: "Hollow Water",
+        lines: ["Drink. It is clear. Nothing clear is left up there.", "The old one by the harbour fire says not to. He has never been down."],
+      },
+    ],
+    later: [{ when: ["shellDead"], area: "hollow", at: { col: 95, row: 49 }, dead: true }],
   },
   {
     id: "maren",
@@ -539,9 +706,14 @@ export const NPCS: readonly Npc[] = [
             ],
           },
           { id: "look", lines: ["I'll just look a little longer.", "Looking is how it starts. I know. I said that."] },
+          {
+            id: "spear",
+            lines: ["Sergeant Corwin. Is he still drilling boys at the Keep?", "Don't tell him you saw me. He'd want a count. He always wanted a count."],
+          },
         ],
       },
-      { when: ["watchmanOut", "hornedKey"] },
+      // Gone down to lie with the forty, where Corwin digs.
+      { when: ["watchmanOut", "hornedKey"], area: "barrowmoor", at: { col: 31, row: 23 }, dead: true },
     ],
   },
   {
@@ -561,11 +733,16 @@ export const NPCS: readonly Npc[] = [
           "They keep them in a yard with ropes. I squeezed out under the gate.",
         ],
       },
-      { id: "crows", lines: ["I count the crows.", "When there's more of them, they're bringing more people."] },
+      {
+        id: "crows",
+        sets: "pennyFollows",
+        lines: ["I count the crows.", "When there's more of them, they're bringing more people.", "Wren says you walk loud. You do. I could follow you anywhere."],
+      },
     ],
+    // Followed the wanderer only if talked to; never met, she stays hidden and her mother walks home to her.
     later: [
       {
-        when: ["greyfallReached"],
+        when: ["pennyFollows", "greyfallReached"],
         area: "greyfall",
         at: { col: 73, row: 67 },
         talks: [
@@ -582,6 +759,15 @@ export const NPCS: readonly Npc[] = [
       },
       {
         when: ["warlordDead"],
+        area: "harbour",
+        at: { col: 24, row: 62 },
+        talks: [
+          { id: "mum", lines: ["Mum came home! On her own feet!", "She says the grey ones just ran. She says it twice."] },
+          { id: "bread", gives: "Mum's Bread", lines: ["Mum made bread. It's mostly ash. Here."] },
+        ],
+      },
+      {
+        when: ["pennyFollows", "warlordDead"],
         area: "greyfall",
         at: { col: 73, row: 67 },
         talks: [
@@ -589,7 +775,7 @@ export const NPCS: readonly Npc[] = [
             id: "free",
             lines: ["They ran! All the grey ones, they just ran!", "Mum says thank you. She says it twice. She's like that."],
           },
-          { id: "home", lines: ["We're walking home. Mum says slowly.", "She's had enough of being hurried by ropes."] },
+          { id: "home", gives: "Mum's Bread", lines: ["We're walking home. Mum says slowly.", "She's had enough of being hurried by ropes."] },
         ],
       },
     ],
@@ -651,6 +837,7 @@ export const NPCS: readonly Npc[] = [
             lines: [
               "Don't look at me like that. I said I'd come out.",
               "I'd forgotten the smell of the Grey. Wet ash and old iron.",
+              "Talk to me again and I'll go on up. So don't. Not unless you mean it.",
             ],
           },
           {
@@ -664,7 +851,7 @@ export const NPCS: readonly Npc[] = [
         ],
       },
       {
-        when: ["warlordDead"],
+        when: ["anselRoused", "warlordDead"],
         area: "keep",
         at: { col: 43, row: 11 },
         talks: [
@@ -672,7 +859,11 @@ export const NPCS: readonly Npc[] = [
             id: "without",
             lines: ["You went up without me. Good.", "I'd only have been in the way. I'd only have been brave."],
           },
-          { id: "wall", lines: ["Back on the wall. It's a good wall.", "You can see the Gilded City from here. Doesn't glint so much now."] },
+          {
+            id: "wall",
+            gives: "Ansel's Edge",
+            lines: ["Back on the wall. It's a good wall.", "Brenna's holding an edge I paid for. Here. Tell her I sent you, she'll want it in writing."],
+          },
         ],
       },
       { when: ["anselAhead"], area: "greyfall", at: { col: 95, row: 25 }, dead: true },
@@ -690,7 +881,7 @@ export const NPCS: readonly Npc[] = [
     color: "yellow",
     // Everything that is not a blade; the deeper fire only once the troll that sat on it is gone.
     shop: {
-      stock: [{ item: "Ember Shard" }, { item: "Smoked Haunch" }, { item: "Pine Resin" }, { item: "Prospector's Purse" }, { item: "Kindled Shard", after: "troll" }],
+      stock: [{ item: "Ember Shard" }, { item: "Smoked Haunch" }, { item: "Pine Resin" }, { item: "Prospector's Purse" }, { item: "Kindled Shard", after: "troll" }, { item: "Salt-Glass Flask", flag: "marenSails" }],
       poor: "Hehe. Come back richer, dearie.",
       sold: "That was the only one, dearie.",
     },
@@ -707,6 +898,19 @@ export const NPCS: readonly Npc[] = [
       },
       { id: "thieves", lines: ["The thieves in the market? Burg folk, all of them.", "Went bad when the bell stopped. Bad for business, worse for them."] },
       { id: "rest", lines: ["Hehe. Still breathing, dearie? Good. Breathing folk buy things."] },
+      {
+        id: "fence",
+        when: "tobinDeeper",
+        lines: ["Tobin's gone down after his brother? Hehe. Then he'll meet my best supplier.", "Don't ask what I buy from below, dearie. I don't."],
+      },
+      {
+        id: "ship",
+        when: "marenSails",
+        lines: [
+          "A ship in, and Maren off on it. Thirty years she waited. Hehe. Some of us don't wait.",
+          "The salt men left me a crate. Glass, dearie. Salt-glass. One, mind.",
+        ],
+      },
     ],
   },
   {
@@ -756,6 +960,18 @@ export const NPCS: readonly Npc[] = [
       { id: "died", when: "died", lines: ["You came back. They don't, usually.", "The wall remembers everyone who crossed it. It just doesn't care."] },
       { id: "kicked", when: "ladderDown", lines: ["You found it. The square's closer than it looks."] },
     ],
+  },
+  {
+    // Ferrow's last one, who went east: laid on the Grey Road short of the Gate, and never named.
+    id: "last",
+    name: "The Last One",
+    area: "barrowmoor",
+    at: { col: 113, row: 37 },
+    kind: "warrior",
+    greet: "",
+    part: "",
+    talks: [],
+    later: [{ when: [], area: "barrowmoor", at: { col: 113, row: 37 }, dead: true }],
   },
 ];
 

@@ -568,6 +568,14 @@ const ITEM_ICON: Record<ItemName, ShopIcon> = {
   "Banded Shield": { url: packUrl("UI Elements/UI Elements/Icons/Icon_06.png") },
   "Kindled Shard": { url: packUrl("Terrain/Resources/Gold/Gold Stones/Gold Stone 2.png"), tint: "#ff4a2a", crop: { x: 45, y: 41, w: 40, h: 40, sheetW: 128, sheetH: 128 } },
   "Prospector's Purse": { url: packUrl("UI Elements/UI Elements/Icons/Icon_03.png") },
+  "The Forty's Banner": { url: packUrl("UI Elements/UI Elements/Icons/Icon_06.png"), tint: "#7aa0e0" },
+  "Ansel's Edge": { url: SWORDS, crop: { x: 128, y: 128, w: 128, h: 128, sheetW: 448, sheetH: 640 } },
+  "The Thrown Coin": { url: packUrl("UI Elements/UI Elements/Icons/Icon_03.png"), tint: "#f4cf6b" },
+  "Smuggler's Coat": { url: packUrl("UI Elements/UI Elements/Icons/Icon_06.png"), tint: "#8a7a5a" },
+  "Sister's Candle": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#fff0c0" },
+  "Hollow Water": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#8fd8f0" },
+  "Mum's Bread": { url: packUrl("UI Elements/UI Elements/Icons/Icon_04.png"), tint: "#c8a070" },
+  "Salt-Glass Flask": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#d8f0f0" },
 };
 /** What a good does to the captain's numbers, in words. */
 function gives(item: ItemName): string {
@@ -632,6 +640,8 @@ const GOLD = "greyfall.gold";
 const SLAIN = "greyfall.slain";
 const KEYS = "greyfall.keys";
 const BOSS_KEY: Partial<Record<string, string>> = { troll: "Troll Key" };
+/** What a boss's fall proves, raised from SLAIN on each entry so old saves have it too. */
+const BOSS_FLAG: Partial<Record<string, WorldFlag>> = { troll: "trollKey", barrowKing: "hornedKey", warlord: "warlordDead", turtleGuard: "shellDead" };
 const BOSSES = new Set(["troll", "minotaur", "rampartBull", "stoneWarden"]);
 /** The exit last gone through, so a crossing lands at the way of the same name when two ways join the same areas. */
 const VIA = "greyfall.via";
@@ -776,7 +786,7 @@ export class AtlasScene extends Phaser.Scene {
   private notes: Note[] = [];
   private reading: Note | null = null;
   private folk: Folk[] = [];
-  private talk: { folk: Folk; lines: readonly string[]; key: string; sets?: WorldFlag; page: number } | null = null;
+  private talk: { folk: Folk; lines: readonly string[]; key: string; sets?: WorldFlag; gives?: ItemName; page: number } | null = null;
   /** The flags as the area was entered: who stands where, and what they say, holds until the captain leaves and comes back. */
   private seen = new Set<WorldFlag>();
   private nearName: string | null = null;
@@ -860,6 +870,7 @@ export class AtlasScene extends Phaser.Scene {
     if (data.area === "keep" && data.from === "steps") this.flag("watchLiftOpen");
     if (data.area === "harbour" && data.from === "barrowmoor") this.flag("moorGateOpen");
     if (data.area === "greyfall") this.flag("greyfallReached");
+    for (const k of remembered<string>(SLAIN)) if (BOSS_FLAG[k]) this.flag(BOSS_FLAG[k]);
     this.seen = new Set(this.flags);
     this.flasks = data.carry?.flasks ?? maxFlasks();
     this.gold = stored(GOLD, 0);
@@ -1687,7 +1698,8 @@ export class AtlasScene extends Phaser.Scene {
     hero.way = [];
     this.tweens.add({ targets: b.s, alpha: 0.25, duration: 600 });
     // Felled by the boss guarding a way out, as at the Landing's end: the captain wakes past it, at the far side's first fire.
-    const past = this.local!.exits.find((e) => e.guard && e.guard === (by as Foe | undefined)?.kind);
+    const kind = (by as Foe | undefined)?.kind;
+    const past = kind === "minotaur" && this.local!.exits.find((e) => e.guard === kind);
     if (past) {
       // Lost, not over, after Elden Ring's Grafted Scion: the bull keeps the Ring and waits to be come back for.
       this.flag("bullWon");
@@ -1934,7 +1946,7 @@ export class AtlasScene extends Phaser.Scene {
 
   /** The goods a merchant shows now. */
   private stock(f: Folk): ItemName[] {
-    return f.npc.shop ? onOffer(f.npc.shop.stock, remembered(BOUGHT), remembered(SLAIN)).map((s) => s.item) : [];
+    return f.npc.shop ? onOffer(f.npc.shop.stock, remembered(BOUGHT), remembered(SLAIN), this.seen).map((s) => s.item) : [];
   }
 
   /** At a merchant's menu: a good, for gold, once, and kept; what it gives is the captain's at once. */
@@ -1945,6 +1957,15 @@ export class AtlasScene extends Phaser.Scene {
     if (bought.has(item)) return this.callOut(f, shop.sold);
     if (this.gold < ITEMS[item].cost) return this.callOut(f, shop.poor);
     this.setGold(this.gold - ITEMS[item].cost);
+    this.gain(item);
+    this.menu!.pick = this.stock(f).indexOf(item);
+    this.showMenu();
+  }
+
+  /** A good bought or given: kept, and the captain's at once. */
+  private gain(item: ItemName): void {
+    const bought = remembered(BOUGHT);
+    if (bought.has(item)) return;
     remember(BOUGHT, bought.add(item));
     const was = this.gear;
     this.gear = kit(bought);
@@ -1956,8 +1977,6 @@ export class AtlasScene extends Phaser.Scene {
     hero.hp += this.gear.hp - was.hp;
     this.float(hero.s.x, hero.s.y - hero.lift - 30, item, "#f4cf6b");
     this.emitSack();
-    this.menu!.pick = this.stock(f).indexOf(item);
-    this.showMenu();
   }
 
   private emitSack(): void {
@@ -3197,7 +3216,7 @@ export class AtlasScene extends Phaser.Scene {
     f.s.setFlipX(hero.s.x < f.s.x);
     hero.s.setFlipX(f.s.x < hero.s.x);
     const t = nextTalk(f.npc, this.heard, this.seen);
-    this.talk = { folk: f, lines: t.lines, key: talkKey(f.npc, t), sets: t.sets, page: 0 };
+    this.talk = { folk: f, lines: t.lines, key: talkKey(f.npc, t), sets: t.sets, gives: t.gives, page: 0 };
     this.say();
   }
 
@@ -3225,10 +3244,12 @@ export class AtlasScene extends Phaser.Scene {
     const t = this.talk;
     if (!t) return;
     if (++t.page >= t.lines.length) {
+      const first = !this.heard.has(t.key);
       this.heard.add(t.key);
       remember(HEARD, this.heard);
       // A talk heard to its end can move someone on: they are elsewhere the next time this area is entered.
       if (t.sets) this.flag(t.sets);
+      if (first && t.gives) this.gain(t.gives);
       this.talk = null;
       this.say();
       // Talked out, a merchant's menu comes back, as in the Souls games.

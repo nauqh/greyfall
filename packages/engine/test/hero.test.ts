@@ -141,13 +141,13 @@ describe("the merchants' goods", () => {
 
   it("add up: the edges on each other, both shards a flask each, an old save's Ember Shard by its name", () => {
     const all = kit(new Set(Object.keys(ITEMS)));
-    expect(all).toEqual({ hp: 125, attack: 22, flasks: HERO.flasks + 2, flask: 55, block: 1.75, greed: 1.25 });
+    expect(all).toEqual({ hp: 210, attack: 24, flasks: HERO.flasks + 4, flask: 70, block: 1.75, greed: 1.5 });
     expect(kit(new Set(["Ember Shard"])).flasks).toBe(HERO.flasks + 1);
   });
 
   it("show each edge once the one before is owned and its boss has fallen", () => {
     const stock = [{ item: "Brenna's Edge" }, { item: "Keener Edge", after: "stoneWarden" }, { item: "Grey-Iron Edge", after: "troll" }] as const;
-    const shown = (bought: string[], slain: string[]) => onOffer(stock, new Set(bought), new Set(slain)).map((s) => s.item);
+    const shown = (bought: string[], slain: string[]) => onOffer(stock, new Set(bought), new Set(slain), new Set()).map((s) => s.item);
     expect(shown([], ["stoneWarden", "troll"])).toEqual(["Brenna's Edge"]);
     expect(shown(["Brenna's Edge"], [])).toEqual(["Brenna's Edge"]);
     expect(shown(["Brenna's Edge"], ["stoneWarden"])).toEqual(["Brenna's Edge", "Keener Edge"]);

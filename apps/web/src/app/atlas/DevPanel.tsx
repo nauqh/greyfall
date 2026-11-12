@@ -19,6 +19,9 @@ const FLAGS = Object.keys({
   greyfallReached: 1,
   warlordDead: 1,
   ladderDown: 1,
+  oldLiftDown: 1,
+  emberGateOpen: 1,
+  shellDead: 1,
   tobinDown: 1,
   tobinDeeper: 1,
   ysoldeDeeper: 1,
@@ -26,6 +29,8 @@ const FLAGS = Object.keys({
   anselAhead: 1,
   watchmanOut: 1,
   marenSails: 1,
+  pennyFollows: 1,
+  drankClear: 1,
 } satisfies Record<WorldFlag, 1>) as WorldFlag[];
 const KINDS = Object.keys(FOES);
 

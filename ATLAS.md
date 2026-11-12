@@ -829,12 +829,12 @@ back; it is remembered on the browser and carries across crossings.
 
 ## Not done yet
 
-- The hero walks, fights, rests at bonfires, drinks flasks, picks up
-  gold and leads a band hired in the Harbour, but there is no dodge or
-  keys yet, and gates and lifts all open.
-- No boss can be killed and no monk freed yet, so the questline's stages
-  past the Troll Key, the Horned Key, the Warlord and the Drowned Chapel
-  wait on them.
+- The hero walks, fights, rolls, rests at bonfires, drinks flasks, picks
+  up gold and leads a band hired in the Harbour. The Cinder Troll drops
+  the Troll Key, which opens the Keep Gate.
+- The Minotaur, Rampart Bull, Stone Warden and Cinder Troll can be
+  killed. The Barrow King, Warlord, Weaver and Shell Below are not
+  fightable yet, so the questline stages that wait on them wait too.
 - No minimap. Zoom out with the wheel; ride a lift to change tier.
 
 
@@ -868,22 +868,28 @@ tool icons and ore laid out beside it.
 
 ## The folk's questline
 
-The Harbour's ten move out into the Reach as you do, after Dark Souls. There is no log and no choice, and you never speak. Where each stands comes from `whereabouts()` in `npcs.ts`, read from world flags. Some flags are set by hearing a talk to its end (`Talk.sets`). Positions change only on entering an area.
+The folk move out into the Reach as you do, after Dark Souls. There is no log and no choice, and you never speak. Where each stands comes from `whereabouts()` in `npcs.ts`, read from world flags. Some flags are set by hearing a talk to its end (`Talk.sets`). Positions change only on entering an area.
 
 The full lines and stations are in [docs/questline.md](docs/questline.md).
 
 
 | Who | Moved on by | Turns up | Ends |
 | --- | --- | --- | --- |
-| Tobin | his remark on the well, then a talk | Undercroft, Smugglers' Nook; then the Deeps, Robbers' Camp | Stays with his brother, who leads the thieves. Never talked to, never leaves |
-| Mother Ysolde | the monk freed, then a talk | Undercroft, the Drowned Chapel; then the Hollow, Pilgrims' Rest | Kneels over her drowned sisters and will not come back |
-| Ansel of the Wall | his remark on the Troll Key | The Greyfall, the Ashen Approach | Hear him out twice and he goes ahead and dies in the High City, below the Warlord's Hall; kill the Warlord first and he is back on the wall |
-| Penny | reaching the Greyfall | The Greyfall, Gallows Yard, penned with her mum | Freed when the Warlord falls |
-| Sergeant Corwin | the Barrow King dead | Barrowmoor, Barrow Field, digging out his forty | Stays with them |
-| The Moor Watchman | his remark on the open Moor Gate | Barrowmoor, Gibbet Hill, watching the lights | Gone into the barrows once the King is dead |
-| Maren | her remark on the Warlord dead | | Sails on the first ship in three winters; missed if not talked to |
-| Wren | the Troll Key | Emberwood, Old Pines | Stays, shooting |
-| Old Ferrow, Brenna | | | Stay; both remark on Ansel leaving |
+| Tobin | his remark on the well, then a talk | Undercroft, Smugglers' Nook; then the Deeps, Robbers' Camp | Stays below counting what his brother steals; gives the Thrown Coin |
+| Jory | Tobin gone deeper and the Warlord dead | Barrow Deeps, Robbers' Camp, selling what his camp robbed; then the Old Well in Tobin's place | Stands at the well, Tobin left below |
+| Mother Ysolde | the sister freed, then a talk | Undercroft, the Drowned Chapel; then the Hollow, Pilgrims' Rest | Shell Below alive: kneels over her sisters for good, and Jory sells her candle. Shell Below dead: walks home to the Upper Town and gives the Sister's Candle |
+| A Drowned Sister | her second talk | Undercroft, the Drowned Chapel | Freed, walks with the wanderer as the Monk |
+| The Pilgrim | | the Hollow, Pilgrims' Rest | Gives Hollow Water; lies dead once the Shell Below is killed |
+| Ansel of the Wall | his remark on the Troll Key | The Greyfall, the Ashen Approach | Hear him out twice and he goes ahead and dies in the High City, and Brenna sells his edge; kill the Warlord first and he is back on the wall and gives Ansel's Edge |
+| Penny | her crows talk, then reaching the Greyfall | The Greyfall, Gallows Yard, penned with her mum | Talked to: freed in the Yard when the Warlord falls. Never talked to: stays hidden, her mum walks home. Mum's Bread either way |
+| Sergeant Corwin | the Barrow King dead | Barrowmoor, Barrow Field, digging out his forty | Watchman heard out: finds the fortieth and gives the Forty's Banner. Otherwise: stops at thirty-nine |
+| The Moor Watchman | his remark on the open Moor Gate | Barrowmoor, Gibbet Hill, watching the lights | Lies dead in Barrow Field once the King is dead, the fortieth of Corwin's spears |
+| Maren | her remark on the Warlord dead | | Sails on the first ship in three winters, and Mags stocks the Salt-Glass Flask; missed only by never hearing her sail talk |
+| Wren | the Troll Key | Emberwood, Old Pines | Stays, shooting; remarks on Penny gone |
+| The Last One | | Barrowmoor, the Grey Road, dead from the start | Ferrow's last one, who went east; never named |
+| Old Ferrow, Brenna, Mags | | | Stay; remark on the folk's news. Brenna and Mags sell what the questlines turn up |
+| Hale, Odo | | | Stay at their posts in the Burg and on the Ramparts |
+
 
 ## The opening
 
