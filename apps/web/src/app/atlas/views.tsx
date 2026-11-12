@@ -464,7 +464,6 @@ export function AreaView({ area: first }: { area: AreaId }) {
               <b>{gold}</b>
             </div>
           )}
-          {sack && !fire && !menu && <Sack sack={sack} gold={gold ?? 0} />}
           {band && band.members.length > 0 && (
             <div className="bandPanel">
               <div className="bandOrder">
@@ -494,6 +493,8 @@ export function AreaView({ area: first }: { area: AreaId }) {
             </div>
           </header>
         </div>
+        {/* Outside the HUD, so Tab opens the sack with the HUD hidden too, from the first step, goods or none. */}
+        {sack && !fire && !menu && !intro && !prologue && <Sack sack={sack} gold={gold ?? 0} />}
       </GameCanvas>
       {prologue && <Prologue onReveal={revealLanding} onDone={() => setPrologue(false)} />}
     </main>
