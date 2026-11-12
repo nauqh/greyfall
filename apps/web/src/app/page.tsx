@@ -1,7 +1,8 @@
 "use client";
 
 // The title screen: the live island behind a game menu. Mouse or keys pick
-// an entry, the slate sword marks it, and every way out closes the clouds.
+// an entry, the slate sword marks it, the island behind turns to that mode's
+// own, and every way out closes the clouds.
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -23,6 +24,9 @@ export default function Page() {
   const [ready, setReady] = useState(false);
   const [pick, setPick] = useState(0);
   const items = useRef<(HTMLAnchorElement | null)[]>([]);
+  const show = useRef<(i: number) => void>(() => {});
+
+  useEffect(() => show.current(pick), [pick]);
 
   const go = (href: string): void => exit.leave(() => router.push(href));
 
@@ -45,7 +49,13 @@ export default function Page() {
   return (
     <main className="stage">
       <GameCanvas
-        start={(el) => import("../game/IntroScene").then(({ startIntro }) => startIntro(el))}
+        start={(el) =>
+          import("../game/IntroScene").then(({ startIntro }) => {
+            const game = startIntro(el);
+            show.current = game.show;
+            return game;
+          })
+        }
         onReady={() => setReady(true)}
       >
         {ready && (

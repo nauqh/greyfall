@@ -6,9 +6,13 @@ import * as Phaser from "phaser";
 
 import { type UnitClass } from "@greyfall/engine";
 
+import { packUrl } from "./art";
 import { baseZoom, fitCamera, startGame } from "./boot";
+import { IntroAtlasScene } from "./introAtlas";
+import { IntroDuelScene } from "./introDuel";
 import { buildIntroIsland, buildIntroScenery } from "./introIsland";
-import { CELL, WORK, cell, loadMapArt, makeMapAnims } from "./islandMap";
+import { IntroSkirmishScene } from "./introSkirmish";
+import { CELL, WORK, cell, loadGroundColours, loadMapArt, makeMapAnims } from "./islandMap";
 import { loadUnits, makeAnims, playPose, unitKey, type Side } from "./sprites";
 import { DEPTH, FOOT, addBuilding, addDecor, addShadow, buildWater, cloudCover, driftClouds, loadBuildings, loadTerrain, prepareTerrain, standing } from "./terrain";
 
@@ -79,19 +83,67 @@ const TREES: readonly [number, number][] = [
 
 const SHEEP: readonly [number, number][] = [[22.2, 8.2], [19.4, 8.6], [13.4, 6.8]];
 
+let current: IntroScene | null = null;
+
+/** Each menu entry's backdrop, in the menu's order; this town is Play's. */
+const MODES: readonly [string, (new () => Phaser.Scene) | null][] = [
+  ["intro", null],
+  ["intro-atlas", IntroAtlasScene],
+  ["intro-skirmish", IntroSkirmishScene],
+  ["intro-duel", IntroDuelScene],
+];
+
 export class IntroScene extends Phaser.Scene {
+  private showing = "intro";
+
   constructor() {
     super("intro");
+  }
+
+  /** Fades the backdrop of menu entry `i` in over the one shown, then puts that one to sleep. */
+  show(i: number): void {
+    const [key, Mode] = MODES[i]!;
+    if (key === this.showing) return;
+    this.showing = key;
+    const scenes = this.game.scene;
+    // Built on first pick, then only woken.
+    if (!scenes.getScene(key)) scenes.add(key, Mode!, false);
+    if (scenes.isSleeping(key)) scenes.wake(key);
+    else if (!scenes.isActive(key)) scenes.run(key);
+    scenes.bringToTop(key);
+    const target = scenes.getScene(key)!;
+    // On the incoming scene's own clock: the one it covers goes to sleep, tweens and all.
+    const fade = (): void => {
+      const cam = target.cameras.main;
+      target.tweens.killTweensOf(cam);
+      cam.setAlpha(0);
+      target.tweens.add({
+        targets: cam,
+        alpha: 1,
+        duration: 320,
+        onComplete: () => {
+          // A later pick may already have moved on from this one.
+          if (this.showing === key) MODES.forEach(([k]) => k !== key && scenes.isActive(k) && scenes.sleep(k));
+        },
+      });
+    };
+    if (target.sys.settings.status >= Phaser.Scenes.RUNNING) fade();
+    else target.events.once(Phaser.Scenes.Events.CREATE, fade);
   }
 
   preload(): void {
     loadTerrain(this);
     loadUnits(this);
     loadMapArt(this);
+    // For the other modes' islands: loaded here once, so two of them loading at once do not both add them.
+    loadGroundColours(this);
+    this.load.spritesheet("fire", packUrl("Effects/Fire/Fire.png"), { frameWidth: 128, frameHeight: 128 });
     loadBuildings(this, TOWN);
   }
 
   create(): void {
+    current = this;
+    this.events.once(Phaser.Scenes.Events.DESTROY, () => (current = null));
     const view = (): typeof VIEW | typeof VIEW_TALL => (this.scale.width / this.scale.height > 1.2 ? VIEW : VIEW_TALL);
     fitCamera(
       this,
@@ -159,6 +211,7 @@ export class IntroScene extends Phaser.Scene {
   }
 }
 
-export function startIntro(parent: HTMLElement): { destroy: () => void; ready: Promise<void> } {
-  return startGame(parent, "intro", IntroScene);
+export function startIntro(parent: HTMLElement): { destroy: () => void; ready: Promise<void>; show: (i: number) => void } {
+  const game = startGame(parent, "intro", IntroScene);
+  return { ...game, show: (i) => current?.show(i) };
 }
