@@ -63,7 +63,7 @@
 	animation: prologueIn 400ms ease-out both;
 }
 
-/* The numbers and the captain by the fire in one framed sheet, the numbers down its left as Dark Souls III sets them. */
+/* The numbers and the class on show in one framed sheet, the numbers down its left as Dark Souls III sets them. */
 .crSheet {
 	grid-area: sheet;
 	position: relative;
@@ -252,6 +252,10 @@
 	background-color: rgb(255 255 255 / 0.3);
 	background-repeat: no-repeat;
 	image-rendering: pixelated;
+}
+
+.crAbout:has(+ .crName) {
+	min-height: 0;
 }
 
 .crName {
@@ -474,6 +478,10 @@
 		min-height: 250px;
 	}
 
+	.crSheet .crView {
+		margin-left: 12px;
+	}
+
 	.crAbout {
 		min-height: 0;
 		font-size: 13px;
@@ -520,6 +528,10 @@
 	.crSheet > .crScene {
 		order: -1;
 		min-height: 200px;
+	}
+
+	.crSheet .crView {
+		margin: 12px 0 4px;
 	}
 
 	.crRows {

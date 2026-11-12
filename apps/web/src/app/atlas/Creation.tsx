@@ -1,7 +1,7 @@
 "use client";
 
 import { CLASSES, kit, type HeroClass, type ItemName } from "@greyfall/engine";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { SackItem } from "../../game/AtlasScene";
 import { packUrl } from "../../game/art";
@@ -66,10 +66,9 @@ function Thumb({ row }: { row: (typeof CLASS_ROWS)[number] }) {
 }
 
 /**
- * After the prologue, on its black: the class, a gift and a name, kept for the run. Laid out after Dark Souls III's
- * Create Character: one gold-ruled window, the steps as its left menu, the choices beside them, the captain by the fire
- * in the middle showing whatever the pointer is on, the numbers on the right and the keys along the foot. The black
- * lifts as the prologue's did.
+ * After the prologue: the class, a gift and a name, kept for the run. Laid out after Dark Souls III's Create Character on
+ * the title screen's paper and sea: the steps across the top, the choices, then the numbers beside the class on show,
+ * either one showing whatever the pointer is on, and the keys along the foot.
  */
 export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => SackItem[]; onBegin: (cls: HeroClass, gift: ItemName, name: string) => void; onDone: () => void }) {
   const [step, setStep] = useState(0);
@@ -78,7 +77,7 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
   const [gift, setGift] = useState<ItemName | null>(null);
   const [name, setName] = useState("");
   const [begun, setBegun] = useState(false);
-  // What the pointer is on, shown by the fire and in the numbers; the chosen one when it is on nothing.
+  // What the pointer is on, shown on the rock and in the numbers; the chosen one when it is on nothing.
   const [hoverCls, setHoverCls] = useState<HeroClass | null>(null);
   const [hoverGift, setHoverGift] = useState<ItemName | null>(null);
   // Read at each render, so a scene still loading when this opened has its gifts by the time they are looked at.
@@ -91,6 +90,13 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
   const was = kit(new Set(gift ? [gift] : []), undefined, cls);
   const giftShown = gifts.find((g) => g.label === showGift);
   const ready = step !== 1 || !!gift;
+
+  // Each list opens with its chosen row (or its first) in focus, so the arrows and Enter work without a click first.
+  const list = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const rows = list.current;
+    (rows?.querySelector<HTMLButtonElement>(".panelOption.chosen") ?? rows?.querySelector<HTMLButtonElement>(".panelOption"))?.focus({ preventScroll: true });
+  }, [step]);
 
   const go = (to: number): void => {
     if (begun || to < 0) return;
@@ -149,7 +155,7 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
             ))}
           </ol>
 
-          <section className="crList" aria-label={STEPS[step]!.label}>
+          <section ref={list} className="crList" aria-label={STEPS[step]!.label}>
             <span className="crTitle">{STEPS[step]!.title}</span>
             <p key={`${step}:${showCls}:${showGift}`} className="crAbout">
               {told}
@@ -164,7 +170,10 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
                     aria-pressed={c.cls === cls}
                     onMouseEnter={() => setHoverCls(c.cls)}
                     onFocus={() => setHoverCls(c.cls)}
-                    onClick={() => setCls(c.cls)}
+                    onClick={(e) => {
+                      setCls(c.cls);
+                      if (e.detail === 0) go(1);
+                    }}
                   >
                     <Thumb row={c} />
                     <span className="panelOptionText">
@@ -185,7 +194,10 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
                     aria-pressed={g.label === gift}
                     onMouseEnter={() => setHoverGift(g.label)}
                     onFocus={() => setHoverGift(g.label)}
-                    onClick={() => setGift(g.label)}
+                    onClick={(e) => {
+                      setGift(g.label);
+                      if (e.detail === 0) go(2);
+                    }}
                   >
                     <ItemIcon icon={g.icon} size={36} />
                     <span className="panelOptionText">

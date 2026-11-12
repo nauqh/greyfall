@@ -55,8 +55,8 @@ export function CreationScene({ row, gift }: { row: (typeof CLASS_ROWS)[number];
 
   return (
     <div className="crScene" aria-hidden="true">
-      <div ref={view} className="crView" style={{ "--cloud": `url("${packUrl("Terrain/Decorations/Clouds/Clouds_02.png")}")`, "--sea": `url("${packUrl("Terrain/Tileset/Water Background color.png")}")` } as React.CSSProperties}>
-        <div className="crStand" style={{ "--k": k, "--isle": `url("${packUrl("Terrain/Tileset/Tilemap_color1.png")}")`, "--foam": `url("${packUrl("Terrain/Tileset/Water Foam.png")}")` } as React.CSSProperties}>
+      <div ref={view} className="crView" style={{ "--k": k, "--cloud": `url("${packUrl("Terrain/Decorations/Clouds/Clouds_03.png")}")`, "--cloud2": `url("${packUrl("Terrain/Decorations/Clouds/Clouds_04.png")}")`, "--sea": `url("${packUrl("Terrain/Tileset/Water Background color.png")}")` } as React.CSSProperties}>
+        <div className="crStand" style={{ "--isle": `url("${packUrl("Terrain/Tileset/Tilemap_color1.png")}")`, "--foam": `url("${packUrl("Terrain/Tileset/Water Foam.png")}")` } as React.CSSProperties}>
           {[0, 1, 2].map((i) => (
             <span key={i} className="crFoam" style={{ "--i": i } as React.CSSProperties} />
           ))}
