@@ -212,7 +212,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
     } catch {}
     window.location.assign("/atlas/landing?rest");
   };
-  // The title gone, the black lifts on the whole Landing and the camera flies in; the name comes up as it lands.
+  // The title gone, the black lifts close on the captain and the camera eases back; the name comes up as it settles.
   const revealLanding = (): void => {
     try {
       localStorage.setItem("greyfall.prologue", "1");

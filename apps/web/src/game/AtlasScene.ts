@@ -1933,7 +1933,7 @@ export class AtlasScene extends Phaser.Scene {
     this.close = at ? (keep ? "folk" : "fire") : null;
   }
 
-  /** The opening shot, after the camera handoffs of cutscene-led games: the whole area, then down onto the hero, held still till it lands. */
+  /** The opening shot: in close on the captain waking, then easing back to the play view; the map is never shown whole. */
   private intro(hold: number, fly: number, done: () => void): void {
     const hero = this.hero;
     if (!hero || !this.local || this.dev) return done();
@@ -1943,9 +1943,8 @@ export class AtlasScene extends Phaser.Scene {
     this.play(hero.s, hero.idle);
     cam.stopFollow();
     cam.removeBounds();
-    const box = this.landBox(this.local);
-    cam.setZoom(Math.min(cam.height / box.height, cam.width / box.width));
-    cam.centerOn(box.centerX, box.centerY);
+    cam.setZoom(this.zoomFor(5));
+    cam.centerOn(hero.s.x, hero.s.y - CELL / 2);
     // Onto where the bounded follow camera will sit, so nothing jumps when play takes it over.
     const zoom = this.zoomFor(AREA_ROWS);
     const [w, h] = [cam.width / zoom / 2, cam.height / zoom / 2];
