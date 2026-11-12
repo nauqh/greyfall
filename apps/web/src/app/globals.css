@@ -1177,7 +1177,7 @@ textarea {
 }
 
 /* Sat at a bonfire: the dark drawn in round the fire, its name and the choices at the foot, like a merchant's. */
-/* Sat at a bonfire: the world stays lit; the panel stands at the left, the captain and the fire right of centre. */
+/* Sat at a bonfire: the world stays lit; the panel stands at the right, the captain and the fire left of centre. */
 .bonfire {
 	position: absolute;
 	inset: 0;
@@ -1185,9 +1185,9 @@ textarea {
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
-	align-items: flex-start;
+	align-items: flex-end;
 	gap: 8px;
-	padding: 16px 16px 16px max(16px, 4vw);
+	padding: 16px max(16px, 5vw) 16px 16px;
 	pointer-events: none;
 }
 
@@ -1199,9 +1199,9 @@ textarea {
 .bonfirePanel {
 	display: flex;
 	flex-direction: column;
-	gap: 4px;
-	width: min(300px, calc(100vw - 32px));
-	padding: 0 4px 4px;
+	gap: 6px;
+	width: min(400px, calc(100vw - 32px));
+	padding: 4px 8px 8px;
 	color: #4a3a28;
 	font-family: "Nunito", "Segoe UI", sans-serif;
 	font-weight: 700;
@@ -1212,7 +1212,7 @@ textarea {
 .bonfireKicker {
 	margin-top: -8px;
 	font-weight: 800;
-	font-size: 12px;
+	font-size: 14px;
 	letter-spacing: 0.2em;
 	text-transform: uppercase;
 	color: #8a5a10;
@@ -1220,28 +1220,28 @@ textarea {
 
 .bonfireName {
 	font-weight: 800;
-	font-size: 22px;
+	font-size: 30px;
 	line-height: 1.15;
 	color: #4a3a28;
 }
 
 .bonfireRested {
-	margin-bottom: 6px;
-	padding-bottom: 8px;
+	margin-bottom: 8px;
+	padding-bottom: 12px;
 	border-bottom: 2px solid rgb(107 87 64 / 0.25);
 	font-weight: 600;
-	font-size: 12px;
+	font-size: 15px;
 	line-height: 1.3;
 }
 
 .bonfireOption {
-	padding: 4px 8px;
+	padding: 8px 12px;
 	border: 2px solid transparent;
 	border-radius: 4px;
 	background: none;
 	color: inherit;
 	font: inherit;
-	font-size: 17px;
+	font-size: 21px;
 	font-weight: 800;
 	text-align: left;
 	cursor: pointer;
@@ -1255,7 +1255,7 @@ textarea {
 @keyframes bonfire {
 	from {
 		opacity: 0;
-		transform: translateX(-16px);
+		transform: translateX(16px);
 	}
 }
 

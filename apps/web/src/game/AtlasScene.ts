@@ -1862,10 +1862,10 @@ export class AtlasScene extends Phaser.Scene {
     this.play(hero.s, hero.idle);
     const cam = this.active;
     const base = this.zoomFor(AREA_ROWS);
-    // A whole-number zoom, so the pixel art lands crisp; the captain drawn right of centre, clear of the rest panel on the left.
-    const zoom = on ? Math.ceil(base * 1.5) : base;
+    // A whole-number zoom, so the pixel art lands crisp; the captain drawn left of centre, clear of the rest panel on the right.
+    const zoom = on ? Math.ceil(base * 2.2) : base;
     cam.zoomTo(zoom, 900, "Sine.easeInOut", true);
-    cam.setFollowOffset(on && cam.width > 640 ? (cam.width * 0.16) / zoom : 0, 0);
+    cam.setFollowOffset(on && cam.width > 640 ? (-cam.width * 0.18) / zoom : 0, 0);
     return districtOf(this.local, fire.col, fire.row)?.name || (AREAS.find((a) => a.id === this.local!.area)?.name ?? null);
   }
 
