@@ -12,6 +12,7 @@ const typing = (t: EventTarget | null): boolean =>
 
 /** The numbers drawn big with an icon, as at a rest; the rest told small below them. */
 const MAIN: Partial<Record<SackView["stats"][number]["key"], string>> = { hp: STAT_ICON.hp, attack: STAT_ICON.attack, stamina: STAT_ICON.stamina, flasks: "ui/icon_heal.png" };
+const ROW = 7;
 
 /**
  * The captain's sack, after a Souls inventory: in the side panel the rests and merchants use, without stopping the world
@@ -46,9 +47,22 @@ export function Sack({ sack, gold }: { sack: SackView; gold: number }) {
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
   }, []);
+  const goodsRef = useRef<HTMLDivElement>(null);
+  const [cut, setCut] = useState(false);
+  useEffect(() => {
+    const el = goodsRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setCut(el.scrollHeight > el.clientHeight + 1));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [mounted, sack.items.length]);
   const good = sack.items[Math.min(pick, sack.items.length - 1)];
+  useEffect(() => {
+    goodsRef.current?.children[sack.items.indexOf(good!)]?.scrollIntoView({ block: "nearest" });
+  }, [good, sack.items]);
   const main = sack.stats.filter((s) => MAIN[s.key]);
   const more = sack.stats.filter((s) => !MAIN[s.key]);
+  const slots = Math.max(ROW * 2, Math.ceil(sack.items.length / ROW) * ROW);
   return (
     <>
       {/* Keeps focus off the buttons, so Space rolls rather than pressing them. */}
@@ -70,7 +84,11 @@ export function Sack({ sack, gold }: { sack: SackView; gold: number }) {
             role="dialog"
             compact
           >
-            <ul className="restStats panelRule">
+            <h3 className="panelHeading">
+              <img src={packUrl("ui/icon_hp.png")} alt="" width={16} height={16} />
+              Status
+            </h3>
+            <ul className="sackMain">
               {main.map((s) => (
                 <li key={s.key}>
                   <img src={packUrl(MAIN[s.key]!)} alt="" width={24} height={24} />
@@ -78,7 +96,7 @@ export function Sack({ sack, gold }: { sack: SackView; gold: number }) {
                   <b>{s.now}</b>
                 </li>
               ))}
-              <li className="restGold">
+              <li className="sackGold">
                 <img src={packUrl("ui/icon_gold.png")} alt="" width={24} height={24} />
                 <span>Gold</span>
                 <b>{gold}</b>
@@ -92,37 +110,42 @@ export function Sack({ sack, gold }: { sack: SackView; gold: number }) {
                 </div>
               ))}
             </dl>
+            <h3 className="panelHeading">
+              <img src={packUrl("ui/icon_heal.png")} alt="" width={16} height={16} />
+              Goods
+            </h3>
+            <div ref={goodsRef} className={`sackGoods${cut ? " cut" : ""}`}>
+              {Array.from({ length: slots }, (_, i) => {
+                const s = sack.items[i];
+                return s ? (
+                  <button
+                    type="button"
+                    key={s.label}
+                    className="sackSlot"
+                    aria-label={s.label}
+                    aria-pressed={s === good}
+                    onMouseEnter={() => setPick(i)}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setPick(i)}
+                  >
+                    <ItemIcon icon={s.icon} size={32} />
+                  </button>
+                ) : (
+                  <span key={i} className="sackSlot empty" />
+                );
+              })}
+            </div>
             {good ? (
-              <>
-                <div className="sackGoods">
-                  {sack.items.map((s, i) => (
-                    <button
-                      type="button"
-                      key={s.label}
-                      className="sackKey"
-                      aria-label={s.label}
-                      aria-pressed={s === good}
-                      onMouseEnter={() => setPick(i)}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => setPick(i)}
-                    >
-                      <ItemIcon icon={s.icon} size={32} />
-                    </button>
-                  ))}
-                </div>
-                <div className="sackDetail panelRule" aria-live="polite">
-                  <div className="sackDetailHead">
-                    <span className="shopKey big">
-                      <ItemIcon icon={good.icon} size={40} />
-                    </span>
-                    <span>
-                      <b>{good.label}</b>
-                      <span className="sackGives">{good.gives}</span>
-                    </span>
-                  </div>
-                  {good.about && <i className="sackAbout">{good.about}</i>}
-                </div>
-              </>
+              <div className="sackDetail" aria-live="polite">
+                <span className="sackSlot big">
+                  <ItemIcon icon={good.icon} size={48} />
+                </span>
+                <span className="sackDetailName">
+                  <b>{good.label}</b>
+                  <span className="sackGives">{good.gives}</span>
+                </span>
+                {good.about && <i className="sackAbout">{good.about}</i>}
+              </div>
             ) : (
               <p className="panelNote">Empty. Merchants sell goods you keep for good, and the folk give some.</p>
             )}

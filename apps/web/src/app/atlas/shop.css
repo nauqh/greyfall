@@ -1,149 +1,429 @@
-/* The goods inside the side panel: a list that scrolls, the picked good told out below it. */
-.shopPurse {
-	flex: none;
-	padding: 6px 10px;
-	border: 2px solid rgb(107 87 64 / 0.25);
-	border-radius: 6px;
-	font-size: 16px;
-}
-
-.shopList {
+/* A merchant on the panels' paper, after Elden Ring's purchase screen: slots on the left, the picked good on the right. */
+.shop {
 	display: flex;
 	flex-direction: column;
-	gap: 4px;
-	max-height: min(260px, 32vh);
-	overflow-y: auto;
+	gap: 12px;
+	width: min(440px, calc(100vw - 32px));
+	max-height: calc(100vh - 32px);
+	padding: 6px 8px 4px;
+	overflow: hidden;
+	color: #4a3a28;
+	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-weight: 700;
+	font-size: 15px;
+	border: 28px solid transparent;
+	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 28px stretch;
+}
+
+.shop.goods {
+	width: min(720px, calc(100vw - 32px));
+}
+
+.shop img {
+	flex: none;
+	image-rendering: pixelated;
+}
+
+.shopTop {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 12px;
+	padding-bottom: 8px;
+	border-bottom: 2px solid rgb(107 87 64 / 0.22);
+}
+
+.shopWho {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.shopKicker {
+	font-weight: 800;
+	font-size: 12px;
+	letter-spacing: 0.2em;
+	text-transform: uppercase;
+	color: #8a5a10;
+}
+
+.shopName {
+	font-weight: 800;
+	font-size: 24px;
+	line-height: 1.15;
+}
+
+.shopPurse {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	border: 1px solid rgb(201 163 92 / 0.8);
+	border-radius: 4px;
+	background: rgb(242 212 138 / 0.3);
+	font-weight: 800;
+	font-size: 18px;
+	font-variant-numeric: tabular-nums;
+	color: #8a5a10;
+}
+
+.shop .panelHeading {
+	margin-bottom: 6px;
+}
+
+/* The talk: the greeting, then the choices as framed rows. */
+.shopGreet {
+	position: relative;
+	margin: 0;
+	padding: 10px 14px;
+	border-left: 3px solid #c9a35c;
+	background: linear-gradient(90deg, rgb(242 212 138 / 0.35), rgb(242 212 138 / 0));
+	font-weight: 600;
+	font-size: 14px;
+	font-style: italic;
+	line-height: 1.4;
+}
+
+.shopChoices {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.shopChoice {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 8px 12px;
+	border: 1px solid rgb(107 87 64 / 0.25);
+	border-radius: 4px;
+	background: rgb(255 255 255 / 0.1);
+	color: inherit;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+	transition: background 120ms ease-out, border-color 120ms ease-out, box-shadow 120ms ease-out;
+}
+
+.shopChoice img {
+	opacity: 0.55;
+	transition: opacity 120ms ease-out;
+}
+
+.shopChoice.picked {
+	border-color: #c9a35c;
+	background: linear-gradient(90deg, rgb(242 212 138 / 0.65), rgb(242 212 138 / 0.2));
+	box-shadow: 0 0 10px rgb(242 180 80 / 0.45);
+}
+
+.shopChoice.picked img {
+	opacity: 1;
+}
+
+.shopChoiceText {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.shopChoiceText b {
+	font-size: 17px;
+}
+
+.shopChoiceText small {
+	font-size: 12px;
+	font-weight: 600;
+	color: #6b5740;
+}
+
+/* The goods: the grid of slots and the told-out good side by side. */
+.shopBody {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	gap: 20px;
+}
+
+.shopGrid {
+	display: grid;
+	grid-template-columns: repeat(5, 60px);
+	gap: 6px;
 	margin: 0;
 	padding: 0;
 	list-style: none;
 }
 
-.shopRow {
+.shopSlot {
 	display: flex;
+	flex-direction: column;
 	align-items: center;
-	gap: 10px;
+	gap: 2px;
 	width: 100%;
-	padding: 4px 10px 4px 4px;
-	border: 2px solid transparent;
-	border-radius: 6px;
+	padding: 0;
+	border: 0;
 	background: none;
 	color: inherit;
 	font: inherit;
-	text-align: left;
 	cursor: pointer;
 }
 
-.shopRow.picked {
-	border-color: #c9a35c;
-	background: rgb(242 212 138 / 0.45);
+.shopSlotArt {
+	display: grid;
+	place-items: center;
+	width: 60px;
+	height: 60px;
+	border: 1px solid rgb(107 87 64 / 0.35);
+	border-radius: 3px;
+	background: radial-gradient(circle, rgb(255 255 255 / 0.22), rgb(107 87 64 / 0.16));
+	box-shadow: inset 0 0 6px rgb(74 58 40 / 0.25);
+	transition: border-color 120ms ease-out, box-shadow 120ms ease-out;
 }
 
-.shopRow.short,
-.shopRow.sold {
-	opacity: 0.55;
+.shopSlot.empty {
+	cursor: default;
 }
 
-.shopRow.sold .shopKey {
+.shopSlot.empty .shopSlotArt {
+	border-color: rgb(107 87 64 / 0.15);
+	background: rgb(107 87 64 / 0.07);
+	box-shadow: none;
+}
+
+.shopSlot.empty::after {
+	content: "";
+	height: 17px;
+}
+
+.shopSlot.picked .shopSlotArt {
+	border: 2px solid #c9a35c;
+	background: radial-gradient(circle, rgb(255 236 180 / 0.75), rgb(242 212 138 / 0.35));
+	box-shadow: 0 0 12px rgb(242 180 80 / 0.7), inset 0 0 6px rgb(255 255 255 / 0.4);
+}
+
+.shopPrice {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	font-size: 13px;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+	color: #8a5a10;
+}
+
+.shopSlot:not(.sold) .shopPrice::before {
+	content: "";
+	width: 12px;
+	height: 12px;
+	background: url("/tiny-swords/ui/icon_gold.png") center / contain no-repeat;
+}
+
+.shopSlot.sold .shopPrice {
+	color: #6b5740;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	font-size: 11px;
+}
+
+.shopSlot.sold .shopSlotArt {
 	filter: grayscale(0.8);
+	opacity: 0.6;
 }
 
-.shopRow.short .panelGold {
+.shopSlot.short .shopPrice {
 	color: #b3261e;
 }
 
-.shopRow.bought {
+.shopSlot.short .shopSlotArt > * {
+	opacity: 0.55;
+}
+
+.shopSlot.bought .shopSlotArt {
 	animation: shopBought 600ms ease-out;
 }
 
 @keyframes shopBought {
 	from {
 		background: rgb(255 226 138 / 0.95);
-		transform: scale(1.03);
+		transform: scale(1.08);
 	}
-}
-
-/* Each good's picture on a blue key, like Play's command card. */
-.shopKey {
-	flex: none;
-	display: grid;
-	place-items: center;
-	border: 8px solid transparent;
-	border-image: url("/tiny-swords/ui/blueButton.png") 64 fill / 8px stretch;
-}
-
-.shopKey.big {
-	border-width: 10px;
-	border-image-width: 10px;
-}
-
-.shopRowName {
-	flex: 1;
-	min-width: 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.shopSoldTag {
-	font-weight: 800;
-	color: #6b5740;
 }
 
 .shopTell {
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
-	min-height: 150px;
+	gap: 8px;
+	min-width: 0;
+	min-height: 220px;
 }
 
 .shopTellHead {
 	display: flex;
 	align-items: center;
-	gap: 10px;
+	gap: 12px;
+}
+
+.shopTellArt {
+	flex: none;
+	display: grid;
+	place-items: center;
+	width: 76px;
+	height: 76px;
+	border: 2px solid #c9a35c;
+	border-radius: 3px;
+	background: radial-gradient(circle, rgb(255 236 180 / 0.6), rgb(242 212 138 / 0.2));
+	box-shadow: 0 0 10px rgb(242 180 80 / 0.4);
 }
 
 .shopTellName {
 	font-weight: 800;
-	font-size: 17px;
+	font-size: 20px;
+	line-height: 1.2;
 }
 
 .shopAbout {
+	margin: 0;
 	font-weight: 600;
 	font-size: 13px;
-	line-height: 1.35;
+	font-style: italic;
+	line-height: 1.4;
 	color: #6b5740;
 }
 
-.shopChange {
+.shopStats,
+.shopLedger {
 	display: flex;
 	flex-direction: column;
+	gap: 2px;
 	margin: 0;
-	padding: 0;
-	list-style: none;
+	font-size: 14px;
 }
 
-.shopChange li {
+.shopStats div,
+.shopLedger div {
 	display: flex;
 	justify-content: space-between;
-	gap: 8px;
+	gap: 12px;
 }
 
-.shopChange b {
+.shopStats dt,
+.shopLedger dt {
+	font-weight: 600;
+	color: #6b5740;
+}
+
+.shopStats dd,
+.shopLedger dd {
+	margin: 0;
+	font-weight: 800;
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+.shopArrow {
+	color: #8a7458;
+}
+
+.shopStats b {
 	color: #2e6b2a;
 }
 
+/* The gold held, the price, the gold after: the barter's sum, under a gold hairline. */
+.shopFoot {
+	display: flex;
+	align-items: flex-end;
+	gap: 20px;
+	padding-top: 8px;
+	border-top: 1px solid rgb(201 163 92 / 0.75);
+}
+
+.shopLedger {
+	flex: 1;
+	max-width: 300px;
+}
+
+.shopLedger > :last-child {
+	padding-top: 2px;
+	border-top: 1px solid rgb(107 87 64 / 0.2);
+}
+
+.shopLedger > :last-child dd {
+	color: #2e6b2a;
+}
+
+.shopLedger > .short dd,
+.shopLedger > .short dt {
+	color: #b3261e;
+}
+
+.shopChoice.back {
+	margin-left: auto;
+	padding: 6px 14px;
+}
+
+.shopKeys {
+	align-self: center;
+	font-size: 11px;
+	font-weight: 800;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	white-space: pre;
+	color: #8a7458;
+}
+
+/* Narrow screens: the panel is the foot of the screen, the slots over the good, the about left out. */
 @media (max-width: 640px) {
-	.shopAbout {
-		display: none;
+	.shop {
+		gap: 8px;
+		max-height: 80vh;
+		border-width: 22px;
+		border-image-width: 22px;
+	}
+
+	.shopName {
+		font-size: 20px;
+	}
+
+	.shopBody {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 10px;
+	}
+
+	.shopGrid {
+		grid-template-columns: repeat(5, minmax(0, 56px));
+	}
+
+	.shopSlotArt {
+		width: 100%;
+		height: auto;
+		aspect-ratio: 1;
 	}
 
 	.shopTell {
 		min-height: 0;
 	}
+
+	.shopTellArt {
+		width: 52px;
+		height: 52px;
+	}
+
+	.shopTellArt > * {
+		transform: scale(0.7);
+	}
+
+	.shopAbout,
+	.shopKeys {
+		display: none;
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.shopRow.bought {
+	.shopChoice,
+	.shopChoice img,
+	.shopSlotArt {
+		transition: none;
+	}
+
+	.shopSlot.bought .shopSlotArt {
 		animation: none;
 	}
 }

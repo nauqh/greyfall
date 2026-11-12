@@ -1,0 +1,114 @@
+/* Label left, numbers right: the level, the gold and the status lines. */
+.luSheet {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	margin: 0;
+	font-size: 14px;
+}
+
+.luSheet > div {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 1px 4px;
+	border-bottom: 1px solid rgb(107 87 64 / 0.12);
+}
+
+.luSheet dt {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	color: #6b5740;
+}
+
+.luSheet dd {
+	margin: 0;
+	font-weight: 800;
+}
+
+.luShort dd {
+	color: #b3261e;
+}
+
+.luChange {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.luChange > span:first-child,
+.luChange b {
+	min-width: 3ch;
+	text-align: right;
+}
+
+.luChange b {
+	color: #8a7458;
+}
+
+.luChange b.luGain {
+	color: #2e6b2a;
+}
+
+.luChange b.pop {
+	display: inline-block;
+	animation: panelPop 500ms ease-out;
+}
+
+.luTo {
+	border-left: 6px solid #8a5a10;
+	border-block: 4px solid transparent;
+}
+
+.luAttrs {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.luAttr .panelOptionName {
+	flex: 1;
+}
+
+.luUp {
+	transform: rotate(-90deg);
+}
+
+/* The raise on every row, lit on the picked one, grey when the gold falls short. */
+.luRaise {
+	width: 22px;
+	height: 22px;
+	opacity: 0.35;
+	transition: opacity 120ms ease-out;
+}
+
+.luAttr.picked .luRaise {
+	opacity: 1;
+}
+
+.luAttr.dim .luRaise {
+	filter: grayscale(1);
+}
+
+@media (max-width: 640px) {
+	.luSheet {
+		font-size: 13px;
+		gap: 1px;
+	}
+
+	.luAttr {
+		padding-block: 5px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.luChange b.pop {
+		animation: none;
+	}
+
+	.luRaise {
+		transition: none;
+	}
+}

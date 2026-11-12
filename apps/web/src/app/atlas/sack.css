@@ -26,13 +26,53 @@
 	border-radius: 4px;
 }
 
-/* The sack's lesser numbers, small under the main ones. */
+.sackDock .sidePanel {
+	gap: 8px;
+}
+
+/* A section's name in small caps over a gold hairline, after a Souls status screen. */
+.sackMain {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 4px 18px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.sackMain li {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.sackMain span {
+	flex: 1;
+	color: #6b5740;
+}
+
+.sackMain b,
+.sackMore dd {
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+}
+
+.sackMain b {
+	font-size: 17px;
+}
+
+.sackGold b {
+	color: #8a5a10;
+}
+
 .sackMore {
 	display: grid;
-	grid-template-columns: 1fr;
-	gap: 2px;
+	grid-template-columns: 1fr 1fr;
+	gap: 2px 18px;
 	margin: 0;
+	padding-top: 4px;
 	font-size: 13px;
+	border-top: 1px dashed rgb(107 87 64 / 0.25);
 }
 
 .sackMore div {
@@ -51,61 +91,91 @@
 	font-weight: 800;
 }
 
+/* Goods on a fixed grid, the empty slots dim, so the sack reads as room to fill. Past what fits, it scrolls with no bar
+   and fades at the cut. */
 .sackGoods {
-	display: flex;
-	flex-wrap: wrap;
+	flex: 0 1 auto;
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 46px));
+	justify-content: space-between;
 	gap: 6px;
-	max-height: min(180px, 24vh);
+	min-height: 46px;
+	padding: 3px;
 	overflow-y: auto;
+	scrollbar-width: none;
 }
 
-.sackKey {
-	flex: none;
+.sackGoods::-webkit-scrollbar {
+	display: none;
+}
+
+.sackGoods.cut {
+	mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent);
+}
+
+.sackSlot {
 	display: grid;
 	place-items: center;
-	width: 48px;
-	height: 48px;
+	aspect-ratio: 1;
 	padding: 0;
-	border: 8px solid transparent;
-	border-image: url("/tiny-swords/ui/blueButton.png") 64 fill / 8px stretch;
-	background: none;
+	border: 2px solid rgb(107 87 64 / 0.35);
+	border-radius: 4px;
+	background: rgb(255 255 255 / 0.18);
+	box-shadow: inset 0 0 6px rgb(74 58 40 / 0.25);
 	cursor: pointer;
+	transition: border-color 120ms ease-out, box-shadow 120ms ease-out;
 }
 
-.sackKey[aria-pressed="true"] {
-	outline: 2px solid #c9a35c;
-	outline-offset: 2px;
+.sackSlot.empty {
+	border-color: rgb(107 87 64 / 0.15);
+	background: rgb(74 58 40 / 0.07);
+	box-shadow: none;
+	cursor: default;
 }
 
+.sackSlot[aria-pressed="true"] {
+	border-color: #c9a35c;
+	background: rgb(242 212 138 / 0.5);
+	box-shadow: 0 0 0 1px #c9a35c, 0 0 10px 2px rgb(242 212 138 / 0.9);
+}
+
+.sackSlot.big {
+	width: 64px;
+	border-color: #c9a35c;
+	cursor: default;
+}
+
+/* The picked good: its picture, its name and what it gives beside it, what it is under them. */
 .sackDetail {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-	min-height: 112px;
-}
-
-.sackDetailHead {
-	display: flex;
+	flex: none;
+	display: grid;
+	grid-template-columns: auto 1fr;
 	align-items: center;
-	gap: 10px;
+	gap: 6px 12px;
+	min-height: 120px;
+	align-content: start;
+	padding-top: 8px;
+	border-top: 1px solid rgb(201 163 92 / 0.75);
 }
 
-.sackDetailHead > span:last-child {
+.sackDetailName {
 	display: flex;
 	flex-direction: column;
 }
 
-.sackDetailHead b {
-	font-size: 17px;
+.sackDetailName b {
+	font-size: 18px;
+	line-height: 1.2;
 }
 
 .sackGives {
 	font-size: 13px;
-	font-weight: 600;
+	font-weight: 800;
 	color: #2e6b2a;
 }
 
 .sackAbout {
+	grid-column: 1 / -1;
 	font-weight: 600;
 	font-size: 13px;
 	line-height: 1.35;
@@ -113,8 +183,18 @@
 }
 
 @media (max-width: 640px) {
+	.sackDetail {
+		min-height: 0;
+	}
+
 	.sackAbout {
 		display: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.sackSlot {
+		transition: none;
 	}
 }
 
