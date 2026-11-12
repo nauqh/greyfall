@@ -287,8 +287,8 @@ export function AreaView({ area: first }: { area: AreaId }) {
             <span className="areaRevealName">{reveal}</span>
           </div>
         )}
-        {travel?.kind === "walk" && (
-          // Walking out: the game's own cloud bank draws in, holds while the next map is built, and parts on it.
+        {travel && (travel.kind === "walk" || travel.name === "The Boat") && (
+          // Walking out or taking the boat: the game's own cloud bank draws in, holds while the next map is built, and parts on it.
           <div className="travel travelClouds">
             <Clouds
               key={travel.phase}
@@ -300,7 +300,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
             />
           </div>
         )}
-        {travel && travel.kind !== "walk" && (
+        {travel && travel.kind !== "walk" && travel.name !== "The Boat" && (
           // The crossing's own cover: a fall, a ride or a stair, held while the next map is built.
           <div
             className={`travel travel-${travel.kind} travel-${travel.dir} travel-${travel.phase}`}
