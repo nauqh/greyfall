@@ -19,6 +19,10 @@
 	width: min(540px, calc(100vw - 32px));
 }
 
+.sidePanel.compact {
+	min-height: 0;
+}
+
 .panelHead {
 	display: flex;
 	justify-content: space-between;

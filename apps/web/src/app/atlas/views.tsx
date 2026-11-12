@@ -464,7 +464,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
               <b>{gold}</b>
             </div>
           )}
-          {sack && !fire && !menu && <Sack sack={sack} />}
+          {sack && !fire && !menu && <Sack sack={sack} gold={gold ?? 0} />}
           {band && band.members.length > 0 && (
             <div className="bandPanel">
               <div className="bandOrder">

@@ -29,6 +29,8 @@ export function SidePanel({
   onChoose,
   keys,
   wide = false,
+  compact = false,
+  role = "menu",
 }: {
   kicker: string;
   name: string;
@@ -41,9 +43,12 @@ export function SidePanel({
   onChoose: (i: number) => void;
   keys: string;
   wide?: boolean;
+  /** As tall as its content, for a panel opened in the field rather than at a rest. */
+  compact?: boolean;
+  role?: "menu" | "dialog";
 }) {
   return (
-    <div className={`sidePanel${wide ? " wide" : ""}`} role="menu" aria-label={name}>
+    <div className={`sidePanel${wide ? " wide" : ""}${compact ? " compact" : ""}`} role={role} aria-label={name}>
       <div className="panelHead">
         <div className="panelWhere">
           <span className="panelKicker">{kicker}</span>
@@ -53,31 +58,33 @@ export function SidePanel({
         {badge}
       </div>
       {children}
-      <div className="panelOptions">
-        {options.map((o, n) => {
-          const i = o.i ?? n;
-          return (
-            <button
-              key={o.label}
-              type="button"
-              role="menuitem"
-              className={`panelOption${i === pick ? " picked" : ""}${o.dim ? " dim" : ""}`}
-              onMouseEnter={() => onPick(i)}
-              onClick={() => onChoose(i)}
-            >
-              <span className="panelOptionText">
-                <span className="panelOptionName">{o.label}</span>
-                {o.note && <span className="panelOptionNote">{o.note}</span>}
-              </span>
-              {o.aside !== undefined && (
-                <b key={o.pop} className={`panelAside${o.pop ? " pop" : ""}`}>
-                  {o.aside}
-                </b>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      {options.length > 0 && (
+        <div className="panelOptions">
+          {options.map((o, n) => {
+            const i = o.i ?? n;
+            return (
+              <button
+                key={o.label}
+                type="button"
+                role="menuitem"
+                className={`panelOption${i === pick ? " picked" : ""}${o.dim ? " dim" : ""}`}
+                onMouseEnter={() => onPick(i)}
+                onClick={() => onChoose(i)}
+              >
+                <span className="panelOptionText">
+                  <span className="panelOptionName">{o.label}</span>
+                  {o.note && <span className="panelOptionNote">{o.note}</span>}
+                </span>
+                {o.aside !== undefined && (
+                  <b key={o.pop} className={`panelAside${o.pop ? " pop" : ""}`}>
+                    {o.aside}
+                  </b>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
       <span className="panelKeys" aria-hidden="true">
         {keys}
       </span>

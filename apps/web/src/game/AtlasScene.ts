@@ -270,7 +270,8 @@ export interface SackItem {
 /** The sack: the goods kept, and every number of the captain's. */
 export interface SackView {
   items: SackItem[];
-  stats: StatLine[];
+  stats: (StatLine & { key: keyof Kit })[];
+  level: number;
 }
 
 /** After the Souls games' merchants: a name over a short list, one option picked; a good says what it gives. */
@@ -2087,8 +2088,10 @@ export class AtlasScene extends Phaser.Scene {
   private emitSack(): void {
     const bought = remembered(BOUGHT);
     const items = (Object.keys(ITEMS) as ItemName[]).filter((item) => bought.has(item));
-    const stats = (Object.keys(STATS) as (keyof Kit)[]).map((k) => ({ label: STATS[k].label, now: statWords(k, this.gear) }));
-    this.hooks.onSack?.({ items: items.map((item) => ({ label: item, icon: ITEM_ICON[item], gives: gives(item), about: ITEMS[item].about })), stats });
+    const stats = (Object.keys(STATS) as (keyof Kit)[]).map((k) => ({ key: k, label: STATS[k].label, now: statWords(k, this.gear) }));
+    const lv = levels();
+    const level = 1 + lv.hp + lv.attack + lv.stamina;
+    this.hooks.onSack?.({ items: items.map((item) => ({ label: item, icon: ITEM_ICON[item], gives: gives(item), about: ITEMS[item].about })), stats, level });
   }
 
   /** In a talk with someone who hires out: a companion joins, for gold, if there is room. */
