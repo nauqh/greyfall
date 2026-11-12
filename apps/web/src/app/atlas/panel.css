@@ -139,20 +139,6 @@
 	font-size: 17px;
 }
 
-.panelOptionName::before {
-	content: "";
-	display: inline-block;
-	width: 0;
-	transition: width 120ms ease-out, margin 120ms ease-out;
-}
-
-.panelOption.picked .panelOptionName::before {
-	content: ">";
-	width: 1ch;
-	margin-right: 6px;
-	color: #8a5a10;
-}
-
 .panelOptionNote {
 	font-size: 12px;
 	font-weight: 600;
@@ -233,8 +219,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.panelOption,
-	.panelOptionName::before {
+	.panelOption {
 		transition: none;
 	}
 
