@@ -74,14 +74,14 @@ function ribbon() {
   return out;
 }
 
-/** The blue sword banner, hilt / blade / tip, off the first 128px row of
- *  Swords.png: the title menu's highlight, hilt left and point right. */
-function sword() {
-  const src = read("UI Elements/UI Elements/Swords/Swords.png");
+/** A left / middle / right strip, 128 / 64 / 128px, off one 128px row of a
+ *  Swords.png-shaped sheet: a sword hilt left and point right, or a ribbon. */
+function strip(file, row) {
+  const src = read(file);
   const out = new PNG({ width: 320, height: 128 });
-  blit(out, src, 0, 0, 128, 128, 0, 0);
-  blit(out, src, 192, 0, 64, 128, 128, 0);
-  blit(out, src, 320, 0, 128, 128, 192, 0);
+  blit(out, src, 0, row * 128, 128, 128, 0, 0);
+  blit(out, src, 192, row * 128, 64, 128, 128, 0);
+  blit(out, src, 320, row * 128, 128, 128, 192, 0);
   return out;
 }
 
@@ -115,7 +115,10 @@ for (const [name, spec] of Object.entries(art.PANELS)) {
   made.push(write(name, png));
 }
 made.push(write("ribbon", ribbon()));
-made.push(write("sword", sword()));
+made.push(write("sword", strip("UI Elements/UI Elements/Swords/Swords.png", 0)));
+// The title banner's dark pieces: the slate-hilted sword and the black ribbon, each sheet's last row.
+made.push(write("swordSlate", strip("UI Elements/UI Elements/Swords/Swords.png", 4)));
+made.push(write("ribbonBlack", strip("UI Elements/UI Elements/Ribbons/BigRibbons.png", 4)));
 // Banner_Slots is already contiguous (192px, 64px corners), just copied here
 // so the CSS has one directory.
 made.push(write("bannerSlots", read("UI Elements/UI Elements/Banners/Banner_Slots.png")));

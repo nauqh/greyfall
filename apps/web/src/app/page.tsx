@@ -1,7 +1,7 @@
 "use client";
 
 // The title screen: the live island behind a game menu. Mouse or keys pick
-// an entry, the sword banner marks it, and every way out closes the clouds.
+// an entry, the slate sword marks it, and every way out closes the clouds.
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -12,7 +12,7 @@ import { GameCanvas } from "../game/GameCanvas";
 
 const MENU = [
   { href: "/map", label: "Play", hint: "The War. Raise a town, train an army, take the last island." },
-  { href: "/atlas", label: "Atlas", hint: "Begin at the Landing and carry the last fire through the Shattered Reach, bonfire to bonfire." },
+  { href: "/atlas", label: "Atlas", hint: "Carry the last fire through the Shattered Reach." },
   { href: "/battle", label: "Skirmish", hint: "Auto chess against three clans. Buy, merge, and outlast them." },
   { href: "/duel", label: "Duel", hint: "Open a room and send the code to a friend." },
 ] as const;
