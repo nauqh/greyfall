@@ -1,58 +1,136 @@
-/* A new game's creation on the prologue's black: the steps across the top, paper either side, the captain by a fire. */
+/* A new game's creation on the Reach's sea, as the title screen sits on it: one sheet of the merchants' paper, the steps
+   across its top, the choices, the numbers and the class on show, and the keys along the foot. */
 .creation {
+	--gold: #8a5a10;
+	--goldDim: rgb(107 87 64 / 0.45);
+	--hair: rgb(107 87 64 / 0.22);
+	--ink: #4a3a28;
+	--deep: #3a2c1c;
+	--mute: #6b5740;
+	--lit: linear-gradient(to top, rgb(242 212 138 / 0.6), rgb(242 212 138 / 0.15));
+	--ember: linear-gradient(90deg, transparent, #c9a35c 25%, #e0b25a 50%, #c9a35c 75%, transparent);
+	--sans: "Nunito", "Segoe UI", sans-serif;
 	place-items: safe center;
-	overflow-y: auto;
-	padding: 18px 16px;
-	background: #000;
+	overflow: auto;
+	padding: 16px;
+	background: #47aba9;
+	color: var(--ink);
+	font: 700 15px var(--sans);
 }
 
 .crScreen {
+	position: relative;
 	display: flex;
 	flex-direction: column;
-	gap: 16px;
-	width: min(1180px, 100%);
+	gap: 10px;
+	width: min(1440px, 100%);
+	height: min(960px, 100%);
+	padding: 0 8px 4px;
+	border: 28px solid transparent;
+	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 28px stretch;
+	filter: drop-shadow(0 10px 18px rgb(0 40 50 / 0.35));
 	animation: prologueIn 900ms ease-out both;
 }
 
-/* The steps, left to right, joined by a rule that fills as they are reached. */
-.crSteps {
+.crHead {
 	display: flex;
-	justify-content: center;
+	align-items: center;
+	gap: 12px;
+	margin: 0;
+	padding-bottom: 4px;
+	border-bottom: 1px solid var(--hair);
+	font: 800 22px var(--sans);
+	letter-spacing: 0.02em;
+}
+
+.crHead .crThumb {
+	width: 40px;
+	height: 40px;
+	border-color: var(--goldDim);
+	background-position-y: 2px;
+}
+
+.crStage {
+	flex: 1;
+	min-height: 0;
+	display: grid;
+	grid-template: "steps steps" auto "list sheet" minmax(0, 1fr) / 320px minmax(0, 1fr);
+	gap: 10px 18px;
+}
+
+.crStage > * {
+	min-height: 0;
+	animation: prologueIn 400ms ease-out both;
+}
+
+/* The numbers and the captain by the fire in one framed sheet, the numbers down its left as Dark Souls III sets them. */
+.crSheet {
+	grid-area: sheet;
+	position: relative;
+	display: grid;
+	grid-template-columns: 250px minmax(0, 1fr);
+	min-height: 0;
+	padding: 8px 0 8px 18px;
+	border: 1px solid var(--goldDim);
+}
+
+.crSheet::before {
+	content: "";
+	position: absolute;
+	inset: 4px;
+	border: 1px solid var(--hair);
+	pointer-events: none;
+}
+
+.crSheet > .crScene {
+	min-height: 0;
+}
+
+/* What the pointer is on, told above the choices. */
+.crAbout {
+	min-height: 4.65em;
+	margin: 0;
+	font: italic 600 14px / 1.55 var(--sans);
+	color: var(--mute);
+	text-wrap: pretty;
+	animation: prologueIn 300ms ease-out both;
+}
+
+/* The steps across the top on one hairline, the current one lit gold. */
+.crSteps {
+	grid-area: steps;
+	display: flex;
+	gap: 6px;
 	margin: 0;
 	padding: 0;
 	list-style: none;
 }
 
 .crSteps li {
-	display: flex;
-	align-items: center;
+	position: relative;
+	flex: 1;
+	border-bottom: 1px solid var(--hair);
 }
 
-.crSteps li + li::before {
+.crSteps li.now::after {
 	content: "";
-	width: clamp(28px, 8vw, 110px);
+	position: absolute;
+	inset: auto 0 -1px;
 	height: 2px;
-	margin: 0 12px;
-	background: #3a352b;
-	transition: background 300ms ease-out;
-}
-
-.crSteps li.done::before,
-.crSteps li.now::before {
-	background: #c9a35c;
+	background: var(--ember);
 }
 
 .crSteps button {
 	display: flex;
-	align-items: center;
+	align-items: baseline;
+	justify-content: center;
 	gap: 10px;
-	padding: 4px 6px;
+	width: 100%;
+	padding: 8px 6px 6px;
 	border: 0;
 	background: none;
-	color: #6a604e;
-	font: 800 13px "Nunito", "Segoe UI", sans-serif;
-	letter-spacing: 0.18em;
-	text-transform: uppercase;
+	color: rgb(74 58 40 / 0.4);
+	font: 800 17px var(--sans);
 	cursor: pointer;
 	transition: color 200ms ease-out;
 }
@@ -61,73 +139,85 @@
 	cursor: default;
 }
 
-.crSteps b {
-	display: grid;
-	place-items: center;
-	width: 32px;
-	height: 32px;
-	border: 2px solid currentColor;
-	border-radius: 50%;
-	font: 700 12px var(--display), serif;
-	letter-spacing: 0;
-}
-
 .crSteps .done button {
-	color: #a89c84;
+	color: var(--mute);
 }
 
 .crSteps .now button {
-	color: #f2d48a;
-}
-
-.crSteps .now b {
-	background: rgb(242 212 138 / 0.12);
-	box-shadow: 0 0 14px rgb(242 180 80 / 0.35);
+	color: var(--deep);
+	background: var(--lit);
 }
 
 .crSteps button:not(:disabled):hover {
-	color: #fdfaf0;
+	color: var(--deep);
 }
 
-.crStage {
-	display: grid;
-	grid-template-columns: minmax(240px, 300px) minmax(0, 1fr) minmax(220px, 270px);
-	align-items: start;
+.crTitle {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 4px 0 8px;
+	border-bottom: 1px solid var(--goldDim);
+	font: 800 19px var(--sans);
+	color: var(--deep);
+}
+
+.crTitle small {
+	font: 800 11px var(--sans);
+	letter-spacing: 0.2em;
+	text-transform: uppercase;
+	color: var(--gold);
+}
+
+.crList {
+	grid-area: list;
+}
+
+.crList,
+.crStats {
+	display: flex;
+	flex-direction: column;
 	gap: 8px;
 }
 
-.crPaper {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-	padding: 6px 10px 10px;
-	color: #4a3a28;
-	font-family: "Nunito", "Segoe UI", sans-serif;
-	font-weight: 700;
-	font-size: 15px;
-	border: 28px solid transparent;
-	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 28px stretch;
-	animation: prologueIn 400ms ease-out both;
+.crList .panelOptions {
+	gap: 0;
+	margin-top: 0;
 }
 
-.crPaper .panelName {
-	margin-top: -6px;
-	font-size: 20px;
-}
-
-.crPaper .panelOptions {
-	margin-top: 4px;
-}
-
-/* The pointer lights a row, as a merchant's picked row is lit, and the chosen one stays lit. */
+/* The choices on hairlines, the pointer's row and the chosen one lit gold from below. */
 .creation .panelOption {
 	position: relative;
+	padding: 8px 6px;
+	border: 0;
+	border-bottom: 1px solid var(--hair);
+	border-radius: 0;
+	background: none;
+	color: var(--ink);
+}
+
+.creation .panelOption::after {
+	content: "";
+	position: absolute;
+	inset: auto 0 -1px;
+	height: 2px;
+	background: var(--ember);
+	opacity: 0;
+	transition: opacity 160ms ease-out;
 }
 
 .creation .panelOption:hover,
 .creation .panelOption.chosen {
-	border-color: #c9a35c;
-	background: rgb(242 212 138 / 0.45);
+	background: var(--lit);
+}
+
+.creation .panelOption:hover::after {
+	opacity: 0.5;
+}
+
+.creation .panelOption.chosen::after {
+	opacity: 1;
 }
 
 .creation .panelOption:focus {
@@ -135,266 +225,314 @@
 }
 
 .creation .panelOption:focus-visible {
-	outline: 2px solid #c9a35c;
-	outline-offset: 1px;
+	outline: 1px solid var(--gold);
+	outline-offset: -1px;
+}
+
+.creation .panelOptionName,
+.creation .panelOptionNote {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.creation .panelOptionName {
+	font: 800 16px var(--sans);
+}
+
+.creation .panelOptionNote {
+	color: var(--mute);
 }
 
 .crThumb {
 	flex: none;
 	width: 48px;
 	height: 48px;
-	border: 2px solid rgb(107 87 64 / 0.3);
-	border-radius: 6px;
-	background-color: rgb(255 255 255 / 0.18);
+	border: 1px solid var(--hair);
+	background-color: rgb(255 255 255 / 0.3);
 	background-repeat: no-repeat;
 	image-rendering: pixelated;
 }
 
 .crName {
 	display: grid;
-	gap: 6px;
-	margin-top: 4px;
+	gap: 8px;
+	padding-top: 6px;
 }
 
 .crName input {
 	width: 100%;
-	padding: 8px 12px;
-	border: 2px solid rgb(107 87 64 / 0.35);
-	border-radius: 6px;
+	padding: 8px 10px;
+	border: 1px solid var(--goldDim);
 	background: rgb(255 255 255 / 0.35);
-	color: #3a2c1c;
-	font: 800 22px "Nunito", "Segoe UI", sans-serif;
+	color: var(--deep);
+	font: 800 22px var(--sans);
 }
 
 .crName input:focus {
-	border-color: #c9a35c;
+	border-color: var(--gold);
 	outline: none;
-	box-shadow: 0 0 0 3px rgb(242 212 138 / 0.5);
+	box-shadow: 0 0 0 2px rgb(201 163 92 / 0.45);
 }
 
 .crName input::placeholder {
 	color: rgb(74 58 40 / 0.4);
 }
 
-/* The middle: night on the shore, the fire's light on the ground, the captain standing at it. */
-.crScene {
-	position: relative;
-	align-self: stretch;
-	min-height: 520px;
-	overflow: hidden;
-}
-
-.crGlow {
-	position: absolute;
-	left: 50%;
-	bottom: 14%;
-	width: 120%;
-	height: 70%;
-	transform: translateX(-50%);
-	background:
-		radial-gradient(ellipse 30% 22% at 58% 78%, rgb(255 150 60 / 0.42), transparent 70%),
-		radial-gradient(ellipse 55% 30% at 55% 82%, rgb(120 70 30 / 0.45), transparent 75%),
-		radial-gradient(ellipse 50% 60% at 55% 70%, rgb(60 40 25 / 0.5), transparent 80%);
-	animation: crFlicker 2.4s ease-in-out infinite alternate;
-}
-
-@keyframes crFlicker {
-	0%, 100% { opacity: 0.88; }
-	30% { opacity: 1; }
-	60% { opacity: 0.8; }
-}
-
-/* A window 220 by 200 on the idle sheet, the feet 180 down it, facing the fire; drawn at its zoom `--k` rather than
-   scaled after, since a scaled layer is drawn small and stretched, which blurs it. */
-.crFigure {
-	position: absolute;
-	left: calc(42% - 110px * var(--k));
-	bottom: calc(24% - 20px * var(--k));
-	width: calc(220px * var(--k));
-	height: calc(200px * var(--k));
-	background: var(--sheet) no-repeat;
-	background-size: calc(var(--frames) * var(--frame) * var(--k)) calc(var(--frame) * var(--k));
-	background-position: calc((110px - var(--frame) / 2) * var(--k)) calc((180px - var(--feet)) * var(--k));
-	image-rendering: pixelated;
-	animation:
-		crFrames calc(var(--frames) * 110ms) steps(var(--frames)) infinite,
-		crStep 450ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-
-@keyframes crFrames {
-	to { background-position-x: calc((110px - var(--frame) / 2 - var(--frames) * var(--frame)) * var(--k)); }
-}
-
-/* Called up, as Diablo II's heroes step to the fire: in from a little back and out of the dark. */
-@keyframes crStep {
-	from {
-		opacity: 0;
-		translate: -18px 0;
-		filter: brightness(0.3);
-	}
-}
-
-/* Its base a fifth up the 128 px frame, set on the ground a little behind the captain's feet. */
-.crFire {
-	position: absolute;
-	left: calc(64% - 64px * var(--k));
-	bottom: calc(24% + 20px - 25.6px * var(--k));
-	width: calc(128px * var(--k));
-	height: calc(128px * var(--k));
-	background: var(--sheet) no-repeat 0 0;
-	background-size: calc(896px * var(--k)) calc(128px * var(--k));
-	image-rendering: pixelated;
-	animation: crFireFrames 700ms steps(7) infinite;
-}
-
-@keyframes crFireFrames {
-	to { background-position-x: calc(-896px * var(--k)); }
-}
-
-/* The gift at the captain's feet, catching the light. */
-.crGift {
-	position: absolute;
-	left: calc(53% - 20px);
-	bottom: calc(24% - 18px);
-	filter: drop-shadow(0 0 8px rgb(255 200 120 / 0.55));
-	animation: crGiftIn 450ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-
-@keyframes crGiftIn {
-	from {
-		opacity: 0;
-		translate: 0 -14px;
-	}
-}
-
-.crTold {
-	position: absolute;
-	left: 6%;
-	right: 6%;
-	bottom: 2%;
+.crRows {
 	margin: 0;
-	font: italic 400 clamp(14px, 1.5vw, 16px) / 1.55 Georgia, "Times New Roman", serif;
-	color: #e2dac6;
-	text-align: center;
-	text-wrap: pretty;
-	text-shadow: 0 2px 6px #000;
-	animation: prologueIn 300ms ease-out both;
+	padding: 0;
+	list-style: none;
 }
 
-.crStats .restStats {
-	grid-template-columns: 1fr;
-	padding: 10px 0;
+.crRows li {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 5px 4px;
+	border-bottom: 1px solid var(--hair);
+}
+
+.crRows span {
+	flex: 1;
+	color: var(--mute);
+}
+
+.crRows b {
+	font: 800 17px var(--sans);
+	font-variant-numeric: lining-nums tabular-nums;
+	color: var(--deep);
 }
 
 /* What the pointer is on, against what is chosen: more in green, less in red. */
-.crStats .restStats b.up {
-	color: #3f7a2a;
+.crRows b.up {
+	color: #2e6b2a;
 }
 
-.crStats .restStats b.down {
-	color: #b0402e;
+.crRows b.down {
+	color: #b3261e;
 }
 
-.crNoIcon {
+/* One 22 px frame of a 64 px tall icon or sheet, the `--frame`th. */
+.crIcon {
+	flex: none;
 	width: 22px;
+	height: 22px;
+	background: no-repeat calc(var(--frame) * -22px) 0 / auto 100%;
+	image-rendering: pixelated;
 }
 
 .crSlot {
 	display: flex;
 	align-items: center;
 	gap: 10px;
+	margin-top: 6px;
 }
 
 .crSlotIcon {
 	flex: none;
 	display: grid;
 	place-items: center;
-	width: 46px;
-	height: 46px;
-	border: 2px solid rgb(107 87 64 / 0.3);
-	border-radius: 6px;
-	background: rgb(255 255 255 / 0.18);
+	width: 50px;
+	height: 50px;
+	border: 1px solid var(--goldDim);
+	outline: 1px solid var(--hair);
+	outline-offset: 2px;
+	background: rgb(255 255 255 / 0.3);
 }
 
 .crFoot {
 	display: flex;
-	justify-content: space-between;
 	align-items: center;
 	gap: 12px;
+	padding-top: 6px;
+	border-top: 1px solid var(--hair);
 }
 
-.crBack {
-	padding: 8px 16px;
-	border: 1px solid #4a4336;
+.crKeys {
+	margin-right: auto;
+	color: var(--mute);
+	font-size: 13px;
+	word-spacing: 2px;
+}
+
+.crKeys kbd {
+	margin: 0 2px 0 10px;
+	padding: 1px 6px;
+	border: 1px solid var(--goldDim);
+	border-radius: 3px;
+	color: var(--ink);
+	font: 800 11px var(--sans);
+}
+
+.crKeys kbd:first-child {
+	margin-left: 0;
+}
+
+/* Back on the paper, the way on on a blue key, as the game's own buttons are. */
+.crBack,
+.crNext {
+	min-width: 150px;
+	padding: 8px 20px;
+	border: 2px solid var(--goldDim);
 	border-radius: 6px;
-	background: none;
-	color: #b8ab8e;
-	font: 800 14px "Nunito", "Segoe UI", sans-serif;
-	letter-spacing: 0.08em;
+	background: rgb(255 255 255 / 0.2);
+	color: var(--ink);
+	font: 800 16px var(--sans);
 	cursor: pointer;
-}
-
-.crBack:hover:not(:disabled) {
-	border-color: #c9b98f;
-	color: #fdfaf0;
-}
-
-.crBack:disabled {
-	visibility: hidden;
+	transition:
+		background 160ms ease-out,
+		border-color 160ms ease-out,
+		filter 160ms ease-out;
 }
 
 .crNext {
-	padding: 6px 22px 10px;
-	border: 14px solid transparent;
-	border-image: url("/tiny-swords/ui/blueButton.png") 64 fill / 14px stretch;
+	padding: 2px 14px;
+	border: 12px solid transparent;
+	border-radius: 0;
+	border-image: url("/tiny-swords/ui/blueButton.png") 64 fill / 12px stretch;
 	background: none;
 	color: #fdfaf0;
-	font: 800 17px "Nunito", "Segoe UI", sans-serif;
-	letter-spacing: 0.04em;
-	text-shadow: 0 2px 0 #1c2634;
-	cursor: pointer;
-	transition: filter 140ms ease-out, transform 140ms ease-out;
+}
+
+.crBack:hover:not(:disabled) {
+	border-color: #c9a35c;
+	background: rgb(242 212 138 / 0.45);
 }
 
 .crNext:hover:not(:disabled) {
-	filter: brightness(1.12);
+	filter: brightness(1.1);
 }
 
 .crNext:active:not(:disabled) {
-	transform: translateY(2px);
+	transform: translateY(1px);
 }
 
+.crBack:disabled,
 .crNext:disabled {
-	filter: grayscale(0.8) brightness(0.6);
+	opacity: 0.4;
 	cursor: default;
 }
 
 .crBack:focus-visible,
 .crNext:focus-visible,
 .crSteps button:focus-visible {
-	outline: 2px solid #c9b98f;
+	outline: 2px solid #c9a35c;
 	outline-offset: 2px;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1100px) {
 	.crStage {
-		grid-template-columns: minmax(0, 1fr);
+		grid-template-columns: 270px minmax(0, 1fr);
+		gap: 12px;
 	}
 
-	.crScene {
+	.crSheet {
+		grid-template-columns: 210px minmax(0, 1fr);
+		padding-left: 14px;
+	}
+}
+
+/* A phone: the steps across the top, the scene under them, the choices and the numbers side by side. */
+@media (max-width: 760px) {
+	.creation {
+		padding: 8px;
+	}
+
+	.crScreen {
+		height: auto;
+		padding: 0 2px 2px;
+		border-width: 22px;
+		border-image-width: 22px;
+	}
+
+	.crHead {
+		font-size: 20px;
+		padding-bottom: 6px;
+	}
+
+	.crStage {
+		grid-template: "steps" auto "sheet" auto "list" auto / minmax(0, 1fr);
+		gap: 10px 14px;
+	}
+
+	.crSteps {
+		gap: 4px;
+	}
+
+	.crSteps button {
+		padding: 4px;
+		font-size: 15px;
+	}
+
+	.crSheet {
+		grid-template-columns: minmax(170px, 0.8fr) minmax(0, 1fr);
+		padding: 10px 0 10px 12px;
+	}
+
+	.crSheet > .crScene {
+		min-height: 250px;
+	}
+
+	.crAbout {
+		min-height: 0;
+		font-size: 13px;
+	}
+
+	.crTitle {
+		font-size: 16px;
+		padding: 0 0 6px;
+	}
+
+	.creation .panelOption {
+		padding: 5px 4px;
+	}
+
+	.crRows li {
+		padding: 3px 2px;
+	}
+
+	.crKeys {
+		display: none;
+	}
+
+	.crFoot {
+		justify-content: space-between;
+	}
+
+	.crBack,
+	.crNext {
+		flex: 1;
+		min-width: 0;
+	}
+}
+
+@media (max-width: 480px) {
+	.crStage {
+		grid-template: "steps" auto "sheet" auto "list" auto / minmax(0, 1fr);
+	}
+
+	.crSheet {
+		grid-template-columns: minmax(0, 1fr);
+		padding: 0 12px 10px;
+	}
+
+	.crSheet > .crScene {
 		order: -1;
-		min-height: 440px;
+		min-height: 200px;
+	}
+
+	.crRows {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		column-gap: 14px;
 	}
 }
 
 @media (prefers-reduced-motion: reduce) {
 	.crScreen,
-	.crPaper,
-	.crGlow,
-	.crFigure,
-	.crFire,
-	.crGift,
-	.crTold {
+	.crStage > *,
+	.crAbout {
 		animation: none;
 	}
 }
