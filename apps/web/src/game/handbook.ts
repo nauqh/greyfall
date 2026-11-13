@@ -76,6 +76,7 @@ export class Handbook {
     const sheet = panel(s, "paper", 600, 366, 1010, 612).setInteractive({ cursor: ARROW });
     box.add([veil, sheet, ribbon(s, 600, 70, 340), label(s, 600, 66, "HANDBOOK", { fontSize: "20px" })]);
 
+    box.add(ribbon(s, 600, 120, 450, 0.5));
     TABS.forEach(([tab, name], i) => {
       const b = button(s, 600 + (i - 1) * 140, 120, 130, 54, name, "blue", () => {
         this.tab = tab;
@@ -186,37 +187,67 @@ export class Handbook {
 
   private shop(): void {
     const head = { fontSize: "13px", fontStyle: "800" };
-    const cols = [150, 210, 270, 370, 440, 510, 580];
-    ["Level", "Board", "XP to next", ...TIERS.map((t) => `Tier ${t}`)].forEach((h, i) => this.text(cols[i]!, 162, h, head));
+    const cols = [150, 220, 330, 410, 490, 570];
+    this.text(150, 150, "Shop odds", { ...BLUE, fontSize: "17px", fontStyle: "800" });
+    this.text(150, 172, "chance per shop slot", { ...SOFT, fontSize: "11px" });
+    ["Level", "XP to next", ...TIERS.map((t) => `Tier ${t}`)].forEach((h, i) => this.text(cols[i]!, 194, h, head));
     for (let level = AUTO.startLevel; level <= AUTO.maxLevel; level++) {
-      const y = 190 + (level - AUTO.startLevel) * 30;
+      const y = 220 + (level - AUTO.startLevel) * 30;
       const odds = AUTO.odds[level]!;
       const xp = level >= AUTO.maxLevel ? "-" : `${AUTO.xpToNext[level]}`;
-      [`${level}`, `${level}`, xp, ...odds.map((o) => (o > 0 ? `${o}%` : "-"))].forEach((v, i) =>
+      [`${level}`, xp, ...odds.map((o) => (o > 0 ? `${o}%` : "-"))].forEach((v, i) =>
         this.text(cols[i]!, y, v, { fontSize: "14px" }),
       );
     }
-    let y = 410;
-    this.text(150, y, "Odds are per shop slot.", SOFT);
+    let y = 458;
     for (const t of TIERS) {
-      y += 20;
       const who = BY_TIER.filter((c) => AUTO.tier[c] === t).map((c) => CLASS_NAME[c]);
-      this.text(150, y, `Tier ${t}, ${t} gold, ${poolOf(t)} copies each: ${who.join(", ")}`, { ...SOFT, wordWrap: { width: 480 } });
+      const line = this.text(150, y, `Tier ${t}, ${t} gold, ${poolOf(t)} copies each: ${who.join(", ")}`, { ...SOFT, wordWrap: { width: 480 } });
+      y += line.height + 6;
     }
 
-    const streaks = AUTO.streakGold.flatMap((g, n) => (g > (AUTO.streakGold[n - 1] ?? 0) ? [`${n} pays +${g}`] : []));
-    const rules = [
-      `Every round pays ${AUTO.income} gold, and a win ${AUTO.winGold} more.`,
-      `Interest: +1 for every 10 gold you hold, up to +${AUTO.interestMax}.`,
-      `Streaks, of wins or of losses: ${streaks.join(", ")}.`,
-      `Level up: ${AUTO.xpBuy.gold} gold for ${AUTO.xpBuy.xp} XP. Each round gives ${AUTO.xpPerRound} XP.`,
-      `Reroll: ${AUTO.reroll} gold for a new shop of ${AUTO.shopSlots}.`,
-      `Three copies merge into the next star: x${AUTO.starPower[2]} then x${AUTO.starPower[3]} health, damage and healing.`,
-      "Selling pays the cost back for every copy inside: 1, 3 or 9.",
-      `A loss costs ${AUTO.damage.base} plus 1 for every ${AUTO.damage.perRounds} rounds played, plus 1 for each star still standing on the winning side.`,
-      `The bench holds ${AUTO.benchSlots}. All ${AUTO.seats} clans share one pool.`,
+    const streaks = AUTO.streakGold.flatMap((g, n) => {
+      if (g <= (AUTO.streakGold[n - 1] ?? 0)) return [];
+      const end = n + (AUTO.streakGold[n + 1] === g ? 1 : 0);
+      const last = end === AUTO.streakGold.length - 1;
+      return [`${n}${end > n ? `-${end}` : ""}${last ? "+" : ""} pays +${g}`];
+    });
+    const rules: { head: string; lines: string[] }[] = [
+      {
+        head: "Gold",
+        lines: [
+          `Every round pays ${AUTO.income} gold, and a win ${AUTO.winGold} more.`,
+          `Interest: +1 for every 10 gold held, up to +${AUTO.interestMax}.`,
+          `Streaks, of wins or losses: ${streaks.join(", ")}.`,
+        ],
+      },
+      {
+        head: "Shop",
+        lines: [
+          `Reroll: ${AUTO.reroll} gold for a new shop of ${AUTO.shopSlots}.`,
+          `Level up: ${AUTO.xpBuy.gold} gold for ${AUTO.xpBuy.xp} XP; each round gives ${AUTO.xpPerRound}.`,
+        ],
+      },
+      {
+        head: "Board",
+        lines: [
+          `Three copies merge into the next star: x${AUTO.starPower[2]} then x${AUTO.starPower[3]} health, damage and healing.`,
+          "Selling pays the cost back for every copy inside: 1, 3 or 9.",
+          `A loss costs ${AUTO.damage.base} plus 1 for every ${AUTO.damage.perRounds} rounds played, plus 1 for each star still standing on the winning side.`,
+          `The bench holds ${AUTO.benchSlots}. All ${AUTO.seats} clans share one pool.`,
+        ],
+      },
+      { head: "Shortcuts", lines: ["D: reroll   F: level up"] },
     ];
-    y = 162;
-    for (const r of rules) y += this.text(680, y, r, { wordWrap: { width: 380 } }).height + 9;
+    y = 150;
+    for (const group of rules) {
+      this.text(680, y, group.head, { ...BLUE, fontSize: "16px", fontStyle: "800" });
+      y += 22;
+      for (const line of group.lines) {
+        const t = this.text(680, y, line, { wordWrap: { width: 380 } });
+        y += t.height + 7;
+      }
+      y += 8;
+    }
   }
 }

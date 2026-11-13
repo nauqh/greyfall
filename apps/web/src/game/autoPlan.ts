@@ -139,6 +139,10 @@ const traitInk = (key: TraitKey, tier: number): number =>
   tier < 0 ? 0xd8cbb0 : tier === AUTO.traits[key].at.length - 1 ? STAR_INK[3]! : STAR_INK[tier + 1]!;
 const still = (): boolean => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 const pct = (f: number): string => `${Math.round(f * 100)}%`;
+const formatClock = (ms: number): string => {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+};
 const AB = BALANCE.abilities;
 
 /** What each Skirmish skill does when its countdown runs out. */
@@ -182,6 +186,10 @@ function dimButton(btn: Phaser.GameObjects.Container, off: boolean): void {
     face.clearTint();
     text.setColor(String(FONT.color)).setStroke(String(FONT.stroke), FONT.strokeThickness ?? 3);
   }
+}
+
+function setButtonText(btn: Phaser.GameObjects.Container, text: string): void {
+  (btn.list[1] as Phaser.GameObjects.Text).setText(text);
 }
 
 /** Monsters look alike on both teams, so their ground disc wears the team's colour. */
@@ -319,7 +327,10 @@ export class AutoPlan {
   private seen = new Map<number, number>();
   private dyn!: Phaser.GameObjects.Container;
   private title!: Phaser.GameObjects.Text;
-  private stats!: Phaser.GameObjects.Text;
+  private hpText!: Phaser.GameObjects.Text;
+  private levelText!: Phaser.GameObjects.Text;
+  private xpText!: Phaser.GameObjects.Text;
+  private xpBar!: Phaser.GameObjects.Graphics;
   private gold!: Phaser.GameObjects.Text;
   private boardCount!: Phaser.GameObjects.Text;
   private sellVeil!: Phaser.GameObjects.Container;
@@ -330,6 +341,7 @@ export class AutoPlan {
   /** A shop card being dragged onto the board, and its ghost portrait. */
   private shopDrag: { slot: number; cls: Champion; x: number; y: number; moved: boolean } | null = null;
   private shopGhost: Phaser.GameObjects.Image | null = null;
+  private pressedCard: { card: Phaser.GameObjects.Container; shadow: Phaser.GameObjects.Image; cy: number } | null = null;
   private selected: number | null = null;
   private ground!: Phaser.GameObjects.Graphics;
   private benchLabel!: Phaser.GameObjects.Text;
@@ -392,12 +404,16 @@ export class AutoPlan {
     box.add(ribbon(s, 900, 52, 380));
     this.title = label(s, 900, 48, "", { fontSize: "20px" });
     const ink = { fontSize: "16px", color: "#4a3a28", strokeThickness: 0 };
-    this.stats = label(s, 652, 96, "", ink).setOrigin(0, 0.5);
+    const hpIcon = s.add.image(660, 96, iconKey(ICON.hp)).setScale(0.4);
+    this.hpText = label(s, 678, 96, "", { ...ink, fontSize: "18px" }).setOrigin(0, 0.5);
+    this.levelText = label(s, 762, 96, "", ink).setOrigin(0, 0.5);
+    this.xpBar = s.add.graphics();
+    this.xpText = label(s, 898, 96, "", { fontSize: "13px", color: "#7a6a52", strokeThickness: 0 }).setOrigin(0, 0.5);
     const coin = s.add.image(1032, 96, iconKey(ICON.gold)).setScale(0.4);
     this.gold = label(s, 1048, 96, "", { ...ink, color: "#7a4f14" }).setOrigin(0, 0.5);
     this.dyn = s.add.container(0, 0);
     this.outgoing = s.add.container(0, 0);
-    box.add([this.title, this.stats, coin, this.gold, this.dyn, this.outgoing]);
+    box.add([this.title, hpIcon, this.hpText, this.levelText, this.xpBar, this.xpText, coin, this.gold, this.dyn, this.outgoing]);
 
     this.buttons = {
       reroll: button(s, 714, 566, 176, 104, `Reroll  ${AUTO.reroll}g`, "blue", () => this.act({ type: "reroll" })),
@@ -406,7 +422,7 @@ export class AutoPlan {
     this.fightBtn = button(s, 1086, 566, 176, 104, this.host.hooks.clock ? "Ready" : "Fight", "red", () => this.host.fight());
     box.add([this.buttons.reroll, this.buttons.xp, this.fightBtn]);
     box.add(
-      label(s, 900, 644, "Drag units onto your half, drop one here to sell.  D reroll, F level up, H handbook.", {
+      label(s, 900, 644, "Drag units onto your half, drop one here to sell.  1-5 buy, D reroll, F level up, H handbook.", {
         fontSize: "13px",
         color: "#7a6a52",
         strokeThickness: 0,
@@ -451,6 +467,7 @@ export class AutoPlan {
   // --- input -----------------------------------------------------------------
 
   private bindInput(): void {
+    const s = this.scene;
     const input = this.scene.input;
     input.on("pointerdown", (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
       if (over.length > 0) return;
@@ -511,6 +528,14 @@ export class AutoPlan {
       }
     });
     input.on("pointerup", (p: Phaser.Input.Pointer) => {
+      const pressed = this.pressedCard;
+      this.pressedCard = null;
+      if (pressed && pressed.card.scene) {
+        const over = pressed.card.getBounds().contains(p.worldX, p.worldY);
+        pressed.card.setY(over ? pressed.cy - 4 : pressed.cy);
+        s.tweens.killTweensOf(pressed.shadow);
+        s.tweens.add({ targets: pressed.shadow, alpha: over ? 0.32 : 0, duration: 100 });
+      }
       const sd = this.shopDrag;
       if (sd) {
         this.shopDrag = null;
@@ -543,6 +568,10 @@ export class AutoPlan {
       if (this.scene.data.get("handbook")) return;
       if (e.key === "d" || e.key === "D") this.act({ type: "reroll" });
       if (e.key === "f" || e.key === "F") this.act({ type: "xp" });
+      if (e.key >= "1" && e.key <= "5" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const slot = Number(e.key) - 1;
+        if (this.seat().shop[slot]) void this.buy(slot);
+      }
     });
   }
 
@@ -565,22 +594,36 @@ export class AutoPlan {
 
   // --- drawing ---------------------------------------------------------------
 
+  private updateTitle(clock = this.host.hooks.clock?.()): void {
+    const run = this.run();
+    if (!clock) {
+      this.title.setText(`ROUND ${run.round}`);
+      return;
+    }
+    const ready = clock.ready[this.host.hooks.seat];
+    const time = clock.msRemaining === null ? "" : ` · ${formatClock(clock.msRemaining)}`;
+    this.title.setText(`ROUND ${run.round}${time}${ready ? " · READY" : ""}`);
+  }
+
   /**
-   * Versus, every frame: the server's clock in the title, and the lobby
-   * redrawn when someone readies. Ready is final for the round.
+   * Versus, every frame: the server's clock and the ready state in the title,
+   * and the lobby redrawn when someone readies. Ready is final for the round.
    */
   tick(): void {
     const clock = this.host.hooks.clock?.();
-    if (!clock) return;
-    const run = this.run();
-    const secs = clock.msRemaining === null ? "" : `   ${Math.ceil(clock.msRemaining / 1000)}s`;
-    this.title.setText(`ROUND ${run.round}${secs}`);
+    if (!clock || !this.title.scene) return;
+    this.updateTitle(clock);
     const seen = clock.ready.join();
     if (seen === this.readySeen) return;
     this.readySeen = seen;
     if (clock.ready[this.host.hooks.seat]) {
       dimButton(this.fightBtn, true);
       this.fightBtn.disableInteractive();
+      setButtonText(this.fightBtn, "Ready!");
+    } else {
+      dimButton(this.fightBtn, false);
+      this.fightBtn.setInteractive({ cursor: HAND });
+      setButtonText(this.fightBtn, "Ready");
     }
     this.refresh();
   }
@@ -588,15 +631,24 @@ export class AutoPlan {
   refresh(): void {
     const run = this.run();
     const seat = run.seats[this.host.hooks.seat]!;
-    this.title.setText(`ROUND ${run.round}`);
+    this.updateTitle();
     const next = xpToNext(seat.level);
-    const xp = seat.level >= AUTO.maxLevel ? "max" : `${seat.xp}/${next} xp`;
-    this.stats.setText(`${Math.max(0, seat.hp)} health     Level ${seat.level}  ${xp}`);
+    const maxed = seat.level >= AUTO.maxLevel;
+    this.hpText.setText(`${Math.max(0, seat.hp)}`).setColor(seat.hp <= AUTO.startHp * 0.3 ? "#8c3a30" : "#4a3a28");
+    this.levelText.setText(`Level ${seat.level}`);
+    this.xpText.setText(maxed ? "max" : `${seat.xp}/${next}`);
+    this.xpBar.clear();
+    if (!maxed) {
+      const frac = next > 0 ? Math.min(1, seat.xp / next) : 1;
+      this.xpBar.fillStyle(0x3d3123, 0.18).fillRoundedRect(828, 92, 64, 8, 4);
+      if (frac > 0) this.xpBar.fillStyle(0x2f5d8a, 1).fillRoundedRect(828, 92, Math.max(8, 64 * frac), 8, 4);
+    }
     const interest = Math.min(AUTO.interestMax, Math.floor(seat.gold / 10));
     this.gold.setText(`${seat.gold}${interest > 0 ? `  +${interest}` : ""}`);
     dimButton(this.buttons.reroll, seat.gold < AUTO.reroll);
     dimButton(this.buttons.xp, seat.gold < AUTO.xpBuy.gold || seat.level >= AUTO.maxLevel);
 
+    this.pressedCard = null;
     if (this.rolled) this.flipOut();
     this.cards = [];
     this.dyn.removeAll(true);
@@ -621,14 +673,19 @@ export class AutoPlan {
       const me = i === this.host.hooks.seat;
       const ink = me ? "#2f5d8a" : "#4a3a28";
       const ready = this.host.hooks.clock?.().ready[i] ? "  - ready" : "";
+      if (me) g.fillStyle(0x2f5d8a, 0.07).fillRoundedRect(644, y - 10, 420, 20, 6);
       const name = label(s, 652, y, `${seat.name}${me ? " (you)" : ""}${ready}`, {
         fontSize: "14px",
+        fontStyle: me ? "bold" : "normal",
         color: ink,
         strokeThickness: 0,
       }).setOrigin(0, 0.5);
       const frac = Math.max(0, seat.hp) / AUTO.startHp;
-      g.fillStyle(0x3d3123, 0.25).fillRect(850, y - 4, 180, 8);
-      if (!out) g.fillStyle(frac > 0.6 ? 0x6fcf4f : frac > 0.3 ? 0xe8c547 : 0xd9544a, 1).fillRect(850, y - 4, 180 * frac, 8);
+      g.fillStyle(0x3d3123, 0.22).fillRoundedRect(850, y - 5, 180, 10, 5);
+      if (!out && seat.hp > 0) {
+        g.fillStyle(frac > 0.6 ? 0x6fcf4f : frac > 0.3 ? 0xe8c547 : 0xd9544a, 1).fillRoundedRect(850, y - 5, Math.max(10, 180 * frac), 10, 5);
+      }
+      g.lineStyle(1, 0x3d3123, 0.28).strokeRoundedRect(850, y - 5, 180, 10, 5);
       const hp = label(s, 1042, y, out ? `${ordinal(seat.place!)}` : `${seat.hp}`, {
         fontSize: "14px",
         color: out ? "#8c3a30" : ink,
@@ -745,7 +802,6 @@ export class AutoPlan {
       const cy = 418;
       const g = s.add.graphics();
       const card = s.add.container(cx, cy, [g]);
-      this.dyn.add(card);
       this.cards.push(card);
       // The reroll's second half: the new hand turns face-up, left to right.
       if (rolled && !still()) {
@@ -754,22 +810,39 @@ export class AutoPlan {
       }
       if (!cls) {
         g.fillStyle(0x3d3123, 0.12).fillRoundedRect(-48, -72, 96, 144, 10);
+        g.lineStyle(2, 0x3d3123, 0.35).strokeRoundedRect(-48, -72, 96, 144, 10);
+        card.add(label(s, 0, 0, "Sold out", { fontSize: "14px", color: "#9a8a70", strokeThickness: 0 }));
+        card.setSize(96, 144);
+        this.dyn.add(card);
         continue;
       }
       const afford = seat.gold >= AUTO.tier[cls];
       g.fillStyle(0xf2e7cf, 1).fillRoundedRect(-48, -72, 96, 144, 10);
       g.lineStyle(4, TIER_INK[AUTO.tier[cls]]!, 1).strokeRoundedRect(-48, -72, 96, 144, 10);
+      if (!afford) g.fillStyle(0x3d3123, 0.18).fillRoundedRect(-48, -72, 96, 144, 10);
+      const key = traitOf(cls);
+      const on = active.has(key);
+      const trait = label(s, 0, 24, AUTO.traits[key].name, {
+        fontSize: "12px",
+        color: on ? "#2f5d8a" : afford ? "#9a8a70" : "#8a7a60",
+        strokeThickness: 0,
+      });
+      if (on) {
+        const w = trait.width + 10;
+        g.fillStyle(0x2f5d8a, 0.14).fillRoundedRect(-w / 2, 16, w, 16, 8);
+        g.lineStyle(1, 0x2f5d8a, 0.5).strokeRoundedRect(-w / 2, 16, w, 16, 8);
+      }
+      g.fillStyle(afford ? 0x7a4f14 : 0xb0443a, afford ? 0.12 : 0.16).fillRoundedRect(-23, 46, 46, 22, 11);
+      g.lineStyle(1, afford ? 0x7a4f14 : 0xb0443a, afford ? 0.35 : 0.5).strokeRoundedRect(-23, 46, 46, 22, 11);
       const [x0, y0, x1, y1] = PORTRAIT_INK[cls];
       const face = s.add
         .image(0, -34, `avatar_${cls}`)
         .setOrigin((x0 + x1) / 2 / 256, (y0 + y1) / 2 / 256)
         .setScale(52 / Math.max(x1 - x0, y1 - y0));
       if (!afford) face.setTint(0x8a8a8a);
-      const name = label(s, 0, 8, CLASS_NAME[cls], { fontSize: "15px", color: "#4a3a28", strokeThickness: 0 });
-      const key = traitOf(cls);
-      const trait = label(s, 0, 24, AUTO.traits[key].name, {
-        fontSize: "12px",
-        color: active.has(key) ? "#2f5d8a" : "#9a8a70",
+      const name = label(s, 0, 8, CLASS_NAME[cls], {
+        fontSize: "15px",
+        color: afford ? "#4a3a28" : "#7a6a52",
         strokeThickness: 0,
       });
       const cost = label(s, 6, 57, `${AUTO.tier[cls]}`, {
@@ -778,36 +851,70 @@ export class AutoPlan {
         strokeThickness: 0,
       }).setOrigin(0, 0.5);
       const coin = s.add.image(-8, 57, iconKey(ICON.gold)).setScale(0.36);
-      const skill = label(s, 5, 40, skillName(cls), { fontSize: "12px", color: "#7a4f14", strokeThickness: 0 });
+      if (!afford) coin.setTint(0x9a9a9a);
+      const skill = label(s, 5, 40, skillName(cls), {
+        fontSize: "12px",
+        color: afford ? "#7a4f14" : "#8a7a60",
+        strokeThickness: 0,
+      });
       const gem = s.add
-        .rectangle(5 - skill.width / 2 - 8, 40, 6, 6, 0xe0b64f)
-        .setStrokeStyle(1.2, 0x7a4f14)
+        .rectangle(5 - skill.width / 2 - 8, 40, 6, 6, afford ? 0xe0b64f : 0x9a8a70)
+        .setStrokeStyle(1.2, afford ? 0x7a4f14 : 0x9a8a70)
         .setAngle(45);
-      card.add([face, name, trait, skill, gem, cost, coin]);
+      const shadow = addShadow(s, cx, cy + 70, 0.55).setAlpha(0);
+      this.dyn.add(shadow);
+      this.dyn.add(card);
+      const parts: Phaser.GameObjects.GameObject[] = [face, name, trait, skill, gem, cost, coin];
       // Copies already owned: at two, this buy makes a 2-star.
       const have = ones(cls);
       if (have > 0) {
+        const hot = have >= 2;
         const tag = label(s, 38, -60, `${have}/3`, {
           fontSize: "13px",
-          color: have >= 2 ? "#b8860b" : "#7a6a52",
+          color: hot ? "#2e2417" : "#7a6a52",
           strokeThickness: 0,
         }).setOrigin(1, 0.5);
-        card.add(tag);
+        const badge = s.add.graphics();
+        const w = tag.width + 8;
+        const bx = 38 - tag.width / 2;
+        badge.fillStyle(hot ? 0xf4cf6b : 0x3d3123, hot ? 1 : 0.12).fillRoundedRect(bx - w / 2, -68, w, 16, 8);
+        badge.lineStyle(1, hot ? 0x7a4f14 : 0x3d3123, hot ? 1 : 0.35).strokeRoundedRect(bx - w / 2, -68, w, 16, 8);
+        parts.push(badge, tag);
       }
+      if (!afford) {
+        const warn = s.add.graphics();
+        warn.fillStyle(0xd0443a, 1).fillCircle(-36, -60, 8);
+        warn.lineStyle(1.5, 0x2e2417, 1).strokeCircle(-36, -60, 8);
+        parts.push(warn, label(s, -36, -60, "!", { fontSize: "12px", color: "#fdfaf0", strokeThickness: 0 }));
+      }
+      card.add(parts);
+      const fade = (a: number): void => {
+        s.tweens.killTweensOf(shadow);
+        s.tweens.add({ targets: shadow, alpha: a, duration: 120 });
+      };
       card
         .setSize(96, 144)
         .setInteractive({ cursor: HAND })
         .on("pointerdown", (p: Phaser.Input.Pointer) => {
           this.shopDrag = { slot, cls, x: p.worldX, y: p.worldY, moved: false };
+          this.pressedCard = { card, shadow, cy };
+          card.setY(cy + 2);
         })
         .on("pointerover", (p: Phaser.Input.Pointer) => {
+          if (this.shopDrag) return;
           const e = p.event as MouseEvent | undefined;
           this.host.onTip?.(unitTip(cls), e?.clientX ?? 0, e?.clientY ?? 0);
           card.setY(cy - 4);
+          fade(0.32);
         })
         .on("pointerout", () => {
           this.host.onTip?.(null, 0, 0);
+          if (this.shopDrag?.slot === slot) {
+            fade(0);
+            return;
+          }
           card.setY(cy);
+          fade(0);
         });
     }
   }

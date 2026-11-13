@@ -996,57 +996,64 @@ textarea {
 	text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
 }
 
-/* Hover tooltip for the draft cards' stat icons. Fixed to the native pointer
-   position the scene reports; the box hugs the text and never takes input,
-   so hovering it cannot hide itself. */
+/* Hover tooltip for the shop cards and traits: ink on the kit's paper. Fixed
+   to the pointer position the scene reports, clamped to the viewport, and
+   never taking input so hovering it cannot hide itself. */
 .statTip {
 	position: fixed;
-	transform: translate(-50%, calc(-100% - 12px));
+	left: 0;
+	top: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 2px;
 	width: max-content;
-	max-width: 220px;
-	padding: 8px 12px;
-	border-radius: 8px;
-	background: rgba(21, 28, 40, 0.95);
-	color: #d9dde6;
-	font-size: 13px;
+	max-width: min(300px, calc(100vw - 24px));
+	max-height: calc(100vh - 24px);
+	overflow: hidden;
+	padding: 0 10px 4px;
+	border: 18px solid transparent;
+	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 18px stretch;
+	color: #4a3a28;
+	font-family: var(--book), serif;
+	font-size: 14px;
+	font-style: italic;
 	font-weight: 400;
-	line-height: 1.4;
+	line-height: 1.5;
 	letter-spacing: 0.01em;
+	overflow-wrap: break-word;
 	pointer-events: none;
 	z-index: 10;
-	box-shadow:
-		0 6px 18px rgba(0, 0, 0, 0.4),
-		inset 0 1px 0 rgba(253, 250, 240, 0.14);
+	filter: drop-shadow(0 6px 14px rgb(8 10 16 / 0.45));
+	translate: clamp(8px, calc(var(--tip-x) - 50%), calc(100vw - 8px - 100%))
+		clamp(8px, calc(var(--tip-y) - 100% - 6px), calc(100vh - 8px - 100%));
 	animation: statTipIn 140ms ease-out;
 }
 
 .statTipTitle {
-	margin-bottom: 2px;
-	color: #f4cf6b;
+	margin: 0;
+	color: #4a3322;
+	font-family: var(--display), serif;
+	font-size: 15px;
+	font-style: normal;
 	font-weight: 700;
+	line-height: 1.2;
+	letter-spacing: 0.02em;
 }
 
-/* The caret glues the pill to the icon it describes. */
-.statTip::after {
-	content: "";
-	position: absolute;
-	left: 50%;
-	bottom: -4px;
-	width: 9px;
-	height: 9px;
-	background: rgba(21, 28, 40, 0.95);
-	transform: translateX(-50%) rotate(45deg);
-	border-radius: 2px;
+.statTipLine {
+	margin: 0;
 }
 
 @keyframes statTipIn {
 	from {
 		opacity: 0;
-		transform: translate(-50%, calc(-100% - 8px));
 	}
-	to {
-		opacity: 1;
-		transform: translate(-50%, calc(-100% - 12px));
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.statTip {
+		animation: none;
 	}
 }
 
