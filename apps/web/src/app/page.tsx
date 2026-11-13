@@ -65,7 +65,7 @@ export default function Page() {
             <div className="titleMenu" data-mode={MENU[pick]!.mode}>
               <h1 className={`logo${moved ? " swap" : ""}`} key={MENU[pick]!.mode}>
                 Greyfall
-                <span className="logoSub">The last fire before the blight</span>
+                <span className="logoSub">Reign of Ash</span>
               </h1>
               <div className="menuScroll">
                 <nav className="menu" aria-label="Main menu">
