@@ -75,7 +75,7 @@ export const roomRouter = router({
   create: guestProcedure
     .input(z.object({ name: nameSchema }))
     .mutation(async ({ ctx, input }): Promise<RoomView> => {
-      const data: RoomData = { seed: store.newSeed(), version: 0, players: [newPlayer(ctx.token, input.name)], run: null, last: null };
+      const data: RoomData = { seed: store.newSeed(), players: [newPlayer(ctx.token, input.name)], run: null, last: null };
       // A collision would be a primary key error; six characters over a
       // 32-letter alphabet makes one round of retries plenty.
       for (let tries = 0; tries < 5; tries++) {
@@ -184,8 +184,6 @@ export const roomRouter = router({
         return settleNow(r);
       });
       if (!row) return notFound();
-      void store.evictStale();
-      void store.touch(row);
       return viewFor(row, seat);
     }),
 

@@ -1,20 +1,26 @@
-// Everything that touches the rooms table.
+// Everything that touches the rooms, held in the server process.
 //
-// A single Node process made the old in-memory plan race-free by accident:
-// no await sat between a read and its write, so nothing could interleave.
-// A database means awaits, and therefore real races. Every write is a
-// read-modify-write of the whole room, made a single UPDATE conditional on
-// the version it read, and redone from a fresh read when it loses.
+// A match lasts minutes and dies with the process anyway, so the rooms are a
+// Map, not a database: a read and the write that follows it cannot interleave,
+// because neither awaits. One process only. Two instances would each hold half
+// the rooms, which is why Versus wants a single long-lived node.
 
-import { TRPCError } from "@trpc/server";
-import { and, eq, lt, sql } from "drizzle-orm";
-
-import { db } from "../db.ts";
-import { rooms, type RoomData, type RoomRow, type RoomState } from "../schema.ts";
+import type { RoomData, RoomRow, RoomState } from "../schema.ts";
 
 import { CODE_ALPHABET, CODE_LEN } from "../../shared/protocol.ts";
 
-const EVICT_AFTER = "2 hours";
+/** No poll for this long means nobody is in the room. */
+const EVICT_AFTER_MS = 2 * 60 * 60 * 1000;
+const EVICT_EVERY_MS = 60_000;
+
+interface Rooms {
+  map: Map<string, RoomRow>;
+  lastEvict: number;
+}
+
+// On globalThis so a dev hot reload keeps the rooms that are live.
+const global = globalThis as typeof globalThis & { __greyfallRooms?: Rooms };
+const rooms = (global.__greyfallRooms ??= { map: new Map(), lastEvict: 0 });
 
 export function newCode(): string {
   let out = "";
@@ -41,18 +47,21 @@ export function seatOf(data: RoomData, token: string): number | null {
   return i === -1 ? null : i;
 }
 
-export async function get(code: string): Promise<RoomRow | null> {
-  const [row] = await db.select().from(rooms).where(eq(rooms.code, code)).limit(1);
-  return row ?? null;
+export function get(code: string): RoomRow | null {
+  const row = rooms.map.get(code) ?? null;
+  if (row) row.lastActivity = new Date();
+  evictStale();
+  return row;
 }
 
-export async function insert(row: {
+export function insert(row: {
   code: string;
   state: RoomState;
   deadline: Date | null;
   data: RoomData;
-}): Promise<void> {
-  await db.insert(rooms).values(row);
+}): void {
+  if (rooms.map.has(row.code)) throw new Error("room code taken");
+  rooms.map.set(row.code, { ...row, lastActivity: new Date() });
 }
 
 export interface Next {
@@ -62,58 +71,42 @@ export interface Next {
   data: RoomData;
 }
 
-const TRIES = 5;
-
 /**
- * Read the room, let `change` decide what it becomes, and write that only if
- * nobody else wrote in between; otherwise start over from a fresh read.
- *
- * This is the whole concurrency story: two players buying in the same second
- * both land, one on top of the other. `change` returns null to leave the room
- * as it is, and may throw to refuse. Null when there is no such room.
+ * Read the room, let `change` decide what it becomes, and write it back.
+ * Nothing awaits between the read and the write, so two players acting in the
+ * same tick land one after the other, never on top of each other. `change`
+ * returns null to leave the room as it is, and may throw to refuse. Null when
+ * there is no such room.
  */
-export async function mutate(code: string, change: (row: RoomRow) => Next | null): Promise<RoomRow | null> {
-  for (let tries = 0; tries < TRIES; tries++) {
-    const row = await get(code);
-    if (!row) return null;
-    const next = change(row);
-    if (!next) return row;
-
-    const lastActivity = new Date();
-    const data = { ...next.data, version: row.data.version + 1 };
-    const deadline = next.deadline === undefined ? row.deadline : next.deadline;
-    const result = await db
-      .update(rooms)
-      .set({ state: next.state, deadline, data, lastActivity })
-      .where(and(eq(rooms.code, code), sql`(${rooms.data}->>'version')::int = ${row.data.version}`));
-    if ((result.rowCount ?? 0) > 0) return { ...row, state: next.state, deadline, data, lastActivity };
-  }
-  throw new TRPCError({ code: "CONFLICT", message: "the room is busy, try again" });
+export function mutate(code: string, change: (row: RoomRow) => Next | null): RoomRow | null {
+  const row = rooms.map.get(code);
+  if (!row) return null;
+  const next = change(row);
+  if (!next) return row;
+  const updated: RoomRow = {
+    ...row,
+    state: next.state,
+    deadline: next.deadline === undefined ? row.deadline : next.deadline,
+    lastActivity: new Date(),
+    data: next.data,
+  };
+  rooms.map.set(code, updated);
+  return updated;
 }
 
-/** Eviction is measured in hours, so a minute-stale lastActivity costs nothing. */
-const TOUCH_EVERY_MS = 60_000;
-const EVICT_EVERY_MS = 60_000;
-let lastEvict = 0;
-
-/** Every poll lands here; only one a minute per room actually writes. */
-export async function touch(row: RoomRow): Promise<void> {
-  if (Date.now() - row.lastActivity.getTime() < TOUCH_EVERY_MS) return;
-  await db.update(rooms).set({ lastActivity: new Date() }).where(eq(rooms.code, row.code));
-}
-
-export async function remove(code: string): Promise<void> {
-  await db.delete(rooms).where(eq(rooms.code, code));
+export function remove(code: string): void {
+  rooms.map.delete(code);
 }
 
 /**
  * Lazy eviction, run off the same poll that does everything else. No cron and
  * no sweeper process: a room nobody is polling is a room nobody is in.
  */
-export async function evictStale(): Promise<void> {
-  if (Date.now() - lastEvict < EVICT_EVERY_MS) return;
-  lastEvict = Date.now();
-  await db
-    .delete(rooms)
-    .where(lt(rooms.lastActivity, sql`now() - interval '${sql.raw(EVICT_AFTER)}'`));
+export function evictStale(): void {
+  const now = Date.now();
+  if (now - rooms.lastEvict < EVICT_EVERY_MS) return;
+  rooms.lastEvict = now;
+  for (const [code, row] of rooms.map) {
+    if (now - row.lastActivity.getTime() > EVICT_AFTER_MS) rooms.map.delete(code);
+  }
 }

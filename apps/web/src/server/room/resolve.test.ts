@@ -14,7 +14,6 @@ const later = new Date(now + 10_000);
 function room(ready: boolean[]): RoomData {
   return {
     seed: "s",
-    version: 3,
     players: ready.map((r, i) => ({ token: `t${i}`, name: `p${i}`, ready: r })),
     run: newRun("s", ready.length, ready.length),
     last: null,

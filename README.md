@@ -101,8 +101,9 @@ cp apps/web/.env.example apps/web/.env   # TINY_SWORDS_S3 is already set
 pnpm dev                                 # fetches the pack, then starts Next
 ```
 
-Versus also needs `DATABASE_URL` (a Neon pooled connection string) in
-`apps/web/.env` and `pnpm --filter @greyfall/web db:push` once.
+Versus keeps each room in the server process for the length of the match, so
+it needs a single long-lived instance. Vercel's serverless functions are not
+that: each instance would hold its own rooms.
 
 Other scripts:
 
@@ -143,7 +144,6 @@ Environment Variables), not in a file:
 | `AWS_ACCESS_KEY_ID` | the deploy user's key |
 | `AWS_SECRET_ACCESS_KEY` | its secret |
 | `AWS_REGION` | `ap-southeast-1` |
-| `DATABASE_URL` | for Versus |
 
 - On Vercel, set the Root Directory to `apps/web`. A missing `TINY_SWORDS_S3`
   fails the build there rather than shipping a game with no art;
@@ -177,7 +177,7 @@ aws s3 cp tiny-swords.zip s3://greyfall-assets/tiny-swords/tiny-swords.zip
 | --- | --- |
 | Engine | TypeScript with no dependencies, tested with Vitest and fast-check |
 | Client | Next.js 15, React 19, Phaser 3.90 |
-| API and data | tRPC, Zod, Drizzle ORM, Neon Postgres |
+| API and data | tRPC, Zod, in-process room state |
 | Tooling | pnpm workspaces, GitHub Actions |
 
 ```
@@ -185,8 +185,8 @@ packages/engine   the simulation: the Atlas world and game, the island, pathing
                   and vision, the tick-stepped war, the Skirmish battle,
                   balance tables, seeded rng, and the two CLIs
 apps/web          the Next.js app: Phaser scenes for the title, the Atlas, the
-                  island and the Skirmish board; React menus; tRPC and Drizzle
-                  for Versus
+                  island and the Skirmish board; React menus; tRPC and the
+                  room Map for Versus
 ```
 
 The engine steps at 10 ticks a second for the war and 20 for the Atlas, and
