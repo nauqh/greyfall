@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${cinzel.variable} ${fell.variable} ${fellSc.variable}`}>
+    <html lang="en" className={[cinzel, fell, fellSc].map((f) => f.variable).join(" ")}>
       <body>{children}</body>
     </html>
   );

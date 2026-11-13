@@ -1,8 +1,8 @@
 "use client";
 
 // The title screen: the live island behind a game menu. Mouse or keys pick
-// an entry, that mode's sword marks it, the banner takes its colours, the
-// island behind turns to that mode's own, and every way out closes the clouds.
+// an entry, the sword marks it, the island behind turns to that mode's own,
+// and every way out closes the clouds.
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -12,10 +12,10 @@ import { useCloudExit } from "../game/Clouds";
 import { GameCanvas } from "../game/GameCanvas";
 
 const MENU = [
-  { href: "/map", mode: "play", label: "Play", hint: "The War. Raise a town, train an army, take the last island." },
-  { href: "/atlas", mode: "atlas", label: "Atlas", hint: "Carry the last fire through the Shattered Reach." },
-  { href: "/battle", mode: "skirmish", label: "Skirmish", hint: "Auto chess against three clans. Buy, merge, and outlast them." },
-  { href: "/duel", mode: "duel", label: "Duel", hint: "Open a room and send the code to a friend." },
+  { href: "/map", label: "Play", hint: "The War. Raise a town, train an army, take the last island." },
+  { href: "/atlas", label: "Atlas", hint: "Carry the last fire through the Shattered Reach." },
+  { href: "/battle", label: "Skirmish", hint: "Auto chess against three clans. Buy, merge, and outlast them." },
+  { href: "/duel", label: "Duel", hint: "Open a room and send the code to a friend." },
 ] as const;
 
 export default function Page() {
@@ -23,8 +23,6 @@ export default function Page() {
   const exit = useCloudExit();
   const [ready, setReady] = useState(false);
   const [pick, setPick] = useState(0);
-  // Past the first pick the ribbon swaps quickly instead of replaying its rise.
-  const [moved, setMoved] = useState(false);
   const items = useRef<(HTMLAnchorElement | null)[]>([]);
   const show = useRef<(i: number) => void>(() => {});
 
@@ -62,8 +60,8 @@ export default function Page() {
       >
         {ready && (
           <>
-            <div className="titleMenu" data-mode={MENU[pick]!.mode}>
-              <h1 className={`logo${moved ? " swap" : ""}`} key={MENU[pick]!.mode}>
+            <div className="titleMenu">
+              <h1 className="logo">
                 Greyfall
                 <span className="logoSub">Reign of Ash</span>
               </h1>
@@ -80,10 +78,7 @@ export default function Page() {
                       style={{ "--i": i } as React.CSSProperties}
                       aria-describedby="menuHint"
                       onMouseEnter={(e) => e.currentTarget.focus({ preventScroll: true })}
-                      onFocus={() => {
-                        if (i !== pick) setMoved(true);
-                        setPick(i);
-                      }}
+                      onFocus={() => setPick(i)}
                       onClick={(e) => {
                         if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
                         e.preventDefault();
@@ -97,7 +92,7 @@ export default function Page() {
                 <p id="menuHint" className="menuHint" key={pick}>
                   {MENU[pick]!.hint}
                 </p>
-                <p className="credit">Developed by Nauqh</p>
+                <p className="credit">© 2026 Designed and built by Nauqh</p>
               </div>
             </div>
           </>

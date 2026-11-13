@@ -116,15 +116,8 @@ for (const [name, spec] of Object.entries(art.PANELS)) {
 }
 made.push(write("ribbon", ribbon()));
 made.push(write("sword", strip("UI Elements/UI Elements/Swords/Swords.png", 0)));
-// The title banner's dark pieces: the slate-hilted sword and the black ribbon, each sheet's last row.
-made.push(write("swordSlate", strip("UI Elements/UI Elements/Swords/Swords.png", 4)));
-made.push(write("ribbonBlack", strip("UI Elements/UI Elements/Ribbons/BigRibbons.png", 4)));
-// The title banner per menu mode, by sheet row (0 blue, 1 red, 2 gold, 3 purple, 4 slate):
-// the war in slate, the Reach's last fire in gold, then the blue and red sides.
-for (const [mode, row] of Object.entries({ play: 4, atlas: 2, skirmish: 0, duel: 1 })) {
-  made.push(write(`sword-${mode}`, strip("UI Elements/UI Elements/Swords/Swords.png", row)));
-  made.push(write(`ribbon-${mode}`, strip("UI Elements/UI Elements/Ribbons/BigRibbons.png", row)));
-}
+// The title banner's ribbon, the big sheet's blue row; its sword is "sword" above.
+made.push(write("ribbonBlue", strip("UI Elements/UI Elements/Ribbons/BigRibbons.png", 0)));
 // Banner_Slots is already contiguous (192px, 64px corners), just copied here
 // so the CSS has one directory.
 made.push(write("bannerSlots", read("UI Elements/UI Elements/Banners/Banner_Slots.png")));
