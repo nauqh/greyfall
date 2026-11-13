@@ -1,4 +1,4 @@
-// The title backdrop while Duel is picked: two rival shores across a strait,
+// The title backdrop while Versus is picked: two rival shores across a strait,
 // blue's tall stepped crag under its tower, red's low jagged reef of pirate
 // towers, and one land bridge between them where two warriors cross blades.
 
@@ -90,9 +90,9 @@ const SEA_ROCKS: readonly [number, number][] = [
 ];
 const FIRES: readonly [number, number][] = [[8.2, 12.75], [22, 12.75]];
 
-export class IntroDuelScene extends Phaser.Scene {
+export class IntroVersusScene extends Phaser.Scene {
   constructor() {
-    super("intro-duel");
+    super("intro-versus");
   }
 
   preload(): void {
@@ -120,17 +120,17 @@ export class IntroDuelScene extends Phaser.Scene {
     buildWater(this);
     buildTerraces(this, MAP);
     for (const t of TOWERS) addBuilding(this, t);
-    TREES.forEach(([c, r], i) => addDecor(this, "tree", c * CELL, r * CELL, 1, `duel-tree-${i}`));
-    BUSHES.forEach(([c, r], i) => addDecor(this, "bush", c * CELL, r * CELL, 1, `duel-bush-${i}`));
-    SEA_ROCKS.forEach(([c, r], i) => addDecor(this, "waterRock", c * CELL, r * CELL, 1, `duel-rock-${i}`).setDepth(DEPTH.foam));
+    TREES.forEach(([c, r], i) => addDecor(this, "tree", c * CELL, r * CELL, 1, `versus-tree-${i}`));
+    BUSHES.forEach(([c, r], i) => addDecor(this, "bush", c * CELL, r * CELL, 1, `versus-bush-${i}`));
+    SEA_ROCKS.forEach(([c, r], i) => addDecor(this, "waterRock", c * CELL, r * CELL, 1, `versus-rock-${i}`).setDepth(DEPTH.foam));
     FIRES.forEach(([c, r]) => this.bonfire(c * CELL, r * CELL));
     for (const side of ["a", "b"] as const) for (const e of CAST[side]) this.addExtra(side, e);
-    this.duel();
-    driftClouds(this, { w: COLS * CELL, h: MAP.length * CELL }, "intro-duel");
+    this.clash();
+    driftClouds(this, { w: COLS * CELL, h: MAP.length * CELL }, "intro-versus");
   }
 
   /** The two on the bridge: one swings, the other guards, then they trade. */
-  private duel(): void {
+  private clash(): void {
     const y = 12.45 * CELL;
     const sides = ["a", "b"] as const;
     const pair = sides.map((side, i) => {
@@ -141,7 +141,7 @@ export class IntroDuelScene extends Phaser.Scene {
       return s;
     });
     const spark = this.add
-      .image((COLS / 2) * CELL, y - 46, "duelGlow")
+      .image((COLS / 2) * CELL, y - 46, "versusGlow")
       .setBlendMode(Phaser.BlendModes.ADD)
       .setTint(0xfff2c0)
       .setScale(0.25)
@@ -170,7 +170,7 @@ export class IntroDuelScene extends Phaser.Scene {
 
   /** A campfire in a ring of stones with its glow, after the atlas's bonfires. */
   private bonfire(x: number, y: number): void {
-    const glow = this.add.image(x, y - 24, "duelGlow").setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.5).setScale(1.3).setDepth(DEPTH.clouds - 2);
+    const glow = this.add.image(x, y - 24, "versusGlow").setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.5).setScale(1.3).setDepth(DEPTH.clouds - 2);
     this.tweens.add({ targets: glow, scale: 1.5, alpha: 0.7, duration: 900 + Math.random() * 400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
     for (let i = 0; i < 5; i++) {
       const a = (i / 5) * Math.PI * 2;
@@ -181,8 +181,8 @@ export class IntroDuelScene extends Phaser.Scene {
   }
 
   private glowTexture(): void {
-    if (this.textures.exists("duelGlow")) return;
-    const t = this.textures.createCanvas("duelGlow", 256, 256)!;
+    if (this.textures.exists("versusGlow")) return;
+    const t = this.textures.createCanvas("versusGlow", 256, 256)!;
     const g = t.context.createRadialGradient(128, 128, 0, 128, 128, 128);
     g.addColorStop(0, "rgba(255, 200, 110, 0.9)");
     g.addColorStop(0.35, "rgba(255, 170, 80, 0.4)");

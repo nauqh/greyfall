@@ -15,7 +15,7 @@ const MENU = [
   { href: "/map", label: "Play", hint: "The War. Raise a town, train an army, take the last island." },
   { href: "/atlas", label: "Atlas", hint: "Carry the last fire through the Shattered Reach." },
   { href: "/battle", label: "Skirmish", hint: "Auto chess against three clans. Buy, merge, and outlast them." },
-  { href: "/duel", label: "Duel", hint: "Open a room and send the code to a friend." },
+  { href: "/versus", label: "Versus", hint: "All twelve champions, one room code. Out-draft a friend." },
 ] as const;
 
 export default function Page() {

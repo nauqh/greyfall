@@ -134,27 +134,16 @@ export function Room({
         <GameCanvas
           // Keyed on the round, so a rematch builds a fresh game and a poll
           // during a battle never disturbs the one that is playing.
-          key={`duel-${view.round}`}
+          key={`versus-${view.round}`}
           start={(el) =>
             import("../game/BattleScene").then(({ startBattle }) =>
               startBattle(el, {
                 result: null,
                 seed: code,
                 mySide: view.seat === 0 ? "a" : "b",
-                // Never called in a duel: the server owns the resolution, and
-                // Lock in stands where Start does in a solo battle.
-                onDraft: () => {
-                  throw new Error("a duel is resolved by the server");
-                },
-                onRematch: () => {
-                  throw new Error("a duel rematch belongs to the room");
-                },
-                onNewArmy: () => {
-                  throw new Error("a duel rematch belongs to the room");
-                },
                 onMenu: onLeave,
                 onTip,
-                duel: {
+                versus: {
                   onArmyChange: pushArmy,
                   onLock: () => lock.mutate({ code }),
                   onPlayed: () => setPlayed(true),

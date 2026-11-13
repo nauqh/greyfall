@@ -4,7 +4,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { BALANCE, UNIT_CLASSES, validateArmy } from "@greyfall/engine";
+import { BALANCE, CHAMPIONS, VERSUS, validateArmy } from "@greyfall/engine";
 
 import { CODE_PATTERN } from "../../shared/protocol.ts";
 
@@ -21,17 +21,17 @@ const codeSchema = z.string().trim().toUpperCase().regex(CODE_PATTERN, "not a ro
 const armySchema = z
   .array(
     z.object({
-      class: z.enum(UNIT_CLASSES as unknown as [string, ...string[]]),
+      class: z.enum(CHAMPIONS as unknown as [string, ...string[]]),
       col: z
         .number()
         .int()
         .min(0)
-        .max(BALANCE.board.cols - 1),
+        .max(VERSUS.board.cols - 1),
       row: z
         .number()
         .int()
         .min(0)
-        .max(BALANCE.board.rows - 1),
+        .max(VERSUS.board.rows - 1),
     }),
   )
   .max(BALANCE.board.maxUnits);
@@ -143,7 +143,7 @@ export const roomRouter = router({
     .query(async ({ ctx, input }): Promise<RoomView> => {
       const { row, seat } = await seated(input.code, ctx.token);
       void store.evictStale();
-      void store.touch(input.code);
+      void store.touch(row);
       return viewFor(await settle(row), seat);
     }),
 
@@ -165,7 +165,7 @@ export const roomRouter = router({
       // sitting on a room is a wedged room waiting for the deadline.
       const army = input.army as typeof mine.army;
       if (army.length > 0) {
-        const errors = validateArmy(army);
+        const errors = validateArmy(army, VERSUS.budget, VERSUS.board, VERSUS.maxCopies);
         if (errors.length > 0) {
           throw new TRPCError({ code: "BAD_REQUEST", message: errors[0]! });
         }

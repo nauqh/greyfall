@@ -551,13 +551,15 @@ textarea {
 	}
 }
 
-/* --- duel lobby ---------------------------------------------------------
+/* --- versus lobby -------------------------------------------------------
    The one part of the game that is DOM rather than canvas: it is a form, and
-   the pack's UI kit has no text input in it. It wears the pack all the same -
-   scripts/compose-ui.mjs packs the kit's gapped nine-slices into contiguous
-   frames on disk, which is the shape border-image can actually read. */
+   the pack's UI kit has no text input in it. It wears the title menu's kit
+   all the same - the beige paper, the blue ribbon, the wood-stained buttons
+   and the sword - which scripts/compose-ui.mjs packs into frames that
+   border-image can read. */
 
 .lobby {
+	--stroke: #2e1a0e;
 	min-height: 100vh;
 	display: flex;
 	flex-direction: column;
@@ -568,28 +570,51 @@ textarea {
 	text-align: center;
 }
 
-/* The slate ribbon: forked ends fixed, middle stretched. */
+/* The big blue ribbon, 320x128: 128px ends fixed, the middle stretched. */
 .banner {
+	position: relative;
 	margin: 0;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	min-width: 300px;
-	min-height: 56px;
-	padding: 0 24px 4px;
-	font-size: clamp(24px, 4.5vw, 34px);
-	letter-spacing: 0.06em;
-	border: 44px solid transparent;
-	border-top-width: 0;
-	border-bottom-width: 0;
-	border-image: url("/tiny-swords/ui/ribbon.png") 0 64 fill / 0 44px stretch;
-	text-shadow: 0 2px 0 #1c2634;
+	min-width: 280px;
+	height: 96px;
+	padding-bottom: 6px;
+	border: solid transparent;
+	border-width: 0 96px;
+	border-image: url("/tiny-swords/ui/ribbonBlue.png") 0 128 fill / 0 96px stretch;
+	image-rendering: pixelated;
+	font-family: var(--display), serif;
+	font-weight: 900;
+	font-size: 34px;
+	line-height: 1;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	white-space: nowrap;
+	color: #f2ead4;
+	-webkit-text-stroke: 5px var(--stroke);
+	paint-order: stroke fill;
+	text-shadow: 0 3px 0 var(--stroke);
+	animation: titleRise 900ms cubic-bezier(0.22, 1, 0.36, 1) 200ms both;
+}
+
+/* On the board the ribbon overhangs the paper and rides over its top edge. */
+.board > .banner {
+	align-self: stretch;
+	margin: -70px -90px 18px;
+	height: 112px;
+	border-width: 0 112px;
+	border-image-width: 0 112px;
+	font-size: 42px;
 }
 
 .tagline {
 	margin: 0;
 	max-width: 360px;
-	text-shadow: 0 2px 4px rgba(0, 0, 0, 0.55);
+	font-family: var(--book), serif;
+	font-size: 18px;
+	font-style: italic;
+	text-shadow: 0 1px 0 var(--stroke), 0 0 6px var(--stroke);
 }
 
 /* Paper, as a nine-slice. The 64px corners never stretch. */
@@ -621,30 +646,6 @@ textarea {
 .fieldLabel {
 	font-size: 14px;
 	color: #6b5740;
-}
-
-.lobby input {
-	font: inherit;
-	font-size: 19px;
-	padding: 8px 12px;
-	width: 250px;
-	color: #3a2f1e;
-	background: rgba(255, 252, 240, 0.72);
-	border: 2px solid #b9a887;
-	border-radius: 4px;
-	outline-color: #7a4f14;
-}
-
-.codeInput {
-	width: 160px !important;
-	letter-spacing: 0.26em;
-	text-transform: uppercase;
-}
-
-.joinRow {
-	display: flex;
-	align-items: center;
-	gap: 10px;
 }
 
 /* The kit's own button; hover and press both sink it. */
@@ -697,37 +698,232 @@ textarea {
 	color: #8c3a30;
 }
 
+/* The kit's beige paper as a nine-slice; the sheet is 135x127 with a clear margin. */
+.lobby .paper {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 16px;
+	min-width: 300px;
+	padding: 4px 14px 10px;
+	color: #4a3322;
+	border: 30px solid transparent;
+	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 30px stretch;
+	filter: drop-shadow(0 12px 22px rgb(8 10 16 / 0.5));
+}
+
+.board {
+	width: 420px;
+	padding: 0 14px 12px;
+	animation: scrollIn 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.lobby .fieldLabel {
+	font-family: var(--book), serif;
+	font-size: 17px;
+	font-style: italic;
+	color: #7a4a22;
+}
+
+.lobby input {
+	font: inherit;
+	font-size: 22px;
+	padding: 10px 14px;
+	width: 320px;
+	color: #3a2f1e;
+	background: rgb(255 248 230 / 0.7);
+	border: 2px solid #b08a5a;
+	border-radius: 4px;
+	outline-color: #7a4a22;
+}
+
+.codeInput {
+	width: 190px !important;
+	font-family: var(--display), serif !important;
+	letter-spacing: 0.26em;
+	text-transform: uppercase;
+}
+
+.joinRow {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+/* A rule either side of the word, in the menu hint's brown. */
+.or {
+	align-self: stretch;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0;
+	font-family: var(--book), serif;
+	font-style: italic;
+	color: #7a4a22;
+}
+
+.or::before,
+.or::after {
+	content: "";
+	flex: 1;
+	border-top: 1px solid rgb(122 74 34 / 0.35);
+}
+
+/* The title menu's entry: the kit's button stained to dark wood, and the
+   sword drawn under it on hover or focus. Red is the kit's own button, and
+   only sinks. */
+:is(.lobby, .resultBar) .btn {
+	--h: 50px;
+	position: relative;
+	isolation: isolate;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 220px;
+	height: var(--h);
+	padding: 0 20px 4px;
+	font-family: var(--display), serif;
+	font-weight: 700;
+	font-size: 19px;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #f6ecd6;
+	text-shadow: 0 2px 0 var(--stroke, #2e1a0e);
+	background: none;
+	border: 0;
+	outline: none;
+	transition:
+		color 200ms ease-out,
+		transform 140ms ease-out;
+}
+
+:is(.lobby, .resultBar) .btn::before {
+	content: "";
+	position: absolute;
+	inset: 3px 0 5px;
+	z-index: -1;
+	border: 14px solid transparent;
+	border-image: url("/tiny-swords/ui/blueButton.png") 64 fill / 14px stretch;
+	image-rendering: pixelated;
+	filter: sepia(1) saturate(1.4) hue-rotate(-12deg) brightness(0.62) contrast(1.15);
+	transition: opacity 200ms ease-out;
+}
+
+:is(.lobby, .resultBar) .btn.red::before {
+	border-image-source: url("/tiny-swords/ui/redButton.png");
+	filter: none;
+}
+
+:is(.lobby, .resultBar) .btn:not(.red):is(:hover, :focus-visible):not(:disabled) {
+	color: #232a36;
+	text-shadow: none;
+}
+
+:is(.lobby, .resultBar) .btn:not(.red):is(:hover, :focus-visible):not(:disabled)::before {
+	opacity: 0;
+}
+
+/* The sword is 320x128: a 128px hilt, a 64px blade that stretches, a 128px point. */
+:is(.lobby, .resultBar) .btn:not(.red):is(:hover, :focus-visible):not(:disabled)::after {
+	content: "";
+	position: absolute;
+	inset: 0 calc(var(--h) * -0.6);
+	z-index: -1;
+	border: 0 solid transparent;
+	border-width: 0 var(--h);
+	border-image: url("/tiny-swords/ui/sword.png") 0 128 fill / 0 var(--h) stretch;
+	image-rendering: pixelated;
+	animation: swordDraw 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:is(.lobby, .resultBar) .btn.red:is(:hover, :focus-visible):not(:disabled),
+:is(.lobby, .resultBar) .btn:active:not(:disabled) {
+	transform: translateY(2px);
+}
+
+:is(.lobby, .resultBar) .btn.red:focus-visible {
+	outline: 2px solid #f6ecd6;
+	outline-offset: 2px;
+}
+
+:is(.lobby, .resultBar) .btn:disabled {
+	opacity: 0.5;
+	cursor: default;
+}
+
+:is(.lobby, .resultBar) .btn.small {
+	--h: 46px;
+	min-width: 96px;
+	font-size: 16px;
+}
+
+.board .btn {
+	--h: 58px;
+	min-width: 260px;
+	font-size: 22px;
+}
+
+.board .btn.small {
+	--h: 54px;
+	min-width: 112px;
+	font-size: 19px;
+}
+
+.lobby .linkBtn {
+	border: 0;
+	background: none;
+	color: var(--ink);
+	font-family: var(--book), serif;
+	font-size: 17px;
+	font-style: italic;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+	text-shadow: 0 1px 0 var(--stroke), 0 0 6px var(--stroke);
+	opacity: 0.9;
+}
+
+.lobby .linkBtn:hover {
+	opacity: 1;
+}
+
 .seats {
 	display: flex;
 	gap: 14px;
+	animation: scrollIn 700ms cubic-bezier(0.22, 1, 0.36, 1) 150ms both;
 }
 
-/* The opponent sits on the kit's slate paper, so their ink is the light one;
-   yours is the plain sheet and keeps the dark. */
+/* Your seat is the beige paper; the empty one across is the kit's slate
+   sheet, so its ink is the light one. */
 .seat {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	gap: 2px;
-	min-width: 120px;
+	min-width: 140px;
 	padding: 2px 10px 8px;
 	color: #f5f2e4;
 	border: 30px solid transparent;
 	border-image: url("/tiny-swords/ui/specialPaper.png") 64 fill / 30px stretch;
+	filter: drop-shadow(0 10px 16px rgb(8 10 16 / 0.45));
 }
 
 .seat.mine {
-	color: #4a3a28;
-	border-image-source: url("/tiny-swords/ui/paper.png");
+	color: #4a3322;
+	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 30px stretch;
 }
 
 .seatLabel {
-	font-size: 13px;
-	opacity: 0.72;
+	font-family: var(--book), serif;
+	font-size: 14px;
+	font-style: italic;
+	opacity: 0.8;
 }
 
 .seatName {
+	font-family: var(--display), serif;
+	font-weight: 700;
 	font-size: 20px;
+	letter-spacing: 0.04em;
 }
 
 .seatLocked {
@@ -747,7 +943,18 @@ textarea {
 	image-rendering: pixelated;
 }
 
-/* The duel board, with the room's own controls sitting under it. */
+@media (prefers-reduced-motion: reduce) {
+	.banner,
+	.board,
+	.seats,
+	:is(.lobby, .resultBar) .btn,
+	:is(.lobby, .resultBar) .btn::after {
+		animation: none;
+		transition: none;
+	}
+}
+
+/* The Versus board, with the room's own controls sitting under it. */
 .roomStage {
 	min-height: 100vh;
 	display: flex;

@@ -86,6 +86,8 @@ export interface SimOptions {
   skills?: boolean;
   /** Class traits by how many of a class each side fields. */
   traits?: boolean;
+  /** Most copies of one champion a side may field. */
+  maxCopies?: number;
 }
 
 export interface BattleResult {
@@ -157,7 +159,12 @@ export function armyCost(army: Army): number {
 }
 
 /** Trust boundary: armies arrive from a client. Empty result means legal. */
-export function validateArmy(army: Army, budget: number = BALANCE.budget, board: Board = BALANCE.board): string[] {
+export function validateArmy(
+  army: Army,
+  budget: number = BALANCE.budget,
+  board: Board = BALANCE.board,
+  maxCopies: number = Infinity,
+): string[] {
   const errors: string[] = [];
   const { cols, rows } = board;
   const { maxUnits } = BALANCE.board;
@@ -178,6 +185,9 @@ export function validateArmy(army: Army, budget: number = BALANCE.budget, board:
     if (seen.has(tile)) errors.push(`unit ${i}: tile ${tile} is taken`);
     seen.add(tile);
   }
+
+  for (const [cls, n] of Object.entries(classCounts(army)))
+    if (n > maxCopies) errors.push(`${n} ${cls}s, max is ${maxCopies}`);
 
   const cost = armyCost(army);
   if (cost > budget) errors.push(`army costs ${cost} gold, budget is ${budget}`);
@@ -367,7 +377,7 @@ export function simulate(
 ): BattleResult {
   const board = opts.board ?? BALANCE.board;
   for (const [side, army] of [["a", armyA], ["b", armyB]] as const) {
-    const errors = validateArmy(army, opts.budget, board);
+    const errors = validateArmy(army, opts.budget, board, opts.maxCopies);
     if (errors.length > 0) throw new Error(`army ${side} is invalid: ${errors.join("; ")}`);
   }
 

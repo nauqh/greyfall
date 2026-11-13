@@ -8,7 +8,7 @@ import type { BattleResult, Placement } from "@greyfall/engine";
 
 export type RoomState = "waiting" | "planning" | "result" | "closed";
 
-/** One side of a duel. `army` is what the deadline resolves from. */
+/** One side of a Versus room. `army` is what the deadline resolves from. */
 export interface Seat {
   token: string;
   name: string;

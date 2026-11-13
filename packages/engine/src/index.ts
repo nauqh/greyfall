@@ -8,6 +8,7 @@ export {
   MAX_TICKS,
   TICKS_PER_ACTION,
   UNIT_CLASSES,
+  VERSUS,
   damageAgainst,
   traitTier,
   type UnitClass,

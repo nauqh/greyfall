@@ -1,6 +1,6 @@
 "use client";
 
-// One duel room. The code is the address: a refresh mid-room lands back here,
+// One Versus room. The code is the address: a refresh mid-room lands back here,
 // and since the seat is keyed to the stored token the poll picks the room
 // straight back up. Joining first is the only way in - room.get is seated
 // only, so a stranger's visit is bounced to the lobby by the room's own
@@ -13,13 +13,13 @@ import { Clouds } from "../../../game/Clouds";
 import { Room } from "../../../pvp/Room";
 import { TrpcProvider } from "../../../pvp/Provider";
 
-export default function DuelRoomPage({ params }: { params: Promise<{ code: string }> }) {
+export default function VersusRoomPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = use(params);
   const router = useRouter();
   return (
     <main className="stage">
       <TrpcProvider>
-        <Room code={code} onLeave={() => router.push("/duel")} />
+        <Room code={code} onLeave={() => router.push("/versus")} />
       </TrpcProvider>
       <Clouds mode="open" />
     </main>

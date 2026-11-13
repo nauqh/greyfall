@@ -1,6 +1,6 @@
 // Deciding a room. The only place a battle is run.
 
-import { simulate, validateArmy, type BattleResult, type Placement } from "@greyfall/engine";
+import { VERSUS, simulate, validateArmy, type BattleResult, type Placement } from "@greyfall/engine";
 
 import type { RoomData, RoomRow } from "../schema.ts";
 
@@ -11,7 +11,7 @@ export interface Outcome {
 
 /** Whether the engine will accept this seat's army at all. */
 function fit(army: Placement[]): boolean {
-  return army.length > 0 && validateArmy(army).length === 0;
+  return army.length > 0 && validateArmy(army, VERSUS.budget, VERSUS.board, VERSUS.maxCopies).length === 0;
 }
 
 /**
@@ -41,7 +41,7 @@ export function resolve(data: RoomData): Outcome {
   if (!canB) return { battle: null, walkover: "a" };
 
   try {
-    return { battle: simulate(a.army, b.army, data.seed), walkover: null };
+    return { battle: simulate(a.army, b.army, data.seed, VERSUS), walkover: null };
   } catch {
     // Both armies passed validateArmy on the way in and again just now, so
     // reaching here is a bug in the engine, not a bad army. It still must not

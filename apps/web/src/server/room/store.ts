@@ -94,8 +94,15 @@ export async function update(
   return (result.rowCount ?? 0) > 0;
 }
 
-export async function touch(code: string): Promise<void> {
-  await db.update(rooms).set({ lastActivity: new Date() }).where(eq(rooms.code, code));
+/** Eviction is measured in hours, so a minute-stale lastActivity costs nothing. */
+const TOUCH_EVERY_MS = 60_000;
+const EVICT_EVERY_MS = 60_000;
+let lastEvict = 0;
+
+/** Every poll lands here; only one a minute per room actually writes. */
+export async function touch(row: RoomRow): Promise<void> {
+  if (Date.now() - row.lastActivity.getTime() < TOUCH_EVERY_MS) return;
+  await db.update(rooms).set({ lastActivity: new Date() }).where(eq(rooms.code, row.code));
 }
 
 export async function remove(code: string): Promise<void> {
@@ -107,6 +114,8 @@ export async function remove(code: string): Promise<void> {
  * no sweeper process: a room nobody is polling is a room nobody is in.
  */
 export async function evictStale(): Promise<void> {
+  if (Date.now() - lastEvict < EVICT_EVERY_MS) return;
+  lastEvict = Date.now();
   await db
     .delete(rooms)
     .where(lt(rooms.lastActivity, sql`now() - interval '${sql.raw(EVICT_AFTER)}'`));

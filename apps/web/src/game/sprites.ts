@@ -330,7 +330,7 @@ export function playPose(
   const body = bodyOf(side, cls);
   sprite.setOrigin(body.anchorX / body.frame, body.anchorY / body.frame);
   // The art faces right in both colors; side b holds the right half. On a
-  // mirrored board - seat B's own view of the duel - it holds the left half
+  // mirrored board - seat B's own view of a Versus match - it holds the left half
   // instead, so the flip goes the other way. Run and attack keep the
   // directional flip their callers set from screen-space movement, which is
   // already mirrored by the time they see it.

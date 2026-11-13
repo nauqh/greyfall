@@ -13,7 +13,7 @@ export const UNIT_CLASSES: readonly UnitClass[] = [
   "monk",
 ];
 
-/** Skirmish's monsters, from the Enemy Pack. The war and Duel field knights only. */
+/** Skirmish's monsters, from the Enemy Pack. The war fields knights only. */
 export type MonsterClass = "skull" | "torch" | "gnoll" | "thief" | "shaman" | "troll" | "minotaur";
 
 export const MONSTER_CLASSES: readonly MonsterClass[] = ["skull", "torch", "gnoll", "thief", "shaman", "troll", "minotaur"];
@@ -265,6 +265,15 @@ export const AUTO = {
       values: [1.12, 1.25, 1.45],
     },
   } as Record<TraitKey, Trait>,
+} as const;
+
+/** Versus: two players draft one army each from all champions, on Skirmish's rules. */
+export const VERSUS = {
+  budget: 24,
+  maxCopies: 2,
+  board: AUTO.board,
+  skills: true,
+  traits: true,
 } as const;
 
 export const TICKS_PER_ACTION = BALANCE.actionSeconds * BALANCE.tickRate;

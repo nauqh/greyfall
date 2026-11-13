@@ -1,7 +1,7 @@
 "use client";
 
 // The cloud bank as DOM, for the screens that are not a Phaser scene (the
-// duel lobby and room) and for the canvas's loading screen. Same layout as
+// Versus lobby and room) and for the canvas's loading screen. Same layout as
 // terrain.ts cloudCover, from art.ts cloudAt, and the same timings, so an
 // HTML screen and a scene open and close on one sky.
 

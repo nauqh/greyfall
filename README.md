@@ -39,8 +39,8 @@ for Discord as an Activity that friends launch from a voice call.
 ## Other modes
 
 The same engine runs three side modes: the real-time war (`/map`), the auto
-chess Skirmish (`/battle`) and the 20-gold Duel (`/duel`). The Skirmish design
-is in [docs/skirmish.md](docs/skirmish.md).
+chess Skirmish (`/battle`) and Versus (`/versus`), a draft against a friend. The
+Skirmish design is in [docs/skirmish.md](docs/skirmish.md).
 
 ## Current state
 
@@ -48,7 +48,9 @@ The Atlas is the focus. The Landing and Harbour are playable; the campaign is
 built area by area: Emberwood and the Cinder Troll are the next slice.
 
 The real-time war is playable solo against the red AI. Skirmish is auto chess.
-Duel still ships unchanged.
+Versus fields all 12 champions, the five knights and the seven Enemy Pack
+monsters, with Skirmish's skills and traits on a 6x4 half: 24 gold, at most
+two of any one champion.
 
 ## Goals
 
@@ -70,7 +72,7 @@ Duel still ships unchanged.
 | Atlas | `/atlas` | The focus: the Souls action RPG in the Shattered Reach |
 | Play | `/map` | The real-time war against the AI |
 | Skirmish | `/battle` | Auto chess against three AI clans |
-| Duel | `/duel` | A 20-gold draft against a friend |
+| Versus | `/versus` | A draft of all 12 champions against a friend |
 
 The Atlas controls are in [ATLAS.md](ATLAS.md). The war uses left click to
 select and right click to order; **H** opens the field guide.
@@ -99,7 +101,7 @@ cp apps/web/.env.example apps/web/.env   # TINY_SWORDS_S3 is already set
 pnpm dev                                 # fetches the pack, then starts Next
 ```
 
-Duel also needs `DATABASE_URL` (a Neon pooled connection string) in
+Versus also needs `DATABASE_URL` (a Neon pooled connection string) in
 `apps/web/.env` and `pnpm --filter @greyfall/web db:push` once.
 
 Other scripts:
@@ -141,7 +143,7 @@ Environment Variables), not in a file:
 | `AWS_ACCESS_KEY_ID` | the deploy user's key |
 | `AWS_SECRET_ACCESS_KEY` | its secret |
 | `AWS_REGION` | `ap-southeast-1` |
-| `DATABASE_URL` | for Duel |
+| `DATABASE_URL` | for Versus |
 
 - On Vercel, set the Root Directory to `apps/web`. A missing `TINY_SWORDS_S3`
   fails the build there rather than shipping a game with no art;
@@ -184,7 +186,7 @@ packages/engine   the simulation: the Atlas world and game, the island, pathing
                   balance tables, seeded rng, and the two CLIs
 apps/web          the Next.js app: Phaser scenes for the title, the Atlas, the
                   island and the Skirmish board; React menus; tRPC and Drizzle
-                  for Duel
+                  for Versus
 ```
 
 The engine steps at 10 ticks a second for the war and 20 for the Atlas, and

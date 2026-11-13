@@ -97,37 +97,13 @@ const BENCH = { x0: 127, y: 646, size: 62, scale: 0.7 } as const;
 /** The plan panel's left edge: a unit dropped past it is sold. */
 const PANEL_X0 = 612;
 const STAR_INK = [0, 0xc7884a, 0xdfe6ee, 0xf4cf6b];
-const TIER_INK = [0, 0x8a8a8a, 0x4c9a4c, 0x3d6fc4, 0x9a4fc4];
+export const TIER_INK = [0, 0x8a8a8a, 0x4c9a4c, 0x3d6fc4, 0x9a4fc4];
 /** A trait's emblem by tier: bronze, then silver, and gold at its last. */
 const traitInk = (key: TraitKey, tier: number): number =>
   tier < 0 ? 0xd8cbb0 : tier === AUTO.traits[key].at.length - 1 ? STAR_INK[3]! : STAR_INK[tier + 1]!;
 const still = (): boolean => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 const pct = (f: number): string => `${Math.round(f * 100)}%`;
 const AB = BALANCE.abilities;
-
-/** Duel's knights: each ability line on its draft card, and the tooltip that explains it. */
-export const ABILITY: Partial<Record<Champion, { name: string; tip: string; on: boolean }>> = {
-  warrior: {
-    name: "Guard",
-    tip: `Guard: once a battle, below ${pct(AB.guard.hpBelow)} health, takes ${pct(1 - AB.guard.damageTaken)} less damage for ${AB.guard.seconds}s`,
-    on: AB.guard.enabled,
-  },
-  lancer: {
-    name: "Taunt",
-    tip: `Taunt: enemies within ${AB.taunt.radius} tiles must attack it`,
-    on: AB.taunt.enabled,
-  },
-  archer: {
-    name: "Piercing shot",
-    tip: `Piercing shot: one arrow in ${AB.pierce.every} also hits the enemy behind for ${pct(AB.pierce.damage)} damage`,
-    on: AB.pierce.enabled,
-  },
-  monk: {
-    name: "Revive",
-    tip: `Revive: once a battle, raises the first fallen ally at ${pct(AB.revive.hp)} health`,
-    on: AB.revive.enabled,
-  },
-};
 
 /** What each Skirmish skill does when its countdown runs out. */
 const SKILL_RULE: Record<Champion, [name: string, rule: string]> = {
@@ -230,17 +206,64 @@ export function traitLine(key: TraitKey, count: number, tier: number): string {
   return `${t.name} ${count}/${t.at[Math.min(tier + 1, t.at.length - 1)]}${unit}  ${traitEffect(key, Math.max(0, tier))}`;
 }
 
-function traitTip(key: TraitKey): string {
+export const TRAIT_W = 256;
+
+/**
+ * One trait tracker row, TFT's left rail: an emblem in the tier's metal with
+ * the count in it, the breakpoints, and what the trait does now or what the
+ * next one more buys. Interactive, so the caller hangs its hover on it.
+ */
+export function traitRow(s: Phaser.Scene, t: { key: TraitKey; count: number; tier: number }, x: number, y: number): Phaser.GameObjects.Container {
+  const trait = AUTO.traits[t.key];
+  const on = t.tier >= 0;
+  const L = -TRAIT_W / 2;
+  const g = s.add.graphics();
+  g.fillStyle(traitInk(t.key, t.tier), 1).fillPoints(hexPoints(L + 14, 0, 15), true);
+  g.lineStyle(1.5, on ? 0x4a3a28 : 0xa8987c, 1).strokePoints(hexPoints(L + 14, 0, 15), true);
+  const dark = "#2e2417";
+  const faint = "#a8987c";
+  const count = label(s, L + 14, 0, `${t.count}`, { fontSize: "15px", color: on ? dark : faint, strokeThickness: 0 });
+  const name = label(s, L + 36, -8, trait.name, { fontSize: "14px", color: on ? dark : "#8a7a60", strokeThickness: 0 })
+    .setOrigin(0, 0.5);
+  const row = s.add.container(x, y, [g, count, name]);
+  // Breakpoints: the ones reached in ink, the rest faint.
+  let bx = L + 36 + name.width + 10;
+  for (const [i, n] of trait.at.entries()) {
+    if (i > 0) {
+      const sep = label(s, bx, -8, "›", { fontSize: "13px", color: faint, strokeThickness: 0 }).setOrigin(0, 0.5);
+      row.add(sep);
+      bx += sep.width + 4;
+    }
+    const bp = label(s, bx, -8, `${n}`, {
+      fontSize: "13px",
+      color: t.count >= n ? dark : faint,
+      strokeThickness: 0,
+    }).setOrigin(0, 0.5);
+    row.add(bp);
+    bx += bp.width + 4;
+  }
+  const need = trait.at[0]! - t.count;
+  const effect = on
+    ? traitEffect(t.key, t.tier)
+    : `${need} more${trait.kinds ? (need > 1 ? " kinds" : " kind") : ""} to switch on`;
+  row.add(
+    label(s, L + 36, 9, effect, { fontSize: "12px", color: on ? "#2f5d8a" : "#9a8a70", strokeThickness: 0 }).setOrigin(0, 0.5),
+  );
+  return row.setSize(TRAIT_W, 34).setInteractive();
+}
+
+export function traitTip(key: TraitKey): string {
   const t = AUTO.traits[key];
   const tiers = t.at.map((n, i) => `${n}: ${traitEffect(key, i)}`).join(". ");
   return `${t.name}${t.kinds ? ", counting kinds of monster" : ""}. ${tiers}.`;
 }
 
-function unitTip(cls: Champion): string {
+/** Versus prices a class by its BALANCE cost, Skirmish by its shop tier. */
+export function unitTip(cls: Champion, cost: number = AUTO.tier[cls]): string {
   const s = BALANCE.units[cls];
   const t = AUTO.traits[traitOf(cls)];
   const main = s.heal > 0 ? `heals ${s.heal}` : `${s.damage} damage`;
-  return `${CLASS_NAME[cls]}: ${AUTO.tier[cls]} gold, ${s.hp} health, ${main}, range ${s.range}. ${t.name} at ${t.at.join(", ")}${t.kinds ? " kinds" : ""}. ${skillTip(cls)}`;
+  return `${CLASS_NAME[cls]}: ${cost} gold, ${s.hp} health, ${main}, range ${s.range}. ${t.name} at ${t.at.join(", ")}${t.kinds ? " kinds" : ""}. ${skillTip(cls)}`;
 }
 
 function ordinal(n: number): string {
@@ -529,48 +552,10 @@ export class AutoPlan {
       );
       return;
     }
-    const W = 256;
     for (const [k, t] of lines.entries()) {
-      const trait = AUTO.traits[t.key];
-      const on = t.tier >= 0;
-      const x = 652 + (k % 2) * 268 + W / 2;
-      const y = 240 + Math.floor(k / 2) * 36;
-      const L = -W / 2;
-      const g = s.add.graphics();
-      g.fillStyle(traitInk(t.key, t.tier), 1).fillPoints(hexPoints(L + 14, 0, 15), true);
-      g.lineStyle(1.5, on ? 0x4a3a28 : 0xa8987c, 1).strokePoints(hexPoints(L + 14, 0, 15), true);
-      const dark = "#2e2417";
-      const faint = "#a8987c";
-      const count = label(s, L + 14, 0, `${t.count}`, { fontSize: "15px", color: on ? dark : faint, strokeThickness: 0 });
-      const name = label(s, L + 36, -8, trait.name, { fontSize: "14px", color: on ? dark : "#8a7a60", strokeThickness: 0 })
-        .setOrigin(0, 0.5);
-      const row = s.add.container(x, y, [g, count, name]);
-      // Breakpoints: the ones reached in ink, the rest faint.
-      let bx = L + 36 + name.width + 10;
-      for (const [i, n] of trait.at.entries()) {
-        if (i > 0) {
-          const sep = label(s, bx, -8, "›", { fontSize: "13px", color: faint, strokeThickness: 0 }).setOrigin(0, 0.5);
-          row.add(sep);
-          bx += sep.width + 4;
-        }
-        const bp = label(s, bx, -8, `${n}`, {
-          fontSize: "13px",
-          color: t.count >= n ? dark : faint,
-          strokeThickness: 0,
-        }).setOrigin(0, 0.5);
-        row.add(bp);
-        bx += bp.width + 4;
-      }
-      const need = trait.at[0]! - t.count;
-      const effect = on
-        ? traitEffect(t.key, t.tier)
-        : `${need} more${trait.kinds ? (need > 1 ? " kinds" : " kind") : ""} to switch on`;
-      row.add(
-        label(s, L + 36, 9, effect, { fontSize: "12px", color: on ? "#2f5d8a" : "#9a8a70", strokeThickness: 0 }).setOrigin(0, 0.5),
-      );
+      const row = traitRow(s, t, 652 + (k % 2) * 268 + TRAIT_W / 2, 240 + Math.floor(k / 2) * 36);
+      const L = -TRAIT_W / 2;
       row
-        .setSize(W, 34)
-        .setInteractive()
         .on("pointerover", (p: Phaser.Input.Pointer) => {
           const e = p.event as MouseEvent | undefined;
           this.host.onTip?.(traitTip(t.key), e?.clientX ?? 0, e?.clientY ?? 0);

@@ -9,8 +9,9 @@ Teamfight Tactics mould. You and three AI clans buy units from one shared
 pool, three copies of a unit merge into a stronger star level, and each round
 every clan fights a paired rival. Losing costs health, and the last clan
 standing wins. The battle itself is the existing Skirmish simulation,
-extended with stars, traits and the monsters' abilities. The war and Duel
-keep the five knights and the old rules.
+extended with stars, traits and the monsters' abilities. Versus fields the same
+12 champions on the same rules; the war keeps the five knights and the old
+ones.
 
 ## What TFT and Dota Auto Chess do, and what Greyfall takes
 
@@ -31,7 +32,7 @@ Five knights and seven monsters from the Enemy Pack. With only the knights,
 a shop of five slots drawn from five classes kept repeating itself and the
 traits mostly rewarded stacking one class; the monsters add roles the
 knights lack and a fourth, 4-gold tier that makes levelling worth more.
-Each clan plays on a 6x4 half, a 12x4 battle grid, against Duel's 5x3. The
+Each clan plays on a 6x4 half, a 12x4 battle grid, as Versus does. The
 level cap stays 8, so the extra cells are room to position, not more units:
 TFT's half is 7x4, and 6x4 is what fits beside the shop. Over 80 AI lobbies
 it moved nothing: still 12 to 20 rounds, median 15, and no fight timed out.
@@ -74,8 +75,8 @@ still open if the fights want more back-and-forth. Two rules come from TFT:
   someone falls. Reactive skills (Taunt, Guard, Reassemble, Revive,
   Ambush) start armed; the rest count down from the first second.
 
-Duel keeps its once-a-battle knight abilities: the countdown is the
-`skills` option on the simulation, and only Skirmish passes it. Over 80
+The war keeps its once-a-battle knight abilities: the countdown is the
+`skills` option on the simulation, and only Skirmish and Versus pass it. Over 80
 all-AI lobbies, against the run before skills: 12 to 19 rounds (median
 14, was 15), 1 timeout in 2,159 fights. Win rates when fielded moved by 5
 points or fewer, except the Minotaur, 75% to 64%, since Cleave became a
@@ -130,7 +131,7 @@ These measure the AI against itself, not people.
 
 1. **Multiplayer lobby.** The run is pure and seeded and takes one action
    at a time, so each AI seat can become a player whose actions go to the
-   server, the way Duel's armies do now. This is the Discord goal.
+   server, the way Versus armies do now. This is the Discord goal.
 2. **PvE rounds.** TFT opens each stage on neutral monsters that drop loot.
    The Enemy Pack has more bodies than the seven in the shop (Spear Goblin,
    Bear, Spider, Lizard, Panda, Turtle) to stock them.

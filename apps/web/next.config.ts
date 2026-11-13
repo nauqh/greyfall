@@ -21,6 +21,12 @@ const config: NextConfig = {
     }
     return config;
   },
+  async redirects() {
+    return [
+      { source: "/duel", destination: "/versus", permanent: true },
+      { source: "/duel/:code", destination: "/versus/:code", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {
