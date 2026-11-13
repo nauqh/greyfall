@@ -1,8 +1,8 @@
 // Battle playback. The engine decided everything; this only replays its log.
 //
-// The scene opens in draft mode when the launcher carries no result: a panel
-// over the enemy half holds the roster cards, clicks place units on the left
-// half, and Start slides the panel away to reveal the enemy army.
+// The scene opens on the auto chess plan when the launcher carries no result:
+// the shop panel over the enemy half, your bench and your half of the board.
+// The run lives with the page (Skirmish) or the room (Versus), behind AutoHooks.
 //
 // The board runs LEFT to RIGHT, two halves of square cells side by side, your
 // army on the left. This matches the art: only the Lancer has a vertical
@@ -16,17 +16,12 @@ import {
   AUTO,
   BALANCE,
   CHAMPIONS,
-  armyCost,
   battleCol,
-  traitsOf,
-  validateArmy,
-  VERSUS,
   type BattleEvent,
   type Board,
   type BattleResult,
   type Champion,
   type LobbyRound,
-  type Placement,
   type Side,
   type UnitSnapshot,
 } from "@greyfall/engine";
@@ -48,6 +43,8 @@ import {
   traitTip,
   unitTip,
   type AutoHooks,
+  type Fought,
+  foughtBy,
 } from "./autoPlan";
 import { GAME_H, GAME_W, WATER_SPAN, fitCamera, startGame } from "./boot";
 import { Handbook } from "./handbook";
@@ -170,40 +167,6 @@ function timeLeft(elapsedMs: number): string {
   return `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
 }
 
-const ROSTER = CHAMPIONS;
-
-/** Draft cards, four across and three down: size, pitch, and the top row's centre. */
-const CARD = { w: 120, h: 112, dx: 130, dy: 116, y0: 178 } as const;
-
-/** Ink on paper, and on the picked card's slate. */
-const CARD_INK = {
-  paper: { name: "#4a3a28", text: "#6b5740", cost: "#7a4f14", skill: "#7a4f14", on: "#2f5d8a", off: "#9a8a70" },
-  slate: { name: "#f5f2e4", text: "#a8b4c4", cost: "#e8c06a", skill: "#e8c06a", on: "#9fd4ff", off: "#8a96a6" },
-} as const;
-
-interface DraftCard {
-  box: Phaser.GameObjects.Container;
-  cy: number;
-  face: Phaser.GameObjects.Graphics;
-  name: Phaser.GameObjects.Text;
-  stats: Phaser.GameObjects.Text[];
-  cost: Phaser.GameObjects.Text;
-  trait: Phaser.GameObjects.Text;
-  skill: Phaser.GameObjects.Text;
-  portrait: Phaser.GameObjects.Image;
-}
-
-/** The lock-in block under the cards: a seal and a state per seat, and the clock. */
-interface LockBoard {
-  seals: Record<"you" | "them", Phaser.GameObjects.Graphics>;
-  names: Record<"you" | "them", Phaser.GameObjects.Text>;
-  states: Record<"you" | "them", Phaser.GameObjects.Text>;
-  clock: Phaser.GameObjects.Text;
-  banner: Phaser.GameObjects.Text;
-  /** What was last drawn, so a change can pop and nothing redraws every frame. */
-  seen: { you: boolean; them: boolean; second: number | null };
-}
-
 interface UnitView {
   snap: UnitSnapshot;
   sprite: Phaser.GameObjects.Sprite;
@@ -224,44 +187,16 @@ interface UnitView {
   skillSpan: number;
 }
 
-/** What the scene needs from a room it does not itself own. */
-export interface VersusStatus {
-  msRemaining: number | null;
-  youLocked: boolean;
-  theyLocked: boolean;
-  opponent: string | null;
-  /** Set once the server has resolved; the scene plays it back. */
-  battle: BattleResult | null;
-}
-
-export interface VersusHooks {
-  /** Every board change, so the deadline always has something to resolve. */
-  onArmyChange: (army: Placement[]) => void;
-  onLock: () => void;
-  /** Read every frame while drafting; no events, no imperative handle. */
-  status: () => VersusStatus;
-  /**
-   * Playback is over and the result card is up. The page waits for this
-   * before saying who won: the server resolves the moment both seats lock,
-   * so the poll knows the winner long before the fight has been watched.
-   */
-  onPlayed: () => void;
-}
-
 export interface BattleLauncher {
-  /** Null while drafting: Versus hands the army to the room, which sends the result back. */
+  /** Null while planning; set to the fight to play back. */
   result: BattleResult | null;
   seed: number | string;
   /**
-   * Which side of the board is the player's. Skirmish is always side A; in Versus
-   * the room decides, and seat B sees the board mirrored so that the half it
-   * drafted on is still the half on the left.
+   * Which side of the fight is the player's. Planning is always side A; a fight
+   * where your seat drew side B is mirrored so your half is still on the left.
    */
   mySide?: Side;
-  /** Present only in Versus: the server owns the army and the result. */
-  versus?: VersusHooks;
-  /** Present only in Skirmish's auto chess lobby, which plans instead of drafting. */
-  auto?: AutoHooks;
+  auto: AutoHooks;
   /** The opponent's name on the HUD. */
   foe?: string;
   /** The round just fought, for its card after playback. */
@@ -280,8 +215,6 @@ export class BattleScene extends Phaser.Scene {
   private result: BattleResult | null = null;
   private units = new Map<string, UnitView>();
   private drafting = false;
-  private draftArmy: Placement[] = [];
-  private picked: Champion | null = null;
   private draftBox!: Phaser.GameObjects.Container;
   /** The how-to bubble; tracks the pawn and leaves with the draft panel. */
   private bubble: Phaser.GameObjects.Container | null = null;
@@ -294,24 +227,8 @@ export class BattleScene extends Phaser.Scene {
     target: { x: number; y: number } | null;
     pauseMs: number;
   } | null = null;
-  private cellZone!: Phaser.GameObjects.Zone;
-  /** The draft's way back to the menu; gone once the fight starts. */
+  /** The plan's way back to the menu; gone once the fight starts. */
   private menuBtn: Phaser.GameObjects.Container | null = null;
-  /** The placement preview under the cursor while drafting. */
-  private ghostCell!: Phaser.GameObjects.Graphics;
-  private ghost: Phaser.GameObjects.Sprite | null = null;
-  private goldText!: Phaser.GameObjects.Text;
-  private goldCoin!: Phaser.GameObjects.Image;
-  private errorText!: Phaser.GameObjects.Text;
-  private cards = new Map<Champion, DraftCard>();
-  private traitBox!: Phaser.GameObjects.Container;
-  private lockBoard: LockBoard | null = null;
-  /** Gold left at the last refresh, so a spend can pulse the counter. */
-  private shownGold = 0;
-  private placed = new Map<
-    string,
-    { sprite: Phaser.GameObjects.Sprite; shadow: Phaser.GameObjects.Image }
-  >();
   private queue: BattleEvent[] = [];
   private simTime = 0;
   private nextEvent = 0;
@@ -320,16 +237,16 @@ export class BattleScene extends Phaser.Scene {
   private started = false;
   private speed = 1;
   private mySide: Side = "a";
-  /** Seat B's view of the board is flipped, so drafting and battle agree. */
+  /** Side B's view of the fight is flipped, so your half stays on the left. */
   private mirrored = false;
-  private versus: VersusHooks | null = null;
-  private auto: AutoHooks | null = null;
+  private auto!: AutoHooks;
+  /** The plan's standing line, which a remark falls back to. */
+  private advice = "";
   private handbook: Handbook | null = null;
   private plan: AutoPlan | null = null;
-  private lockBtn: Phaser.GameObjects.Container | null = null;
   private bars: Record<Side, PackBar | null> = { a: null, b: null };
   private clockText: Phaser.GameObjects.Text | null = null;
-  /** Rounds played in this scene, so only a later draft slides in. */
+  /** Rounds played in this scene, so only the first plan opens under cloud. */
   private rounds = 0;
 
   constructor() {
@@ -343,14 +260,11 @@ export class BattleScene extends Phaser.Scene {
     this.result = data.result;
     this.mySide = data.mySide ?? "a";
     this.mirrored = this.mySide === "b";
-    this.versus = data.versus ?? null;
-    this.auto = data.auto ?? null;
+    this.auto = data.auto;
     // Both halves are 6x4, so the island runs edge to edge.
-    layout(this.auto ? AUTO.board : VERSUS.board, { x0: 0, y0: 150, x1: 1200, y1: 540 });
+    layout(AUTO.board, { x0: 0, y0: 150, x1: 1200, y1: 540 });
     this.handbook = null;
     this.plan = null;
-    this.lockBtn = null;
-    this.lockBoard = null;
     this.units = new Map();
     this.queue = [];
     this.simTime = 0;
@@ -359,16 +273,11 @@ export class BattleScene extends Phaser.Scene {
     this.started = false;
     this.speed = 1;
     this.drafting = false;
-    this.draftArmy = [];
-    this.picked = null;
-    this.cards = new Map();
-    this.shownGold = VERSUS.budget;
-    this.placed = new Map();
     this.clockText = null;
     this.bubble = null;
-    this.ghost = null;
     this.menuBtn = null;
     this.bubbleLine = "";
+    this.advice = "";
     this.adviceTimer = null;
     // Field initialisers run once, at construction; a restart runs only this.
     // A stale PackBar here would be ticked every frame with its art already
@@ -447,23 +356,21 @@ export class BattleScene extends Phaser.Scene {
     this.drawGrid();
     driftClouds(this, { w: GAME_W, h: GAME_H }, this.launcher.seed);
     this.buildAdvisor();
-    if (this.auto) this.buildHandbook();
+    this.buildHandbook();
 
     if (this.result) {
       this.beginBattle();
-    } else if (this.auto && this.launcher.round) {
+    } else if (this.launcher.round) {
       // A round nobody could fight (an empty board) skips straight to its card.
       this.showRoundCard();
-    } else if (this.auto) {
-      this.buildPlan();
     } else {
-      this.buildDraft();
+      this.buildPlan();
     }
   }
 
   /** The handbook's button, beside the menu's while planning and in its place in a fight. A fight holds still while it is open. */
   private buildHandbook(): void {
-    const auto = this.auto!;
+    const auto = this.auto;
     this.data.set("handbook", false);
     this.time.paused = false;
     this.handbook = new Handbook(this, () => auto.run().pool, (open) => {
@@ -511,9 +418,9 @@ export class BattleScene extends Phaser.Scene {
       });
   }
 
-  /** Skirmish's plan phase over the left half; the panel covers the enemy's. */
+  /** The plan phase over the left half; the panel covers the enemy's. */
   private buildPlan(): void {
-    const auto = this.auto!;
+    const auto = this.auto;
     this.drafting = true;
     this.draftBox = this.add.container(0, 0).setDepth(DEPTH.hud + 5);
     const zx = ORIGIN_X - TILE / 2;
@@ -528,10 +435,17 @@ export class BattleScene extends Phaser.Scene {
         return col >= 0 && col < COLS / 2 && row >= 0 && row < ROWS ? { col, row } : null;
       },
       standAt: (col, row) => this.spriteXY(col, row),
-      say: (line) => this.say(line),
+      say: (line) => {
+        this.advice = line;
+        this.say(line);
+      },
       remark: (line) => this.remark(line),
       onTip: this.launcher.onTip,
-      fight: () => this.fightFromPlan(),
+      fight: () => this.readyFromPlan(),
+    });
+    const plan = this.plan;
+    void auto.fought(auto.run().round).then(({ round, result }) => {
+      if (this.plan === plan && this.drafting) this.leavePlan(foughtBy(auto.run(), round, auto.seat, result));
     });
     this.buildMenuButton();
     this.draftBox.setX(GAME_W);
@@ -543,26 +457,31 @@ export class BattleScene extends Phaser.Scene {
         ease: "Sine.easeOut",
         onComplete: () =>
           this.summonAdvisor(() => {
-            const seat = auto.run().seats[0]!;
-            this.say(
+            const seat = auto.run().seats[auto.seat]!;
+            this.advice =
               seat.board.length === 0 && seat.bench.every((p) => p === null)
                 ? "Buy units from the shop. Three of a kind make a 2-star."
-                : "Set your line, then Fight.",
-            );
+                : `Set your line, then ${auto.clock ? "Ready" : "Fight"}.`;
+            this.say(this.advice);
           }),
       }),
     );
   }
 
-  private fightFromPlan(): void {
+  private readyFromPlan(): void {
     if (!this.drafting) return;
-    const seat = this.auto!.run().seats[0]!;
+    const seat = this.auto.run().seats[this.auto.seat]!;
     if (seat.board.length === 0 && seat.bench.some((p) => p !== null))
       return this.remark("Put someone on the board first.");
+    this.auto.ready();
+    if (this.auto.clock) this.say((this.advice = "Ready. The fight starts when everyone is, or on the clock."));
+  }
+
+  /** The round is fought: planning makes way for the fight, or straight for the card. */
+  private leavePlan({ result, side, foe, round }: Fought): void {
     this.drafting = false;
     this.input.enabled = false;
     this.launcher.onTip?.(null, 0, 0);
-    const { result, foe, round } = this.auto!.fight();
     // Everything that belongs to planning leaves together; the board's units stay.
     const exit = 360;
     this.plan?.leave(exit * 0.6);
@@ -574,21 +493,25 @@ export class BattleScene extends Phaser.Scene {
       x: GAME_W,
       duration: exit,
       ease: "Quint.easeOut",
-      onComplete: () => this.restart({ result, foe, round }),
+      onComplete: () => this.restart({ result, mySide: side, foe, round }),
     });
   }
 
   private showRoundCard(): void {
-    const auto = this.auto!;
+    const auto = this.auto;
+    const again = auto.again;
+    auto.onCard?.(this.launcher.round!);
     roundCard(
       this,
       auto.run(),
+      auto.seat,
       this.launcher.round!,
-      () => this.restart({ result: null, round: null }),
-      () => {
-        auto.again();
-        this.restart({ result: null, round: null });
-      },
+      () => this.restart({ result: null, mySide: "a", round: null }),
+      again &&
+        (() => {
+          again();
+          this.restart({ result: null, mySide: "a", round: null });
+        }),
       () => {
         this.input.enabled = false;
         cloudCover(this, "close", () => this.launcher.onMenu());
@@ -602,14 +525,7 @@ export class BattleScene extends Phaser.Scene {
     this.spawnArmies();
     this.buildHud();
     this.queue = [...this.result!.events].sort((x, y) => x.t - y.t);
-    if (this.auto) {
-      this.revealFoe(before, () => {
-        this.summonAdvisor(() => {});
-        this.runIntro();
-      });
-      return;
-    }
-    this.opening(() => {
+    this.revealFoe(before, () => {
       this.summonAdvisor(() => {});
       this.runIntro();
     });
@@ -692,269 +608,6 @@ export class BattleScene extends Phaser.Scene {
     this.time.delayedCall(420, then);
   }
 
-  // --- draft ---------------------------------------------------------------
-
-  /**
-   * Roster cards on a panel over the enemy half; clicks place on the left.
-   *
-   * The vertical budget is tight and worth writing down, because everything
-   * here is spaced off it: the panel runs y 16..704, the twelve cards take
-   * y 122..466, all six traits three rows under them, and the Lock in button cannot
-   * go under ~104px tall without its nine-slice collapsing into a strip.
-   */
-  private buildDraft(): void {
-    this.drafting = true;
-    // Above the HUD too, so the slide-out sweeps across the plates.
-    this.draftBox = this.add.container(0, 0).setDepth(DEPTH.hud + 5);
-
-    const panel_ = panel(this, "paper", 900, 360, 576, 688);
-    const band = ribbon(this, 900, 52, 380);
-    const title = label(this, 900, 48, "DRAFT YOUR WARBAND", { fontSize: "20px" });
-    this.goldText = label(this, 900, 90, "", {
-      fontSize: "18px",
-      color: "#7a4f14",
-      strokeThickness: 0,
-    });
-    this.goldCoin = this.add.image(0, 90, iconKey(ICON.gold)).setScale(0.48);
-    // What is wrong with the army, and only that; the how-to is the advisor's.
-    this.errorText = label(this, 900, 112, "", {
-      fontSize: "13px",
-      color: "#8c3a30",
-      strokeThickness: 0,
-    });
-    this.traitBox = this.add.container(0, 0);
-    this.draftBox.add([panel_, band, title, this.goldText, this.goldCoin, this.errorText, this.traitBox]);
-
-    for (const [i, cls] of ROSTER.entries()) {
-      const cx = 900 + ((i % 4) - 1.5) * CARD.dx;
-      const cy = CARD.y0 + Math.floor(i / 4) * CARD.dy;
-      this.draftBox.add(this.buildCard(cls, cx, cy));
-    }
-
-    // The army goes to the server, which starts the fight the moment both
-    // seats are locked - the deadline is a floor under a stalling opponent,
-    // never something two ready players sit through.
-    this.lockBtn = button(this, 1086, 630, 176, 104, "Lock in", "red", () => this.versus?.onLock());
-    this.draftBox.add(this.lockBtn);
-    this.buildLockBoard();
-
-    // Clouds part, the roster slides in from the right (the way it goes
-    // out), then the advisor turns up and starts talking.
-    this.draftBox.setX(GAME_W);
-    this.opening(() =>
-      this.tweens.add({
-        targets: this.draftBox,
-        x: 0,
-        duration: 460,
-        ease: "Sine.easeOut",
-        onComplete: () => this.summonAdvisor(() => this.advise()),
-      }),
-    );
-
-    this.buildMenuButton();
-
-    // A click on nothing clickable - the panel, the water, the sky - drops
-    // the picked card. The grid and the cards are interactive, so they keep it.
-    this.input.on("pointerdown", (_p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
-      if (!this.drafting || over.length > 0 || !this.picked) return;
-      this.picked = null;
-      this.hoverCell(null);
-      this.refreshDraft();
-      this.advise();
-    });
-
-    // Own half only, and it is always the left half of the screen: the enemy
-    // half sits under the panel whichever side of the engine you hold.
-    const zx = ORIGIN_X - TILE / 2;
-    const zy = ORIGIN_Y - TILE / 2;
-    this.cellZone = this.add
-      .zone(zx + (COLS / 2) * (TILE / 2), zy + BOARD_H / 2, (COLS / 2) * TILE, BOARD_H)
-      .setInteractive();
-    const cellAt = (p: Phaser.Input.Pointer): { battle: number; row: number } | null => {
-      const screenCol = Math.floor((p.worldX - zx) / TILE);
-      const row = Math.floor((p.worldY - zy) / TILE);
-      if (screenCol < 0 || screenCol >= COLS / 2 || row < 0 || row >= ROWS) return null;
-      // Screen column to battle column. For side A that is the identity.
-      return { battle: this.mirrored ? COLS - 1 - screenCol : screenCol, row };
-    };
-    this.ghostCell = this.add.graphics().setDepth(DEPTH.ground + 1);
-    this.cellZone
-      .on("pointermove", (p: Phaser.Input.Pointer) => this.hoverCell(cellAt(p)))
-      .on("pointerout", () => this.hoverCell(null))
-      .on("pointerdown", (p: Phaser.Input.Pointer) => {
-        const c = cellAt(p);
-        if (!c) return;
-        this.toggleCell(this.myCol(c.battle), c.row);
-        this.hoverCell(c);
-      });
-
-    // The first nine cards' hotkeys, 1 to 9.
-    this.input.keyboard?.on("keydown", (e: KeyboardEvent) => {
-      const cls = ROSTER[Number(e.key) - 1];
-      if (this.drafting && cls) this.pick(cls);
-    });
-
-    this.refreshDraft();
-  }
-
-  /**
-   * One roster card, the shop card's look at 120x120: portrait and price,
-   * health and damage beside it, then name, trait and skill. The whole rule
-   * set is the card's tooltip, the one Skirmish's shop shows.
-   */
-  private buildCard(cls: Champion, cx: number, cy: number): Phaser.GameObjects.Container {
-    const stats = BALANCE.units[cls];
-    const ink = { strokeThickness: 0 };
-    const face = this.add.graphics();
-    const [x0, y0, x1, y1] = PORTRAIT_INK[cls];
-    const portrait = this.add
-      .image(-30, -24, `avatar_${cls}`)
-      .setOrigin((x0 + x1) / 2 / 256, (y0 + y1) / 2 / 256)
-      .setScale(46 / Math.max(x1 - x0, y1 - y0));
-    const cost = label(this, 50, -42, `${stats.cost}`, { fontSize: "17px", ...ink }).setOrigin(1, 0.5);
-    const coin = this.add.image(50 - cost.width - 12, -42, iconKey(ICON.gold)).setScale(0.36);
-    const stat = (y: number, icon: string, value: number): [Phaser.GameObjects.Image, Phaser.GameObjects.Text] => [
-      this.add.image(14, y, iconKey(icon)).setScale(0.26),
-      label(this, 50, y, `${value}`, { fontSize: "13px", ...ink }).setOrigin(1, 0.5),
-    ];
-    const hp = stat(-20, ICON.hp, stats.hp);
-    const hit = stats.heal > 0 ? stat(-2, ICON.heal, stats.heal) : stat(-2, ICON.damage, stats.damage);
-    const name = label(this, 0, 16, CLASS_NAME[cls], { fontSize: "14px", ...ink });
-    const trait = label(this, 0, 33, AUTO.traits[traitOf(cls)].name, { fontSize: "12px", ...ink });
-    const skill = label(this, 5, 49, skillName(cls), { fontSize: "12px", ...ink });
-    const gem = this.add
-      .rectangle(5 - skill.width / 2 - 8, 49, 6, 6, 0xe0b64f)
-      .setStrokeStyle(1.2, 0x7a4f14)
-      .setAngle(45);
-
-    const box = this.add.container(cx, cy, [face, portrait, coin, cost, ...hp, ...hit, name, trait, gem, skill]);
-    box.setSize(CARD.w, CARD.h);
-    const card: DraftCard = { box, cy, face, name, stats: [hp[1], hit[1]], cost, trait, skill, portrait };
-    const tip = (p: Phaser.Input.Pointer): void => {
-      const e = p.event as MouseEvent | undefined;
-      this.launcher.onTip?.(unitTip(cls, stats.cost), e?.clientX ?? 0, e?.clientY ?? 0);
-    };
-    box
-      .setInteractive({ cursor: HAND })
-      .on("pointerup", () => this.pick(cls))
-      .on("pointerover", (p: Phaser.Input.Pointer) => {
-        tip(p);
-        this.liftCard(card, true);
-      })
-      .on("pointermove", tip)
-      .on("pointerout", () => {
-        this.launcher.onTip?.(null, 0, 0);
-        this.refreshDraft();
-      });
-    this.cards.set(cls, card);
-    return box;
-  }
-
-  /**
-   * Left of the Lock in button: who has locked, and the clock. The opponent's
-   * name also hangs on a banner over your half, the way the HUD names them in
-   * the fight.
-   */
-  private buildLockBoard(): void {
-    const ink = { fontSize: "15px", color: "#4a3a28", strokeThickness: 0 };
-    const row = (y: number, who: string) => ({
-      seal: this.add.graphics({ x: 656, y }),
-      name: label(this, 672, y, who, ink).setOrigin(0, 0.5),
-      state: label(this, 900, y, "", { ...ink, fontSize: "13px" }).setOrigin(1, 0.5),
-    });
-    const you = row(604, "You");
-    const them = row(636, "");
-    const clock = label(this, 950, 618, "", { fontSize: "28px", color: "#7a4f14", strokeThickness: 0 });
-    const flag = ribbon(this, 340, 52, 400, 0.8);
-    const banner = label(this, 340, 50, "", { fontSize: "18px" });
-    this.draftBox.add([you.seal, you.name, you.state, them.seal, them.name, them.state, clock, flag, banner]);
-    this.lockBoard = {
-      seals: { you: you.seal, them: them.seal },
-      names: { you: you.name, them: them.name },
-      states: { you: you.state, them: them.state },
-      clock,
-      banner,
-      // True so the first refresh draws both seals open.
-      seen: { you: true, them: true, second: null },
-    };
-  }
-
-  private drawSeal(g: Phaser.GameObjects.Graphics, locked: boolean): void {
-    g.clear();
-    if (!locked) {
-      g.lineStyle(2, 0xa8987c, 1).strokeCircle(0, 0, 8);
-      return;
-    }
-    g.fillStyle(0xe0b64f, 1).fillCircle(0, 0, 9);
-    g.lineStyle(1.5, 0x7a4f14, 1).strokeCircle(0, 0, 9);
-    g.lineStyle(2.5, 0x3d3123, 1).beginPath();
-    g.moveTo(-4, 0);
-    g.lineTo(-1, 3.5);
-    g.lineTo(4.5, -3.5);
-    g.strokePath();
-  }
-
-  /**
-   * Versus's own half of the draft screen, read straight off the room every
-   * frame. No events and no handle into the scene: the poll owns the truth
-   * and this just renders whatever it last said.
-   */
-  private refreshVersus(): void {
-    const versus = this.versus;
-    const board = this.lockBoard;
-    if (!versus || !board) return;
-    const st = versus.status();
-
-    // The result arriving is the signal to play it. Restarting with it in
-    // hand runs the same playback path Skirmish does.
-    if (st.battle) {
-      this.versus = null;
-      this.restart({ result: st.battle });
-      return;
-    }
-
-    const them = st.opponent ?? "Opponent";
-    board.names.them.setText(them.length > 14 ? `${them.slice(0, 13)}.` : them);
-    board.banner.setText(`YOU  VS  ${them.toUpperCase()}`);
-    const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-    for (const seat of ["you", "them"] as const) {
-      const locked = seat === "you" ? st.youLocked : st.theyLocked;
-      board.states[seat].setText(locked ? "locked in" : "drafting...").setColor(locked ? "#2f5d8a" : "#9a8a70");
-      if (locked === board.seen[seat]) continue;
-      board.seen[seat] = locked;
-      this.drawSeal(board.seals[seat], locked);
-      if (locked && !still) {
-        board.seals[seat].setScale(1.8);
-        this.tweens.add({ targets: board.seals[seat], scale: 1, duration: 320, ease: "Back.easeOut" });
-      }
-      if (locked && seat === "them" && !st.youLocked) this.remark(`${them} is locked in.`);
-    }
-
-    // The clock: red and ticking in the last ten seconds.
-    const second = st.msRemaining === null ? null : Math.ceil(st.msRemaining / 1000);
-    if (second !== board.seen.second) {
-      board.seen.second = second;
-      const urgent = second !== null && second <= 10;
-      board.clock.setText(second === null ? "" : `${second}s`).setColor(urgent ? "#b0443a" : "#7a4f14");
-      if (urgent && !still) {
-        board.clock.setScale(1.25);
-        this.tweens.add({ targets: board.clock, scale: 1, duration: 260, ease: "Quint.easeOut" });
-      }
-    }
-
-    // Locked means locked: the army on the server is the one that fights.
-    if (st.youLocked && this.lockBtn?.input?.enabled) {
-      this.lockBtn.disableInteractive();
-      this.lockBtn.setAlpha(0.55);
-      (this.lockBtn.list[1] as Phaser.GameObjects.Text).setText("Locked");
-      this.cellZone.disableInteractive();
-      this.picked = null;
-      this.hoverCell(null);
-      this.refreshDraft();
-    }
-    if (st.youLocked) this.say(st.theyLocked ? "Both locked in. To battle!" : `Locked in. Waiting for ${them}.`);
-  }
-
   /**
    * The battle's resident: an advisor pawn that ambles around the island's
    * top-left corner. Lives outside the draft box, so when the roster slides
@@ -1013,52 +666,11 @@ export class BattleScene extends Phaser.Scene {
     this.menuBtn = btn;
   }
 
-  private cardName(cls: Champion): string {
-    return CLASS_NAME[cls];
-  }
-
-  private copies(cls: Champion): number {
-    return this.draftArmy.filter((p) => p.class === cls).length;
-  }
-
-  /** "Two Trolls is the limit." */
-  private capLine(cls: Champion): string {
-    const name = CLASS_NAME[cls];
-    const many = name.endsWith("f") ? `${name.slice(0, -1)}ves` : `${name}s`;
-    return `${VERSUS.maxCopies === 2 ? "Two" : VERSUS.maxCopies} ${many} is the limit.`;
-  }
-
-  private pick(cls: Champion): void {
-    if (!this.cellZone.input?.enabled) return;
-    if (this.copies(cls) >= VERSUS.maxCopies) {
-      this.remark(this.capLine(cls));
-      return;
-    }
-    if (BALANCE.units[cls].cost > VERSUS.budget - armyCost(this.draftArmy)) {
-      this.remark("Not enough gold.");
-      return;
-    }
-    this.picked = cls;
-    this.refreshDraft();
-    this.advise();
-  }
-
-  /** What the advisor says for the draft as it stands:
-   *  one short line for the next step, not the whole manual at once. */
-  private advise(): void {
-    const next = !this.picked
-      ? "Pick a unit from the cards."
-      : this.draftArmy.length === 0
-        ? `Click a tile on your side to place the ${this.cardName(this.picked)}.`
-        : "Click a unit to send it back. Lock in when ready.";
-    this.say(next);
-  }
-
   /** A passing remark, then back to the advice. */
   private remark(line: string): void {
     this.say(line);
     this.adviceTimer?.remove();
-    this.adviceTimer = this.time.delayedCall(1800, () => this.advise());
+    this.adviceTimer = this.time.delayedCall(1800, () => this.say(this.advice));
   }
 
   /**
@@ -1178,182 +790,9 @@ export class BattleScene extends Phaser.Scene {
     this.bubble?.setPosition(s.x, s.y);
   }
 
-  /** The old CSS translateY transition, as a tween. */
-  private liftCard(card: DraftCard, up: boolean): void {
-    this.tweens.killTweensOf(card.box);
-    this.tweens.add({
-      targets: card.box,
-      y: card.cy - (up ? 4 : 0),
-      duration: 140,
-      ease: "Sine.easeInOut",
-    });
-  }
-
-  /** Whether one more of this class still fits the gold and the unit cap. */
-  private fits(cls: Champion): boolean {
-    return (
-      armyCost([...this.draftArmy, { class: cls, col: 0, row: 0 }]) <= VERSUS.budget &&
-      this.copies(cls) < VERSUS.maxCopies &&
-      this.draftArmy.length < BALANCE.board.maxUnits
-    );
-  }
-
-  /**
-   * Build placement: the picked unit, see-through, on the cell under the
-   * cursor, on a green cell where it can go and a red one where it cannot.
-   * A cell that already holds a unit goes red too: clicking it removes.
-   */
-  private hoverCell(c: { battle: number; row: number } | null): void {
-    this.ghostCell.clear();
-    this.ghost?.setVisible(false);
-    if (!c || !this.drafting || !this.cellZone.input?.enabled) return;
-    const taken = this.placed.has(`${this.myCol(c.battle)},${c.row}`);
-    if (!taken && !this.picked) return;
-    const ok = !taken && this.fits(this.picked!);
-    const color = ok ? 0x86d15e : 0xd9544a;
-    const { x, y } = this.tileXY(c.battle, c.row);
-    const w = TILE - 6;
-    this.ghostCell
-      .fillStyle(color, 0.22)
-      .fillRect(x - w / 2, y - w / 2, w, w)
-      .lineStyle(2, color, 0.75)
-      .strokeRect(x - w / 2, y - w / 2, w, w);
-    if (taken) return;
-
-    const at = this.spriteXY(c.battle, c.row);
-    this.ghost ??= this.add.sprite(0, 0, unitKey(this.mySide, this.picked!, "idle")).setAlpha(0.55);
-    playPose(this.ghost, this.mySide, this.picked!, "idle", this.mirrored);
-    this.ghost.setScale(bodyScale(this.picked!)).setPosition(at.x, at.y).setDepth(DEPTH.unit + at.y).setVisible(true);
-    if (ok) this.ghost.clearTint();
-    else this.ghost.setTint(0xff7a7a);
-  }
-
-  private toggleCell(col: number, row: number): void {
-    const key = `${col},${row}`;
-    const existing = this.placed.get(key);
-    if (existing) {
-      existing.sprite.destroy();
-      existing.shadow.destroy();
-      this.placed.delete(key);
-      this.draftArmy = this.draftArmy.filter((p) => !(p.col === col && p.row === row));
-    } else {
-      if (this.picked === null) return;
-      const next: Placement[] = [...this.draftArmy, { class: this.picked, col, row }];
-      if (next.length > BALANCE.board.maxUnits) return this.remark("No room for more.");
-      if (armyCost(next) > VERSUS.budget) return this.remark("Not enough gold.");
-      if (this.copies(this.picked) >= VERSUS.maxCopies) return this.remark(this.capLine(this.picked));
-      this.draftArmy = next;
-      const { x, y } = this.spriteXY(this.myCol(col), row);
-      const shadow = teamShadow(addShadow(this, x, y, this.picked === "lancer" ? 0.8 : 0.62), this.mySide, this.picked);
-      // Summon, not spawn: a dust cloud covering the troop first, the unit
-      // fading in inside it as the cloud breaks apart. The 64px puff reads
-      // at 3x to blanket a 192px frame; 0.8 alpha keeps it from looking
-      // like the death cloud's twin.
-      const dust = this.add
-        .sprite(x, y, "dust")
-        .setOrigin(0.5, 0.85)
-        .setDepth(DEPTH.unit + y + 1)
-        .setScale(3)
-        .setAlpha(0.8);
-      dust.play("dust_anim");
-      this.tweens.add({
-        targets: dust,
-        alpha: 0,
-        duration: (FX.dust.frames / 16) * 1000,
-      });
-      const sprite = this.add.sprite(x, y, unitKey(this.mySide, this.picked, "idle"));
-      playPose(sprite, this.mySide, this.picked, "idle", this.mirrored);
-      sprite.setDepth(DEPTH.unit + y).setScale(bodyScale(this.picked));
-      sprite.setAlpha(0);
-      this.tweens.add({
-        targets: sprite,
-        alpha: 1,
-        duration: 220,
-        delay: 80,
-        ease: "Sine.easeOut",
-      });
-      this.placed.set(key, { sprite, shadow });
-      // The last copy allowed puts the card down, so the cursor stops offering it.
-      if (this.copies(this.picked) >= VERSUS.maxCopies) {
-        const line = this.capLine(this.picked);
-        this.picked = null;
-        this.hoverCell(null);
-        this.versus?.onArmyChange(this.draftArmy);
-        this.refreshDraft();
-        return this.remark(line);
-      }
-    }
-    this.versus?.onArmyChange(this.draftArmy);
-    this.refreshDraft();
-    this.advise();
-  }
-
-  private refreshDraft(): void {
-    const gold = VERSUS.budget - armyCost(this.draftArmy);
-    this.goldText.setText(`${gold} of ${VERSUS.budget} gold left    ${this.draftArmy.length}/${BALANCE.board.maxUnits} units`);
-    this.goldCoin.setX(900 - this.goldText.width / 2 - 20);
-    if (gold !== this.shownGold) {
-      this.shownGold = gold;
-      this.goldText.setScale(1.12);
-      this.tweens.add({ targets: this.goldText, scale: 1, duration: 220, ease: "Quint.easeOut" });
-    }
-    this.errorText.setText(validateArmy(this.draftArmy, VERSUS.budget, VERSUS.board, VERSUS.maxCopies)[0] ?? "");
-    const traits = traitsOf(this.draftArmy).sort((a, b) => b.tier - a.tier || b.count - a.count);
-    const active = new Set(traits.flatMap((t) => (t.tier >= 0 ? [t.key] : [])));
-    const locked = !this.cellZone.input?.enabled;
-    for (const [cls, card] of this.cards) {
-      const picked = cls === this.picked;
-      const ink = picked ? CARD_INK.slate : CARD_INK.paper;
-      const cost = BALANCE.units[cls].cost;
-      // Out of reach reads as a greyed face and a red price, still legible.
-      // At the copy cap a card greys the same way, though its price stays legible.
-      const capped = this.copies(cls) >= VERSUS.maxCopies;
-      const afford = cost <= gold && !locked && !capped;
-      card.face
-        .clear()
-        .fillStyle(picked ? 0x2b3442 : 0xf2e7cf, 1)
-        .fillRoundedRect(-CARD.w / 2, -CARD.h / 2, CARD.w, CARD.h, 10)
-        .lineStyle(4, TIER_INK[cost]!, 1)
-        .strokeRoundedRect(-CARD.w / 2, -CARD.h / 2, CARD.w, CARD.h, 10);
-      card.name.setColor(ink.name);
-      for (const t of card.stats) t.setColor(ink.text);
-      card.skill.setColor(ink.skill);
-      card.trait.setColor(active.has(traitOf(cls)) ? ink.on : ink.off);
-      card.cost.setColor(cost <= gold || picked ? ink.cost : "#b0443a");
-      if (afford || picked) card.portrait.clearTint();
-      else card.portrait.setTint(0x8a8a8a);
-      card.box.setAlpha(afford || picked ? 1 : 0.8);
-      this.liftCard(card, picked);
-    }
-
-    // The trait tracker Skirmish's plan shows; a Versus army reaches six at most.
-    this.traitBox.removeAll(true);
-    if (traits.length === 0) {
-      this.traitBox.add(
-        label(this, 900, 520, "Two or more of a class on the board switch on its trait.", {
-          fontSize: "13px",
-          color: "#9a8a70",
-          strokeThickness: 0,
-        }),
-      );
-    }
-    for (const [k, t] of traits.entries()) {
-      const row = traitRow(this, t, 652 + (k % 2) * 268 + 128, 488 + Math.floor(k / 2) * 33);
-      row
-        .on("pointerover", (p: Phaser.Input.Pointer) => {
-          const e = p.event as MouseEvent | undefined;
-          this.launcher.onTip?.(traitTip(t.key), e?.clientX ?? 0, e?.clientY ?? 0);
-        })
-        .on("pointerout", () => this.launcher.onTip?.(null, 0, 0));
-      this.traitBox.add(row);
-    }
-  }
-
   /** Both armies are already placed, so the count is all that is needed. */
   private runIntro(): void {
-    const foe = this.versus?.status().opponent;
-    // Versus opens on who you face.
-    const steps = [...(foe ? [`VS ${foe.toUpperCase()}`] : []), "3", "2", "1", "FIGHT"];
+    const steps = ["3", "2", "1", "FIGHT"];
     let i = 0;
 
     // A veil so the count reads over the armies without hiding them. As wide
@@ -1416,7 +855,7 @@ export class BattleScene extends Phaser.Scene {
     this.tickAdvisor(delta);
 
     if (this.drafting) {
-      this.refreshVersus();
+      this.plan?.tick();
       return;
     }
     if (!this.started || this.finished || this.handbook?.open) return;
@@ -1430,7 +869,7 @@ export class BattleScene extends Phaser.Scene {
     if (this.nextEvent >= this.queue.length) {
       this.finished = true;
       // Let the last death land before the result card.
-      this.time.delayedCall(800 / this.speed, () => this.showResult());
+      this.time.delayedCall(800 / this.speed, () => this.showRoundCard());
     }
   }
 
@@ -1584,7 +1023,7 @@ export class BattleScene extends Phaser.Scene {
     const BAR_W = 650;
     const mine = this.mySide;
     const foe: Side = mine === "a" ? "b" : "a";
-    const foeName = this.launcher.foe ?? this.versus?.status().opponent ?? "THE GREY HOST";
+    const foeName = this.launcher.foe ?? "THE GREY HOST";
 
     const topY = 58;
     // Fixed, not off the island: Skirmish's runs to the screen edge.
@@ -2070,125 +1509,6 @@ export class BattleScene extends Phaser.Scene {
       .setDepth(DEPTH.unit + view.sprite.y + 2);
     dust.play("dust_anim");
     this.blast("fall", body.x, body.y - this.headHeight(view.snap.class, view.snap.side) / 2, 0.7);
-  }
-
-  // --- result --------------------------------------------------------------
-
-  private showResult(): void {
-    if (this.auto) return this.showRoundCard();
-    this.versus?.onPlayed();
-    const result = this.result!;
-    // The engine names sides, the player names players: winner is read
-    // against mySide, not against a.
-    const won = result.winner === this.mySide;
-    const lost = result.winner !== this.mySide && result.winner !== "draw";
-    const foeName = this.versus?.status().opponent ?? "THE GREY HOST";
-    // One verdict per ending, short and flat. The win line names the foe.
-    const headline = won
-      ? `${foeName.toUpperCase()} DEFEATED`
-      : lost
-        ? "DEFEAT"
-        : "DRAW";
-    const cx = GAME_W / 2;
-    const cy = GAME_H / 2;
-
-    // The whole veil is the card: no sheet, just darkness and the words. As
-    // wide as the water, so it covers the whole page.
-    const veil = this.add
-      .rectangle(cx, cy, WATER_SPAN.w, WATER_SPAN.h, 0x050608, 0.82)
-      .setDepth(DEPTH.hud + 10);
-    const band = ribbon(this, cx, cy - 150, 600).setDepth(DEPTH.hud + 11);
-    const title = label(this, cx, cy - 154, headline, {
-      fontSize: won && foeName.length > 12 ? "30px" : "38px",
-      color: won ? "#f4cf6b" : lost ? "#e0796a" : "#e4e8ea",
-    }).setDepth(DEPTH.hud + 12);
-
-    // The scoreline stays, but quiet: one line, not a ledger. Losing says
-    // how it ended (wipe or the clock), winning does not need the excuse.
-    const loserLine =
-      result.reason === "wipe"
-        ? "your line was wiped from the field"
-        : "the clock ran out on your army";
-    const detail = label(
-      this,
-      cx,
-      cy - 96,
-      won
-        ? `${result.survivors[this.mySide]} of yours left standing - ` +
-          `${(result.ticks / BALANCE.tickRate).toFixed(1)}s`
-        : lost
-          ? `${loserLine} - ${(result.ticks / BALANCE.tickRate).toFixed(1)}s`
-          : `${result.survivors.a} against ${result.survivors.b} - ` +
-            `${(result.ticks / BALANCE.tickRate).toFixed(1)}s`,
-      { fontSize: "15px", color: "#b9a887", strokeThickness: 0 },
-    ).setDepth(DEPTH.hud + 11);
-
-    // Both armies as they ended: the fallen greyed, the standing lit.
-    const standing = new Set(result.standing);
-    const faces: (Phaser.GameObjects.Text | Phaser.GameObjects.Image)[] = [];
-    for (const [side, y, who] of [
-      [this.mySide, cy - 36, "YOU"],
-      [this.mySide === "a" ? "b" : "a", cy + 20, foeName.toUpperCase()],
-    ] as const) {
-      const units = result.units.filter((u) => u.side === side);
-      const name = who.length > 14 ? `${who.slice(0, 13)}.` : who;
-      faces.push(
-        label(this, cx - 200, y, name, { fontSize: "15px", color: "#b9a887", strokeThickness: 0 })
-          .setOrigin(1, 0.5)
-          .setDepth(DEPTH.hud + 11),
-      );
-      for (const [i, u] of units.entries()) {
-        const [x0, y0, x1, y1] = PORTRAIT_INK[u.class];
-        const face = this.add
-          .image(cx - 160 + i * 48, y, `avatar_${u.class}`)
-          .setOrigin((x0 + x1) / 2 / 256, (y0 + y1) / 2 / 256)
-          .setScale(42 / Math.max(x1 - x0, y1 - y0))
-          .setDepth(DEPTH.hud + 11);
-        if (!standing.has(u.id)) face.setTint(0x4a4a4a);
-        faces.push(face);
-      }
-    }
-
-    // Your hardest hitter, off the log.
-    const dealt = new Map<string, number>();
-    for (const ev of result.events) if (ev.type === "hit") dealt.set(ev.unit, (dealt.get(ev.unit) ?? 0) + ev.damage);
-    const best = result.units
-      .filter((u) => u.side === this.mySide)
-      .sort((x, y) => (dealt.get(y.id) ?? 0) - (dealt.get(x.id) ?? 0))[0];
-    const mvp = label(
-      this,
-      cx,
-      cy + 74,
-      best && dealt.get(best.id) ? `Your best blade: ${CLASS_NAME[best.class]}, ${dealt.get(best.id)} damage` : "",
-      { fontSize: "15px", color: "#e8c06a", strokeThickness: 0 },
-    ).setDepth(DEPTH.hud + 11);
-
-    // The menu link: a quiet text button, styled after the boss-fog exit. A
-    // rematch belongs to the room, so the page offers that, not this card.
-    const menu = label(this, cx, cy + 150, "Return to menu", {
-      fontSize: "15px",
-      color: "#b9a887",
-      strokeThickness: 0,
-    })
-      .setDepth(DEPTH.hud + 11)
-      .setInteractive({ cursor: HAND })
-      .on("pointerover", () => menu.setColor("#fdfaf0"))
-      .on("pointerout", () => menu.setColor("#b9a887"))
-      .on("pointerup", () => {
-        this.input.enabled = false;
-        cloudCover(this, "close", () => this.launcher.onMenu());
-      });
-
-    for (const [i, o] of [veil, band, title, detail, ...faces, mvp, menu].entries()) {
-      o.setAlpha(0);
-      this.tweens.add({ targets: o, alpha: 1, delay: Math.min(i, 3) * 120, duration: 260 });
-    }
-    // The verdict lands: the band and its words pop in together.
-    for (const o of [band, title]) {
-      const scale = o.scale;
-      o.setScale(scale * 0.6);
-      this.tweens.add({ targets: o, scale, delay: 120, duration: 420, ease: "Back.easeOut" });
-    }
   }
 }
 

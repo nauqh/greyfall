@@ -1,40 +1,37 @@
-// Room procedures. Milestone 1: seats and polling. Planning, resolution and
-// rematch land on top of the same room object.
+// Room procedures. A room holds one Skirmish run, and every change to it is a
+// read-modify-write through store.mutate.
 
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { BALANCE, CHAMPIONS, VERSUS, validateArmy } from "@greyfall/engine";
+import { AUTO, act, newRun, type Fight } from "@greyfall/engine";
 
 import { CODE_PATTERN } from "../../shared/protocol.ts";
 
 import { guestProcedure, publicProcedure, router } from "../trpc.ts";
-import { type RoomData, type RoomRow } from "../schema.ts";
+import type { Player, RoomData, RoomRow } from "../schema.ts";
 import * as store from "./store.ts";
-import { ready, resolve } from "./resolve.ts";
+import { PLANNING_MS, ownFight, settle } from "./resolve.ts";
 import { viewFor, type RoomView } from "./view.ts";
 
 const nameSchema = z.string().trim().min(1).max(20);
 const codeSchema = z.string().trim().toUpperCase().regex(CODE_PATTERN, "not a room code");
 
+/** One rival: a Versus run is two seats, both human, no AI clan. */
+const SEATS = 2;
+
 /** The envelope only. The engine checks the game; Zod checks the shape. */
-const armySchema = z
-  .array(
-    z.object({
-      class: z.enum(CHAMPIONS as unknown as [string, ...string[]]),
-      col: z
-        .number()
-        .int()
-        .min(0)
-        .max(VERSUS.board.cols - 1),
-      row: z
-        .number()
-        .int()
-        .min(0)
-        .max(VERSUS.board.rows - 1),
-    }),
-  )
-  .max(BALANCE.board.maxUnits);
+const spotSchema = z.union([
+  z.object({ bench: z.number().int() }),
+  z.object({ col: z.number().int(), row: z.number().int() }),
+]);
+const actionSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("buy"), slot: z.number().int().min(0).max(AUTO.shopSlots - 1) }),
+  z.object({ type: z.literal("sell"), piece: z.number().int() }),
+  z.object({ type: z.literal("reroll") }),
+  z.object({ type: z.literal("xp") }),
+  z.object({ type: z.literal("move"), piece: z.number().int(), to: spotSchema }),
+]);
 
 const notFound = (): never => {
   // The same error whether the code never existed or the room has been
@@ -42,30 +39,31 @@ const notFound = (): never => {
   throw new TRPCError({ code: "NOT_FOUND", message: "no such room" });
 };
 
-/** Load the room and the caller's seat, or fail the way the client expects. */
-async function seated(code: string, token: string): Promise<{ row: RoomRow; seat: 0 | 1 }> {
-  const row = await store.get(code);
-  if (!row) return notFound();
+const conflict = (message: string): never => {
+  throw new TRPCError({ code: "CONFLICT", message });
+};
+
+function seatIn(row: RoomRow, token: string): number {
   const seat = store.seatOf(row.data, token);
   if (seat === null) throw new TRPCError({ code: "FORBIDDEN", message: "not your room" });
-  return { row, seat };
+  return seat;
 }
 
-/**
- * Decide the room if it is owed a decision, and hand back whatever the room
- * is now. The write is conditional on the room still being in planning, so
- * two polls arriving together past the deadline produce one battle between
- * them and the loser simply re-reads the finished room.
- */
-async function settle(row: RoomRow): Promise<RoomRow> {
-  if (!ready(row)) return row;
-  await store.update(row.code, "planning", {
-    state: "result",
-    deadline: null,
-    data: { ...row.data, ...resolve(row.data) },
-  });
-  return (await store.get(row.code)) ?? row;
+const settleNow = (row: RoomRow) => settle(row.state, row.deadline, row.data, Date.now());
+
+/** store.mutate for a caller who must hold a seat; `change` gets that seat. */
+async function change(
+  code: string,
+  token: string,
+  fn: (row: RoomRow, seat: number) => store.Next | null,
+): Promise<RoomView> {
+  let seat = -1;
+  const row = await store.mutate(code, (r) => fn(r, (seat = seatIn(r, token))));
+  if (!row) return notFound();
+  return viewFor(row, seat);
 }
+
+const newPlayer = (token: string, name: string): Player => ({ token, name, ready: false });
 
 export const roomRouter = router({
   /**
@@ -77,21 +75,14 @@ export const roomRouter = router({
   create: guestProcedure
     .input(z.object({ name: nameSchema }))
     .mutation(async ({ ctx, input }): Promise<RoomView> => {
-      const data: RoomData = {
-        seed: store.newSeed(),
-        round: 0,
-        seats: [store.makeSeat(ctx.token, input.name), null],
-        battle: null,
-        walkover: null,
-      };
+      const data: RoomData = { seed: store.newSeed(), version: 0, players: [newPlayer(ctx.token, input.name)], run: null, last: null };
       // A collision would be a primary key error; six characters over a
       // 32-letter alphabet makes one round of retries plenty.
       for (let tries = 0; tries < 5; tries++) {
         const code = store.newCode();
         try {
           await store.insert({ code, state: "waiting", deadline: null, data });
-          const row = await store.get(code);
-          return viewFor(row!, 0);
+          return viewFor({ code, state: "waiting", deadline: null, lastActivity: new Date(), data }, 0);
         } catch {
           continue;
         }
@@ -102,37 +93,83 @@ export const roomRouter = router({
   join: guestProcedure
     .input(z.object({ code: codeSchema, name: nameSchema }))
     .mutation(async ({ ctx, input }): Promise<RoomView> => {
-      const row = await store.get(input.code);
-      if (!row) return notFound();
-
-      // Rejoining your own room is a no-op, not an error: a refresh mid-room
-      // lands here, and the room is the unit of truth, not the session.
-      const already = store.seatOf(row.data, ctx.token);
-      if (already !== null) return viewFor(row, already);
-
-      if (row.state !== "waiting") {
-        throw new TRPCError({ code: "CONFLICT", message: "that room is full" });
-      }
-      const seat = store.freeSeat(row.data);
-      if (seat === null) throw new TRPCError({ code: "CONFLICT", message: "that room is full" });
-
-      const seats = [...row.data.seats] as RoomData["seats"];
-      seats[seat] = store.makeSeat(ctx.token, input.name);
-      const deadline = new Date(Date.now() + store.PLANNING_MS);
-
-      // Conditional on the room still being `waiting`. Two people entering the
-      // same code at the same moment: one takes the seat, the other re-reads
-      // and is told the room is full.
-      const won = await store.update(input.code, "waiting", {
-        state: "planning",
-        deadline,
-        data: { ...row.data, seats },
+      let seat = -1;
+      const row = await store.mutate(input.code, (r) => {
+        // Rejoining your own room is a no-op, not an error: a refresh mid-room
+        // lands here, and the room is the unit of truth, not the session.
+        const already = store.seatOf(r.data, ctx.token);
+        if (already !== null) {
+          seat = already;
+          return null;
+        }
+        if (r.state !== "waiting") return conflict("that game has already started");
+        if (r.data.players.length >= SEATS) return conflict("that room is full");
+        seat = r.data.players.length;
+        return { state: "waiting", data: { ...r.data, players: [...r.data.players, newPlayer(ctx.token, input.name)] } };
       });
-      if (!won) throw new TRPCError({ code: "CONFLICT", message: "that room is full" });
-
-      const fresh = await store.get(input.code);
-      return viewFor(fresh!, seat);
+      if (!row) return notFound();
+      return viewFor(row, seat);
     }),
+
+  /**
+   * In the lobby, frees the seat, and the last one out closes the room. In a
+   * run the seat stays and keeps its board; it just never readies again.
+   */
+  leave: guestProcedure
+    .input(z.object({ code: codeSchema }))
+    .mutation(async ({ ctx, input }): Promise<{ left: true }> => {
+      const row = await store.mutate(input.code, (r) => {
+        const seat = seatIn(r, ctx.token);
+        if (r.state !== "waiting") return null;
+        const players = r.data.players.filter((_, i) => i !== seat);
+        return { state: players.length === 0 ? "closed" : "waiting", data: { ...r.data, players } };
+      });
+      if (!row) return notFound();
+      if (row.state === "closed") await store.remove(input.code);
+      return { left: true };
+    }),
+
+  start: guestProcedure
+    .input(z.object({ code: codeSchema }))
+    .mutation(({ ctx, input }) =>
+      change(input.code, ctx.token, (row, seat) => {
+        if (seat !== 0) return conflict("only the host can start");
+        if (row.state !== "waiting") return conflict("the game has already started");
+        if (row.data.players.length < 2) return conflict("waiting for a second player");
+        return {
+          state: "planning",
+          deadline: new Date(Date.now() + PLANNING_MS),
+          data: { ...row.data, run: newRun(row.data.seed, row.data.players.length, SEATS) },
+        };
+      }),
+    ),
+
+  /** One shop or board action. An action that arrives after the clock ran out is dropped, and the round is fought. */
+  act: guestProcedure
+    .input(z.object({ code: codeSchema, action: actionSchema }))
+    .mutation(({ ctx, input }) =>
+      change(input.code, ctx.token, (row, seat) => {
+        const settled = settleNow(row);
+        if (settled) return settled;
+        if (row.state !== "planning") return conflict("planning is over");
+        const { run, error } = act(row.data.run!, seat, input.action);
+        if (error) throw new TRPCError({ code: "BAD_REQUEST", message: error });
+        return { state: "planning", data: { ...row.data, run } };
+      }),
+    ),
+
+  /** The last human still in to ready starts the fight; nobody waits out the clock. */
+  ready: guestProcedure
+    .input(z.object({ code: codeSchema }))
+    .mutation(({ ctx, input }) =>
+      change(input.code, ctx.token, (row, seat) => {
+        if (row.state !== "planning") return conflict("planning is over");
+        if (row.data.players[seat]!.ready) return settleNow(row);
+        const players = row.data.players.map((p, i) => (i === seat ? { ...p, ready: true } : p));
+        const data = { ...row.data, players };
+        return settle(row.state, row.deadline, data, Date.now()) ?? { state: row.state, data };
+      }),
+    ),
 
   /**
    * Drives all polling, and carries the housekeeping with it: the poll is the
@@ -141,118 +178,42 @@ export const roomRouter = router({
   get: guestProcedure
     .input(z.object({ code: codeSchema }))
     .query(async ({ ctx, input }): Promise<RoomView> => {
-      const { row, seat } = await seated(input.code, ctx.token);
+      let seat = -1;
+      const row = await store.mutate(input.code, (r) => {
+        seat = seatIn(r, ctx.token);
+        return settleNow(r);
+      });
+      if (!row) return notFound();
       void store.evictStale();
       void store.touch(row);
-      return viewFor(await settle(row), seat);
+      return viewFor(row, seat);
     }),
 
-  /**
-   * Autosave. Every board change lands here, so the deadline always has
-   * something to resolve from even if the player never locks in.
-   */
-  setArmy: guestProcedure
-    .input(z.object({ code: codeSchema, army: armySchema }))
-    .mutation(async ({ ctx, input }): Promise<RoomView> => {
-      const { row, seat } = await seated(input.code, ctx.token);
-      if (row.state !== "planning") {
-        throw new TRPCError({ code: "CONFLICT", message: "planning is over" });
-      }
-      const mine = row.data.seats[seat]!;
-      if (mine.locked) throw new TRPCError({ code: "CONFLICT", message: "you are locked in" });
-
-      // Validated on every write, not only on lock-in. An illegal army left
-      // sitting on a room is a wedged room waiting for the deadline.
-      const army = input.army as typeof mine.army;
-      if (army.length > 0) {
-        const errors = validateArmy(army, VERSUS.budget, VERSUS.board, VERSUS.maxCopies);
-        if (errors.length > 0) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: errors[0]! });
-        }
-      }
-
-      const seats = [...row.data.seats] as RoomData["seats"];
-      seats[seat] = { ...mine, army };
-      await store.update(input.code, "planning", {
-        state: "planning",
-        data: { ...row.data, seats },
-      });
-      const fresh = await store.get(input.code);
-      return viewFor(fresh ?? row, seat);
+  /** The caller's own fight from `round`, battle included. Fetched once a round, so polls stay small. */
+  fight: guestProcedure
+    .input(z.object({ code: codeSchema, round: z.number().int() }))
+    .query(async ({ ctx, input }): Promise<Fight | null> => {
+      const row = await store.get(input.code);
+      if (!row) return notFound();
+      const seat = seatIn(row, ctx.token);
+      const last = row.data.last;
+      return last?.round === input.round ? ownFight(last, seat) : null;
     }),
 
-  /** Freezes the army already held. There is no separate submission. */
-  lock: guestProcedure
-    .input(z.object({ code: codeSchema }))
-    .mutation(async ({ ctx, input }): Promise<RoomView> => {
-      const { row, seat } = await seated(input.code, ctx.token);
-      if (row.state !== "planning") {
-        throw new TRPCError({ code: "CONFLICT", message: "planning is over" });
-      }
-      const seats = [...row.data.seats] as RoomData["seats"];
-      seats[seat] = { ...row.data.seats[seat]!, locked: true };
-      await store.update(input.code, "planning", {
-        state: "planning",
-        data: { ...row.data, seats },
-      });
-
-      // Both locked means the fight starts now. Nobody waits out the clock.
-      const fresh = (await store.get(input.code)) ?? row;
-      return viewFor(await settle(fresh), seat);
-    }),
-
-  /** Fresh seed, both armies cleared, both locks cleared, back to planning. */
+  /** A fresh seed and a fresh run for the same players. */
   rematch: guestProcedure
     .input(z.object({ code: codeSchema }))
-    .mutation(async ({ ctx, input }): Promise<RoomView> => {
-      const { row, seat } = await seated(input.code, ctx.token);
-      if (row.state !== "result") {
-        throw new TRPCError({ code: "CONFLICT", message: "no battle to rematch" });
-      }
-      const seats = row.data.seats.map((s) =>
-        s === null ? null : { ...s, army: [], locked: false },
-      ) as RoomData["seats"];
-
-      // Conditional on `result`, so both players tapping rematch at once
-      // starts one new round rather than two.
-      await store.update(input.code, "result", {
-        state: "planning",
-        deadline: new Date(Date.now() + store.PLANNING_MS),
-        data: {
-          seed: store.newSeed(),
-          round: row.data.round + 1,
-          seats,
-          battle: null,
-          walkover: null,
-        },
-      });
-      const fresh = await store.get(input.code);
-      return viewFor(fresh ?? row, seat);
-    }),
-
-  /**
-   * Frees the seat. The last one out closes the room; the one left behind
-   * goes back to waiting with their lock cleared, since they are waiting for
-   * an opponent again rather than holding a submission against nobody.
-   */
-  leave: guestProcedure
-    .input(z.object({ code: codeSchema }))
-    .mutation(async ({ ctx, input }): Promise<{ left: true }> => {
-      const { row, seat } = await seated(input.code, ctx.token);
-      const seats = [...row.data.seats] as RoomData["seats"];
-      seats[seat] = null;
-      const other = seats[seat === 0 ? 1 : 0];
-
-      if (other === null) {
-        await store.remove(input.code);
-        return { left: true };
-      }
-      seats[seat === 0 ? 1 : 0] = { ...other, army: [], locked: false };
-      await store.update(input.code, row.state, {
-        state: "waiting",
-        deadline: null,
-        data: { ...row.data, seats, battle: null, walkover: null },
-      });
-      return { left: true };
-    }),
+    .mutation(({ ctx, input }) =>
+      change(input.code, ctx.token, (row, seat) => {
+        if (seat !== 0) return conflict("only the host can start a rematch");
+        if (row.state !== "result") return conflict("the game is not over");
+        const seed = store.newSeed();
+        const players = row.data.players.map((p) => ({ ...p, ready: false }));
+        return {
+          state: "planning",
+          deadline: new Date(Date.now() + PLANNING_MS),
+          data: { ...row.data, seed, players, run: newRun(seed, players.length, SEATS), last: null },
+        };
+      }),
+    ),
 });

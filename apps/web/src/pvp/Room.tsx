@@ -1,22 +1,25 @@
 "use client";
 
 // The room, once you have a seat in it. One poll drives every screen: what
-// the server says the state is, is what you are looking at.
+// the server says the state is, is what you are looking at. In a run, the
+// Skirmish scene plays the room's run: every action is a round trip, and a
+// round ends when everyone is ready or the server's clock runs out.
 
-import type { Placement } from "@greyfall/engine";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { BattleResult, LobbyRound } from "@greyfall/engine";
+
+import type { AutoHooks } from "../game/autoPlan";
 import { Clouds, useCloudExit } from "../game/Clouds";
 import { GameCanvas } from "../game/GameCanvas";
 import { StatTip, useStatTip } from "../game/StatTip";
 import { api } from "./client.ts";
+import { Waiting } from "./Waiting";
 import type { RoomView } from "../server/room/view.ts";
 
-/** 1s while anything is moving. The result screen slows down; see below. */
+/** 1s while anything is moving; a finished room slows down. */
 const POLL_MS = 1000;
 const IDLE_POLL_MS = 5000;
-/** A placement is a click, and a click is not worth a round trip each. */
-const AUTOSAVE_MS = 250;
 
 export function Room({
   code,
@@ -32,58 +35,99 @@ export function Room({
     { code },
     {
       initialData: initial,
-      // Stop polling fast once the battle is in hand: a stored BattleResult is
-      // ~16KB, and two clients pulling that every second on a finished room
-      // would be the heaviest thing the server does, for nothing.
       refetchInterval: (q) => (q.state.data?.state === "result" ? IDLE_POLL_MS : POLL_MS),
-      // Keep polling an unfocused tab. Waiting for an opponent is exactly
+      // Keep polling an unfocused tab. Waiting for the others is exactly
       // when someone alt-tabs away, and react-query parks the interval on a
-      // blurred window by default - so the player who opened the room would
-      // sit on "waiting" while the other one was already drafting.
+      // blurred window by default.
       refetchIntervalInBackground: true,
     },
   );
   const view = room.data ?? initial;
+  const utils = api.useUtils();
 
-  // The scene reads this every frame. Holding it in a ref rather than passing
-  // it down means a poll never remounts the game underneath a battle. Null
-  // only before the first poll lands, and nothing below reads it then: the
-  // loading guard sits first, so every read happens under a real view.
+  // The scene reads these from its own handlers. Holding them in refs rather
+  // than passing them down means a poll never remounts the game underneath a
+  // battle.
   const live = useRef<RoomView | undefined>(view);
   live.current = view;
+  const liveAt = useRef(0);
+  liveAt.current = room.dataUpdatedAt;
 
-  const setArmy = api.room.setArmy.useMutation();
-  const lock = api.room.lock.useMutation();
+  const start = api.room.start.useMutation();
   const rematch = api.room.rematch.useMutation();
   const leave = api.room.leave.useMutation();
   const [error, setError] = useState<string | null>(null);
-  // The server resolves as soon as both seats lock, so the poll carries the
-  // winner while the fight is still playing. Nothing is said until the scene
-  // has finished showing it.
+  // The poll knows the run is over before the last fight has been watched;
+  // nothing is said until the scene has shown it.
   const [played, setPlayed] = useState(false);
-  useEffect(() => setPlayed(false), [view?.round]);
+
+  // A rematch is a new run on the same seats, so a new game for the canvas.
+  const game = useRef({ n: 0, round: 0 });
+  const round = view?.run?.round ?? 0;
+  if (round < game.current.round) game.current.n += 1;
+  game.current.round = round;
+  useEffect(() => setPlayed(false), [game.current.n]);
 
   // An evicted or closed room is not something to sit in.
   useEffect(() => {
     if (room.error) onLeave();
   }, [room.error, onLeave]);
 
-  const queued = useRef<Placement[] | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pushArmy = useCallback(
-    (army: Placement[]) => {
-      queued.current = army;
-      if (timer.current) return;
-      timer.current = setTimeout(() => {
-        timer.current = null;
-        const next = queued.current;
-        queued.current = null;
-        if (next) setArmy.mutate({ code, army: next });
-      }, AUTOSAVE_MS);
+  const take = useCallback(
+    (v: RoomView) => {
+      live.current = v;
+      utils.room.get.setData({ code }, v);
     },
-    [setArmy],
+    [utils, code],
   );
-  useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
+
+  // The scene waits on the round it is planning; the poll that shows the run
+  // past it fetches this seat's fight and hands it over.
+  const waiter = useRef<{ round: number; resolve: (f: { round: LobbyRound; result: BattleResult | null }) => void } | null>(null);
+  const settle = useCallback(() => {
+    const w = waiter.current;
+    const v = live.current;
+    if (!w || !v?.run || !v.last || v.run.round <= w.round) return;
+    waiter.current = null;
+    const { last } = v;
+    void utils.client.room.fight
+      .query({ code, round: last.round })
+      .catch(() => null)
+      .then((f) => w.resolve({ round: last, result: f?.result ?? null }));
+  }, [utils, code]);
+  useEffect(settle, [view, settle]);
+
+  const hooks = useRef<AutoHooks | null>(null);
+  hooks.current ??= {
+    seat: view?.seat ?? 0,
+    run: () => live.current!.run!,
+    act: (action) =>
+      utils.client.room.act.mutate({ code, action }).then(
+        (v) => {
+          take(v);
+          return null;
+        },
+        (e: Error) => e.message,
+      ),
+    ready: () => void utils.client.room.ready.mutate({ code }).then(take, () => {}),
+    fought: (r) =>
+      new Promise((resolve) => {
+        waiter.current = { round: r, resolve };
+        settle();
+      }),
+    clock: () => {
+      const v = live.current!;
+      return {
+        msRemaining: v.msRemaining === null ? null : Math.max(0, v.msRemaining - (Date.now() - liveAt.current)),
+        ready: v.players.map((p) => p.ready),
+      };
+    },
+    onCard: (r) => {
+      const v = live.current;
+      if (v?.run?.over && v.last?.round === r.round) setPlayed(true);
+    },
+  };
+  hooks.current.seat = view?.seat ?? 0;
 
   const exit = useCloudExit();
   const quit = useCallback(() => {
@@ -91,14 +135,13 @@ export function Room({
     exit.leave(onLeave);
   }, [leave, code, onLeave, exit]);
 
-  // Hooks stay above the early returns below: this one used to sit after
-  // them, so leaving the waiting screen ran one more hook than the render
-  // before and React threw.
+  // Hooks stay above the early returns below: leaving the waiting screen
+  // must not change how many hooks run.
   const { tip, onTip } = useStatTip();
 
-  // Waiting to drafting is a screen change without a route change: the
+  // Waiting to planning is a screen change without a route change: the
   // waiting screen closes into cloud first, and the board parts out of it.
-  // Only when this client saw the waiting screen; a refresh mid-draft goes
+  // Only when this client saw the waiting screen; a refresh mid-run goes
   // straight to the board.
   const [sawWaiting, setSawWaiting] = useState(false);
   useEffect(() => {
@@ -115,71 +158,54 @@ export function Room({
     );
   }
 
-  if (view.state === "waiting" || sawWaiting) {
+  if (view.state === "waiting" || !view.run || sawWaiting) {
     return (
       <>
-        <Waiting view={view} onLeave={quit} />
-        {view.state === "waiting" ? exit.cover : <Clouds mode="close" onDone={() => setSawWaiting(false)} />}
+        <Waiting
+          view={view}
+          onStart={() => start.mutate({ code }, { onSuccess: take })}
+          onLeave={quit}
+          starting={start.isPending}
+        />
+        {view.state === "waiting" || !view.run ? exit.cover : <Clouds mode="close" onDone={() => setSawWaiting(false)} />}
       </>
     );
   }
 
-  // A walkover has no event log to play, so there is nothing for the canvas
-  // to show and the page says what happened instead.
-  const walkover = view.state === "result" && view.battle === null;
-
   return (
     <div className="roomStage">
-      {walkover ? null : (
-        <GameCanvas
-          // Keyed on the round, so a rematch builds a fresh game and a poll
-          // during a battle never disturbs the one that is playing.
-          key={`versus-${view.round}`}
-          start={(el) =>
-            import("../game/BattleScene").then(({ startBattle }) =>
-              startBattle(el, {
-                result: null,
-                seed: code,
-                mySide: view.seat === 0 ? "a" : "b",
-                onMenu: onLeave,
-                onTip,
-                versus: {
-                  onArmyChange: pushArmy,
-                  onLock: () => lock.mutate({ code }),
-                  onPlayed: () => setPlayed(true),
-                  status: () => {
-                    const v = live.current!;
-                    return {
-                      msRemaining: v.msRemaining,
-                      youLocked: v.you.locked,
-                      theyLocked: v.opponent?.locked ?? false,
-                      opponent: v.opponent?.name ?? null,
-                      battle: v.battle,
-                    };
-                  },
-                },
-              }),
-            )
-          }
-        >
-          <StatTip tip={tip} />
-        </GameCanvas>
-      )}
+      <GameCanvas
+        key={`versus-${game.current.n}`}
+        start={(el) =>
+          import("../game/BattleScene").then(({ startBattle }) =>
+            startBattle(el, {
+              result: null,
+              seed: code,
+              auto: hooks.current!,
+              onMenu: quit,
+              onTip,
+            }),
+          )
+        }
+      >
+        <StatTip tip={tip} />
+      </GameCanvas>
 
-      {view.state === "result" && (played || walkover) ? (
+      {view.state === "result" && played ? (
         <div className="resultBar">
-          <Outcome view={view} />
-          <button
-            className="btn small"
-            type="button"
-            disabled={rematch.isPending}
-            onClick={() => {
-              setError(null);
-              rematch.mutate({ code: view.code }, { onError: (e) => setError(e.message) });
-            }}
-          >
-            Rematch
-          </button>
+          {view.host ? (
+            <button
+              className="btn small"
+              type="button"
+              disabled={rematch.isPending}
+              onClick={() => {
+                setError(null);
+                rematch.mutate({ code: view.code }, { onSuccess: take, onError: (e) => setError(e.message) });
+              }}
+            >
+              Rematch
+            </button>
+          ) : null}
           <button className="btn red small" type="button" onClick={quit}>
             Leave
           </button>
@@ -187,61 +213,6 @@ export function Room({
         </div>
       ) : null}
       {exit.cover}
-    </div>
-  );
-}
-
-/** Who won, in the caller's own terms. */
-function Outcome({ view }: { view: RoomView }) {
-  const mine = view.seat === 0 ? "a" : "b";
-  const winner = view.battle?.winner ?? view.walkover;
-  const word =
-    winner === "draw" || winner == null
-      ? "A draw"
-      : winner === mine
-        ? "You hold"
-        : "The Grey takes you";
-  const how = view.battle === null ? " - nobody fielded an army against you" : "";
-  return (
-    <span className="outcome">
-      {word}
-      {how}
-    </span>
-  );
-}
-
-function Waiting({ view, onLeave }: { view: RoomView; onLeave: () => void }) {
-  return (
-    <div className="lobby">
-      <h1 className="banner">{view.code}</h1>
-      <p className="tagline">Share the code. Waiting for an opponent.</p>
-      <div className="seats">
-        <Seat label="You" name={view.you.name} locked={view.you.locked} mine />
-        <Seat label="Opponent" name={null} locked={false} />
-      </div>
-      <button className="linkBtn" type="button" onClick={onLeave}>
-        Leave
-      </button>
-    </div>
-  );
-}
-
-function Seat({
-  label,
-  name,
-  locked,
-  mine = false,
-}: {
-  label: string;
-  name: string | null;
-  locked: boolean;
-  mine?: boolean;
-}) {
-  return (
-    <div className={mine ? "seat mine" : "seat"}>
-      <span className="seatLabel">{label}</span>
-      <span className="seatName">{name ?? "empty"}</span>
-      {locked ? <span className="seatLocked">locked in</span> : null}
     </div>
   );
 }

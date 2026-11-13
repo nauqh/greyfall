@@ -11,10 +11,13 @@ import {
   xpToNext,
   type BattleResult,
   type BoardPiece,
+  type Fight,
   type LobbyRound,
   type Piece,
   type Run,
   type RunAction,
+  type Seat,
+  type Side,
   type Champion,
   type Spot,
   type TraitKey,
@@ -69,14 +72,47 @@ export const PORTRAIT_INK: Record<Champion, [number, number, number, number]> = 
   minotaur: [32, 26, 219, 214],
 };
 
+/** A fought round, as one seat sees it. */
+export interface Fought {
+  result: BattleResult | null;
+  /** Your side of the fight: B when the pairing put you second. */
+  side: Side;
+  foe: string;
+  round: LobbyRound;
+}
+
+/**
+ * The run behind the scene: held by the page in Skirmish, by the server in
+ * Versus, where every action is a round trip and a round ends on the clock.
+ */
 export interface AutoHooks {
+  /** Your seat in the run. */
+  seat: number;
   run: () => Run;
-  /** Seat 0's action; the error to show, or null once applied. */
-  act: (a: RunAction) => string | null;
-  /** Resolves the round for every clan and returns seat 0's fight. */
-  fight: () => { result: BattleResult | null; foe: string; round: LobbyRound };
-  /** A fresh lobby. */
-  again: () => void;
+  /** Your action; resolves to the error to show, or null once applied. */
+  act: (a: RunAction) => Promise<string | null>;
+  /** The Fight button, or Versus's Ready. */
+  ready: () => void;
+  /** Resolves once round `round` has been fought, with your fight's result when the round's own copy lacks it. */
+  fought: (round: number) => Promise<{ round: LobbyRound; result?: BattleResult | null }>;
+  /** Versus only, read every frame while planning: the planning clock, and who is ready by seat. */
+  clock?: () => { msRemaining: number | null; ready: boolean[] };
+  /** A fresh lobby once the run is over; Versus leaves the rematch to the room. */
+  again?: () => void;
+  /** The round card is up, so the fight has been watched. */
+  onCard?: (round: LobbyRound) => void;
+}
+
+/** Your fight in a round: side A of one, or side B of a pairing that is not an echo. */
+export function fightOf(round: LobbyRound, seat: number): Fight | undefined {
+  return round.fights.find((f) => f.a === seat || (f.b === seat && !f.ghost));
+}
+
+export function foughtBy(run: Run, round: LobbyRound, seat: number, result = fightOf(round, seat)?.result ?? null): Fought {
+  const f = fightOf(round, seat);
+  const side: Side = f && f.a !== seat ? "b" : "a";
+  const foe = f ? run.seats[side === "a" ? f.b : f.a]!.name + (f.ghost ? " (echo)" : "") : "";
+  return { result, side, foe, round };
 }
 
 /** What the plan needs from the scene that hosts it. */
@@ -289,6 +325,7 @@ export class AutoPlan {
   private sellVeil!: Phaser.GameObjects.Container;
   private sellText!: Phaser.GameObjects.Text;
   private buttons!: { reroll: Phaser.GameObjects.Container; xp: Phaser.GameObjects.Container };
+  private fightBtn!: Phaser.GameObjects.Container;
   private drag: { id: number; x: number; y: number; moved: boolean } | null = null;
   private selected: number | null = null;
   private ground!: Phaser.GameObjects.Graphics;
@@ -298,6 +335,8 @@ export class AutoPlan {
   private outgoing!: Phaser.GameObjects.Container;
   private rolled = false;
   private pieceTip = false;
+  /** Versus: the ready flags at the last draw, so a change redraws the lobby. */
+  private readySeen = "";
   /** Each trait's tier at the last draw, null before the first: a rise gets its flourish. */
   private tiers: Map<TraitKey, number> | null = null;
 
@@ -313,8 +352,14 @@ export class AutoPlan {
     return this.host.hooks.run();
   }
 
-  private act(a: RunAction): boolean {
-    const error = this.host.hooks.act(a);
+  private seat(): Seat {
+    return this.run().seats[this.host.hooks.seat]!;
+  }
+
+  private async act(a: RunAction): Promise<boolean> {
+    const error = await this.host.hooks.act(a);
+    // The fight may have taken the scene while a Versus action was in flight.
+    if (!this.title.scene) return false;
     if (error) this.host.remark(error);
     this.rolled = error === null && a.type === "reroll";
     this.refresh();
@@ -341,8 +386,8 @@ export class AutoPlan {
       reroll: button(s, 714, 566, 176, 104, `Reroll  ${AUTO.reroll}g`, "blue", () => this.act({ type: "reroll" })),
       xp: button(s, 900, 566, 176, 104, `Level up  ${AUTO.xpBuy.gold}g`, "blue", () => this.act({ type: "xp" })),
     };
-    const fight = button(s, 1086, 566, 176, 104, "Fight", "red", () => this.host.fight());
-    box.add([this.buttons.reroll, this.buttons.xp, fight]);
+    this.fightBtn = button(s, 1086, 566, 176, 104, this.host.hooks.clock ? "Ready" : "Fight", "red", () => this.host.fight());
+    box.add([this.buttons.reroll, this.buttons.xp, this.fightBtn]);
     box.add(
       label(s, 900, 644, "Drag units onto your half, drop one here to sell.  D reroll, F level up, H handbook.", {
         fontSize: "13px",
@@ -381,7 +426,7 @@ export class AutoPlan {
   }
 
   private pieceAt(spot: Spot): Piece | null {
-    const seat = this.run().seats[0]!;
+    const seat = this.seat();
     if ("bench" in spot) return seat.bench[spot.bench] ?? null;
     return seat.board.find((p) => p.col === spot.col && p.row === spot.row) ?? null;
   }
@@ -461,7 +506,7 @@ export class AutoPlan {
   }
 
   private findOwned(id: number): Piece | null {
-    const seat = this.run().seats[0]!;
+    const seat = this.seat();
     return seat.board.find((p) => p.id === id) ?? seat.bench.find((p) => p?.id === id) ?? null;
   }
 
@@ -470,7 +515,7 @@ export class AutoPlan {
    * panel's exit, and the units on the board stay put for the battle to take over.
    */
   leave(ms: number): void {
-    const seat = this.run().seats[0]!;
+    const seat = this.seat();
     const benched = new Set(seat.bench.flatMap((p) => (p ? [p.id] : [])));
     const parts: Phaser.GameObjects.GameObject[] = [this.ground, this.boardCount, this.benchLabel];
     for (const [id, v] of this.views) parts.push(v.stars, ...(benched.has(id) ? [v.sprite, v.shadow] : []));
@@ -479,9 +524,29 @@ export class AutoPlan {
 
   // --- drawing ---------------------------------------------------------------
 
+  /**
+   * Versus, every frame: the server's clock in the title, and the lobby
+   * redrawn when someone readies. Ready is final for the round.
+   */
+  tick(): void {
+    const clock = this.host.hooks.clock?.();
+    if (!clock) return;
+    const run = this.run();
+    const secs = clock.msRemaining === null ? "" : `   ${Math.ceil(clock.msRemaining / 1000)}s`;
+    this.title.setText(`ROUND ${run.round}${secs}`);
+    const seen = clock.ready.join();
+    if (seen === this.readySeen) return;
+    this.readySeen = seen;
+    if (clock.ready[this.host.hooks.seat]) {
+      dimButton(this.fightBtn, true);
+      this.fightBtn.disableInteractive();
+    }
+    this.refresh();
+  }
+
   refresh(): void {
     const run = this.run();
-    const seat = run.seats[0]!;
+    const seat = run.seats[this.host.hooks.seat]!;
     this.title.setText(`ROUND ${run.round}`);
     const next = xpToNext(seat.level);
     const xp = seat.level >= AUTO.maxLevel ? "max" : `${seat.xp}/${next} xp`;
@@ -512,8 +577,10 @@ export class AutoPlan {
     for (const [k, { seat, i }] of order.entries()) {
       const y = 134 + k * 23;
       const out = seat.place !== null;
-      const ink = i === 0 ? "#2f5d8a" : "#4a3a28";
-      const name = label(s, 652, y, i === 0 ? `${seat.name} (you)` : seat.name, {
+      const me = i === this.host.hooks.seat;
+      const ink = me ? "#2f5d8a" : "#4a3a28";
+      const ready = this.host.hooks.clock?.().ready[i] ? "  - ready" : "";
+      const name = label(s, 652, y, `${seat.name}${me ? " (you)" : ""}${ready}`, {
         fontSize: "14px",
         color: ink,
         strokeThickness: 0,
@@ -538,7 +605,7 @@ export class AutoPlan {
    */
   private drawTraits(run: Run): void {
     const s = this.scene;
-    const seat = run.seats[0]!;
+    const seat = run.seats[this.host.hooks.seat]!;
     const lines = traitsOf(armyOf(seat)).sort((a, b) => b.tier - a.tier || b.count - a.count);
     const was = this.tiers;
     this.tiers = new Map(lines.map((t) => [t.key, t.tier]));
@@ -596,7 +663,7 @@ export class AutoPlan {
 
   /** Tints every owned unit that counts toward `key`, or clears it. */
   private light(key: TraitKey | null): void {
-    const seat = this.run().seats[0]!;
+    const seat = this.seat();
     for (const p of [...seat.board, ...seat.bench]) {
       const v = p && this.views.get(p.id);
       if (!v) continue;
@@ -628,7 +695,7 @@ export class AutoPlan {
 
   private drawShop(run: Run, rolled: boolean): void {
     const s = this.scene;
-    const seat = run.seats[0]!;
+    const seat = run.seats[this.host.hooks.seat]!;
     const active = new Set(traitsOf(armyOf(seat)).flatMap((t) => (t.tier >= 0 ? [t.key] : [])));
     const ones = (cls: Champion): number =>
       [...seat.board, ...seat.bench].filter((p) => p?.class === cls && p?.stars === 1).length;
@@ -700,14 +767,15 @@ export class AutoPlan {
         })
         .on("pointerup", () => {
           this.host.onTip?.(null, 0, 0);
-          if (this.act({ type: "buy", slot }) && this.run().seats[0]!.board.length === 0)
-            this.host.say("Drag it from the bench onto your half of the board.");
+          void this.act({ type: "buy", slot }).then((ok) => {
+            if (ok && this.seat().board.length === 0) this.host.say("Drag it from the bench onto your half of the board.");
+          });
         });
     }
   }
 
   private drawGround(run: Run): void {
-    const seat = run.seats[0]!;
+    const seat = run.seats[this.host.hooks.seat]!;
     const g = this.ground.clear();
     const w = BENCH.size - 4;
     for (let i = 0; i < AUTO.benchSlots; i++) {
@@ -723,7 +791,7 @@ export class AutoPlan {
 
   private drawPieces(run: Run): void {
     const s = this.scene;
-    const seat = run.seats[0]!;
+    const seat = run.seats[this.host.hooks.seat]!;
     for (const v of this.views.values()) {
       v.sprite.destroy();
       v.shadow.destroy();
@@ -776,18 +844,19 @@ export class AutoPlan {
 export function roundCard(
   scene: Phaser.Scene,
   run: Run,
+  seat: number,
   round: LobbyRound,
   onContinue: () => void,
-  onAgain: () => void,
+  onAgain: (() => void) | undefined,
   onMenu: () => void,
 ): void {
   const cx = GAME_W / 2;
   const cy = 360;
-  const me = run.seats[0]!;
-  const mine = round.fights.find((f) => f.a === 0);
-  const won = mine?.winner === 0;
+  const me = run.seats[seat]!;
+  const mine = fightOf(round, seat);
+  const won = mine?.winner === seat;
   const lost = mine !== undefined && mine.winner !== null && !won;
-  const foe = mine ? run.seats[mine.b]!.name : "";
+  const foe = mine ? run.seats[mine.a === seat ? mine.b : mine.a]!.name : "";
   const done = me.place !== null;
 
   const headline = done
@@ -826,7 +895,7 @@ export function roundCard(
     .sort((x, y) => (x.s.place ?? 0) - (y.s.place ?? 0) || y.s.hp - x.s.hp);
   for (const [k, { s, i }] of order.entries()) {
     const y = cy - 88 + k * 28;
-    const ink = i === 0 ? "#9fd4ff" : "#e6dccb";
+    const ink = i === seat ? "#9fd4ff" : "#e6dccb";
     parts.push(label(scene, cx - 150, y, s.name, { fontSize: "16px", color: ink, strokeThickness: 0 }).setOrigin(0, 0.5));
     const hp = s.place !== null ? ordinal(s.place) : `${s.hp}`;
     parts.push(label(scene, cx + 90, y, hp, { fontSize: "16px", color: ink, strokeThickness: 0 }).setOrigin(1, 0.5));
@@ -834,7 +903,7 @@ export function roundCard(
     if (d) parts.push(label(scene, cx + 104, y, `-${d}`, { fontSize: "15px", color: "#e0796a", strokeThickness: 0 }).setOrigin(0, 0.5));
   }
 
-  const pay = round.income[0];
+  const pay = round.income[seat];
   if (!done && pay) {
     const bits = [`${pay.base} base`];
     if (pay.interest) bits.push(`${pay.interest} interest`);
@@ -853,11 +922,8 @@ export function roundCard(
     .on("pointerout", () => menu.setColor("#b9a887"))
     .on("pointerup", onMenu);
   parts.push(menu);
-  parts.push(
-    done
-      ? button(scene, cx, cy + 110, 220, 120, "Play again", "blue", onAgain).setScale(0.85)
-      : button(scene, cx, cy + 110, 220, 120, "Continue", "blue", onContinue).setScale(0.85),
-  );
+  if (!done) parts.push(button(scene, cx, cy + 110, 220, 120, "Continue", "blue", onContinue).setScale(0.85));
+  else if (onAgain) parts.push(button(scene, cx, cy + 110, 220, 120, "Play again", "blue", onAgain).setScale(0.85));
 
   for (const o of parts) {
     const go = o as Phaser.GameObjects.Components.AlphaSingle & Phaser.GameObjects.Components.Depth & Phaser.GameObjects.GameObject;

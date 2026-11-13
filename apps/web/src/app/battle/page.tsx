@@ -5,7 +5,7 @@
 // each fight and each plan phase inside the one game rather than building
 // another (a new WebGL context and a pass over the whole art pack).
 
-import { act, fightRound, newRun, type Run } from "@greyfall/engine";
+import { act, fightRound, newRun, type LobbyRound, type Run } from "@greyfall/engine";
 import { useRouter } from "next/navigation";
 import { useRef } from "react";
 
@@ -25,19 +25,21 @@ export default function BattlePage() {
   const run = useRef<Run | null>(null) as { current: Run };
   run.current ??= newRun(newSeed());
 
+  const pending = useRef<((f: { round: LobbyRound }) => void) | null>(null);
+
   const hooks: AutoHooks = {
+    seat: 0,
     run: () => run.current,
-    act: (a) => {
+    act: async (a) => {
       const next = act(run.current, 0, a);
       run.current = next.run;
       return next.error;
     },
-    fight: () => {
+    fought: () => new Promise((resolve) => (pending.current = resolve)),
+    ready: () => {
       const { run: next, report } = fightRound(run.current);
       run.current = next;
-      const mine = report.fights.find((f) => f.a === 0);
-      const foe = mine ? next.seats[mine.b]!.name + (mine.ghost ? " (echo)" : "") : "";
-      return { result: mine?.result ?? null, foe, round: report };
+      pending.current?.({ round: report });
     },
     again: () => {
       run.current = newRun(newSeed());

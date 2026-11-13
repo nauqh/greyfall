@@ -4,30 +4,28 @@
 
 import { index, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
-import type { BattleResult, Placement } from "@greyfall/engine";
+import type { LobbyRound, Run } from "@greyfall/engine";
 
 export type RoomState = "waiting" | "planning" | "result" | "closed";
 
-/** One side of a Versus room. `army` is what the deadline resolves from. */
-export interface Seat {
+/** A human in the room. Their index is their seat in the run. */
+export interface Player {
   token: string;
   name: string;
-  army: Placement[];
-  locked: boolean;
+  /** Ready for the current planning phase. */
+  ready: boolean;
 }
 
 export interface RoomData {
-  /** Regenerated on creation and on every rematch, so neither player can aim it. */
-  seed: number;
-  /** Bumped per rematch. The client keys its canvas on it, so a new round
-      builds a new game and a poll during one never disturbs it. */
-  round: number;
-  /** Index 0 is side A, index 1 side B. A free seat is null. */
-  seats: [Seat | null, Seat | null];
-  /** Set once the room resolves; ~16KB of event log. */
-  battle: BattleResult | null;
-  /** Set when a side wins without a battle: no legal army at the deadline. */
-  walkover: "a" | "b" | "draw" | null;
+  /** Server only: with it a client could predict every roll. */
+  seed: string;
+  /** Bumped on every write; each write is conditional on the one it read. */
+  version: number;
+  players: Player[];
+  /** The Skirmish run, from start on. */
+  run: Run | null;
+  /** The latest fought round, battles included. */
+  last: LobbyRound | null;
 }
 
 export const rooms = pgTable(
@@ -35,7 +33,7 @@ export const rooms = pgTable(
   {
     code: text("code").primaryKey(),
     state: text("state").$type<RoomState>().notNull(),
-    /** Null outside planning. */
+    /** End of the current planning phase; null outside planning. */
     deadline: timestamp("deadline", { withTimezone: true }),
     lastActivity: timestamp("last_activity", { withTimezone: true }).notNull().defaultNow(),
     data: jsonb("data").$type<RoomData>().notNull(),

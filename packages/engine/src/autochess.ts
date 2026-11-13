@@ -124,12 +124,12 @@ function emptySeat(name: string, ai: boolean): Seat {
   };
 }
 
-/** `humans` seats, from seat 0, wait for actions; the rest are AI clans. */
-export function newRun(seed: string | number, humans = 1): Run {
+/** `humans` seats, from seat 0, wait for actions; the rest are AI clans. `seats` is the run size: 4 in Skirmish, 2 in Versus. */
+export function newRun(seed: string | number, humans = 1, seats: number = AUTO.seats): Run {
   const run: Run = {
     seed: String(seed),
     round: 1,
-    seats: CLANS.slice(0, AUTO.seats).map((name, i) => emptySeat(name, i >= humans)),
+    seats: CLANS.slice(0, seats).map((name, i) => emptySeat(name, i >= humans)),
     pool: { ...AUTO.pool },
     nextId: 1,
     draws: 0,
@@ -298,6 +298,11 @@ export function act(run: Run, seatIndex: number, a: RunAction): { run: Run; erro
   if (!seat || seat.place !== null || next.over) return { run, error: "That clan is out." };
   const error = apply(next, seat, a);
   return error ? { run, error } : { run: next, error: null };
+}
+
+/** What one seat may see of a shared run: no seed to predict rolls with, no other seat's shop. */
+export function redactRun(run: Run, seat: number): Run {
+  return { ...run, seed: "", seats: run.seats.map((s, i) => (i === seat ? s : { ...s, shop: [] })) };
 }
 
 export function armyOf(seat: Seat): Placement[] {

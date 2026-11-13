@@ -9,9 +9,11 @@ Teamfight Tactics mould. You and three AI clans buy units from one shared
 pool, three copies of a unit merge into a stronger star level, and each round
 every clan fights a paired rival. Losing costs health, and the last clan
 standing wins. The battle itself is the existing Skirmish simulation,
-extended with stars, traits and the monsters' abilities. Versus fields the same
-12 champions on the same rules; the war keeps the five knights and the old
-ones.
+extended with stars, traits and the monsters' abilities. Versus is the same
+run online: two players join a room by code, both human and no AI clans.
+Each planning phase lasts 30s and ends early once both players are ready; the
+server holds the run and fights the round. The war
+keeps the five knights and the old ones.
 
 ## What TFT and Dota Auto Chess do, and what Greyfall takes
 
@@ -129,17 +131,14 @@ These measure the AI against itself, not people.
 
 ## Next, in order of value
 
-1. **Multiplayer lobby.** The run is pure and seeded and takes one action
-   at a time, so each AI seat can become a player whose actions go to the
-   server, the way Versus armies do now. This is the Discord goal.
-2. **PvE rounds.** TFT opens each stage on neutral monsters that drop loot.
+1. **PvE rounds.** TFT opens each stage on neutral monsters that drop loot.
    The Enemy Pack has more bodies than the seven in the shop (Spear Goblin,
    Bear, Spider, Lizard, Panda, Turtle) to stock them.
-3. **Augments.** TFT's three picks of a run-long perk (more interest, a free
+2. **Augments.** TFT's three picks of a run-long perk (more interest, a free
    Monk, Pawns that fight). Cheap to add and they make runs differ.
-4. **Items.** Component drops from PvE rounds, combined two at a time. The
+3. **Items.** Component drops from PvE rounds, combined two at a time. The
    biggest job here, and it needs art the pack mostly lacks.
-5. **Clan origins.** The pack draws every unit in five colours, so a unit
+4. **Clan origins.** The pack draws every unit in five colours, so a unit
    could carry a clan as a second trait. Both teams would then show mixed
    colours, so the board needs another way to tell sides apart first.
 

@@ -64,6 +64,7 @@ export function Lobby({
     <div className="lobby">
       <div className="paper board">
         <h1 className="banner">Versus</h1>
+        <p className="hint">Skirmish one on one, over a room code.</p>
 
         <label className="field">
           <span className="fieldLabel">Your name</span>
@@ -81,7 +82,7 @@ export function Lobby({
           disabled={!named || busy}
           onClick={() => void run(() => create.mutateAsync({ name: name.trim() }))}
         >
-          Open a room
+          Open a table
         </button>
 
         <p className="or">or</p>

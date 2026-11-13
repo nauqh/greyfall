@@ -267,15 +267,6 @@ export const AUTO = {
   } as Record<TraitKey, Trait>,
 } as const;
 
-/** Versus: two players draft one army each from all champions, on Skirmish's rules. */
-export const VERSUS = {
-  budget: 24,
-  maxCopies: 2,
-  board: AUTO.board,
-  skills: true,
-  traits: true,
-} as const;
-
 export const TICKS_PER_ACTION = BALANCE.actionSeconds * BALANCE.tickRate;
 export const MAX_TICKS = BALANCE.timeoutSeconds * BALANCE.tickRate;
 

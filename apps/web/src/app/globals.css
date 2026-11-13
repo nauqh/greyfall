@@ -886,20 +886,31 @@ textarea {
 	opacity: 1;
 }
 
+.hint {
+	margin: -6px 0 0;
+	max-width: 320px;
+	font-family: var(--book), serif;
+	font-style: italic;
+	color: #7a4a22;
+}
+
 .seats {
 	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
 	gap: 14px;
+	max-width: 860px;
 	animation: scrollIn 700ms cubic-bezier(0.22, 1, 0.36, 1) 150ms both;
 }
 
-/* Your seat is the beige paper; the empty one across is the kit's slate
-   sheet, so its ink is the light one. */
+/* Your seat is the beige paper; the others are the kit's slate sheet, so
+   their ink is the light one. */
 .seat {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	gap: 2px;
-	min-width: 140px;
+	width: 190px;
 	padding: 2px 10px 8px;
 	color: #f5f2e4;
 	border: 30px solid transparent;
@@ -920,19 +931,21 @@ textarea {
 }
 
 .seatName {
+	max-width: 100%;
+	overflow-wrap: anywhere;
 	font-family: var(--display), serif;
 	font-weight: 700;
 	font-size: 20px;
 	letter-spacing: 0.04em;
 }
 
-.seatLocked {
-	font-size: 13px;
-	color: #a9e88a;
+.seat.empty {
+	opacity: 0.6;
 }
 
-.seat.mine .seatLocked {
-	color: #2f6b2a;
+.seatNote {
+	font-size: 13px;
+	font-style: italic;
 }
 
 /* The gold coin beside the room code, straight off the kit's icon sheet. */

@@ -1,51 +1,46 @@
-// Deciding a room. The only place a battle is run.
+// Settling a round. The only place a battle is run. Pure, so it can run again
+// on a fresh read when a write loses its race.
 
-import { VERSUS, simulate, validateArmy, type BattleResult, type Placement } from "@greyfall/engine";
+import { BALANCE, fightRound, type Fight, type LobbyRound } from "@greyfall/engine";
 
-import type { RoomData, RoomRow } from "../schema.ts";
+import type { RoomData, RoomState } from "../schema.ts";
+import type { Next } from "./store.ts";
 
-export interface Outcome {
-  battle: BattleResult | null;
-  walkover: "a" | "b" | "draw" | null;
+export const PLANNING_MS = 30_000;
+
+/** The fight a seat watches. A ghost copy of its board on side b is not its fight. */
+export function ownFight(report: LobbyRound, seat: number): Fight | null {
+  return report.fights.find((f) => f.a === seat || (f.b === seat && !f.ghost)) ?? null;
 }
 
-/** Whether the engine will accept this seat's army at all. */
-function fit(army: Placement[]): boolean {
-  return army.length > 0 && validateArmy(army, VERSUS.budget, VERSUS.board, VERSUS.maxCopies).length === 0;
+function alive(data: RoomData): number[] {
+  return data.players.flatMap((_, i) => (data.run!.seats[i]!.place === null ? [i] : []));
 }
 
 /**
- * Whether the room is owed a decision: both seats ready, or the clock out.
- *
- * Both locked resolves immediately - the deadline is only ever a floor under
- * a stalling or absent opponent, never something two ready players wait out.
+ * Whether planning is over: every human still in has readied, or the clock
+ * ran out. Knocked-out seats are never waited on.
  */
-export function ready(row: RoomRow): boolean {
-  if (row.state !== "planning") return false;
-  const both = row.data.seats.every((s) => s?.locked === true);
-  const expired = row.deadline !== null && row.deadline.getTime() <= Date.now();
-  return both || expired;
+export function owed(state: RoomState, deadline: Date | null, data: RoomData, now: number): boolean {
+  if (state !== "planning" || !data.run) return false;
+  const everyone = alive(data).every((i) => data.players[i]!.ready);
+  return everyone || (deadline !== null && deadline.getTime() <= now);
 }
 
-export function resolve(data: RoomData): Outcome {
-  const [a, b] = data.seats;
-  const canA = a !== null && fit(a.army);
-  const canB = b !== null && fit(b.army);
+/** The room after the round it is owed, or null if it is owed nothing. */
+export function settle(state: RoomState, deadline: Date | null, data: RoomData, now: number): Next | null {
+  if (!owed(state, deadline, data, now)) return null;
 
-  // The engine throws on an empty or illegal army rather than returning a
-  // loss, so a seat that never fielded one is a walkover and nothing is
-  // simulated at all. Resolving it any other way would wedge the room in
-  // planning, which is the exact thing the deadline exists to prevent.
-  if (!canA && !canB) return { battle: null, walkover: "draw" };
-  if (!canA) return { battle: null, walkover: "b" };
-  if (!canB) return { battle: null, walkover: "a" };
+  const { run, report } = fightRound(data.run!);
 
-  try {
-    return { battle: simulate(a.army, b.army, data.seed, VERSUS), walkover: null };
-  } catch {
-    // Both armies passed validateArmy on the way in and again just now, so
-    // reaching here is a bug in the engine, not a bad army. It still must not
-    // leave the room stuck: the room lands in result either way.
-    return { battle: null, walkover: "draw" };
-  }
+  const players = data.players.map((p) => ({ ...p, ready: false }));
+  const next = { ...data, players, run, last: report };
+  if (run.over) return { state: "result", deadline: null, data: next };
+
+  // Nobody plans while still watching their own fight play out.
+  const watching = data.players.map((_, i) => {
+    const ticks = ownFight(report, i)?.result?.ticks ?? 0;
+    return Math.min(ticks / BALANCE.tickRate, BALANCE.timeoutSeconds) * 1000;
+  });
+  return { state: "planning", deadline: new Date(now + Math.max(0, ...watching) + PLANNING_MS), data: next };
 }

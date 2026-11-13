@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { AUTO, BALANCE, CHAMPIONS, TICKS_PER_ACTION, act, copies, fightRound, newRun, simulate, traitCounts, type Placement, type Run } from "../src/index.ts";
+import { AUTO, BALANCE, CHAMPIONS, TICKS_PER_ACTION, act, copies, fightRound, newRun, redactRun, simulate, traitCounts, type Placement, type Run } from "../src/index.ts";
 
 /** Copies in shops are not reserved, so the pool plus every owned copy is the whole pool. */
 function poolIntact(run: Run): boolean {
@@ -87,6 +87,25 @@ describe("auto chess run", () => {
     const before = structuredClone(run);
     act(run, 0, { type: "reroll" });
     fightRound(run);
+    expect(run).toEqual(before);
+  });
+
+  it("seats two humans and no AI when asked for a two-seat run", () => {
+    const run = newRun(4, 2, 2);
+    expect(run.seats.map((s) => s.ai)).toEqual([false, false]);
+    run.seats[0]!.board = [{ id: 900, class: "warrior", stars: 1, col: 4, row: 1 }];
+    const next = fightRound(run).run;
+    expect(next.seats[1]!.hp).toBeLessThan(AUTO.startHp);
+  });
+
+  it("redacts the seed and every other seat's shop, leaving the input alone", () => {
+    const run = newRun(9, 2);
+    const before = structuredClone(run);
+    const seen = redactRun(run, 1);
+    expect(seen.seed).toBe("");
+    expect(seen.seats[1]!.shop).toEqual(run.seats[1]!.shop);
+    expect(seen.seats[1]!.shop.length).toBe(AUTO.shopSlots);
+    for (const i of [0, 2, 3]) expect(seen.seats[i]!.shop).toEqual([]);
     expect(run).toEqual(before);
   });
 });

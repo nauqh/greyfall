@@ -1,56 +1,46 @@
 // What a caller is allowed to see.
 //
-// Redaction is a server rule, not a client courtesy: hiding the opponent's
-// army in the UI would not hide it at all. Until the room reaches `result`,
-// the other seat is a name and a lock flag and nothing else.
+// Redaction is a server rule, not a client courtesy: the seed would let a
+// client predict every roll, and the other shops are nobody else's business.
+// Battles are left out too, so a poll stays small; room.fight fetches one.
 
-import type { BattleResult, Placement } from "@greyfall/engine";
+import { redactRun, type LobbyRound, type Run } from "@greyfall/engine";
 
 import type { RoomRow, RoomState } from "../schema.ts";
-
-export interface SeatView {
-  name: string;
-  locked: boolean;
-  /** Only ever set once the room has resolved. */
-  army: Placement[] | null;
-}
 
 export interface RoomView {
   code: string;
   state: RoomState;
-  round: number;
-  /** Which seat the caller holds, 0 or 1. */
-  seat: 0 | 1;
-  you: SeatView & { army: Placement[] };
-  opponent: SeatView | null;
+  /** The caller's seat, the index into players and run.seats. */
+  seat: number;
+  host: boolean;
+  players: { name: string; ready: boolean }[];
   /**
    * Time left in planning, from the server. The client counts down from this
    * and re-syncs on every poll: an absolute deadline measured against the
-   * device's own clock would show one player 0:00 while the other still had
-   * forty seconds.
+   * device's own clock would show one player 0:00 while another still had
+   * twenty seconds.
    */
   msRemaining: number | null;
-  battle: BattleResult | null;
-  walkover: "a" | "b" | "draw" | null;
+  /** Null while waiting. Redacted: seed is "", every other seat's shop is []. */
+  run: Run | null;
+  /** The latest fought round, with every fight's `result` set to null (fetch your own via room.fight). */
+  last: LobbyRound | null;
 }
 
-export function viewFor(row: RoomRow, seat: 0 | 1): RoomView {
-  const done = row.state === "result";
-  const you = row.data.seats[seat]!;
-  const them = row.data.seats[seat === 0 ? 1 : 0];
-
+export function viewFor(row: RoomRow, seat: number): RoomView {
+  const { run, last } = row.data;
   return {
     code: row.code,
     state: row.state,
-    round: row.data.round,
     seat,
-    you: { name: you.name, locked: you.locked, army: you.army },
-    opponent: them ? { name: them.name, locked: them.locked, army: done ? them.army : null } : null,
+    host: seat === 0,
+    players: row.data.players.map((p) => ({ name: p.name, ready: p.ready })),
     msRemaining:
       row.state === "planning" && row.deadline
         ? Math.max(0, row.deadline.getTime() - Date.now())
         : null,
-    battle: done ? row.data.battle : null,
-    walkover: done ? row.data.walkover : null,
+    run: run && redactRun(run, seat),
+    last: last && { ...last, fights: last.fights.map((f) => ({ ...f, result: null })) },
   };
 }
