@@ -205,12 +205,12 @@ export function buildingKey(side: "a" | "b" | "g", name: BuildingName): string {
 }
 
 export function loadBuildings(scene: Phaser.Scene, all: readonly Structure[]): void {
-  // A village has two of the same house in it, and the loader warns on a
-  // repeated key.
+  // A village has two of the same house in it, and another scene may have
+  // loaded it already; the loader warns on a repeated key.
   const seen = new Set<string>();
   for (const s of all) {
     const key = buildingKey(s.side, s.name);
-    if (seen.has(key)) continue;
+    if (seen.has(key) || scene.textures.exists(key)) continue;
     seen.add(key);
     const spec = BUILDINGS[s.name] as BuildingSpec;
     if (spec.frame) {

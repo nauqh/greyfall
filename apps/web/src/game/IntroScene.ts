@@ -8,10 +8,10 @@ import { type UnitClass } from "@greyfall/engine";
 
 import { packUrl } from "./art";
 import { baseZoom, fitCamera, startGame } from "./boot";
-import { IntroAtlasScene } from "./introAtlas";
-import { IntroDuelScene } from "./introDuel";
+import { BUILT as ATLAS_BUILT, IntroAtlasScene } from "./introAtlas";
+import { IntroDuelScene, TOWERS as DUEL_BUILT } from "./introDuel";
 import { buildIntroIsland, buildIntroScenery } from "./introIsland";
-import { IntroSkirmishScene } from "./introSkirmish";
+import { BUILT as SKIRMISH_BUILT, IntroSkirmishScene } from "./introSkirmish";
 import { CELL, WORK, cell, loadGroundColours, loadMapArt, makeMapAnims } from "./islandMap";
 import { loadUnits, makeAnims, playPose, unitKey, type Side } from "./sprites";
 import { DEPTH, FOOT, addBuilding, addDecor, addShadow, buildWater, cloudCover, driftClouds, loadBuildings, loadTerrain, prepareTerrain, standing } from "./terrain";
@@ -138,7 +138,8 @@ export class IntroScene extends Phaser.Scene {
     // For the other modes' islands: loaded here once, so two of them loading at once do not both add them.
     loadGroundColours(this);
     this.load.spritesheet("fire", packUrl("Effects/Fire/Fire.png"), { frameWidth: 128, frameHeight: 128 });
-    loadBuildings(this, TOWN);
+    // The other modes' buildings too, so two of them loading at once do not both add a shared one.
+    loadBuildings(this, [...TOWN, ...ATLAS_BUILT, ...SKIRMISH_BUILT, ...DUEL_BUILT]);
   }
 
   create(): void {

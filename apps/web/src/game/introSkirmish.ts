@@ -1,6 +1,7 @@
-// The title backdrop while Skirmish is picked: a sunken arena where blue and
-// red trade blows, the benches on the terraces above it, and the three clans
-// looking down from their towers on the high ground.
+// The title backdrop while Skirmish is picked: a horseshoe arena on a ragged
+// island, its long pit running deep to a crag at the back where the three
+// clans look down from their own halls, blue's stands up the west flank and
+// red's up the east, and pirate water towers keeping the coasts.
 
 import type { Champion } from "@greyfall/engine";
 import * as Phaser from "phaser";
@@ -13,26 +14,27 @@ import { BODY, bodyScale, healKey, loadChampions, loadUnits, makeAnims, playPose
 import { DEPTH, addBuilding, addDecor, addShadow, buildWater, driftClouds, loadBuildings, loadTerrain, prepareTerrain, standing } from "./terrain";
 import { IMPACT_MS, flash, loadWarFx, makeWarFxAnims, projectile } from "./warFx";
 
-// Cliffs only face south, so the stands rise to the north: the pit, the
-// benches, the champions' terrace, the clans' towers. Stairs zigzag up.
+// Cliffs only face south, so the stands flank the pit rather than rising
+// behind it: each side's bench and terrace on its own ragged crag, a ramp
+// down into the pit, and the clans' crag alone at the pit's far end.
 const MAP = [
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
-  "~~###^^^^4444444444^^^^###~~",
-  "~~###^^^^4444444444^^^^###~~",
-  "~~###^^^{4444444444}^^^###~~",
-  "~~###^^^^^^^^^^^^^^^^^^###~~",
-  "~~###^^^^^^^^^^^^^^^^^^###~~",
-  "~~##[^^^^^^^^^^^^^^^^^^]##~~",
-  "~~########################~~",
-  "~~########################~~",
-  "~~########################~~",
-  "~~####................####~~",
-  "~~####................####~~",
-  "~~####................####~~",
-  "~~####>..............<####~~",
-  "~~........................~~",
-  "~~~......................~~~",
-  "~~~~....................~~~~",
+  "~~~~~~~~~^^^^^^^^^^~~~~~~~~~",
+  "~~###~~~^^^^^^^^^^^^~~~###~~",
+  "~~####~~~^^^^^^^^^^~~####~~~",
+  "~~#^^##~~..........~~##^^#~~",
+  "~##^^^##~..........~##^^^##~",
+  "~#^^^^##............##^^^#~~",
+  "~##^^####..........####^^##~",
+  "~~#^^]###..........###[^^#~~",
+  "~~#######..........######~~~",
+  "~~~######..........#######~~",
+  "~~######............#####~~~",
+  "~~~#####>..........<####~~~~",
+  "~~~~......................~~",
+  "~~~~~....................~~~",
+  "~~~~~~~.......~~.......~~~~~",
+  "~~~~~~~~~....~~~~~~...~~~~~~",
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
 ];
 const COLS = MAP[0]!.length;
@@ -43,9 +45,18 @@ const VIEW = { col0: -13, col1: 28.2, midRow: 8.8 } as const;
 /** Portrait: the logo on top and the menu along the bottom; the pit sits between. */
 const VIEW_TALL = { col0: 3.5, col1: 24.5, midRow: 11.5 } as const;
 
-const TOWERS = [cell("g", "tower", 10.6, 3.75), cell("g", "castle", 14, 3.85), cell("g", "tower", 17.4, 3.75)];
-const BANNERS = [cell("a", "tower", 3.5, 4.9), cell("b", "tower", 24.5, 4.9), cell("a", "barracks", 4, 11.9), cell("b", "barracks", 24, 11.9)];
-const SPIKES = [cell("g", "skullSpike", 6.6, 11.4), cell("g", "skullSpike", 21.4, 11.4), cell("g", "skullSpike", 6.4, 16.6), cell("g", "skullSpike", 21.6, 16.6)];
+/** Each clan's own hall on the high ground: Yellow's gnome tower, Purple's monastery, Black's pirate tower. */
+const TOWERS = [cell("g", "gnomeTower", 10.6, 3.75), cell("g", "monastery", 14, 3.85), cell("g", "pirateTower", 17.4, 3.75)];
+const BANNERS = [
+  cell("a", "tower", 3.8, 6.9),
+  cell("b", "tower", 23.6, 6.9),
+  cell("a", "barracks", 4.5, 11.9),
+  cell("b", "barracks", 22.4, 11.9),
+  cell("g", "waterTower", 0.9, 9.6),
+  cell("g", "waterTower", 27, 10.4),
+];
+const SPIKES = [cell("g", "skullSpike", 8.6, 13.5), cell("g", "skullSpike", 19.6, 13.5), cell("g", "skullSpike", 9.6, 16.4), cell("g", "skullSpike", 20.4, 16.4)];
+export const BUILT = [...TOWERS, ...BANNERS, ...SPIKES];
 
 /** The three clans Skirmish is fought against, each in its own colour. */
 const CLANS = ["Yellow", "Purple", "Black"] as const;
@@ -57,19 +68,20 @@ const CLAN_FILE = { warrior: "Warrior/Warrior_Idle.png", archer: "Archer/Archer_
 type Bench = [side: Side, cls: Champion, col: number, row: number];
 
 const BENCH: readonly Bench[] = [
-  // The players' benches, either side of the pit's head.
-  ["a", "warrior", 6.4, 8.4], ["a", "archer", 7.6, 8.9], ["a", "monk", 8.8, 8.3], ["a", "lancer", 2.9, 9.6], ["a", "pawn", 4.4, 7.9],
-  ["b", "warrior", 21.6, 8.4], ["b", "archer", 20.4, 8.9], ["b", "monk", 19.2, 8.3], ["b", "lancer", 25.1, 9.6], ["b", "pawn", 23.6, 7.9],
-  // The champions waiting their turn on the terrace above.
-  ["b", "skull", 6.2, 5.6], ["b", "gnoll", 7.5, 6.1], ["b", "shaman", 9.6, 5.8], ["b", "thief", 12.4, 6],
-  ["b", "torch", 15.6, 6], ["b", "skull", 18.4, 5.8], ["a", "troll", 20.6, 5.6],
-];
+  // The players' benches on their own flanks.
+  ["a", "warrior", 6.4, 9.4], ["a", "archer", 7.4, 10], ["a", "monk", 6.2, 10.8], ["a", "lancer", 3.4, 9.6], ["a", "pawn", 4.4, 10.4],
+  ["b", "warrior", 21.6, 9.4], ["b", "archer", 20.4, 10], ["b", "monk", 21.8, 10.8], ["b", "lancer", 24.4, 9.6], ["b", "pawn", 23.4, 10.4],
+  // The champions waiting their turn: on the flank terraces and at the pit's far end.
+  ["b", "skull", 3.6, 5.5], ["b", "gnoll", 4.8, 6.5], ["b", "shaman", 23.4, 5.5], ["b", "torch", 23, 6.6],
+  ["b", "thief", 11.6, 5.8], ["b", "skull", 16.4, 5.8], ["a", "troll", 14, 6.6],
+]
 
 const WATCHERS: readonly [Clan, "warrior" | "archer", number, number][] = [
-  ["Yellow", "warrior", 9.4, 2.9], ["Purple", "warrior", 12.2, 3.1], ["Purple", "warrior", 15.8, 3.1], ["Black", "warrior", 18.6, 2.9],
-];
+  ["Yellow", "warrior", 9.4, 3.4], ["Yellow", "archer", 8.6, 2.4], ["Purple", "warrior", 12.2, 3.4], ["Purple", "archer", 15.8, 3.4],
+  ["Black", "warrior", 18.6, 3.4], ["Black", "archer", 19.2, 2.4],
+]
 
-const TREES: readonly [number, number][] = [[2.7, 1.9], [24.8, 2.1], [2.6, 13.5], [25.4, 13.4], [5.6, 1.6], [22.4, 1.7]];
+const TREES: readonly [number, number][] = [[3.4, 2.4], [24.4, 2.4], [1.6, 6.4], [25.8, 7.4], [4, 13.4], [24.6, 13.4], [12, 16.5], [16.6, 15.5]];
 
 export class IntroSkirmishScene extends Phaser.Scene {
   constructor() {
@@ -83,7 +95,7 @@ export class IntroSkirmishScene extends Phaser.Scene {
     loadMapArt(this);
     loadGroundColours(this);
     loadWarFx(this);
-    loadBuildings(this, [...TOWERS, ...BANNERS, ...SPIKES]);
+    loadBuildings(this, BUILT);
     for (const clan of CLANS) {
       for (const cls of ["warrior", "archer"] as const) {
         this.load.spritesheet(clanKey(clan, cls), packUrl(`Units/${clan} Units/${CLAN_FILE[cls]}`), { frameWidth: 192, frameHeight: 192 });
@@ -110,18 +122,18 @@ export class IntroSkirmishScene extends Phaser.Scene {
     buildWater(this);
     // The pit trampled to dust, each terrace up a greener, brighter step.
     buildTerraces(this, MAP, [4, 3, 2, 1]);
-    for (const s of [...TOWERS, ...BANNERS, ...SPIKES]) addBuilding(this, s);
+    for (const s of BUILT) addBuilding(this, s);
     TREES.forEach(([c, r], i) => addDecor(this, "tree", c * CELL, r * CELL, 0.9, `skirmish-tree-${i}`));
-    for (const [c, r] of [[3.2, 15], [24.6, 15.2], [11, 16.4], [17.5, 16.5]] as const) addDecor(this, "rock", c * CELL, r * CELL, 1, `skirmish-rock-${c}`);
-    for (const [c, r] of [[1.2, 4], [26.6, 7.5], [0.8, 12.2], [27.2, 14.6], [8, 17.6], [20.5, 17.4]] as const) {
+    for (const [c, r] of [[7.6, 15.2], [22.4, 15.2], [11, 16.6], [13.4, 15.5]] as const) addDecor(this, "rock", c * CELL, r * CELL, 1, `skirmish-rock-${c}`);
+    for (const [c, r] of [[1.2, 4], [27.2, 6], [0.6, 12.6], [27.2, 14.6], [8, 17.6], [20.5, 17.4], [14.8, 16.7], [7.4, 2.8], [20.6, 3.4]] as const) {
       addDecor(this, "waterRock", c * CELL, r * CELL, 1, `skirmish-wrock-${c}`).setDepth(DEPTH.foam);
     }
 
     for (const [side, cls, c, r] of BENCH) this.unit(side, cls, c, r);
     this.clans();
-    this.bonfire(5.6, 4.7);
-    this.bonfire(22.4, 4.7);
-    this.bonfire(13.9, 8.9);
+    this.bonfire(4.2, 4.6);
+    this.bonfire(23.6, 4.6);
+    this.bonfire(14, 4.9);
     this.pit();
 
     driftClouds(this, { w: COLS * CELL, h: ROWS * CELL }, "intro-skirmish");
@@ -138,7 +150,7 @@ export class IntroSkirmishScene extends Phaser.Scene {
     return s;
   }
 
-  /** The three clans on the high ground: one on each tower top, the rest beside them. */
+  /** The three clans on the high ground, beside their halls. */
   private clans(): void {
     const stand = (clan: Clan, cls: "warrior" | "archer", x: number, y: number, depth: number): void => {
       const body = BODY[cls];
@@ -149,11 +161,6 @@ export class IntroSkirmishScene extends Phaser.Scene {
         .play(`${clanKey(clan, cls)}_loop`);
       if (s.anims.currentAnim) s.anims.setProgress(Math.random());
     };
-    TOWERS.filter((t) => t.name === "tower").forEach((t, i) => stand(i === 0 ? "Yellow" : "Black", "archer", t.x + 6, t.y - 117, standing(t.y) + 1));
-    // The castle's two turrets.
-    const keep = TOWERS.find((t) => t.name === "castle")!;
-    stand("Purple", "archer", keep.x - 125, keep.y - 166, standing(keep.y) + 1);
-    stand("Purple", "archer", keep.x + 72, keep.y - 166, standing(keep.y) + 1);
     for (const [clan, cls, c, r] of WATCHERS) {
       addShadow(this, c * CELL, r * CELL, 0.62);
       stand(clan, cls, c * CELL, r * CELL, DEPTH.unit + r * CELL);
@@ -191,6 +198,8 @@ export class IntroSkirmishScene extends Phaser.Scene {
     this.brawl(["a", "warrior", 13.6, 14.7], ["b", "torch", 14.7, 14.7]);
     this.brawl(["a", "lancer", 17.6, 12.2], ["b", "warrior", 18.9, 12.2]);
     this.brawl(["a", "warrior", 17.4, 15.4], ["b", "skull", 18.5, 15.4]);
+    this.brawl(["a", "warrior", 11.2, 8.8], ["b", "gnoll", 12.4, 8.8]);
+    this.brawl(["a", "lancer", 15.2, 9.8], ["b", "warrior", 16.6, 9.8]);
     const archerA = this.unit("a", "archer", 7.6, 11.9);
     const archerB = this.unit("b", "archer", 20.5, 13.9);
     this.volley(archerA, "a", { x: 18.9 * CELL, y: 12.2 * CELL - 40 });

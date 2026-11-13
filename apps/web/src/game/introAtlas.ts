@@ -1,74 +1,86 @@
-// The title backdrop while The Atlas is picked: the Shattered Reach at dusk,
-// five levels of broken island climbing to the last lit bonfire on its crown,
-// the captain carrying a flame up the stairs while the blight prowls the shore.
+// The title backdrop while The Atlas is picked: an expedition making landfall
+// on a wild, lopsided island in daylight. The boat rides at anchor by the fish
+// hut, the camp's fire burns on the beach, pawns dig and build, and a party
+// climbs the ridge to the lookout on the summit, past a cave still to explore.
 
-import type { Champion } from "@greyfall/engine";
+import type { UnitClass } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
+import { packUrl } from "./art";
 import { baseZoom, fitCamera } from "./boot";
 import { buildTerraces } from "./introIsland";
-import { CELL, loadGroundColours } from "./islandMap";
-import { loadChampions, loadUnits, makeAnims, playPose, unitKey, type Side } from "./sprites";
-import { DEPTH, addBuilding, addDecor, addShadow, buildWater, driftClouds, loadBuildings, loadTerrain, prepareTerrain, standing } from "./terrain";
+import { CELL, WORK, addMine, cell, makeMapAnims } from "./islandMap";
+import { loadUnits, makeAnims, playPose, unitKey } from "./sprites";
+import { DEPTH, FOOT, addBuilding, addDecor, addShadow, buildWater, driftClouds, loadBuildings, loadTerrain, prepareTerrain, standing } from "./terrain";
 
 const MAP = [
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
-  "~~~###^^^44445555544^^^###~##~",
-  "~~~###^^^44445555544^^^###~##~",
-  "~~~###^^^444(5555444^^^###~~~~",
-  "~~~###^^^^4444444444^^^###~~~~",
-  "~~...####^^444444444}^^###~~~~",
-  "~~...####^^^^^^^^^^^^^####~~~~",
-  "~~...###[^^^^^^^^^^^^^###...~~",
-  "~~...###################.....~",
-  "~~....##################.....~",
-  "~~....##################>....~",
-  "~............................~",
-  "~............~..............~~",
-  "~~.........~~~...........~^^~~",
-  "~~~~.......~~~..........~~^^~~",
-  "~##~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~##~~~~~~~^^^^~~~~~~~~~",
+  "~~~~~~~~##~~~~~^^^4455~~~~~~~~",
+  "~~~~~~~~~~~~~#^^^44(555^~~~##~",
+  "~~~~~~~~~~~##^^^^44444^^^^~~##",
+  "~~~~~~~~~###^^^^^^4444}^^~~~~~",
+  "~~~~~~~~####^^^^^^^^^^^^^~~~~~",
+  "~~~~~~~~######^^^^^^^^^^#~~~~~",
+  "~~~~~~~######[^^^^^^^^###~~.~~",
+  "~~~~~~~.################~~...~",
+  "~~~~~~~.#############.......~~",
+  "~~~~~~~..############>.....~~~",
+  "~~~~~~~~~...................~~",
+  "~~~~~~~~~~.......~~~......~~~~",
+  "~~~~~~~~~~~~......~~~~~~~##~~~",
+  "~~~~~~~##~~~~~~~~~~~~~~~~##~~~",
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
 ];
-/** Lowland to crown, each step up a brighter green: the dusty shore, then up to the sunlit crown. */
-const RAMP = [5, 4, 3, 2, 1];
+/** Lowland to summit, each step up a brighter green, as on the war's island. */
+const RAMP = [5, 3, 2, 1, 1];
 
-/** Landscape: the west third is the menu board's. Portrait: the crown lifted clear of the menu along the bottom. */
+/** Landscape: the west third is the menu board's. Portrait: the summit lifted clear of the menu along the bottom. */
 const VIEW = { col0: -11, col1: 30.5, midRow: 8.6 } as const;
 const VIEW_TALL = { col0: 3, col1: 27, midRow: 12.5 } as const;
 
-const BONFIRE = { col: 15.4, row: 3.3 } as const;
+/** The expedition's marks on the island, each its base's centre in cells. */
+export const BUILT = [
+  cell("a", "tower", 21.6, 4.7),
+  cell("g", "cave", 9.8, 9.8),
+  cell("g", "fishHut", 14.8, 15.6),
+  cell("a", "house2", 25.4, 12.3),
+  cell("g", "goblinHut", 28.3, 5.7, 0.7),
+];
 
-/** The captain's climb, feet by cell: up the shore ramp, west along the terrace,
- *  each stair in turn, and on to the fire. Starts mid-climb, then from the shore. */
+/** The party's climb, feet by cell: up the shore ramp, west across the plateau, each stair in turn along the ridge, to the lookout. */
 const CLIMB: readonly [number, number][] = [
-  [26.5, 13.5], [24.5, 13.2], [24.5, 11.5], [23.3, 11.4], [8.5, 11.4], [8.5, 8.5], [9.6, 8.4], [20.5, 8.4],
-  [20.5, 6.5], [19.4, 6.4], [12.5, 6.4], [12.5, 4.5], [13.6, 4.3], [14, 3.6],
+  [26.5, 13.5], [22, 13.5], [21.5, 12.5], [20.3, 12.4], [13.5, 12.4], [13.5, 10.5], [13.5, 9.5], [14.6, 9.4],
+  [22.5, 8.4], [22.5, 6.5], [21.4, 6.4], [19.5, 6.4], [19.5, 5.4], [19.5, 4.5], [20.4, 4.3],
 ];
-const CLIMB_FROM = 4;
+/** Leader first, each a step behind the one before; the leader starts this far up. */
+const PARTY: readonly UnitClass[] = ["warrior", "lancer", "archer"];
+const PARTY_FROM = 5;
 
-/** The blight on the shore, by feet in cells; `pace` cells there and back, signed for the way it sets off. */
-const BLIGHT: readonly { side: Side; cls: Champion; col: number; row: number; pace: number }[] = [
-  { side: "a", cls: "troll", col: 4, row: 13.6, pace: 2 },
-  { side: "m", cls: "warrior", col: 8.5, row: 14.4, pace: -1.5 },
-  { side: "a", cls: "torch", col: 15.5, row: 13.4, pace: 2.5 },
-  { side: "m", cls: "archer", col: 19.5, row: 14.5, pace: -2 },
-  { side: "m", cls: "lancer", col: 22.5, row: 13.3, pace: 1.5 },
-  { side: "a", cls: "shaman", col: 26.8, row: 9.6, pace: -1 },
-  { side: "m", cls: "warrior", col: 3.4, row: 10.4, pace: 0 },
+/** The camp and the island at work, feet in cells. `pace` cells there and back, signed for the way it sets off. */
+const CAST: readonly { cls: UnitClass; col: number; row: number; pace?: number; left?: boolean; work?: keyof typeof WORK; on?: number }[] = [
+  // On the lookout's top, and one keeping the boat.
+  { cls: "archer", col: 21.2, row: 2.4, on: 4.7, left: true },
+  { cls: "warrior", col: 17.2, row: 15.5 },
+  // Round the camp fire.
+  { cls: "monk", col: 18.4, row: 13.8 },
+  { cls: "pawn", col: 20.3, row: 14.4, left: true },
+  // Digging the crown's seam, carrying out along the ridge, raising the hut.
+  { cls: "pawn", col: 15.4, row: 6.3, left: true, work: "dig" },
+  { cls: "pawn", col: 15, row: 8.4, pace: 3, work: "carry" },
+  { cls: "pawn", col: 24.1, row: 12.7, work: "hammer" },
+  // Scouting the cave mouth, walking the beach.
+  { cls: "archer", col: 11.9, row: 10.6, left: true },
+  { cls: "lancer", col: 11.4, row: 14.4, pace: 3 },
+  { cls: "warrior", col: 22.6, row: 11.4, pace: 1.5 },
 ];
 
-const RUIN = [
-  { side: "g", name: "deadTree", x: 2.6 * CELL, y: 7.2 * CELL, scale: 0.42 },
-  { side: "g", name: "skullSpike", x: 6.4 * CELL, y: 14.1 * CELL },
-  { side: "g", name: "skullSpike", x: 17.4 * CELL, y: 13.1 * CELL },
-  { side: "g", name: "skullSpike", x: 25.6 * CELL, y: 11.2 * CELL },
-] as const;
-
+const CAMPFIRE = { col: 19.4, row: 13.9 } as const;
+const MINE = { col: 14, row: 5 } as const;
+const BOAT = { col: 20, row: 15.9, frame: 256 } as const;
+const SHEEP: readonly [number, number][] = [[23.4, 14.3], [24.6, 13.7], [10.8, 13.7], [27.2, 10.6]];
 const FIRE = { anchor: 0.8 } as const;
-/** Dusk over everything but the lights: a warm mauve multiplied in. */
-const DUSK = 0xb48aa0;
 
 export class IntroAtlasScene extends Phaser.Scene {
   constructor() {
@@ -77,10 +89,9 @@ export class IntroAtlasScene extends Phaser.Scene {
 
   preload(): void {
     loadTerrain(this);
-    loadUnits(this, true);
-    loadChampions(this);
-    loadGroundColours(this);
-    loadBuildings(this, RUIN);
+    loadUnits(this);
+    loadBuildings(this, BUILT);
+    if (!this.textures.exists("atlasBoat")) this.load.spritesheet("atlasBoat", packUrl("Enemy Pack/Extra/Boat/Boat_Idle.png"), { frameWidth: BOAT.frame, frameHeight: BOAT.frame });
   }
 
   create(): void {
@@ -93,95 +104,68 @@ export class IntroAtlasScene extends Phaser.Scene {
     );
     prepareTerrain(this);
     makeAnims(this);
+    makeMapAnims(this);
     if (!this.anims.exists("fire_loop")) this.anims.create({ key: "fire_loop", frames: this.anims.generateFrameNumbers("fire"), frameRate: 9, repeat: -1 });
-    this.glowTexture();
+    if (!this.anims.exists("atlasBoat_loop")) this.anims.create({ key: "atlasBoat_loop", frames: this.anims.generateFrameNumbers("atlasBoat"), frameRate: 6, repeat: -1 });
 
     buildWater(this);
     buildTerraces(this, MAP, RAMP);
     this.scenery();
-    for (const b of BLIGHT) this.prowl(b);
-    this.bonfire();
-    this.climb();
-    this.add.rectangle(0, 0, 8000, 8000, DUSK).setBlendMode(Phaser.BlendModes.MULTIPLY).setDepth(DEPTH.clouds - 3);
+    for (const c of CAST) this.extra(c);
+    PARTY.forEach((cls, i) => this.climber(cls, i));
     driftClouds(this, { w: MAP[0]!.length * CELL, h: MAP.length * CELL }, "intro-atlas");
   }
 
   private scenery(): void {
-    for (const r of RUIN) addBuilding(this, r);
+    for (const b of BUILT) addBuilding(this, b);
+    addMine(this, MINE, "mineActive");
     const put = (kind: "tree" | "bush" | "rock" | "waterRock", spots: [number, number][]): Phaser.GameObjects.Sprite[] =>
       spots.map(([c, r], i) => addDecor(this, kind, c * CELL, r * CELL, 1, `atlas-${kind}-${i}`));
-    put("tree", [[3.6, 3.1], [4.7, 4.3], [3.5, 5.6], [24.4, 3.4], [25.3, 4.9], [7.4, 3.2], [21.6, 3.6]]);
-    put("bush", [[6.4, 7.6], [22.9, 6.6], [10.5, 5.1], [18.3, 9.6], [2.8, 12.4]]);
-    put("rock", [[12.2, 13.6], [20.6, 15.2], [27.6, 11.6], [5.6, 6.6], [17.5, 5.2]]);
-    put("waterRock", [[0.6, 9.4], [11.4, 16.4], [28.6, 6.2], [23.8, 16.7], [1.2, 2.4], [26.4, 0.9], [5.5, 16.9], [29.2, 15.6]]).forEach((s) =>
-      s.setDepth(DEPTH.foam),
-    );
-  }
+    put("tree", [[8.6, 2.9], [9.6, 7.2], [10.5, 5.8], [11.6, 6.4], [16.5, 3.4], [17.6, 2.6], [23.5, 9.2], [24.4, 8.6], [27.5, 10.4], [8.4, 16.6], [25.6, 15.7], [12.6, 12.4]]);
+    put("bush", [[12, 11.6], [18.5, 8.6], [21.6, 13.8], [24.8, 6.3], [16, 14.2]]);
+    put("rock", [[11.6, 14.6], [27.2, 11.7], [18.5, 10.6]]);
+    put("waterRock", [[5.4, 9.6], [6, 6], [7.4, 14.4], [8, 1.2], [25, 2], [23.5, 15.5], [29, 13.2], [12, 16.6]]).forEach((s) => s.setDepth(DEPTH.foam));
 
-  /** The last fire, in its ring of stones, its light, and sparks going up into the dusk. */
-  private bonfire(): void {
-    const x = BONFIRE.col * CELL;
-    const y = BONFIRE.row * CELL;
-    for (let i = 0; i < 5; i++) {
-      const a = (i / 5) * Math.PI * 2;
-      this.add.ellipse(x + Math.cos(a) * 26, y + Math.sin(a) * 12, 16, 10, 0x8b8f99).setStrokeStyle(2, 0x3a3f4a).setDepth(standing(y) - 1);
-    }
-    this.add.sprite(x, y, "fire").setOrigin(0.5, FIRE.anchor).setScale(0.8).setDepth(standing(y)).play({ key: "fire_loop", startFrame: 2 });
-    const glow = this.light(x, y - 24, 2.6, 0.7);
-    this.tweens.add({ targets: glow, scale: 3, alpha: 0.85, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
-    for (let i = 0; i < 9; i++) {
-      const spark = this.add.rectangle(x, y, 3, 3, 0xffc070).setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.clouds - 1);
-      this.tweens.add({
-        targets: spark,
-        props: { y: { from: y - 30, to: y - 150 - Math.random() * 80 }, x: { from: x - 14 + Math.random() * 28, to: x - 40 + Math.random() * 80 }, alpha: { from: 1, to: 0 } },
-        duration: 1800 + Math.random() * 1400,
-        delay: Math.random() * 2400,
-        repeat: -1,
-      });
+    const by = BOAT.row * CELL;
+    const boat = this.add.sprite(BOAT.col * CELL, by, "atlasBoat").setOrigin(0.5, 0.7).setScale(0.7).setDepth(DEPTH.foam + 2).play("atlasBoat_loop");
+    this.tweens.add({ targets: boat, y: by + 4, duration: 1600, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+
+    const fx = CAMPFIRE.col * CELL;
+    const fy = CAMPFIRE.row * CELL;
+    this.add.sprite(fx, fy, "fire").setOrigin(0.5, FIRE.anchor).setScale(0.45).setDepth(standing(fy)).play({ key: "fire_loop", startFrame: 3 });
+
+    for (const [c, r] of SHEEP) {
+      const sheep = this.add.sprite(c * CELL, r * CELL, "sheep").setOrigin(0.5, 0.66).setDepth(standing(r * CELL)).setFlipX(c > 20).play("sheep_anim");
+      if (sheep.anims.currentAnim) sheep.anims.setProgress(Math.random());
     }
   }
 
-  /** A warm light over the dusk, so what it falls on keeps its own colour. */
-  private light(x: number, y: number, scale: number, alpha: number): Phaser.GameObjects.Image {
-    return this.add.image(x, y, "glow").setBlendMode(Phaser.BlendModes.ADD).setScale(scale).setAlpha(alpha).setDepth(DEPTH.clouds - 2);
-  }
-
-  /** The same soft light AtlasScene makes, made here when this game has none. */
-  private glowTexture(): void {
-    if (this.textures.exists("glow")) return;
-    const t = this.textures.createCanvas("glow", 256, 256)!;
-    const g = t.context.createRadialGradient(128, 128, 0, 128, 128, 128);
-    g.addColorStop(0, "rgba(255, 200, 110, 0.9)");
-    g.addColorStop(0.35, "rgba(255, 170, 80, 0.4)");
-    g.addColorStop(1, "rgba(255, 150, 60, 0)");
-    t.context.fillStyle = g;
-    t.context.fillRect(0, 0, 256, 256);
-    t.refresh();
-  }
-
-  /** One of the blight, idling, and pacing its stretch of shore if it has one. */
-  private prowl({ side, cls, col, row, pace }: (typeof BLIGHT)[number]): void {
+  /** One of the expedition at its post: idling or at work, maybe walking a stretch there and back. */
+  private extra({ cls, col, row, pace = 0, left, work, on }: (typeof CAST)[number]): void {
     const x = col * CELL;
     const y = row * CELL;
-    const shadow = addShadow(this, x, y, cls === "troll" ? 1.2 : 0.62);
-    const sprite = this.add.sprite(x, y, unitKey(side, cls, "idle")).setDepth(DEPTH.unit + y);
-    playPose(sprite, side, cls, "idle");
-    if (cls === "troll") sprite.setScale(0.7);
+    // Up on a building the ground is its roof, which bakes in its own shade.
+    const shadow = addShadow(this, x, y, cls === "lancer" ? 0.8 : 0.62).setVisible(on === undefined);
+    const sprite = this.add.sprite(x, y, unitKey("a", cls, "idle")).setDepth(DEPTH.unit + (on === undefined ? y : on * CELL - FOOT + 1));
+    const rest = (): void => {
+      if (work) sprite.play(WORK[work].key);
+      else playPose(sprite, "a", cls, "idle");
+    };
+    rest();
     if (sprite.anims.currentAnim) sprite.anims.setProgress(Math.random());
-    sprite.setFlipX(pace < 0);
+    if (left !== undefined) sprite.setFlipX(left);
     if (pace === 0) return;
     let dir = Math.sign(pace);
     const step = Math.abs(pace) * CELL;
     const leg = (): void => {
-      playPose(sprite, side, cls, "run");
+      if (!work) playPose(sprite, "a", cls, "run");
       sprite.setFlipX(dir < 0);
       this.tweens.add({
         targets: [sprite, shadow],
         x: `+=${dir * step}`,
-        duration: step * (cls === "troll" ? 40 : 26),
+        duration: step * 26,
         onComplete: () => {
-          playPose(sprite, side, cls, "idle");
-          sprite.setFlipX(dir < 0);
+          rest();
           dir = -dir;
           this.time.delayedCall(1200 + Math.random() * 2600, leg);
         },
@@ -190,58 +174,48 @@ export class IntroAtlasScene extends Phaser.Scene {
     this.time.delayedCall(Math.random() * 2400, leg);
   }
 
-  /** The captain, flame in hand, up every stair to the bonfire; a rest there, then the climb again from the shore. */
-  private climb(): void {
-    const [c0, r0] = CLIMB[CLIMB_FROM]!;
-    const shadow = addShadow(this, c0 * CELL, r0 * CELL, 0.62);
-    const captain = this.add.sprite(c0 * CELL, r0 * CELL, unitKey("a", "warrior", "idle"));
-    const flame = this.add.sprite(0, 0, "fire").setOrigin(0.5, FIRE.anchor).setScale(0.28).play("fire_loop");
-    const glow = this.light(0, 0, 0.9, 0.55);
-    const follow = (): void => {
-      const hand = captain.flipX ? -18 : 18;
-      captain.setDepth(DEPTH.unit + captain.y);
-      flame.setPosition(captain.x + hand, captain.y - 36).setDepth(captain.depth + 1);
-      glow.setPosition(flame.x, flame.y - 10);
-    };
-    const all = [captain, shadow, flame, glow];
+  /** One of the party, `place` behind the leader: up the climb to the lookout, a rest there, then the climb again from the shore. */
+  private climber(cls: UnitClass, place: number): void {
+    const from = Math.max(0, PARTY_FROM - place);
+    const end = CLIMB.length - 1 - place;
+    const [c0, r0] = CLIMB[from]!;
+    const shadow = addShadow(this, c0 * CELL, r0 * CELL, cls === "lancer" ? 0.8 : 0.62);
+    const unit = this.add.sprite(c0 * CELL, r0 * CELL, unitKey("a", cls, "run"));
+    const depth = (): void => void unit.setDepth(DEPTH.unit + unit.y);
     const walk = (i: number): void => {
       const to = CLIMB[i];
-      if (!to) return rest();
-      const dx = to[0] * CELL - captain.x;
-      const dy = to[1] * CELL - captain.y;
-      if (Math.abs(dx) > 1) captain.setFlipX(dx < 0);
-      this.tweens.add({
-        targets: [captain, shadow],
-        x: to[0] * CELL,
-        y: to[1] * CELL,
-        duration: Math.hypot(dx, dy) * 13,
-        onUpdate: follow,
-        onComplete: () => walk(i + 1),
-      });
+      if (!to || i > end) return rest();
+      const dx = to[0] * CELL - unit.x;
+      const dy = to[1] * CELL - unit.y;
+      if (Math.abs(dx) > 1) unit.setFlipX(dx < 0);
+      this.tweens.add({ targets: [unit, shadow], x: to[0] * CELL, y: to[1] * CELL, duration: Math.hypot(dx, dy) * 14, onUpdate: depth, onComplete: () => walk(i + 1) });
     };
     const rest = (): void => {
-      playPose(captain, "a", "warrior", "idle");
-      captain.setFlipX(false);
-      follow();
-      this.time.delayedCall(6000, () =>
+      playPose(unit, "a", cls, "idle");
+      unit.setFlipX(false);
+      this.time.delayedCall(7000, () =>
         this.tweens.add({
-          targets: all,
+          targets: [unit, shadow],
           alpha: 0,
           duration: 900,
           onComplete: () => {
-            const [c, r] = CLIMB[0]!;
-            captain.setPosition(c * CELL, r * CELL);
-            shadow.setPosition(c * CELL, r * CELL);
-            playPose(captain, "a", "warrior", "run");
-            follow();
-            this.tweens.add({ targets: all, alpha: (t: Phaser.GameObjects.GameObject) => (t === shadow ? 0.35 : t === glow ? 0.55 : 1), duration: 900 });
-            walk(1);
+            // Back at the shore, the followers a few steps behind as before.
+            this.time.delayedCall(place * 700, () => {
+              const [c, r] = CLIMB[0]!;
+              unit.setPosition(c * CELL, r * CELL);
+              shadow.setPosition(c * CELL, r * CELL);
+              playPose(unit, "a", cls, "run");
+              depth();
+              this.tweens.add({ targets: unit, alpha: 1, duration: 600 });
+              this.tweens.add({ targets: shadow, alpha: 0.35, duration: 600 });
+              walk(1);
+            });
           },
         }),
       );
     };
-    playPose(captain, "a", "warrior", "run");
-    follow();
-    walk(CLIMB_FROM + 1);
+    playPose(unit, "a", cls, "run");
+    depth();
+    walk(from + 1);
   }
 }
