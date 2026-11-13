@@ -1742,3 +1742,198 @@ textarea {
 	background: #6fb0e0;
 }
 
+
+/* --- versus mode pick ---------------------------------------------------
+   The entry splits the screen into two live scenes: the solo run against the
+   three clans on the left, the online duel over a room code on the right.
+   The whole half is the button, its label sits in the water's wash, and the
+   seam between them is the kit's ink line. The room form opens over the pair
+   only once PvP is picked. */
+
+.pick {
+	position: fixed;
+	inset: 0;
+	display: flex;
+	gap: 3px;
+	background: #2e1a0e;
+}
+
+/* The pane is a window, not the scene's size: the scene behind it is laid
+   out once at the width the pane takes when picked, and clipped. Opening
+   the window therefore reveals more art instead of re-zooming it. */
+.pickPane {
+	position: relative;
+	flex: 1 1 0;
+	min-width: 0;
+	overflow: hidden;
+}
+
+.pickScene {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 50%;
+	width: 60vw;
+	transform: translateX(-50%);
+}
+
+.pickScene .canvas {
+	position: absolute;
+	inset: 0;
+}
+
+.pickHit {
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 6px;
+	padding: 0 16px clamp(26px, 6vh, 56px);
+	border: 0;
+	outline: none;
+	background: linear-gradient(to top, rgb(5 6 8 / 0.68), rgb(5 6 8 / 0) 42%);
+	color: #fdfaf0;
+	text-align: center;
+}
+
+.pickHit:focus-visible {
+	box-shadow: inset 0 0 0 3px #f4cf6b;
+}
+
+/* The scene labels wear the HUD's own text: Nunito on the colour and shadow
+   the battle labels use, not the paper menu's serif. */
+.pickTag {
+	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-weight: 700;
+	font-size: clamp(12px, 1.2vw, 15px);
+	letter-spacing: 0.18em;
+	padding-left: 0.18em;
+	text-transform: uppercase;
+	color: #f4cf6b;
+	text-shadow: 0 2px 0 #1c2634;
+}
+
+.pickTitle {
+	position: relative;
+	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-weight: 700;
+	font-size: clamp(32px, 4.4vw, 54px);
+	line-height: 1;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	color: #fdfaf0;
+	text-shadow: 0 2px 0 #1c2634, 0 4px 14px rgb(5 6 8 / 0.6);
+	transition: translate 200ms ease-out;
+}
+
+/* The gold rule draws in under the chosen half, as the menu's sword does. */
+.pickTitle::after {
+	content: "";
+	position: absolute;
+	left: 6%;
+	right: 6%;
+	bottom: -11px;
+	height: 3px;
+	background: #f4cf6b;
+	transform: scaleX(0);
+	transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pickHit:hover .pickTitle,
+.pickHit:focus-visible .pickTitle {
+	translate: 0 -4px;
+}
+
+.pickHit:hover .pickTitle::after,
+.pickHit:focus-visible .pickTitle::after {
+	transform: scaleX(1);
+}
+
+.pickHint {
+	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-weight: 400;
+	font-size: clamp(14px, 1.3vw, 17px);
+	color: #b9a887;
+	text-shadow: 0 2px 3px rgb(5 6 8 / 0.8);
+}
+
+.pickBack {
+	position: fixed;
+	z-index: 5;
+	top: 16px;
+	left: 18px;
+	padding: 4px 6px;
+	border: 0;
+	background: none;
+	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-weight: 600;
+	font-size: 15px;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+	color: #fdfaf0;
+	text-shadow: 0 2px 0 #1c2634, 0 0 8px rgb(5 6 8 / 0.7);
+	opacity: 0.85;
+}
+
+.pickBack:hover {
+	opacity: 1;
+}
+
+/* The room form over the pair: the split stays as the backdrop. */
+.pickLobby {
+	position: fixed;
+	inset: 0;
+	z-index: 20;
+	display: grid;
+	place-items: center;
+	padding: 20px;
+	background: rgb(8 10 16 / 0.45);
+	backdrop-filter: blur(2px);
+	animation: hintIn 220ms ease-out both;
+}
+
+.pickLobby .lobby {
+	min-height: 0;
+	padding: 0;
+}
+
+/* Hovering or focusing a half widens its window over the other. The scene
+   inside is already 60vw wide, so this only clips and slides it. */
+@media (min-width: 721px) {
+	.pickPane {
+		transition: flex-grow 450ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.pick:has(.pickHit:hover, .pickHit:focus-visible) > .pickPane {
+		flex-grow: 1;
+	}
+
+	.pick > .pickPane:has(.pickHit:hover, .pickHit:focus-visible) {
+		flex-grow: 1.5;
+	}
+}
+
+/* A phone stacks the halves: the split has no room side by side. */
+@media (max-width: 720px) {
+	.pick {
+		flex-direction: column;
+	}
+
+	.pickScene {
+		left: 0;
+		right: 0;
+		width: auto;
+		transform: none;
+	}
+
+	.pickHit {
+		padding-bottom: 18px;
+	}
+
+	.pickTitle {
+		font-size: clamp(26px, 8vw, 40px);
+	}
+}

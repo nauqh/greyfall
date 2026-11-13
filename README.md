@@ -38,19 +38,19 @@ for Discord as an Activity that friends launch from a voice call.
 
 ## Other modes
 
-The same engine runs three side modes: the real-time war (`/map`), the auto
-chess Skirmish (`/battle`) and Versus (`/versus`), Skirmish played online. The
-Skirmish design is in [docs/skirmish.md](docs/skirmish.md).
+The same engine runs two side modes: the real-time war (`/map`) and the auto
+chess Versus (`/versus`), played solo against three clans (`/battle`) or one
+against one over a room code. The design is in
+[docs/skirmish.md](docs/skirmish.md).
 
 ## Current state
 
 The Atlas is the focus. The Landing and Harbour are playable; the campaign is
 built area by area: Emberwood and the Cinder Troll are the next slice.
 
-The real-time war is playable solo against the red AI. Skirmish is auto chess.
-Versus is Skirmish's auto chess online, one against one, joined by a room
-code. Each planning phase lasts 30s and ends early once both players are
-ready.
+The real-time war is playable solo against the red AI. Versus is auto chess:
+three AI clans solo, or one against one online joined by a room code. Each
+planning phase lasts 30s and ends early once both players are ready.
 
 ## Goals
 
@@ -71,8 +71,7 @@ ready.
 | --- | --- | --- |
 | Atlas | `/atlas` | The focus: the Souls action RPG in the Shattered Reach |
 | Play | `/map` | The real-time war against the AI |
-| Skirmish | `/battle` | Auto chess against three AI clans |
-| Versus | `/versus` | Skirmish one on one, over a room code |
+| Versus | `/versus` | Auto chess, solo (`/battle`) or online over a room code |
 
 The Atlas controls are in [ATLAS.md](ATLAS.md). The war uses left click to
 select and right click to order; **H** opens the field guide.

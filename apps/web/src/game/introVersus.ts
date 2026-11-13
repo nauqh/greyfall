@@ -5,6 +5,7 @@
 import { type UnitClass } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
+import { packUrl } from "./art";
 import { baseZoom, fitCamera } from "./boot";
 import { buildTerraces } from "./introIsland";
 import { CELL, cell, loadGroundColours, loadMapArt, makeMapAnims } from "./islandMap";
@@ -101,6 +102,9 @@ export class IntroVersusScene extends Phaser.Scene {
     loadMapArt(this);
     loadGroundColours(this);
     loadBuildings(this, TOWERS);
+    // The title's scene has already loaded it; started alone on the mode
+    // pick, this scene is the only one that can.
+    if (!this.textures.exists("fire")) this.load.spritesheet("fire", packUrl("Effects/Fire/Fire.png"), { frameWidth: 128, frameHeight: 128 });
   }
 
   create(): void {

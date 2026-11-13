@@ -9,7 +9,6 @@ import { type UnitClass } from "@greyfall/engine";
 import { packUrl } from "./art";
 import { baseZoom, fitCamera, startGame } from "./boot";
 import { BUILT as ATLAS_BUILT, IntroAtlasScene } from "./introAtlas";
-import { IntroVersusScene, TOWERS as VERSUS_BUILT } from "./introVersus";
 import { buildIntroIsland, buildIntroScenery } from "./introIsland";
 import { BUILT as SKIRMISH_BUILT, IntroSkirmishScene } from "./introSkirmish";
 import { CELL, WORK, cell, loadGroundColours, loadMapArt, makeMapAnims } from "./islandMap";
@@ -90,7 +89,6 @@ const MODES: readonly [string, (new () => Phaser.Scene) | null][] = [
   ["intro", null],
   ["intro-atlas", IntroAtlasScene],
   ["intro-skirmish", IntroSkirmishScene],
-  ["intro-versus", IntroVersusScene],
 ];
 
 export class IntroScene extends Phaser.Scene {
@@ -139,7 +137,7 @@ export class IntroScene extends Phaser.Scene {
     loadGroundColours(this);
     this.load.spritesheet("fire", packUrl("Effects/Fire/Fire.png"), { frameWidth: 128, frameHeight: 128 });
     // The other modes' buildings too, so two of them loading at once do not both add a shared one.
-    loadBuildings(this, [...TOWN, ...ATLAS_BUILT, ...SKIRMISH_BUILT, ...VERSUS_BUILT]);
+    loadBuildings(this, [...TOWN, ...ATLAS_BUILT, ...SKIRMISH_BUILT]);
   }
 
   create(): void {

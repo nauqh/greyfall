@@ -9,10 +9,13 @@ import { Clouds } from "./Clouds";
 export function GameCanvas({
   start,
   onReady,
+  bare = false,
   children,
 }: {
   start: (el: HTMLElement) => Promise<{ destroy: () => void; ready: Promise<void> }>;
   onReady?: () => void;
+  /** No cover of its own: the page has one for the whole screen. */
+  bare?: boolean;
   children?: ReactNode;
 }) {
   const holder = useRef<HTMLDivElement>(null);
@@ -60,7 +63,7 @@ export function GameCanvas({
   return (
     <div className="canvas" ref={holder}>
       {/* Loading label while the scene boots; gone the frame create() runs. */}
-      {!ready && (
+      {!bare && !ready && (
         <div className="loader" aria-hidden>
           {/* The cloud bank the scenes open and close on, so a page change
               reads as one sky: close, load, part. */}

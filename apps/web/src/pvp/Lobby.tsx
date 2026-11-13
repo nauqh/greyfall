@@ -1,6 +1,7 @@
 "use client";
 
-// Name, create, join. The whole of the PvP entry point.
+// The online half of Versus: name, create, join. The mode itself is chosen
+// on the entry screen behind this board.
 //
 // Plain DOM rather than a Phaser scene: it is a form, and the scene's own UI
 // kit has no text input. The board screens stay in Phaser.
@@ -64,7 +65,7 @@ export function Lobby({
     <div className="lobby">
       <div className="paper board">
         <h1 className="banner">Versus</h1>
-        <p className="hint">Skirmish one on one, over a room code.</p>
+        <p className="hint">One room code, one rival.</p>
 
         <label className="field">
           <span className="fieldLabel">Your name</span>
@@ -114,7 +115,7 @@ export function Lobby({
       </div>
 
       <button className="linkBtn" type="button" onClick={onBack}>
-        Back to the title
+        Back
       </button>
     </div>
   );

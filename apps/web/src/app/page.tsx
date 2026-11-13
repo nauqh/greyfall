@@ -14,8 +14,7 @@ import { GameCanvas } from "../game/GameCanvas";
 const MENU = [
   { href: "/map", label: "Play", hint: "The War. Raise a town, train an army, take the last island." },
   { href: "/atlas", label: "Atlas", hint: "Carry the last fire through the Shattered Reach." },
-  { href: "/battle", label: "Skirmish", hint: "Auto chess against three clans. Buy, merge, and outlast them." },
-  { href: "/versus", label: "Versus", hint: "All twelve champions, one room code. Out-draft a friend." },
+  { href: "/versus", label: "Versus", hint: "Auto chess against three clans, or a friend. Buy, merge, and outlast them." },
 ] as const;
 
 export default function Page() {

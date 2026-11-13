@@ -96,6 +96,9 @@ export class IntroSkirmishScene extends Phaser.Scene {
     loadGroundColours(this);
     loadWarFx(this);
     loadBuildings(this, BUILT);
+    // The title's scene has already loaded it; started alone on the mode
+    // pick, this scene is the only one that can.
+    if (!this.textures.exists("fire")) this.load.spritesheet("fire", packUrl("Effects/Fire/Fire.png"), { frameWidth: 128, frameHeight: 128 });
     for (const clan of CLANS) {
       for (const cls of ["warrior", "archer"] as const) {
         this.load.spritesheet(clanKey(clan, cls), packUrl(`Units/${clan} Units/${CLAN_FILE[cls]}`), { frameWidth: 192, frameHeight: 192 });
