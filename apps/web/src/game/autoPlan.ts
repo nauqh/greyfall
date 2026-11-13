@@ -327,6 +327,9 @@ export class AutoPlan {
   private buttons!: { reroll: Phaser.GameObjects.Container; xp: Phaser.GameObjects.Container };
   private fightBtn!: Phaser.GameObjects.Container;
   private drag: { id: number; x: number; y: number; moved: boolean } | null = null;
+  /** A shop card being dragged onto the board, and its ghost portrait. */
+  private shopDrag: { slot: number; cls: Champion; x: number; y: number; moved: boolean } | null = null;
+  private shopGhost: Phaser.GameObjects.Image | null = null;
   private selected: number | null = null;
   private ground!: Phaser.GameObjects.Graphics;
   private benchLabel!: Phaser.GameObjects.Text;
@@ -364,6 +367,20 @@ export class AutoPlan {
     this.rolled = error === null && a.type === "reroll";
     this.refresh();
     return error === null;
+  }
+
+  /** A shop card clicked, not dragged: buy it onto the bench. */
+  private async buy(slot: number): Promise<void> {
+    if (!(await this.act({ type: "buy", slot }))) return;
+    if (this.seat().board.length === 0) this.host.say("Drag a unit onto your half, or drag a shop card straight there.");
+  }
+
+  /** A shop card dropped on the board: buy it, then stand the new unit on that cell. */
+  private async buyTo(slot: number, spot: { col: number; row: number }): Promise<void> {
+    const before = new Set([...this.seat().board, ...this.seat().bench].flatMap((p) => (p ? [p.id] : [])));
+    if (!(await this.act({ type: "buy", slot }))) return;
+    const bought = [...this.seat().board, ...this.seat().bench].find((p) => p && !before.has(p.id));
+    if (bought) await this.act({ type: "move", piece: bought.id, to: spot });
   }
 
   // --- panel -----------------------------------------------------------------
@@ -453,6 +470,19 @@ export class AutoPlan {
       }
     });
     input.on("pointermove", (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
+      const sd = this.shopDrag;
+      if (sd) {
+        if (Math.hypot(p.worldX - sd.x, p.worldY - sd.y) > 8) sd.moved = true;
+        if (sd.moved) {
+          this.shopGhost ??= this.scene.add
+            .image(p.worldX, p.worldY, `avatar_${sd.cls}`)
+            .setScale(0.34)
+            .setAlpha(0.9)
+            .setDepth(DEPTH.hud + 20);
+          this.shopGhost.setPosition(p.worldX, p.worldY);
+        }
+        return;
+      }
       const d = this.drag;
       if (!d) {
         const spot = over.length === 0 ? this.spotAt(p.worldX, p.worldY) : null;
@@ -481,6 +511,17 @@ export class AutoPlan {
       }
     });
     input.on("pointerup", (p: Phaser.Input.Pointer) => {
+      const sd = this.shopDrag;
+      if (sd) {
+        this.shopDrag = null;
+        this.shopGhost?.destroy();
+        this.shopGhost = null;
+        this.host.onTip?.(null, 0, 0);
+        const spot = sd.moved ? this.spotAt(p.worldX, p.worldY) : null;
+        if (spot && "col" in spot) void this.buyTo(sd.slot, spot);
+        else if (!sd.moved) void this.buy(sd.slot);
+        return;
+      }
       const d = this.drag;
       if (!d) return;
       this.drag = null;
@@ -756,6 +797,9 @@ export class AutoPlan {
       card
         .setSize(96, 144)
         .setInteractive({ cursor: HAND })
+        .on("pointerdown", (p: Phaser.Input.Pointer) => {
+          this.shopDrag = { slot, cls, x: p.worldX, y: p.worldY, moved: false };
+        })
         .on("pointerover", (p: Phaser.Input.Pointer) => {
           const e = p.event as MouseEvent | undefined;
           this.host.onTip?.(unitTip(cls), e?.clientX ?? 0, e?.clientY ?? 0);
@@ -764,12 +808,6 @@ export class AutoPlan {
         .on("pointerout", () => {
           this.host.onTip?.(null, 0, 0);
           card.setY(cy);
-        })
-        .on("pointerup", () => {
-          this.host.onTip?.(null, 0, 0);
-          void this.act({ type: "buy", slot }).then((ok) => {
-            if (ok && this.seat().board.length === 0) this.host.say("Drag it from the bench onto your half of the board.");
-          });
         });
     }
   }
