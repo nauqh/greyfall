@@ -33,7 +33,7 @@ const KNIGHT_BODY: Record<UnitClass, Body> = {
 };
 
 /** Skirmish's monsters, one look for both teams. Anchors are the feet, read off
- *  the idle sheet's bottom rows of ink; the two big ones are drawn smaller so a
+ *  the idle sheet's bottom rows of ink; the big ones are drawn smaller so a
  *  Troll stands in its cell rather than over three. */
 const CHAMPION: Record<MonsterClass, { dir: string; body: Body; height: number; scale: number; poses: Partial<Record<AnimName, string>> }> = {
   skull: {
@@ -85,6 +85,114 @@ const CHAMPION: Record<MonsterClass, { dir: string; body: Body; height: number; 
     height: 129,
     scale: 0.85,
     poses: { idle: "Minotaur_Idle.png", run: "Minotaur_Walk.png", attack: "Minotaur_Attack.png" },
+  },
+  // Height to the helmet; the spear rises well above it.
+  spear: {
+    dir: "Spear Goblin",
+    body: { frame: 256, anchorX: 121, anchorY: 174 },
+    height: 100,
+    scale: 1,
+    poses: { idle: "Spear Goblin_Idle.png", run: "Spear Goblin_Run.png", attack: "Spear Goblin_Attack Fast.png" },
+  },
+  gnome: {
+    dir: "Gnome",
+    body: { frame: 192, anchorX: 96, anchorY: 126 },
+    height: 69,
+    scale: 1,
+    poses: { idle: "Gnome_Idle.png", run: "Gnome_Run.png", attack: "Gnome_Attack.png" },
+  },
+  // Fliers anchor on their shadow, so they hover over the cell.
+  bee: {
+    dir: "Bumblebee",
+    body: { frame: 192, anchorX: 95, anchorY: 152 },
+    height: 106,
+    scale: 1,
+    poses: { idle: "Bumblebee_Idle.png", run: "Bumblebee_Move.png", attack: "Bumblebee_Attack.png" },
+  },
+  snake: {
+    dir: "Snake",
+    body: { frame: 192, anchorX: 92, anchorY: 122 },
+    height: 57,
+    scale: 1,
+    poses: { idle: "Snake_Idle.png", run: "Snake_Run.png", attack: "Snake_Attack.png" },
+  },
+  spider: {
+    dir: "Spider",
+    body: { frame: 192, anchorX: 98, anchorY: 136 },
+    height: 84,
+    scale: 1,
+    poses: { idle: "Spider_Idle.png", run: "Spider_Run.png", attack: "Spider_Attack.png" },
+  },
+  slinger: {
+    dir: "Slingshot Gnome",
+    body: { frame: 192, anchorX: 98, anchorY: 136 },
+    height: 64,
+    scale: 1,
+    poses: { idle: "Slingshot Gnome_Idle.png", run: "Slingshot Gnome_Run.png", attack: "Slingshot Gnome_Shoot.png" },
+  },
+  lizard: {
+    dir: "Lizard",
+    body: { frame: 192, anchorX: 90, anchorY: 151 },
+    height: 126,
+    scale: 0.8,
+    poses: { idle: "Lizard_Idle.png", run: "Lizard_Run.png", attack: "Lizard_Attack.png" },
+  },
+  paddle: {
+    dir: "Paddle Shark",
+    body: { frame: 192, anchorX: 86, anchorY: 135 },
+    height: 72,
+    scale: 1,
+    poses: { idle: "Paddle Shark_Idle.png", run: "Paddle Shark_Run.png", attack: "Paddle Shark_Attack.png" },
+  },
+  turtle: {
+    dir: "Turtle",
+    body: { frame: 320, anchorX: 160, anchorY: 207 },
+    height: 90,
+    scale: 1,
+    poses: { idle: "Turtle_Idle.png", run: "Turtle_Walk.png", attack: "Turtle_Attack.png" },
+  },
+  // Start is the windup into the breath; Loop and End only hold and trail off the flame.
+  imp: {
+    dir: "Imp",
+    body: { frame: 192, anchorX: 93, anchorY: 151 },
+    height: 103,
+    scale: 1,
+    poses: { idle: "Imp_Idle.png", run: "Imp_Move.png", attack: "Imp_Attack_Start.png" },
+  },
+  bat: {
+    dir: "Giant Bat",
+    body: { frame: 192, anchorX: 89, anchorY: 142 },
+    height: 101,
+    scale: 1,
+    poses: { idle: "Giant Bat_Idle.png", run: "Giant Bat_Move.png", attack: "Giant Bat_Attack.png" },
+  },
+  harpoon: {
+    dir: "Harpoon Shark",
+    body: { frame: 192, anchorX: 93, anchorY: 135 },
+    height: 78,
+    scale: 1,
+    poses: { idle: "Harpoon Shark_Idle.png", run: "Harpoon Shark_Run.png", attack: "Harpoon Shark_Throw.png" },
+  },
+  panda: {
+    dir: "Panda",
+    body: { frame: 256, anchorX: 127, anchorY: 171 },
+    height: 93,
+    scale: 1,
+    poses: { idle: "Panda_Idle.png", run: "Panda_Run.png", attack: "Panda_Attack.png" },
+  },
+  bear: {
+    dir: "Bear",
+    body: { frame: 256, anchorX: 128, anchorY: 176 },
+    height: 91,
+    scale: 1,
+    poses: { idle: "Bear_Idle.png", run: "Bear_Run.png", attack: "Bear_Attack.png" },
+  },
+  bombfish: {
+    dir: "Bomb Fish",
+    body: { frame: 192, anchorX: 94, anchorY: 134 },
+    height: 67,
+    scale: 1,
+    poses: { idle: "Bomb Fish_Idle.png", run: "Bomb Fish_Run.png", attack: "Bomb Fish_Shoot.png" },
   },
 };
 

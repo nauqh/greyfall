@@ -43,6 +43,21 @@ export const CLASS_NAME: Record<Champion, string> = {
   shaman: "Hex Shaman",
   troll: "Troll",
   minotaur: "Minotaur",
+  spear: "Spear Goblin",
+  gnome: "Gnome",
+  bee: "Bumblebee",
+  snake: "Snake",
+  spider: "Spider",
+  slinger: "Slingshot Gnome",
+  lizard: "Lizard",
+  paddle: "Paddle Shark",
+  turtle: "Turtle",
+  imp: "Imp",
+  bat: "Giant Bat",
+  harpoon: "Harpoon Shark",
+  panda: "Panda",
+  bear: "Bear",
+  bombfish: "Bomb Fish",
 };
 
 /** A knight's portrait, from the pack's 25 avatars. */
@@ -70,6 +85,21 @@ export const PORTRAIT_INK: Record<Champion, [number, number, number, number]> = 
   shaman: [39, 55, 204, 213],
   troll: [21, 17, 233, 252],
   minotaur: [32, 26, 219, 214],
+  spear: [38, 56, 211, 199],
+  gnome: [51, 38, 216, 210],
+  bee: [37, 34, 209, 211],
+  snake: [39, 56, 209, 202],
+  spider: [41, 55, 209, 201],
+  slinger: [55, 43, 208, 194],
+  lizard: [47, 37, 213, 210],
+  paddle: [37, 51, 212, 209],
+  turtle: [40, 71, 210, 195],
+  imp: [31, 53, 215, 203],
+  bat: [39, 28, 219, 213],
+  harpoon: [45, 55, 200, 192],
+  panda: [45, 45, 200, 192],
+  bear: [35, 41, 206, 196],
+  bombfish: [35, 60, 216, 208],
 };
 
 /** A fought round, as one seat sees it. */
@@ -159,6 +189,21 @@ const SKILL_RULE: Record<Champion, [name: string, rule: string]> = {
   shaman: ["Hex", `a bolt that costs its target ${AB.hex.seconds}s before its next action`],
   troll: ["Regenerate", `regains ${pct(AB.regenerate.hp)} of its health`],
   minotaur: ["Cleave", `a swing that also hits each other enemy beside it for ${pct(AB.cleave.damage)} damage`],
+  spear: ["Skewer", `a thrust that also hits the enemy behind its target for ${pct(AB.skewer.damage)} damage`],
+  gnome: ["Jab", `a second blow straight after for ${pct(AB.jab.damage)} damage`],
+  bee: ["Dive", "flies beside the enemy furthest back"],
+  snake: ["Venom", `poisons its target for ${AB.venom.damage} damage a second over ${AB.venom.seconds}s`],
+  spider: ["Web", `a bite that costs its target ${AB.web.seconds}s before its next action`],
+  slinger: ["Ricochet", `a shot that bounces to an enemy beside its target for ${pct(AB.ricochet.damage)} damage`],
+  lizard: ["Lunge", `hits its target for ${pct(AB.lunge.damage)} damage`],
+  paddle: ["Frenzy", `attacks ${Math.round(1 / AB.frenzy.attackSeconds)}x as fast for ${AB.frenzy.seconds}s`],
+  turtle: ["Shell", `takes ${pct(1 - AB.shell.damageTaken)} less damage for ${AB.shell.seconds}s`],
+  imp: ["Hellfire", `a bolt that also burns each enemy beside its target for ${pct(AB.hellfire.damage)} damage`],
+  bat: ["Leech", `a bite that heals it for ${pct(AB.leech.heal)} of the damage dealt`],
+  harpoon: ["Hook", "drags its target one cell closer"],
+  panda: ["Slam", `costs every enemy beside it ${AB.slam.seconds}s before its next action`],
+  bear: ["Maul", `hits its target for ${pct(AB.maul.damage)} damage and costs it ${AB.maul.seconds}s before its next action`],
+  bombfish: ["Bomb", `hits its target and each enemy beside it for ${pct(AB.bomb.damage)} damage`],
 };
 
 export function skillName(cls: Champion): string {
@@ -219,9 +264,12 @@ function hexPoints(x: number, y: number, r: number): { x: number; y: number }[] 
   });
 }
 
+export const ORIGINS: TraitKey[] = ["order", "horde", "wilds", "tide"];
+
 /** Who a trait helps, in a phrase. */
 export function traitWho(key: TraitKey): string {
-  return key === "horde" ? "Monsters" : `${AUTO.traits[key].name}s`;
+  const name = AUTO.traits[key].name;
+  return ORIGINS.includes(key) ? `${name} units` : name.endsWith("man") ? `${name.slice(0, -3)}men` : `${name}s`;
 }
 
 /** What a trait does at one tier. */

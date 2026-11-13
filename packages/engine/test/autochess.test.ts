@@ -1,6 +1,7 @@
+import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { AUTO, BALANCE, CHAMPIONS, TICKS_PER_ACTION, act, copies, fightRound, newRun, redactRun, simulate, traitCounts, type Placement, type Run } from "../src/index.ts";
+import { AUTO, BALANCE, CHAMPIONS, MONSTER_CLASSES, TICKS_PER_ACTION, act, copies, fightRound, newRun, redactRun, simulate, traitCounts, type Placement, type Run } from "../src/index.ts";
 
 /** Copies in shops are not reserved, so the pool plus every owned copy is the whole pool. */
 function poolIntact(run: Run): boolean {
@@ -189,4 +190,73 @@ describe("monsters", () => {
       ?? r.events.find((e) => e.type === "move" && e.unit === "b0" && e.t > hex.t);
     expect(next!.t - hex.t).toBeGreaterThanOrEqual(BALANCE.abilities.hex.seconds * BALANCE.tickRate);
   });
+
+  it("casts every new monster's skill against a crowd", () => {
+    const crowd = [at("pawn", 4, 0), at("pawn", 4, 1), at("pawn", 4, 2), at("pawn", 3, 1), at("pawn", 2, 1)].map((p) => ({ ...p, stars: 2 }));
+    // The crowd is in melee before the Harpoon Shark can hook; that has its own test.
+    for (const cls of MONSTER_CLASSES.slice(MONSTER_CLASSES.indexOf("spear")).filter((c) => c !== "harpoon")) {
+      const r = simulate([{ class: cls, col: 1, row: 1, stars: 3 }], crowd, 1, opts);
+      expect(abilities(r, AUTO.skills[cls].ability).length, cls).toBeGreaterThan(0);
+    }
+  });
+
+  it("poisons with venom every second for its duration", () => {
+    const r = simulate([at("snake", 4, 1)], [at("monk", 4, 1)], 1, opts);
+    const cast = abilities(r, "venom")[0]!;
+    const ticks = r.events
+      .filter((e) => e.type === "hit" && e.unit === "a0" && e.damage === BALANCE.abilities.venom.damage && e.t > cast.t && e.t <= cast.t + 40)
+      .map((e) => e.t - cast.t);
+    expect(ticks).toEqual([10, 20, 30, 40]);
+  });
+
+  it("speeds a Paddle Shark's swings while it is in a frenzy", () => {
+    const r = simulate([at("paddle", 4, 1)], [{ ...at("monk", 4, 1), stars: 3 }], 1, opts);
+    const cast = abilities(r, "frenzy")[0]!;
+    const window = BALANCE.abilities.frenzy.seconds * BALANCE.tickRate;
+    const swings = r.events.filter((e) => e.type === "attack" && e.unit === "a0" && e.t >= cast.t && e.t < cast.t + window);
+    expect(swings.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it("cuts the damage a shelled Turtle takes", () => {
+    const r = simulate([at("turtle", 4, 1)], [at("minotaur", 4, 1)], 1, opts);
+    const cast = abilities(r, "shell")[0]!;
+    const blows = r.events.filter(
+      (e) => e.type === "hit" && e.target === "a0" && e.t > cast.t && e.t <= cast.t + BALANCE.abilities.shell.seconds * BALANCE.tickRate,
+    );
+    expect(blows.length).toBeGreaterThan(0);
+    for (const e of blows) expect(e.type === "hit" && e.damage).toBe(Math.round(BALANCE.units.minotaur.damage * BALANCE.abilities.shell.damageTaken));
+  });
+
+  it("heals a Giant Bat for a share of what its leech dealt", () => {
+    const r = simulate([at("bat", 4, 1)], [at("troll", 4, 1)], 1, opts);
+    const cast = abilities(r, "leech")[0]!;
+    const heal = r.events.find((e) => e.type === "heal" && e.unit === "a0" && e.target === "a0" && e.t === cast.t);
+    expect(heal && heal.type === "heal" && heal.amount).toBe(Math.round(BALANCE.units.bat.damage * BALANCE.abilities.leech.heal));
+  });
+
+  it("drags a hooked unit one cell toward the Harpoon Shark", () => {
+    // A Monk at full health never moves of its own accord.
+    const r = simulate([at("harpoon", 4, 1)], [at("monk", 0, 1)], 1, opts);
+    const cast = abilities(r, "hook")[0]!;
+    const drag = r.events.find((e) => e.type === "move" && e.unit === "b0");
+    expect(drag && drag.t).toBe(cast.t);
+    expect(drag && drag.type === "move" && [drag.col, drag.row]).toEqual([8, 1]);
+  });
+
+  it("property: a mirror match of monsters is always a draw", () => {
+    const tiles = Array.from({ length: BALANCE.board.cols * BALANCE.board.rows }, (_, k) => k);
+    fc.assert(
+      fc.property(
+        fc.uniqueArray(fc.constantFrom(...tiles), { minLength: 1, maxLength: BALANCE.board.maxUnits }),
+        fc.array(fc.constantFrom(...MONSTER_CLASSES), { minLength: BALANCE.board.maxUnits, maxLength: BALANCE.board.maxUnits }),
+        fc.integer({ min: 0, max: 2 ** 31 }),
+        (cells, classes, seed) => {
+          const army = cells.map((k, n) => ({ class: classes[n]!, col: k % BALANCE.board.cols, row: Math.floor(k / BALANCE.board.cols) }));
+          const r = simulate(army, structuredClone(army), seed, { ...opts, skills: true });
+          expect(r.hpRemaining.a).toBe(r.hpRemaining.b);
+        },
+      ),
+      { numRuns: 100 },
+    );
+  }, 20_000);
 });

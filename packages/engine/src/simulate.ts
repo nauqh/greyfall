@@ -46,9 +46,9 @@ export type BattleEvent =
   | { t: number; type: "heal"; unit: string; target: string; amount: number; hpAfter: number }
   | { t: number; type: "death"; unit: string }
   /**
-   * Guard and taunt name only the unit; pierce, ambush and hex name a target.
-   * Splash and cleave come before the extra hits they cause. Reassemble carries
-   * the HP the Skull gets up with.
+   * Guard, taunt, shell, frenzy and slam name only the unit; the rest name a
+   * target. Splash, cleave, hellfire and bomb come before the extra hits they
+   * cause. Reassemble carries the HP the Skull gets up with.
    */
   | {
       t: number;
@@ -121,6 +121,14 @@ interface SimUnit extends UnitSnapshot {
   /** The tick the skill's countdown runs out; it stays armed from then until cast. */
   skillAt: number;
   tauntUntil: number;
+  /** Venom deals poisonDamage, credited to poisonBy, on poisonNext and every second after, up to poisonUntil. */
+  poisonUntil: number;
+  poisonNext: number;
+  poisonDamage: number;
+  poisonBy: string;
+  frenzyUntil: number;
+  shellFrom: number;
+  shellUntil: number;
 }
 
 /** Row is a lane: the same meaning for both sides, no reflection. */
@@ -244,6 +252,13 @@ function build(army: Army, side: Side, traits: boolean, cols: number): SimUnit[]
       diedAt: 0,
       skillAt: AUTO.skills[p.class].first * BALANCE.tickRate,
       tauntUntil: 0,
+      poisonUntil: -1,
+      poisonNext: 0,
+      poisonDamage: 0,
+      poisonBy: "",
+      frenzyUntil: 0,
+      shellFrom: 0,
+      shellUntil: 0,
     };
   });
 }
@@ -413,8 +428,10 @@ export function simulate(
   // Guard starts the tick after it is raised, so a hit landing in the same
   // tick does not depend on whether the attacker or the Warrior came first.
   const dealt = (target: SimUnit, rawIn: number, t: number) => {
-    const raw = Math.round(rawIn * target.damageTaken);
-    return t >= target.guardFrom && t < target.guardUntil ? Math.round(raw * ability.guard.damageTaken) : raw;
+    let raw = Math.round(rawIn * target.damageTaken);
+    if (t >= target.guardFrom && t < target.guardUntil) raw = Math.round(raw * ability.guard.damageTaken);
+    if (t >= target.shellFrom && t < target.shellUntil) raw = Math.round(raw * ability.shell.damageTaken);
+    return raw;
   };
   const strike = (unit: SimUnit, target: SimUnit) => damageAgainst(unit.class, target.class) * unit.power;
 
@@ -448,8 +465,10 @@ export function simulate(
     const intents: { i: number; steps: { col: number; row: number }[] }[] = [];
     // Tiles a Monk is raising someone on this tick; nobody may step into them.
     const raising = new Set<string>();
-    // Hexed this tick, applied once every unit has acted so order cannot matter.
-    const hexed: number[] = [];
+    // Hexed, webbed, mauled or slammed this tick, applied once every unit has
+    // acted so order cannot matter. Hooks wait for the same reason.
+    const hexed: { j: number; seconds: number }[] = [];
+    const hooks: { j: number; to: { col: number; row: number } }[] = [];
 
     // Taunts go up before anyone acts, so whether one holds this tick never depends on order.
     if (ability.taunt.enabled && skills) {
@@ -468,8 +487,14 @@ export function simulate(
       const stats = BALANCE.units[unit.class];
       const healer = stats.heal > 0;
 
-      // A Thief leaps beside the enemy furthest back, behind it where there is room.
-      if (ability.ambush.enabled && unit.class === "thief" && armed(unit, t)) {
+      // A Thief or a Bumblebee leaps beside the enemy furthest back, behind it where there is room.
+      const leap =
+        ability.ambush.enabled && unit.class === "thief"
+          ? ("ambush" as const)
+          : ability.dive.enabled && unit.class === "bee"
+            ? ("dive" as const)
+            : null;
+      if (leap && armed(unit, t)) {
         // How deep into the enemy half a column is, seen from this Thief's side.
         const back = (col: number) => (unit.side === "a" ? col : -col);
         const prey = units
@@ -489,7 +514,7 @@ export function simulate(
           unit.row = spot.row;
           unit.nextAt = t + TICKS_PER_ACTION;
           spend(unit, t);
-          events.push({ t, type: "ability", unit: unit.id, ability: "ambush", target: prey.u.id });
+          events.push({ t, type: "ability", unit: unit.id, ability: leap, target: prey.u.id });
           events.push({ t, type: "move", unit: unit.id, col: spot.col, row: spot.row });
           continue;
         }
@@ -508,6 +533,14 @@ export function simulate(
         unit.nextAt = t + TICKS_PER_ACTION;
         events.push({ t, type: "ability", unit: unit.id, ability: "guard" });
         continue;
+      }
+
+      // Unlike Guard, the Turtle's shell costs no action.
+      if (ability.shell.enabled && unit.class === "turtle" && armed(unit, t) && hpAtStart[i]! < unit.maxHp) {
+        spend(unit, t);
+        unit.shellFrom = t + 1;
+        unit.shellUntil = t + 1 + ability.shell.seconds * BALANCE.tickRate;
+        events.push({ t, type: "ability", unit: unit.id, ability: "shell" });
       }
 
       if (ability.revive.enabled && unit.class === "monk" && (timed(unit) ? armed(unit, t) : !unit.reviveUsed)) {
@@ -584,7 +617,14 @@ export function simulate(
         const hit = tier.find((c) => c.dist <= stats.range);
         if (hit) {
           const target = units[hit.j]!;
-          unit.nextAt = t + unit.attackTicks + sway(unit, t);
+          if (ability.frenzy.enabled && unit.class === "paddle" && armed(unit, t)) {
+            spend(unit, t);
+            unit.frenzyUntil = t + ability.frenzy.seconds * BALANCE.tickRate;
+            events.push({ t, type: "ability", unit: unit.id, ability: "frenzy" });
+          }
+          const every =
+            t < unit.frenzyUntil ? Math.round(unit.attackTicks * ability.frenzy.attackSeconds) : unit.attackTicks;
+          unit.nextAt = t + every + sway(unit, t);
           // Unclamped until the tick ends: clamping as each lands would make
           // the total depend on whether the hit or the heal came first.
           if (healer) {
@@ -610,13 +650,18 @@ export function simulate(
                   armed(unit, t) &&
                   hpAtStart[hit.j]! < target.maxHp * ability.hunter.below
                 ? { name: "hunter" as const, boost: 1 + ability.hunter.bonus }
-                : null;
+                : ability.lunge.enabled && unit.class === "lizard" && armed(unit, t)
+                  ? { name: "lunge" as const, boost: ability.lunge.damage }
+                  : ability.maul.enabled && unit.class === "bear" && armed(unit, t)
+                    ? { name: "maul" as const, boost: ability.maul.damage }
+                    : null;
           const damage = dealt(target, Math.round(strike(unit, target) * (empowered?.boost ?? 1)), t);
           target.hp -= damage;
           events.push({ t, type: "attack", unit: unit.id, target: target.id });
           if (empowered) {
             spend(unit, t);
             events.push({ t, type: "ability", unit: unit.id, ability: empowered.name, target: target.id });
+            if (empowered.name === "maul") hexed.push({ j: hit.j, seconds: ability.maul.seconds });
           }
           events.push({
             t,
@@ -628,11 +673,16 @@ export function simulate(
           });
 
           unit.shots += 1;
-          if (
+          // The Archer's arrow and the Spear Goblin's skewer go on to whoever stands behind the target.
+          const through =
             ability.pierce.enabled &&
             unit.class === "archer" &&
             (timed(unit) ? armed(unit, t) : unit.shots % ability.pierce.every === 0)
-          ) {
+              ? { name: "pierce" as const, share: ability.pierce.damage }
+              : ability.skewer.enabled && unit.class === "spear" && armed(unit, t)
+                ? { name: "skewer" as const, share: ability.skewer.damage }
+                : null;
+          if (through) {
             const tpos = startPos[hit.j]!;
             const dir = Math.sign(tpos.col - unit.col);
             const behind = units.findIndex(
@@ -645,10 +695,10 @@ export function simulate(
             if (dir !== 0 && behind !== -1) {
               if (timed(unit)) spend(unit, t);
               const second = units[behind]!;
-              const raw = Math.round(strike(unit, second) * ability.pierce.damage);
+              const raw = Math.round(strike(unit, second) * through.share);
               const damage2 = dealt(second, raw, t);
               second.hp -= damage2;
-              events.push({ t, type: "ability", unit: unit.id, ability: "pierce", target: second.id });
+              events.push({ t, type: "ability", unit: unit.id, ability: through.name, target: second.id });
               events.push({
                 t,
                 type: "hit",
@@ -660,14 +710,68 @@ export function simulate(
             }
           }
 
-          // Splash burns round the target, cleave sweeps round the Minotaur.
+          if (ability.jab.enabled && unit.class === "gnome" && armed(unit, t)) {
+            spend(unit, t);
+            const extra = dealt(target, Math.round(strike(unit, target) * ability.jab.damage), t);
+            target.hp -= extra;
+            events.push({ t, type: "ability", unit: unit.id, ability: "jab", target: target.id });
+            events.push({ t, type: "hit", unit: unit.id, target: target.id, damage: extra, hpAfter: clamp(target) });
+          }
+
+          if (ability.venom.enabled && unit.class === "snake" && armed(unit, t)) {
+            spend(unit, t);
+            target.poisonBy = unit.id;
+            target.poisonDamage = Math.round(ability.venom.damage * unit.power);
+            target.poisonNext = t + BALANCE.tickRate;
+            target.poisonUntil = t + ability.venom.seconds * BALANCE.tickRate;
+            events.push({ t, type: "ability", unit: unit.id, ability: "venom", target: target.id });
+          }
+
+          if (ability.leech.enabled && unit.class === "bat" && armed(unit, t)) {
+            const amount = Math.min(Math.round(damage * ability.leech.heal), unit.maxHp - hpAtStart[i]!);
+            if (amount > 0) {
+              spend(unit, t);
+              unit.hp += amount;
+              events.push({ t, type: "ability", unit: unit.id, ability: "leech", target: target.id });
+              events.push({ t, type: "heal", unit: unit.id, target: unit.id, amount, hpAfter: clamp(unit) });
+            }
+          }
+
+          if (ability.ricochet.enabled && unit.class === "slinger" && armed(unit, t)) {
+            const tpos = startPos[hit.j]!;
+            const rank = (j: number) => [hpAtStart[j]!, Math.abs(startPos[j]!.row - unit.row), Math.abs(startPos[j]!.col - unit.col), j];
+            const next = units
+              .map((u, j) => ({ u, j }))
+              .filter(({ u, j }) => j !== hit.j && aliveAtStart[j] && u.side === target.side && chebyshev(startPos[j]!, tpos) === 1)
+              .sort((x, y) => compareRanks(rank(x.j), rank(y.j)))[0];
+            if (next) {
+              spend(unit, t);
+              const extra = dealt(next.u, Math.round(strike(unit, next.u) * ability.ricochet.damage), t);
+              next.u.hp -= extra;
+              events.push({ t, type: "ability", unit: unit.id, ability: "ricochet", target: next.u.id });
+              events.push({ t, type: "hit", unit: unit.id, target: next.u.id, damage: extra, hpAfter: clamp(next.u) });
+            }
+          }
+
+          if (ability.hook.enabled && unit.class === "harpoon" && armed(unit, t) && hit.dist > 1) {
+            const tpos = startPos[hit.j]!;
+            spend(unit, t);
+            hooks.push({ j: hit.j, to: { col: tpos.col + Math.sign(unit.col - tpos.col), row: tpos.row + Math.sign(unit.row - tpos.row) } });
+            events.push({ t, type: "ability", unit: unit.id, ability: "hook", target: target.id });
+          }
+
+          // Splash, hellfire and bomb burn round the target, cleave sweeps round the Minotaur.
           const sweep = !armed(unit, t)
             ? null
             : ability.splash.enabled && unit.class === "torch"
               ? { name: "splash" as const, around: startPos[hit.j]!, share: ability.splash.damage }
               : ability.cleave.enabled && unit.class === "minotaur"
                 ? { name: "cleave" as const, around: startPos[i]!, share: ability.cleave.damage }
-                : null;
+                : ability.hellfire.enabled && unit.class === "imp"
+                  ? { name: "hellfire" as const, around: startPos[hit.j]!, share: ability.hellfire.damage }
+                  : ability.bomb.enabled && unit.class === "bombfish"
+                    ? { name: "bomb" as const, around: startPos[hit.j]!, share: ability.bomb.damage }
+                    : null;
           if (sweep) {
             const caught = units
               .map((u, j) => ({ u, j }))
@@ -683,10 +787,25 @@ export function simulate(
             }
           }
 
-          if (ability.hex.enabled && unit.class === "shaman" && armed(unit, t)) {
+          const curse =
+            ability.hex.enabled && unit.class === "shaman"
+              ? { name: "hex" as const, seconds: ability.hex.seconds }
+              : ability.web.enabled && unit.class === "spider"
+                ? { name: "web" as const, seconds: ability.web.seconds }
+                : null;
+          if (curse && armed(unit, t)) {
             spend(unit, t);
-            hexed.push(hit.j);
-            events.push({ t, type: "ability", unit: unit.id, ability: "hex", target: target.id });
+            hexed.push({ j: hit.j, seconds: curse.seconds });
+            events.push({ t, type: "ability", unit: unit.id, ability: curse.name, target: target.id });
+          }
+
+          if (ability.slam.enabled && unit.class === "panda" && armed(unit, t)) {
+            spend(unit, t);
+            events.push({ t, type: "ability", unit: unit.id, ability: "slam" });
+            for (const [j, u] of units.entries()) {
+              if (aliveAtStart[j] && u.side !== unit.side && chebyshev(startPos[j]!, startPos[i]!) === 1)
+                hexed.push({ j, seconds: ability.slam.seconds });
+            }
           }
           break;
         }
@@ -707,9 +826,32 @@ export function simulate(
       }
     }
 
-    for (const j of hexed) {
+    for (const { j, seconds } of hexed) {
       const u = units[j]!;
-      u.nextAt = Math.max(u.nextAt, t + 1) + ability.hex.seconds * BALANCE.tickRate;
+      u.nextAt = Math.max(u.nextAt, t + 1) + seconds * BALANCE.tickRate;
+    }
+
+    // A hooked unit is dragged one cell toward the shark if that cell is free,
+    // and loses whatever step it had planned. A unit that leapt this tick stays.
+    const dragged = new Set<number>();
+    for (const { j, to } of hooks) {
+      const u = units[j]!;
+      const from = startPos[j]!;
+      if (dragged.has(j) || !alive(u) || u.col !== from.col || u.row !== from.row) continue;
+      if (!onBoard(to, board) || occupied.has(tileKey(to)) || raising.has(tileKey(to))) continue;
+      dragged.add(j);
+      raising.add(tileKey(to));
+      u.col = to.col;
+      u.row = to.row;
+      events.push({ t, type: "move", unit: u.id, col: to.col, row: to.row });
+    }
+
+    for (const [i, u] of units.entries()) {
+      if (!aliveAtStart[i] || t !== u.poisonNext || t > u.poisonUntil) continue;
+      u.poisonNext += BALANCE.tickRate;
+      const damage = dealt(u, u.poisonDamage, t);
+      u.hp -= damage;
+      events.push({ t, type: "hit", unit: u.poisonBy, target: u.id, damage, hpAfter: clamp(u) });
     }
 
     if (ability.regenerate.enabled) {
@@ -728,7 +870,7 @@ export function simulate(
     // rest fall back to their next step next round.
     const granted = new Map<number, { col: number; row: number }>();
     const taken = new Set<string>(raising);
-    let pending = intents.filter((m) => alive(units[m.i]!));
+    let pending = intents.filter((m) => alive(units[m.i]!) && !dragged.has(m.i));
 
     for (let round = 0; round < 3 && pending.length > 0; round++) {
       const claims = new Map<string, number[]>();

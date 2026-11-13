@@ -14,9 +14,54 @@ export const UNIT_CLASSES: readonly UnitClass[] = [
 ];
 
 /** Skirmish's monsters, from the Enemy Pack. The war fields knights only. */
-export type MonsterClass = "skull" | "torch" | "gnoll" | "thief" | "shaman" | "troll" | "minotaur";
+export type MonsterClass =
+  | "skull"
+  | "torch"
+  | "gnoll"
+  | "thief"
+  | "shaman"
+  | "troll"
+  | "minotaur"
+  | "spear"
+  | "imp"
+  | "gnome"
+  | "bee"
+  | "snake"
+  | "spider"
+  | "slinger"
+  | "bat"
+  | "panda"
+  | "bear"
+  | "lizard"
+  | "paddle"
+  | "turtle"
+  | "harpoon"
+  | "bombfish";
 
-export const MONSTER_CLASSES: readonly MonsterClass[] = ["skull", "torch", "gnoll", "thief", "shaman", "troll", "minotaur"];
+export const MONSTER_CLASSES: readonly MonsterClass[] = [
+  "skull",
+  "torch",
+  "gnoll",
+  "thief",
+  "shaman",
+  "troll",
+  "minotaur",
+  "spear",
+  "imp",
+  "gnome",
+  "bee",
+  "snake",
+  "spider",
+  "slinger",
+  "bat",
+  "panda",
+  "bear",
+  "lizard",
+  "paddle",
+  "turtle",
+  "harpoon",
+  "bombfish",
+];
 
 /** Anything that can stand on the Skirmish board. */
 export type Champion = UnitClass | MonsterClass;
@@ -84,6 +129,21 @@ export const BALANCE = {
     shaman: { cost: 3, hp: 80, damage: 14, range: 3, heal: 0 },
     troll: { cost: 4, hp: 360, damage: 20, range: 1, heal: 0 },
     minotaur: { cost: 4, hp: 280, damage: 23, range: 1, heal: 0 },
+    spear: { cost: 1, hp: 85, damage: 10, range: 1, heal: 0 },
+    gnome: { cost: 1, hp: 70, damage: 8, range: 1, heal: 0 },
+    bee: { cost: 1, hp: 65, damage: 9, range: 1, heal: 0 },
+    snake: { cost: 1, hp: 65, damage: 8, range: 1, heal: 0 },
+    spider: { cost: 2, hp: 105, damage: 11, range: 1, heal: 0 },
+    slinger: { cost: 2, hp: 60, damage: 10, range: 4, heal: 0 },
+    lizard: { cost: 2, hp: 120, damage: 12, range: 1, heal: 0 },
+    paddle: { cost: 2, hp: 105, damage: 11, range: 1, heal: 0 },
+    turtle: { cost: 2, hp: 170, damage: 7, range: 1, heal: 0 },
+    imp: { cost: 3, hp: 80, damage: 14, range: 3, heal: 0 },
+    bat: { cost: 3, hp: 120, damage: 17, range: 1, heal: 0 },
+    harpoon: { cost: 3, hp: 95, damage: 15, range: 3, heal: 0 },
+    panda: { cost: 3, hp: 200, damage: 13, range: 1, heal: 0 },
+    bear: { cost: 4, hp: 320, damage: 24, range: 1, heal: 0 },
+    bombfish: { cost: 4, hp: 130, damage: 20, range: 4, heal: 0 },
   } as Record<Champion, UnitStats>,
 
   /**
@@ -117,6 +177,36 @@ export const BALANCE = {
     regenerate: { enabled: true, hp: 0.12 },
     /** Minotaur: a swing that also hits each other enemy beside it for this share. */
     cleave: { enabled: true, damage: 1 },
+    /** Spear Goblin: a thrust that also hits the enemy straight behind the target for this share. */
+    skewer: { enabled: true, damage: 0.75 },
+    /** Gnome: a second blow straight after the first, for this share. */
+    jab: { enabled: true, damage: 0.5 },
+    /** Bumblebee: flies beside the enemy furthest back, as the Thief's ambush. */
+    dive: { enabled: true },
+    /** Snake: a bite that poisons the target for `damage` a second over `seconds`. */
+    venom: { enabled: true, damage: 4, seconds: 4 },
+    /** Spider: a bite that costs the target this long before its next action. */
+    web: { enabled: true, seconds: 1.5 },
+    /** Slingshot Gnome: a shot that bounces to another enemy beside the target for this share. */
+    ricochet: { enabled: true, damage: 0.6 },
+    /** Lizard: one blow for this much of its damage. */
+    lunge: { enabled: true, damage: 2 },
+    /** Paddle Shark: attacks at this share of its interval for `seconds`. */
+    frenzy: { enabled: true, attackSeconds: 0.5, seconds: 3 },
+    /** Turtle: takes this share of damage for `seconds`. */
+    shell: { enabled: true, damageTaken: 0.4, seconds: 3 },
+    /** Imp: a bolt that also burns each enemy beside the target for this share. */
+    hellfire: { enabled: true, damage: 0.6 },
+    /** Giant Bat: a bite that heals it for this share of the damage dealt. */
+    leech: { enabled: true, heal: 0.6 },
+    /** Harpoon Shark: a throw that drags its target one cell toward the shark. */
+    hook: { enabled: true },
+    /** Panda: a slam that costs every enemy beside it this long before its next action. */
+    slam: { enabled: true, seconds: 1 },
+    /** Bear: a blow for this much of its damage that also costs the target `seconds`. */
+    maul: { enabled: true, damage: 1.5, seconds: 1.5 },
+    /** Bomb Fish: a bomb that hits the target and each enemy beside it for this share. */
+    bomb: { enabled: true, damage: 0.8 },
   },
 
   /**
@@ -143,8 +233,8 @@ export type Skill = keyof typeof BALANCE.abilities;
 
 export type TraitEffect = "damageTaken" | "hp" | "attackSeconds" | "heal" | "gold" | "damage";
 
-/** TFT's pair: an origin (knight or monster) and a role shared across both. */
-export type TraitKey = "order" | "horde" | "guardian" | "marksman" | "mystic" | "brute";
+/** TFT's pair: an origin and a role shared across them. */
+export type TraitKey = "order" | "horde" | "wilds" | "tide" | "guardian" | "marksman" | "mystic" | "brute" | "striker";
 
 export interface Trait {
   name: string;
@@ -173,6 +263,21 @@ const TIER: Record<Champion, number> = {
   shaman: 3,
   troll: 4,
   minotaur: 4,
+  spear: 1,
+  gnome: 1,
+  bee: 1,
+  snake: 1,
+  spider: 2,
+  slinger: 2,
+  lizard: 2,
+  paddle: 2,
+  turtle: 2,
+  imp: 3,
+  bat: 3,
+  harpoon: 3,
+  panda: 3,
+  bear: 4,
+  bombfish: 4,
 };
 /** Copies of each unit in the shared pool, by tier. Nine make a 3-star. */
 const POOL_BY_TIER = [0, 29, 22, 16, 10];
@@ -218,6 +323,21 @@ export const AUTO = {
     shaman: { ability: "hex", cooldown: 3, first: 3 },
     troll: { ability: "regenerate", cooldown: 5, first: 5 },
     minotaur: { ability: "cleave", cooldown: 4, first: 4 },
+    spear: { ability: "skewer", cooldown: 3, first: 3 },
+    gnome: { ability: "jab", cooldown: 3, first: 3 },
+    bee: { ability: "dive", cooldown: 8, first: 0 },
+    snake: { ability: "venom", cooldown: 4, first: 4 },
+    spider: { ability: "web", cooldown: 4, first: 4 },
+    slinger: { ability: "ricochet", cooldown: 3, first: 3 },
+    lizard: { ability: "lunge", cooldown: 5, first: 5 },
+    paddle: { ability: "frenzy", cooldown: 8, first: 4 },
+    turtle: { ability: "shell", cooldown: 7, first: 4 },
+    imp: { ability: "hellfire", cooldown: 4, first: 4 },
+    bat: { ability: "leech", cooldown: 4, first: 4 },
+    harpoon: { ability: "hook", cooldown: 6, first: 2 },
+    panda: { ability: "slam", cooldown: 6, first: 6 },
+    bear: { ability: "maul", cooldown: 5, first: 5 },
+    bombfish: { ability: "bomb", cooldown: 5, first: 5 },
   } as Record<Champion, { ability: Skill; cooldown: number; first: number }>,
   /** XP from level L to L+1, indexed by L. */
   xpToNext: [0, 2, 2, 6, 10, 20, 36, 48] as readonly number[],
@@ -252,11 +372,14 @@ export const AUTO = {
   damage: { base: 3, perRounds: 3 },
   traits: {
     order: kinds("Order", UNIT_CLASSES, [2, 4], "gold", [1, 3]),
-    horde: kinds("Horde", MONSTER_CLASSES, [2, 4, 6], "damage", [1.12, 1.25, 1.45]),
-    guardian: kinds("Guardian", ["warrior", "lancer", "skull", "troll"], [2, 4], "damageTaken", [0.85, 0.7]),
-    marksman: kinds("Marksman", ["archer", "torch", "gnoll"], [2, 3], "attackSeconds", [0.7, 0.5]),
-    mystic: kinds("Mystic", ["monk", "shaman"], [2], "heal", [1.5]),
-    brute: kinds("Brute", ["pawn", "thief", "minotaur"], [2, 3], "hp", [1.2, 1.45]),
+    horde: kinds("Horde", ["skull", "torch", "gnoll", "thief", "shaman", "troll", "minotaur", "spear", "imp"], [2, 4, 6], "damage", [1.12, 1.25, 1.45]),
+    wilds: kinds("Wilds", ["gnome", "bee", "snake", "spider", "slinger", "bat", "panda", "bear"], [2, 4, 6], "hp", [1.15, 1.3, 1.5]),
+    tide: kinds("Tide", ["lizard", "paddle", "turtle", "harpoon", "bombfish"], [2, 4], "damageTaken", [0.9, 0.75]),
+    guardian: kinds("Guardian", ["warrior", "lancer", "skull", "troll", "turtle", "panda"], [2, 4, 6], "damageTaken", [0.85, 0.7, 0.55]),
+    marksman: kinds("Marksman", ["archer", "torch", "gnoll", "slinger", "harpoon", "bombfish"], [2, 4, 6], "attackSeconds", [0.8, 0.65, 0.5]),
+    mystic: kinds("Mystic", ["monk", "shaman", "imp"], [2, 3], "heal", [1.5, 2.2]),
+    brute: kinds("Brute", ["pawn", "thief", "minotaur", "lizard", "bear"], [2, 4], "hp", [1.2, 1.45]),
+    striker: kinds("Striker", ["spear", "gnome", "bee", "snake", "spider", "bat", "paddle"], [2, 4, 6], "damage", [1.1, 1.2, 1.35]),
   } as Record<TraitKey, Trait>,
 } as const;
 

@@ -26,11 +26,11 @@ keeps the five knights and the old ones.
 | Streaks | Win and loss streaks both pay, +1 to +3 | Same: 2-3 +1, 4-5 +2, 6+ +3. A win pays +1 more |
 | Player damage | A stage amount plus the winner's surviving units | 3 + round/3, plus a point per surviving star |
 | Odd lobby | One player fights a ghost copy of another board, which takes no damage | Same, shown as "(echo)" |
-| Traits | Origins and classes, many per unit | One per knight class, and one origin, the Horde, shared by every monster. See below |
+| Traits | Origins and classes, many per unit | One origin and one role per unit: four origins, five roles. See below |
 
 ## The roster
 
-Five knights and seven monsters from the Enemy Pack. With only the knights,
+Five knights and 22 monsters from the Enemy Pack. With only the knights,
 a shop of five slots drawn from five classes kept repeating itself and the
 traits mostly rewarded stacking one class; the monsters add roles the
 knights lack and a fourth, 4-gold tier that makes levelling worth more.
@@ -44,15 +44,30 @@ it moved nothing: still 12 to 20 rounds, median 15, and no fight timed out.
 | Pawn | 1 | 40 | 4 | 1 | 5s | Smash: hits its target for 250% |
 | Lancer | 1 | 140 | 10 | 1 | 8s, from the start | Taunt: for 4s, enemies within 2 tiles must attack it |
 | Skull | 1 | 90 | 9 | 1 | 12s, from the start | Reassemble: the blow that would kill it leaves it at 40% |
+| Spear Goblin | 1 | 85 | 10 | 1 | 3s | Skewer: also hits the enemy behind the target for 75% |
+| Gnome | 1 | 70 | 8 | 1 | 3s | Jab: a second blow straight after, for 50% |
+| Bumblebee | 1 | 65 | 9 | 1 | 8s, from the start | Dive: flies beside the enemy furthest back |
+| Snake | 1 | 65 | 8 | 1 | 4s | Venom: poisons its target for 4 a second over 4s |
 | Warrior | 2 | 120 | 14 | 1 | 8s, from the start | Guard: below 50%, takes 50% less damage for 3s |
 | Archer | 2 | 60 | 10 | 5 | 3s | Piercing shot: also hits the enemy behind for 50% |
 | Torch Goblin | 2 | 100 | 11 | 1 | 4s | Splash: also burns the target's neighbours for 100% |
 | Gnoll | 2 | 75 | 11 | 4 | 3s | Hunter: 100% more damage to a target below 50% |
+| Spider | 2 | 105 | 11 | 1 | 4s | Web: costs its target 1.5s before its next action |
+| Slingshot Gnome | 2 | 60 | 10 | 4 | 3s | Ricochet: bounces to an enemy beside the target for 60% |
+| Lizard | 2 | 120 | 12 | 1 | 5s | Lunge: hits its target for 200% |
+| Paddle Shark | 2 | 105 | 11 | 1 | 8s, first at 4s | Frenzy: attacks twice as fast for 3s |
+| Turtle | 2 | 170 | 7 | 1 | 7s, first at 4s | Shell: once hurt, takes 60% less damage for 3s |
 | Monk | 3 | 70 | heals 8 | 2 | 12s, from the start | Revive: raises the first fallen ally at 50% |
 | Thief | 3 | 110 | 20 | 1 | 8s, from the start | Ambush: leaps beside the enemy furthest back |
 | Hex Shaman | 3 | 80 | 14 | 3 | 3s | Hex: costs its target 1.5s before its next action |
+| Imp | 3 | 80 | 14 | 3 | 4s | Hellfire: also burns the target's neighbours for 60% |
+| Giant Bat | 3 | 120 | 17 | 1 | 4s | Leech: heals itself for 60% of the blow |
+| Harpoon Shark | 3 | 95 | 15 | 3 | 6s, first at 2s | Hook: drags its target a tile closer, if that tile is free |
+| Panda | 3 | 200 | 13 | 1 | 6s | Slam: costs every enemy beside it 1s before its next action |
 | Troll | 4 | 360 | 20 | 1 | 5s | Regenerate: regains 12% of its health |
 | Minotaur | 4 | 280 | 23 | 1 | 4s | Cleave: also hits every other enemy beside it for 100% |
+| Bear | 4 | 320 | 24 | 1 | 5s | Maul: hits for 150% and costs its target 1.5s |
+| Bomb Fish | 4 | 130 | 20 | 4 | 5s | Bomb: hits the target and each enemy beside it for 80% |
 
 Stats are at 1 star. Every unit acts once a second; the Marksman trait is
 the only thing that changes that. Monsters look the same on both teams, so
@@ -75,7 +90,7 @@ still open if the fights want more back-and-forth. Two rules come from TFT:
 - A skill with nothing to do waits, armed, at an empty bar: a Gnoll holds
   Hunter until a target drops below half, a Monk holds Revive until
   someone falls. Reactive skills (Taunt, Guard, Reassemble, Revive,
-  Ambush) start armed; the rest count down from the first second.
+  Ambush, Dive) start armed; the rest count down from the first second.
 
 The war keeps its once-a-battle knight abilities: the countdown is the
 `skills` option on the simulation, and only Skirmish and Versus pass it. Over 80
@@ -87,7 +102,7 @@ cast and not every swing.
 ## Traits
 
 Every unit carries two traits, as in TFT: an origin, Order for the knights
-or Horde for the monsters, and a role shared across both camps. A trait
+and Horde, Wilds or Tide for the monsters, and a role shared across both camps. A trait
 counts different units on the board, never copies, so a second Archer adds
 nothing to Marksman; a spread of kinds switches traits on, a stack does not.
 Each tier replaces the one below it.
@@ -95,11 +110,14 @@ Each tier replaces the one below it.
 | Trait | Who | At | Effect |
 | --- | --- | --- | --- |
 | Order | Pawn, Warrior, Lancer, Archer, Monk | 2 / 4 | +1 / +3 gold after each round |
-| Horde | Skull, Torch Goblin, Gnoll, Thief, Hex Shaman, Troll, Minotaur | 2 / 4 / 6 | Monsters deal 12% / 25% / 45% more damage |
-| Guardian | Warrior, Lancer, Skull, Troll | 2 / 4 | Guardians take 15% / 30% less damage |
-| Marksman | Archer, Torch Goblin, Gnoll | 2 / 3 | Marksmen attack every 0.7s / 0.5s |
-| Mystic | Monk, Hex Shaman | 2 | Mystics heal 50% more |
-| Brute | Pawn, Thief, Minotaur | 2 / 3 | Brutes +20% / +45% health |
+| Horde | Skull, Torch Goblin, Gnoll, Thief, Hex Shaman, Troll, Minotaur, Spear Goblin, Imp | 2 / 4 / 6 | Horde units deal 12% / 25% / 45% more damage |
+| Wilds | Gnome, Bumblebee, Snake, Spider, Slingshot Gnome, Giant Bat, Panda, Bear | 2 / 4 / 6 | Wilds units +15% / +30% / +50% health |
+| Tide | Lizard, Paddle Shark, Turtle, Harpoon Shark, Bomb Fish | 2 / 4 | Tide units take 10% / 25% less damage |
+| Guardian | Warrior, Lancer, Skull, Troll, Turtle, Panda | 2 / 4 / 6 | Guardians take 15% / 30% / 45% less damage |
+| Marksman | Archer, Torch Goblin, Gnoll, Slingshot Gnome, Harpoon Shark, Bomb Fish | 2 / 4 / 6 | Marksmen attack every 0.8s / 0.65s / 0.5s |
+| Mystic | Monk, Hex Shaman, Imp | 2 / 3 | Mystics heal 50% / 120% more |
+| Brute | Pawn, Thief, Minotaur, Lizard, Bear | 2 / 4 | Brutes +20% / +45% health |
+| Striker | Spear Goblin, Gnome, Bumblebee, Snake, Spider, Giant Bat, Paddle Shark | 2 / 4 / 6 | Strikers deal 10% / 20% / 35% more damage |
 
 Order keeps the old Prospectors pay, the one idea TFT doesn't have: a
 board of knights gives up the Horde's damage for gold later. The trait

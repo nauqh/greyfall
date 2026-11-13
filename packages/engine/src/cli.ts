@@ -24,6 +24,21 @@ const GLYPH: Record<Champion, string> = {
   shaman: "Sha",
   troll: "Trl",
   minotaur: "Min",
+  spear: "Spr",
+  gnome: "Gnm",
+  bee: "Bee",
+  snake: "Snk",
+  spider: "Spd",
+  slinger: "Sli",
+  lizard: "Liz",
+  paddle: "Pad",
+  turtle: "Tur",
+  imp: "Imp",
+  bat: "Bat",
+  harpoon: "Hrp",
+  panda: "Pan",
+  bear: "Bea",
+  bombfish: "Bom",
 };
 
 function flag(name: string): string | undefined {

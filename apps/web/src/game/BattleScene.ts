@@ -121,13 +121,27 @@ const STEP_MS = 880;
 /** The frame of each attack sheet where the weapon leaves the hand. The
  * archer's bow is fully back on frame 5; the projectile spawns then, not at
  * frame 0. */
-const RELEASE_FRAME: Partial<Record<Champion, number>> = { archer: 5, gnoll: 5, shaman: 6 };
+const RELEASE_FRAME: Partial<Record<Champion, number>> = {
+  archer: 5,
+  gnoll: 5,
+  shaman: 6,
+  slinger: 6,
+  harpoon: 4,
+  bombfish: 4,
+  imp: 3,
+};
 
-/** What each ranged attacker throws: sheet key, scale, and whether it tumbles rather than flies point first. */
-const MISSILE: Partial<Record<Champion, { key: string; scale: number; spin: boolean }>> = {
+/** What each ranged attacker throws: sheet key, scale, and whether it tumbles
+ * rather than flies point first. `frame` picks one still from a sheet; `tilt`
+ * turns art not drawn pointing right. */
+const MISSILE: Partial<Record<Champion, { key: string; scale: number; spin: boolean; frame?: number; tilt?: number }>> = {
   archer: { key: "arrow", scale: 1, spin: false },
   gnoll: { key: "bone", scale: 0.9, spin: true },
   shaman: { key: "hexbolt", scale: 0.55, spin: false },
+  slinger: { key: "acorn", scale: 1, spin: true },
+  harpoon: { key: "harpoonDart", scale: 0.8, spin: false, tilt: Math.PI / 4 },
+  bombfish: { key: "bomb", scale: 0.6, spin: true },
+  imp: { key: "fireball", scale: 1, spin: true, frame: 3 },
 };
 
 /** Ability callouts over the unit, in the colour of what happened. */
@@ -139,7 +153,31 @@ const CALLOUT: Partial<Record<string, [text: string, color: string]>> = {
   smash: ["SMASH", "#ffd36b"],
   hunter: ["HUNTER", "#ffb35c"],
   regenerate: ["REGENERATE", "#9be38a"],
+  pierce: ["PIERCE", "#ffe08a"],
+  skewer: ["SKEWER", "#ffd36b"],
+  jab: ["JAB", "#ffd36b"],
+  dive: ["DIVE", "#cfd6e0"],
+  ricochet: ["RICOCHET", "#ffe08a"],
+  lunge: ["LUNGE", "#ffd36b"],
+  frenzy: ["FRENZY", "#ff8a6b"],
+  shell: ["SHELL", "#9fd4ff"],
+  hellfire: ["HELLFIRE", "#ffb35c"],
+  leech: ["LEECH", "#9be38a"],
+  hook: ["HOOK", "#cfd6e0"],
+  slam: ["SLAM", "#e0c08a"],
+  maul: ["MAUL", "#ffd36b"],
+  bomb: ["BOMB", "#ffb35c"],
 };
+
+/** Skills that mark their target: a word over it and a passing tint. */
+const MARK: Partial<Record<string, [text: string, color: string, tint: number]>> = {
+  hex: ["HEXED", "#d6b8ff", 0xc89cff],
+  venom: ["POISONED", "#9be38a", 0x8fe07a],
+  web: ["WEBBED", "#e6e6e6", 0xb0b0b0],
+};
+
+/** Skills that change the caster for a while, shown as a passing tint on it. */
+const SELF_TINT: Partial<Record<string, number>> = { frenzy: 0xff9a7a, shell: 0x9fd4ff };
 
 /** A spark where a blow lands and a burst where a unit falls, both 192px frames. */
 const BLAST = {
@@ -297,6 +335,10 @@ export class BattleScene extends Phaser.Scene {
       frameWidth: 128,
       frameHeight: 128,
     });
+    this.load.spritesheet("acorn", packUrl("Enemy Pack/Slingshot Gnome/Acorn_Projectile.png"), { frameWidth: 64, frameHeight: 64 });
+    this.load.image("harpoonDart", packUrl("Enemy Pack/Harpoon Shark/Harpoon.png"));
+    this.load.spritesheet("bomb", packUrl("Enemy Pack/Bomb Fish/Bomb_Spinning.png"), { frameWidth: 128, frameHeight: 128 });
+    this.load.spritesheet("fireball", packUrl("Particle FX/Fire_02.png"), { frameWidth: 64, frameHeight: 64 });
     for (const [key, fx] of Object.entries(BLAST)) this.load.spritesheet(key, packUrl(fx.file), { frameWidth: 192, frameHeight: 192 });
     loadPanels(this, ["paper", "specialPaper", "blueButton", "redButton"]);
     this.load.image(
@@ -1120,30 +1162,41 @@ export class BattleScene extends Phaser.Scene {
       const dust = this.add.sprite(view.sprite.x, view.sprite.y, "dust").setOrigin(0.5, 0.8).setDepth(DEPTH.unit + view.sprite.y + 2);
       dust.play("dust_anim");
     }
-    if (ev.ability === "hex") {
-      const target = this.view(ev.target!);
-      this.time.delayedCall(this.impactMs(view) / this.speed, () => {
+    const mark = MARK[ev.ability];
+    if (mark && ev.target) {
+      const target = this.view(ev.target);
+      const [text, color, tint] = mark;
+      // After the hit's flash, which ends by clearing every tint.
+      this.time.delayedCall((this.impactMs(view) + 160) / this.speed, () => {
         if (!target.alive) return;
-        target.sprite.setTint(0xc89cff);
+        target.sprite.setTint(tint);
         this.time.delayedCall(700 / this.speed, () => target.alive && target.sprite.clearTint());
-        this.floatText(target, "HEXED", "#d6b8ff");
+        this.floatText(target, text, color);
       });
       return;
+    }
+
+    // The shot carries on: a second missile released with the first reads as it.
+    if ((ev.ability === "pierce" || ev.ability === "ricochet") && ev.target) {
+      const target = this.view(ev.target);
+      const release = ((RELEASE_FRAME[cls] ?? 0) / ATTACK_FRAME_RATE) * 1000;
+      this.time.delayedCall(release / this.speed, () => {
+        if (view.alive && target.alive) this.flyProjectile(view, target);
+      });
+    }
+    if (ev.ability === "hook" && ev.target) this.hookLine(view, this.view(ev.target));
+    if (ev.ability === "slam") {
+      this.add.sprite(view.sprite.x, view.sprite.y, "dust").setOrigin(0.5, 0.8).setDepth(DEPTH.unit + view.sprite.y + 2).play("dust_anim");
+      this.ring(view, 1.5 * TILE, 0xc8a878);
+    }
+    const tint = SELF_TINT[ev.ability];
+    if (tint !== undefined) {
+      view.sprite.setTint(tint);
+      this.time.delayedCall(700 / this.speed, () => view.alive && view.sprite.clearTint());
     }
     const callout = CALLOUT[ev.ability];
     if (callout) {
       this.floatText(view, ...callout);
-      return;
-    }
-
-    if (ev.ability === "pierce") {
-      // The same arrow flies on: a second one released with the first reads as it.
-      const target = this.view(ev.target!);
-      const release = (RELEASE_FRAME.archer! / ATTACK_FRAME_RATE) * 1000;
-      this.time.delayedCall(release / this.speed, () => {
-        if (view.alive && target.alive) this.flyProjectile(view, target);
-      });
-      this.floatText(view, "PIERCE", "#ffe08a");
       return;
     }
 
@@ -1154,11 +1207,16 @@ export class BattleScene extends Phaser.Scene {
     }
 
     // Taunt: a ring out to the reach that pulls enemies in.
-    const reach = (BALANCE.abilities.taunt.radius + 0.5) * TILE;
+    this.ring(view, (BALANCE.abilities.taunt.radius + 0.5) * TILE, 0xe8c547);
+    this.floatText(view, "TAUNT", "#ffd36b");
+  }
+
+  /** A ring that grows out from a unit to `reach`, then fades. */
+  private ring(view: UnitView, reach: number, color: number): void {
     const ring = this.add
       .graphics({ x: view.sprite.x, y: view.sprite.y - SPRITE_NUDGE })
       .setDepth(DEPTH.unit + view.sprite.y - 1);
-    ring.lineStyle(4, 0xe8c547, 0.9).strokeCircle(0, 0, reach);
+    ring.lineStyle(4, color, 0.9).strokeCircle(0, 0, reach);
     ring.setScale(0.2);
     this.tweens.add({ targets: ring, scale: 1, duration: 500 / this.speed, ease: "Sine.easeOut" });
     // Fading while it grew left the ring half-seen; it lands, then fades.
@@ -1169,7 +1227,27 @@ export class BattleScene extends Phaser.Scene {
       duration: 500 / this.speed,
       onComplete: () => ring.destroy(),
     });
-    this.floatText(view, "TAUNT", "#ffd36b");
+  }
+
+  /** The harpoon's line, from the throw until the target is hauled in. */
+  private hookLine(shark: UnitView, target: UnitView): void {
+    const line = this.add.graphics().setDepth(DEPTH.fx);
+    this.tweens.addCounter({
+      from: 0,
+      to: 1,
+      delay: (((RELEASE_FRAME.harpoon ?? 0) / ATTACK_FRAME_RATE) * 1000) / this.speed,
+      duration: (FLIGHT_MS + STEP_MS) / this.speed,
+      onUpdate: (tw) => {
+        line.clear();
+        if (!shark.alive || !target.alive) return;
+        // Paid out with the harpoon's flight, then taut while it drags.
+        const k = Math.min(1, (tw.progress * (FLIGHT_MS + STEP_MS)) / FLIGHT_MS);
+        const from = { x: shark.sprite.x, y: shark.sprite.y - 46 };
+        const to = { x: target.sprite.x, y: target.sprite.y - 40 };
+        line.lineStyle(2, 0xd8d0bc, 0.9).lineBetween(from.x, from.y, from.x + (to.x - from.x) * k, from.y + (to.y - from.y) * k);
+      },
+      onComplete: () => line.destroy(),
+    });
   }
 
   private onRevive(ev: Extract<BattleEvent, { type: "revive" }>): void {
@@ -1302,7 +1380,8 @@ export class BattleScene extends Phaser.Scene {
     const from = { x: attacker.sprite.x, y: attacker.sprite.y - 46 };
     const to = { x: target.sprite.x, y: target.sprite.y - 40 };
     const missile = MISSILE[attacker.snap.class] ?? MISSILE.archer!;
-    const projectile = this.add.sprite(from.x, from.y, missile.key).setScale(missile.scale);
+    const projectile = this.add.sprite(from.x, from.y, missile.key, missile.frame).setScale(missile.scale);
+    const tilt = missile.tilt ?? 0;
     projectile.setDepth(DEPTH.fx);
 
     // Quadratic bezier: start, apex above the midpoint, target. The arrow's
@@ -1316,7 +1395,7 @@ export class BattleScene extends Phaser.Scene {
       const dy = 2 * (1 - t) * (apexY - from.y) + 2 * t * (to.y - apexY);
       return { x, y, angle: Math.atan2(dy, dx) };
     };
-    projectile.setRotation(curve(0).angle);
+    projectile.setRotation(curve(0).angle + tilt);
     this.tweens.addCounter({
       from: 0,
       to: 1,
@@ -1324,7 +1403,7 @@ export class BattleScene extends Phaser.Scene {
       onUpdate: (tw) => {
         const p = curve(tw.progress);
         projectile.setPosition(p.x, p.y);
-        projectile.setRotation(missile.spin ? tw.progress * Math.PI * 4 : p.angle);
+        projectile.setRotation(missile.spin ? tw.progress * Math.PI * 4 : p.angle + tilt);
       },
       onComplete: () => projectile.destroy(),
     });

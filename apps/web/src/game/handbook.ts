@@ -4,7 +4,7 @@
 import { AUTO, BALANCE, CHAMPIONS, TRAIT_KEYS, type Champion } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
-import { CLASS_NAME, PORTRAIT_INK, skillName, skillTip, traitEffect, traitsFor } from "./autoPlan";
+import { CLASS_NAME, ORIGINS, PORTRAIT_INK, skillName, skillTip, traitEffect, traitsFor } from "./autoPlan";
 import { WATER_SPAN } from "./boot";
 import { DEPTH } from "./terrain";
 import { ARROW, HAND, button, label, panel, ribbon } from "./ui";
@@ -33,9 +33,17 @@ function poolOf(tier: number): number {
   return AUTO.pool[BY_TIER.find((c) => AUTO.tier[c] === tier)!];
 }
 
+/** An idle tab, greyed so the open one stands out. */
+function idle(b: Phaser.GameObjects.Container): void {
+  (b.list[0] as Phaser.GameObjects.NineSlice).setTint(0x9aa4aa);
+  (b.list[1] as Phaser.GameObjects.Text).setColor("#e4e8ea").setStroke("#4a5560", 3);
+}
+
 export class Handbook {
   private box: Phaser.GameObjects.Container | null = null;
   private tab: Tab = "units";
+  /** The Units tab shows one tier at a time, so every row fits the sheet. */
+  private tier = 1;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -82,10 +90,7 @@ export class Handbook {
         this.tab = tab;
         this.build();
       }, 0.5);
-      if (this.tab !== tab) {
-        (b.list[0] as Phaser.GameObjects.NineSlice).setTint(0x9aa4aa);
-        (b.list[1] as Phaser.GameObjects.Text).setColor("#e4e8ea").setStroke("#4a5560", 3);
-      }
+      if (this.tab !== tab) idle(b);
       box.add(b);
     });
 
@@ -115,24 +120,32 @@ export class Handbook {
       .on("pointerout", () => this.onTip?.(null, 0, 0));
   }
 
-  /** One row a unit, cheapest first; an ability's full rule is on its name. */
+  /** One row a unit of the chosen tier; an ability's full rule is on its name. */
   private units(): void {
     const s = this.scene;
     const pool = this.pool();
+    TIERS.forEach((t) => {
+      const b = button(s, 600 + (t - 2.5) * 120, 172, 110, 44, `Tier ${t}`, "blue", () => {
+        this.tier = t;
+        this.build();
+      }, 0.5);
+      if (this.tier !== t) idle(b);
+      this.box!.add(b);
+    });
     const head = { fontSize: "13px", fontStyle: "800" };
     const cols = { name: 176, hp: 336, dmg: 466, range: 590, vs: 640, ability: 752, trait: 900 };
-    this.text(cols.hp, 156, "Health", head);
-    this.text(cols.dmg, 156, "Damage", head);
-    this.text(cols.range, 156, "Range", head);
-    this.text(cols.vs, 156, "Beats", head);
-    this.text(cols.ability, 156, "Skill", head);
-    this.text(cols.trait, 156, "Trait", head);
-    this.text(cols.hp, 172, "at 1 / 2 / 3 stars", { ...SOFT, fontSize: "11px" });
-    this.text(cols.ability, 172, "hover for the rule", { ...SOFT, fontSize: "11px" });
+    this.text(cols.hp, 206, "Health", head);
+    this.text(cols.dmg, 206, "Damage", head);
+    this.text(cols.range, 206, "Range", head);
+    this.text(cols.vs, 206, "Beats", head);
+    this.text(cols.ability, 206, "Skill", head);
+    this.text(cols.trait, 206, "Trait", head);
+    this.text(cols.hp, 222, "at 1 / 2 / 3 stars", { ...SOFT, fontSize: "11px" });
+    this.text(cols.ability, 222, "hover for the rule", { ...SOFT, fontSize: "11px" });
 
     const counters: Partial<Record<Champion, Champion>> = BALANCE.counters;
-    BY_TIER.forEach((cls, i) => {
-      const y = 192 + i * 35;
+    BY_TIER.filter((c) => AUTO.tier[c] === this.tier).forEach((cls, i) => {
+      const y = 244 + i * 36;
       const u = BALANCE.units[cls];
       const [x0, y0, x1, y1] = PORTRAIT_INK[cls];
       this.box!.add(
@@ -158,24 +171,29 @@ export class Handbook {
     });
   }
 
+  /** Origins in the left column, roles in the right. */
   private traits(): void {
     this.text(
       150,
       156,
-      "Every unit has an origin, Order or Horde, and a role. A trait counts different units on the board, so a second copy adds nothing. Each tier replaces the one below it.",
+      "Every unit has an origin, Order, Horde, Wilds or Tide, and a role. A trait counts different units on the board, so a second copy adds nothing. Each tier replaces the one below it.",
       { ...SOFT, wordWrap: { width: 900 } },
     );
-    let y = 206;
+    const ys = [200, 200];
     for (const key of TRAIT_KEYS) {
+      const col = ORIGINS.includes(key) ? 0 : 1;
+      const x = col ? 620 : 150;
+      const y = ys[col]!;
       const t = AUTO.traits[key];
-      this.text(150, y, t.name, { ...BLUE, fontSize: "16px", fontStyle: "800" });
-      this.text(150, y + 22, t.members.map((c) => CLASS_NAME[c]).join(", "), { ...SOFT, fontSize: "12px", wordWrap: { width: 170 } });
+      this.text(x, y, t.name, { ...BLUE, fontSize: "16px", fontStyle: "800" });
+      const who = this.text(x, y + 22, t.members.map((c) => CLASS_NAME[c]).join(", "), { ...SOFT, fontSize: "12px", wordWrap: { width: 170 } });
       t.at.forEach((n, k) => {
-        this.text(330, y + k * 22, `${n}`, { fontSize: "14px", fontStyle: "800" });
-        this.text(360, y + k * 22, traitEffect(key, k), { fontSize: "14px" });
+        this.text(x + 180, y + k * 22, `${n}`, { fontSize: "14px", fontStyle: "800" });
+        this.text(x + 210, y + k * 22, traitEffect(key, k), { fontSize: "14px" });
       });
-      y += Math.max(44, t.at.length * 22) + 12;
+      ys[col] = y + Math.max(22 + who.height, t.at.length * 22) + 10;
     }
+    const y = Math.max(...ys);
     const triangle = Object.entries(BALANCE.counters)
       .map(([a, b]) => `${CLASS_NAME[a as Champion]} beats ${CLASS_NAME[b!]}`)
       .join(", ");
@@ -196,7 +214,7 @@ export class Handbook {
         this.text(cols[i]!, y, v, { fontSize: "14px" }),
       );
     }
-    let y = 458;
+    let y = 438;
     for (const t of TIERS) {
       const who = BY_TIER.filter((c) => AUTO.tier[c] === t).map((c) => CLASS_NAME[c]);
       const line = this.text(150, y, `Tier ${t}, ${t} gold, ${poolOf(t)} copies each: ${who.join(", ")}`, { ...SOFT, wordWrap: { width: 480 } });
