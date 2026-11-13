@@ -385,6 +385,15 @@ export function simulate(
   // go by army index, the same for both sides, so a mirror match stays a draw.
   const offsets = Array.from({ length: BALANCE.board.maxUnits }, () => rng.int(TICKS_PER_ACTION));
   for (const u of units) u.nextAt = offsets[Number(u.id.slice(1))]!;
+  // A fixed period alone lets units fall back into step mid-fight, so each
+  // swing drifts up to a fifth of it either way, averaging out to the same
+  // pace. Keyed by army index and tick, so mirror units still drift together.
+  const sway = (u: SimUnit, t: number): number => {
+    const spread = Math.floor(u.attackTicks / 5);
+    const i = Number(u.id.slice(1));
+    const h = Math.imul((offsets[i]! + 1) * 31 + i, 0x9e3779b1) ^ Math.imul(t + 1, 0x85ebca6b);
+    return ((h >>> 0) % (2 * spread + 1)) - spread;
+  };
   const snapshots: UnitSnapshot[] = units.map((u) => ({
     id: u.id,
     side: u.side,
@@ -575,7 +584,7 @@ export function simulate(
         const hit = tier.find((c) => c.dist <= stats.range);
         if (hit) {
           const target = units[hit.j]!;
-          unit.nextAt = t + unit.attackTicks;
+          unit.nextAt = t + unit.attackTicks + sway(unit, t);
           // Unclamped until the tick ends: clamping as each lands would make
           // the total depend on whether the hit or the heal came first.
           if (healer) {

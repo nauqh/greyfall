@@ -338,6 +338,14 @@ describe("simulate", () => {
     expect(hits.filter((e) => e.type === "hit" && e.damage === 7).length).toBeGreaterThan(0);
   });
 
+  it("drifts each swing so units do not fall back into step, at the same average pace", () => {
+    const pawn: Army = [{ class: "pawn", col: 4, row: 1 }];
+    const swings = simulate(pawn, pawn, 1).events.filter((e) => e.type === "attack" && e.unit === "a0");
+    const gaps = swings.slice(1).map((e, i) => e.t - swings[i]!.t);
+    expect(new Set(gaps).size).toBeGreaterThan(1);
+    expect(Math.abs(gaps.reduce((s, g) => s + g, 0) / gaps.length - TICKS_PER_ACTION)).toBeLessThan(1);
+  });
+
   it("gives the counter its edge: a Warrior beats an Archer in melee", () => {
     const result = simulate(warriorAt(4, 1), [{ class: "archer", col: 4, row: 1 }], 1);
     expect(result.winner).toBe("a");
