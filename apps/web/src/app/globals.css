@@ -226,10 +226,85 @@ textarea {
 	flex-direction: column;
 	width: 330px;
 	padding: 0 14px 6px;
-	border: 30px solid transparent;
-	border-image: url("/tiny-swords/ui/specialPaper.png") 64 fill / 30px stretch;
+	--bw: 30px;
+	border: var(--bw) solid transparent;
 	filter: drop-shadow(0 12px 22px rgb(8 10 16 / 0.5));
 	animation: scrollIn 700ms cubic-bezier(0.22, 1, 0.36, 1) 200ms both;
+}
+
+/* Each mode dresses the whole standard: its own ribbon and sword
+   (compose-ui.mjs), --accent for the
+   hairlines and small text, --stroke for the logo ink, --text and --hint for
+   the entries and the line under them. */
+.titleMenu[data-mode="play"] {
+	--ribbon: url("/tiny-swords/ui/ribbon-play.png");
+	--sword: url("/tiny-swords/ui/sword-play.png");
+	--accent: #d9b56a;
+	--stroke: #1c2634;
+	--text: #cfc4a6;
+	--hint: #b9b09a;
+}
+
+.titleMenu[data-mode="atlas"] {
+	--ribbon: url("/tiny-swords/ui/ribbon-atlas.png");
+	--sword: url("/tiny-swords/ui/sword-atlas.png");
+	--accent: #f0a35e;
+	--stroke: #3a1d14;
+	--text: #e6c9a0;
+	--hint: #c9ab8a;
+}
+
+.titleMenu[data-mode="skirmish"] {
+	--ribbon: url("/tiny-swords/ui/ribbon-skirmish.png");
+	--sword: url("/tiny-swords/ui/sword-skirmish.png");
+	--accent: #9cc3e6;
+	--stroke: #15233a;
+	--text: #c3d3e6;
+	--hint: #a9b8c9;
+}
+
+.titleMenu[data-mode="duel"] {
+	--ribbon: url("/tiny-swords/ui/ribbon-duel.png");
+	--sword: url("/tiny-swords/ui/sword-duel.png");
+	--accent: #e8907a;
+	--stroke: #3a1519;
+	--text: #e3c2b8;
+	--hint: #c9a59c;
+}
+
+/* The slate board, and over it a worn-stone grain and a sooted rim inside the gold filigree. */
+.titleMenu::before,
+.menuScroll::before,
+.titleMenu::after,
+.menuScroll::after {
+	content: "";
+	position: absolute;
+	inset: calc(var(--bw) * -1);
+	z-index: -1;
+	pointer-events: none;
+}
+
+.titleMenu::before,
+.menuScroll::before {
+	border: var(--bw) solid transparent;
+	border-image: url("/tiny-swords/ui/specialPaper.png") 64 fill / var(--bw) stretch;
+}
+
+.titleMenu::after,
+.menuScroll::after {
+	inset: calc(var(--bw) * -1 + 12px);
+	border-radius: 6px;
+	background:
+		radial-gradient(ellipse at 50% 40%, transparent 45%, rgb(10 12 18 / 0.55) 100%),
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1.4 -0.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012 0.03' numOctaves='4' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1.6 -0.55'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
+	mix-blend-mode: overlay;
+	opacity: 0.85;
+}
+
+.menuScroll::before,
+.menuScroll::after {
+	display: none;
 }
 
 @keyframes scrollIn {
@@ -251,7 +326,7 @@ textarea {
 	justify-content: center;
 	border: solid transparent;
 	border-width: 0 96px;
-	border-image: url("/tiny-swords/ui/ribbonBlack.png") 0 128 fill / 0 96px stretch;
+	border-image: var(--ribbon) 0 128 fill / 0 96px stretch;
 	image-rendering: pixelated;
 	font-family: var(--display), serif;
 	font-weight: 900;
@@ -261,10 +336,15 @@ textarea {
 	text-transform: uppercase;
 	white-space: nowrap;
 	color: #f2ead4;
-	-webkit-text-stroke: 5px #1c2634;
+	-webkit-text-stroke: 5px var(--stroke);
 	paint-order: stroke fill;
-	text-shadow: 0 3px 0 #1c2634;
+	text-shadow: 0 3px 0 var(--stroke);
 	animation: titleRise 900ms cubic-bezier(0.22, 1, 0.36, 1) 400ms both;
+}
+
+/* border-image cannot transition, so a new mode's ribbon flashes in and settles instead. */
+.logo.swap {
+	animation: ribbonSwap 260ms ease-out;
 }
 
 .logoSub {
@@ -274,21 +354,23 @@ textarea {
 	right: -76px;
 	margin-top: 2px;
 	text-align: center;
-	font-family: var(--display), serif;
-	font-size: 11px;
-	font-weight: 700;
-	letter-spacing: 0.24em;
-	color: #d9b56a;
+	font-family: var(--book), serif;
+	font-size: 16px;
+	font-weight: 400;
+	font-style: italic;
+	letter-spacing: 0.02em;
+	text-transform: none;
+	color: var(--accent);
 	-webkit-text-stroke: 0;
-	text-shadow: 0 1px 0 #1c2634;
+	text-shadow: 0 1px 0 var(--stroke);
 }
 
 .menu {
 	display: flex;
 	flex-direction: column;
-	gap: 4px;
+	gap: 8px;
 	padding-top: 12px;
-	border-top: 1px solid rgb(217 181 106 / 0.35);
+	border-top: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
 /* The sword is 320x128: a 128px hilt, a 64px blade that stretches, a 128px
@@ -296,20 +378,46 @@ textarea {
 .menuItem {
 	display: flex;
 	align-items: center;
+	justify-content: center;
 	height: var(--h);
-	padding: 0 0 4px 6px;
+	padding: 0 0 4px;
 	font-family: var(--display), serif;
 	font-weight: 700;
 	font-size: 22px;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
 	text-decoration: none;
-	color: #cfc4a6;
+	color: var(--text);
+	text-shadow: 0 2px 0 var(--stroke);
 	border: 0 solid transparent;
 	border-width: 0 var(--h);
 	outline: none;
 	transition: color 200ms ease-out;
 	animation: menuIn 500ms cubic-bezier(0.22, 1, 0.36, 1) calc(700ms + var(--i) * 80ms) both;
+}
+
+/* Each entry sits on the kit's button, darkened to iron. */
+.menuItem {
+	position: relative;
+	isolation: isolate;
+}
+
+.menuItem::before {
+	content: "";
+	position: absolute;
+	inset: 3px calc(var(--h) * -1 + 10px) 5px;
+	z-index: -1;
+	border: 14px solid transparent;
+	border-image: url("/tiny-swords/ui/blueButton.png") 64 fill / 14px stretch;
+	image-rendering: pixelated;
+	filter: grayscale(0.8) brightness(0.5) contrast(1.2);
+	transition: opacity 200ms ease-out;
+}
+
+/* The picked entry drops its slab and rides the sword alone. */
+.menuItem:hover::before,
+.menuItem.on::before {
+	opacity: 0;
 }
 
 .menuItem:hover {
@@ -319,38 +427,49 @@ textarea {
 /* On the blade the ink goes dark. */
 .menuItem.on {
 	color: #232a36;
-	border-image: url("/tiny-swords/ui/swordSlate.png") 0 128 fill / 0 var(--h) stretch;
+	text-shadow: none;
+}
+
+/* Drawn hilt to point on each pick, under the text. */
+.menuItem.on::after {
+	content: "";
+	position: absolute;
+	inset: 0 calc(var(--h) * -1);
+	z-index: -1;
+	border: 0 solid transparent;
+	border-width: 0 var(--h);
+	border-image: var(--sword) 0 128 fill / 0 var(--h) stretch;
 	image-rendering: pixelated;
-	/* Drawn hilt to point on each pick; menuIn is matched by name, so the arrival does not replay. */
-	animation:
-		menuIn 500ms cubic-bezier(0.22, 1, 0.36, 1) calc(700ms + var(--i) * 80ms) both,
-		swordDraw 360ms cubic-bezier(0.22, 1, 0.36, 1);
+	animation: swordDraw 360ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .menuHint {
 	min-height: 4.5em;
 	margin: 12px 0 0;
 	padding-top: 10px;
-	border-top: 1px solid rgb(217 181 106 / 0.35);
-	font-size: 14px;
-	line-height: 1.5;
-	font-weight: 600;
+	border-top: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+	font-family: var(--book), serif;
+	font-size: 16px;
+	line-height: 1.35;
+	font-weight: 400;
 	font-style: italic;
-	color: #b9b09a;
+	color: var(--hint);
+	text-shadow: 0 1px 0 var(--stroke);
 	animation: hintIn 320ms ease-out both;
 }
 
-/* The credit, small in the filigree's gold. */
+/* The credit hangs just under the board's frame, like a copyright line. */
 .credit {
-	margin: 8px 0 0;
+	position: absolute;
+	left: calc(var(--bw) * -1);
+	right: calc(var(--bw) * -1);
 	text-align: center;
-	font-family: var(--display), serif;
-	font-size: 10px;
-	font-weight: 700;
-	letter-spacing: 0.24em;
-	text-transform: uppercase;
-	color: #d9b56a;
-	opacity: 0.7;
+	top: calc(100% + var(--bw) + 6px);
+	margin: 0;
+	white-space: nowrap;
+	text-shadow: 0 1px 2px rgb(8 10 16 / 0.8);
+	font-size: 11px;
+	color: #fff;
 	user-select: none;
 	animation: hintIn 320ms ease-out 900ms both;
 }
@@ -359,6 +478,14 @@ textarea {
 	from {
 		opacity: 0;
 		translate: 0 14px;
+	}
+}
+
+@keyframes ribbonSwap {
+	from {
+		opacity: 0.4;
+		filter: brightness(1.6);
+		scale: 0.97;
 	}
 }
 
@@ -394,7 +521,7 @@ textarea {
 	}
 	.menuHint {
 		min-height: 3em;
-		font-size: 13px;
+		font-size: 15px;
 	}
 }
 
@@ -408,7 +535,6 @@ textarea {
 		align-items: center;
 		padding: 0;
 		border: 0;
-		border-image: none;
 		filter: none;
 		animation: none;
 	}
@@ -422,19 +548,29 @@ textarea {
 	.logoSub {
 		left: -84px;
 		right: -84px;
-		font-size: 10px;
+		font-size: 14px;
 		color: var(--ink);
-		text-shadow: 0 1px 0 #1c2634, 0 0 6px #1c2634;
+		text-shadow: 0 1px 0 var(--stroke), 0 0 6px var(--stroke);
 	}
 	.menuScroll {
 		margin-top: auto;
 		display: flex;
 		flex-direction: column;
 		width: min(320px, 100%);
+		position: relative;
+		isolation: isolate;
 		padding: 0 10px 4px;
-		border: 26px solid transparent;
-		border-image: url("/tiny-swords/ui/specialPaper.png") 64 fill / 26px stretch;
+		--bw: 26px;
+		border: var(--bw) solid transparent;
 		animation: scrollIn 700ms cubic-bezier(0.22, 1, 0.36, 1) 200ms both;
+	}
+	.titleMenu::before,
+	.titleMenu::after {
+		display: none;
+	}
+	.menuScroll::before,
+	.menuScroll::after {
+		display: block;
 	}
 	.menu {
 		border-top: 0;
@@ -445,7 +581,7 @@ textarea {
 	}
 	.menuHint {
 		min-height: 3em;
-		font-size: 13px;
+		font-size: 15px;
 	}
 }
 
@@ -453,8 +589,9 @@ textarea {
 	.titleMenu,
 	.menuScroll,
 	.logo,
+	.logo.swap,
 	.menuItem,
-	.menuItem.on,
+	.menuItem.on::after,
 	.menuHint,
 	.credit {
 		animation: none;
