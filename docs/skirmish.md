@@ -54,7 +54,7 @@ it moved nothing: still 12 to 20 rounds, median 15, and no fight timed out.
 | Troll | 4 | 360 | 20 | 1 | 5s | Regenerate: regains 12% of its health |
 | Minotaur | 4 | 280 | 23 | 1 | 4s | Cleave: also hits every other enemy beside it for 100% |
 
-Stats are at 1 star. Every unit acts once a second; the Archer's Volley is
+Stats are at 1 star. Every unit acts once a second; the Marksman trait is
 the only thing that changes that. Monsters look the same on both teams, so
 each stands on a disc in its team's colour.
 
@@ -86,23 +86,25 @@ cast and not every swing.
 
 ## Traits
 
-Two or more of a knight class on the board switch its trait on, and a
-second threshold makes it stronger. Monsters share one origin, the Horde,
-which counts different kinds of monster rather than units, the way TFT
-counts unique champions, so it rewards a spread instead of a stack.
+Every unit carries two traits, as in TFT: an origin, Order for the knights
+or Horde for the monsters, and a role shared across both camps. A trait
+counts different units on the board, never copies, so a second Archer adds
+nothing to Marksman; a spread of kinds switches traits on, a stack does not.
+Each tier replaces the one below it.
 
 | Trait | Who | At | Effect |
 | --- | --- | --- | --- |
-| Prospectors | Pawns | 2 / 4 | +1 / +3 gold after each round |
-| Vanguard | Lancers | 2 / 4 | Lancers +20% / +45% health |
-| Shieldwall | Warriors | 2 / 4 | Warriors take 15% / 30% less damage |
-| Volley | Archers | 2 / 4 | Archers attack every 0.7s / 0.5s |
-| Chorus | Monks | 2 / 3 | Monks heal 50% / 120% more |
-| Horde | Monster kinds | 2 / 4 / 6 | Monsters deal 12% / 25% / 45% more damage |
+| Order | Pawn, Warrior, Lancer, Archer, Monk | 2 / 4 | +1 / +3 gold after each round |
+| Horde | Skull, Torch Goblin, Gnoll, Thief, Hex Shaman, Troll, Minotaur | 2 / 4 / 6 | Monsters deal 12% / 25% / 45% more damage |
+| Guardian | Warrior, Lancer, Skull, Troll | 2 / 4 | Guardians take 15% / 30% less damage |
+| Marksman | Archer, Torch Goblin, Gnoll | 2 / 3 | Marksmen attack every 0.7s / 0.5s |
+| Mystic | Monk, Hex Shaman | 2 | Mystics heal 50% more |
+| Brute | Pawn, Thief, Minotaur | 2 / 3 | Brutes +20% / +45% health |
 
-Prospectors is the one idea TFT doesn't have: the Pawn mines, so a board
-that fields Pawns gives up strength now for gold later. It is an economy
-choice that lives on the board.
+Order keeps the old Prospectors pay, the one idea TFT doesn't have: a
+board of knights gives up the Horde's damage for gold later. The trait
+values were carried over from the one-class traits and have not been
+re-tuned for the new groups.
 
 Every number above, and the shop odds, is in the in-game handbook (H, or the
 ? button), read straight off the balance tables.

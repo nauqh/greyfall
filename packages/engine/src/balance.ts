@@ -143,8 +143,8 @@ export type Skill = keyof typeof BALANCE.abilities;
 
 export type TraitEffect = "damageTaken" | "hp" | "attackSeconds" | "heal" | "gold" | "damage";
 
-/** A class trait for each knight, and the monsters' shared one. */
-export type TraitKey = UnitClass | "horde";
+/** TFT's pair: an origin (knight or monster) and a role shared across both. */
+export type TraitKey = "order" | "horde" | "guardian" | "marksman" | "mystic" | "brute";
 
 export interface Trait {
   name: string;
@@ -177,10 +177,11 @@ const TIER: Record<Champion, number> = {
 /** Copies of each unit in the shared pool, by tier. Nine make a 3-star. */
 const POOL_BY_TIER = [0, 29, 22, 16, 10];
 
-const knight = (cls: UnitClass, name: string, at: number[], effect: TraitEffect, values: number[]): Trait => ({
+// TFT counts unique champions toward a trait, so a second copy adds nothing.
+const kinds = (name: string, members: readonly Champion[], at: number[], effect: TraitEffect, values: number[]): Trait => ({
   name,
-  members: [cls],
-  kinds: false,
+  members,
+  kinds: true,
   at,
   effect,
   values,
@@ -250,20 +251,12 @@ export const AUTO = {
   /** A loss costs this plus a point per star still standing on the winner's side. */
   damage: { base: 3, perRounds: 3 },
   traits: {
-    warrior: knight("warrior", "Shieldwall", [2, 4], "damageTaken", [0.85, 0.7]),
-    lancer: knight("lancer", "Vanguard", [2, 4], "hp", [1.2, 1.45]),
-    archer: knight("archer", "Volley", [2, 4], "attackSeconds", [0.7, 0.5]),
-    monk: knight("monk", "Chorus", [2, 3], "heal", [1.5, 2.2]),
-    pawn: knight("pawn", "Prospectors", [2, 4], "gold", [1, 3]),
-    // TFT counts unique champions toward an origin; the Horde counts kinds of monster.
-    horde: {
-      name: "Horde",
-      members: MONSTER_CLASSES,
-      kinds: true,
-      at: [2, 4, 6],
-      effect: "damage",
-      values: [1.12, 1.25, 1.45],
-    },
+    order: kinds("Order", UNIT_CLASSES, [2, 4], "gold", [1, 3]),
+    horde: kinds("Horde", MONSTER_CLASSES, [2, 4, 6], "damage", [1.12, 1.25, 1.45]),
+    guardian: kinds("Guardian", ["warrior", "lancer", "skull", "troll"], [2, 4], "damageTaken", [0.85, 0.7]),
+    marksman: kinds("Marksman", ["archer", "torch", "gnoll"], [2, 3], "attackSeconds", [0.7, 0.5]),
+    mystic: kinds("Mystic", ["monk", "shaman"], [2], "heal", [1.5]),
+    brute: kinds("Brute", ["pawn", "thief", "minotaur"], [2, 3], "hp", [1.2, 1.45]),
   } as Record<TraitKey, Trait>,
 } as const;
 

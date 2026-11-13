@@ -1015,9 +1015,8 @@ textarea {
 	border: 18px solid transparent;
 	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 18px stretch;
 	color: #4a3a28;
-	font-family: var(--book), serif;
+	font-family: "Nunito", "Segoe UI", sans-serif;
 	font-size: 14px;
-	font-style: italic;
 	font-weight: 400;
 	line-height: 1.5;
 	letter-spacing: 0.01em;
@@ -1033,9 +1032,7 @@ textarea {
 .statTipTitle {
 	margin: 0;
 	color: #4a3322;
-	font-family: var(--display), serif;
 	font-size: 15px;
-	font-style: normal;
 	font-weight: 700;
 	line-height: 1.2;
 	letter-spacing: 0.02em;

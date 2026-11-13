@@ -74,7 +74,7 @@ export interface Income {
   interest: number;
   streak: number;
   win: number;
-  prospectors: number;
+  order: number;
 }
 
 export interface LobbyRound {
@@ -311,8 +311,8 @@ export function armyOf(seat: Seat): Placement[] {
 
 // --- the AI clans ----------------------------------------------------------
 
-/** Each AI clan leans toward one class, or toward a Horde of different monsters, so they contest the pool differently. */
-const FAVOURITE: readonly (Champion | "horde")[] = ["archer", "horde", "lancer", "warrior"];
+/** Each AI clan leans toward one trait, chasing kinds it lacks, so they contest the pool differently. */
+const FAVOURITE: readonly TraitKey[] = ["marksman", "horde", "guardian", "order"];
 
 function targetLevel(round: number): number {
   return round <= 2 ? 2 : round <= 4 ? 3 : round <= 6 ? 4 : round <= 9 ? 5 : round <= 12 ? 6 : round <= 15 ? 7 : 8;
@@ -332,8 +332,7 @@ function planAiSeat(run: Run, i: number): void {
   for (let rolls = 0; rolls < 3; rolls++) {
     const score = (cls: Champion): number => {
       const have = owned(seat).filter((p) => p.class === cls && p.stars < 3).length;
-      const monster = (MONSTER_CLASSES as readonly Champion[]).includes(cls);
-      const leaning = fav === "horde" ? (monster ? 2 + (have === 0 ? 2 : 0) : 0) : cls === fav ? 2 : 0;
+      const leaning = AUTO.traits[fav].members.includes(cls) ? 2 + (have === 0 ? 2 : 0) : 0;
       return have * 3 + leaning + AUTO.tier[cls];
     };
     const slots = seat.shop
@@ -451,16 +450,15 @@ export function fightRound(prev: Run): { run: Run; report: LobbyRound } {
 
   const income = run.seats.map((seat, i): Income | null => {
     if (seat.place !== null) return null;
-    const pawns = traitCounts(armyOf(seat)).pawn;
-    const tier = traitTier("pawn", pawns);
+    const tier = traitTier("order", traitCounts(armyOf(seat)).order);
     const pay: Income = {
       base: AUTO.income,
       interest: Math.min(AUTO.interestMax, Math.floor(seat.gold / 10)),
       streak: AUTO.streakGold[Math.min(Math.abs(seat.streak), AUTO.streakGold.length - 1)]!,
       win: won.has(i) ? AUTO.winGold : 0,
-      prospectors: tier >= 0 ? AUTO.traits.pawn.values[tier]! : 0,
+      order: tier >= 0 ? AUTO.traits.order.values[tier]! : 0,
     };
-    seat.gold += pay.base + pay.interest + pay.streak + pay.win + pay.prospectors;
+    seat.gold += pay.base + pay.interest + pay.streak + pay.win + pay.order;
     seat.xp += AUTO.xpPerRound;
     levelUp(seat);
     return pay;

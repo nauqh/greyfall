@@ -4,7 +4,7 @@
 import { AUTO, BALANCE, CHAMPIONS, TRAIT_KEYS, type Champion } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
-import { CLASS_NAME, PORTRAIT_INK, skillName, skillTip, traitEffect, traitOf, traitWho } from "./autoPlan";
+import { CLASS_NAME, PORTRAIT_INK, skillName, skillTip, traitEffect, traitsFor } from "./autoPlan";
 import { WATER_SPAN } from "./boot";
 import { DEPTH } from "./terrain";
 import { ARROW, HAND, button, label, panel, ribbon } from "./ui";
@@ -154,25 +154,22 @@ export class Handbook {
       this.tipped(this.text(cols.ability, y, skillName(cls), { ...BLUE, fontStyle: "800" }), skillTip(cls));
       this.text(cols.ability, y + 17, `every ${AUTO.skills[cls].cooldown}s`, { ...SOFT, fontSize: "11px" });
 
-      const t = AUTO.traits[traitOf(cls)];
-      this.text(cols.trait, y + 4, t.name, { ...BLUE, fontStyle: "800" });
-      this.text(cols.trait + 92, y + 4, `at ${t.at.join(", ")}${t.kinds ? " kinds" : ""}`, SOFT);
+      this.text(cols.trait, y + 4, traitsFor(cls).map((k) => AUTO.traits[k].name).join(", "), { ...BLUE, fontStyle: "800" });
     });
   }
 
   private traits(): void {
-    const monsters = AUTO.traits.horde.members.map((c) => CLASS_NAME[c]).join(", ");
     this.text(
       150,
       156,
-      `Each knight class has its own trait. Monsters share the Horde, which counts different kinds on the board: ${monsters}. Each tier replaces the one below it.`,
+      "Every unit has an origin, Order or Horde, and a role. A trait counts different units on the board, so a second copy adds nothing. Each tier replaces the one below it.",
       { ...SOFT, wordWrap: { width: 900 } },
     );
     let y = 206;
     for (const key of TRAIT_KEYS) {
       const t = AUTO.traits[key];
       this.text(150, y, t.name, { ...BLUE, fontSize: "16px", fontStyle: "800" });
-      this.text(150, y + 22, traitWho(key), SOFT);
+      this.text(150, y + 22, t.members.map((c) => CLASS_NAME[c]).join(", "), { ...SOFT, fontSize: "12px", wordWrap: { width: 170 } });
       t.at.forEach((n, k) => {
         this.text(330, y + k * 22, `${n}`, { fontSize: "14px", fontStyle: "800" });
         this.text(360, y + k * 22, traitEffect(key, k), { fontSize: "14px" });

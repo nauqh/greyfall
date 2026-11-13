@@ -119,16 +119,17 @@ describe("stars and traits", () => {
     expect(r.winner).toBe("a");
   });
 
-  it("switches a trait on only at its threshold, and only when asked", () => {
-    const two = [
-      { class: "lancer" as const, col: 4, row: 0 },
-      { class: "lancer" as const, col: 4, row: 1 },
-    ];
-    const foe = [{ class: "pawn" as const, col: 0, row: 0 }];
-    const hp = (traits: boolean, army = two) => simulate(army, foe, 1, { budget: Infinity, traits }).units[0]!.maxHp;
-    expect(hp(false)).toBe(140);
-    expect(hp(true)).toBe(Math.round(140 * AUTO.traits.lancer.values[0]!));
-    expect(hp(true, two.slice(0, 1))).toBe(140);
+  it("switches a trait on at its threshold of different members, and only when asked", () => {
+    const pawn = { class: "pawn" as const, col: 4, row: 0 };
+    const mixed = [pawn, { class: "thief" as const, col: 4, row: 1 }];
+    const twins = [pawn, { ...pawn, row: 1 }];
+    const foe = [{ class: "lancer" as const, col: 0, row: 0 }];
+    const hp = (traits: boolean, army: Placement[]) => simulate(army, foe, 1, { budget: Infinity, traits }).units[0]!.maxHp;
+    const base = BALANCE.units.pawn.hp;
+    expect(hp(false, mixed)).toBe(base);
+    expect(hp(true, mixed)).toBe(Math.round(base * AUTO.traits.brute.values[0]!));
+    // A second copy of the same unit is not a second kind.
+    expect(hp(true, twins)).toBe(base);
   });
 });
 
