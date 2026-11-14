@@ -89,6 +89,7 @@ const MODES: readonly [string, (new () => Phaser.Scene) | null][] = [
   ["intro", null],
   ["intro-atlas", IntroAtlasScene],
   ["intro-skirmish", IntroSkirmishScene],
+  ["intro", null],
 ];
 
 export class IntroScene extends Phaser.Scene {
