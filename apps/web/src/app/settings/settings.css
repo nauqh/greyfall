@@ -1,112 +1,92 @@
-/* The controls sheet: a Souls options screen in the title menu's inks.
-   Smoked glass over a dark vignette, gold hairlines, an ember wash under the
-   hovered row and the picked tab, prompts in a bar along the foot. */
+/* The controls sheet borrows the title menu whole (paper, ribbon, sword,
+   inks from globals.css); this only widens the scroll and lays the bindings
+   out beside the modes. */
 
-.setStage {
-	--gold: #f3d58a;
-	--bone: #f2ead4;
-	--dim: #a89a7c;
-	--rule: rgb(243 213 138 / 0.22);
-	--ember: rgb(214 112 40 / 0.55);
-	min-height: 100vh;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: 24px 16px;
-	background:
-		radial-gradient(ellipse at 50% 40%, rgb(46 38 30 / 0.85), rgb(8 7 6 / 0.98) 75%),
-		#0b0a09;
-	color: var(--bone);
+.titleMenu.setPanel {
+	width: min(760px, calc(100vw - 112px));
 }
 
-.setPanel {
-	width: min(760px, 100%);
+.setScroll {
+	display: grid;
+	grid-template-columns: 290px 1fr;
+	grid-template-areas: "tabs body" "foot foot";
+	column-gap: 28px;
+}
+
+.setCats {
+	grid-area: tabs;
+	align-self: start;
+}
+
+/* Not built yet: faded ink, no rule, no hover. */
+.setCats .menuItem.off {
+	opacity: 0.4;
+	pointer-events: none;
+}
+
+.setPane {
+	grid-area: body;
 	display: flex;
 	flex-direction: column;
-	border: 1px solid var(--rule);
-	outline: 1px solid rgb(243 213 138 / 0.08);
-	outline-offset: 4px;
-	background: linear-gradient(rgb(20 18 16 / 0.82), rgb(12 11 10 / 0.9));
-	box-shadow: 0 24px 60px rgb(0 0 0 / 0.6);
-	animation: setIn 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+	min-height: 0;
 }
 
-.setHead {
-	padding: 22px 28px 0;
-	border-bottom: 1px solid var(--rule);
-}
-
-.setHead h1 {
-	margin: 0 0 14px;
-	font-family: var(--display), serif;
-	font-weight: 700;
-	font-size: 22px;
-	letter-spacing: 0.12em;
-	text-transform: uppercase;
-	color: var(--bone);
-}
-
-.setTabs {
+.setModes {
 	display: flex;
-	align-items: center;
-	gap: 4px;
-	overflow-x: auto;
-	scrollbar-width: none;
+	flex-wrap: wrap;
+	gap: 4px 18px;
+	padding-bottom: 8px;
+	margin-bottom: 10px;
+	border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
-.setTab {
-	position: relative;
-	padding: 8px 16px 12px;
+.setMode {
+	padding: 4px 0;
 	border: 0;
+	border-bottom: 2px solid transparent;
 	background: none;
 	font-family: var(--display), serif;
 	font-weight: 700;
-	font-size: 15px;
+	font-size: 14px;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
-	white-space: nowrap;
-	color: var(--dim);
+	color: color-mix(in srgb, var(--text) 60%, transparent);
 	transition: color 160ms ease-out;
 }
 
-.setTab:hover,
-.setTab:focus-visible {
-	color: var(--bone);
+.setMode:hover,
+.setMode:focus-visible {
+	color: var(--text);
 	outline: none;
 }
 
-/* The picked tab sits on an ember glow, as DS3 marks its picked row. */
-.setTab.on {
-	color: var(--gold);
-	background: radial-gradient(ellipse at 50% 100%, var(--ember), transparent 70%);
-}
-
-.setTab.on::after {
-	content: "";
-	position: absolute;
-	left: 12%;
-	right: 12%;
-	bottom: -1px;
-	border-bottom: 1px solid var(--gold);
+.setMode.on {
+	color: var(--stroke);
+	border-bottom-color: var(--stroke);
 }
 
 .setBody {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-	gap: 8px 32px;
-	padding: 18px 28px 24px;
-	max-height: calc(100vh - 220px);
+	/* Fixed, not max: the scroll is centred, so a height that followed the mode would jump on every pick. */
+	height: min(520px, calc(100vh - 300px));
 	overflow-y: auto;
-	animation: setFade 240ms ease-out both;
+	padding: 4px 6px 0 0;
+	scrollbar-width: thin;
+	scrollbar-color: color-mix(in srgb, var(--accent) 55%, transparent) transparent;
+	animation: hintIn 320ms ease-out both;
 }
 
 .setGroup h2 {
-	margin: 10px 0 6px;
-	font-family: var(--bookSc), serif;
-	font-weight: 400;
-	font-size: 17px;
-	letter-spacing: 0.06em;
-	color: var(--gold);
+	margin: 12px 0 4px;
+	font-family: var(--display), serif;
+	font-weight: 700;
+	font-size: 13px;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--accent);
+}
+
+.setGroup:first-child h2 {
+	margin-top: 0;
 }
 
 .setGroup dl {
@@ -118,111 +98,93 @@
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
-	min-height: 36px;
-	padding: 2px 8px;
-	border-bottom: 1px solid var(--rule);
-	transition: background 160ms ease-out;
-}
-
-.setRow:hover {
-	background: linear-gradient(90deg, transparent, var(--ember) 50%, transparent);
+	min-height: 32px;
+	border-bottom: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 .setRow dt {
 	font-family: var(--book), serif;
-	font-size: 17px;
+	font-size: 16px;
+	color: var(--text);
 }
 
 .setRow dd {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: flex-end;
-	gap: 4px;
+	gap: 6px;
 	margin: 0;
+	color: var(--stroke);
 }
 
-/* Keycaps: square for a letter, wider for a word, gold hairline on soot. */
+/* Keycaps in the ribbon's inks: bone face, dark-ink rim, a pressed lip. */
 .setCap {
 	display: inline-grid;
 	place-items: center;
-	min-width: 24px;
-	height: 24px;
+	min-width: 22px;
+	height: 22px;
+	margin: 0 2px;
 	padding: 0 6px;
-	border: 1px solid rgb(243 213 138 / 0.55);
-	border-radius: 4px;
-	background: rgb(0 0 0 / 0.45);
-	box-shadow: inset 0 -2px 0 rgb(243 213 138 / 0.18);
-	font: 700 12px "Nunito", sans-serif;
-	color: var(--bone);
+	border: 1px solid var(--stroke);
+	border-radius: 3px;
+	background: #f2ead4;
+	box-shadow: 0 2px 0 var(--stroke);
+	font: 800 11px "Nunito", sans-serif;
+	letter-spacing: 0.04em;
+	color: var(--stroke);
 	white-space: nowrap;
 }
 
-.setCap.wide {
-	padding: 0 8px;
-}
-
-.setCap.dim {
-	opacity: 0.6;
-}
-
 .setFoot {
+	grid-area: foot;
 	display: flex;
 	flex-wrap: wrap;
 	gap: 8px 24px;
-	padding: 12px 28px;
-	border-top: 1px solid var(--rule);
-	font-family: var(--book), serif;
-	font-size: 15px;
-	color: var(--bone);
+	min-height: 0;
+	font-style: normal;
+	animation: none;
 }
 
 .setFoot span,
 .setFoot a {
 	display: inline-flex;
 	align-items: center;
-	gap: 4px;
+	gap: 2px;
 	color: inherit;
 	text-decoration: none;
 }
 
 .setFoot a:hover,
 .setFoot a:focus-visible {
-	color: var(--gold);
+	color: var(--stroke);
 	outline: none;
 }
 
-@keyframes setIn {
-	from {
-		opacity: 0;
-		translate: 0 16px;
+@media (max-aspect-ratio: 6/5) {
+	.titleMenu.setPanel {
+		width: auto;
 	}
-}
-
-@keyframes setFade {
-	from {
-		opacity: 0;
-	}
-}
-
-@media (max-width: 560px) {
-	.setHead,
-	.setBody,
-	.setFoot {
-		padding-left: 14px;
-		padding-right: 14px;
-	}
-	.setBody {
+	.setScroll {
+		flex: 1;
+		min-height: 0;
+		width: min(560px, 100%);
 		grid-template-columns: 1fr;
-		max-height: none;
+		grid-template-rows: auto 1fr auto;
+		grid-template-areas: "tabs" "body" "foot";
 	}
-	.setTab {
-		padding: 8px 10px 12px;
-		font-size: 13px;
+	.setCats {
+		justify-self: center;
+		width: min(290px, 100%);
+	}
+	.setPane,
+	.setBody {
+		flex: 1;
+		height: auto;
+		min-height: 0;
 	}
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.setPanel,
 	.setBody {
 		animation: none;
 	}
