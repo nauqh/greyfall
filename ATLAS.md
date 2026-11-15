@@ -191,7 +191,7 @@ then walks back. The engine already has a guard leash.
    over.
 2. **The Harbour:** the hub is the village's bowl, after Firelink. The
    Harbour's one bonfire stands at its centre, with Old Ferrow beside it
-   saying where to go and the Old Well beside it going down (bats below;
+   saying where to go and the Old Well in the hill's cave west of it going down (bats below;
    only bows reach them). The boat's pier lies just south, on the docks. The
    climb runs straight up from the fire through Old Town and the Upper Town
    to the Castle Gate on the hill's crown. The main path to the Burg leaves

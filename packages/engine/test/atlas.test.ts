@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { AREAS, AREA_CODE, FLYING, SEA_KINDS, TIERS, WATER_ART, atlasMap, castsCliff, footprint, isSlope, level, cellKey, isWalkable, stepsFrom, useIsland, type AreaId, type AtlasTier, type Cell, type TierId } from "../src/index.ts";
+import { AREAS, AREA_CODE, FLYING, SEA_KINDS, TIERS, WATER_ART, atlasMap, castsCliff, shown, footprint, isSlope, level, cellKey, isWalkable, stepsFrom, useIsland, type AreaId, type AtlasTier, type Cell, type TierId } from "../src/index.ts";
 
 const map = atlasMap();
 const code = Object.fromEntries(AREAS.map((a, i) => [a.id, AREA_CODE[i]])) as Record<AreaId, string>;
@@ -212,5 +212,14 @@ describe("the atlas's tiers", () => {
       }),
     );
     if (id === "surface") expect(t.island.rows.some((l) => l.includes("^"))).toBe(true);
+  });
+
+  it("shows a gated prop only while every when flag holds and no unless flag does", () => {
+    const flags = new Set(["bullWon", "monkFreed"] as const);
+    expect(shown({}, flags)).toBe(true);
+    expect(shown({ when: "bullWon" }, flags)).toBe(true);
+    expect(shown({ when: ["bullWon", "shellDead"] }, flags)).toBe(false);
+    expect(shown({ unless: "shellDead" }, flags)).toBe(true);
+    expect(shown({ when: "bullWon", unless: ["shellDead", "monkFreed"] }, flags)).toBe(false);
   });
 });

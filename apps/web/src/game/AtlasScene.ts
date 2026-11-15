@@ -63,6 +63,7 @@ import {
   tileDistance,
   atlasMap,
   footprint,
+  shown,
   solidCells,
   useIsland,
   type AreaId,
@@ -972,9 +973,12 @@ export class AtlasScene extends Phaser.Scene {
   preload(): void {
     if (this.hooks.area) {
       // One area's map stands in for every tier; only its own is built.
-      this.local = areaMap(this.hooks.area);
+      this.local = this.gated(areaMap(this.hooks.area));
       this.map = { tiers: { sky: this.local, surface: this.local, below: this.local }, areas: [...AREAS], lifts: [] };
-    } else this.map = atlasMap();
+    } else {
+      const { tiers, ...m } = atlasMap();
+      this.map = { ...m, tiers: { sky: this.gated(tiers.sky), surface: this.gated(tiers.surface), below: this.gated(tiers.below) } };
+    }
     loadTerrain(this);
     loadGroundColours(this);
     this.load.image("tilesetRoad", packUrl("Terrain/Tileset/Tilemap_color4.png"));
@@ -3279,6 +3283,11 @@ export class AtlasScene extends Phaser.Scene {
       if (ward) text(mid.col * CELL, mid.row * CELL, ward, 36, "#e6dcc4", 12, 40).setLetterSpacing(6);
       else text(mid.col * CELL, mid.row * CELL, a.name.toUpperCase(), 64, "#fdfaf0", 22).setLetterSpacing(10);
     }
+  }
+
+  /** The map as the flags held on entry dress it: the cached map is left whole. */
+  private gated<T extends AtlasTier>(t: T): T {
+    return { ...t, props: t.props.filter((p) => shown(p, this.seen)), dwellers: t.dwellers.filter((d) => shown(d, this.seen)) };
   }
 
   private flag(f: WorldFlag): void {

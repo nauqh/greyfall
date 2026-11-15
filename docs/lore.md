@@ -186,7 +186,7 @@ Gate to the Warlord.
   keep the sea road; the Grey has not come down to the water. Pirates hold
   the far cove, smugglers the steps under the village.
 - **Last Harbour.** The hub: a town in a bowl round the one bonfire, with
-  the Old Well beside it, the docks below and the castle above. It held.
+  the Old Well in the hill's cave west of it, the docks below and the castle above. It held.
 - **The castle (Lower Burg, Ramparts, Chapel Ward, Keep).** The Harbour's
   own castle, climbed ward by ward: the Burg's fallen streets and Hale's
   square, the Ramparts and the Rampart Bull, the Chapel Ward's cloister,
@@ -303,7 +303,7 @@ eels, the old kings, the gnome-kings, the steward.
 | Barrowmoor | The moor | the Barrowmoor |
 | the Watch Lift | The castle's lift to the Steps | the watchtower lift, the sky-lift |
 | the Old Lift | The Chapel Ward's lift to Old Town's foot | |
-| the Old Well | The well in the Harbour's square | |
+| the Old Well | The well in the Lower Town hill's cave, west of the square | |
 | the Shore Minotaur; the bull (folk) | The Bull's Ring keeper | |
 | the Sky Bridge | The gnomes' high road from the Crags to the Greyfall | for any bridge in the Harbour |
 | the Robbers' Camp | Tobin's brother's camp in the Deeps | for the moor's diggers' camp |

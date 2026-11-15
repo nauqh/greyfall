@@ -14,6 +14,7 @@
 // areas.ts imports this module too; areaMap() is only called inside the builders, after both have loaded.
 import { areaMap } from "./areas.ts";
 import { castsCliff, cellKey, isWalkable, level, stepsFrom, useIsland, type Cell, type Island } from "./island.ts";
+import type { WorldFlag } from "./npcs.ts";
 import { hashSeed, makeRng, type Rng } from "./rng.ts";
 
 export type TierId = "sky" | "surface" | "below";
@@ -103,6 +104,9 @@ export interface Placed {
   frame?: number;
   /** Placed by hand to the fraction of a tile, as a scene drew it: never moved to fit. */
   fixed?: boolean;
+  /** Shown only while every when flag is set and no unless flag is. */
+  when?: WorldFlag | readonly WorldFlag[];
+  unless?: WorldFlag | readonly WorldFlag[];
 }
 
 /** A creature, or a knight with `color`. With `to`, it walks between the two; `act` picks a pose. */
@@ -115,6 +119,14 @@ export interface Dweller {
   act?: string;
   flip?: boolean;
   scale?: number;
+  /** Shown only while every when flag is set and no unless flag is. */
+  when?: WorldFlag | readonly WorldFlag[];
+  unless?: WorldFlag | readonly WorldFlag[];
+}
+
+/** Whether a prop or dweller stands, by the flags held. */
+export function shown(x: Pick<Placed, "when" | "unless">, flags: ReadonlySet<WorldFlag>): boolean {
+  return [x.when ?? []].flat().every((f) => flags.has(f)) && ![x.unless ?? []].flat().some((f) => flags.has(f));
 }
 
 /** What lies outside the land: sea round the Surface, open sky, solid rock. */
@@ -182,6 +194,7 @@ export const AREAS: readonly AtlasArea[] = [
     palette: [3, 3, 3],
     mood: 0xffffff,
     rise: 0,
+    ownGround: true,
     label: { col: 44, row: 44 },
   },
   {
@@ -898,6 +911,8 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
     shapes: [] as { level: number; keys: Set<string>; owner?: string }[],
     /** Authored stairs onto authored ground; a table of authored ground takes no others. */
     ways: [] as { level: number; col: number; row: number; side: "L" | "R" }[],
+    /** Ground copied tile for tile from a drawn scene: kept as drawn though no stair reaches it. */
+    drawn: new Set<string>(),
     /** Ways the high ground keeps clear of, drawn or not: roads, and the bridges between isles. */
     paths: new Set<string>(),
     /** The bridge tiles laid over water, sky or rock: the crossing itself, not the land at its ends. */
@@ -1185,7 +1200,7 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
         for (let r = 0; r < rows; r++) {
           for (let c = 0; c < cols; c++) {
             const ch = at(c, r);
-            if (!"#^45".includes(ch) || !isWalkable(c, r) || seen.has(cellKey({ col: c, row: r }))) continue;
+            if (!"#^45".includes(ch) || !isWalkable(c, r) || seen.has(cellKey({ col: c, row: r })) || t.drawn.has(`${c},${r}`)) continue;
             put(c, r, lower[ch]!);
             changed = true;
           }
@@ -1247,7 +1262,7 @@ export const LIFTS: readonly AtlasLift[] = [
     id: "old-well",
     name: "Old Well",
     kind: "drop",
-    note: "A dry well off the square. A rope goes down; nothing comes back up it.",
+    note: "A dry well in the hill's cave, west of the square. A rope goes down; nothing comes back up it.",
     up: { tier: "surface", area: "harbour", at: { col: 43, row: 48 } },
     down: { tier: "below", area: "undercroft", at: { col: 45, row: 51 } },
   },
@@ -1288,7 +1303,7 @@ export const LIFTS: readonly AtlasLift[] = [
     name: "The Boat",
     kind: "lift",
     note: "The fishers' boat out of the Bull's Ring, along the sea channel and round to the Harbour's docks.",
-    up: { tier: "surface", area: "harbour", at: { col: 42, row: 50 } },
+    up: { tier: "surface", area: "harbour", at: { col: 44, row: 49 } },
     down: { tier: "below", area: "ring", at: { col: 42, row: 46 } },
   },
   {

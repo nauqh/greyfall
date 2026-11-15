@@ -330,7 +330,7 @@ export const NPCS: readonly Npc[] = [
     id: "wren",
     name: "Wren",
     area: "harbour",
-    at: { col: 36, row: 58 },
+    at: { col: 28, row: 55 },
     kind: "archer",
     greet: "You walk loud.",
     part: "Keep your head down!",
@@ -376,7 +376,7 @@ export const NPCS: readonly Npc[] = [
     id: "tobin",
     name: "Tobin",
     area: "harbour",
-    at: { col: 53, row: 53 },
+    at: { col: 44, row: 53 },
     kind: "pawn",
     greet: "Don't lean on the rope.",
     part: "...Right. Off you go.",
@@ -385,7 +385,7 @@ export const NPCS: readonly Npc[] = [
         id: "first",
         lines: [
           "Don't lean on the rope. It's older than me.",
-          "That well's not for drawing water. My brother went down it after a dropped coin.",
+          "The Old Well, in the hill there. Not for drawing water. My brother went down it after a dropped coin.",
           "Never came up. Says something about the coin, doesn't it?",
         ],
       },
@@ -490,7 +490,7 @@ export const NPCS: readonly Npc[] = [
       {
         when: ["tobinDeeper", "warlordDead"],
         area: "harbour",
-        at: { col: 53, row: 53 },
+        at: { col: 44, row: 53 },
         talks: [{ id: "well", lines: ["Tobin? Down there. Counting. Someone has to.", "Don't lean on the rope. It's older than both of us."] }],
       },
     ],
@@ -633,7 +633,7 @@ export const NPCS: readonly Npc[] = [
     name: "Maren the Harbourmaster",
     short: "Maren",
     area: "harbour",
-    at: { col: 65, row: 60 },
+    at: { col: 67, row: 63 },
     kind: "pawn",
     greet: "Tide's out.",
     part: "Fair winds. Ha.",
@@ -760,7 +760,7 @@ export const NPCS: readonly Npc[] = [
       {
         when: ["warlordDead"],
         area: "harbour",
-        at: { col: 24, row: 62 },
+        at: { col: 68, row: 71 },
         talks: [
           { id: "mum", lines: ["Mum came home! On her own feet!", "She says the grey ones just ran. She says it twice."] },
           { id: "bread", gives: "Mum's Bread", lines: ["Mum made bread. It's mostly ash. Here."] },

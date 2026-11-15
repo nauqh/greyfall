@@ -510,10 +510,10 @@ const LOWER_TOWN = [
   "~~~~~~55544444^^^^~~~~~~~~~",
   "~~~~~^555)4444^^^^^^~~~~~~~",
   "~~~~~^44444^^^^^^^^^##~~~~~",
-  "~~~~#^^4444}^^^^^^^####~~~~",
+  "~~~~[^^4444}^^^^^^^####~~~~",
   "~~~.#^^^^^^^^^^########.~~~",
-  "~~..##^^^##^^^^]######..~~~",
-  "~~...######..########....~~",
+  "~~.<##^^^##^^^^]######..~~~",
+  "~~....#####..########....~~",
   "~~....#####..######......~~",
   "~~...<####....#####>.....~~",
   "~~.......................~~",
@@ -531,6 +531,7 @@ const LOWER_TOWN = [
 function stamp(t: Builder, rows: readonly string[], x0: number, y0: number): void {
   rows.forEach((line, r) =>
     [...line].forEach((ch, c) => {
+      t.drawn.add(`${x0 + c},${y0 + r}`);
       if (ch === "w") return t.pond(x0 + c, y0 + r, 1, 1);
       const way = "<>[]{}()".indexOf(ch);
       if (way < 0) return t.block((".#^45".indexOf(ch === "~" ? "." : ch) + 1) as 1 | 2 | 3 | 4 | 5, x0 + c, y0 + r, 1, 1);
@@ -538,6 +539,23 @@ function stamp(t: Builder, rows: readonly string[], x0: number, y0: number): voi
       t.block((level - 1) as 1 | 2 | 3 | 4, x0 + c, y0 + r, 1, 1);
       t.stair(level, x0 + c, y0 + r, way % 2 ? "R" : "L");
     }),
+  );
+}
+
+/** Drawn rows widened to `w`, each column repeated where it falls; a stair keeps one copy, on its table's side, and
+ *  the others are the ground under it. */
+function widen(rows: readonly string[], w: number): string[] {
+  const f = rows[0]!.length / w;
+  return rows.map((line) =>
+    Array.from({ length: w }, (_, x) => {
+      const c = Math.floor(x * f);
+      const ch = line[c]!;
+      const way = "<>[]{}()".indexOf(ch);
+      if (way < 0) return ch;
+      const first = x === 0 || Math.floor((x - 1) * f) !== c;
+      const last = Math.floor((x + 1) * f) !== c;
+      return (way % 2 ? first : last) ? ch : ".#^4"[way >> 1]!;
+    }).join(""),
   );
 }
 
@@ -1179,14 +1197,20 @@ function harbour(): AreaMap {
   t.stair(2, 97, 64, "L");
   t.shape(2, 16, 56, 6, 3.5, 0.45, "West Fields");
   // The Lower Town is the title screen's island, its beach on the bay: the first thing seen from the fire.
-  stamp(t, LOWER_TOWN, 43, 43);
+  // Widened from the title's island to span the bowl from the fields to the bend where the coast turns south.
+  const [X0, W] = [30, 39];
+  const sx = (c: number) => X0 + (c * W) / LOWER_TOWN[0]!.length;
+  // Notches cut into the widened cliffs, top and foot, so no edge runs on straight.
+  const ground = widen(LOWER_TOWN, W).map((l) => [...l]);
+  for (const [c, r, ch] of [[47, 43, "."], [48, 43, "."], [54, 43, "."], [55, 43, "."], [41, 46, "^"], [42, 46, "^"], [48, 48, "#"], [49, 48, "#"], [53, 51, "."], [54, 51, "."]] as const) ground[r - 43]![c - X0] = ch;
+  stamp(t, ground.map((l) => l.join("")), X0, 43);
 
   // Roads: the lower town's streets from the square to the docks and both gates; the creek crossed by the Old Bridge.
   // Streets that bend with the ground, not a grid: the main way from the Old Bridge through the square to the Moor
   // Gate, the Ember Gate road north, the docks lane curving down to the shore, and the farm road.
-  t.road([1, 42], [12, 43], [26, 47], [40, 47], [46, 52], [66, 52], [72, 50], [86, 47]);
+  t.road([1, 42], [12, 43], [26, 47], [36, 42], [64, 42], [70, 46], [72, 50], [86, 47]);
   t.road([26, 47], [33, 41], [34, 30], [28, 4], [26, 1]);
-  t.road([26, 47], [28, 54], [37, 58], [37, 66], [3, 66]);
+  t.road([26, 47], [27, 54], [27, 66], [3, 66]);
   t.road([15, 66], [15, 61]);
   // The castle road: up from the bowl's north stairs, straight up the hill to the Castle Gate.
   t.road([55, 39], [56, 30], [56, 20], [56, 6]);
@@ -1203,7 +1227,6 @@ function harbour(): AreaMap {
   t.bridge({ col: 95, row: 76 }, { col: 95, row: 78 }, 3);
   t.bridge({ col: 8, row: 42 }, { col: 1, row: 42 }, 3);
   t.bridge({ col: 28, row: 7 }, { col: 26, row: 1 }, 3);
-  t.bridge({ col: 50, row: 58 }, { col: 50, row: 62 });
   t.bridge({ col: 62, row: 58 }, { col: 62, row: 62 });
   // The climb starts at the fire: twin stairs up the bowl's north wall onto Old Town, the castle straight above.
   t.stair(2, 54, 40, "R");
@@ -1221,6 +1244,8 @@ function harbour(): AreaMap {
   prop("castle", 61, 10, blue);
   who("lancer", 55, 10, { ...blue, to: { col: 57, row: 10 } });
   for (const [c, r] of [[51, 11], [61, 13]] as const) who("lancer", c, r, blue);
+  // Once the Keep is open, Corwin sends lancers down to hold the gate with them.
+  for (const [c, r] of [[54, 12], [58, 12]] as const) who("lancer", c, r, { ...blue, when: "trollKey" });
 
   // The Upper Town is the fortified upper ward: a curtain of towers on the terrace's lip, the garrison yard under the
   // Castle Gate (barracks west of the road, the archery butts east, a drill ground between), a watchtower at each stair
@@ -1230,7 +1255,9 @@ function harbour(): AreaMap {
   prop("barracks", 51, 18, blue);
   prop("archery", 62, 18, blue);
   for (const [c, r] of [[54, 17], [59, 17]] as const) who("warrior", c, r, blue);
-  who("warrior", 52, 21, { ...blue, to: { col: 60, row: 21 } });
+  // The drill stops the day the Warlord falls, and a brother keeps the chapel door.
+  who("warrior", 52, 21, { ...blue, unless: "warlordDead", to: { col: 60, row: 21 } });
+  who("monk", 51, 25, { ...blue, when: "warlordDead" });
   for (const [c, r] of [[61, 21], [64, 21]] as const) who("archer", c, r, blue);
   t.campfires.push({ col: 57, row: 22 });
   prop("monastery", 49, 24, blue);
@@ -1253,7 +1280,7 @@ function harbour(): AreaMap {
   who("archer", 72, 30, { ...blue, to: { col: 64, row: 22 } });
 
   // The Lower Town, as clusters each with its own life (after the Witcher's Oxenfurt): the paved market round the fire,
-  // the Old Well on the bowl's floor opposite the climb (up is the castle and the sky, down is the drowned), the west quarter's houses thinning out toward the archery butts, the east quarter's smithy,
+  // the Old Well in the hill's cave west of the square (up is the castle and the sky, down is the drowned), the west quarter's houses thinning out toward the archery butts, the east quarter's smithy,
   // garden and garrison, and the docks on the shore; a watchtower at each gate. Folk walk between them at their work.
   for (const [c, r, art] of [[51, 45, "woodPile"], [61, 45, "meat"], [61, 48, "goldStone"], [59, 49, "woodPile"]] as const) prop(art, c, r);
   // A few at the market, not a crowd: a town this size reads busy with a handful.
@@ -1261,39 +1288,48 @@ function harbour(): AreaMap {
   who("pawn", 58, 47, { color: "yellow", act: "meat", to: { col: 54, row: 47 } });
   // The west quarter: close round the square, sparser toward the fields.
   for (const [c, r, art] of [[47, 44, "house2"], [44, 44, "house1"], [40, 44, "house3"], [36, 44, "house2"], [48, 50, "house3"], [45, 50, "house2"], [35, 50, "house1"], [48, 53, "house1"], [45, 53, "house3"], [51, 53, "house2"], [36, 54, "house3"]] as const) prop(art, c, r, blue);
-  prop("archery", 31, 51, blue);
-  who("archer", 30, 53, blue);
+  // Wren's butts: once the troll is dead Wren goes shooting in the Emberwood, and the target stands alone.
+  prop("archery", 22, 50, blue);
+  who("archer", 24, 52, { ...blue, unless: "trollKey" });
   prop("watchtower", 21, 44);
   who("lancer", 18, 46, { ...blue, to: { col: 24, row: 47 } });
-  // The east quarter: the smithy and its yard, a fenced garden, the barracks, the gate's watchtower.
-  for (const [c, r, art] of [[65, 44, "house1"], [68, 44, "house3"], [71, 44, "house2"], [76, 44, "house1"], [80, 44, "house3"], [81, 51, "house2"], [84, 51, "house1"], [78, 55, "house3"], [82, 55, "house2"]] as const) prop(art, c, r, blue);
-  prop("house3", 66, 52, blue);
-  for (const [c, r, art] of [[65, 54, "tools"], [68, 54, "goldStone"], [63, 55, "woodPile"]] as const) prop(art, c, r);
-  who("pawn", 67, 54, { ...blue, act: "hammer" });
-  t.fences.push({ col: 59, row: 51, w: 5, h: 4 });
+  // The east quarter, where the shore street leaves the square: houses on the inlet's shore, the barracks, the gate's
+  // watchtower.
+  for (const [c, r, art] of [[81, 51, "house2"], [84, 51, "house1"], [78, 55, "house3"], [82, 55, "house2"]] as const) prop(art, c, r, blue);
   prop("barracks", 77, 52, blue);
   who("warrior", 75, 50, { ...blue, to: { col: 80, row: 50 } });
   prop("watchtower", 89, 43);
   // The rounds: wood from the farm to the smithy, fish up the lane to the market, the watch along the main way.
-  who("pawn", 30, 56, { ...blue, act: "wood", to: { col: 64, row: 50 } });
+  who("pawn", 30, 56, { ...blue, act: "wood", to: { col: 68, row: 51 } });
   who("pawn", 57, 55, { ...blue, act: "meat", to: { col: 57, row: 49 } });
   who("warrior", 30, 48, { ...blue, to: { col: 82, row: 48 } });
 
   // The Docks: fish huts along both shores of the bay, the catch heaped and gutted, boats out on the water.
-  for (const [c, r] of [[42, 58], [70, 58], [47, 59], [65, 59]] as const) prop("fishHut", c, r);
-  for (const [c, r] of [[58, 56], [44, 60], [68, 60]] as const) prop("meat", c, r);
+  for (const [c, r] of [[42, 58], [47, 59]] as const) prop("fishHut", c, r);
+  for (const [c, r] of [[58, 56], [44, 60]] as const) prop("meat", c, r);
   for (const [c, r] of [[46, 65], [62, 66], [56, 69], [60, 61]] as const) prop("boat", c, r, { flip: c > 56 });
   // The boat to the sea cave, moored at the pier's end.
   prop("boat", 64, 62);
+  // The merchant berth below Maren's post, empty three winters: the first ship ties up once the Warlord falls, and
+  // sails with her.
+  prop("boat", 66, 66, { when: "warlordDead", unless: "marenSails" });
   for (const [c, r] of [[45, 61], [67, 61]] as const) who("pawn", c, r, { ...blue, act: "knife" });
   who("turtle", 44, 60);
   who("rubberDuck", 52, 66);
 
-  // The Northwood: woodcutters' cabins in the trees, a lookout on the crag.
+  // The Northwood: woodcutters' cabins in the trees, a lookout on the crag. The cabins nearest the goblins stand empty,
+  // an axe left by a stump and a pen open, and the woodcutters work the wood's south edge; once the Ember Gate is
+  // opened from the wood they go back up to them.
   prop("house1", 22, 24, blue);
   prop("house1", 10, 22, blue);
+  prop("house2", 25, 15, blue);
   prop("tower", 15, 13, blue);
-  crowd(t, rng, "pawn", { col: 20, row: 22 }, 3, 3, { ...blue, act: "axe" });
+  for (const [c, r] of [[23, 13], [28, 17], [20, 18]] as const) prop("stump", c, r);
+  prop("tools", 24, 13);
+  t.fences.push({ col: 26, row: 19, w: 3, h: 2 });
+  const gateOpen = { ...blue, when: "emberGateOpen" } as const;
+  for (const [c, r] of [[24, 17], [21, 22], [11, 24]] as const) who("pawn", c, r, { ...gateOpen, act: "axe" });
+  who("pawn", 23, 19, { ...gateOpen, act: "wood", to: { col: 26, row: 36 } });
   who("bear", 8, 18, { to: { col: 14, row: 26 } });
   t.grove(18, 22, 13, 9, 0.5);
   // The lumber camp at the wood's foot by the Ember Gate road: felled trunks stacked, stumps, a fire, the axes going.
@@ -1301,6 +1337,7 @@ function harbour(): AreaMap {
   for (const [c, r] of [[20, 35], [29, 35], [25, 34]] as const) prop("stump", c, r);
   t.campfires.push({ col: 25, row: 40 });
   for (const [c, r] of [[21, 36], [28, 36]] as const) who("pawn", c, r, { ...blue, act: "axe" });
+  who("pawn", 17, 32, { ...blue, act: "axe", unless: "emberGateOpen" });
   who("pawn", 26, 39, { ...blue, act: "wood", to: { col: 40, row: 46 } });
 
   // The goblins' camp outside the Ember Gate: Emberwood's raiders dug in on the Harbour's side of the road, the first
@@ -1309,26 +1346,35 @@ function harbour(): AreaMap {
   // The camp's fire: a campfire, the gate it guards shut from this side until it is opened from the wood.
   t.campfires.push({ col: 33, row: 9 });
   // Two torches and a spear: winnable at the start, with nothing but the sword (three met at once killed in five seconds).
-  for (const [c, r] of [[35, 10], [36, 12]] as const) who("torch", c, r);
-  who("spear", 34, 13);
+  for (const [c, r] of [[35, 10], [36, 12]] as const) who("torch", c, r, { unless: "emberGateOpen" });
+  who("spear", 34, 13, { unless: "emberGateOpen" });
   prop("skullSpike", 31, 5);
+  // The gate open, the town keeps a watch on it.
+  who("warrior", 27, 4, gateOpen);
 
-  // The Mine Hills: the mine in the working face, ore in the rock, a cave under the crest.
+  // The Mine Hills: the mine in the working face, ore in the rock, a cave under the crest boarded up, its ore left lying.
   prop("goldMine", 90, 22);
   for (const [c, r] of [[86, 16], [98, 18], [100, 26], [88, 28]] as const) prop("goldStone", c, r);
   prop("cave", 100, 20);
-  crowd(t, rng, "pawn", { col: 92, row: 25 }, 4, 4, { ...blue, act: "pickaxe", walk: false });
-  // The miners' camp at the hill's foot where the mine road ends, and the ore carried down to the smith.
-  for (const [c, r, art] of [[84, 36, "tools"], [89, 37, "woodPile"], [88, 35, "goldStone"]] as const) prop(art, c, r);
+  t.fences.push({ col: 98, row: 22, w: 4, h: 2 });
+  prop("woodPile", 97, 21);
+  crowd(t, rng, "pawn", { col: 90, row: 25 }, 4, 3, { ...blue, act: "pickaxe", walk: false });
+  // The miners' camp at the hill's foot where the mine road ends, and the ore carried down it and up the castle road
+  // to the forge.
+  for (const [c, r, art] of [[84, 36, "tools"], [89, 37, "woodPile"], [88, 35, "goldStone"], [85, 39, "goldStone"]] as const) prop(art, c, r);
   t.campfires.push({ col: 86, row: 37 });
-  for (const [c, r] of [[90, 33], [96, 31]] as const) who("pawn", c, r, { ...blue, act: "pickaxe" });
-  who("pawn", 87, 38, { ...blue, act: "gold", to: { col: 66, row: 54 } });
+  for (const [c, r] of [[90, 33], [93, 31]] as const) who("pawn", c, r, { ...blue, act: "pickaxe" });
+  who("pawn", 90, 26, { ...blue, act: "gold", to: { col: 87, row: 35 } });
+  who("pawn", 87, 38, { ...blue, act: "gold", to: { col: 56, row: 30 } });
 
-  // The Old Bridge: Saltreach's fishers and its yellow militia come over to trade, a taste of the shore beyond.
+  // The Old Bridge: Saltreach's toll and trade post, its yellow militia looking over every load that crosses, the
+  // fishers' catch and the town's wood and ore heaped to go over, carriers waiting their turn.
   prop("fishHut", 14, 39);
-  prop("meat", 17, 40);
-  who("lancer", 10, 45, { color: "yellow", to: { col: 15, row: 45 } });
+  for (const [c, r, art] of [[17, 40, "meat"], [12, 39, "woodPile"], [16, 37, "goldStone"]] as const) prop(art, c, r);
+  who("lancer", 10, 43, { color: "yellow", to: { col: 10, row: 41 } });
   who("pawn", 13, 41, { color: "yellow", act: "knife" });
+  who("pawn", 13, 44, { ...blue, act: "wood" });
+  who("pawn", 15, 43, { ...blue, act: "gold", flip: true });
 
   // West Fields: a farm on the farm road. The farmstead on its knoll with a copse beside it, paddocks of sheep and
   // pigs, and below them fenced fields in crop rows and fenced pastures, worked by farmhands.
@@ -1349,22 +1395,27 @@ function harbour(): AreaMap {
   who("pawn", 13, 67, { ...blue, act: "wood", to: { col: 16, row: 58 } });
   who("pawn", 26, 66, { ...blue, act: "meat", to: { col: 26, row: 60 } });
 
-  // The Graves, after Firelink's graveyard on the slope behind the shrine: the path up from the point crosses the moor's
-  // dead to the Moor Gate on the hill's seaward edge, shut from this side. Gold in plain view and the moor's dogs among
-  // the graves, far past a new captain (three gnolls and a shaman, 45 hp and 9 a blow apiece, two of them throwing).
-  // Opened later from Barrowmoor, the gate brings the captain down this hill straight to the fire.
+  // The Graves, after Firelink's graveyard on the slope behind the shrine: the path up from the point crosses the town's
+  // own dead to the Moor Gate on the hill's seaward edge, shut from this side. Gold in plain view and the Grey's dogs,
+  // come over the hill and not through the gate, among the graves, far past a new captain (three gnolls and a shaman,
+  // 45 hp and 9 a blow apiece, two of them throwing). Foes rise again at every rest, so the gate opened from Barrowmoor
+  // is what clears the hill for good: the dogs and the walking dead go, and a gravedigger comes up to put it right.
   prop("tower", 101, 47, blue);
   who("archer", 103, 49, blue);
   for (const [c, r] of [[93, 55], [97, 58], [103, 58], [106, 57]] as const) prop("skullSpike", c, r);
   for (const [c, r] of [[93, 58], [100, 60], [94, 61]] as const) prop("deadTree", c, r, { scale: 0.7 });
-  who("skull", 96, 60, { to: { col: 100, row: 61 } });
-  for (const [c, r] of [[99, 57], [104, 56], [98, 54]] as const) who("gnoll", c, r);
-  who("shaman", 102, 53);
+  const held = { unless: "moorGateOpen" } as const;
+  who("skull", 96, 60, { ...held, to: { col: 100, row: 61 } });
+  for (const [c, r] of [[99, 57], [104, 56], [98, 54]] as const) who("gnoll", c, r, held);
+  who("shaman", 102, 53, held);
+  who("pawn", 97, 57, { ...blue, act: "pickaxe", when: "moorGateOpen", to: { col: 101, row: 59 } });
   prop("goldStone", 99, 61);
   for (const [c, r] of [[95, 61], [105, 61]] as const) prop("bones", c, r);
 
-  // Lantern Point, the lighthouse on the south-east headland at the Graves road's foot, the cove's gold behind it.
+  // Lantern Point, the lighthouse on the south-east headland at the Graves road's foot, the cove's gold behind it. Dark
+  // three winters, with no ship to light in; lit again the day the Warlord falls.
   prop("tower", 101, 71, blue);
+  prop("sconce", 99, 72, { when: "warlordDead" });
   prop("house1", 92, 69, blue);
   prop("fishHut", 87, 71);
   prop("meat", 89, 72);
@@ -1379,50 +1430,86 @@ function harbour(): AreaMap {
 
   // Copses in the lowland's corners and between the clusters, so the town sits in a country, not on bare grass.
   for (const [x, y, rx, ry, d] of [[104, 8, 5, 4, 0.7], [82, 14, 3, 5, 0.6], [6, 34, 3, 3, 0.7], [76, 72, 4, 2, 0.6]] as const) t.grove(x, y, rx, ry, d);
-  for (const [x, y, rx, ry, d] of [[78, 66, 6, 4, 0.55], [32, 72, 5, 3, 0.55], [104, 36, 3, 4, 0.6], [8, 30, 4, 4, 0.6], [74, 42, 3, 2, 0.5]] as const) t.grove(x, y, rx, ry, d);
+  for (const [x, y, rx, ry, d] of [[32, 72, 5, 3, 0.55], [104, 36, 3, 4, 0.6], [8, 30, 4, 4, 0.6], [80, 41, 2.5, 1.5, 0.5]] as const) t.grove(x, y, rx, ry, d);
 
   // The island is the Lower Town: what stood on its ground before goes, and its own folk and scenery come, as the
-  // title screen draws them (introAtlas.ts, shifted by 43, 41).
-  const old = (c: number, r: number) => c >= 44 && c <= 68 && r >= 42 && r <= 59;
+  // title screen draws them (introAtlas.ts, widened from X0, shifted down 41).
+  const old = (c: number, r: number) => c >= X0 + 1 && c <= X0 + W - 2 && r >= 42 && r <= 59;
   t.props = t.props.filter((p) => !old(p.col, p.row));
   t.dwellers = t.dwellers.filter((d) => !old(d.col, d.row));
   t.fences = t.fences.filter((f) => !old(f.col, f.row));
   t.campfires = t.campfires.filter((f) => !old(f.col, f.row));
   const pinned = { fixed: true } as const;
-  prop("tower", 49.9, 43.9, { ...blue, ...pinned });
-  prop("cave", 52.5, 48.9, { ...pinned, scale: 0.85 });
-  prop("goldMine", 61, 43.9, { ...pinned, scale: 0.89 });
-  prop("goblinHut", 63, 47.75, { ...pinned, scale: 0.7 });
-  prop("fishHut", 52.3, 55.25, pinned);
-  prop("house2", 62.1, 55.65, { ...blue, ...pinned });
-  prop("boat", 56.5, 55.6, pinned);
-  for (const [c, r] of [[5.6, 4.6], [12.4, 3.6], [5.4, 5.8], [4.5, 7.2], [3.6, 8.6], [2.8, 10.4], [20.8, 4.8], [22.4, 6.2], [23, 8], [12.4, 10.8], [7, 10.2], [4.4, 15.4], [21.4, 15.8], [14.5, 2.6]] as const) prop("tree", 43 + c, 41 + r, pinned);
-  for (const [c, r] of [[9.4, 10.6], [6.4, 10.6], [18.6, 12.5], [3.3, 12.6], [21.4, 10.6], [6.3, 6.6]] as const) prop("bush", 43 + c, 41 + r, pinned);
-  for (const [c, r] of [[6.5, 13.8], [23, 11.6], [14.6, 9.7]] as const) prop("rock", 43 + c, 41 + r, pinned);
-  for (const [c, r] of [[12.2, 16.8], [16.4, 16.4], [8.6, 17.4], [24.6, 17]] as const) prop("waterRock", 43 + c, 41 + r, pinned);
-  who("monk", 54, 53, blue);
-  who("pawn", 57, 53, { ...blue, flip: true });
-  who("warrior", 58, 54, { ...blue, flip: true });
-  who("pawn", 60, 45, { ...blue, act: "pickaxe" });
-  who("pawn", 61, 48, { ...blue, act: "gold", to: { col: 59, row: 48 } });
-  who("pawn", 64, 56, { ...blue, act: "hammer", flip: true });
-  who("archer", 51, 50, blue);
-  who("lancer", 48, 54, { ...blue, to: { col: 51, row: 54 } });
-  who("warrior", 61, 49, { ...blue, to: { col: 59, row: 49 } });
-  for (const [c, r] of [[47, 52], [48, 53], [65, 51], [64, 50]] as const) who("sheep", c, r);
-  t.campfires.push({ col: 55, row: 53 });
+  prop("tower", sx(6.9), 43.9, { ...blue, ...pinned });
+  prop("cave", sx(9.5), 48.9, { ...pinned, scale: 0.85 });
+  prop("goldMine", sx(18), 43.9, { ...pinned, scale: 0.89 });
+  prop("goblinHut", sx(20), 47.75, { ...pinned, scale: 0.7 });
+  prop("fishHut", sx(9.3), 55.25, pinned);
+  prop("house2", sx(19.1), 55.65, { ...blue, ...pinned });
+  prop("boat", sx(13.5), 55.6, pinned);
+  for (const [c, r] of [[5.6, 4.6], [12.4, 3.6], [5.4, 5.8], [4.5, 7.2], [3.6, 8.6], [2.8, 10.4], [20.8, 4.8], [22.4, 6.2], [23, 8], [12.4, 10.8], [7, 10.2], [4.4, 15.4], [21.4, 15.8], [14.5, 2.6]] as const) prop("tree", sx(c), 41 + r, pinned);
+  for (const [c, r] of [[9.4, 10.6], [6.4, 10.6], [18.6, 12.5], [3.3, 12.6], [21.4, 10.6], [6.3, 6.6]] as const) prop("bush", sx(c), 41 + r, pinned);
+  for (const [c, r] of [[6.5, 13.8], [23, 11.6], [14.6, 9.7]] as const) prop("rock", sx(c), 41 + r, pinned);
+  for (const [c, r] of [[12.2, 16.8], [16.4, 16.4], [8.6, 17.4], [24.6, 17]] as const) prop("waterRock", sx(c), 41 + r, pinned);
+  who("monk", sx(11), 53, blue);
+  who("pawn", sx(14), 53, { ...blue, flip: true });
+  who("warrior", sx(15), 54, { ...blue, flip: true });
+  who("pawn", sx(17), 45, { ...blue, act: "pickaxe" });
+  who("pawn", sx(18), 48, { ...blue, act: "gold", to: { col: sx(16), row: 48 } });
+  who("pawn", sx(21), 56, { ...blue, act: "hammer", flip: true });
+  who("archer", sx(8), 50, blue);
+  who("lancer", sx(5), 54, { ...blue, to: { col: sx(8), row: 54 } });
+  who("warrior", sx(18), 49, { ...blue, to: { col: sx(16), row: 49 } });
+  for (const [c, r] of [[4, 52], [5, 53], [22, 51], [21, 50]] as const) who("sheep", sx(c), r);
+  t.campfires.push({ col: Math.round(sx(12)), row: 53 });
+  // The island's terraces carried round the bay's upper curve, the shore left as it lies: the west terrace down to the
+  // north-west corner, its stair moved to the beach, and the east plateau out to the square.
+  // Each row a run of its own length, so the cliffs step in and out like the island's.
+  const raised = [[51, 36, 41], [52, 35, 40], [53, 35, 39], [54, 36, 39], [55, 37, 38], [48, 62, 64], [49, 61, 65], [50, 62, 64], [51, 63, 65]] as const;
+  const under = (c: number, r: number) => raised.some(([y, a, b]) => r === y && c >= a && c <= b);
+  t.blocks = t.blocks.filter((b) => !(b.level === 1 && under(b.x, b.y)));
+  t.ways = t.ways.filter((w) => !(w.col === 38 && w.row === 51));
+  for (const [y, a, b] of raised) t.block(2, a, y, b - a + 1, 1);
+  t.block(1, 40, 54, 1, 1);
+  t.stair(2, 40, 54, "R");
 
-  // The market, east of the island on the road from the beach: the Harbour's bonfire in a paved square, stalls round
-  // it, the houses closing it in north and south, a fenced garden behind, and the town at its trades.
+  // The fire square at the island's east foot, the hub: the Harbour's bonfire on its paving, a woodpile and a lancer,
+  // the shore street leaving it south.
   for (const r of [46, 48, 50]) t.road([66, r], [76, r]);
-  for (const [c, r, art] of [[68, 46, "woodPile"], [68, 50, "meat"], [74, 46, "tools"], [75, 50, "meat"], [73, 52, "woodPile"], [66, 47, "tools"]] as const) prop(art, c, r);
-  prop("house3", 74, 55, blue);
+  for (const [c, r, art] of [[68, 46, "woodPile"], [74, 46, "tools"]] as const) prop(art, c, r);
   t.fences.push({ col: 79, row: 47, w: 4, h: 3 });
   t.grove(80.5, 48, 0.8, 0.6, 1);
-  crowd(t, rng, "pawn", { col: 71, row: 49 }, 3, 3, { ...blue, act: "gold" });
-  who("pawn", 73, 49, { color: "yellow", act: "meat", to: { col: 69, row: 49 } });
-  who("monk", 70, 51, { ...blue, to: { col: 74, row: 51 } });
+  crowd(t, rng, "pawn", { col: 71, row: 49 }, 2, 3, { ...blue, act: "gold" });
   who("lancer", 69, 45, blue);
+
+  // The village down the bay's east coast, on the one shore street from the fire to the lighthouse, lit by lanterns:
+  // its head between a house and the garrison, houses down both sides, the docks, the market and Maren's pier on the
+  // bay side, and the burned east lane where it turns for the point.
+  for (const [c, r] of [[73, 52], [73, 57], [72, 64], [76, 69]] as const) prop("sconce", c, r);
+  prop("house1", 67, 53, blue);
+  prop("house3", 69, 56, blue);
+  prop("fishHut", 75, 55);
+  for (const [c, r, art] of [[75, 58, "house2"], [75, 62, "house1"], [76, 66, "house3"]] as const) prop(art, c, r, blue);
+  // A stall for each road opened, so the market by the docks fills as the captain's work goes on: Saltreach's fish once
+  // the bull is beaten, the brother freed from the chapel in the Harbour's blue, ore down from the hills once the troll
+  // is dead.
+  for (const [c, r, art] of [[67, 59, "meat"], [69, 60, "woodPile"], [68, 62, "tools"]] as const) prop(art, c, r);
+  who("pawn", 68, 58, { color: "yellow", act: "meat", when: "bullWon", to: { col: 70, row: 58 } });
+  who("monk", 70, 61, { ...blue, when: "monkFreed" });
+  who("pawn", 69, 63, { ...blue, act: "pickaxe", when: "trollKey" });
+  who("pawn", 73, 60, { ...blue, act: "gold", to: { col: 73, row: 55 } });
+  who("pawn", 71, 62, { ...blue, act: "meat", to: { col: 71, row: 50 } });
+
+  // The east lane, the village's last houses before the point, taken in the first nights: the taken carried its folk
+  // off to the Gallows Yard and burned what they left. Its doors stay shut and no one walks it; the Warlord dead, they
+  // come home.
+  for (const [c, r, art] of [[65, 69, "house1"], [69, 69, "house2"], [67, 72, "house3"]] as const) prop(art, c, r, blue);
+  prop("deadTree", 62, 70, { scale: 0.5 });
+  for (const [c, r, art] of [[79, 70, "house1"], [83, 70, "house3"]] as const) prop(art, c, r, blue);
+  for (const [c, r] of [[67, 70], [71, 71]] as const) prop("bones", c, r, { unless: "warlordDead" });
+  const home = { ...blue, when: "warlordDead" } as const;
+  who("pawn", 66, 70, home);
+  who("pawn", 70, 71, { ...home, act: "hammer", flip: true });
 
   const exits: AreaExit[] = [
     { to: "saltreach", name: "Old Bridge", kind: "open", at: { col: 1, row: 42 }, plain: true },
@@ -1430,32 +1517,34 @@ function harbour(): AreaMap {
     { to: "emberwood", name: "Ember Gate", kind: "gate", at: { col: 26, row: 1 }, shut: "emberGateOpen" },
     { to: "chapel", name: "The Old Lift", kind: "shortcut", at: { col: 72, row: 41 }, shut: "oldLiftDown" },
     { to: "burg", name: "Burg Gate", kind: "open", at: { col: 56, row: 1 }, plain: true },
-    { to: "undercroft", name: "The Hill Cave", kind: "drop", at: { col: 53, row: 50 } },
+    { to: "undercroft", name: "The Old Well", kind: "drop", at: { col: Math.round(sx(10)), row: 50 } },
     { to: "ring", name: "The Boat", kind: "lift", at: { col: 62, row: 61 } },
   ];
-  // The hub is the brightest place in the game: green ground climbing through fresh green to a gold capital, no olive or teal.
+  // One shade by height over the whole Harbour, as the title paints its island: salt grass by the sea, greening up the
+  // hills to a gold capital. Only the fenced crops and the Graves keep colours of their own.
+  const ramp = [5, 3, 2, 1, 1];
   const districts: District[] = [
-    { name: "The Upper Town", at: { col: 56, row: 27 }, levels: [3], palette: [1], dress: "harbour", decor: 2 },
-    { name: "Old Town", at: { col: 60, row: 39 }, levels: [2], palette: [2], dress: "harbour", decor: 2 },
-    { name: "The Lower Town", at: { col: 56, row: 53 }, levels: [1], palette: [3], dress: "harbour", decor: 0 },
-    { name: "Lookout Hill", at: { col: 56, row: 46 }, levels: [2, 3, 4, 5], palette: [3, 2, 1, 1], dress: "harbour", decor: 0 },
-    { name: "The Docks", at: { col: 56, row: 75 }, levels: [1], palette: [3], dress: "saltreach", decor: 2 },
-    { name: "West Fields", at: { col: 16, row: 60 }, palette: [3], dress: "harbour", decor: 1 },
+    { name: "The Upper Town", at: { col: 56, row: 27 }, levels: [3], palette: ramp, dress: "harbour", decor: 2 },
+    { name: "Old Town", at: { col: 60, row: 39 }, levels: [2], palette: ramp, dress: "harbour", decor: 2 },
+    { name: "The Lower Town", at: { col: Math.round(sx(13)), row: 53 }, levels: [1], palette: ramp, dress: "harbour", decor: 0 },
+    { name: "Lookout Hill", at: { col: Math.round(sx(13)), row: 46 }, levels: [2, 3, 4, 5], palette: ramp, dress: "harbour", decor: 0 },
+    { name: "The Docks", at: { col: 56, row: 75 }, levels: [1], palette: ramp, dress: "saltreach", decor: 2 },
+    { name: "West Fields", at: { col: 16, row: 60 }, palette: ramp, dress: "harbour", decor: 1 },
     // The fields and pastures, on the farm's own green (painted patches read as flat colour): the fields drawn in crop
     // rows, each fenced, a track between; unnamed, so no label sits on them.
     ...([[4, 61, 10, 5, true], [16, 61, 10, 5, true], [28, 61, 9, 5, true], [4, 68, 10, 6, false], [16, 68, 8, 5, false]] as const).map(([x, y, w, h, crops]): District => ({ name: "", at: { col: x + (w >> 1), row: y + (h >> 1) }, palette: [3], dress: "harbour", decor: 0.4, crops, box: { x, y, w, h } })),
-    { name: "The Northwood", at: { col: 18, row: 30 }, levels: [1, 2, 3], palette: [3, 2, 1], dress: "emberwood", decor: 1.5, trees: 0.4 },
-    { name: "Mine Hills", at: { col: 96, row: 34 }, levels: [1, 2, 3, 4], palette: [3, 2, 1, 1], dress: "crags", decor: 2.5, trees: 0.06 },
-    { name: "Lantern Point", at: { col: 97, row: 71 }, levels: [1], palette: [3], dress: "saltreach", decor: 1.5 },
-    { name: "The Castle Gate", at: { col: 56, row: 8 }, levels: [4], palette: [1], dress: "harbour", decor: 1 },
-    // The Graves read dark against the point's green: the hill's foot keeps the green, its slope and crest go grey-teal and olive.
-    { name: "The Graves", at: { col: 97, row: 57 }, levels: [1, 2, 3], palette: [3, 5, 4], dress: "barrowmoor", decor: 1.5, gloom: true },
+    { name: "The Northwood", at: { col: 18, row: 30 }, levels: [1, 2, 3], palette: ramp, dress: "emberwood", decor: 1.5, trees: 0.4 },
+    { name: "Mine Hills", at: { col: 96, row: 34 }, levels: [1, 2, 3, 4], palette: ramp, dress: "crags", decor: 2.5, trees: 0.06 },
+    { name: "Lantern Point", at: { col: 97, row: 71 }, levels: [1], palette: ramp, dress: "saltreach", decor: 1.5 },
+    { name: "The Castle Gate", at: { col: 56, row: 8 }, levels: [4], palette: ramp, dress: "harbour", decor: 1 },
+    // The Graves read dead against the point's salt grass: its slope and crest go olive.
+    { name: "The Graves", at: { col: 97, row: 57 }, levels: [1, 2, 3], palette: [5, 4, 4], dress: "barrowmoor", decor: 1.5, gloom: true },
   ];
-  // Messages on the ground, after the Souls games: at the cave's mouth, on the pier and at the Graves road's foot.
+  // Messages on the ground, after the Souls games: at the Old Well's cave, on the pier and at the Graves road's foot.
   const notes: Note[] = [
-    { at: { col: 52, row: 51 }, text: "Down through the hill. No way back up." },
+    { at: { col: Math.round(sx(9)), row: 51 }, text: "The Old Well, sunk in the hill's cave. A rope down; no way back up." },
     { at: { col: 63, row: 59 }, text: "Back to the Ring. If the bull lives, he waits." },
-    { at: { col: 95, row: 67 }, text: "Dogs on the hill, and its gate is shut. Not yet." },
+    { at: { col: 95, row: 67 }, text: "Our own dead up there. The dogs came over the hill, not through the gate. Not yet." },
   ];
   const tier = t.finish({}, [{ col: 71, row: 49 }]);
   return { ...tier, area: "harbour", entry: { col: 71, row: 49 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], streets: true, notes };
