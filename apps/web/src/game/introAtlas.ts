@@ -14,45 +14,46 @@ import { loadUnits, makeAnims, playPose, unitKey } from "./sprites";
 import { DEPTH, FOOT, addBuilding, addDecor, addShadow, buildWater, driftClouds, loadBuildings, loadTerrain, prepareTerrain, standing } from "./terrain";
 
 const MAP = [
-  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
-  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
-  "~~~~~~~~##~~~~~~~^^^^~~~~~~~~~",
-  "~~~~~~~~##~~~~~^^^4455~~~~~~~~",
-  "~~~~~~~~~~~~~#^^^44(555^~~~##~",
-  "~~~~~~~~~~~##^^^^44444^^^^~~##",
-  "~~~~~~~~~###^^^^^^4444}^^~~~~~",
-  "~~~~~~~~####^^^^^^^^^^^^^~~~~~",
-  "~~~~~~~~######^^^^^^^^^^#~~~~~",
-  "~~~~~~~######[^^^^^^^^###~~.~~",
-  "~~~~~~~.################~~...~",
-  "~~~~~~~.#############.......~~",
-  "~~~~~~~..############>.....~~~",
-  "~~~~~~~~~...................~~",
-  "~~~~~~~~~~.......~~~......~~~~",
-  "~~~~~~~~~~~~......~~~~~~~##~~~",
-  "~~~~~~~##~~~~~~~~~~~~~~~~##~~~",
-  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~^^445555^~~~~~~~~~",
+  "~~~~~~~^^^^4(5554^^^~~~~~~~",
+  "~~~~~##^^^{44444^^^^##~~~~~",
+  "~~~~####^^^^^^^^^^^####~~~~",
+  "~~~.#####^^^^^^^^######.~~~",
+  "~~..######^^^^^^^]####..~~~",
+  "~~...################....~~",
+  "~~...######..#######.....~~",
+  "~~....####....######>....~~",
+  "~~.......................~~",
+  "~~.......................~~",
+  "~~~.....................~~~",
+  "~~~.........~~~~........~~~",
+  "~~~~.......~~~~~~~.....~~~~",
+  "~~~~~~...~~~~~~~~~~...~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~",
 ];
 /** Lowland to summit, each step up a brighter green, as on the war's island. */
 const RAMP = [5, 3, 2, 1, 1];
 
-/** Landscape: the west third is the menu board's. Portrait: the summit lifted clear of the menu along the bottom. */
-const VIEW = { col0: -11, col1: 30.5, midRow: 8.6 } as const;
-const VIEW_TALL = { col0: 3, col1: 27, midRow: 12.5 } as const;
+/** Landscape: the island from just past the menu board to the east edge. Portrait: the summit lifted clear of the menu along the bottom. */
+const VIEW = { col0: -8.2, col1: 25.6, midRow: 9.4 } as const;
+const VIEW_TALL = { col0: 1.5, col1: 25.5, midRow: 13.4 } as const;
 
 /** The expedition's marks on the island, each its base's centre in cells. */
 export const BUILT = [
-  cell("a", "tower", 21.6, 4.7),
-  cell("g", "cave", 9.8, 9.8),
-  cell("g", "fishHut", 14.8, 15.6),
-  cell("a", "house2", 25.4, 12.3),
-  cell("g", "goblinHut", 28.3, 5.7, 0.7),
+  cell("a", "tower", 15.1, 3.85),
+  cell("g", "cave", 7.8, 10.7),
+  cell("g", "fishHut", 9.8, 15.2),
+  cell("a", "house2", 21.5, 12.6),
+  cell("g", "goblinHut", 20.5, 7.7, 0.7),
 ];
 
-/** The party's climb, feet by cell: up the shore ramp, west across the plateau, each stair in turn along the ridge, to the lookout. */
+/** The party's climb, feet by cell: up the beach ramp, along the plateau, then each stair in turn, west and back east, to the summit. */
 const CLIMB: readonly [number, number][] = [
-  [26.5, 13.5], [22, 13.5], [21.5, 12.5], [20.3, 12.4], [13.5, 12.4], [13.5, 10.5], [13.5, 9.5], [14.6, 9.4],
-  [22.5, 8.4], [22.5, 6.5], [21.4, 6.4], [19.5, 6.4], [19.5, 5.4], [19.5, 4.5], [20.4, 4.3],
+  [22.5, 13.5], [20.5, 12.2], [20.5, 11.5], [20.5, 10.4], [19.5, 10.4], [17.5, 8.4], [17.5, 7.4], [16.5, 7.4],
+  [11.5, 6.4], [10.5, 6.4], [10.5, 5.4], [10.5, 4.4], [11.5, 4.4], [12.5, 4.4], [12.5, 3.4], [13.6, 3.4],
 ];
 /** Leader first, each a step behind the one before; the leader starts this far up. */
 const PARTY: readonly UnitClass[] = ["warrior", "lancer", "archer"];
@@ -61,25 +62,25 @@ const PARTY_FROM = 5;
 /** The camp and the island at work, feet in cells. `pace` cells there and back, signed for the way it sets off. */
 const CAST: readonly { cls: UnitClass; col: number; row: number; pace?: number; left?: boolean; work?: keyof typeof WORK; on?: number }[] = [
   // On the lookout's top, and one keeping the boat.
-  { cls: "archer", col: 21.2, row: 2.4, on: 4.7, left: true },
-  { cls: "warrior", col: 17.2, row: 15.5 },
+  { cls: "archer", col: 14.7, row: 1.55, on: 3.85, left: true },
+  { cls: "warrior", col: 12.4, row: 13.6 },
   // Round the camp fire.
-  { cls: "monk", col: 18.4, row: 13.8 },
-  { cls: "pawn", col: 20.3, row: 14.4, left: true },
-  // Digging the crown's seam, carrying out along the ridge, raising the hut.
-  { cls: "pawn", col: 15.4, row: 6.3, left: true, work: "dig" },
-  { cls: "pawn", col: 15, row: 8.4, pace: 3, work: "carry" },
-  { cls: "pawn", col: 24.1, row: 12.7, work: "hammer" },
-  // Scouting the cave mouth, walking the beach.
-  { cls: "archer", col: 11.9, row: 10.6, left: true },
-  { cls: "lancer", col: 11.4, row: 14.4, pace: 3 },
-  { cls: "warrior", col: 22.6, row: 11.4, pace: 1.5 },
+  { cls: "monk", col: 14.4, row: 12.3 },
+  { cls: "pawn", col: 16.7, row: 12.8, left: true },
+  // Digging the ridge's seam, carrying along the ridge, raising the hut.
+  { cls: "pawn", col: 16.4, row: 5.4, work: "dig" },
+  { cls: "pawn", col: 12, row: 6.6, pace: 3, work: "carry" },
+  { cls: "pawn", col: 20.2, row: 13, work: "hammer" },
+  // Scouting the cave mouth, walking the beach, keeping the plateau.
+  { cls: "archer", col: 10.4, row: 11.5, left: true },
+  { cls: "lancer", col: 5, row: 13.2, pace: 3 },
+  { cls: "warrior", col: 18.2, row: 8.6, pace: 1.5 },
 ];
 
-const CAMPFIRE = { col: 19.4, row: 13.9 } as const;
-const MINE = { col: 14, row: 5 } as const;
-const BOAT = { col: 20, row: 15.9, frame: 256 } as const;
-const SHEEP: readonly [number, number][] = [[23.4, 14.3], [24.6, 13.7], [10.8, 13.7], [27.2, 10.6]];
+const CAMPFIRE = { col: 15.5, row: 12.4 } as const;
+const MINE = { col: 17, row: 4 } as const;
+const BOAT = { col: 14, row: 15.3, frame: 256 } as const;
+const SHEEP: readonly [number, number][] = [[4.6, 11.6], [5.6, 12.2], [22.5, 10.5], [21.8, 9.4]];
 const FIRE = { anchor: 0.8 } as const;
 
 export class IntroAtlasScene extends Phaser.Scene {
@@ -121,10 +122,10 @@ export class IntroAtlasScene extends Phaser.Scene {
     addMine(this, MINE, "mineActive");
     const put = (kind: "tree" | "bush" | "rock" | "waterRock", spots: [number, number][]): Phaser.GameObjects.Sprite[] =>
       spots.map(([c, r], i) => addDecor(this, kind, c * CELL, r * CELL, 1, `atlas-${kind}-${i}`));
-    put("tree", [[8.6, 2.9], [9.6, 7.2], [10.5, 5.8], [11.6, 6.4], [16.5, 3.4], [17.6, 2.6], [23.5, 9.2], [24.4, 8.6], [27.5, 10.4], [8.4, 16.6], [25.6, 15.7], [12.6, 12.4]]);
-    put("bush", [[12, 11.6], [18.5, 8.6], [21.6, 13.8], [24.8, 6.3], [16, 14.2]]);
-    put("rock", [[11.6, 14.6], [27.2, 11.7], [18.5, 10.6]]);
-    put("waterRock", [[5.4, 9.6], [6, 6], [7.4, 14.4], [8, 1.2], [25, 2], [23.5, 15.5], [29, 13.2], [12, 16.6]]).forEach((s) => s.setDepth(DEPTH.foam));
+    put("tree", [[8.2, 3.6], [7.3, 4.7], [5.4, 5.8], [4.5, 7.2], [3.6, 8.6], [2.8, 10.4], [20.8, 4.8], [22.4, 6.2], [23, 8], [12.4, 10.8], [4.4, 15.4], [21.4, 15.8], [18.4, 3.4]]);
+    put("bush", [[9, 8.6], [12.6, 10.1], [18.6, 12.5], [3.3, 12.6], [19, 9.5], [6.3, 6.6]]);
+    put("rock", [[6.5, 13.8], [23, 11.6], [14.6, 9.7]]);
+    put("waterRock", [[1.2, 6.5], [3.4, 3.6], [24.8, 4.5], [25.6, 13.6], [12.2, 16.8], [8.6, 17.4], [1.4, 15], [24.6, 17], [16.4, 16.4]]).forEach((s) => s.setDepth(DEPTH.foam));
 
     const by = BOAT.row * CELL;
     const boat = this.add.sprite(BOAT.col * CELL, by, "atlasBoat").setOrigin(0.5, 0.7).setScale(0.7).setDepth(DEPTH.foam + 2).play("atlasBoat_loop");
@@ -135,7 +136,7 @@ export class IntroAtlasScene extends Phaser.Scene {
     this.add.sprite(fx, fy, "fire").setOrigin(0.5, FIRE.anchor).setScale(0.45).setDepth(standing(fy)).play({ key: "fire_loop", startFrame: 3 });
 
     for (const [c, r] of SHEEP) {
-      const sheep = this.add.sprite(c * CELL, r * CELL, "sheep").setOrigin(0.5, 0.66).setDepth(standing(r * CELL)).setFlipX(c > 20).play("sheep_anim");
+      const sheep = this.add.sprite(c * CELL, r * CELL, "sheep").setOrigin(0.5, 0.66).setDepth(standing(r * CELL)).setFlipX(c > 13).play("sheep_anim");
       if (sheep.anims.currentAnim) sheep.anims.setProgress(Math.random());
     }
   }
