@@ -78,7 +78,7 @@ describe("where the folk stand", () => {
     const at = (id: string) => NPCS.find((n) => n.id === id)!.at;
     const near = (a: { col: number; row: number }, b: { col: number; row: number }) => Math.max(Math.abs(a.col - b.col), Math.abs(a.row - b.row)) <= 3;
     expect(map.fires.some((f) => near(f, at("ferrow")))).toBe(true);
-    expect(near(map.exits.find((e) => e.name === "Old Well")!.at, at("tobin"))).toBe(true);
+    expect(near(map.exits.find((e) => e.name === "The Hill Cave")!.at, at("tobin"))).toBe(true);
     expect(areaMap("keep").props.some((p) => p.art === "barracks" && near(p, at("corwin")))).toBe(true);
     expect(map.props.some((p) => p.art === "monastery" && near(p, at("ysolde")))).toBe(true);
   });

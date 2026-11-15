@@ -101,6 +101,8 @@ export interface Placed {
   scale?: number;
   /** A sheet's frame, for art with variants. */
   frame?: number;
+  /** Placed by hand to the fraction of a tile, as a scene drew it: never moved to fit. */
+  fixed?: boolean;
 }
 
 /** A creature, or a knight with `color`. With `to`, it walks between the two; `act` picks a pose. */
@@ -425,14 +427,15 @@ export function footprint(p: Placed, ring = false): Cell[] {
   const f = FOOT[p.art] ?? { w: 1, d: 1, clear: false };
   const w = Math.max(1, Math.round(f.w * (p.scale ?? 1)));
   const m = ring && f.clear ? 1 : 0;
-  const left = p.col - Math.floor((w - 1) / 2);
+  const [col, row] = [Math.round(p.col), Math.round(p.row)];
+  const left = col - Math.floor((w - 1) / 2);
   const out: Cell[] = [];
-  for (let r = p.row - f.d + 1 - m; r <= p.row + m; r++) for (let c = left - m; c < left + w + m; c++) out.push({ col: c, row: r });
+  for (let r = row - f.d + 1 - m; r <= row + m; r++) for (let c = left - m; c < left + w + m; c++) out.push({ col: c, row: r });
   return out;
 }
 
 /** Props walked over, not into: gold to pick up, bones in the grass, a torch on the wall, and whatever floats. */
-const UNDERFOOT: ReadonlySet<string> = new Set(["goldStone", "bones", "sconce", "boat", "pirateTowerWater"]);
+const UNDERFOOT: ReadonlySet<string> = new Set(["goldStone", "bones", "sconce", "boat", "pirateTowerWater", "bush", "rock", "waterRock"]);
 
 /** The tiles no one walks through: every prop's base but those underfoot, and every fence post, as "col,row". A base
  *  stands centred under the art, drawn on its tile's middle: an even width rounds down, so none juts out to one side. */
@@ -442,7 +445,8 @@ export function solidCells(t: Pick<AtlasTier, "props" | "fences">): Set<string> 
     if (UNDERFOOT.has(p.art)) continue;
     const f = FOOT[p.art] ?? { w: 1, d: 1 };
     const half = Math.floor((Math.max(1, Math.round(f.w * (p.scale ?? 1))) - 1) / 2);
-    for (let r = p.row - f.d + 1; r <= p.row; r++) for (let c = p.col - half; c <= p.col + half; c++) out.add(`${c},${r}`);
+    const [col, row] = [Math.round(p.col), Math.round(p.row)];
+    for (let r = row - f.d + 1; r <= row; r++) for (let c = col - half; c <= col + half; c++) out.add(`${c},${r}`);
   }
   for (const f of t.fences) {
     for (let c = f.col; c < f.col + f.w; c++) for (const r of [f.row, f.row + f.h - 1]) out.add(`${c},${r}`);
@@ -760,7 +764,7 @@ function settleAll(t: Builder): void {
   // Buildings that already fit stay; the rest move to the nearest place that fits, on the height meant for them when there is one.
   const own = (p: Placed) => (WATER_ART.has(p.art) ? -1 : t.area[p.row]?.[p.col] ?? -1);
   const fitted = t.props.map((p) => {
-    const ok = fits(p, own(p));
+    const ok = p.fixed || fits(p, own(p));
     if (ok) place(p);
     return ok;
   });

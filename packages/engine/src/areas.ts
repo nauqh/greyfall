@@ -502,6 +502,45 @@ function districtGrid(tier: AtlasTier, districts: readonly District[], t?: Build
 
 type Builder = ReturnType<typeof tierBuilder>;
 
+/**
+ * The Lower Town: the title screen's island (introAtlas.ts MAP, its rows 2 to 18), tile for tile. Its sea west, north
+ * and east is the town's ground ("~"); south of its beach, "w", is the bay, so its coast is the Harbour's shore.
+ */
+const LOWER_TOWN = [
+  "~~~~~~55544444^^^^~~~~~~~~~",
+  "~~~~~^555)4444^^^^^^~~~~~~~",
+  "~~~~~^44444^^^^^^^^^##~~~~~",
+  "~~~~#^^4444}^^^^^^^####~~~~",
+  "~~~.#^^^^^^^^^^########.~~~",
+  "~~..##^^^##^^^^]######..~~~",
+  "~~...######..########....~~",
+  "~~....#####..######......~~",
+  "~~...<####....#####>.....~~",
+  "~~.......................~~",
+  "~~.......................~~",
+  "~~w.....................w~~",
+  "~~w.........wwww........w~~",
+  "~~ww.......wwwwwww.....ww~~",
+  "~~wwww...wwwwwwwwww...www~~",
+  "~~wwwwwwwwwwwwwwwwwwwwwww~~",
+  "~~wwwwwwwwwwwwwwwwwwwwwww~~",
+];
+
+/** Ground drawn row by row in the map alphabet, its top-left at `x0`, `y0`: every tile authored, "~" the lowland, "w"
+ *  water, a stair on the ground under it. */
+function stamp(t: Builder, rows: readonly string[], x0: number, y0: number): void {
+  rows.forEach((line, r) =>
+    [...line].forEach((ch, c) => {
+      if (ch === "w") return t.pond(x0 + c, y0 + r, 1, 1);
+      const way = "<>[]{}()".indexOf(ch);
+      if (way < 0) return t.block((".#^45".indexOf(ch === "~" ? "." : ch) + 1) as 1 | 2 | 3 | 4 | 5, x0 + c, y0 + r, 1, 1);
+      const level = ((way >> 1) + 2) as 2 | 3 | 4 | 5;
+      t.block((level - 1) as 1 | 2 | 3 | 4, x0 + c, y0 + r, 1, 1);
+      t.stair(level, x0 + c, y0 + r, way % 2 ? "R" : "L");
+    }),
+  );
+}
+
 /** A ring of raised ground `width` thick round a hollow, a tile clear of every road laid so far, so each street is a pass. */
 function rim(t: Builder, cx: number, cy: number, rx: number, ry: number, width: number, owner: string): void {
   const n = noise(`rim:${cx},${cy}`, 3);
@@ -1139,15 +1178,14 @@ function harbour(): AreaMap {
   t.block(1, 96, 61, 2, 4);
   t.stair(2, 97, 64, "L");
   t.shape(2, 16, 56, 6, 3.5, 0.45, "West Fields");
+  // The Lower Town is the title screen's island, its beach on the bay: the first thing seen from the fire.
+  stamp(t, LOWER_TOWN, 43, 43);
 
   // Roads: the lower town's streets from the square to the docks and both gates; the creek crossed by the Old Bridge.
   // Streets that bend with the ground, not a grid: the main way from the Old Bridge through the square to the Moor
   // Gate, the Ember Gate road north, the docks lane curving down to the shore, and the farm road.
-  t.road([1, 42], [12, 43], [26, 47], [40, 47], [50, 46]);
-  t.road([62, 46], [72, 48], [86, 47]);
+  t.road([1, 42], [12, 43], [26, 47], [40, 47], [46, 52], [66, 52], [72, 50], [86, 47]);
   t.road([26, 47], [33, 41], [34, 30], [28, 4], [26, 1]);
-  t.road([56, 48], [55, 52], [56, 56]);
-  t.road([57, 48], [56, 52], [57, 56]);
   t.road([26, 47], [28, 54], [37, 58], [37, 66], [3, 66]);
   t.road([15, 66], [15, 61]);
   // The castle road: up from the bowl's north stairs, straight up the hill to the Castle Gate.
@@ -1163,25 +1201,20 @@ function harbour(): AreaMap {
   t.road([98, 63], [99, 58], [101, 54], [104, 51], [109, 50]);
   t.road([95, 74], [95, 78]);
   t.bridge({ col: 95, row: 76 }, { col: 95, row: 78 }, 3);
-  // The market square, paved.
-  for (const r of [44, 46, 48]) t.road([50, r], [62, r]);
   t.bridge({ col: 8, row: 42 }, { col: 1, row: 42 }, 3);
   t.bridge({ col: 28, row: 7 }, { col: 26, row: 1 }, 3);
   t.bridge({ col: 50, row: 58 }, { col: 50, row: 62 });
   t.bridge({ col: 62, row: 58 }, { col: 62, row: 62 });
-  // The Lower Town is a bowl, after Firelink: the bonfire square sunk in the middle, the houses up on a rim round it,
-  // Old Town's cliff its north side, and the streets the passes out of it.
-  rim(t, 56, 45, 15, 9, 4, "The Lower Town");
   // The climb starts at the fire: twin stairs up the bowl's north wall onto Old Town, the castle straight above.
   t.stair(2, 54, 40, "R");
   t.stair(2, 56, 40, "L");
   // A gate tower at the mouth of each pass, so from the fire the bowl's sides read as its ways out.
   for (const [c, r] of [[43, 44], [69, 44], [60, 52]] as const) prop("watchtower", c, r);
   // Copses on the rim and in the bowl's corners, so the hollow is green round the fire.
-  for (const [x, y, rx, ry, d] of [[44, 41, 2, 1.5, 0.6], [46, 51, 2.5, 1.5, 0.6], [66, 51, 2.5, 1.5, 0.6], [69, 50, 1.5, 1.5, 0.6], [50, 41, 1.5, 1, 0.7], [62, 41, 1.5, 1, 0.7]] as const) t.grove(x, y, rx, ry, d);
+  for (const [x, y, rx, ry, d] of [[44, 41, 2, 1.5, 0.6], [62, 41, 1.5, 1, 0.7]] as const) t.grove(x, y, rx, ry, d);
 
   // The bowl's fire is the hub, after Firelink: the Harbour's one bonfire, first, so a fall at the Ring wakes here.
-  t.fires.push({ col: 56, row: 45 });
+  t.fires.push({ col: 71, row: 48 });
 
   // The Castle Gate: a tower either side of the road through it, the castle's keep looming over the wall beside it.
   for (const [c, r] of [[53, 7], [59, 7]] as const) prop("tower", c, r, blue);
@@ -1227,7 +1260,6 @@ function harbour(): AreaMap {
   for (const [c, r, art] of [[65, 54, "tools"], [68, 54, "goldStone"], [63, 55, "woodPile"]] as const) prop(art, c, r);
   who("pawn", 67, 54, { ...blue, act: "hammer" });
   t.fences.push({ col: 59, row: 51, w: 5, h: 4 });
-  t.grove(61, 52, 0.6, 0.6, 1);
   prop("barracks", 77, 52, blue);
   who("warrior", 75, 50, { ...blue, to: { col: 80, row: 50 } });
   prop("watchtower", 89, 43);
@@ -1241,7 +1273,7 @@ function harbour(): AreaMap {
   for (const [c, r] of [[58, 56], [44, 60], [68, 60]] as const) prop("meat", c, r);
   for (const [c, r] of [[46, 65], [62, 66], [56, 69], [60, 61]] as const) prop("boat", c, r, { flip: c > 56 });
   // The boat to the sea cave, moored at the pier's end.
-  prop("boat", 52, 62);
+  prop("boat", 64, 62);
   for (const [c, r] of [[45, 61], [67, 61]] as const) who("pawn", c, r, { ...blue, act: "knife" });
   who("turtle", 44, 60);
   who("rubberDuck", 52, 66);
@@ -1338,20 +1370,64 @@ function harbour(): AreaMap {
   for (const [x, y, rx, ry, d] of [[104, 8, 5, 4, 0.7], [82, 14, 3, 5, 0.6], [6, 34, 3, 3, 0.7], [76, 72, 4, 2, 0.6]] as const) t.grove(x, y, rx, ry, d);
   for (const [x, y, rx, ry, d] of [[78, 66, 6, 4, 0.55], [32, 72, 5, 3, 0.55], [104, 36, 3, 4, 0.6], [8, 30, 4, 4, 0.6], [74, 42, 3, 2, 0.5]] as const) t.grove(x, y, rx, ry, d);
 
+  // The island is the Lower Town: what stood on its ground before goes, and its own folk and scenery come, as the
+  // title screen draws them (introAtlas.ts, shifted by 43, 41).
+  const old = (c: number, r: number) => c >= 44 && c <= 68 && r >= 42 && r <= 59;
+  t.props = t.props.filter((p) => !old(p.col, p.row));
+  t.dwellers = t.dwellers.filter((d) => !old(d.col, d.row));
+  t.fences = t.fences.filter((f) => !old(f.col, f.row));
+  t.campfires = t.campfires.filter((f) => !old(f.col, f.row));
+  const pinned = { fixed: true } as const;
+  prop("tower", 49.9, 43.9, { ...blue, ...pinned });
+  prop("cave", 52.5, 48.9, { ...pinned, scale: 0.85 });
+  prop("goldMine", 61, 43.9, { ...pinned, scale: 0.89 });
+  prop("goblinHut", 63, 47.75, { ...pinned, scale: 0.7 });
+  prop("fishHut", 52.3, 55.25, pinned);
+  prop("house2", 62.1, 55.65, { ...blue, ...pinned });
+  prop("boat", 56.5, 55.6, pinned);
+  for (const [c, r] of [[5.6, 4.6], [12.4, 3.6], [5.4, 5.8], [4.5, 7.2], [3.6, 8.6], [2.8, 10.4], [20.8, 4.8], [22.4, 6.2], [23, 8], [12.4, 10.8], [7, 10.2], [4.4, 15.4], [21.4, 15.8], [14.5, 2.6]] as const) prop("tree", 43 + c, 41 + r, pinned);
+  for (const [c, r] of [[9.4, 10.6], [6.4, 10.6], [18.6, 12.5], [3.3, 12.6], [21.4, 10.6], [6.3, 6.6]] as const) prop("bush", 43 + c, 41 + r, pinned);
+  for (const [c, r] of [[6.5, 13.8], [23, 11.6], [14.6, 9.7]] as const) prop("rock", 43 + c, 41 + r, pinned);
+  for (const [c, r] of [[12.2, 16.8], [16.4, 16.4], [8.6, 17.4], [24.6, 17]] as const) prop("waterRock", 43 + c, 41 + r, pinned);
+  who("monk", 54, 53, blue);
+  who("pawn", 57, 53, { ...blue, flip: true });
+  who("warrior", 58, 54, { ...blue, flip: true });
+  who("pawn", 60, 45, { ...blue, act: "pickaxe" });
+  who("pawn", 61, 48, { ...blue, act: "gold", to: { col: 59, row: 48 } });
+  who("pawn", 64, 56, { ...blue, act: "hammer", flip: true });
+  who("archer", 51, 50, blue);
+  who("lancer", 48, 54, { ...blue, to: { col: 51, row: 54 } });
+  who("warrior", 61, 49, { ...blue, to: { col: 59, row: 49 } });
+  for (const [c, r] of [[47, 52], [48, 53], [65, 51], [64, 50]] as const) who("sheep", c, r);
+  t.campfires.push({ col: 55, row: 53 });
+
+  // The market, east of the island on the road from the beach: the Harbour's bonfire in a paved square, stalls round
+  // it, the houses closing it in north and south, a fenced garden behind, and the town at its trades.
+  for (const r of [46, 48, 50]) t.road([66, r], [76, r]);
+  for (const [c, r, art] of [[68, 46, "woodPile"], [68, 50, "meat"], [74, 46, "tools"], [75, 50, "meat"], [73, 52, "woodPile"], [66, 47, "tools"]] as const) prop(art, c, r);
+  prop("house3", 74, 55, blue);
+  t.fences.push({ col: 79, row: 47, w: 4, h: 3 });
+  t.grove(80.5, 48, 0.8, 0.6, 1);
+  crowd(t, rng, "pawn", { col: 71, row: 49 }, 3, 3, { ...blue, act: "gold" });
+  who("pawn", 73, 49, { color: "yellow", act: "meat", to: { col: 69, row: 49 } });
+  who("monk", 70, 51, { ...blue, to: { col: 74, row: 51 } });
+  who("lancer", 69, 45, blue);
+
   const exits: AreaExit[] = [
     { to: "saltreach", name: "Old Bridge", kind: "open", at: { col: 1, row: 42 }, plain: true },
     { to: "barrowmoor", name: "Moor Gate", kind: "shortcut", at: { col: 109, row: 50 }, shut: "moorGateOpen" },
     { to: "emberwood", name: "Ember Gate", kind: "gate", at: { col: 26, row: 1 }, shut: "emberGateOpen" },
     { to: "chapel", name: "The Old Lift", kind: "shortcut", at: { col: 72, row: 41 }, shut: "oldLiftDown" },
     { to: "burg", name: "Burg Gate", kind: "open", at: { col: 56, row: 1 }, plain: true },
-    { to: "undercroft", name: "Old Well", kind: "drop", at: { col: 52, row: 48 } },
-    { to: "ring", name: "The Boat", kind: "lift", at: { col: 50, row: 61 } },
+    { to: "undercroft", name: "The Hill Cave", kind: "drop", at: { col: 53, row: 50 } },
+    { to: "ring", name: "The Boat", kind: "lift", at: { col: 62, row: 61 } },
   ];
   // The hub is the brightest place in the game: green ground climbing through fresh green to a gold capital, no olive or teal.
   const districts: District[] = [
     { name: "The Upper Town", at: { col: 56, row: 27 }, levels: [3], palette: [1], dress: "harbour", decor: 2 },
     { name: "Old Town", at: { col: 60, row: 39 }, levels: [2], palette: [2], dress: "harbour", decor: 2 },
-    { name: "The Lower Town", at: { col: 56, row: 52 }, levels: [1, 2], palette: [3, 2], dress: "harbour", decor: 2 },
+    { name: "The Lower Town", at: { col: 56, row: 53 }, levels: [1], palette: [3], dress: "harbour", decor: 0 },
+    { name: "Lookout Hill", at: { col: 56, row: 46 }, levels: [2, 3, 4, 5], palette: [3, 2, 1, 1], dress: "harbour", decor: 0 },
     { name: "The Docks", at: { col: 56, row: 75 }, levels: [1], palette: [3], dress: "saltreach", decor: 2 },
     { name: "West Fields", at: { col: 16, row: 60 }, palette: [3], dress: "harbour", decor: 1 },
     // The fields and pastures, on the farm's own green (painted patches read as flat colour): the fields drawn in crop
@@ -1364,14 +1440,14 @@ function harbour(): AreaMap {
     // The Graves read dark against the point's green: the hill's foot keeps the green, its slope and crest go grey-teal and olive.
     { name: "The Graves", at: { col: 97, row: 57 }, levels: [1, 2, 3], palette: [3, 5, 4], dress: "barrowmoor", decor: 1.5, gloom: true },
   ];
-  // Messages on the ground, after the Souls games: at the well's lip, on the pier and at the Graves road's foot.
+  // Messages on the ground, after the Souls games: at the cave's mouth, on the pier and at the Graves road's foot.
   const notes: Note[] = [
-    { at: { col: 53, row: 47 }, text: "The rope is cut. No way back up." },
-    { at: { col: 51, row: 59 }, text: "Back to the Ring. If the bull lives, he waits." },
+    { at: { col: 52, row: 51 }, text: "Down through the hill. No way back up." },
+    { at: { col: 63, row: 59 }, text: "Back to the Ring. If the bull lives, he waits." },
     { at: { col: 95, row: 67 }, text: "Dogs on the hill, and its gate is shut. Not yet." },
   ];
-  const tier = t.finish({}, [{ col: 56, row: 46 }]);
-  return { ...tier, area: "harbour", entry: { col: 56, row: 47 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], streets: true, notes };
+  const tier = t.finish({}, [{ col: 71, row: 49 }]);
+  return { ...tier, area: "harbour", entry: { col: 71, row: 49 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], streets: true, notes };
 }
 
 function emberwood(): AreaMap {

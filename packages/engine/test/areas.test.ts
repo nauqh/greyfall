@@ -74,6 +74,8 @@ describe.each(MAPPED_AREAS)("the %s area map", (id) => {
     useIsland(m.island);
     const under = new Set<string>();
     for (const p of m.props) {
+      // Pinned scenery stands where its scene drew it (the Harbour's Lookout Hill), not to the building rules.
+      if (p.fixed) continue;
       const name = `${p.art} at ${p.col},${p.row}`;
       const wet = WATER_ART.has(p.art);
       const base = level(p.col, p.row);
@@ -130,7 +132,7 @@ it("puts the harbour's hub in the village: the boat's pier near its one bonfire,
   expect(near(m.fires[0]!, m.entry, 3)).toBe(true);
   expect(level(burg.at.col, burg.at.row)).toBe(2);
   expect(moor.shut).toBe("moorGateOpen");
-  expect(m.dwellers.filter((d) => d.kind === "gnoll" && d.col > m.fires[0]!.col + 30).length).toBeGreaterThanOrEqual(3);
+  expect(m.dwellers.filter((d) => d.kind === "gnoll" && d.col >= 90).length).toBeGreaterThanOrEqual(3);
 });
 
 it("shuts the Keep behind its gate off the Burg until the troll's key, and its Watch Lift until ridden down from the sky", () => {

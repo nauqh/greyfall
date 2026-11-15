@@ -987,7 +987,7 @@ export class AtlasScene extends Phaser.Scene {
     for (const tier of new Set(Object.values(this.map.tiers))) {
       for (const p of tier.props) {
         if (p.color) this.load.image(this.buildingKey(p), packUrl(`Buildings/${COLOR_DIR[p.color]} Buildings/${BUILDING_FILE[p.art]}`));
-        else if (p.art !== "sconce") sheet(`prop_${p.art}`, PROP[p.art]!);
+        else if (PROP[p.art]) sheet(`prop_${p.art}`, PROP[p.art]!);
       }
       for (const d of tier.dwellers) {
         const { idle, move, frame } = this.look(d);
@@ -2859,6 +2859,13 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   private addProp(p: Placed, base: AtlasTier["base"]): void {
+    if (p.art === "tree" || p.art === "bush" || p.art === "rock" || p.art === "waterRock") {
+      // Scenery set by hand, at its feet as the title scene places it.
+      const s = addDecor(this, p.art, p.col * CELL, p.row * CELL, p.scale ?? 1, `prop${p.col},${p.row}`);
+      if (p.art === "waterRock") s.setDepth(DEPTH.foam);
+      this.track(s);
+      return;
+    }
     const x = (p.col + 0.5) * CELL;
     const y = (p.row + 0.95) * CELL;
     if (p.color) {
@@ -2973,16 +2980,11 @@ export class AtlasScene extends Phaser.Scene {
     const there = AREAS.find((a) => a.id === e.to)!;
     const up = TIERS.indexOf(there.tier) < TIERS.indexOf(here);
     const down = TIERS.indexOf(there.tier) > TIERS.indexOf(here);
-    // Each crossing is drawn as the thing it is: a town's well, a fen's sinkhole, a railed lift; a lift beside its own
-    // building (the cave, the gnomes' tower, the keep) needs nothing more.
+    // Each crossing is drawn as the thing it is: a fen's sinkhole, a railed lift; a crossing beside its own building
+    // (the Harbour's hill cave, the gnomes' tower, the keep) needs nothing more.
     const ground = DEPTH.ground + 1;
     if (e.kind === "drop" && this.local!.area === "harbour") {
-      // The Old Well: a ring of stones round dark water, a post either side and the beam the rope hangs from.
-      this.add.ellipse(x, y, 92, 44, 0x6f747e).setStrokeStyle(4, 0x3a3f4a).setDepth(ground);
-      this.add.ellipse(x, y + 2, 64, 26, 0x16303c).setStrokeStyle(3, 0x2a2f38).setDepth(ground + 1);
-      for (const side of [-1, 1]) this.add.rectangle(x + side * 40, y - 30, 8, 64, 0x7a5432).setStrokeStyle(2, 0x3b2716).setDepth(standing(y));
-      this.add.rectangle(x, y - 62, 96, 9, 0x7a5432).setStrokeStyle(2, 0x3b2716).setDepth(standing(y) + 1);
-      this.add.rectangle(x, y - 40, 3, 42, 0xc8b48a).setDepth(standing(y) + 1);
+      // The Lookout Hill's cave is the way down: the map places it.
     } else if (e.kind === "drop") {
       // A sinkhole: the fen's black water drawing down into the ground, ringed in reed, a slow ripple on it.
       this.add.ellipse(x, y, 136, 62, 0x0e2226).setStrokeStyle(5, 0x2e4c3c).setDepth(ground);
