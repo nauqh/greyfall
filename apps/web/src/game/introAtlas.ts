@@ -16,15 +16,15 @@ import { DEPTH, FOOT, addBuilding, addDecor, addShadow, buildWater, driftClouds,
 const MAP = [
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~",
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~",
-  "~~~~~~~~~^^445555^~~~~~~~~~",
-  "~~~~~~~^^^^4(5554^^^~~~~~~~",
-  "~~~~~##^^^{44444^^^^##~~~~~",
-  "~~~~####^^^^^^^^^^^####~~~~",
-  "~~~.#####^^^^^^^^######.~~~",
-  "~~..######^^^^^^^]####..~~~",
+  "~~~~~~^5555444^^^^~~~~~~~~~",
+  "~~~~~^^55)5444^^^^^^~~~~~~~",
+  "~~~~~^^4444444^^^^^^##~~~~~",
+  "~~~~#^^4444{44^^^^^####~~~~",
+  "~~~.#^^^^^^^^^^^^^^####.~~~",
+  "~~..##^^^^^^^^^]^^^###..~~~",
   "~~...################....~~",
   "~~...######..#######.....~~",
-  "~~....####....######>....~~",
+  "~~....####....##>###.....~~",
   "~~.......................~~",
   "~~.......................~~",
   "~~~.....................~~~",
@@ -43,17 +43,17 @@ const VIEW_TALL = { col0: 1.5, col1: 25.5, midRow: 13.4 } as const;
 
 /** The expedition's marks on the island, each its base's centre in cells. */
 export const BUILT = [
-  cell("a", "tower", 15.1, 3.85),
+  cell("a", "tower", 7.9, 3.85),
   cell("g", "cave", 7.8, 10.7),
   cell("g", "fishHut", 9.8, 15.2),
-  cell("a", "house2", 21.5, 12.6),
+  cell("a", "house2", 19.6, 15.6),
   cell("g", "goblinHut", 20.5, 7.7, 0.7),
 ];
 
-/** The party's climb, feet by cell: up the beach ramp, along the plateau, then each stair in turn, west and back east, to the summit. */
+/** The party's climb, feet by cell: each stair cut into the middle of its cliff, switching back west and up to the summit on the west cliff. */
 const CLIMB: readonly [number, number][] = [
-  [22.5, 13.5], [20.5, 12.2], [20.5, 11.5], [20.5, 10.4], [19.5, 10.4], [17.5, 8.4], [17.5, 7.4], [16.5, 7.4],
-  [11.5, 6.4], [10.5, 6.4], [10.5, 5.4], [10.5, 4.4], [11.5, 4.4], [12.5, 4.4], [12.5, 3.4], [13.6, 3.4],
+  [22.5, 13.5], [16.5, 12.2], [16.5, 11.5], [16.5, 10.4], [16.5, 9.4], [15.5, 9.4], [15.5, 8.4], [15.5, 7.4], [14.5, 7.4],
+  [11.5, 7.4], [11.5, 6.4], [11.5, 5.4], [9.5, 5.4], [9.5, 4.4], [9.5, 3.4], [9.5, 2.4],
 ];
 /** Leader first, each a step behind the one before; the leader starts this far up. */
 const PARTY: readonly UnitClass[] = ["warrior", "lancer", "archer"];
@@ -62,23 +62,23 @@ const PARTY_FROM = 5;
 /** The camp and the island at work, feet in cells. `pace` cells there and back, signed for the way it sets off. */
 const CAST: readonly { cls: UnitClass; col: number; row: number; pace?: number; left?: boolean; work?: keyof typeof WORK; on?: number }[] = [
   // On the lookout's top, and one keeping the boat.
-  { cls: "archer", col: 14.7, row: 1.55, on: 3.85, left: true },
-  { cls: "warrior", col: 12.4, row: 13.6 },
+  { cls: "archer", col: 7.9, row: 1.8, on: 3.85 },
+  { cls: "warrior", col: 15.6, row: 13.8, left: true },
   // Round the camp fire.
-  { cls: "monk", col: 14.4, row: 12.3 },
-  { cls: "pawn", col: 16.7, row: 12.8, left: true },
+  { cls: "monk", col: 11.4, row: 12.5 },
+  { cls: "pawn", col: 13.7, row: 13, left: true },
   // Digging the ridge's seam, carrying along the ridge, raising the hut.
-  { cls: "pawn", col: 16.4, row: 5.4, work: "dig" },
-  { cls: "pawn", col: 12, row: 6.6, pace: 3, work: "carry" },
-  { cls: "pawn", col: 20.2, row: 13, work: "hammer" },
+  { cls: "pawn", col: 17.4, row: 4.3, work: "dig" },
+  { cls: "pawn", col: 17.6, row: 6.2, pace: -3, work: "carry" },
+  { cls: "pawn", col: 21.4, row: 15.4, left: true, work: "hammer" },
   // Scouting the cave mouth, walking the beach, keeping the plateau.
   { cls: "archer", col: 10.4, row: 11.5, left: true },
   { cls: "lancer", col: 5, row: 13.2, pace: 3 },
-  { cls: "warrior", col: 18.2, row: 8.6, pace: 1.5 },
+  { cls: "warrior", col: 17.5, row: 9.5, pace: 1.5 },
 ];
 
-const CAMPFIRE = { col: 15.5, row: 12.4 } as const;
-const MINE = { col: 17, row: 4 } as const;
+const CAMPFIRE = { col: 12.5, row: 12.6 } as const;
+const MINE = { col: 18, row: 3 } as const;
 const BOAT = { col: 14, row: 15.3, frame: 256 } as const;
 const SHEEP: readonly [number, number][] = [[4.6, 11.6], [5.6, 12.2], [22.5, 10.5], [21.8, 9.4]];
 const FIRE = { anchor: 0.8 } as const;
@@ -122,8 +122,8 @@ export class IntroAtlasScene extends Phaser.Scene {
     addMine(this, MINE, "mineActive");
     const put = (kind: "tree" | "bush" | "rock" | "waterRock", spots: [number, number][]): Phaser.GameObjects.Sprite[] =>
       spots.map(([c, r], i) => addDecor(this, kind, c * CELL, r * CELL, 1, `atlas-${kind}-${i}`));
-    put("tree", [[8.2, 3.6], [7.3, 4.7], [5.4, 5.8], [4.5, 7.2], [3.6, 8.6], [2.8, 10.4], [20.8, 4.8], [22.4, 6.2], [23, 8], [12.4, 10.8], [4.4, 15.4], [21.4, 15.8], [18.4, 3.4]]);
-    put("bush", [[9, 8.6], [12.6, 10.1], [18.6, 12.5], [3.3, 12.6], [19, 9.5], [6.3, 6.6]]);
+    put("tree", [[5.6, 4.6], [12.4, 3.6], [5.4, 5.8], [4.5, 7.2], [3.6, 8.6], [2.8, 10.4], [20.8, 4.8], [22.4, 6.2], [23, 8], [12.4, 10.8], [4.4, 15.4], [21.4, 15.8], [14.5, 2.6]]);
+    put("bush", [[9, 9.5], [12.6, 10.1], [18.6, 12.5], [3.3, 12.6], [19, 9.5], [6.3, 6.6]]);
     put("rock", [[6.5, 13.8], [23, 11.6], [14.6, 9.7]]);
     put("waterRock", [[1.2, 6.5], [3.4, 3.6], [24.8, 4.5], [25.6, 13.6], [12.2, 16.8], [8.6, 17.4], [1.4, 15], [24.6, 17], [16.4, 16.4]]).forEach((s) => s.setDepth(DEPTH.foam));
 

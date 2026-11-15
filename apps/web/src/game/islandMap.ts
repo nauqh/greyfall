@@ -262,7 +262,7 @@ export function buildMap(
       for (let c = 0; c < STRAT_COLS; c++) {
         if (!top(c, r)) continue;
         const side = (dc: number): boolean => top(c + dc, r) || slope(c + dc, r);
-        tile(c, r, 5 + edge(side(-1), side(1)), edge(top(c, r - 1), top(c, r + 1)), sheetAt(c, r, lv));
+        tile(c, r, 5 + edge(side(-1), side(1)), edge(top(c, r - 1), top(c, r + 1) || slope(c, r + 1)), sheetAt(c, r, lv));
       }
     }
     for (let r = 0; r < STRAT_ROWS; r++) {
@@ -277,6 +277,8 @@ export function buildMap(
       for (let c = 0; c < STRAT_COLS; c++) {
         if (!slope(c, r)) continue;
         const col = "<[{(".includes(at(c, r)) ? 0 : 3;
+        // A stair cut into the middle of a cliff has the plateau behind its open half.
+        if (top(c, r - 1)) tile(c, r, 6, 1, sheetAt(c, r, lv));
         tile(c, r, col, 4, sheetAt(c, r, lv));
         tile(c, r + 1, col, 5, sheetAt(c, r, lv));
       }
