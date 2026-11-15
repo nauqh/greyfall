@@ -106,3 +106,15 @@
 .devBtn:hover {
 	background: rgb(242 212 138 / 0.35);
 }
+
+/* The panel folded away: a tab where its corner was. */
+.devTab {
+	position: absolute;
+	top: 16px;
+	right: 16px;
+	z-index: 6;
+	padding: 4px 12px;
+	background: rgb(7 10 16 / 0.8);
+	color: #fdfaf0;
+	font: 700 13px "Nunito", "Segoe UI", sans-serif;
+}

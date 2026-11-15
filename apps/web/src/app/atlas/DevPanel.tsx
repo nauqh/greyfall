@@ -1,7 +1,7 @@
 "use client";
 
 import { AREAS, FOES, MAPPED_AREAS, areaMap, type AreaId, type WorldFlag } from "@greyfall/engine";
-import { useMemo, type KeyboardEvent, type RefObject } from "react";
+import { useMemo, useState, type KeyboardEvent, type RefObject } from "react";
 
 import type { AtlasApi, DevState } from "../../game/AtlasScene";
 import "./dev.css";
@@ -74,7 +74,18 @@ function List({ title, items }: { title: string; items: readonly string[] }) {
   );
 }
 
-/** Dev mode's side panel: the save as the scene holds it, and a way to anywhere and anyone. */
+const SHOWN = "greyfall.devPanel";
+
+/** Whether the panel was last left open in this browser; open when the store is blocked. */
+function wasShown(): boolean {
+  try {
+    return localStorage.getItem(SHOWN) !== "0";
+  } catch {
+    return true;
+  }
+}
+
+/** Dev mode's side panel: the save as the scene holds it, and a way to anywhere and anyone. Hidden, it folds to a tab. */
 export function DevPanel({ state: s, api, onArea, onMap }: { state: DevState; api: RefObject<AtlasApi | null>; onArea: (to: AreaId) => void; onMap: () => void }) {
   // Keys are kept by the kind of boss that drops them; these are the ones a gate or lock asks for.
   const keys = useMemo(() => {
@@ -84,10 +95,24 @@ export function DevPanel({ state: s, api, onArea, onMap }: { state: DevState; ap
     });
     return [...new Set(asked.filter((k): k is string => !!k))];
   }, []);
+  const [shown, setShown] = useState(wasShown);
+  const show = (on: boolean): void => {
+    setShown(on);
+    try {
+      localStorage.setItem(SHOWN, on ? "1" : "0");
+    } catch {}
+  };
   const setGold = (v: string): void => {
     const n = Math.floor(Number(v));
     if (v !== "" && Number.isFinite(n) && n >= 0 && n !== s.gold) api.current?.devSet({ gold: n });
   };
+  if (!shown) {
+    return (
+      <button type="button" className="devBtn devTab" aria-expanded={false} aria-label="Show the dev panel" onClick={() => show(true)}>
+        Dev
+      </button>
+    );
+  }
   return (
     <aside className="devPanel" aria-label="Dev" onKeyDown={keep} onKeyUp={keep}>
       <div className="devRow">
@@ -107,6 +132,9 @@ export function DevPanel({ state: s, api, onArea, onMap }: { state: DevState; ap
         </select>
         <button type="button" className="devBtn" onClick={onMap}>
           Open map
+        </button>
+        <button type="button" className="devBtn" aria-expanded={true} aria-label="Hide the dev panel" onClick={() => show(false)}>
+          Hide
         </button>
       </div>
       <dl>
