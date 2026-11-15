@@ -1216,19 +1216,30 @@ function harbour(): AreaMap {
   // The bowl's fire is the hub, after Firelink: the Harbour's one bonfire, first, so a fall at the Ring wakes here.
   t.fires.push({ col: 71, row: 48 });
 
-  // The Castle Gate: a tower either side of the road through it, the castle's keep looming over the wall beside it.
+  // The Castle Gate: a tower either side of the road through it, the keep behind, a guard at each stair head.
   for (const [c, r] of [[53, 7], [59, 7]] as const) prop("tower", c, r, blue);
   prop("castle", 61, 10, blue);
   who("lancer", 55, 10, { ...blue, to: { col: 57, row: 10 } });
+  for (const [c, r] of [[51, 11], [61, 13]] as const) who("lancer", c, r, blue);
 
-  // The Upper Town: the chapel and its close of trees, the old families' houses along the terrace, a garden.
-  prop("monastery", 48, 24, blue);
-  for (const [c, r, art] of [[53, 27, "house2"], [59, 27, "house1"], [64, 24, "house3"], [66, 20, "house2"], [46, 19, "house1"]] as const) prop(art, c, r, blue);
-  t.fences.push({ col: 61, row: 21, w: 4, h: 2 });
-  for (const [c, r] of [[62, 22], [63, 22]] as const) who("sheep", c, r);
-  who("monk", 51, 25, { ...blue, to: { col: 55, row: 25 } });
-  who("pawn", 58, 23, { ...blue, act: "gold", to: { col: 61, row: 25 } });
-  t.campfires.push({ col: 57, row: 25 });
+  // The Upper Town is the fortified upper ward: a curtain of towers on the terrace's lip, the garrison yard under the
+  // Castle Gate (barracks west of the road, the archery butts east, a drill ground between), a watchtower at each stair
+  // onto the ward, and inside the walls the chapel and the officers' houses.
+  for (const [c, r] of [[46, 15], [45, 20], [65, 20], [65, 16], [54, 28], [59, 28]] as const) prop("tower", c, r, blue);
+  for (const [c, r] of [[49, 26], [63, 23]] as const) prop("watchtower", c, r);
+  prop("barracks", 51, 18, blue);
+  prop("archery", 62, 18, blue);
+  for (const [c, r] of [[54, 17], [59, 17]] as const) who("warrior", c, r, blue);
+  who("warrior", 52, 21, { ...blue, to: { col: 60, row: 21 } });
+  for (const [c, r] of [[61, 21], [64, 21]] as const) who("archer", c, r, blue);
+  t.campfires.push({ col: 57, row: 22 });
+  prop("monastery", 49, 24, blue);
+  for (const [c, r, art] of [[53, 25, "house2"], [60, 25, "house1"], [57, 26, "house1"]] as const) prop(art, c, r, blue);
+  for (const [c, r, art] of [[48, 20, "woodPile"], [49, 21, "tools"], [54, 21, "meat"], [65, 18, "tools"], [61, 24, "woodPile"]] as const) prop(art, c, r);
+  who("monk", 51, 26, { ...blue, to: { col: 55, row: 27 } });
+  who("pawn", 58, 24, { ...blue, act: "hammer" });
+  who("warrior", 46, 23, { ...blue, to: { col: 46, row: 17 } });
+  who("archer", 66, 18, blue);
 
   // Old Town: the busiest ground in the Reach. The market under the terraces, a smithy corner, cottages on every
   // spare ledge, folk at their trades, and the watch walking the stairs between the tiers.
