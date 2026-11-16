@@ -1181,20 +1181,79 @@ function harbour(): AreaMap {
   t.shape(2, 56, 6, 16, 5, 0.2, "Old Town");
   t.shape(3, 56, 18, 13, 12, 0.3, "The Upper Town");
   t.shape(4, 56, 9, 8, 5, 0.15, "The Castle Gate");
-  // The Northwood: a wooded upland of its own west of the castle, a crag on its crown.
-  t.shape(2, 18, 20, 14, 11, 0.45, "The Northwood");
-  t.shape(3, 15, 14, 6, 4, 0.45, "The Northwood");
-  // The Mine Hills east: a broad hill, its working face, the crest.
-  t.shape(2, 94, 24, 14, 11, 0.45, "Mine Hills");
-  t.shape(3, 93, 18, 9, 6, 0.45, "Mine Hills");
-  t.shape(4, 92, 14, 4, 3, 0.3, "Mine Hills");
+  // The Northwood: a wooded upland west of the castle, the lookout crag on its crown, the empty cabins on a ledge
+  // of their own by the Ember Gate road.
+  stamp(t, [
+    ".......^^^^...............",
+    "....##^^^^^##.............",
+    "..####^^^^^^###...........",
+    ".####^^^^^^^^###..####....",
+    ".####^^^^^^^^^#..######...",
+    "####^^^^^^^^^^#..#######..",
+    "####^^^^^^^^^###..######..",
+    "#######^^^^^^]##..######..",
+    ".#####[^^^^####..#######..",
+    ".##############..########.",
+    "..##############..#######.",
+    "..##############..#######>",
+    ".################..######.",
+    "#################..#####..",
+    "##################..###...",
+    ".#################........",
+    ".###################......",
+    "..##################......",
+    ".....#################....",
+    ".......################>..",
+    ".........#############....",
+    ".............#####........",
+    "............<#####........",
+    ".............####.........",
+  ], 5, 8);
+  // The Mine Hills east: a worked hill, its quarried face stepping up in benches to a crest pushed north-east, the
+  // mine cut into the bench under the crest's west spur, the cave under the crest, the sea biting its east foot.
+  stamp(t, [
+    "~~~~~~~~~~~~~~44~~~~~~~~~~~~",
+    "~~~~~~~~~~~~^4444^~~~~~~~~~~",
+    "~~~~~~~~~~^^^4444^^^^~~~~~~~",
+    "~~~~~~~~^^^444444444^^^~~~~~",
+    "~~~~~~^^^4444444444444^^~~~~",
+    "~~~##^^4444444^444^444^^^~~~",
+    "~~~#^^444444^^^^^^^^^^4}^~~~",
+    "~~~#^{44444^^^^^^^^^^^^^^^~~",
+    "~~##^^^4444^^^^^^^^^^^^^^^~~",
+    "~~~##^^^^^^^^^^^^^^^^^^^#~~~",
+    "~~~##^^^^^^^^#^^^^^^^^^^]~~~",
+    "~~~#[^^^^^^^##^^^^^^^^###~~~",
+    "~~####^^^^^^##^^^^^^^#####~~",
+    "~~~####^^^#####^^^^######~~~",
+    "~~~~###################~~~~~",
+    "~~~################~~~~~~~~~",
+    "~~~~##############~~~~~~~~~~",
+    "~~~~~################~~~~~~~",
+    "~~~~~##################~~~~~",
+    "~~~~~~################~~~~~~",
+    "~~~~~~#################~~~~~",
+    "~~~~~<###############~~~~~~~",
+    "~~~~~~~############~~~~~~~~~",
+    "~~~~~~~~~########~~~~~~~~~~~",
+    "~~~~~~~~~~~####~~~~~~~~~~~~~",
+  ], 82, 11);
   // The Moor Watch, Lantern Point's hill: the graves on its slope, the old watchtower on its crest, the Moor Gate on its
-  // seaward edge; and the knoll in West Fields.
-  t.shape(2, 100, 53, 10, 11, 0.3, "The Graves");
-  t.shape(3, 101, 48, 5, 3.5, 0.3, "The Graves");
-  // The climb in plain sight from the fire: a notch cut into the hill's face straight above it, a stair up its side.
-  t.block(1, 96, 61, 2, 4);
+  // seaward edge; and the knoll in West Fields. Grave terraces leaning north-east to the crest, each row a run of its
+  // own length; the climb in plain sight from the fire is a notch in the south face, a stair up its side.
+  const graves = [
+    [2, 41, 99, 102], [2, 42, 96, 104], [2, 43, 96, 104], [2, 44, 93, 107], [2, 45, 93, 107], [2, 46, 93, 108],
+    [2, 47, 91, 108], [2, 48, 91, 109], [2, 49, 91, 109], [2, 50, 89, 109], [2, 51, 89, 109], [2, 52, 89, 107],
+    [2, 53, 91, 102], [2, 53, 105, 107], [2, 54, 91, 102], [2, 55, 88, 104], [2, 56, 88, 103], [2, 57, 88, 105],
+    [2, 58, 90, 106], [2, 59, 90, 106], [2, 60, 92, 106], [2, 61, 93, 95], [2, 61, 98, 104], [2, 62, 93, 95],
+    [2, 62, 98, 104], [2, 63, 98, 101], [2, 64, 98, 101],
+    [3, 43, 100, 103], [3, 44, 98, 105], [3, 45, 98, 105], [3, 46, 96, 106], [3, 47, 96, 106], [3, 48, 96, 106],
+    [3, 49, 97, 104], [3, 50, 97, 104], [3, 51, 100, 103],
+  ] as const;
+  for (const [l, y, a, b] of graves) t.block(l, a, y, b - a + 1, 1);
   t.stair(2, 97, 64, "L");
+  t.stair(3, 96, 50, "L");
+  t.stair(3, 105, 50, "R");
   t.shape(2, 16, 56, 6, 3.5, 0.45, "West Fields");
   // The Lower Town is the title screen's island, its beach on the bay: the first thing seen from the fire.
   // Widened from the title's island to span the bowl from the fields to the bend where the coast turns south.
@@ -1354,10 +1413,10 @@ function harbour(): AreaMap {
 
   // The Mine Hills: the mine in the working face, ore in the rock, a cave under the crest boarded up, its ore left lying.
   prop("goldMine", 90, 22);
-  for (const [c, r] of [[86, 16], [98, 18], [100, 26], [88, 28]] as const) prop("goldStone", c, r);
+  for (const [c, r] of [[86, 16], [104, 21], [100, 26], [88, 28]] as const) prop("goldStone", c, r);
   prop("cave", 100, 20);
   t.fences.push({ col: 98, row: 22, w: 4, h: 2 });
-  prop("woodPile", 97, 21);
+  prop("woodPile", 96, 22);
   crowd(t, rng, "pawn", { col: 90, row: 25 }, 4, 3, { ...blue, act: "pickaxe", walk: false });
   // The miners' camp at the hill's foot where the mine road ends, and the ore carried down it and up the castle road
   // to the forge.
@@ -1534,11 +1593,11 @@ function harbour(): AreaMap {
     // rows, each fenced, a track between; unnamed, so no label sits on them.
     ...([[4, 61, 10, 5, true], [16, 61, 10, 5, true], [28, 61, 9, 5, true], [4, 68, 10, 6, false], [16, 68, 8, 5, false]] as const).map(([x, y, w, h, crops]): District => ({ name: "", at: { col: x + (w >> 1), row: y + (h >> 1) }, palette: [3], dress: "harbour", decor: 0.4, crops, box: { x, y, w, h } })),
     { name: "The Northwood", at: { col: 18, row: 30 }, levels: [1, 2, 3], palette: ramp, dress: "emberwood", decor: 1.5, trees: 0.4 },
-    { name: "Mine Hills", at: { col: 96, row: 34 }, levels: [1, 2, 3, 4], palette: ramp, dress: "crags", decor: 2.5, trees: 0.06 },
+    { name: "Mine Hills", at: { col: 95, row: 26 }, levels: [1, 2, 3, 4], palette: ramp, dress: "crags", decor: 2.5, trees: 0.06 },
     { name: "Lantern Point", at: { col: 97, row: 71 }, levels: [1], palette: ramp, dress: "saltreach", decor: 1.5 },
     { name: "The Castle Gate", at: { col: 56, row: 8 }, levels: [4], palette: ramp, dress: "harbour", decor: 1 },
     // The Graves read dead against the point's salt grass: its slope and crest go olive.
-    { name: "The Graves", at: { col: 97, row: 57 }, levels: [1, 2, 3], palette: [5, 4, 4], dress: "barrowmoor", decor: 1.5, gloom: true },
+    { name: "The Graves", at: { col: 100, row: 48 }, levels: [1, 2, 3], palette: [5, 4, 4], dress: "barrowmoor", decor: 1.5, gloom: true },
   ];
   // Messages on the ground, after the Souls games: at the Old Well's cave, on the pier and at the Graves road's foot.
   const notes: Note[] = [
