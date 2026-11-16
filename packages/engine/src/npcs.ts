@@ -330,7 +330,7 @@ export const NPCS: readonly Npc[] = [
     id: "wren",
     name: "Wren",
     area: "harbour",
-    at: { col: 28, row: 55 },
+    at: { col: 27, row: 57 },
     kind: "archer",
     greet: "You walk loud.",
     part: "Keep your head down!",
@@ -500,7 +500,7 @@ export const NPCS: readonly Npc[] = [
     name: "Mother Ysolde",
     short: "Ysolde",
     area: "harbour",
-    at: { col: 54, row: 29 },
+    at: { col: 47, row: 24 },
     kind: "monk",
     greet: "Peace on you.",
     part: "Go gently.",
@@ -561,7 +561,7 @@ export const NPCS: readonly Npc[] = [
       {
         when: ["ysoldeDeeper", "shellDead"],
         area: "harbour",
-        at: { col: 54, row: 29 },
+        at: { col: 47, row: 24 },
         talks: [
           {
             id: "ash",

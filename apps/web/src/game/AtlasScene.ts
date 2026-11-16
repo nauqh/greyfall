@@ -3091,7 +3091,7 @@ export class AtlasScene extends Phaser.Scene {
     const look = this.look(d);
     const x = (d.col + 0.5) * CELL;
     const y = (d.row + 0.75) * CELL;
-    const s = this.add.sprite(x, y, look.idle.key).setOrigin(0.5, look.anchor).setScale(look.scale).setDepth(look.swim ? DEPTH.foam + 2 : standing(y));
+    const s = this.add.sprite(x, y - (d.perch ?? 0) * CELL, look.idle.key).setOrigin(0.5, look.anchor).setScale(look.scale).setDepth(look.swim ? DEPTH.foam + 2 : standing(y));
     s.setFlipX(d.flip ?? Math.random() < 0.3);
     this.loop(s, look.idle.key);
     if (look.fly) {

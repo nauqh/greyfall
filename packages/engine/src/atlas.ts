@@ -122,6 +122,8 @@ export interface Dweller {
   /** Shown only while every when flag is set and no unless flag is. */
   when?: WorldFlag | readonly WorldFlag[];
   unless?: WorldFlag | readonly WorldFlag[];
+  /** Stands this many tiles up, on what is built on its tile: an archer on a tower's platform. */
+  perch?: number;
 }
 
 /** Whether a prop or dweller stands, by the flags held. */
