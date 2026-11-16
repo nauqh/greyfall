@@ -158,16 +158,16 @@ function roadTiles(): Set<number> {
   return trailTiles([...walk({ col: 53, row: 10 }), ...walk({ col: 7, row: 27 })]);
 }
 
-/** A walk as a dirt track, one tile wider, on lowland only. */
-export function trailTiles(walk: readonly Cell[]): Set<number> {
+/** A walk as a track a row wider, never on a stair nor under a `solid` base ("col,row"); on lowland only unless
+ *  `raised`, as a town's streets climb. */
+export function trailTiles(walk: readonly Cell[], raised = false, solid: ReadonlySet<string> = new Set()): Set<number> {
   const out = new Set<number>();
   for (const c of walk) {
-    if (level(c.col, c.row) !== 1) continue;
+    const lv = level(c.col, c.row);
+    if (lv < 1 || (!raised && lv !== 1) || isSlope(c.col, c.row) || solid.has(`${c.col},${c.row}`)) continue;
     out.add(c.row * STRAT_COLS + c.col);
     const wider = { col: c.col, row: c.row + 1 };
-    if (isOpen(wider) && level(wider.col, wider.row) === 1) {
-      out.add(wider.row * STRAT_COLS + wider.col);
-    }
+    if (isOpen(wider) && level(wider.col, wider.row) === lv && !isSlope(wider.col, wider.row) && !solid.has(`${wider.col},${wider.row}`)) out.add(wider.row * STRAT_COLS + wider.col);
   }
   return out;
 }
@@ -226,12 +226,16 @@ export function buildMap(
 
   // A road is a patch of flat ground in the road colour, edged where it ends
   // like any other patch of ground.
-  const road = (c: number, r: number): boolean => roads.has(r * STRAT_COLS + c);
-  for (let r = 0; r < STRAT_ROWS; r++) {
-    for (let c = 0; c < STRAT_COLS; c++) {
-      if (road(c, r)) tile(c, r, edge(road(c - 1, r), road(c + 1, r)), edge(road(c, r - 1), road(c, r + 1)), "tilesetRoad");
+  // A raised street is painted over its own level's top, so the cliffs and stairs drawn after frame it.
+  const paveLevel = (lv: number): void => {
+    const road = (c: number, r: number): boolean => roads.has(r * STRAT_COLS + c) && level(c, r) === lv;
+    for (let r = 0; r < STRAT_ROWS; r++) {
+      for (let c = 0; c < STRAT_COLS; c++) {
+        if (road(c, r)) tile(c, r, edge(road(c - 1, r), road(c + 1, r)), edge(road(c, r - 1), road(c, r + 1)), "tilesetRoad");
+      }
     }
-  }
+  };
+  paveLevel(1);
 
   // Every height the map has, lowest first: the war's goes to the Crown, the atlas's peaks higher.
   const highest = Math.max(2, ...MAP.flatMap((line, r) => [...line].map((_, c) => level(c, r))));
@@ -265,6 +269,7 @@ export function buildMap(
         tile(c, r, 5 + edge(side(-1), side(1)), edge(top(c, r - 1), top(c, r + 1) || slope(c, r + 1)), sheetAt(c, r, lv));
       }
     }
+    paveLevel(lv);
     for (let r = 0; r < STRAT_ROWS; r++) {
       for (let c = 0; c < STRAT_COLS; c++) {
         if (!wall(c, r)) continue;

@@ -1301,38 +1301,52 @@ function harbour(): AreaMap {
   for (const [c, r, ch] of [[47, 43, "."], [48, 43, "."], [54, 43, "."], [55, 43, "."], [41, 46, "^"], [42, 46, "^"], [48, 48, "#"], [49, 48, "#"], [53, 51, "."], [54, 51, "."]] as const) ground[r - 43]![c - X0] = ch;
   stamp(t, ground.map((l) => l.join("")), X0, 43);
 
-  // Roads: the lower town's streets from the square to the docks and both gates; the creek crossed by the Old Bridge.
-  // Streets that bend with the ground, not a grid: the main way from the Old Bridge through the square to the Moor
-  // Gate, the Ember Gate road north, the docks lane curving down to the shore, and the farm road.
-  t.road([1, 42], [12, 43], [26, 47], [36, 42], [64, 42], [70, 46], [72, 50], [86, 47]);
-  t.road([26, 47], [33, 41], [34, 30], [28, 4], [26, 1]);
-  t.road([26, 47], [27, 54], [27, 66], [3, 66]);
-  t.road([15, 66], [15, 61]);
-  // The castle road, after Whiterun's: up from the bowl's north stairs onto the Burg road, then turning back on itself
-  // up each terrace, east stair, west stair, east stair, round the great tree on the way.
-  t.road([55, 39], [55, 36], [57, 36]);
-  t.road([55, 36], [50, 33]);
-  t.road([55, 36], [60, 33]);
+  // Paved only where the town is: the high street from the Old Bridge's toll post along the bowl's foot to the Old
+  // Lift, turning down into the fire square, and the castle's climb off it. Out in the country the ways are tracks,
+  // kept clear but grass: the Ember Gate road north through the wood, and the farm road down between the fields.
+  t.road([1, 42], [72, 42]);
+  t.road([71, 42], [71, 46]);
+  t.track([26, 42], [33, 41], [34, 30], [28, 4], [26, 1]);
+  t.track([26, 42], [27, 54], [27, 66], [3, 66]);
+  t.track([15, 66], [15, 61]);
+  // The castle road, after Whiterun's, each street on its own terrace. A stair climbs side on, so a street meets it
+  // along its foot from the open side (the left of a < [ { (, the right of a > ] } )) and leaves its head the other
+  // way, never running up at its face. Old Town: up from the landing to the market row, out to each end and back in
+  // along the foot of the west and east stairs onto the tongue under the gate square.
+  t.road([55, 39], [55, 37]);
+  t.road([47, 37], [62, 37]);
+  t.road([47, 37], [47, 33], [50, 33]);
+  t.road([62, 37], [62, 33], [60, 33]);
+  // The lower circle: the tongue, the gate square's street under the great tree, the pilgrims' way down from the
+  // chapel door to it, and from the door round the chapel's west side to the Castle Gate's west stair. East, up past
+  // the garrison's butts to its street and along the barracks' side to the east stair.
   t.road([51, 32], [59, 32]);
-  t.road([55, 32], [55, 30]);
-  t.road([45, 22], [45, 27], [49, 29], [54, 30]);
-  t.road([45, 22], [42, 22], [42, 17], [44, 15]);
-  t.road([45, 14], [48, 11]);
-  t.road([50, 9], [62, 9]);
-  t.road([56, 30], [60, 27], [62, 24], [64, 20], [63, 15]);
-  t.road([63, 15], [63, 11]);
-  // The Burg road: off the climb onto Old Town, round the Upper Town's east side to the hill's back.
-  t.road([57, 36], [64, 33], [70, 31], [72, 29], [72, 10], [66, 3], [56, 3]);
-  // The town's alley two tiles wide, between its two rows of houses.
-  t.road([73, 10], [73, 29]);
+  t.road([55, 31], [55, 29]);
+  t.road([47, 29], [64, 29]);
+  t.road([45, 21], [45, 27], [46, 27], [46, 28], [49, 28], [49, 29]);
+  t.road([45, 21], [43, 21], [43, 15], [44, 15]);
+  t.road([62, 29], [62, 20], [67, 20]);
+  t.road([64, 20], [64, 15], [63, 15]);
+  // The Castle Gate: off the head of each stair and round to the foot of the stair above it.
+  t.road([45, 14], [45, 11], [49, 11]);
+  t.road([62, 14], [62, 12], [65, 12], [65, 11], [63, 11]);
+  // The crest: the court between the two stairs' heads, and the way to the keep's door.
+  t.road([50, 10], [62, 10]);
+  for (const c of [55, 56]) t.road([c, 8], [c, 9]);
+  // The Burg road: off Old Town's east stair along the market's upper street to the alley, two tiles wide between its
+  // two rows of houses, and round the Upper Town's east side to the hill's back.
+  t.road([60, 33], [73, 33]);
+  t.road([72, 33], [72, 10], [66, 3], [56, 3]);
+  t.road([73, 10], [73, 33]);
   edgeWay(t, { col: 56, row: 3 }, { col: 56, row: 1 }, 2);
-  // The path out to the mine, and Lantern Point's ways: the shore path west to the docks, the climb up the Graves to the
-  // Moor Gate, and the Shore Road off its tip to the Landing.
-  t.road([86, 47], [86, 34]);
-  t.road([95, 74], [86, 73], [77, 73], [73, 68], [70, 61], [72, 55], [72, 49], [70, 47]);
-  t.road([96, 71], [97, 66], [97, 64]);
-  t.road([98, 63], [99, 58], [101, 54], [104, 51], [109, 50]);
-  t.road([95, 74], [95, 78]);
+  // The village's shore street, two wide and straight from the fire square down between its houses, round the inlet's
+  // head and along the burned east lane to the Shore Road off Lantern Point's tip. The track out to the mine, and the
+  // climb up the Graves to the Moor Gate, stay grass.
+  for (const c of [71, 72]) t.road([c, 50], [c, 70]);
+  t.road([71, 70], [77, 70], [77, 73], [95, 73], [95, 78]);
+  t.track([76, 46], [86, 46], [86, 34]);
+  t.track([95, 73], [96, 71], [97, 66], [97, 64]);
+  t.track([98, 63], [99, 58], [101, 54], [104, 51], [109, 50]);
   t.bridge({ col: 95, row: 76 }, { col: 95, row: 78 }, 3);
   t.bridge({ col: 8, row: 42 }, { col: 1, row: 42 }, 3);
   t.bridge({ col: 28, row: 7 }, { col: 26, row: 1 }, 3);
@@ -1340,15 +1354,15 @@ function harbour(): AreaMap {
   // The climb starts at the fire: a landing at the foot of the bowl's north wall, a tile wider than the wall over it
   // and stepping down once more at its middle, a stair up each of its outer ends onto Old Town, the castle above.
   t.block(2, 52, 40, 10, 1);
-  t.block(2, 55, 41, 4, 1);
   t.stair(2, 51, 40, "L");
   t.stair(2, 62, 40, "R");
-  t.road([51, 42], [51, 40], [61, 40]);
-  t.road([62, 42], [62, 40]);
+  t.road([48, 41], [51, 41]);
+  t.road([62, 41], [66, 41]);
+  t.road([52, 40], [61, 40]);
   // A gate tower at the mouth of each pass, so from the fire the bowl's sides read as its ways out.
-  for (const [c, r] of [[43, 44], [69, 44], [60, 52]] as const) prop("watchtower", c, r);
+  for (const [c, r] of [[43, 44], [69, 45], [60, 52]] as const) prop("watchtower", c, r);
   // Copses on the rim and in the bowl's corners, so the hollow is green round the fire.
-  for (const [x, y, rx, ry, d] of [[44, 41, 2, 1.5, 0.6], [65, 41, 1.5, 1, 0.7]] as const) t.grove(x, y, rx, ry, d);
+  for (const [x, y, rx, ry, d] of [[44, 39.5, 2, 1.5, 0.6], [65.5, 39.5, 1.5, 1, 0.7]] as const) t.grove(x, y, rx, ry, d);
 
   // The bowl's fire is the hub, after Firelink: the Harbour's one bonfire, first, so a fall at the Ring wakes here.
   t.fires.push({ col: 71, row: 48 });
@@ -1368,7 +1382,7 @@ function harbour(): AreaMap {
     if (atop.has(`${c},${r}`)) who("archer", c, r + 0.25, { ...blue, perch: 1.85 });
     else who("archer", c - 1, r + 1, { ...blue, to: { col: c + 1, row: r + 1 } });
   }
-  for (const [c, r] of [[49, 33], [61, 33]] as const) prop("sconce", c, r);
+  for (const [c, r] of [[49, 32], [61, 32]] as const) prop("sconce", c, r);
   for (const [c, r] of [[51, 32], [59, 32]] as const) who("lancer", c, r, blue);
   // The gate square under the prow's tip: the town's great tree, lanterns, folk crossing to every ward.
   prop("tree", 55.5, 26.6, { scale: 1.8, fixed: true });
@@ -1396,9 +1410,9 @@ function harbour(): AreaMap {
   who("warrior", 60, 19, { ...blue, unless: "warlordDead", to: { col: 66, row: 21 } });
   for (const [c, r] of [[62, 26], [64, 27]] as const) who("archer", c, r, blue);
   who("warrior", 64, 15, { ...blue, to: { col: 67, row: 15 } });
-  // The Castle Gate, the circle under the keep, split by the prow: the captains' houses west, the court of the guard
-  // east, a lancer at each stair head.
-  for (const [c, r, art] of [[45, 9, "house2"], [47, 15, "house3"]] as const) prop(art, c, r, blue);
+  // The Castle Gate, the circle under the keep, split by the prow: the captain's house west, off the streets between
+  // the stairs, the court of the guard east, a lancer at each stair head; the other captain's at the gate square's head.
+  for (const [c, r, art] of [[55, 22, "house2"], [46, 14, "house3"]] as const) prop(art, c, r, blue);
   for (const [c, r] of [[48, 18], [63, 15]] as const) who("lancer", c, r, blue);
   who("lancer", 61, 12, { ...blue, to: { col: 62, row: 8 } });
   // The prow's watch, looking down the whole climb to the bay.
@@ -1413,14 +1427,14 @@ function harbour(): AreaMap {
 
   // Old Town: the busiest ground in the Reach. The market under the terraces, a smithy corner, cottages on every
   // spare ledge, folk at their trades, and the watch walking the stairs between the tiers.
-  // Houses either side of the market row at the stairs' head.
-  for (const [c, r, art] of [[45, 34, "house1"], [48, 35, "house3"], [64, 36, "house2"], [67, 35, "house1"]] as const) prop(art, c, r, blue);
+  // Houses either side of the market's lanes, and two facing its upper street on the east.
+  for (const [c, r, art] of [[45, 34, "house1"], [51, 36, "house3"], [65, 31, "house2"], [69, 31, "house1"]] as const) prop(art, c, r, blue);
   // The east ring's town: the Burg road as its alley, a terrace of six houses down each side, and the ring's market
   // halfway along, a paved square with a street out of each side: the alley north and south, a stair east down to the
   // back street, a stair west up into the garrison's ward.
   for (const c of [70, 75]) for (const r of [12, 15, 18, 23, 26, 29]) prop(["house1", "house2", "house3"][(r + c) % 3]!, c, r, blue);
-  for (let r = 20; r <= 22; r++) t.road([69, r], [76, r]);
-  t.road([68, 20], [64, 20]);
+  // Paved two rows deep, so the houses south of it stand clear of it.
+  t.road([69, 20], [78, 20]);
   for (const [c, r, art] of [[70, 21, "meat"], [71, 21, "tools"], [75, 21, "woodPile"], [76, 21, "goldStone"]] as const) prop(art, c, r);
   // The ring's east lip pushed out under the right-hand row, stepping as it goes.
   for (const [r, c] of [[14, 78], [15, 77], [17, 78]] as const) t.block(2, c, r, 1, 1);
@@ -1432,7 +1446,6 @@ function harbour(): AreaMap {
   for (const [c, r, art] of [[81, 15, "house2"], [81, 19, "house1"], [81, 23, "house3"], [81, 27, "house2"]] as const) prop(art, c, r, blue);
   t.block(1, 79, 20, 1, 1);
   t.stair(2, 79, 20, "R");
-  t.road([73, 20], [79, 20], [80, 21]);
   t.road([80, 13], [80, 21], [80, 29]);
   who("pawn", 80, 16, { ...blue, act: "wood", to: { col: 80, row: 26 } });
   who("pawn", 79, 24, { ...blue, act: "meat" });
@@ -1449,7 +1462,7 @@ function harbour(): AreaMap {
   // Wren's butts: once the troll is dead Wren goes shooting in the Emberwood, and the target stands alone.
   prop("archery", 22, 50, blue);
   who("archer", 24, 52, { ...blue, unless: "trollKey" });
-  prop("watchtower", 21, 44);
+  prop("watchtower", 21, 45);
   who("lancer", 18, 46, { ...blue, to: { col: 24, row: 47 } });
   // The east quarter, where the shore street leaves the square: houses on the inlet's shore, the barracks, the gate's
   // watchtower.
@@ -1587,7 +1600,7 @@ function harbour(): AreaMap {
   t.grove(107, 68, 1.5, 1.5, 0.6);
 
   // Copses in the lowland's corners and between the clusters, so the town sits in a country, not on bare grass.
-  for (const [x, y, rx, ry, d] of [[104, 8, 5, 4, 0.7], [6, 34, 3, 3, 0.7], [76, 72, 4, 2, 0.6]] as const) t.grove(x, y, rx, ry, d);
+  for (const [x, y, rx, ry, d] of [[104, 8, 5, 4, 0.7], [6, 34, 3, 3, 0.7], [81, 75.5, 3, 1, 0.6]] as const) t.grove(x, y, rx, ry, d);
   for (const [x, y, rx, ry, d] of [[32, 72, 5, 3, 0.55], [104, 36, 3, 4, 0.6], [8, 30, 4, 4, 0.6], [80, 41, 2.5, 1.5, 0.5]] as const) t.grove(x, y, rx, ry, d);
 
   // The island is the Lower Town: what stood on its ground before goes, and its own folk and scenery come, as the
@@ -1633,7 +1646,7 @@ function harbour(): AreaMap {
 
   // The fire square at the island's east foot, the hub: the Harbour's bonfire on its paving, a woodpile and a lancer,
   // the shore street leaving it south.
-  for (const r of [46, 48, 50]) t.road([66, r], [76, r]);
+  for (const r of [46, 48, 50]) t.road([66, r], [75, r]);
   for (const [c, r, art] of [[68, 46, "woodPile"], [74, 46, "tools"]] as const) prop(art, c, r);
   t.fences.push({ col: 79, row: 47, w: 4, h: 3 });
   t.grove(80.5, 48, 0.8, 0.6, 1);
@@ -1644,7 +1657,7 @@ function harbour(): AreaMap {
   // its head between a house and the garrison, houses down both sides, the docks, the market and Maren's pier on the
   // bay side, and the burned east lane where it turns for the point.
   for (const [c, r] of [[73, 52], [73, 57], [72, 64], [76, 69]] as const) prop("sconce", c, r);
-  prop("house1", 67, 53, blue);
+  prop("house1", 68, 53, blue);
   prop("house3", 69, 56, blue);
   prop("fishHut", 75, 55);
   for (const [c, r, art] of [[75, 58, "house2"], [75, 62, "house1"], [76, 66, "house3"]] as const) prop(art, c, r, blue);

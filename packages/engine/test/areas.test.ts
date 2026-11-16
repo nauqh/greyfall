@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { AREAS, FLYING, MAPPED_AREAS, NPCS, districtOf, groundColours, SEA_KINDS, WATER_ART, areaMap, castsCliff, cellKey, footprint, isForest, isSlope, isWalkable, level, solidCells, stepsFrom, useIsland, type Cell } from "../src/index.ts";
+import { AREAS, FLYING, MAPPED_AREAS, NPCS, canStep, districtOf, groundColours, SEA_KINDS, WATER_ART, areaMap, castsCliff, cellKey, footprint, isForest, isSlope, isWalkable, level, solidCells, stepsFrom, useIsland, type Cell } from "../src/index.ts";
 
 function reach(from: Cell, shut: ReadonlySet<number> = new Set()): Set<number> {
   const seen = new Set([cellKey(from)]);
@@ -178,5 +178,38 @@ describe("crossings between the surface lands", () => {
     expect(Math.abs(x.world - y.world), `${x.world} against ${y.world}`).toBeLessThanOrEqual(1);
     if (area(e.a).ownGround || area(e.b).ownGround || x.shade === null || y.shade === null) return;
     expect(Math.abs(LIGHT[x.shade]! - LIGHT[y.shade]!), `shade ${x.shade} against ${y.shade}`).toBeLessThanOrEqual(1);
+  });
+});
+
+// The Harbour's streets after a pass over each terrace: no street steps up a cliff, and each stair it reaches is met
+// along its foot from the open side and left along its own row the other way, as the art climbs side on.
+describe("the Harbour's streets", () => {
+  const m = areaMap("harbour");
+  // Keys hang on the island in use, so each test takes the Harbour's before it reads them.
+  let road = new Set<number>();
+  const take = () => (useIsland(m.island), (road = new Set(m.roads.map(cellKey))));
+  const on = (col: number, row: number) => road.has(cellKey({ col, row }));
+
+  it("change level only on a stair", () => {
+    take();
+    for (const c of m.roads) {
+      for (const n of [{ col: c.col + 1, row: c.row }, { col: c.col, row: c.row + 1 }]) {
+        if (!road.has(cellKey(n)) || level(c.col, c.row) === level(n.col, n.row)) continue;
+        expect(canStep(c, n) || canStep(n, c), `${c.col},${c.row} to ${n.col},${n.row}`).toBe(true);
+      }
+    }
+  });
+
+  it("meet every stair from its side", () => {
+    take();
+    m.island.rows.forEach((line, r) =>
+      [...line].forEach((ch, c) => {
+        if (!isSlope(c, r) || ![[0, 1], [-1, 1], [1, 1], [-1, 0], [1, 0], [0, 2]].some(([dc, dr]) => on(c + dc!, r + dr!))) return;
+        const open = "<[{(".includes(ch) ? -1 : 1;
+        expect(on(c + open, r + 1) || on(c + open, r), `foot of ${ch} at ${c},${r}`).toBe(true);
+        expect(on(c - open, r) || on(c - open, r - 1), `head of ${ch} at ${c},${r}`).toBe(true);
+        expect(on(c, r + 2) && !on(c - 1, r + 2) && !on(c + 1, r + 2), `face of ${ch} at ${c},${r}`).toBe(false);
+      }),
+    );
   });
 });

@@ -2669,7 +2669,7 @@ export class AtlasScene extends Phaser.Scene {
     const before = new Set(this.children.list);
     // An area map draws no roads, its ways open ground in the district's own colour (across the wilds a road
     // tile's other colour read as a stripe painted on), unless it is a town whose streets should read as streets.
-    const roads = this.local && !this.local.streets ? new Set<number>() : trailTiles(tier.roads);
+    const roads = !this.local ? trailTiles(tier.roads) : this.local.streets ? trailTiles(tier.roads, true, solidCells(tier)) : new Set<number>();
     const local = this.local;
     // An area map's ground reads a shade lighter each height up; the engine works each tile's colour out.
     const shade = local ? groundColours(local) : null;
