@@ -181,8 +181,8 @@ describe("crossings between the surface lands", () => {
   });
 });
 
-// The Harbour's streets after a pass over each terrace: no street steps up a cliff, and each stair it reaches is met
-// along its foot from the open side and left along its own row the other way, as the art climbs side on.
+// The Harbour's streets: no street steps up a cliff, and a stair a street reaches is met along its foot from the open
+// side, as the art climbs side on, never at its face nor from the side its head is on.
 describe("the Harbour's streets", () => {
   const m = areaMap("harbour");
   // Keys hang on the island in use, so each test takes the Harbour's before it reads them.
@@ -204,11 +204,10 @@ describe("the Harbour's streets", () => {
     take();
     m.island.rows.forEach((line, r) =>
       [...line].forEach((ch, c) => {
-        if (!isSlope(c, r) || ![[0, 1], [-1, 1], [1, 1], [-1, 0], [1, 0], [0, 2]].some(([dc, dr]) => on(c + dc!, r + dr!))) return;
+        if (!isSlope(c, r)) return;
         const open = "<[{(".includes(ch) ? -1 : 1;
-        expect(on(c + open, r + 1) || on(c + open, r), `foot of ${ch} at ${c},${r}`).toBe(true);
-        expect(on(c - open, r) || on(c - open, r - 1), `head of ${ch} at ${c},${r}`).toBe(true);
         expect(on(c, r + 2) && !on(c - 1, r + 2) && !on(c + 1, r + 2), `face of ${ch} at ${c},${r}`).toBe(false);
+        expect(on(c - open, r + 1) && level(c - open, r + 1) < level(c, r), `foot of ${ch} at ${c},${r} from its head's side`).toBe(false);
       }),
     );
   });
