@@ -558,8 +558,8 @@ function terrain(t: Builder, rows: number, cols: number): void {
   });
   // A bridge deck and the height it stands at: it joins tables of that height only, not those under it.
   const spanned = new Map(t.blocks.filter((b) => b.span).flatMap((b) => Array.from({ length: b.w * b.h }, (_, i): [string, number] => [`${b.x + (i % b.w)},${b.y + Math.floor(i / b.w)}`, b.level])));
-  // A notch cut back to the lowland under authored ground: a block of level 1.
-  for (const b of t.blocks) if (b.level === 1) for (let r = b.y; r < b.y + b.h; r++) for (let c = b.x; c < b.x + b.w; c++) authored.set(`${c},${r}`, 1);
+  // A notch cut back to the lowland under authored ground: a block of level 1. A deck over it stays up.
+  for (const b of t.blocks) if (b.level === 1) for (let r = b.y; r < b.y + b.h; r++) for (let c = b.x; c < b.x + b.w; c++) if (!spanned.has(`${c},${r}`)) authored.set(`${c},${r}`, 1);
   const top = Math.max(1, ...height.flat(), ...t.blocks.map((b) => b.level), ...t.shapes.map((sh) => sh.level));
   if (top < 2) return;
 

@@ -1315,7 +1315,8 @@ function harbour(): AreaMap {
   // Paved only where the town is: the high street from the Old Bridge's toll post along the bowl's foot to the Old
   // Lift, turning down into the fire square, and the castle's climb off it. Out in the country the ways are tracks,
   // kept clear but grass: the Ember Gate road north through the wood, and the farm road down between the fields.
-  t.road([1, 42], [72, 42]);
+  t.road([1, 42], [58, 42]);
+  t.road([61, 42], [72, 42]);
   t.road([71, 42], [71, 46]);
   t.track([26, 42], [33, 41], [34, 30], [28, 4], [26, 1]);
   t.track([26, 42], [27, 54], [27, 66], [3, 66]);
@@ -1343,8 +1344,13 @@ function harbour(): AreaMap {
   t.block(2, 52, 40, 10, 1);
   t.stair(2, 51, 40, "L");
   t.stair(2, 62, 40, "R");
-  t.track([48, 41], [51, 41]);
   t.track([62, 41], [66, 41]);
+  // The paved way from the citadel to the island: off the Great Gate's west stair, down the alley between Old Town's
+  // houses onto the landing, and over a bridge deck across the high street onto the island's east rim, so the two
+  // first heights meet. A walker along the street goes up the landing's stairs and over.
+  t.road([50, 33], [46, 33], [46, 37], [52, 37], [52, 40], [58, 40]);
+  t.road([48, 41], [51, 41]);
+  const decks = t.span(2, 59, 41, 2, 4);
   // A gate tower at the mouth of each pass, so from the fire the bowl's sides read as its ways out.
   for (const [c, r] of [[43, 44], [69, 45], [60, 52]] as const) prop("watchtower", c, r);
   // Copses on the rim and in the bowl's corners, so the hollow is green round the fire.
@@ -1368,7 +1374,7 @@ function harbour(): AreaMap {
     if (atop.has(`${c},${r}`)) who("archer", c, r + 0.25, { ...blue, perch: 1.85 });
     else who("archer", c - 1, r + 1, { ...blue, to: { col: c + 1, row: r + 1 } });
   }
-  for (const [c, r] of [[49, 33], [61, 33]] as const) prop("sconce", c, r);
+  for (const [c, r] of [[49, 32], [61, 32]] as const) prop("sconce", c, r);
   for (const [c, r] of [[51, 32], [59, 32]] as const) who("lancer", c, r, blue);
   // The gate square under the prow's tip: the town's great tree, lanterns, folk crossing to every ward.
   prop("tree", 55.5, 26.6, { scale: 1.8, fixed: true });
@@ -1413,7 +1419,7 @@ function harbour(): AreaMap {
   // Old Town: the busiest ground in the Reach. The market under the terraces, a smithy corner, cottages on every
   // spare ledge, folk at their trades, and the watch walking the stairs between the tiers.
   // Houses either side of the market row at the stairs' head.
-  for (const [c, r, art] of [[45, 34, "house1"], [48, 35, "house3"], [64, 36, "house2"], [67, 35, "house1"]] as const) prop(art, c, r, blue);
+  for (const [c, r, art] of [[44, 34, "house1"], [48, 35, "house3"], [64, 36, "house2"], [67, 35, "house1"]] as const) prop(art, c, r, blue);
   // The east ring's town: the Burg road as its alley, a terrace of six houses down each side, and the ring's market
   // halfway along, a paved square with a street out of each side: the alley north and south, a stair east down to the
   // back street, a stair west up into the garrison's ward.
@@ -1685,7 +1691,11 @@ function harbour(): AreaMap {
     { at: { col: 95, row: 67 }, text: "Our own dead up there. The dogs came over the hill, not through the gate. Not yet." },
   ];
   const tier = t.finish({}, [{ col: 71, row: 49 }]);
-  return { ...tier, area: "harbour", entry: { col: 71, row: 49 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], streets: true, notes };
+  // The bridge is the island's own ground run out to the landing, not half Old Town's.
+  const districtAt = districtGrid(tier, districts, t);
+  const rim = districtAt[45]![59]!;
+  for (const d of decks) districtAt[d.row] = districtAt[d.row]!.slice(0, d.col) + rim + districtAt[d.row]!.slice(d.col + 1);
+  return { ...tier, area: "harbour", entry: { col: 71, row: 49 }, exits, districts, districtAt, decks, streets: true, notes };
 }
 
 function emberwood(): AreaMap {
