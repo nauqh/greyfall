@@ -524,7 +524,7 @@ const LOWER_TOWN = [
   "~~...<####....#####>.....~~",
   "~~.......................~~",
   "~~.......................~~",
-  "~~w.....................w~~",
+  "~~w......................~~",
   "~~w.........wwww........w~~",
   "~~ww.......wwwwwww.....ww~~",
   "~~wwww...wwwwwwwwww...www~~",
@@ -1654,7 +1654,12 @@ function harbour(): AreaMap {
   prop("tower", sx(6.9), 43.9, { ...blue, ...pinned });
   prop("cave", sx(9.5), 48.9, { ...pinned, scale: 0.85 });
   prop("goldMine", sx(18), 43.9, { ...pinned, scale: 0.89 });
-  prop("goblinHut", sx(20), 47.75, { ...pinned, scale: 0.7 });
+  // As the title draws the landfall now: a chapel on the ridge's first terrace, the butts a step above, the barracks on
+  // the high terrace (a row down from the title's, whose top row is the high street here), a house at the climb's foot.
+  prop("monastery", sx(20), 47.85, { ...blue, ...pinned });
+  prop("barracks", sx(10.4), 43.85, { ...blue, ...pinned });
+  prop("archery", sx(15.7), 44.85, { ...blue, ...pinned });
+  prop("house1", sx(21.8), 52.85, { ...blue, ...pinned });
   prop("fishHut", sx(9.3), 55.25, pinned);
   prop("house2", sx(19.1), 55.65, { ...blue, ...pinned });
   prop("boat", sx(13.5), 55.6, pinned);
