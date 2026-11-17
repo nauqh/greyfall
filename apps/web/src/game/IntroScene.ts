@@ -84,10 +84,10 @@ const SHEEP: readonly [number, number][] = [[22.2, 8.2], [19.4, 8.6], [13.4, 6.8
 
 let current: IntroScene | null = null;
 
-/** Each menu entry's backdrop, in the menu's order; this town is Play's. */
+/** Each menu entry's backdrop, in the menu's order; this town is War's. */
 const MODES: readonly [string, (new () => Phaser.Scene) | null][] = [
-  ["intro", null],
   ["intro-atlas", IntroAtlasScene],
+  ["intro", null],
   ["intro-skirmish", IntroSkirmishScene],
   ["intro", null],
 ];

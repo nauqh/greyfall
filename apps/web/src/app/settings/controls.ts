@@ -5,7 +5,7 @@ export type Mode = { id: string; label: string; groups: Group[] };
 export const CONTROLS: Mode[] = [
   {
     id: "atlas",
-    label: "Atlas",
+    label: "Journey",
     groups: [
       {
         title: "Movement",
@@ -72,7 +72,7 @@ export const CONTROLS: Mode[] = [
   },
   {
     id: "war",
-    label: "The War",
+    label: "War",
     groups: [
       {
         title: "Camera",

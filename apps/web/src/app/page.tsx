@@ -14,10 +14,10 @@ import { Settings } from "./settings/Settings";
 
 // An entry without an href opens the settings in place of the menu.
 const MENU: readonly { href?: string; label: string; hint: string }[] = [
-  { href: "/map", label: "Play", hint: "The War. Raise a town, train an army, take the last island." },
-  { href: "/atlas", label: "Atlas", hint: "Carry the last fire through the Shattered Reach." },
-  { href: "/versus", label: "Versus", hint: "Auto chess against three clans, or a friend. Buy, merge, and outlast them." },
-  { label: "Settings", hint: "The controls for every mode." },
+  { href: "/atlas", label: "Journey", hint: "The story. Wash ashore nameless and hunt the Grey Warlord." },
+  { href: "/map", label: "War", hint: "Real-time war on one island: dig gold, raise an army, bring down the red hall." },
+  { href: "/versus", label: "Versus", hint: "Auto chess. Buy, merge and place your band, then outlast AI clans or friends." },
+  { label: "Settings", hint: "Keys and mouse for every mode." },
 ];
 
 export default function Page() {
@@ -83,7 +83,7 @@ export default function Page() {
             <div className={`titleMenu${swapped ? " swapIn" : ""}${leaving ? " leaving" : ""}`}>
               <h1 className="logo">
                 Greyfall
-                <span className="logoSub">Reign of Ash</span>
+                <span className="logoSub">The Shattered Reach</span>
               </h1>
               <div className="menuScroll">
                 <nav className="menu" aria-label="Main menu">
