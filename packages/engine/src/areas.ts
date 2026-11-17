@@ -3323,7 +3323,8 @@ function landing(): AreaMap {
     { name: "The Watch Hall", at: { col: 21, row: 12 }, palette: [5], dress: "undercroft", decor: 1 },
     { name: "The Antechamber", at: { col: 51, row: 18 }, palette: [5], dress: "barrowmoor", decor: 0.6 },
   ];
-  const entry = { col: 34, row: 43 };
+  // Ashore beside the first fire, where a new game wakes too.
+  const entry = { col: 37, row: 42 };
   const tier = stone(t.finish({}, [entry]));
   return { ...tier, area: "landing", entry, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes };
 }
