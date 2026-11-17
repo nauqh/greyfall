@@ -356,18 +356,28 @@ textarea {
 	animation: menuIn 500ms cubic-bezier(0.22, 1, 0.36, 1) calc(700ms + var(--i) * 80ms) both;
 }
 
-/* Each entry is faded ink on a faint sword; picking one draws its sword in
-   full. */
+/* Each entry is a cream name on the kit's slate button, the ribbon's own
+   teal; picking one trades its button for the sword, drawn in full. */
 .menuItem {
 	/* The drawn sword is taller than the entry, overhanging it equally above and below. */
 	--sh: calc(var(--h) + 16px);
 	position: relative;
 	isolation: isolate;
-	color: color-mix(in srgb, var(--text) 62%, transparent);
+	color: #f6ecd6;
+	text-shadow: 0 1px 3px rgb(20 12 6 / 0.55);
 }
 
-.menuItem:hover {
-	color: var(--stroke);
+/* Out over the side borders, so the button spans the scroll. */
+.menuItem::before {
+	content: "";
+	position: absolute;
+	inset: 3px calc(var(--h) * -1) 5px;
+	z-index: -1;
+	border: 14px solid transparent;
+	border-image: url("/tiny-swords/ui/blueButton.png") 64 fill / 14px stretch;
+	image-rendering: pixelated;
+	filter: brightness(0.8);
+	transition: opacity 200ms ease-out;
 }
 
 /* On the blade the ink goes dark. */
@@ -376,7 +386,11 @@ textarea {
 	text-shadow: none;
 }
 
-/* Hilt to point under the text, faint until picked. */
+.menuItem.on::before {
+	opacity: 0;
+}
+
+/* Hilt to point under the text, hidden until picked. */
 .menuItem::after {
 	content: "";
 	position: absolute;
@@ -386,13 +400,8 @@ textarea {
 	border-width: 0 var(--sh);
 	border-image: url("/tiny-swords/ui/sword.png") 0 128 fill / 0 var(--sh) stretch;
 	image-rendering: pixelated;
-	opacity: 0.22;
-	filter: grayscale(0.4);
+	opacity: 0;
 	transition: opacity 200ms ease-out;
-}
-
-.menuItem:hover::after {
-	opacity: 0.4;
 }
 
 /* Drawn in full on each pick. */
@@ -538,6 +547,8 @@ textarea {
 	.menuScroll,
 	.logo,
 	.menuItem,
+	.menuItem::before,
+	.menuItem::after,
 	.menuItem.on::after,
 	.menuHint,
 	.credit {
