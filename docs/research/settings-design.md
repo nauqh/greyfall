@@ -1,6 +1,6 @@
 # Settings page: controls sheet design
 
-Research for the read-only controls page at `/settings`
+Research for the read-only controls sheet, opened in place on the title screen
 (`apps/web/src/app/settings/`). Sources at the foot, read 2026-11-15.
 
 ## What the reference games do

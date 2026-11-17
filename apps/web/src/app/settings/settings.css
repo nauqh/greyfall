@@ -146,16 +146,69 @@
 }
 
 .setFoot span,
-.setFoot a {
+.setFoot button {
 	display: inline-flex;
 	align-items: center;
 	gap: 2px;
+	padding: 0;
+	border: 0;
+	background: none;
+	font: inherit;
 	color: inherit;
-	text-decoration: none;
+	cursor: pointer;
 }
 
-.setFoot a:hover,
-.setFoot a:focus-visible {
+/* Swapping the menu and the settings: the open scroll leaves fast, the other
+   slides straight in as one piece, without the title's first-load stagger. */
+.titleMenu.setPanel,
+.titleMenu.swapIn {
+	animation: panelIn 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* After the entrances, so it wins at equal specificity. */
+.titleMenu.leaving {
+	pointer-events: none;
+	animation: panelOut 140ms cubic-bezier(0.55, 0, 1, 0.45) both;
+}
+
+.titleMenu.setPanel .logo,
+.titleMenu.swapIn .logo {
+	animation: none;
+}
+
+.titleMenu.setPanel .menuItem,
+.titleMenu.swapIn .menuItem {
+	animation-duration: 280ms;
+	animation-delay: calc(60ms + var(--i) * 40ms);
+}
+
+.titleMenu.swapIn .credit {
+	animation-delay: 200ms;
+}
+
+@keyframes panelOut {
+	to {
+		opacity: 0;
+		translate: -16px 0;
+	}
+}
+
+@keyframes panelIn {
+	from {
+		opacity: 0;
+		translate: -16px 0;
+	}
+}
+
+/* The title menu's Settings entry opens in place, so it is a button among links. */
+button.menuItem {
+	width: 100%;
+	background: none;
+	cursor: pointer;
+}
+
+.setFoot button:hover,
+.setFoot button:focus-visible {
 	color: var(--stroke);
 	outline: none;
 }
@@ -185,7 +238,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.setBody {
+	.setBody,
+	.titleMenu.leaving,
+	.titleMenu.setPanel,
+	.titleMenu.swapIn,
+	.titleMenu.setPanel .menuItem,
+	.titleMenu.swapIn .menuItem {
 		animation: none;
 	}
 }
