@@ -348,6 +348,28 @@ export function driftClouds(
 }
 
 /** The pack blob, anchored like a unit. */
+/** The Atlas's bonfire, its base at x, y: a ring of stones, the fire, and a warm glow breathing over it. Needs the
+ *  "fire" sheet and its "fire_loop" anim. */
+export function addBonfire(scene: Phaser.Scene, x: number, y: number): Phaser.GameObjects.Sprite {
+  if (!scene.textures.exists("glow")) {
+    const t = scene.textures.createCanvas("glow", 256, 256)!;
+    const g = t.context.createRadialGradient(128, 128, 0, 128, 128, 128);
+    g.addColorStop(0, "rgba(255, 200, 110, 0.9)");
+    g.addColorStop(0.35, "rgba(255, 170, 80, 0.4)");
+    g.addColorStop(1, "rgba(255, 150, 60, 0)");
+    t.context.fillStyle = g;
+    t.context.fillRect(0, 0, 256, 256);
+    t.refresh();
+  }
+  const glow = scene.add.image(x, y - 24, "glow").setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.55).setScale(1.3).setDepth(DEPTH.clouds - 2);
+  scene.tweens.add({ targets: glow, scale: 1.5, alpha: 0.75, duration: 900 + Math.random() * 400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    scene.add.ellipse(x + Math.cos(a) * 26, y + Math.sin(a) * 12, 16, 10, 0x8b8f99).setStrokeStyle(2, 0x3a3f4a).setDepth(standing(y) - 1);
+  }
+  return scene.add.sprite(x, y, "fire").setOrigin(0.5, 0.8).setScale(0.7).setDepth(standing(y)).play({ key: "fire_loop", startFrame: 3 });
+}
+
 export function addShadow(scene: Phaser.Scene, x: number, y: number, scale: number): Phaser.GameObjects.Image {
   return scene.add
     .image(x, y, "shadow_src")

@@ -11,7 +11,7 @@ import { baseZoom, fitCamera } from "./boot";
 import { buildTerraces } from "./introIsland";
 import { CELL, WORK, addMine, cell, makeMapAnims } from "./islandMap";
 import { loadUnits, makeAnims, playPose, unitKey } from "./sprites";
-import { DEPTH, FOOT, addBuilding, addDecor, addShadow, buildWater, driftClouds, loadBuildings, loadTerrain, prepareTerrain, standing } from "./terrain";
+import { DEPTH, FOOT, addBonfire, addBuilding, addDecor, addShadow, buildWater, driftClouds, loadBuildings, loadTerrain, prepareTerrain, standing } from "./terrain";
 
 const MAP = [
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~",
@@ -86,7 +86,6 @@ const CAMPFIRE = { col: 12.5, row: 12.6 } as const;
 const MINE = { col: 18, row: 3 } as const;
 const BOAT = { col: 14, row: 15.3, frame: 256 } as const;
 const SHEEP: readonly [number, number][] = [[4.6, 11.6], [5.6, 12.2], [22.5, 10.5], [21.8, 9.4]];
-const FIRE = { anchor: 0.8 } as const;
 
 export class IntroAtlasScene extends Phaser.Scene {
   constructor() {
@@ -136,9 +135,7 @@ export class IntroAtlasScene extends Phaser.Scene {
     const boat = this.add.sprite(BOAT.col * CELL, by, "atlasBoat").setOrigin(0.5, 0.7).setScale(0.7).setDepth(DEPTH.foam + 2).play("atlasBoat_loop");
     this.tweens.add({ targets: boat, y: by + 4, duration: 1600, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
 
-    const fx = CAMPFIRE.col * CELL;
-    const fy = CAMPFIRE.row * CELL;
-    this.add.sprite(fx, fy, "fire").setOrigin(0.5, FIRE.anchor).setScale(0.45).setDepth(standing(fy)).play({ key: "fire_loop", startFrame: 3 });
+    addBonfire(this, CAMPFIRE.col * CELL, CAMPFIRE.row * CELL);
 
     for (const [c, r] of SHEEP) {
       const sheep = this.add.sprite(c * CELL, r * CELL, "sheep").setOrigin(0.5, 0.66).setDepth(standing(r * CELL)).setFlipX(c > 13).play("sheep_anim");
