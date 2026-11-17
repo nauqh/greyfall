@@ -1303,6 +1303,10 @@ function harbour(): AreaMap {
   t.stair(2, 97, 64, "L");
   t.stair(3, 96, 50, "L");
   t.stair(3, 105, 50, "R");
+  // The watch's rock: a stack of grey stone on the crest, the tower and its beacon on top, the highest thing east of the
+  // castle, so the fire square sees it.
+  t.block(4, 100, 44, 5, 4);
+  t.stair(4, 99, 47, "L");
   t.shape(2, 16, 56, 6, 3.5, 0.45, "West Fields");
   // The Lower Town is the title screen's island, its beach on the bay: the first thing seen from the fire.
   // Widened from the title's island to span the bowl from the fields to the bend where the coast turns south.
@@ -1555,14 +1559,49 @@ function harbour(): AreaMap {
   // come over the hill and not through the gate, among the graves, far past a new captain (three gnolls and a shaman,
   // 45 hp and 9 a blow apiece, two of them throwing). Foes rise again at every rest, so the gate opened from Barrowmoor
   // is what clears the hill for good: the dogs and the walking dead go, and a gravedigger comes up to put it right.
-  prop("tower", 101, 47, blue);
-  who("archer", 103, 49, blue);
   const held = { unless: "moorGateOpen" } as const;
+  // The foot: a lantern either side of the lychgate where the road starts up, the gravedigger's cottage and yard, a grave
+  // half dug, and a mourner who goes no further.
+  for (const [c, r] of [[95, 66], [99, 66]] as const) prop("sconce", c, r);
+  prop("house2", 103, 66, blue);
+  prop("woodPile", 106, 65);
+  prop("tools", 100, 68);
+  prop("bones", 99, 67);
+  who("pawn", 101, 68, { ...blue, act: "pickaxe", unless: "moorGateOpen" });
+  who("monk", 94, 66, { ...blue, flip: true, unless: "moorGateOpen" });
+  // The town's dead on the lower terraces, a walled plot either side of the road up, headstones in rows; the dead house
+  // above them, black with the smoke of what it burned the first winter of the Grey, a lantern on up to the crest.
+  t.fences.push({ col: 90, row: 56, w: 6, h: 4 }, { col: 101, row: 57, w: 5, h: 4 });
+  for (const y of [57.5, 58.4]) for (const x of [91.6, 92.8, 94]) prop("rock", x, y, { scale: 0.55, fixed: true });
+  for (const y of [58.4, 59.4]) for (const x of [102.3, 103.4, 104.4]) prop("rock", x, y, { scale: 0.55, fixed: true });
+  prop("monastery", 94, 54, { color: "black" });
+  for (const [c, r] of [[100, 56], [104, 52]] as const) prop("sconce", c, r);
+  // The dead walk the plots.
   who("skull", 96, 60, { ...held, to: { col: 100, row: 61 } });
-  for (const [c, r] of [[99, 57], [104, 56], [98, 54]] as const) who("gnoll", c, r, held);
-  who("shaman", 102, 53, held);
-  who("pawn", 97, 57, { ...blue, act: "pickaxe", when: "moorGateOpen", to: { col: 101, row: 59 } });
+  who("skull", 94, 61, { ...held, to: { col: 92, row: 60 } });
+  who("gnoll", 100, 55, { ...held, to: { col: 102, row: 53 } });
   prop("goldStone", 99, 61);
+  // The crest: the dogs' den round their fire, graves dug up for the rings, bones and meat flung about, skulls staked at
+  // the stair heads, a gibbet tree on the west lip. Their spoil heaped by the fire, where it glints from the road.
+  t.campfires.push({ col: 97, row: 47 });
+  prop("deadTree", 98, 44, { scale: 1.2 });
+  for (const [c, r] of [[97, 49], [104, 49]] as const) prop("skullSpike", c, r);
+  for (const [c, r] of [[97, 45], [99, 49], [102, 49], [105, 47]] as const) prop("bones", c, r);
+  prop("meat", 99, 50);
+  for (const [c, r] of [[100, 49], [101, 50]] as const) prop("goldStone", c, r);
+  for (const [c, r] of [[98, 49], [103, 49]] as const) who("gnoll", c, r, held);
+  who("shaman", 98, 45, held);
+  who("bat", 99, 44, held);
+  // The watch's rock, still held: the old tower, its beacon kept lit, the last of the Moor Watch's bows on its roof.
+  prop("tower", 102, 45, blue);
+  who("archer", 102, 45.25, { ...blue, perch: 1.85 });
+  prop("sconce", 104, 47);
+  // The Moor Gate's barricade: timber stacked against it, a lantern at each side.
+  prop("woodPile", 108, 46);
+  for (const [c, r] of [[108, 48], [108, 51]] as const) prop("sconce", c, r);
+  // The gate open, the dead put back and the gravedigger at the plots, a brother saying the words over them.
+  who("pawn", 97, 57, { ...blue, act: "pickaxe", when: "moorGateOpen", to: { col: 98, row: 60 } });
+  who("monk", 96, 58, { ...blue, when: "moorGateOpen" });
   // The Coffin Stair, the town's old way up with its dead: off the plateau's south-west corner toward the fire square,
   // barred at its head until someone who has cleared the crest lifts the bar.
   t.stair(2, 90, 52, "L");
@@ -1687,13 +1726,15 @@ function harbour(): AreaMap {
     { name: "Lantern Point", at: { col: 97, row: 71 }, levels: [1], palette: ramp, dress: "saltreach", decor: 1.5 },
     { name: "The Castle Gate", at: { col: 55, row: 11 }, levels: [2, 3, 4, 5], palette: ramp, dress: "harbour", decor: 1 },
     // The Graves read dead against the point's salt grass: its slope and crest go olive.
-    { name: "The Graves", at: { col: 100, row: 48 }, levels: [1, 2, 3], palette: [5, 4, 4], dress: "barrowmoor", decor: 1.5, gloom: true },
+    { name: "The Graves", at: { col: 100, row: 48 }, levels: [1, 2, 3, 4], palette: [5, 4, 4, 3], dress: "barrowmoor", decor: 1.5, gloom: true },
   ];
-  // Messages on the ground, after the Souls games: at the Old Well's cave, on the pier and at the Graves road's foot.
+  // Messages on the ground, after the Souls games: at the Old Well's cave, on the pier, at the Graves road's foot and on
+  // the Watch's rock.
   const notes: Note[] = [
     { at: { col: Math.round(sx(9)), row: 51 }, text: "The Old Well, sunk in the hill's cave. A rope down; no way back up." },
     { at: { col: 63, row: 59 }, text: "Back to the Ring. If the bull lives, he waits." },
     { at: { col: 95, row: 67 }, text: "Our own dead up there. The dogs came over the hill, not through the gate. Not yet." },
+    { at: { col: 101, row: 47 }, text: "Three winters on this rock. The beacon stays lit. Someone has to see it." },
   ];
   const tier = t.finish({}, [{ col: 71, row: 49 }]);
   // The bridge is the island's own ground run out to the landing, not half Old Town's.
