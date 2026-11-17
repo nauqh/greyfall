@@ -71,7 +71,7 @@ function Thumb({ row }: { row: (typeof CLASS_ROWS)[number] }) {
 }
 
 /**
- * After the prologue: the class, a gift and a name, kept for the run. Laid out after Dark Souls III's Create Character on
+ * Before the prologue: the class, a gift and a name, kept for the run. Laid out after Dark Souls III's Create Character on
  * the title screen's paper and sea: the step named over its choices, the numbers laid over the class on show,
  * either one showing whatever row has focus, and the keys along the foot. Keyboard only, on the play keys, so it is practice.
  */

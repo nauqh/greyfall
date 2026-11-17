@@ -82,10 +82,10 @@ export function AreaView({ area: first }: { area: AreaId }) {
   const [atlas, setAtlas] = useState<"travel" | "look" | null>(null);
   // Opening the map, on M or from a bonfire: the cloud bank draws in first, then that map is under it.
   const [mapCover, setMapCover] = useState<"travel" | "look" | null>(null);
-  // The opening cutscene, once per game, over a Landing paused behind it.
-  const [prologue, setPrologue] = useState(false);
-  // The class, gift and name, on the prologue's black once it ends.
+  // The class, gift and name, once per game, first of all over a Landing paused behind it.
   const [picking, setPicking] = useState(false);
+  // The opening cutscene, on the creation screen's black once the captain is made.
+  const [prologue, setPrologue] = useState(false);
   // The camera's flight in after the prologue, the HUD away until it lands.
   const [intro, setIntro] = useState(false);
   const [devState, setDevState] = useState<DevState | null>(null);
@@ -276,7 +276,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
             hooks.dev = localStorage.getItem("greyfall.dev") === "1";
             now.current.prologue = first === "landing" && localStorage.getItem("greyfall.prologue") !== "1";
           } catch {}
-          setPrologue(now.current.prologue);
+          setPicking(now.current.prologue);
           setDev(!!hooks.dev);
           return import("../../game/AtlasScene").then(({ startAtlas }) => startAtlas(el, hooks));
         }}
@@ -499,13 +499,14 @@ export function AreaView({ area: first }: { area: AreaId }) {
         {/* Outside the HUD, so Tab opens the sack with the HUD hidden too, from the first step, goods or none. */}
         {sack && !fire && !menu && !intro && !prologue && !picking && <Sack sack={sack} gold={gold ?? 0} />}
       </GameCanvas>
-      {prologue && <Prologue onReveal={() => setPicking(true)} onDone={() => setPrologue(false)} />}
+      {prologue && <Prologue onReveal={revealLanding} onDone={() => setPrologue(false)} />}
       {picking && (
+        // Over the prologue: its black is under the creation screen as that fades, so the cutscene comes up out of it.
         <Creation
           gifts={() => api.current?.gifts() ?? []}
           onBegin={(cls, gift, name) => {
             api.current?.begin(cls, gift, name);
-            revealLanding();
+            setPrologue(true);
           }}
           onDone={() => setPicking(false)}
         />
