@@ -43,7 +43,8 @@ export default function Page() {
   };
   const show = useRef<(i: number) => void>(() => {});
 
-  useEffect(() => show.current(pick), [pick]);
+  // Again once the scene is up: it boots on its own town, and the first pick asks before anything is listening.
+  useEffect(() => show.current(pick), [pick, ready]);
 
   const go = (href: string): void => exit.leave(() => router.push(href));
 
