@@ -15,7 +15,7 @@ import { DEPTH, FOOT, addBuilding, addDecor, addShadow, buildWater, driftClouds,
 
 const MAP = [
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~",
-  "~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~444~~^^~~~~~~~~~~",
   "~~~~~~55544444^^^^~~~~~~~~~",
   "~~~~~^555)4444^^^^^^~~~~~~~",
   "~~~~~^44444^^^^^^^^^##~~~~~",
@@ -23,12 +23,12 @@ const MAP = [
   "~~~.#^^^^^^^^^^########.~~~",
   "~~.<##^^^##^^^^]######..~~~",
   "~~....#####..########....~~",
-  "~~....#####..######......~~",
-  "~~...<####....#####>.....~~",
-  "~~.......................~~",
-  "~~.......................~~",
+  "~~~...#####..######.......~",
+  "~~...<####.....####>.....~~",
   "~~~.....................~~~",
-  "~~~.........~~~~........~~~",
+  "~~.......................~~",
+  "~~~......................~~",
+  "~~~~........~~~~........~~~",
   "~~~~.......~~~~~~~.....~~~~",
   "~~~~~~...~~~~~~~~~~...~~~~~",
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~",
@@ -38,7 +38,7 @@ const MAP = [
 const RAMP = [5, 3, 2, 1, 1];
 
 /** Landscape: the island from just past the menu board to the east edge. Portrait: the summit lifted clear of the menu along the bottom. */
-const VIEW = { col0: -8.2, col1: 25.6, midRow: 9.4 } as const;
+const VIEW = { col0: -12, col1: 27.1, midRow: 9.4 } as const;
 const VIEW_TALL = { col0: 1.5, col1: 25.5, midRow: 13.4 } as const;
 
 /** The expedition's marks on the island, each its base's centre in cells. */
@@ -47,7 +47,12 @@ export const BUILT = [
   cell("g", "cave", 10, 8.85, 0.85),
   cell("g", "fishHut", 9.8, 15.2),
   cell("a", "house2", 19.6, 15.6),
-  cell("g", "goblinHut", 20.5, 7.7, 0.7),
+  // The landfall's own: a chapel on the ridge's first terrace, the garrison's butts a step above it and its barracks up
+  // by the summit, clear of the climb, and a house at the climb's foot.
+  cell("a", "monastery", 20.5, 6.8),
+  cell("a", "barracks", 11.5, 2.8),
+  cell("a", "archery", 15.5, 4.8),
+  cell("a", "house1", 23, 12.8),
 ];
 
 /** The party's climb, feet by cell: each stair cut into the middle of its cliff, switching back west and up to the summit on the west cliff. */
@@ -62,7 +67,7 @@ const PARTY_FROM = 5;
 /** The camp and the island at work, feet in cells. `pace` cells there and back, signed for the way it sets off. */
 const CAST: readonly { cls: UnitClass; col: number; row: number; pace?: number; left?: boolean; work?: keyof typeof WORK; on?: number }[] = [
   // On the lookout's top, and one keeping the boat.
-  { cls: "archer", col: 7.4, row: 1.8, on: 3.85 },
+  { cls: "archer", col: 7.4, row: 2.03, on: 3.85 },
   { cls: "warrior", col: 15.6, row: 13.8, left: true },
   // Round the camp fire.
   { cls: "monk", col: 11.4, row: 12.5 },
