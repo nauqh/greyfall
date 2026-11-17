@@ -212,3 +212,25 @@ describe("the Harbour's streets", () => {
     );
   });
 });
+
+it("shortens the Harbour fire's walk to the Graves crest once the Coffin Stair is unbarred", () => {
+  const m = areaMap("harbour");
+  useIsland(m.island);
+  const solid = new Set([...solidCells(m)].map((k) => cellKey({ col: Number(k.split(",")[0]), row: Number(k.split(",")[1]) })));
+  const stair = m.locks!.find((l) => l.name === "The Coffin Stair")!;
+  const steps = (shut: ReadonlySet<number>): number => {
+    const fire = m.fires[0]!;
+    const dist = new Map([[cellKey(fire), 0]]);
+    const queue = [fire];
+    for (let i = 0; i < queue.length; i++) {
+      for (const n of stepsFrom(queue[i]!)) {
+        if (dist.has(cellKey(n)) || shut.has(cellKey(n))) continue;
+        dist.set(cellKey(n), dist.get(cellKey(queue[i]!))! + 1);
+        queue.push(n);
+      }
+    }
+    return dist.get(cellKey(stair.from!))!;
+  };
+  const barred = steps(new Set([...solid, ...stair.cells.map(cellKey)]));
+  expect(steps(solid)).toBeLessThan(barred - 10);
+});

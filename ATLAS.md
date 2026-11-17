@@ -113,7 +113,8 @@ come ashore alone.
   past him. Your carried gold stays where you fell, marked on the map. Reach
   it again and it is yours; die on the way and it is gone.
 - **Shortcuts.** Gates and lifts that open from one side only, such as the
-  Moor Gate and the Watch Lift. Opening one is permanent and turns the area
+  Moor Gate and the Watch Lift, or the Coffin Stair from the Graves' crest
+  down toward the Harbour's fire. Opening one is permanent and turns the area
   into a loop.
 - **Keys.** Keys follow Firelink's two bells, one up and one down. The Troll
   Key is the castle's own. Its steward fled into the Emberwood with it when

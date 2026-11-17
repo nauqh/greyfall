@@ -21,6 +21,8 @@ export type WorldFlag =
   | "ladderDown"
   | "oldLiftDown"
   | "emberGateOpen"
+  // Unbarred from the Graves' crest: the stair off its south-west corner toward the fire square.
+  | "coffinStairOpen"
   | "shellDead"
   // Set by a talk, not by the world.
   | "tobinDown"

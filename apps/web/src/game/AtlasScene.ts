@@ -794,6 +794,7 @@ const UNDER: Partial<Record<AreaId, { rock: number; ambient: number; glow: numbe
 };
 
 type Exit = AreaMap["exits"][number];
+type Lock = NonNullable<AreaMap["locks"]>[number];
 
 interface Tracked {
   s: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image;
@@ -843,6 +844,8 @@ export class AtlasScene extends Phaser.Scene {
   private sealed = new Set<string>();
   /** Ways shut until their key is carried, apart from the fog so a boss's fall never opens them. */
   private locked = new Set<string>();
+  /** The posts barring each locked way, taken down when a shortcut is unbarred. */
+  private lockPosts: { lock: Lock; s: Phaser.GameObjects.Image }[] = [];
   /** What no one walks through: buildings, heaps, fence posts, and the rocks and stumps standing in open ground. */
   private solid = new Set<string>();
   /** The solid tiles that are a prop's or a rock's: the hero's feet meet the art's base there, not the whole tile. */
@@ -915,6 +918,7 @@ export class AtlasScene extends Phaser.Scene {
     this.hero = null;
     this.sealed = new Set();
     this.locked = new Set();
+    this.lockPosts = [];
     this.solid = new Set();
     this.boxed = new Set();
     this.bases = [];
@@ -1306,16 +1310,24 @@ export class AtlasScene extends Phaser.Scene {
   private lockGates(): void {
     const keys = remembered(KEYS);
     for (const l of this.local?.locks ?? []) {
-      if (keys.has(l.key) || (l.flag && this.flags.has(l.flag as WorldFlag))) continue;
+      if ((l.key && keys.has(l.key)) || (l.flag && this.flags.has(l.flag as WorldFlag))) continue;
       for (const c of l.cells) {
         this.locked.add(`${c.col},${c.row}`);
-        this.gatehouse("locked", [c]);
+        this.lockPosts.push(...this.fence(c.col, c.row, 1, 1).map((s) => ({ lock: l, s })));
       }
     }
   }
 
+  /** E at a shortcut's gate from its far side: the bar comes down for good, and the way opens. */
+  private unbar(l: Lock): void {
+    if (l.flag) this.flag(l.flag as WorldFlag);
+    for (const c of l.cells) this.locked.delete(`${c.col},${c.row}`);
+    for (const p of this.lockPosts.filter((p) => p.lock === l)) this.tweens.add({ targets: p.s, alpha: 0, y: p.s.y + 8, duration: 500, ease: "Sine.easeIn", onComplete: () => p.s.destroy() });
+    this.lockPosts = this.lockPosts.filter((p) => p.lock !== l);
+  }
+
   /** The locked way beside the captain, if any. */
-  private lockNear(): NonNullable<AreaMap["locks"]>[number] | undefined {
+  private lockNear(): Lock | undefined {
     const at = this.hero!.at;
     return this.local?.locks?.find((l) => l.cells.some((c) => this.locked.has(`${c.col},${c.row}`) && tileDistance(c, at) <= 1));
   }
@@ -1807,7 +1819,7 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** What E does here besides swing: talk to someone right beside, else rest at a bonfire beside, else talk to someone near. */
-  private eTarget(): { folk: Folk } | { fire: Cell } | { note: Note } | { exit: Exit } | { fog: true } | { lock: string } | undefined {
+  private eTarget(): { folk: Folk } | { fire: Cell } | { note: Note } | { exit: Exit } | { fog: true } | { lock: string } | { unbar: Lock } | undefined {
     const at = this.hero!.at;
     const folk = this.folk.filter((f) => f.near).sort((a, b) => tileDistance(a.at, at) - tileDistance(b.at, at))[0];
     if (folk && tileDistance(folk.at, at) <= 1) return { folk };
@@ -1819,7 +1831,9 @@ export class AtlasScene extends Phaser.Scene {
     if (exit) return { exit };
     if (this.atFog()) return { fog: true };
     const lock = this.lockNear();
-    if (lock) return { lock: `${lock.name}: locked. The ${BOSS_KEY[lock.key] ?? "key"} opens it` };
+    // A shortcut opens only from its far side: nearer `from` than the gate is.
+    if (lock?.from) return tileDistance(at, lock.from) < tileDistance(lock.cells[0]!, lock.from) ? { unbar: lock } : { lock: `${lock.name}: barred from the other side` };
+    if (lock) return { lock: `${lock.name}: locked. The ${(lock.key && BOSS_KEY[lock.key]) ?? "key"} opens it` };
     return folk && { folk };
   }
 
@@ -2907,23 +2921,28 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** A fence pen: corners, rails and posts from the kit's 4x3 tile sheet. */
-  private fence(col: number, row: number, w: number, h: number): void {
+  private fence(col: number, row: number, w: number, h: number): Phaser.GameObjects.Image[] {
+    const made: Phaser.GameObjects.Image[] = [];
     /** One tile of the sheet; `crop` keeps only part of the frame, so an end piece shows no rail running off into nothing. */
     const piece = (c: number, r: number, frame: number, crop?: [number, number, number, number]): void => {
       const y = (r + 1) * CELL;
       const img = this.add.image(c * CELL + CELL / 2, y, "fence", frame).setOrigin(0.5, 1).setDepth(standing(y));
       if (crop) img.setCrop(...crop);
+      made.push(img);
     };
     // The sheet is a pen's parts: corners, rails, sides. A straight run takes its ends from the corners, cut down to the
     // post and the rail that carries on along the run; a lone post is an end piece cut down to the post alone.
-    if (w === 1 && h === 1) return piece(col, row, 10, [0, 0, 44, 64]);
+    if (w === 1 && h === 1) {
+      piece(col, row, 10, [0, 0, 44, 64]);
+      return made;
+    }
     if (w === 1) {
       for (let r = row; r < row + h; r++) piece(col, r, r === row ? 0 : r === row + h - 1 ? 8 : 4, r === row || r === row + h - 1 ? [0, 0, 44, 64] : undefined);
-      return;
+      return made;
     }
     if (h === 1) {
       for (let c = col; c < col + w; c++) piece(c, row, c === col ? 0 : c === col + w - 1 ? 3 : 1 + (c % 2), c === col || c === col + w - 1 ? [0, 0, 64, 54] : undefined);
-      return;
+      return made;
     }
     for (let c = col; c < col + w; c++) {
       const first = c === col;
@@ -2935,6 +2954,7 @@ export class AtlasScene extends Phaser.Scene {
       piece(col, r, 4);
       piece(col + w - 1, r, 7);
     }
+    return made;
   }
 
   /** A barred gate: a fence across the way, at the gate's middle. */
@@ -3366,6 +3386,7 @@ export class AtlasScene extends Phaser.Scene {
     if ("exit" in t) return this.traverse(t.exit);
     if ("fog" in t) return this.enterFog();
     if ("lock" in t) return;
+    if ("unbar" in t) return this.unbar(t.unbar);
     return RECRUITER[t.folk.npc.id] || t.folk.npc.shop ? this.openMenu(t.folk) : this.talkTo(t.folk);
   }
 
@@ -3490,7 +3511,7 @@ export class AtlasScene extends Phaser.Scene {
     }
     if (this.reading && tileDistance(this.reading.at, hero.at) > 1) this.read(null);
     const t = this.talk || this.menu || this.reading || hero.dead || this.gone ? undefined : this.eTarget();
-    const action = !t ? null : "folk" in t ? "Talk" : "fire" in t ? "Rest" : "note" in t ? "Read" : "fog" in t ? "Traverse the fog" : "lock" in t ? t.lock : this.exitWord(t.exit);
+    const action = !t ? null : "folk" in t ? "Talk" : "fire" in t ? "Rest" : "note" in t ? "Read" : "fog" in t ? "Traverse the fog" : "lock" in t ? t.lock : "unbar" in t ? `Unbar the ${t.unbar.name}` : this.exitWord(t.exit);
     if (action !== this.nearName) this.hooks.onNear?.((this.nearName = action));
   }
 

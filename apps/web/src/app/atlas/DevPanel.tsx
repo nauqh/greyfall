@@ -21,6 +21,7 @@ const FLAGS = Object.keys({
   ladderDown: 1,
   oldLiftDown: 1,
   emberGateOpen: 1,
+  coffinStairOpen: 1,
   shellDead: 1,
   tobinDown: 1,
   tobinDeeper: 1,

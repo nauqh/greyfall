@@ -71,8 +71,9 @@ export interface AreaMap extends AtlasTier {
   notes?: Note[];
   /** A boss room: fog across `gate`, crossed with E from outside to `inside`, shut behind until the `boss` kind falls. */
   arena?: { boss: string; gate: Cell[]; inside: Cell };
-  /** Ways shut until a boss's key is carried: `key` is the boss kind that drops it; `flag`, a world flag that opens it too. */
-  locks?: { key: string; name: string; cells: Cell[]; flag?: string }[];
+  /** Ways shut until a boss's key is carried: `key` is the boss kind that drops it; `flag`, a world flag that opens it too.
+   *  With `from`, a shortcut: no key, unbarred for good with E from the side nearer `from`, setting `flag`. */
+  locks?: { key?: string; name: string; cells: Cell[]; flag?: string; from?: Cell }[];
 }
 
 export interface Note {
@@ -285,7 +286,7 @@ function pad(m: AreaMap, n: number): AreaMap {
     decks: m.decks.map(at),
     ...(m.notes && { notes: m.notes.map((x) => ({ ...x, at: at(x.at) })) }),
     ...(m.arena && { arena: { ...m.arena, gate: m.arena.gate.map(at), inside: at(m.arena.inside) } }),
-    ...(m.locks && { locks: m.locks.map((l) => ({ ...l, cells: l.cells.map(at) })) }),
+    ...(m.locks && { locks: m.locks.map((l) => ({ ...l, cells: l.cells.map(at), ...(l.from && { from: at(l.from) }) })) }),
   };
 }
 
@@ -1562,6 +1563,10 @@ function harbour(): AreaMap {
   who("shaman", 102, 53, held);
   who("pawn", 97, 57, { ...blue, act: "pickaxe", when: "moorGateOpen", to: { col: 101, row: 59 } });
   prop("goldStone", 99, 61);
+  // The Coffin Stair, the town's old way up with its dead: off the plateau's south-west corner toward the fire square,
+  // barred at its head until someone who has cleared the crest lifts the bar.
+  t.stair(2, 90, 52, "L");
+  const locks = [{ name: "The Coffin Stair", cells: [{ col: 90, row: 52 }], flag: "coffinStairOpen", from: { col: 90, row: 50 } }];
 
   // Lantern Point, the lighthouse on the south-east headland at the Graves road's foot, the cove's gold behind it. Dark
   // three winters, with no ship to light in; lit again the day the Warlord falls.
@@ -1695,7 +1700,7 @@ function harbour(): AreaMap {
   const districtAt = districtGrid(tier, districts, t);
   const rim = districtAt[45]![59]!;
   for (const d of decks) districtAt[d.row] = districtAt[d.row]!.slice(0, d.col) + rim + districtAt[d.row]!.slice(d.col + 1);
-  return { ...tier, area: "harbour", entry: { col: 71, row: 49 }, exits, districts, districtAt, decks, streets: true, notes };
+  return { ...tier, area: "harbour", entry: { col: 71, row: 49 }, exits, districts, districtAt, decks, streets: true, notes, locks };
 }
 
 function emberwood(): AreaMap {
