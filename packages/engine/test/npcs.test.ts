@@ -182,6 +182,7 @@ describe("the questline", () => {
       tobinDown: "tobin.below",
       tobinDeeper: "tobin.deeper",
       ysoldeDeeper: "ysolde.lake",
+      sistersStair: "ysolde.stair",
       anselRoused: "ansel.roused",
       anselAhead: "ansel.ahead",
       watchmanOut: "watchman.open",

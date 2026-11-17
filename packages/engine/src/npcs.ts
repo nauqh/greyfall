@@ -21,6 +21,8 @@ export type WorldFlag =
   | "ladderDown"
   | "oldLiftDown"
   | "emberGateOpen"
+  // Told of by Ysolde, or walked down from the Ward: the stair beside the Harbour's chapel.
+  | "sistersStair"
   // Unbarred from the Graves' crest: the stair off its south-west corner toward the fire square.
   | "coffinStairOpen"
   | "shellDead"
@@ -512,6 +514,14 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "My sisters went down to the Drowned Chapel, to pray the Grey out of the water.",
           "The water did not clear. Nor did they come back.",
+        ],
+      },
+      {
+        id: "stair",
+        sets: "sistersStair",
+        lines: [
+          "Beside the chapel there is a stair. The sisters climbed it to the Ward to pray, before the Grey.",
+          "I've no knees for it now. The bar lifts from this side; go up, if you've the stomach for what walks the cloister.",
         ],
       },
       { id: "candle", lines: ["I light a candle each night.", "The hour comes round and my hands are already there."] },

@@ -155,8 +155,9 @@ it.each(MAPPED_AREAS)("leaves every note in %s clear of woods that would stand o
 
 // One hill, not a stack of maps each starting from its floor: a crossing meets the height and the green it left.
 describe("crossings between the surface lands", () => {
-  // Ways that go down the hill by design: a lift, a ladder off a tower, and the Postern road down the Ward's back.
-  const DESCENTS = new Set(["The Old Lift", "The Ladder", "The Postern"]);
+  // Ways that go down the hill by design: a lift, a ladder off a tower, the Postern road down the Ward's back, and the
+  // Sisters' Stair from the Ward down to the Harbour's chapel.
+  const DESCENTS = new Set(["The Old Lift", "The Ladder", "The Postern", "The Sisters' Stair"]);
   const LIGHT: Record<number, number> = { 5: 0, 4: 1, 3: 2, 2: 3, 1: 4 };
   const area = (id: string) => AREAS.find((a) => a.id === id)!;
   const ends = MAPPED_AREAS.flatMap((a) =>

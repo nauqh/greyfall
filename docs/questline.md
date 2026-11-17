@@ -33,7 +33,7 @@ After Dark Souls: no quest log, no choices, the wanderer never speaks.
 | warlordDead | the Grey Warlord (kind `warlord`) slain, raised on entering any area |
 | shellDead | the Shell Below (kind `shellBelow`) slain, raised on entering any area |
 | monkFreed | hearing the Drowned Sister's second talk to its end; the Monk joins the band at once |
-| tobinDown, tobinDeeper, ysoldeDeeper, anselRoused, anselAhead, watchmanOut, marenSails, pennyFollows, drankClear | hearing a talk to its end (marked below) |
+| tobinDown, tobinDeeper, ysoldeDeeper, sistersStair, anselRoused, anselAhead, watchmanOut, marenSails, pennyFollows, drankClear | hearing a talk to its end (marked below) |
 
 ## At a glance
 
@@ -308,6 +308,9 @@ Greets you: *"Peace on you."* Walked away from: *"Go gently."*
 - **first**
   1. My sisters went down to the Drowned Chapel, to pray the Grey out of the water.
   2. The water did not clear. Nor did they come back.
+- **stair** (heard to the end, sets **sistersStair**: the Sisters' Stair beside the chapel opens to the Chapel Ward)
+  1. Beside the chapel there is a stair. The sisters climbed it to the Ward to pray, before the Grey.
+  2. I've no knees for it now. The bar lifts from this side; go up, if you've the stomach for what walks the cloister.
 - **candle**
   1. I light a candle each night.
   2. The hour comes round and my hands are already there.

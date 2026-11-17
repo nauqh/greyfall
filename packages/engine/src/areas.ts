@@ -777,6 +777,8 @@ function chapel(): AreaMap {
   t.stair(3, 13, 4, "L");
   t.stair(2, 9, 7, "L");
   edgeWay(t, { col: 6, row: 4 }, { col: 6, row: 1 });
+  // The Sisters' Stair off the Alcove's south wall, down the hill to the Harbour's chapel.
+  edgeWay(t, { col: 33, row: 50 }, { col: 33, row: 58 });
   // Under the terrace clear of its cliff, then along the stair's foot from its open side.
   t.road([4, 30], [22, 30]);
   t.road([22, 19], [53, 19], [53, 17], [52, 17]);
@@ -814,6 +816,7 @@ function chapel(): AreaMap {
     { to: "ramparts", name: "Chapel Door", kind: "open", at: { col: 1, row: 30 }, plain: true },
     { to: "harbour", name: "The Old Lift", kind: "shortcut", at: { col: 68, row: 55 }, opens: "oldLiftDown" },
     { to: "emberwood", name: "The Postern", kind: "gate", at: { col: 6, row: 1 }, guard: "stoneWarden", plain: true },
+    { to: "harbour", name: "The Sisters' Stair", kind: "open", at: { col: 33, row: 58 }, opens: "sistersStair", plain: true },
   ];
   const districts: District[] = [
     { name: "The Cloister Gate", at: { col: 9, row: 30 }, levels: [1], palette: [4], dress: "greyfall", decor: 1.5 },
@@ -1372,8 +1375,8 @@ function harbour(): AreaMap {
   // round the Castle Gate, and the keep's own on the crown.
   // Each with its archer: on the platform of the keep's, the Castle Gate's and every other outer tower, walking the
   // foot of the rest. A perched archer stands a quarter tile in front of its tower's base, so it draws over the tower.
-  const watch = [[72, 8], [67, 29], [63, 36], [42, 32], [39, 20], [42, 5], [65, 16], [63, 27], [59, 24], [49, 29], [64, 7], [57, 15], [46, 9]] as const;
-  const atop = new Set(["72,8", "63,36", "39,20", "64,7", "57,15", "46,9", "51,6"]);
+  const watch = [[72, 8], [67, 29], [63, 36], [42, 32], [42, 5], [65, 16], [63, 27], [59, 24], [49, 29], [64, 7], [57, 15], [46, 9]] as const;
+  const atop = new Set(["72,8", "63,36", "64,7", "57,15", "46,9", "51,6"]);
   for (const [c, r] of watch) prop("tower", c, r, blue);
   for (const [c, r] of [...watch, [51, 6]] as const) {
     if (atop.has(`${c},${r}`)) who("archer", c, r + 0.25, { ...blue, perch: 1.85 });
@@ -1398,6 +1401,23 @@ function harbour(): AreaMap {
   who("monk", 45, 24, { ...blue, to: { col: 45, row: 27 } });
   who("monk", 49, 28, { ...blue, to: { col: 53, row: 29 } });
   who("warrior", 42, 12, { ...blue, to: { col: 44, row: 12 } });
+  // The Sisters' Stair: beside the chapel the outer ring widened west and sunk in a hole to the ground, a stair down off
+  // the Close onto the ring, round the hole's rim and down into it at its far corner like a turn of a spiral stair, the
+  // sisters' old way to the Chapel Ward at its foot, shut until Ysolde tells of it.
+  for (const [r, c] of [[15, 37], [16, 35], [17, 33], [18, 32], [19, 34], [20, 33], [21, 34], [22, 33], [23, 35], [24, 34], [25, 36], [26, 38]] as const) t.block(2, c, r, 39 - c, 1);
+  // The hole wraps the stair on three sides, so it stands clear like every other stair, open ground round its ramp, and
+  // runs on down the ring to above the road off the Great Gate.
+  for (const [r, a, z] of [[17, 36, 38], [18, 37, 39], [19, 36, 39], [20, 35, 38], [21, 36, 39], [22, 37, 39], [23, 37, 38], [24, 37, 39], [25, 38, 40], [26, 39, 40], [27, 40, 43], [28, 40, 43], [29, 41, 43], [30, 41, 44]] as const) t.block(1, a, r, z - a + 1, 1);
+  t.stair(3, 40, 16, "L");
+  t.stair(2, 36, 18, "R");
+  // Grown over since the sisters went, each on the floor and never under a cliff's face: trees and a stump only where the
+  // floor is three wide, off the way down; brush, stones and bones along it, and their candles still set at the turns.
+  for (const [c, r] of [[39, 19], [36, 21], [39, 22], [43, 28]] as const) prop("tree", c, r);
+  prop("stump", 41, 30);
+  for (const [c, r] of [[37, 18], [38, 20], [37, 24], [39, 25], [42, 29]] as const) prop("bush", c, r);
+  for (const [c, r] of [[38, 21], [40, 28]] as const) prop("rock", c, r);
+  prop("bones", 39, 26);
+  for (const [c, r] of [[38, 19], [38, 25], [42, 30]] as const) prop("sconce", c, r);
   // The east ward: the garrison, its barracks and butts, a drill ground and its fire.
   prop("barracks", 64, 18, blue);
   prop("archery", 65, 24, blue);
@@ -1703,6 +1723,7 @@ function harbour(): AreaMap {
     { to: "barrowmoor", name: "Moor Gate", kind: "shortcut", at: { col: 109, row: 50 }, shut: "moorGateOpen" },
     { to: "emberwood", name: "Ember Gate", kind: "gate", at: { col: 26, row: 1 }, shut: "emberGateOpen" },
     { to: "chapel", name: "The Old Lift", kind: "shortcut", at: { col: 72, row: 41 }, shut: "oldLiftDown" },
+    { to: "chapel", name: "The Sisters' Stair", kind: "gate", at: { col: 43, row: 30 }, shut: "sistersStair" },
     { to: "burg", name: "Burg Gate", kind: "open", at: { col: 56, row: 1 }, plain: true },
     { to: "undercroft", name: "The Old Well", kind: "drop", at: { col: Math.round(sx(10)), row: 50 } },
     { to: "ring", name: "The Boat", kind: "lift", at: { col: 62, row: 61 } },
