@@ -504,7 +504,7 @@ export const NPCS: readonly Npc[] = [
     name: "Mother Ysolde",
     short: "Ysolde",
     area: "harbour",
-    at: { col: 47, row: 24 },
+    at: { col: 43, row: 24 },
     kind: "monk",
     greet: "Peace on you.",
     part: "Go gently.",
@@ -573,7 +573,7 @@ export const NPCS: readonly Npc[] = [
       {
         when: ["ysoldeDeeper", "shellDead"],
         area: "harbour",
-        at: { col: 47, row: 24 },
+        at: { col: 43, row: 24 },
         talks: [
           {
             id: "ash",

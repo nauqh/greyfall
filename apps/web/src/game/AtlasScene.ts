@@ -3030,6 +3030,8 @@ export class AtlasScene extends Phaser.Scene {
       }
     } else if (e.name === "The Boat") {
       // A boat crossing: the map moors the boat itself in the water beside it, so nothing more is drawn.
+    } else if (e.name === "The Sisters' Stair") {
+      this.sistersDoor(e);
     } else if (up || down || e.name.includes("Lift")) {
       const beside = (up || down) && this.map.tiers[here].props.some((p) => ["cave", "gnomeTower", "watchtower", "tower", "castle", "monastery"].includes(p.art) && footprint(p).some((c) => Math.abs(c.col - e.at.col) <= 3 && Math.abs(c.row - e.at.row) <= 3));
       if (!beside) {
@@ -3049,6 +3051,35 @@ export class AtlasScene extends Phaser.Scene {
     } else if (!e.plain) {
       this.fogDoor(e);
     }
+  }
+
+  /** The Sisters' Stair: no fog bank but a low arch cut in the rock under the altar, the sisters' incense still threading
+   *  out of it one wisp at a time; dark and grey while the way is barred, candle-lit and gold once Ysolde has told of it. */
+  private sistersDoor(e: Exit): void {
+    const x = (e.at.col + 0.5) * CELL;
+    const y = (e.at.row + 0.95) * CELL;
+    const lit = !barred(e);
+    const [w, h] = [0.62 * CELL, 1.15 * CELL];
+    const arch = this.add.graphics().setDepth(standing(y) - 1);
+    const radius = { tl: w / 2, tr: w / 2, bl: 0, br: 0 };
+    arch.fillStyle(0x0e1218, 1).fillRoundedRect(x - w / 2, y - h, w, h, radius);
+    arch.lineStyle(5, 0x161c2e, 1).strokeRoundedRect(x - w / 2, y - h, w, h, radius);
+    if (lit) {
+      const glow = this.add.image(x, y - h * 0.45, "glow").setBlendMode(Phaser.BlendModes.ADD).setTint(0xffb870).setAlpha(0.5).setScale(0.6).setDepth(standing(y));
+      this.tweens.add({ targets: glow, alpha: 0.7, duration: 900, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    }
+    if (!this.anims.exists("fogPuff_fade")) this.anims.create({ key: "fogPuff_fade", frames: this.anims.generateFrameNumbers("fogPuff"), frameRate: 9, repeat: 0 });
+    const incense = this.time.addEvent({
+      delay: lit ? 700 : 1300,
+      loop: true,
+      callback: () => {
+        if (!arch.active) return void incense.remove();
+        const [sx, sy] = [x + (Math.random() - 0.5) * w * 0.5, y - h * 0.35];
+        const wisp = this.add.sprite(sx, sy, "fogPuff", 0).setScale(0.45).setTint(lit ? 0xf3d9a6 : 0xb8b4ae).setAlpha(lit ? 0.7 : 0.45).setDepth(standing(y) + 1);
+        wisp.play("fogPuff_fade");
+        this.tweens.add({ targets: wisp, y: sy - 46, x: sx + (Math.random() - 0.5) * 20, scale: 0.7, duration: 1600, onComplete: () => wisp.destroy() });
+      },
+    });
   }
 
   /** A way out to the next area on foot: a fog gate across the way. */

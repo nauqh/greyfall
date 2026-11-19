@@ -544,23 +544,23 @@ const UPPER_TOWN = [
   "#^^444^^^^5555^^^^^^^44^^4444#",
   "#^^^444^^^^555^^^^^^^^^^4444^#",
   "#^{444^^^^^^^^^^^^^^^^^4444^^#",
-  "#^^^444^^^^^^^^44444444444^^^#",
-  "#^^^44444444444444444444^^^^^#",
-  "#^^^^^^^444444444444444^^^^^^#",
-  "##^^^^^^^^4444444444^^^^^^^^^#",
-  "##^^^^^^^{4444444444}^^^^^^^##",
-  "###^^^^^^^^^44444^^^^^^^^^^^]#",
-  "###^^^^^^^^^^^^^^^^^^^^^^^^###",
-  "####^^^^^^^^^^^^^^^^^^^^^^^###",
-  "####^^^^^^^^^^^^^^^^^^^^^^^###",
-  "###^^^^^^^^^^^^^^^^^^^^^^^^^##",
-  "###^^^^^^^^^^^^^^^^^^^^^^^^^##",
-  "####^^^^^^^^^^^^^^^^^^^^^^^###",
-  "#####^^^^^^^^^^^^^^^^^^^^^####",
-  "######^^^^^^^^^^^^^^^^^^^^####",
-  "#######^^^^^^^^^^^^^^^^^^#####",
-  "#######^^^^^^^^^^^^^^^^^######",
-  "###########^^^^^^^^^##########",
+  ".^^^444^^^^^^^^44444444444^^^#",
+  "..^^44444444444444444444^^^^^#",
+  ".^^^^^^^444444444444444^^^^^^#",
+  "^^^^^^^^^^4444444444^^^^^^^^^#",
+  "^^^^^^^^^{4444444444}^^^^^^^##",
+  "^^^^^^^^^^^^44444^^^^^^^^^^^]#",
+  "^^^^^^^^^^^^^^^^^^^^^^^^^^^###",
+  "^^^^^^^^^^^^^^^^^^^^^^^^^^^###",
+  "^^^^^^^^^^^^^^^^^^^^^^^^^^^###",
+  "^##^####^^^^^^^^^^^^^^^^^^^^##",
+  "######..^^^^^^^^^^^^^^^^^^^^##",
+  "######>.^^^^^^^^^^^^^^^^^^^###",
+  "...##...^^^^^^^^^^^^^^^^^^####",
+  "........^^^^^^^^^^^^^^^^^^####",
+  "w.....^^^^^^^^^^^^^^^^^^^#####",
+  "ww....^^^^^^^^^^^^^^^^^^######",
+  "##...######^^^^^^^^^##########",
   "##########[^^^^^^^^^]#########",
   "#############^^^^^############",
 ];
@@ -1385,40 +1385,55 @@ function harbour(): AreaMap {
     else who("archer", c - 1, r + 1, { ...blue, to: { col: c + 1, row: r + 1 } });
   }
   for (const [c, r] of [[49, 32], [61, 32]] as const) prop("sconce", c, r);
-  for (const [c, r] of [[51, 32], [59, 32]] as const) who("lancer", c, r, blue);
+  for (const [c, r] of [[52, 32], [58, 32]] as const) who("lancer", c, r, blue);
   // The gate square under the Wind Ward's stairs: lanterns, folk crossing to every ward.
   for (const [c, r] of [[53, 25], [58, 25]] as const) prop("sconce", c, r);
   who("pawn", 57, 27, { ...blue, act: "wood", to: { col: 64, row: 22 } });
   who("pawn", 53, 27, { ...blue, act: "meat", to: { col: 47, row: 22 } });
-  // The west wedge, between the rim and the Wind Ward, is the Chapel Close: the chapel at its head, a pilgrims' way running
-  // straight down from its door between paired candles and paired stands of churchyard trees, then turning for the gate
-  // square, the almshouse at its foot, and the brothers walking it.
-  prop("monastery", 45, 20, blue);
-  prop("house1", 47, 27, blue);
-  for (const x of [42.6, 47.4]) for (const y of [23.6, 25.6]) prop("tree", x, y, { fixed: true });
-  for (const [c, r] of [[44, 23], [46, 23], [44, 25], [46, 25]] as const) prop("sconce", c, r);
+  // The west wedge, between the rim and the Wind Ward, is the Chapel Close, run out west into the Chapel Spur: the
+  // almshouse at the spur's root, the pilgrims' walk along its ridge between churchyard trees on the valley side and
+  // candles on the drop, the chapel alone at its tip, and the brothers walking it.
+  prop("monastery", 37, 21, blue);
+  prop("house1", 49, 27, blue);
+  for (const x of [41.4, 44.4, 47.4]) prop("tree", x, 19.6, { fixed: true });
+  for (const [c, r] of [[40, 22], [43, 22], [46, 22], [33, 21]] as const) prop("sconce", c, r);
   who("monk", 52, 26, { ...blue, when: "warlordDead" });
-  who("monk", 45, 23, blue);
-  who("monk", 45, 24, { ...blue, to: { col: 45, row: 27 } });
+  who("monk", 41, 23, blue);
+  who("monk", 42, 21, { ...blue, to: { col: 48, row: 21 } });
   who("monk", 49, 28, { ...blue, to: { col: 53, row: 29 } });
+  // Under the spur: the sisters' headstones in a row along the ledge and a candle at each of its stairs; their pool at
+  // the foot, and the door under the altar staked shut till Ysolde tells of the way.
+  for (const x of [36.4, 37.8, 41.2, 44.2]) prop("rock", x, 25.4, { scale: 0.55, fixed: true });
+  prop("sconce", 45, 25);
+  for (const [c, r] of [[37, 30], [42, 28]] as const) prop("bush", c, r);
+  prop("bones", 44, 30);
+  prop("sconce", 36, 28);
+  for (const r of [28, 30]) prop("skullSpike", 35, r, { unless: "sistersStair" });
   who("warrior", 42, 9, { ...blue, to: { col: 42, row: 13 } });
-  // The Sisters' Stair: beside the chapel the outer ring widened west and sunk in a hole to the ground, a stair down off
-  // the Close onto the ring, round the hole's rim and down into it at its far corner like a turn of a spiral stair, the
-  // sisters' old way to the Chapel Ward at its foot, shut until Ysolde tells of it.
-  for (const [r, c] of [[15, 37], [16, 35], [17, 33], [18, 32], [19, 34], [20, 33], [21, 34], [22, 33], [23, 35], [24, 34], [25, 36], [26, 38]] as const) t.block(2, c, r, 39 - c, 1);
-  // The hole wraps the stair on three sides, so it stands clear like every other stair, open ground round its ramp, and
-  // runs on down the ring to above the road off the Great Gate.
-  for (const [r, a, z] of [[17, 36, 38], [18, 37, 39], [19, 36, 39], [20, 35, 38], [21, 36, 39], [22, 37, 39], [23, 37, 38], [24, 37, 39], [25, 38, 40], [26, 39, 40], [27, 40, 43], [28, 40, 43], [29, 41, 43], [30, 41, 44]] as const) t.block(1, a, r, z - a + 1, 1);
-  t.stair(3, 40, 16, "L");
-  t.stair(2, 36, 18, "R");
-  // Grown over since the sisters went, each on the floor and never under a cliff's face: trees and a stump only where the
-  // floor is three wide, off the way down; brush, stones and bones along it, and their candles still set at the turns.
-  for (const [c, r] of [[39, 19], [36, 21], [39, 22], [43, 28]] as const) prop("tree", c, r);
-  prop("stump", 41, 30);
-  for (const [c, r] of [[37, 18], [38, 20], [37, 24], [39, 25], [42, 29]] as const) prop("bush", c, r);
-  for (const [c, r] of [[38, 21], [40, 28]] as const) prop("rock", c, r);
-  prop("bones", 39, 26);
-  for (const [c, r] of [[38, 19], [38, 25], [42, 30]] as const) prop("sconce", c, r);
+  // The Chapel Spur: a blade of rock run west off the Close over the valley, the pilgrims' walk along its ridge to the
+  // chapel alone at its tip. The Sisters' Stair folds back under it: off the tip onto a ledge of the sisters' graves
+  // along its south flank, down at the ledge's east end, and west along its foot past their pool to the door cut in the
+  // rock beneath the altar, the sisters' old way to the Chapel Ward, shut until Ysolde tells of it. The castle's own
+  // columns are in UPPER_TOWN.
+  stamp(t, [
+    "........",
+    "........",
+    "........",
+    "......^^",
+    "...^^^^^",
+    "..^^^^^^",
+    ".##^^^^^",
+    ".#[^^^^^",
+    ".#######",
+    ".#######",
+    "..######",
+    "...#####",
+    "..#.....",
+    ".##.....",
+    ".##...ww",
+    "..#....w",
+    "..######",
+  ], 32, 15);
   // The east ward: the garrison, its barracks and butts, a drill ground and its fire, the guard down at the gate.
   prop("barracks", 64, 21, blue);
   prop("archery", 65, 24, blue);
@@ -1439,7 +1454,7 @@ function harbour(): AreaMap {
   who("pawn", 55, 20, { ...blue, act: "meat" });
   who("pawn", 62, 15, { ...blue, act: "wood", to: { col: 56, row: 15 } });
   for (const [c, r, art] of [[44, 7, "house2"], [66, 7, "house3"]] as const) prop(art, c, r, blue);
-  for (const [c, r] of [[44, 14], [59, 19], [61, 15]] as const) who("lancer", c, r, blue);
+  for (const [c, r] of [[44, 14], [59, 18], [61, 15]] as const) who("lancer", c, r, blue);
   who("lancer", 63, 14, { ...blue, to: { col: 66, row: 14 } });
   // The ravine's floor, a stair down into each side of the bridge: stones and brush on the west, the bones of a lancer
   // who went in after something and his kit on the east, and gold for whoever follows.
@@ -1781,7 +1796,7 @@ function harbour(): AreaMap {
     { to: "barrowmoor", name: "Moor Gate", kind: "shortcut", at: { col: 109, row: 50 }, shut: "moorGateOpen" },
     { to: "emberwood", name: "Ember Gate", kind: "gate", at: { col: 26, row: 1 }, shut: "emberGateOpen" },
     { to: "chapel", name: "The Old Lift", kind: "shortcut", at: { col: 72, row: 41 }, shut: "oldLiftDown" },
-    { to: "chapel", name: "The Sisters' Stair", kind: "gate", at: { col: 43, row: 30 }, shut: "sistersStair" },
+    { to: "chapel", name: "The Sisters' Stair", kind: "gate", at: { col: 35, row: 29 }, shut: "sistersStair" },
     { to: "burg", name: "Burg Gate", kind: "open", at: { col: 56, row: 1 }, plain: true },
     { to: "undercroft", name: "The Old Well", kind: "drop", at: { col: Math.round(sx(10)), row: 50 } },
     { to: "ring", name: "The Boat", kind: "lift", at: { col: 62, row: 61 } },
