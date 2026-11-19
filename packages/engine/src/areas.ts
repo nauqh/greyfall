@@ -1252,7 +1252,7 @@ function harbour(): AreaMap {
     "..##############..#######>",
     ".################..######.",
     "#################..#####..",
-    "##################..###...",
+    "##################..####..",
     ".#################........",
     ".###################......",
     "..##################......",
@@ -1426,7 +1426,7 @@ function harbour(): AreaMap {
     ".#[^^^^^",
     ".#######",
     ".#######",
-    "..######",
+    "<#######",
     "...#####",
     "..#.....",
     ".##.....",
@@ -1434,6 +1434,9 @@ function harbour(): AreaMap {
     "..#....w",
     "..######",
   ], 32, 15);
+  // The Northwood's plateau bridged over the Ember Gate track onto the spur's landing; the track climbs over it, up the
+  // plateau's stair and down the landing's.
+  const sistersBridge = t.span(2, 29, 21, 4, 2);
   // The east ward: the garrison, its barracks and butts, a drill ground and its fire, the guard down at the gate.
   prop("barracks", 64, 21, blue);
   prop("archery", 65, 24, blue);
@@ -1836,7 +1839,7 @@ function harbour(): AreaMap {
   const districtAt = districtGrid(tier, districts, t);
   const rim = districtAt[45]![59]!;
   for (const d of decks) districtAt[d.row] = districtAt[d.row]!.slice(0, d.col) + rim + districtAt[d.row]!.slice(d.col + 1);
-  return { ...tier, area: "harbour", entry: { col: 71, row: 49 }, exits, districts, districtAt, decks: [...decks, ...keepBridge], streets: true, notes, locks };
+  return { ...tier, area: "harbour", entry: { col: 71, row: 49 }, exits, districts, districtAt, decks: [...decks, ...keepBridge, ...sistersBridge], streets: true, notes, locks };
 }
 
 function emberwood(): AreaMap {
