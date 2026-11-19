@@ -533,26 +533,26 @@ const LOWER_TOWN = [
 ];
 
 const UPPER_TOWN = [
-  "##############################",
-  "#########5555555555###########",
-  "######444555555555555444444###",
-  "####44444555555555555544444###",
-  "##^^444444555555555555444444##",
-  "#^^^44444455555555555544444^##",
-  "#^^^44444(5555555555555)4444^#",
-  "#^^^^444444555555555444444^^^#",
-  "#^^^^444444455555554444444^^^#",
-  "##^^^444444555554444444^^^^^^#",
-  "##^^{444445555544444444}^^^^##",
-  "#^^^^44445555544444444^^^^^^##",
-  "#^^^^^44555554444444^^^^^^^^^#",
-  "#^^^^^^^5555444444^^^^^^^^^^^#",
-  "##^^^^^^555544444^^^^^^^^^^^^#",
-  "##^^^^^^5555444^^^^^^^^^^^^^##",
-  "###^^^^^^55544^^^^^^^^^^^^^^]#",
-  "###^^^^^^^555^^^^^^^^^^^^^^###",
-  "####^^^^^^^55^^^^^^^^^^^^^^###",
-  "####^^^^^^^^5^^^^^^^^^^^^^^###",
+  "#####44#####55555####^^##44###",
+  "#####444^^^555555555^^^^^444##",
+  "###4444^^^55555555555^^^^4444#",
+  "##^44444^^555555555555^^^4444#",
+  "#^^4444^^^^55555555555^^^4444#",
+  "#^^^4444}^^55555555555^^{4444#",
+  "##^444^^^^5555555555544^^^444#",
+  "#^^44444^^^5555555555)4^^444^#",
+  "#^^444^^^^5555^^^^^^^44^^4444#",
+  "#^^^444^^^^555^^^^^^^^^^4444^#",
+  "#^{444^^^^^^^^^^^^^^^^^4444^^#",
+  "#^^^444^^^^^^^^44444444444^^^#",
+  "#^^^44444444444444444444^^^^^#",
+  "#^^^^^^^444444444444444^^^^^^#",
+  "##^^^^^^^^4444444444^^^^^^^^^#",
+  "##^^^^^^^{4444444444}^^^^^^^##",
+  "###^^^^^^^^^44444^^^^^^^^^^^]#",
+  "###^^^^^^^^^^^^^^^^^^^^^^^^###",
+  "####^^^^^^^^^^^^^^^^^^^^^^^###",
+  "####^^^^^^^^^^^^^^^^^^^^^^^###",
   "###^^^^^^^^^^^^^^^^^^^^^^^^^##",
   "###^^^^^^^^^^^^^^^^^^^^^^^^^##",
   "####^^^^^^^^^^^^^^^^^^^^^^^###",
@@ -1228,6 +1228,8 @@ function harbour(): AreaMap {
   t.shape(2, 70, 11, 8, 5, 0.3, "Old Town");
   t.shape(2, 56, 6, 16, 5, 0.2, "Old Town");
   stamp(t, UPPER_TOWN, 40, 4);
+  // The keep's one bridge, over the ravine from the Wind Ward onto the ledge under its stair.
+  const keepBridge = t.span(4, 61, 13, 2, 2);
   // The drawn citadel's west side and the hill's top broken up, so neither runs on as one straight cliff.
   for (const [r, c] of [[5, 39], [6, 38], [7, 38], [8, 37], [9, 38], [10, 39], [11, 38], [12, 37], [13, 38], [14, 39]] as const) t.block(2, c, r, 40 - c, 1);
   t.block(1, 45, 2, 2, 1);
@@ -1367,29 +1369,28 @@ function harbour(): AreaMap {
   // The bowl's fire is the hub, after Firelink: the Harbour's one bonfire, first, so a fall at the Ring wakes here.
   t.fires.push({ col: 71, row: 48 });
 
-  // The Upper Town, after Minas Tirith and Whiterun, drawn tile by tile (UPPER_TOWN): the keep's crown, a prow of rock
-  // run down from it splitting the circle under it in two, and the wide lower circle round both, each its own life.
+  // The Upper Town, after Whiterun, drawn tile by tile (UPPER_TOWN), three districts each a height up: the wide lower
+  // circle with the gate, the chapel and the garrison; the Wind Ward's horseshoe round a ravine; and on its own crag in
+  // the ravine the keep's crown, reached only by its bridge and the stair off the ledge under it.
   // The Great Gate, a bastion jutting off the lower circle: a tower either side of the road through it, a stair up
   // each of its outer corners, a lantern at each stair's foot and the watch at its head.
-  // Watchtowers by ring, each set spread evenly along its own: six round the outer wall, four round the town, three
-  // round the Castle Gate, and the keep's own on the crown.
-  // Each with its archer: on the platform of the keep's, the Castle Gate's and every other outer tower, walking the
-  // foot of the rest. A perched archer stands a quarter tile in front of its tower's base, so it draws over the tower.
-  const watch = [[72, 8], [67, 29], [63, 36], [42, 32], [42, 5], [65, 16], [63, 27], [59, 24], [49, 29], [64, 7], [57, 15], [46, 9]] as const;
-  const atop = new Set(["72,8", "63,36", "64,7", "57,15", "46,9", "51,6"]);
+  // Watchtowers round the outer wall and the town, and one at each front corner of the crown.
+  // Each with its archer: on the platform of the crown's and of the outer towers, walking the foot of the rest. A
+  // perched archer stands a quarter tile in front of its tower's base, so it draws over the tower.
+  const watch = [[72, 8], [67, 29], [63, 36], [42, 32], [42, 5], [65, 18], [63, 27], [59, 24], [49, 29], [52, 9], [58, 9]] as const;
+  const atop = new Set(["72,8", "63,36", "52,9", "58,9"]);
   for (const [c, r] of watch) prop("tower", c, r, blue);
-  for (const [c, r] of [...watch, [51, 6]] as const) {
+  for (const [c, r] of watch) {
     if (atop.has(`${c},${r}`)) who("archer", c, r + 0.25, { ...blue, perch: 1.85 });
     else who("archer", c - 1, r + 1, { ...blue, to: { col: c + 1, row: r + 1 } });
   }
   for (const [c, r] of [[49, 32], [61, 32]] as const) prop("sconce", c, r);
   for (const [c, r] of [[51, 32], [59, 32]] as const) who("lancer", c, r, blue);
-  // The gate square under the prow's tip: the town's great tree, lanterns, folk crossing to every ward.
-  prop("tree", 55.5, 26.6, { scale: 1.8, fixed: true });
+  // The gate square under the Wind Ward's stairs: lanterns, folk crossing to every ward.
   for (const [c, r] of [[53, 25], [58, 25]] as const) prop("sconce", c, r);
   who("pawn", 57, 27, { ...blue, act: "wood", to: { col: 64, row: 22 } });
   who("pawn", 53, 27, { ...blue, act: "meat", to: { col: 47, row: 22 } });
-  // The west wedge, between the rim and the prow, is the Chapel Close: the chapel at its head, a pilgrims' way running
+  // The west wedge, between the rim and the Wind Ward, is the Chapel Close: the chapel at its head, a pilgrims' way running
   // straight down from its door between paired candles and paired stands of churchyard trees, then turning for the gate
   // square, the almshouse at its foot, and the brothers walking it.
   prop("monastery", 45, 20, blue);
@@ -1400,7 +1401,7 @@ function harbour(): AreaMap {
   who("monk", 45, 23, blue);
   who("monk", 45, 24, { ...blue, to: { col: 45, row: 27 } });
   who("monk", 49, 28, { ...blue, to: { col: 53, row: 29 } });
-  who("warrior", 42, 12, { ...blue, to: { col: 44, row: 12 } });
+  who("warrior", 42, 9, { ...blue, to: { col: 42, row: 13 } });
   // The Sisters' Stair: beside the chapel the outer ring widened west and sunk in a hole to the ground, a stair down off
   // the Close onto the ring, round the hole's rim and down into it at its far corner like a turn of a spiral stair, the
   // sisters' old way to the Chapel Ward at its foot, shut until Ysolde tells of it.
@@ -1418,28 +1419,52 @@ function harbour(): AreaMap {
   for (const [c, r] of [[38, 21], [40, 28]] as const) prop("rock", c, r);
   prop("bones", 39, 26);
   for (const [c, r] of [[38, 19], [38, 25], [42, 30]] as const) prop("sconce", c, r);
-  // The east ward: the garrison, its barracks and butts, a drill ground and its fire.
-  prop("barracks", 64, 18, blue);
+  // The east ward: the garrison, its barracks and butts, a drill ground and its fire, the guard down at the gate.
+  prop("barracks", 64, 21, blue);
   prop("archery", 65, 24, blue);
   t.campfires.push({ col: 61, row: 21 });
   // The drill stops the day the Warlord falls.
-  who("warrior", 60, 19, { ...blue, unless: "warlordDead", to: { col: 66, row: 21 } });
+  who("warrior", 59, 23, { ...blue, unless: "warlordDead", to: { col: 63, row: 23 } });
   for (const [c, r] of [[62, 26], [64, 27]] as const) who("archer", c, r, blue);
-  who("warrior", 64, 15, { ...blue, to: { col: 67, row: 15 } });
-  // The Castle Gate, the circle under the keep, split by the prow: the captains' houses west, the court of the guard
-  // east, a lancer at each stair head.
-  for (const [c, r, art] of [[45, 9, "house2"], [47, 15, "house3"]] as const) prop(art, c, r, blue);
-  for (const [c, r] of [[48, 18], [63, 15]] as const) who("lancer", c, r, blue);
-  who("lancer", 61, 12, { ...blue, to: { col: 62, row: 8 } });
-  // The prow's watch, looking down the whole climb to the bay.
-  who("archer", 56, 15, blue);
-  // The keep on the crown, after Dragonsreach, its towers and the guard at its door. Once the Keep is open, Corwin
-  // sends lancers down to hold it with them.
+  // The Wind Ward, after Whiterun's: the town's great tree on a plaza facing the keep's bridge, the band's mead hall
+  // across it, after Jorrvaskr, its fire and its drinkers; the captains' houses out on the horseshoe's two arms, and a
+  // lancer at each stair head.
+  prop("tree", 57.5, 17.4, { scale: 1.6, fixed: true });
+  for (const [c, r] of [[56, 16], [60, 17]] as const) prop("sconce", c, r);
+  prop("barracks", 52, 18, { ...blue, scale: 1.3 });
+  t.campfires.push({ col: 56, row: 19 });
+  prop("woodPile", 58, 19);
+  prop("meat", 56, 20);
+  who("warrior", 52, 20, { ...blue, to: { col: 54, row: 20 } });
+  who("pawn", 55, 20, { ...blue, act: "meat" });
+  who("pawn", 62, 15, { ...blue, act: "wood", to: { col: 56, row: 15 } });
+  for (const [c, r, art] of [[44, 7, "house2"], [66, 7, "house3"]] as const) prop(art, c, r, blue);
+  for (const [c, r] of [[44, 14], [59, 19], [61, 15]] as const) who("lancer", c, r, blue);
+  who("lancer", 63, 14, { ...blue, to: { col: 66, row: 14 } });
+  // The ravine's floor, a stair down into each side of the bridge: stones and brush on the west, the bones of a lancer
+  // who went in after something and his kit on the east, and gold for whoever follows.
+  for (const [c, r] of [[48, 6], [47, 13]] as const) prop("rock", c, r);
+  for (const [c, r] of [[49, 14], [58, 13]] as const) prop("bush", c, r);
+  prop("bones", 48, 13);
+  prop("goldStone", 54, 14);
+  prop("bones", 63, 12);
+  prop("tools", 64, 11);
+  prop("goldStone", 62, 6);
+  // The crown, after Dragonsreach: the keep behind a forecourt, a tower at each front corner, a garden either side, and
+  // off the south-west corner a porch over the drop where the watch looks down the whole climb to the bay.
   prop("castle", 55, 7, blue);
-  for (const [c, r] of [[51, 6]] as const) prop("tower", c, r, blue);
-  for (const [c, r] of [[53, 9], [58, 9]] as const) prop("sconce", c, r);
-  for (const [c, r] of [[50, 8], [61, 9]] as const) who("lancer", c, r, blue);
-  for (const [c, r] of [[54, 9], [57, 9]] as const) who("lancer", c, r, { ...blue, when: "trollKey" });
+  for (const [c, r] of [[51.4, 5.6], [52.2, 6.8], [59.6, 6.6]] as const) prop("tree", c, r, { fixed: true });
+  for (const [c, r] of [[50, 6], [61, 8]] as const) prop("bush", c, r);
+  for (const [c, r] of [[51, 13], [53, 13]] as const) prop("sconce", c, r);
+  who("archer", 52, 13, blue);
+  who("lancer", 62, 12, blue);
+  // The steward barred the door behind him and took the key: the guard camps in the forecourt with the door boarded,
+  // until the troll's key opens the Keep from the Burg and Corwin sends lancers down to hold the door.
+  t.campfires.push({ col: 56, row: 11 });
+  for (const c of [55, 56]) prop("woodPile", c, 9, { unless: "trollKey" });
+  prop("meat", 53, 11, { unless: "trollKey" });
+  for (const [c, r] of [[54, 10], [58, 11]] as const) who("lancer", c, r, { ...blue, unless: "trollKey" });
+  for (const c of [55, 56]) who("lancer", c, 9, { ...blue, when: "trollKey" });
 
   // Old Town: the busiest ground in the Reach. The market under the terraces, a smithy corner, cottages on every
   // spare ledge, folk at their trades, and the watch walking the stairs between the tiers.
@@ -1767,7 +1792,7 @@ function harbour(): AreaMap {
   const districtAt = districtGrid(tier, districts, t);
   const rim = districtAt[45]![59]!;
   for (const d of decks) districtAt[d.row] = districtAt[d.row]!.slice(0, d.col) + rim + districtAt[d.row]!.slice(d.col + 1);
-  return { ...tier, area: "harbour", entry: { col: 71, row: 49 }, exits, districts, districtAt, decks, streets: true, notes, locks };
+  return { ...tier, area: "harbour", entry: { col: 71, row: 49 }, exits, districts, districtAt, decks: [...decks, ...keepBridge], streets: true, notes, locks };
 }
 
 function emberwood(): AreaMap {
