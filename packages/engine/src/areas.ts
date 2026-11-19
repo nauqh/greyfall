@@ -1271,18 +1271,18 @@ function harbour(): AreaMap {
     "~~~~~~~~~~^^^4444^^^^~~~~~~~",
     "~~~~~~~~^^^444444444^^^~~~~~",
     "~~~~~~^^^4444444444444^^~~~~",
-    "~~~##^^4444444^444^444^^^~~~",
+    "~~~~~^^4444444^444^444^^^~~~",
     "~~~#^^444444^^^^^^^^^^4}^~~~",
     "~~~#^{44444^^^^^^^^^^^^^^^~~",
     "~~##^^^4444^^^^^^^^^^^^^^^~~",
     "~~~##^^^^^^^^^^^^^^^^^^^#~~~",
     "~~~##^^^^^^^^#^^^^^^^^^^]~~~",
     "~~~#[^^^^^^^##^^^^^^^^###~~~",
-    "~~####^^^^^^##^^^^^^^#####~~",
-    "~~~####^^^#####^^^^######~~~",
-    "~~~~###################~~~~~",
-    "~~~################~~~~~~~~~",
-    "~~~~##############~~~~~~~~~~",
+    "~~~###^^^^^^##^^^^^^^#####~~",
+    "~~~~###^^^#####^^^^######~~~",
+    "~~~~~##################~~~~~",
+    "~~~~~##############~~~~~~~~~",
+    "~~~~~#############~~~~~~~~~~",
     "~~~~~################~~~~~~~",
     "~~~~~##################~~~~~",
     "~~~~~~################~~~~~~",
@@ -1482,14 +1482,17 @@ function harbour(): AreaMap {
   for (const [c, r] of [[72, 22], [73, 20]] as const) who("pawn", c, r, { ...blue, act: "gold" });
   who("pawn", 74, 22, { color: "yellow", act: "meat", to: { col: 71, row: 22 } });
   who("pawn", 73, 13, { ...blue, act: "wood", to: { col: 73, row: 19 } });
-  // Off the market a cross street down a stair off the ring to a back street along the lowland under it, houses down its
-  // far side.
-  for (const [c, r, art] of [[81, 15, "house2"], [81, 19, "house1"], [81, 23, "house3"], [81, 27, "house2"]] as const) prop(art, c, r, blue);
+  // Off the market a cross street down a stair off the ring to a back street along the lowland under it, a row of houses
+  // down each side, the west row broken where the stair comes down.
+  for (const [c, r, art] of [[80, 14, "house1"], [80, 17, "house3"], [80, 23, "house2"], [80, 26, "house1"], [80, 29, "house3"]] as const) prop(art, c, r, blue);
+  // The east row stands only where the Mine Hills' foot leaves it room.
+  for (const [c, r, art] of [[84, 15, "house2"], [84, 27, "house3"], [84, 30, "house1"]] as const) prop(art, c, r, blue);
   t.block(1, 79, 20, 1, 1);
   t.stair(2, 79, 20, "R");
-  t.road([80, 13], [80, 21], [80, 29]);
-  who("pawn", 80, 16, { ...blue, act: "wood", to: { col: 80, row: 26 } });
-  who("pawn", 79, 24, { ...blue, act: "meat" });
+  t.road([82, 13], [82, 21], [82, 29]);
+  t.road([80, 20], [82, 20]);
+  who("pawn", 82, 16, { ...blue, act: "wood", to: { col: 82, row: 26 } });
+  who("pawn", 81, 21, { ...blue, act: "meat" });
 
   // The Lower Town, as clusters each with its own life (after the Witcher's Oxenfurt): the paved market round the fire,
   // the Old Well in the hill's cave west of the square (up is the castle and the sky, down is the drowned), the west quarter's houses thinning out toward the archery butts, the east quarter's smithy,
