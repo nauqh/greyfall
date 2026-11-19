@@ -1275,8 +1275,8 @@ function harbour(): AreaMap {
     "~~~#^^444444^^^^^^^^^^4}^~~~",
     "~~~#^{44444^^^^^^^^^^^^^^^~~",
     "~~##^^^4444^^^^^^^^^^^^^^^~~",
-    "~~~##^^^^^^^^^^^^^^^^^^^#~~~",
-    "~~~##^^^^^^^^#^^^^^^^^^^]~~~",
+    "~~~##^^^^^^^^^^^^^^^^^^##~~~",
+    "~~~##^^^^^^^^#^^^^^^^^^]#~~~",
     "~~~#[^^^^^^^##^^^^^^^^###~~~",
     "~~~###^^^^^^##^^^^^^^#####~~",
     "~~~~###^^^#####^^^^######~~~",
@@ -1491,15 +1491,12 @@ function harbour(): AreaMap {
   // The east ring's town: the Burg road as its alley, a terrace of six houses down each side, and the ring's market
   // halfway along, a paved square with a street out of each side: the alley north and south, a stair east down to the
   // back street, a stair west up into the garrison's ward.
-  // Two of the terrace are halls: the Weighhouse, where the Mine Hills' loads are weighed before the castle road, and
-  // the Lane House, where the east lane's last folk sleep.
-  const halls: Record<string, string> = { "70,23": "The Weighhouse", "75,26": "The Lane House" };
+  // The terrace's head house is a hall under the Burg road's tower: the Lane House, where the east lane's last folk
+  // sleep. Pinned, as the strip between the rock and the road is its own width and no wider.
   for (const c of [70, 75])
-    for (const r of [12, 15, 18, 23, 26, 29]) {
-      const name = halls[`${c},${r}`];
-      if (name) prop("barracks", c + 1, r, { ...blue, name });
+    for (const r of [12, 15, 18, 23, 26, 29])
+      if (c === 70 && r === 12) prop("barracks", c, r, { ...blue, fixed: true });
       else prop(["house1", "house2", "house3"][(r + c) % 3]!, c, r, blue);
-    }
   // Paved two rows deep, so the houses south of it stand clear of it.
   t.road([69, 20], [78, 20]);
   prop("goldStone", 76, 21);
@@ -1512,7 +1509,10 @@ function harbour(): AreaMap {
   // down each side, the west row broken where the stair comes down.
   for (const [c, r, art] of [[80, 14, "house1"], [80, 17, "house3"], [80, 23, "house2"], [80, 26, "house1"], [80, 29, "house3"]] as const) prop(art, c, r, blue);
   // The east row stands only where the Mine Hills' foot leaves it room.
-  for (const [c, r, art] of [[84, 15, "house2"], [84, 27, "house3"], [84, 30, "house1"]] as const) prop(art, c, r, blue);
+  // Its middle is the Weighhouse, where the Mine Hills' loads are weighed before the castle road, pinned against the
+  // hill's foot.
+  for (const [c, r, art] of [[84, 15, "house2"], [84, 30, "house1"]] as const) prop(art, c, r, blue);
+  prop("barracks", 84, 27, { ...blue, fixed: true });
   t.block(1, 79, 20, 1, 1);
   t.stair(2, 79, 20, "R");
   t.road([82, 13], [82, 21], [82, 29]);

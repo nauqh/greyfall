@@ -85,12 +85,12 @@ import {
 } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
-import { BUILDINGS, RIBBON, packUrl, type BuildingSpec } from "./art";
+import { BUILDINGS, packUrl } from "./art";
 import { DPR, startGame } from "./boot";
 import { CELL, buildMap, loadGroundColours, trailTiles } from "./islandMap";
 import { STRAT_COLS, STRAT_ROWS, at, findPath, isForest, isLand, isSlope, isWalkable, level } from "./stratMap";
 import { DEPTH, addDecor, cloudCover, loadTerrain, prepareTerrain, standing } from "./terrain";
-import { HAND, ribbon } from "./ui";
+import { HAND } from "./ui";
 
 export interface AtlasApi {
   /** Fly to an area, on its own tier. */
@@ -987,7 +987,6 @@ export class AtlasScene extends Phaser.Scene {
     loadGroundColours(this);
     this.load.image("tilesetRoad", packUrl("Terrain/Tileset/Tilemap_color4.png"));
     if (!this.textures.exists("note")) this.load.image("note", packUrl("ui/paper.png"));
-    if (!this.textures.exists("ribbon_src")) this.load.image("ribbon_src", packUrl(RIBBON.file));
     if (!this.textures.exists("gold")) this.load.image("gold", packUrl("Terrain/Resources/Gold/Gold Resource/Gold_Resource.png"));
     const sheet = (key: string, s: Sheet): void => {
       if (this.textures.exists(key)) return;
@@ -2890,15 +2889,6 @@ export class AtlasScene extends Phaser.Scene {
     if (p.color) {
       const spec = BUILDINGS[p.art as keyof typeof BUILDINGS];
       this.add.image(x, y, this.buildingKey(p)).setOrigin(0.5, spec.anchorY / spec.h).setScale(p.scale ?? 1).setFlipX(p.flip ?? false).setDepth(standing(y));
-      if (p.name) {
-        // On a ribbon hung along the front parapet, over the door.
-        const sign = y - (spec.anchorY - ((spec as BuildingSpec).sign ?? 0)) * (p.scale ?? 1);
-        const text = this.add
-          .text(x, sign - 3, p.name, { fontFamily: FONT, fontSize: "18px", fontStyle: "bold", color: "#fdfaf0", stroke: "#2e3a4e", strokeThickness: 4 })
-          .setOrigin(0.5)
-          .setDepth(DEPTH.fx + 1);
-        ribbon(this, x, sign, text.width + 64, 0.6).setDepth(DEPTH.fx);
-      }
       return;
     }
     if (p.art === "sconce") {
