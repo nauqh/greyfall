@@ -410,6 +410,26 @@ Greets you: *"Tide's out."* Walked away from: *"Fair winds. Ha."*
 
 ### Gone, once **marenSails**
 
+## Dunstan the Foreman
+
+Greets you: *"Mind the carts."* Walked away from: *"Back to it."*
+
+### Home: Last Harbour, the Mine Hills, by the mine (96, 25)
+
+- **first**
+  1. The good ore came off the deep face, under the crest. Forty loads a week.
+  2. Then one shift it came up grey. Cold in the hand, cold in July.
+  3. The lads who worked it went slow. Slower every day. So I nailed it shut myself.
+- **face**
+  1. We work the old face now. Soft stuff. Brenna grumbles.
+  2. Let her grumble. She's still got all her lads.
+- **boards**
+  1. Don't touch the boards.
+  2. I count them every morning. Nineteen. Still nineteen.
+- **warm** (once, after meeting, when **warlordDead**)
+  1. Put my hand to the boards this morning. Warm. First time in three winters.
+  2. Maybe I'll pull them. Maybe next year.
+
 ## The Moor Watchman
 
 Greets you: *"Gate stays shut."* Walked away from: *"Back to the wall, then."*

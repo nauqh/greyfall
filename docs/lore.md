@@ -187,6 +187,13 @@ Gate to the Warlord.
   the far cove, smugglers the steps under the village.
 - **Last Harbour.** The hub: a town in a bowl round the one bonfire, with
   the Old Well in the hill's cave west of it, the docks below and the castle above. It held.
+- **The Mine Hills.** The Harbour's worked hill, north-east of the town,
+  its quarried face stepping up to a crest over the sea. The best ore came
+  off the deep face under the crest until, one shift in the first winter, it
+  came up grey: cold in the hand, and the men who worked it went slow. The
+  foreman nailed the cave shut, and the hill works only the old face now,
+  which is why its ore is soft. The Grey got into the ground here too; it
+  just got no further.
 - **The castle (Lower Burg, Ramparts, Chapel Ward, Keep).** The Harbour's
   own castle, climbed ward by ward: the Burg's fallen streets and Hale's
   square, the Ramparts and the Rampart Bull, the Chapel Ward's cloister,
@@ -233,6 +240,7 @@ Gate to the Warlord.
 | Tobin | Last Harbour, by the Old Well | His brother went down the well after a coin. Follows him to the Deeps and stays to count what he steals. |
 | Mother Ysolde | Last Harbour, the Upper Town | Of the Order. Her sisters went down to the Drowned Chapel; she follows the one freed down to the Hollow, where the rest kneel drowned. |
 | Wren | Last Harbour, the butts in West Fields | Hires out the Harbour's bows. Goes shooting goblins in the Emberwood once the troll is dead. |
+| Dunstan the Foreman | Last Harbour, the Mine Hills | Boarded the deep face when its ore came up grey, and counts the boards every morning. Feels them warm once the Warlord falls, and still leaves them up. |
 | Maren the Harbourmaster | Last Harbour, the docks | Has watched an empty sea for three winters. Sails on the first ship after the Warlord falls. |
 | The Moor Watchman | Last Harbour, the Moor Watch | Keeps the Moor Gate barred on orders. Once it is opened from the moor, goes to look at the lights, and into the barrows. |
 | Penny | Last Harbour, hiding in West Fields | Escaped when the east lane was taken. Follows the wanderer to the Gallows Yard to be with her mum; freed when the Warlord falls. |

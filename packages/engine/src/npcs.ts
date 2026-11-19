@@ -674,6 +674,36 @@ export const NPCS: readonly Npc[] = [
     later: [{ when: ["marenSails"] }],
   },
   {
+    id: "dunstan",
+    name: "Dunstan the Foreman",
+    short: "Dunstan",
+    area: "harbour",
+    at: { col: 96, row: 25 },
+    kind: "pawn",
+    greet: "Mind the carts.",
+    part: "Back to it.",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "The good ore came off the deep face, under the crest. Forty loads a week.",
+          "Then one shift it came up grey. Cold in the hand, cold in July.",
+          "The lads who worked it went slow. Slower every day. So I nailed it shut myself.",
+        ],
+      },
+      { id: "face", lines: ["We work the old face now. Soft stuff. Brenna grumbles.", "Let her grumble. She's still got all her lads."] },
+      { id: "boards", lines: ["Don't touch the boards.", "I count them every morning. Nineteen. Still nineteen."] },
+      {
+        id: "warm",
+        when: "warlordDead",
+        lines: [
+          "Put my hand to the boards this morning. Warm. First time in three winters.",
+          "Maybe I'll pull them. Maybe next year.",
+        ],
+      },
+    ],
+  },
+  {
     id: "watchman",
     name: "The Moor Watchman",
     area: "harbour",

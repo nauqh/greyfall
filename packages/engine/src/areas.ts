@@ -1558,16 +1558,33 @@ function harbour(): AreaMap {
   // The gate open, the town keeps a watch on it.
   who("warrior", 27, 4, gateOpen);
 
-  // The Mine Hills: the mine in the working face, ore in the rock, a cave under the crest boarded up.
+  // The Mine Hills: the mine in the old face, ore in the rock, and the deep face's cave under the crest boarded up
+  // since its ore came up grey, the tools left where they were dropped.
   prop("goldMine", 90, 22);
-  for (const [c, r] of [[86, 16], [104, 21], [100, 26], [88, 28]] as const) prop("goldStone", c, r);
+  for (const [c, r] of [[86, 16], [104, 21], [100, 26], [88, 28], [94, 21], [97, 29]] as const) prop("goldStone", c, r);
   prop("cave", 100, 20);
   t.fences.push({ col: 98, row: 22, w: 4, h: 2 });
+  prop("tools", 96, 21);
   crowd(t, rng, "pawn", { col: 90, row: 25 }, 4, 3, { ...blue, act: "pickaxe", walk: false });
+  // A lookout on the crest, over the sea the ships stopped coming in on.
+  prop("watchtower", 97, 13);
+  who("archer", 99, 14, blue);
+  t.campfires.push({ col: 93, row: 16 });
+  prop("goldStone", 87, 19);
+  // The middle bench: the hill's last trees felled for pit props, a shed for the tools, and the timber and ore going
+  // down past it.
+  prop("house3", 99, 29, blue);
+  for (const [c, r, art] of [[92, 27, "stump"], [103, 30, "stump"], [95, 30, "woodPile"]] as const) prop(art, c, r);
+  who("pawn", 93, 28, { ...blue, act: "axe" });
+  who("pawn", 96, 28, { ...blue, act: "wood", to: { col: 88, row: 36 } });
   // The miners' camp at the hill's foot where the mine road ends, and the ore carried down it and up the castle road
   // to the forge.
   for (const [c, r] of [[88, 35], [85, 39]] as const) prop("goldStone", c, r);
   t.campfires.push({ col: 86, row: 37 });
+  for (const [c, r, art] of [[92, 39, "house1"], [96, 38, "house2"]] as const) prop(art, c, r, blue);
+  for (const [c, r, art] of [[89, 38, "woodPile"], [84, 36, "tools"], [94, 36, "meat"]] as const) prop(art, c, r);
+  who("pawn", 90, 39, { ...blue, act: "hammer" });
+  who("pawn", 95, 36, { ...blue, act: "knife" });
   for (const [c, r] of [[90, 33], [93, 31]] as const) who("pawn", c, r, { ...blue, act: "pickaxe" });
   who("pawn", 90, 26, { ...blue, act: "gold", to: { col: 87, row: 35 } });
   who("pawn", 87, 38, { ...blue, act: "gold", to: { col: 56, row: 30 } });
@@ -1780,12 +1797,13 @@ function harbour(): AreaMap {
     { name: "The Graves", at: { col: 100, row: 48 }, levels: [1, 2, 3, 4], palette: [5, 4, 4, 3], dress: "barrowmoor", decor: 1.5, gloom: true },
   ];
   // Messages on the ground, after the Souls games: at the Old Well's cave, on the pier, at the Graves road's foot and on
-  // the Watch's rock.
+  // the Watch's rock, and on the boards over the Mine Hills' deep face.
   const notes: Note[] = [
     { at: { col: Math.round(sx(9)), row: 51 }, text: "The Old Well, sunk in the hill's cave. A rope down; no way back up." },
     { at: { col: 63, row: 59 }, text: "Back to the Ring. If the bull lives, he waits." },
     { at: { col: 95, row: 67 }, text: "Our own dead up there. The dogs came over the hill, not through the gate. Not yet." },
     { at: { col: 101, row: 47 }, text: "Three winters on this rock. The beacon stays lit. Someone has to see it." },
+    { at: { col: 98, row: 21 }, text: "SHUT. The rock is grey past here. Do not dig it. - D." },
   ];
   const tier = t.finish({}, [{ col: 71, row: 49 }]);
   // The bridge is the island's own ground run out to the landing, not half Old Town's.
