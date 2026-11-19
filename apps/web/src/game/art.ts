@@ -184,6 +184,8 @@ export interface BuildingSpec {
   anchorY: number;
   /** Set when the PNG is a horizontal sheet of variants, not one image. */
   frame?: number;
+  /** The row a name's sign hangs on: the front parapet, over the door. */
+  sign?: number;
 }
 
 export const BUILDINGS = {
@@ -206,7 +208,7 @@ export const BUILDINGS = {
   gnomeTower: { file: "Enemy Pack/Extra/Gnome Buildings/Gnome Tower.png", w: 128, h: 256, anchorY: 229 },
   skullSpike: { file: "Enemy Pack/Extra/Skull decorations/Skull Spike_01.png", w: 64, h: 128, anchorY: 94 },
   waterTower: { file: "Enemy Pack/Extra/Pirate Tower/Pirate Tower_Water.png", w: 128, h: 192, anchorY: 187, frame: 128 },
-  barracks: { file: "Barracks.png", w: 192, h: 256, anchorY: 245 },
+  barracks: { file: "Barracks.png", w: 192, h: 256, anchorY: 245, sign: 140 },
   archery: { file: "Archery.png", w: 192, h: 256, anchorY: 240 },
   house1: { file: "House1.png", w: 128, h: 192, anchorY: 173 },
   house2: { file: "House2.png", w: 128, h: 192, anchorY: 178 },

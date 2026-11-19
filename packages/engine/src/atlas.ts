@@ -102,6 +102,8 @@ export interface Placed {
   scale?: number;
   /** A sheet's frame, for art with variants. */
   frame?: number;
+  /** A building's own name, hung on a sign over its door. */
+  name?: string;
   /** Placed by hand to the fraction of a tile, as a scene drew it: never moved to fit. */
   fixed?: boolean;
   /** Shown only while every when flag is set and no unless flag is. */

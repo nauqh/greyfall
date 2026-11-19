@@ -194,6 +194,13 @@ Gate to the Warlord.
   foreman nailed the cave shut, and the hill works only the old face now,
   which is why its ore is soft. The Grey got into the ground here too; it
   just got no further.
+- **The Weighhouse and the Lane House.** The two halls on the east ring's
+  terrace. Every load off the Mine Hills is weighed and paid out at the
+  Weighhouse before it goes up the castle road to the forge; since the deep
+  face was shut, half its scales stand idle. The Lane House was the east
+  lane's guild hall. The lane went in the first nights, its people carried
+  off to the Gallows Yard; the few who got out sleep in the hall now, and
+  the town keeps a lamp in its window for the rest.
 - **The castle (Lower Burg, Ramparts, Chapel Ward, Keep).** The Harbour's
   own castle, climbed ward by ward: the Burg's fallen streets and Hale's
   square, the Ramparts and the Rampart Bull, the Chapel Ward's cloister,

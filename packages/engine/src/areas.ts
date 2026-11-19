@@ -1473,7 +1473,15 @@ function harbour(): AreaMap {
   // The east ring's town: the Burg road as its alley, a terrace of six houses down each side, and the ring's market
   // halfway along, a paved square with a street out of each side: the alley north and south, a stair east down to the
   // back street, a stair west up into the garrison's ward.
-  for (const c of [70, 75]) for (const r of [12, 15, 18, 23, 26, 29]) prop(["house1", "house2", "house3"][(r + c) % 3]!, c, r, blue);
+  // Two of the terrace are halls: the Weighhouse, where the Mine Hills' loads are weighed before the castle road, and
+  // the Lane House, where the east lane's last folk sleep.
+  const halls: Record<string, string> = { "70,23": "The Weighhouse", "75,26": "The Lane House" };
+  for (const c of [70, 75])
+    for (const r of [12, 15, 18, 23, 26, 29]) {
+      const name = halls[`${c},${r}`];
+      if (name) prop("barracks", c + 1, r, { ...blue, name });
+      else prop(["house1", "house2", "house3"][(r + c) % 3]!, c, r, blue);
+    }
   // Paved two rows deep, so the houses south of it stand clear of it.
   t.road([69, 20], [78, 20]);
   prop("goldStone", 76, 21);
