@@ -135,7 +135,7 @@
 .panelOptions {
 	display: flex;
 	flex-direction: column;
-	gap: 4px;
+	gap: 10px;
 	margin-top: auto;
 }
 
@@ -143,21 +143,30 @@
 	display: flex;
 	align-items: center;
 	gap: 12px;
-	padding: 8px 12px;
-	border: 1px solid rgb(107 87 64 / 0.18);
-	border-radius: 4px;
-	background: rgb(255 255 255 / 0.1);
+	padding: 8px 14px;
+	border: 3px solid #2e1a0e;
+	border-radius: 14px;
+	background: #fbf5e6;
+	box-shadow: 3px 4px 0 #2e1a0e;
 	color: inherit;
 	font: inherit;
 	text-align: left;
 	cursor: pointer;
-	transition: background 120ms ease-out, border-color 120ms ease-out, box-shadow 120ms ease-out;
+	transition: background 120ms ease-out, color 120ms ease-out, box-shadow 90ms ease-out, transform 90ms ease-out;
 }
 
 .panelOption.picked {
-	border-color: #c9a35c;
-	background: linear-gradient(90deg, rgb(242 212 138 / 0.7), rgb(242 212 138 / 0.25));
-	box-shadow: 0 0 8px rgb(242 180 80 / 0.45), inset 0 0 0 1px rgb(255 240 200 / 0.5);
+	background: #2e1a0e;
+	color: #fbf5e6;
+}
+
+.panelOption.picked .panelOptionNote {
+	color: #d9c9a8;
+}
+
+.panelOption:active {
+	transform: translate(3px, 4px);
+	box-shadow: 0 0 0 #2e1a0e;
 }
 
 .panelOption.dim {
@@ -174,7 +183,9 @@
 
 .panelOptionName {
 	font-weight: 800;
-	font-size: 16px;
+	font-size: 15px;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
 }
 
 .panelOptionNote {

@@ -356,15 +356,14 @@ textarea {
 	animation: menuIn 500ms cubic-bezier(0.22, 1, 0.36, 1) calc(700ms + var(--i) * 80ms) both;
 }
 
-/* Each entry is a cream name on the kit's slate button, the ribbon's own
-   teal; picking one trades its button for the sword, drawn in full. */
+/* Each entry is an inked pill on a hard shadow; picking one trades the pill
+   for the sword, drawn in full. */
 .menuItem {
 	/* The drawn sword is taller than the entry, overhanging it equally above and below. */
 	--sh: calc(var(--h) + 16px);
 	position: relative;
 	isolation: isolate;
-	color: #f6ecd6;
-	text-shadow: 0 1px 3px rgb(20 12 6 / 0.55);
+	color: #2e1a0e;
 }
 
 /* Out over the side borders, so the button spans the scroll. */
@@ -373,10 +372,10 @@ textarea {
 	position: absolute;
 	inset: 3px calc(var(--h) * -1) 5px;
 	z-index: -1;
-	border: 14px solid transparent;
-	border-image: url("/tiny-swords/ui/blueButton.png") 64 fill / 14px stretch;
-	image-rendering: pixelated;
-	filter: brightness(0.8);
+	border: 3px solid #2e1a0e;
+	border-radius: 999px;
+	background: #fbf5e6;
+	box-shadow: 3px 4px 0 #2e1a0e;
 	transition: opacity 200ms ease-out;
 }
 
@@ -654,29 +653,41 @@ textarea {
 	color: #6b5740;
 }
 
-/* The kit's own button; hover and press both sink it. */
+/* An inked pill on a hard shadow; the press sinks it onto the shadow. */
 .btn {
 	min-width: 168px;
-	padding: 0 10px 4px;
-	color: var(--ink);
+	padding: 12px 22px;
+	color: #fbf5e6;
 	font: inherit;
-	font-size: 17px;
+	font-weight: 800;
+	font-size: 16px;
 	line-height: 20px;
-	letter-spacing: 0.05em;
-	text-shadow: 0 2px 0 #1c2634;
-	background: none;
-	border: 22px solid transparent;
-	border-image: url("/tiny-swords/ui/blueButton.png") 64 fill / 22px stretch;
-	transition: transform 140ms ease-out;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	background: #2e1a0e;
+	border: 3px solid #2e1a0e;
+	border-radius: 999px;
+	box-shadow: 3px 4px 0 #2e1a0e;
+	transition: transform 90ms ease-out, box-shadow 90ms ease-out;
+}
+
+.btn.light {
+	color: #2e1a0e;
+	background: #fbf5e6;
 }
 
 .btn.red {
-	border-image-source: url("/tiny-swords/ui/redButton.png");
+	background: #b3261e;
 }
 
-.btn:hover:not(:disabled),
-.btn:active:not(:disabled) {
-	transform: translateY(2px);
+.btn:where(:hover:not(:disabled)) {
+	transform: translate(1px, 2px);
+	box-shadow: 2px 2px 0 #2e1a0e;
+}
+
+.btn:where(:active:not(:disabled)) {
+	transform: translate(3px, 4px);
+	box-shadow: 0 0 0 #2e1a0e;
 }
 
 .btn:disabled {
@@ -686,7 +697,8 @@ textarea {
 
 .btn.small {
 	min-width: 96px;
-	font-size: 16px;
+	padding: 9px 18px;
+	font-size: 14px;
 }
 
 .linkBtn {
@@ -797,6 +809,8 @@ textarea {
 	text-shadow: 0 2px 0 var(--stroke, #2e1a0e);
 	background: none;
 	border: 0;
+	border-radius: 0;
+	box-shadow: none;
 	outline: none;
 	transition:
 		color 200ms ease-out,

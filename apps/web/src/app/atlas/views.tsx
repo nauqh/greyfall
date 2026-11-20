@@ -422,7 +422,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
                 >
                   Drop
                 </button>
-                <button className="btn small" type="button" onClick={() => setWarn(null)}>
+                <button className="btn small light" type="button" onClick={() => setWarn(null)}>
                   Stay
                 </button>
               </div>

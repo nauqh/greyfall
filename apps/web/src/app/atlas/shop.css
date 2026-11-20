@@ -87,22 +87,23 @@
 .shopChoices {
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
+	gap: 10px;
 }
 
 .shopChoice {
 	display: flex;
 	align-items: center;
 	gap: 12px;
-	padding: 8px 12px;
-	border: 1px solid rgb(107 87 64 / 0.25);
-	border-radius: 4px;
-	background: rgb(255 255 255 / 0.1);
+	padding: 8px 14px;
+	border: 3px solid #2e1a0e;
+	border-radius: 14px;
+	background: #fbf5e6;
+	box-shadow: 3px 4px 0 #2e1a0e;
 	color: inherit;
 	font: inherit;
 	text-align: left;
 	cursor: pointer;
-	transition: background 120ms ease-out, border-color 120ms ease-out, box-shadow 120ms ease-out;
+	transition: background 120ms ease-out, color 120ms ease-out, box-shadow 90ms ease-out, transform 90ms ease-out;
 }
 
 .shopChoice img {
@@ -111,9 +112,13 @@
 }
 
 .shopChoice.picked {
-	border-color: #c9a35c;
-	background: linear-gradient(90deg, rgb(242 212 138 / 0.65), rgb(242 212 138 / 0.2));
-	box-shadow: 0 0 10px rgb(242 180 80 / 0.45);
+	background: #2e1a0e;
+	color: #fbf5e6;
+}
+
+.shopChoice:active {
+	transform: translate(3px, 4px);
+	box-shadow: 0 0 0 #2e1a0e;
 }
 
 .shopChoice.picked img {
@@ -126,14 +131,21 @@
 	min-width: 0;
 }
 
-.shopChoiceText b {
-	font-size: 17px;
+.shopChoiceText b,
+.shopChoice.back b {
+	font-size: 15px;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
 }
 
 .shopChoiceText small {
 	font-size: 12px;
 	font-weight: 600;
 	color: #6b5740;
+}
+
+.shopChoice.picked small {
+	color: #d9c9a8;
 }
 
 /* The goods: the grid of slots and the told-out good side by side. */
