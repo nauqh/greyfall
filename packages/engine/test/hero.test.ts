@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FOES, GIFTS, HERO, ITEMS, LEVEL_UP, kit, levelCost, onOffer, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
+import { FOES, GIFTS, HERO, LENT, ITEMS, LEVEL_UP, kit, levelCost, onOffer, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
 
 const goblin = FOES.torch!;
 const home = { col: 10, row: 10 };
@@ -104,7 +104,7 @@ describe("the merchants' goods", () => {
   });
 
   it("add up: the edges on each other, both shards a flask each, an old save's Ember Shard by its name", () => {
-    const all = kit(new Set(Object.keys(ITEMS).filter((k) => !GIFTS.includes(k as keyof typeof ITEMS))));
+    const all = kit(new Set(Object.keys(ITEMS).filter((k) => ![...GIFTS, ...LENT].includes(k as keyof typeof ITEMS))));
     expect(all).toEqual({ hp: 210, attack: 24, flasks: HERO.flasks + 4, flask: 70, block: 1.75, greed: 1.5, stamina: STAMINA.max });
     expect(kit(new Set(["Ember Shard"])).flasks).toBe(HERO.flasks + 1);
   });

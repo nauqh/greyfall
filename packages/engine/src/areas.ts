@@ -3381,22 +3381,25 @@ function saltreach(): AreaMap {
 
 function landing(): AreaMap {
   const rng = makeRng("area:landing");
-  const t = tierBuilder("below", rng, { cols: 70, rows: 50 });
+  const t = tierBuilder("below", rng, { cols: 80, rows: 50 });
   const { prop, who } = t;
   const l = "landing";
 
   // Where you wake with the tide, after the Asylum and the Stranded Graveyard: a sea cave, the way out of it narrow and
   // found, not shown. The grotto the boat drifted into, the first fire; a tunnel to the goblins' chamber, another up to
-  // the hall where they keep watch, a side passage to gold; and the long way round to the antechamber, the Ring Gate at
-  // its end. Notes scratched on the rock by those who washed in before, each where its lesson is needed.
-  for (const [x, y, w, h] of [[26, 40, 16, 7], [12, 26, 12, 9], [14, 8, 16, 9], [40, 9, 6, 5], [46, 14, 10, 8]] as const) t.ground(l, x, y, w, h);
+  // the hall where they keep watch, then the castaway's camp, its fire and the cleft of gold beside it; south through
+  // the flooded gallery to the antechamber, the Ring Gate at its end. Notes scratched on the rock by those who washed in
+  // before, each where its lesson is needed; the sack and the map are Hollis's to teach.
+  for (const [x, y, w, h] of [[26, 40, 16, 7], [12, 26, 12, 9], [14, 8, 16, 9], [38, 7, 13, 10], [55, 6, 6, 5], [36, 24, 18, 9], [60, 24, 10, 9]] as const) t.ground(l, x, y, w, h);
   t.pond(26, 46, 16, 2);
-  for (const way of [[[32, 40], [32, 31], [20, 31]], [[18, 26], [18, 17]], [[29, 12], [40, 12]], [[22, 8], [22, 4], [51, 4], [51, 14]]] as const) tunnel(t, way);
+  // The gallery's flood: a pool in its middle, to be fought round.
+  t.pond(42, 26, 5, 5);
+  for (const way of [[[32, 40], [32, 31], [20, 31]], [[18, 26], [18, 17]], [[29, 12], [38, 12]], [[50, 8], [55, 8]], [[44, 16], [44, 24]], [[53, 28], [60, 28]]] as const) tunnel(t, way);
   // The Ring Gate: the antechamber opens east into a tunnel running on off the map, straight into the Ring's own.
-  tunnel(t, [[54, 18], [68, 18]]);
-  openEdge(t, 69, 18);
+  tunnel(t, [[69, 28], [78, 28]]);
+  openEdge(t, 79, 28);
   // Torches in the rock along the way, so the way out is the lit one.
-  for (const [c, r] of [[30, 36], [26, 30], [17, 21], [35, 11], [30, 3], [45, 3], [52, 9], [60, 17], [27, 41], [41, 41], [13, 27], [22, 34], [15, 9], [28, 9], [15, 15], [44, 10], [55, 15], [47, 21], [38, 3], [22, 5], [54, 21]] as const) prop("sconce", c, r);
+  for (const [c, r] of [[30, 36], [26, 29], [16, 21], [34, 10], [46, 20], [56, 26], [74, 26], [27, 41], [41, 41], [13, 27], [22, 34], [15, 9], [28, 9], [15, 15], [39, 15], [49, 15], [60, 10], [37, 31], [52, 25], [61, 31], [68, 31]] as const) prop("sconce", c, r);
 
   // The grotto: the boat that drifted in, the first fire.
   prop("boat", 33, 46);
@@ -3408,28 +3411,38 @@ function landing(): AreaMap {
   who("torch", 19, 11, { to: { col: 24, row: 11 } });
   who("spear", 25, 13);
   prop("woodPile", 15, 9);
-  // The side passage's end: gold, for whoever looks.
-  prop("goldStone", 43, 12);
-  // The antechamber before the Ring: the dead who went in before, and the fog.
-  for (const [c, r] of [[48, 16], [53, 20], [50, 21]] as const) prop("bones", c, r);
-  for (const [c, r] of [[47, 15], [54, 15]] as const) prop("skullSpike", c, r);
+  // The castaway's camp: Hollis's fire, the second, for the map's travel to be tried between the two.
+  t.fires.push({ col: 46, row: 10 });
+  prop("woodPile", 48, 14);
+  prop("tools", 40, 14);
+  // The cleft off the camp: gold, for whoever looks.
+  prop("goldStone", 58, 8);
+  // The flooded gallery: three together round the pool, one slinging from across it.
+  who("torch", 39, 29, { to: { col: 39, row: 26 } });
+  who("spear", 49, 26);
+  who("slingshot", 51, 31);
+  // The antechamber before the Ring: the dead who went in before.
+  for (const [c, r] of [[63, 26], [66, 31], [64, 31]] as const) prop("bones", c, r);
+  for (const [c, r] of [[61, 25], [68, 25]] as const) prop("skullSpike", c, r);
 
   const notes: Note[] = [
-    { at: { col: 33, row: 43 }, text: "Hold Space while walking to run." },
-    { at: { col: 30, row: 41 }, text: "R to drink a flask. Rest at a fire to refill." },
-    { at: { col: 36, row: 44 }, text: "M to open the map." },
-    { at: { col: 22, row: 32 }, text: "Left click to attack." },
-    { at: { col: 18, row: 18 }, text: "Tap Space to roll." },
-    { at: { col: 41, row: 11 }, text: "Tab to open your sack." },
-    { at: { col: 49, row: 18 }, text: "Hold Shift to guard." },
-    { at: { col: 52, row: 20 }, text: "Die, and your gold stays where you fell." },
+    { at: { col: 34, row: 42 }, text: "E at a fire to rest. Resting refills your flasks." },
+    { at: { col: 32, row: 37 }, text: "Hold Space while walking to run." },
+    { at: { col: 27, row: 31 }, text: "Left click to attack." },
+    { at: { col: 18, row: 24 }, text: "Tap Space to roll." },
+    { at: { col: 18, row: 21 }, text: "Hold right click to guard." },
+    { at: { col: 33, row: 12 }, text: "R to drink a flask." },
+    { at: { col: 63, row: 28 }, text: "Die, and your gold stays where you fell." },
   ];
-  const exits: AreaExit[] = [{ to: "ring", name: "Ring Gate", kind: "open", at: { col: 68, row: 18 }, plain: true }];
+  const exits: AreaExit[] = [{ to: "ring", name: "Ring Gate", kind: "open", at: { col: 78, row: 28 }, plain: true }];
+  // Unnamed: no room's name shows walking in, and both fires go by the Landing's own.
   const districts: District[] = [
-    { name: "The Grotto", at: { col: 34, row: 42 }, palette: [5], dress: "saltreach", decor: 1 },
-    { name: "The Goblins' Chamber", at: { col: 17, row: 30 }, palette: [5], dress: "undercroft", decor: 1 },
-    { name: "The Watch Hall", at: { col: 21, row: 12 }, palette: [5], dress: "undercroft", decor: 1 },
-    { name: "The Antechamber", at: { col: 51, row: 18 }, palette: [5], dress: "barrowmoor", decor: 0.6 },
+    { name: "", at: { col: 34, row: 42 }, palette: [5], dress: "saltreach", decor: 1 },
+    { name: "", at: { col: 17, row: 30 }, palette: [5], dress: "undercroft", decor: 1 },
+    { name: "", at: { col: 21, row: 12 }, palette: [5], dress: "undercroft", decor: 1 },
+    { name: "", at: { col: 44, row: 11 }, palette: [5], dress: "saltreach", decor: 0.8 },
+    { name: "", at: { col: 44, row: 28 }, palette: [5], dress: "fen", decor: 0.8 },
+    { name: "", at: { col: 64, row: 28 }, palette: [5], dress: "barrowmoor", decor: 0.6 },
   ];
   // Ashore beside the first fire, where a new game wakes too.
   const entry = { col: 37, row: 42 };

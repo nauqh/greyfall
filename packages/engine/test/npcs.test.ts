@@ -38,7 +38,7 @@ describe("talking", () => {
 describe("the merchants", () => {
   it("sell or give every good but the gifts, each sold by one merchant only, and none on the Ramparts", () => {
     const sold = NPCS.flatMap((n) => (n.shop?.stock ?? []).map((s) => s.item));
-    const given = NPCS.flatMap((n) => stations(n).flatMap((s) => (s.talks ?? []).flatMap((t) => (t.gives ? [t.gives] : []))));
+    const given = NPCS.flatMap((n) => stations(n).flatMap((s) => (s.talks ?? []).flatMap((t) => [t.gives, t.throws].filter((i) => i !== undefined))));
     expect(new Set(sold).size).toBe(sold.length);
     expect([...new Set([...sold, ...given, ...GIFTS])].sort()).toEqual(Object.keys(ITEMS).sort());
     expect(NPCS.filter((n) => n.shop && n.area === "ramparts")).toEqual([]);

@@ -29,6 +29,7 @@ import {
   type HeroClass,
   ITEMS,
   GIFTS,
+  LENT,
   kit,
   levelCost,
   NO_LEVELS,
@@ -627,6 +628,7 @@ const ITEM_ICON: Record<ItemName, ShopIcon> = {
   "Hollow Water": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#8fd8f0" },
   "Mum's Bread": { url: packUrl("UI Elements/UI Elements/Icons/Icon_04.png"), tint: "#c8a070" },
   "Salt-Glass Flask": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#d8f0f0" },
+  "Hollis's Gaff": { url: SWORDS, crop: { x: 0, y: 0, w: 128, h: 128, sheetW: 448, sheetH: 640 } },
   "Drowned Locket": { url: packUrl("UI Elements/UI Elements/Icons/Icon_06.png"), tint: "#9fc8d8" },
   "Notched Whetstone": { url: packUrl("UI Elements/UI Elements/Icons/Icon_05.png") },
   "Brine Flask": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#a8e0d0" },
@@ -768,10 +770,14 @@ function store(key: string, value: unknown): void {
     else localStorage.setItem(key, JSON.stringify(value));
   } catch {}
 }
-/** Gold on the ground: a monster's drop, a gold stone, or the gold left at the last death. */
+/** Goods thrown down by the folk and not picked up yet, kept on this browser so they wait there. */
+const THROWN = "greyfall.thrown";
+type Thrown = { item: ItemName; area: AreaId; col: number; row: number };
+/** Gold on the ground: a monster's drop, a gold stone, or the gold left at the last death; or a good thrown down. */
 interface Pile {
   at: Cell;
   gold: number;
+  item?: ItemName;
   s: Phaser.GameObjects.Image;
   stone?: string;
   lost?: boolean;
@@ -872,7 +878,7 @@ export class AtlasScene extends Phaser.Scene {
   private notes: Note[] = [];
   private reading: Note | null = null;
   private folk: Folk[] = [];
-  private talk: { folk: Folk; lines: readonly string[]; key: string; sets?: WorldFlag; gives?: ItemName; page: number } | null = null;
+  private talk: { folk: Folk; lines: readonly string[]; key: string; sets?: WorldFlag; gives?: ItemName; throws?: ItemName; page: number } | null = null;
   /** The flags as the area was entered: who stands where, and what they say, holds until the captain leaves and comes back. */
   private seen = new Set<WorldFlag>();
   private nearName: string | null = null;
@@ -883,6 +889,7 @@ export class AtlasScene extends Phaser.Scene {
   private close: "fire" | "folk" | null = null;
   /** The share of the screen the open sack covers, 0 when shut. */
   private sackCover = 0;
+  private seaTook: ItemName[] = [];
   private flasks: number = HERO.flasks;
   private cls: HeroClass = "warrior";
   /** The captain's numbers with the goods bought. */
@@ -959,6 +966,11 @@ export class AtlasScene extends Phaser.Scene {
     this.heard = remembered(HEARD);
     this.flags = remembered(FLAGS);
     this.cls = heroClass();
+    // Ashore anywhere past the Ring, whatever was lent on the Landing is gone: by the boat, or washed up off the bull.
+    const bought = remembered<ItemName>(BOUGHT);
+    this.seaTook = data.area && data.area !== "landing" && data.area !== "ring" ? LENT.filter((i) => bought.has(i)) : [];
+    if (this.seaTook.length) remember(BOUGHT, new Set([...bought].filter((i) => !LENT.includes(i))));
+    if (data.area && data.area !== "landing" && data.area !== "ring") store(THROWN, stored<Thrown[]>(THROWN, []).filter((t) => !LENT.includes(t.item)));
     this.gear = gearNow();
     this.stamina = this.gear.stamina;
     // What a crossing proves: down the well, the Watch Lift ridden down, the Moor Gate come through from the moor, the Greyfall reached.
@@ -997,6 +1009,7 @@ export class AtlasScene extends Phaser.Scene {
     this.load.image("tilesetRoad", packUrl("Terrain/Tileset/Tilemap_color4.png"));
     if (!this.textures.exists("note")) this.load.image("note", packUrl("ui/paper.png"));
     if (!this.textures.exists("gold")) this.load.image("gold", packUrl("Terrain/Resources/Gold/Gold Resource/Gold_Resource.png"));
+    if (!this.textures.exists("swords")) this.load.spritesheet("swords", SWORDS, { frameWidth: 448, frameHeight: 128 });
     const sheet = (key: string, s: Sheet): void => {
       if (this.textures.exists(key)) return;
       this.load.spritesheet(key, packUrl(s.file), { frameWidth: s.frame, frameHeight: s.frameH ?? s.frame });
@@ -1127,6 +1140,7 @@ export class AtlasScene extends Phaser.Scene {
       for (const n of this.notes) this.addNote(n);
       this.spawnHero(near);
       if (this.hooks.carry) this.hero!.hp = Math.max(1, Math.min(this.hero!.max, this.hooks.carry.hp));
+      for (const item of this.seaTook) this.time.delayedCall(1200, () => this.float(this.hero!.s.x, this.hero!.s.y - this.hero!.lift - 30, `The sea took ${item}`, "#9fc8d8", 2600));
       this.hooks.onFlasks?.(this.flasks);
       this.hooks.onGold?.(this.gold);
       this.emitSack();
@@ -1148,6 +1162,7 @@ export class AtlasScene extends Phaser.Scene {
       // The gold left at the last death waits where it fell, glowing, until it is picked up or the captain dies again.
       const lost = stored<Lost | null>(LOST, null);
       if (lost?.area === local.area) this.dropGold({ col: lost.col, row: lost.row }, lost.gold, { lost: true });
+      for (const t of stored<Thrown[]>(THROWN, [])) if (t.area === local.area) this.dropItem({ col: t.col, row: t.row }, t.item);
       this.input.keyboard?.on("keydown-R", (e: KeyboardEvent) => !e.repeat && this.quaff());
       for (const [n, w] of this.folkHere()) this.addFolk(n, w);
       // Arriving, the area's own name is shown; only the quarters walked into after are.
@@ -1860,6 +1875,37 @@ export class AtlasScene extends Phaser.Scene {
     this.piles.push({ at: { ...at }, gold, s, ...more });
   }
 
+  /** A good on the ground, drawn as a blade: Hollis's gaff is the only one thrown so far. */
+  private dropItem(at: Cell, item: ItemName): Phaser.GameObjects.Image {
+    const [x, y] = [(at.col + 0.5) * CELL, (at.row + 0.75) * CELL];
+    const s = this.add.image(x, y, "swords", 0).setOrigin(0.5, 0.62).setScale(0.12).setDepth(standing(y) - 1);
+    this.piles.push({ at: { ...at }, gold: 0, item, s });
+    return s;
+  }
+
+  /** One of the folk throws a good to land on bare ground two tiles from the captain, away from them and off any fire. */
+  private throwDown(f: Folk, item: ItemName): void {
+    const hero = this.hero!;
+    const open = (c: Cell): boolean =>
+      isWalkable(c.col, c.row) && !isSlope(c.col, c.row) && !this.solid.has(`${c.col},${c.row}`) && !this.local!.fires.some((fire) => tileDistance(fire, c) <= 1);
+    const ring: Cell[] = [];
+    for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) if (Math.max(Math.abs(dc), Math.abs(dr)) === 2) ring.push({ col: hero.at.col + dc, row: hero.at.row + dr });
+    const at = ring.filter(open).sort((a, b) => tileDistance(b, f.at) - tileDistance(a, f.at))[0] ?? hero.at;
+    store(THROWN, [...stored<Thrown[]>(THROWN, []), { item, area: this.local!.area, col: at.col, row: at.row }]);
+    const s = this.dropItem(at, item);
+    const [x0, y0, x1, y1] = [f.s.x, f.s.y - CELL, s.x, s.y];
+    this.tweens.addCounter({
+      from: 0,
+      to: 1,
+      duration: 650,
+      ease: "Sine.easeOut",
+      onUpdate: (tw) => {
+        const k = tw.getValue() ?? 1;
+        s.setPosition(x0 + (x1 - x0) * k, y0 + (y1 - y0) * k - Math.sin(Math.PI * k) * 90).setAngle(k * 720);
+      },
+    });
+  }
+
   private setGold(n: number): void {
     this.gold = n;
     store(GOLD, n);
@@ -1872,6 +1918,12 @@ export class AtlasScene extends Phaser.Scene {
     if (hero.dead || this.gone) return;
     for (const p of this.piles.filter((p) => tileDistance(p.at, hero.at) <= 1)) {
       this.piles.splice(this.piles.indexOf(p), 1);
+      if (p.item) {
+        store(THROWN, stored<Thrown[]>(THROWN, []).filter((t) => t.item !== p.item));
+        p.s.destroy();
+        this.gain(p.item);
+        continue;
+      }
       this.setGold(this.gold + p.gold);
       if (p.stone) store(TAKEN, [...stored<string[]>(TAKEN, []), p.stone]);
       if (p.lost) store(LOST, null);
@@ -2147,13 +2199,13 @@ export class AtlasScene extends Phaser.Scene {
   private gain(item: ItemName): void {
     const bought = remembered(BOUGHT);
     if (bought.has(item)) return;
-    const first = bought.size === 0;
+    const first = [...bought].every((i) => GIFTS.includes(i as ItemName));
     remember(BOUGHT, bought.add(item));
     this.regear();
     const hero = this.hero!;
     this.float(hero.s.x, hero.s.y - hero.lift - 30, item, "#f4cf6b");
-    // The sack has no button on a keyboard: its key is told once, with the first good it holds.
-    if (first) this.time.delayedCall(900, () => this.float(hero.s.x, hero.s.y - hero.lift - 30, "Kept in your sack. Tab.", "#fdfaf0", 2600));
+    // The sack has no button on a keyboard: its key is told once, with the first good got past the gift come ashore.
+    if (first) this.time.delayedCall(900, () => this.float(hero.s.x, hero.s.y - hero.lift - 30, "Press Tab to open your sack", "#fdfaf0", 3200));
   }
 
   /** The captain as `cls`, with `gift` in the sack and called `name`, kept for the run: its sheets, feet and numbers. */
@@ -3470,6 +3522,7 @@ export class AtlasScene extends Phaser.Scene {
 
   /** A line called out over a dweller's head: up, held, gone. */
   private callOut(f: Folk, text: string): void {
+    if (!text) return;
     f.bubble?.destroy();
     const b = this.add
       .text(f.s.x, f.s.y - 1.45 * CELL, text, { fontFamily: FONT, fontSize: "24px", fontStyle: "italic bold", color: "#fdfaf0", stroke: "#1c2634", strokeThickness: 6, align: "center", wordWrap: { width: 5 * CELL } })
@@ -3568,7 +3621,7 @@ export class AtlasScene extends Phaser.Scene {
     f.s.setFlipX(hero.s.x < f.s.x);
     hero.s.setFlipX(f.s.x < hero.s.x);
     const t = nextTalk(f.npc, this.heard, this.seen);
-    this.talk = { folk: f, lines: t.lines, key: talkKey(f.npc, t), sets: t.sets, gives: t.gives, page: 0 };
+    this.talk = { folk: f, lines: t.lines, key: talkKey(f.npc, t), sets: t.sets, gives: t.gives, throws: t.throws, page: 0 };
     this.say();
   }
 
@@ -3602,10 +3655,12 @@ export class AtlasScene extends Phaser.Scene {
       // A talk heard to its end can move someone on: they are elsewhere the next time this area is entered.
       if (t.sets) this.flag(t.sets);
       if (first && t.gives) this.gain(t.gives);
+      const thrown = first && t.throws;
+      if (thrown) this.throwDown(t.folk, thrown);
       this.talk = null;
       this.say();
-      // Talked out, a merchant's menu comes back, as in the Souls games.
-      if (RECRUITER[t.folk.npc.id] || t.folk.npc.shop) this.openMenu(t.folk);
+      // Talked out, a merchant's menu comes back, as in the Souls games; not over a good just thrown, to be gone for.
+      if (!thrown && (RECRUITER[t.folk.npc.id] || t.folk.npc.shop)) this.openMenu(t.folk);
       return;
     }
     this.say();

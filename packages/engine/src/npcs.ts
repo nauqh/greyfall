@@ -45,6 +45,8 @@ export interface Talk {
   sets?: WorldFlag;
   /** Heard to the end the first time, the wanderer is given this. */
   gives?: ItemName;
+  /** Heard to the end the first time, this is thrown down near the wanderer, to be picked up. */
+  throws?: ItemName;
   /** One page each. */
   lines: readonly string[];
 }
@@ -1014,6 +1016,45 @@ export const NPCS: readonly Npc[] = [
     part: "",
     talks: [],
     later: [{ when: [], area: "barrowmoor", at: { col: 113, row: 37 }, dead: true }],
+  },
+  {
+    // The Landing's castaway, washed in before the wanderer on a broken leg: the sack and the map are learned from him.
+    id: "hollis",
+    name: "Hollis the Castaway",
+    short: "Hollis",
+    area: "landing",
+    at: { col: 43, row: 11 },
+    kind: "pawn",
+    // Silent until spoken to.
+    greet: "",
+    part: "",
+    talks: [
+      {
+        id: "first",
+        throws: "Hollis's Gaff",
+        lines: [
+          "Another one the tide brought in. Come and sit by the fire a while. It costs nothing, and I could do with the company.",
+          "I washed up here the same way you did, but I came down on the rocks badly and this leg hasn't held me since. So I sit here and keep the fire going.",
+          "You'll want something with an edge before you go any further. My old gaff is only a fishing hook with the point filed sharp, but it will do more good out there with you than in here with me.",
+          "It's a loan, mind, so look after it. Here, I'll throw it over to you.",
+        ],
+      },
+      {
+        id: "map",
+        lines: [
+          "Have you rested at my fire yet? Do that, then press M to look at your map. Every fire you've rested at is marked on it.",
+          "While you're sitting at a fire, you can travel to any other fire you've rested at. Try it now: go back to the fire you woke by, then come back here. It saves a lot of walking.",
+        ],
+      },
+      {
+        id: "way",
+        lines: [
+          "The way out is south, through the flooded cave. There are more goblins down there, and one of them slings stones from across the water, so don't stand still for long.",
+          "Past the cave is the ring where the bull lives, and past the bull there's a boat. When you take it, the sea will want my gaff back. It always takes back what was only lent.",
+        ],
+      },
+      { id: "still", lines: ["I'm still here, and the leg is no better. Go on, the bull isn't going to come to you."] },
+    ],
   },
 ];
 
