@@ -1412,17 +1412,6 @@ textarea {
 	font: inherit;
 }
 
-.talkName {
-	font-family: "Nunito", "Segoe UI", sans-serif;
-	font-weight: 800;
-	font-size: 15px;
-	letter-spacing: 0.2em;
-	text-transform: uppercase;
-	color: #f2d48a;
-	-webkit-text-stroke: 5px #1c2634;
-	paint-order: stroke fill;
-}
-
 .talkText {
 	max-width: 760px;
 	font-family: "Nunito", "Segoe UI", sans-serif;

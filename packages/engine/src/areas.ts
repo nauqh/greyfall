@@ -3372,6 +3372,7 @@ function landing(): AreaMap {
     { at: { col: 18, row: 24 }, text: "Tap Space to roll." },
     { at: { col: 18, row: 21 }, text: "Hold right click to guard." },
     { at: { col: 33, row: 12 }, text: "R to drink a flask." },
+    { at: { col: 45, row: 13 }, text: "M to open the map. Sat at a fire, travel to any fire you have rested at." },
     { at: { col: 63, row: 28 }, text: "Die, and your gold stays where you fell." },
   ];
   const exits: AreaExit[] = [{ to: "ring", name: "Ring Gate", kind: "open", at: { col: 78, row: 28 }, plain: true }];

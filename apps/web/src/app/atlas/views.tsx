@@ -374,9 +374,8 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
             <span className="noteText">{say.text}</span>
           </button>
         ) : say ? (
-          // A talk, after the Souls games: the name, then one page at a time across the foot of the screen.
+          // A talk, after the Souls games: one page at a time across the foot of the screen, unnamed; the name is over their head.
           <button key={say.text} type="button" className="talk" onClick={() => api.current?.next()} aria-live="polite">
-            <span className="talkName">{say.name}</span>
             <span className="talkText">{say.text}</span>
             <span className="talkNext" aria-hidden="true">E</span>
           </button>
