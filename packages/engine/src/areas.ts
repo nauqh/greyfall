@@ -1649,12 +1649,12 @@ function harbour(): AreaMap {
   prop("house3", 16, 55, blue);
   prop("house1", 26, 58, blue);
   t.grove(25, 51, 2.5, 2, 0.9);
-  t.fences.push({ col: 8, row: 46, w: 6, h: 4 }, { col: 15, row: 47, w: 5, h: 4 });
+  t.fences.push({ col: 8, row: 46, w: 6, h: 4, gate: 2 }, { col: 15, row: 47, w: 5, h: 4, gate: 2 });
   for (const [c, r] of [[9, 47], [11, 48], [10, 48]] as const) who("sheep", c, r);
   for (const [c, r] of [[16, 48], [17, 49]] as const) who("pig", c, r);
-  // The pastures, fenced to the fields' own edges, the flocks grazing in them.
-  t.fences.push({ col: 4, row: 68, w: 10, h: 6 }, { col: 16, row: 68, w: 8, h: 5 });
-  t.fences.push({ col: 4, row: 61, w: 10, h: 5 }, { col: 16, row: 61, w: 10, h: 5 }, { col: 28, row: 61, w: 9, h: 5 });
+  // The pastures, fenced to the fields' own edges, the flocks grazing in them. Every pen on the farm is gated at its foot.
+  t.fences.push({ col: 4, row: 68, w: 10, h: 6, gate: 4 }, { col: 16, row: 68, w: 8, h: 5, gate: 3 });
+  t.fences.push({ col: 4, row: 61, w: 10, h: 5, gate: 4 }, { col: 16, row: 61, w: 10, h: 5, gate: 4 }, { col: 28, row: 61, w: 9, h: 5, gate: 3 });
   for (const [c, r] of [[6, 70], [8, 71], [10, 70], [11, 72], [7, 72]] as const) who("sheep", c, r);
   for (const [c, r] of [[18, 70], [20, 71], [21, 70]] as const) who("pig", c, r);
   for (const [c, r] of [[6, 63], [11, 64], [18, 63], [23, 64], [31, 63]] as const) who("pawn", c, r, { ...blue, act: "knife" });

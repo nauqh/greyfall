@@ -152,8 +152,8 @@ export interface AtlasTier {
   /** Campfires: lit like a bonfire, but no rest. */
   campfires: Cell[];
   bosses: { name: string; area: AreaId; col: number; row: number }[];
-  /** Fence pens and barricades, as rectangles of tiles. */
-  fences: { col: number; row: number; w: number; h: number }[];
+  /** Fence pens and barricades, as rectangles of tiles; `gate` opens two tiles of the south side, that many in from `col`. */
+  fences: { col: number; row: number; w: number; h: number; gate?: number }[];
   /** Each area laid from its own map by `real()`: its own map's cell (`col`, `row`) is atlas cell
    *  (`x0 + (col - c0) / scale`, `y0 + (row - r0) / scale`). */
   real?: Partial<Record<AreaId, RealPlace>>;
@@ -465,10 +465,15 @@ export function solidCells(t: Pick<AtlasTier, "props" | "fences">): Set<string> 
     for (let r = row - f.d + 1; r <= row; r++) for (let c = col - half; c <= col + half; c++) out.add(`${c},${r}`);
   }
   for (const f of t.fences) {
-    for (let c = f.col; c < f.col + f.w; c++) for (const r of [f.row, f.row + f.h - 1]) out.add(`${c},${r}`);
+    for (let c = f.col; c < f.col + f.w; c++) for (const r of [f.row, f.row + f.h - 1]) if (r === f.row || !inGate(f, c)) out.add(`${c},${r}`);
     for (let r = f.row; r < f.row + f.h; r++) for (const c of [f.col, f.col + f.w - 1]) out.add(`${c},${r}`);
   }
   return out;
+}
+
+/** Whether column `c` of a fence's south side is its gate. */
+export function inGate(f: { col: number; gate?: number }, c: number): boolean {
+  return f.gate !== undefined && c - f.col >= f.gate && c - f.col < f.gate + 2;
 }
 
 /** Props that stand in the sea, creatures that swim in it, and those that fly over anything. */
@@ -819,7 +824,7 @@ function settleAll(t: Builder): void {
   // each other; one that does not fit moves to the nearest place that does, or is left out.
   const posts = (f: Fence): Cell[] => {
     const out: Cell[] = [];
-    for (let r = f.row; r < f.row + f.h; r++) for (let c = f.col; c < f.col + f.w; c++) if (r === f.row || r === f.row + f.h - 1 || c === f.col || c === f.col + f.w - 1) out.push({ col: c, row: r });
+    for (let r = f.row; r < f.row + f.h; r++) for (let c = f.col; c < f.col + f.w; c++) if (r === f.row || (r === f.row + f.h - 1 && !inGate(f, c)) || c === f.col || c === f.col + f.w - 1) out.push({ col: c, row: r });
     return out;
   };
   const fenceFits = (f: Fence): boolean => {

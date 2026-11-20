@@ -168,6 +168,7 @@ export {
   TIER_INFO,
   atlasMap,
   footprint,
+  inGate,
   shown,
   solidCells,
   type AreaId,

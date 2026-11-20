@@ -65,6 +65,7 @@ import {
   footprint,
   shown,
   solidCells,
+  inGate,
   useIsland,
   type AreaId,
   type AreaMap,
@@ -2057,7 +2058,7 @@ export class AtlasScene extends Phaser.Scene {
         c.planned = time;
         // Not onto the captain or another companion: a band stands round its captain, not on them.
         const taken = (cell: Cell): boolean =>
-          (cell.col === hero.at.col && cell.row === hero.at.row) || this.band.some((o) => o !== c && !o.dead && o.at.col === cell.col && o.at.row === cell.row);
+          (cell.col === hero.at.col && cell.row === hero.at.row) || this.shut(cell) || this.band.some((o) => o !== c && !o.dead && o.at.col === cell.col && o.at.row === cell.row);
         const goal =
           plan.do === "close"
             ? (cell: Cell) => tileDistance(cell, mine[plan.foe]!.at) <= stats.range && (c.kind !== "archer" || clearShot(cell, mine[plan.foe]!.at, this.blocks))
@@ -2707,10 +2708,11 @@ export class AtlasScene extends Phaser.Scene {
     }
     this.dress(tier, roads);
     for (const p of tier.props) this.addProp(p, tier.base);
-    for (const f of tier.fences) this.fence(f.col, f.row, f.w, f.h);
+    for (const f of tier.fences) this.fence(f.col, f.row, f.w, f.h, f.gate);
     for (const g of tier.gates) this.gatehouse(g.kind, g.cells);
     for (const f of [...tier.fires, ...tier.campfires]) this.bonfire(f);
-    for (const d of tier.dwellers) this.addDweller(d);
+    const posts = solidCells({ props: [], fences: tier.fences });
+    for (const d of tier.dwellers) this.addDweller(d, posts);
     for (const e of this.local?.exits ?? []) this.exitMark(e);
     this.mood(tier);
     this.ambience(tier);
@@ -2934,7 +2936,7 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** A fence pen: corners, rails and posts from the kit's 4x3 tile sheet. */
-  private fence(col: number, row: number, w: number, h: number): Phaser.GameObjects.Image[] {
+  private fence(col: number, row: number, w: number, h: number, gate?: number): Phaser.GameObjects.Image[] {
     const made: Phaser.GameObjects.Image[] = [];
     /** One tile of the sheet; `crop` keeps only part of the frame, so an end piece shows no rail running off into nothing. */
     const piece = (c: number, r: number, frame: number, crop?: [number, number, number, number]): void => {
@@ -2961,7 +2963,9 @@ export class AtlasScene extends Phaser.Scene {
       const first = c === col;
       const last = c === col + w - 1;
       piece(c, row, first ? 0 : last ? 3 : 1 + (c % 2));
-      if (h > 1) piece(c, row + h - 1, first ? 8 : last ? 11 : 9 + (c % 2));
+      // The sheet's bottom row is a gate, each middle piece stopping at its post: a closed run takes the top's rails.
+      const shut = (k: number) => !inGate({ col, gate }, k);
+      if (shut(c)) piece(c, row + h - 1, first ? 8 : last ? 11 : !shut(c + 1) ? 9 : !shut(c - 1) ? 10 : 1 + (c % 2));
     }
     for (let r = row + 1; r < row + h - 1; r++) {
       piece(col, r, 4);
@@ -3180,7 +3184,7 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** Creatures and knights, idle at their spot or walking their beat. */
-  private addDweller(d: Dweller): void {
+  private addDweller(d: Dweller, posts: ReadonlySet<string>): void {
     if (this.local && FOES[d.kind]) {
       if (!this.slain(d)) this.addFoe(d);
       return;
@@ -3199,8 +3203,8 @@ export class AtlasScene extends Phaser.Scene {
       this.track(s, 160);
       return;
     }
-    // A walker keeps to the ground it can walk: round the cliffs, and up and down only by the stairs.
-    const found = d.to && !look.swim ? findPath({ col: d.col, row: d.row }, d.to) : null;
+    // A walker keeps to the ground it can walk: round the cliffs, up and down only by the stairs, in and out of a pen by its gate.
+    const found = d.to && !look.swim ? findPath({ col: d.col, row: d.row }, d.to, (c) => posts.has(`${c.col},${c.row}`)) : null;
     // A beat that only goes the long way round, down one stair and up another, is not walked: it stays at its post.
     const route = found && d.to && found.length <= 2 * (Math.abs(d.to.col - d.col) + Math.abs(d.to.row - d.row)) + 8 ? found : null;
     const cells = route ? [{ col: d.col, row: d.row }, ...route] : d.to && look.swim ? [{ col: d.col, row: d.row }, d.to] : [];
