@@ -746,8 +746,9 @@ crossing are gone.
   their own, and that area is the arena and nothing else, a land apart:
   in at a gate from the land before, straight into the room, and
   past the boss his exit (`guard`) into a new land. Like the Ring, each is
-  walked straight into with no fog (an empty `gate`): the land is the room. The Bull's Wall (`bullwall`): the curtain wall
-  alone, three wide over the drop, from the Ramparts' walk to the Chapel
+  walked straight into with no fog (an empty `gate`): the land is the
+  room. The Bull's Wall (`bullwall`): the curtain wall alone, three wide
+  over the drop, from the Ramparts' walk to the Chapel
   Door, no way round him; the Ladder to the Burg drops off it past him.
   The Belfry (`belfry`): the bell loft alone, cramped round the bell's
   timber frame (a fence), from the chapel terrace's Bell Stair to the
