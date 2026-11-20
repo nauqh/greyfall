@@ -1858,7 +1858,7 @@ function harbour(): AreaMap {
   // the Watch's rock, and on the boards over the Mine Hills' deep face.
   const notes: Note[] = [
     { at: { col: Math.round(sx(9)), row: 51 }, text: "The Old Well, sunk in the hill's cave. A rope down; no way back up." },
-    { at: { col: 63, row: 59 }, text: "Back to the Ring. If the bull lives, he waits." },
+    { at: { col: 63, row: 59 }, text: "Seek church ahead" },
     { at: { col: 95, row: 67 }, text: "Our own dead up there. The dogs came over the hill, not through the gate. Not yet." },
     { at: { col: 101, row: 47 }, text: "Three winters on this rock. The beacon stays lit. Someone has to see it." },
     { at: { col: 98, row: 21 }, text: "SHUT. The rock is grey past here. Do not dig it. - D." },

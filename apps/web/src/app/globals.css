@@ -1273,11 +1273,17 @@ textarea {
 	margin-top: -2px;
 }
 
-/* The way out, back to the fire. */
-.mapClose {
+/* The way out, back to the fire: the sack's round x, in the corner above the land panel. */
+.btn.small.mapClose {
 	position: absolute;
+	top: 14px;
 	right: 14px;
-	bottom: 14px;
+	display: grid;
+	place-items: center;
+	width: 40px;
+	height: 40px;
+	min-width: 0;
+	padding: 0;
 }
 
 /* A land, on the map's parchment: its name, where it sits, its lore, its keeper and its bonfires. */

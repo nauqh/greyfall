@@ -158,8 +158,16 @@ export function TravelMap({ from, travel: atFire, dev = false, onTravel, onBack 
             </section>
           )}
 
-          <button className="btn small mapClose" type="button" onClick={onBack}>
-            {atFire ? "Back to the bonfire" : "Close the map"}
+          <button
+            className="btn small light mapClose"
+            type="button"
+            aria-label={atFire ? "Back to the bonfire" : "Close the map"}
+            title={atFire ? "Back to the bonfire (Esc)" : "Close the map (M or Esc)"}
+            onClick={onBack}
+          >
+            <svg viewBox="0 0 16 16" width={16} height={16} aria-hidden>
+              <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth={3} strokeLinecap="round" />
+            </svg>
           </button>
         </div>
       </GameCanvas>
