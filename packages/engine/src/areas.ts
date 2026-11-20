@@ -1570,6 +1570,11 @@ function harbour(): AreaMap {
   who("pawn", 23, 19, { ...gateOpen, act: "wood", to: { col: 26, row: 36 } });
   who("bear", 8, 18, { to: { col: 14, row: 26 } });
   t.grove(18, 22, 13, 9, 0.5);
+  // The cleft between the Northwood and the cabins' ledge let out at its foot, one walker wide, onto the track, and
+  // cleared of the wood along it so it reads as a way through.
+  t.block(1, 25, 22, 1, 1);
+  for (let r = 10; r <= 24; r++) for (let c = 20; c <= 25; c++) if (t.grid[r]![c] === "T") t.grid[r]![c] = ".";
+  for (const [c, r] of [[26, 25], [27, 25], [28, 25], [27, 26]] as const) t.grid[r]![c] = ".";
   // The lumber camp at the wood's foot by the Ember Gate road: a fire, the axes going.
   t.campfires.push({ col: 25, row: 40 });
   for (const [c, r] of [[21, 36], [28, 36]] as const) who("pawn", c, r, { ...blue, act: "axe" });
