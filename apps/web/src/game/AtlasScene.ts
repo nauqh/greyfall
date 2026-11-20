@@ -3424,6 +3424,7 @@ export class AtlasScene extends Phaser.Scene {
       return;
     }
     this.loop(s, look.idle.key);
+    this.bases.push({ x0: s.x - 0.3 * CELL, x1: s.x + 0.3 * CELL, y0: y - 12, y1: y });
     // Named over their heads, so they stand out from the villagers at work round them.
     const tag = this.add
       .text(s.x, y - 1.05 * CELL, n.short ?? n.name, { fontFamily: FONT, fontSize: "20px", fontStyle: "bold", color: "#f2d48a", stroke: "#1c2634", strokeThickness: 5 })
