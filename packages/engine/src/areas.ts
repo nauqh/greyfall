@@ -1324,6 +1324,10 @@ function harbour(): AreaMap {
   // Notches cut into the widened cliffs, top and foot, so no edge runs on straight.
   const ground = widen(LOWER_TOWN, W).map((l) => [...l]);
   for (const [c, r, ch] of [[47, 43, "."], [48, 43, "."], [54, 43, "."], [55, 43, "."], [41, 46, "^"], [42, 46, "^"], [48, 48, "#"], [49, 48, "#"], [53, 51, "."], [54, 51, "."], [39, 45, "^"], [39, 46, "{"], [40, 46, "4"], [41, 46, "4"], [42, 46, "4"]] as const) ground[r - 43]![c - X0] = ch;
+  // Lookout Hill's foot runs on west and down the bay's west shore toward West Fields, its stair moved to the new end.
+  for (const [r, line] of [[46, "...####"], [47, "..######"], [48, ".<######"], [49, "..#######"], [50, "..#######"], [51, ".######"], [52, "#####"], [53, "###"], [54, "###"], [55, "###"], [56, "##"]] as const) {
+    [...line].forEach((ch, i) => ch === "." || (ground[r - 43]![i] = ch));
+  }
   stamp(t, ground.map((l) => l.join("")), X0, 43);
 
   // Paved only where the town is: the high street from the Old Bridge's toll post along the bowl's foot to the Old
@@ -1767,6 +1771,12 @@ function harbour(): AreaMap {
   who("warrior", sx(18), 49, { ...blue, to: { col: sx(16), row: 49 } });
   for (const [c, r] of [[4, 52], [5, 53], [22, 51], [21, 50]] as const) who("sheep", sx(c), r);
   t.campfires.push({ col: Math.round(sx(12)), row: 53 });
+  // The hill's west foot: a hamlet on the shelf, and a watchtower on the shore spur looking over the bay to the farm.
+  for (const [c, r, art] of [[34, 49, "house1"], [38, 49, "house3"], [36, 52, "house2"]] as const) prop(art, c, r, blue);
+  prop("watchtower", 31, 55, pinned);
+  t.campfires.push({ col: 36, row: 50 });
+  who("pawn", 33, 51, { ...blue, act: "hammer" });
+  who("archer", 30, 54, blue);
   // The island's terraces carried round the bay's upper curve, the shore left as it lies: the west terrace down to the
   // north-west corner, its stair moved to the beach, and the east plateau out to the square.
   // Each row a run of its own length, so the cliffs step in and out like the island's.
