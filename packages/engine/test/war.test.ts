@@ -141,7 +141,7 @@ describe("island", () => {
     expect(canStep({ col: 10, row: 7 }, { col: 11, row: 7 })).toBe(false);
     expect(canStep({ col: 26, row: 20 }, { col: 26, row: 19 })).toBe(true);
     expect(canStep({ col: 26, row: 19 }, { col: 25, row: 19 })).toBe(false);
-    // The war's ramps run down their own row's foot, never off their open side as the atlas's stairs do.
+    // The war's ramps run down their own row's foot, never along their slope as the atlas's stairs do.
     expect(canStep({ col: 12, row: 5 }, { col: 13, row: 5 })).toBe(false);
     expect(isWalkable(27, 20)).toBe(false);
   });

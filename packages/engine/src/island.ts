@@ -66,8 +66,8 @@ export interface Island {
   start: Record<WarSide, { castle: Cell; barracks: Cell }>;
   mines: readonly Mine[];
   lair: Cell;
-  /** Stairs drawn side-on: a slope is also walked on and off from its open side, away from its table. */
-  sideways?: boolean;
+  /** Stairs drawn as a ramp sloping down off their open side: climbed only diagonally, along the slope. */
+  diagonalStairs?: boolean;
 }
 
 // ponytail: one island per process, live `let` bindings swapped by useIsland(); thread an Island through if a server ever runs two at once.
@@ -112,13 +112,13 @@ export function isWalkable(col: number, row: number): boolean {
 
 /** One move to a neighbouring cell. The level only changes on a ramp, one
  *  level at a time, from a slope's top straight down to its foot or back up,
- *  and on a sideways island also off its open side. Other diagonals stay on
- *  one level and never cut a corner. */
+ *  or on a diagonal-stairs island only along the slope. Other diagonals stay
+ *  on one level and never cut a corner. */
 export function canStep(from: Cell, to: Cell): boolean {
   if (!isWalkable(to.col, to.row)) return false;
   const dc = to.col - from.col;
   const dr = to.row - from.row;
-  if (SIDEWAYS && (isSlope(from.col, from.row) || isSlope(to.col, to.row)) && offStair(from, to)) return true;
+  if (DIAGONAL_STAIRS && level(from.col, from.row) !== level(to.col, to.row)) return climbsStair(from, to, dc, dr);
   if (dc !== 0 && dr !== 0) {
     const lv = level(from.col, from.row);
     return (
@@ -133,14 +133,17 @@ export function canStep(from: Cell, to: Cell): boolean {
   return isSlope(top.col, top.row) && level(top.col, top.row) - level(foot.col, foot.row) === 1;
 }
 
-/** A stair and the ground one level down off its open side: beside it, or below that, where its art runs out. */
-function offStair(a: Cell, b: Cell): boolean {
+/** Whether moving (dx, dy) from `a` into `b` goes along a stair's slope: up toward its table, or down off its open
+ *  side, both axes at once. `b` may be any cell between the stair and the ground a row down off its open side. */
+export function climbsStair(a: Cell, b: Cell, dx: number, dy: number): boolean {
   const [top, low] = level(a.col, a.row) > level(b.col, b.row) ? [a, b] : [b, a];
   if (!isSlope(top.col, top.row) || level(top.col, top.row) - level(low.col, low.row) !== 1) return false;
-  const open = top.col + ("<[{(".includes(at(top.col, top.row)) ? -1 : 1);
-  if (low.col !== open) return false;
-  if (low.row === top.row) return true;
-  return low.row === top.row + 1 && isWalkable(open, top.row) && isWalkable(top.col, low.row);
+  const toTable = "<[{(".includes(at(top.col, top.row)) ? 1 : -1;
+  const open = top.col - toTable;
+  if ((low.col !== open && low.col !== top.col) || (low.row !== top.row && low.row !== top.row + 1)) return false;
+  if (!isWalkable(open, top.row) || !isWalkable(top.col, top.row + 1) || !isWalkable(open, top.row + 1)) return false;
+  const up = top === b ? 1 : -1;
+  return Math.sign(dx) === toTable * up && Math.sign(dy) === -up;
 }
 
 const STEPS = new Map<number, readonly Cell[]>();
@@ -313,7 +316,7 @@ export let LAIR: Cell = { col: 30, row: 18 };
 export const WAR_ISLAND: Island = { rows: WAR_MAP, start: START, mines: MINES, lair: LAIR };
 
 let HOME: Record<WarSide, Set<number>>;
-let SIDEWAYS = false;
+let DIAGONAL_STAIRS = false;
 let MINE_CELLS: Set<number>;
 
 /** Make `island` the ground every rule reads. The war's is in use until then. */
@@ -324,7 +327,7 @@ export function useIsland(island: Island): void {
   START = island.start;
   MINES = island.mines;
   LAIR = island.lair;
-  SIDEWAYS = island.sideways ?? false;
+  DIAGONAL_STAIRS = island.diagonalStairs ?? false;
   STEPS.clear();
   HOME = {
     a: new Set(plateauOf(START.a.castle).map(cellKey)),

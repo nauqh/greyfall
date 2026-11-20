@@ -55,6 +55,7 @@ export {
   STRAT_ROWS,
   at,
   canStep,
+  climbsStair,
   castlePlot,
   castsCliff,
   cellKey,

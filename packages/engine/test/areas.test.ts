@@ -212,19 +212,19 @@ describe("the Harbour's streets", () => {
     }
   });
 
-  it("walk every stair on and off from its open side, as its art climbs", () => {
+  it("climb every stair along its slope, never straight across or straight up", () => {
     take();
     for (let row = 0; row < m.island.rows.length; row++)
       for (let col = 0; col < m.island.rows[0]!.length; col++) {
         const ch = m.island.rows[row]![col]!;
         if (!isSlope(col, row)) continue;
-        const open = { col: col + ("<[{(".includes(ch) ? -1 : 1), row };
-        if (!isWalkable(open.col, open.row) || level(open.col, open.row) !== level(col, row) - 1) continue;
-        expect(canStep({ col, row }, open) && canStep(open, { col, row }), `${ch} at ${col},${row}`).toBe(true);
-        // Down off its end, as the ramp's art runs, where the foot beside it is open too.
-        const below = { col: open.col, row: row + 1 };
-        if (!isWalkable(below.col, below.row) || !isWalkable(col, row + 1) || level(below.col, below.row) !== level(col, row) - 1) continue;
-        expect(canStep({ col, row }, below) && canStep(below, { col, row }), `${ch} at ${col},${row} down its end`).toBe(true);
+        const top = { col, row };
+        const open = col + ("<[{(".includes(ch) ? -1 : 1);
+        expect(level(open, row), `${ch} at ${col},${row} open side`).toBe(level(col, row) - 1);
+        expect(canStep(top, { col: open, row }) || canStep({ col: open, row }, top), `${ch} at ${col},${row} across`).toBe(false);
+        expect(canStep(top, { col, row: row + 1 }) || canStep({ col, row: row + 1 }, top), `${ch} at ${col},${row} up its foot`).toBe(false);
+        const low = { col: open, row: row + 1 };
+        expect(canStep(top, low) && canStep(low, top), `${ch} at ${col},${row} along its slope`).toBe(true);
       }
   });
 

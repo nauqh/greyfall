@@ -8,6 +8,7 @@ export {
   at,
   canStep,
   castsCliff,
+  climbsStair,
   findPath,
   isForest,
   isHigh,

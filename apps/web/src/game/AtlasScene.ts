@@ -89,7 +89,7 @@ import * as Phaser from "phaser";
 import { BUILDINGS, packUrl } from "./art";
 import { DPR, startGame } from "./boot";
 import { CELL, buildMap, loadGroundColours, trailTiles } from "./islandMap";
-import { STRAT_COLS, STRAT_ROWS, at, findPath, isForest, isLand, isSlope, isWalkable, level } from "./stratMap";
+import { STRAT_COLS, STRAT_ROWS, at, climbsStair, findPath, isForest, isLand, isSlope, isWalkable, level } from "./stratMap";
 import { DEPTH, addDecor, cloudCover, loadTerrain, prepareTerrain, standing } from "./terrain";
 import { HAND } from "./ui";
 
@@ -2321,17 +2321,25 @@ export class AtlasScene extends Phaser.Scene {
     const cellAt = (x: number, y: number): Cell => ({ col: Math.floor(x / CELL), row: Math.round(y / CELL - 0.75) });
     // Felt for a little ahead of the feet, so the hero stops short of a wall instead of half inside it.
     const ahead = 0.3 * CELL;
-    const open = (x: number, y: number): boolean => {
+    const open = (x: number, y: number, mx = 0, my = 0): boolean => {
       const to = cellAt(x, y);
       const k = `${to.col},${to.row}`;
-      return (to.col === hero.at.col && to.row === hero.at.row) || (canStep(hero.at, to) && (this.boxed.has(k) ? !this.sealed.has(k) && !this.locked.has(k) : !this.shut(to)));
+      return (to.col === hero.at.col && to.row === hero.at.row) || ((canStep(hero.at, to) || climbsStair(hero.at, to, mx, my)) && (this.boxed.has(k) ? !this.sealed.has(k) && !this.locked.has(k) : !this.shut(to)));
     };
     // A prop or a rock stops the feet at its art's base, not at its tile's edge; feet already in one can always step out.
     const hit = (b: Box, x: number, y: number): boolean => x + FEET.w > b.x0 && x - FEET.w < b.x1 && y + FEET.down > b.y0 && y - FEET.up < b.y1;
     let { x, y } = hero.s;
     const clear = (nx: number, ny: number): boolean => !this.bases.some((b) => hit(b, nx, ny) && !hit(b, x, y));
-    if (dx && open(x + Math.sign(dx) * ahead + dx * step, y) && clear(x + dx * step, y)) x += dx * step;
-    if (dy && open(x, y + Math.sign(dy) * ahead + dy * step) && clear(x, y + dy * step)) y += dy * step;
+    // A stair is taken along its slope, both axes at once; one axis alone never changes level.
+    const [fx, fy] = [x + Math.sign(dx) * ahead + dx * step, y + Math.sign(dy) * ahead + dy * step];
+    const to = cellAt(fx, fy);
+    if (dx && dy && level(to.col, to.row) !== level(hero.at.col, hero.at.row) && open(fx, fy, dx, dy) && clear(x + dx * step, y + dy * step)) {
+      x += dx * step;
+      y += dy * step;
+    } else {
+      if (dx && open(x + Math.sign(dx) * ahead + dx * step, y) && clear(x + dx * step, y)) x += dx * step;
+      if (dy && open(x, y + Math.sign(dy) * ahead + dy * step) && clear(x, y + dy * step)) y += dy * step;
+    }
     hero.s.setPosition(x, y).setDepth(standing(y));
     hero.at = cellAt(x, y);
     if (face && Math.abs(dx) > 0.01) hero.s.setFlipX(dx < 0);

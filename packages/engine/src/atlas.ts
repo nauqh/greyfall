@@ -689,7 +689,8 @@ function terrain(t: Builder, rows: number, cols: number): void {
             }
           }
         }
-        // A stair stands beside the table's bottom row, on open ground of the height below, with that ground above it and below.
+        // A stair stands beside the table's bottom row, on open ground of the height below, with that ground above it and
+        // below, and a row down off its open side, where its slope runs out.
         const lower = (c: number, r: number) => levelAt(c, r) === k - 1 && !isStair(c, r) && (k > 2 || ".T".includes(at(c, r)));
         const found: { c: number; r: number; side: "L" | "R"; own: string }[] = [];
         for (const p of comp) {
@@ -698,7 +699,8 @@ function terrain(t: Builder, rows: number, cols: number): void {
             const c = p.col + (s === "L" ? -1 : 1);
             const r = p.row;
             // Grouped by area and by landform: every landform gets its own way up.
-            if (lower(c, r) && lower(c, r - 1) && lower(c, r + 1) && levelAt(c, r + 2) >= 1) found.push({ c, r, side: s, own: `${area[r]![c]}:${organic.get(`${p.col},${p.row}`) ?? ""}` });
+            const o = c + (s === "L" ? -1 : 1);
+            if (lower(c, r) && lower(c, r - 1) && lower(c, r + 1) && lower(o, r) && lower(o, r + 1) && levelAt(c, r + 2) >= 1) found.push({ c, r, side: s, own: `${area[r]![c]}:${organic.get(`${p.col},${p.row}`) ?? ""}` });
           }
         }
         // Authored ground takes only its authored stairs.
@@ -721,7 +723,7 @@ function terrain(t: Builder, rows: number, cols: number): void {
 
   for (const w of t.ways) stairs.set(`${w.col},${w.row}`, w.side === "L" ? HEIGHT[w.level]!.left : HEIGHT[w.level]!.right);
 
-  // Write the ground: tops, then stairs, with open ground at each stair's head and foot.
+  // Write the ground: tops, then stairs, with open ground at each stair's head, foot and the end of its slope.
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       if (!".T#".includes(at(c, r))) continue;
@@ -733,7 +735,8 @@ function terrain(t: Builder, rows: number, cols: number): void {
   for (const [k, ch] of stairs) {
     const [c, r] = k.split(",").map(Number) as [number, number];
     put(c, r, ch);
-    for (const dr of [-1, 1]) if (at(c, r + dr) === "T") put(c, r + dr, ".");
+    const o = c + ("<[{(".includes(ch) ? -1 : 1);
+    for (const [x, y] of [[c, r - 1], [c, r + 1], [o, r], [o, r + 1]] as const) if (at(x, y) === "T") put(x, y, ".");
   }
 }
 
@@ -748,6 +751,10 @@ function settleAll(t: Builder): void {
   useIsland(islandNow());
   const slope = (c: Cell) => "<>[]{}()".includes(t.at(c.col, c.row));
   const key = (c: Cell) => `${c.col},${c.row}`;
+  // A stair's head and the ground its slope runs down to stay clear, or the stair leads nowhere.
+  const left = (x: number, y: number) => "<[{(".includes(t.at(x, y));
+  const right = (x: number, y: number) => ">]})".includes(t.at(x, y));
+  const byStair = (c: Cell) => left(c.col - 1, c.row) || right(c.col + 1, c.row) || left(c.col + 1, c.row - 1) || right(c.col - 1, c.row - 1);
   // Ground a building stands on, and the ground round it: taken once a building is placed.
   const under = new Set<string>();
   const taken = new Set<string>();
@@ -764,7 +771,7 @@ function settleAll(t: Builder): void {
     for (const c of footprint(p)) {
       if (taken.has(key(c))) return false;
       // A building is never on a road, a building in a street reads as one dropped there; stock and stalls may be.
-      if (wet ? t.at(c.col, c.row) !== "~" : !isWalkable(c.col, c.row) || slope(c) || level(c.col, c.row) !== base || t.area[c.row]?.[c.col] !== own || (FOOT[p.art]?.clear && t.roadSet.has(key(c)))) return false;
+      if (wet ? t.at(c.col, c.row) !== "~" : !isWalkable(c.col, c.row) || slope(c) || byStair(c) || level(c.col, c.row) !== base || t.area[c.row]?.[c.col] !== own || (FOOT[p.art]?.clear && t.roadSet.has(key(c)))) return false;
     }
     for (const c of footprint(p, true)) {
       if (under.has(key(c))) return false;
@@ -1153,7 +1160,8 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
           // Never on a cliff face, by a stair, or where a slope's head or foot is.
           const slope = (x: number, y: number) => "<>[]{}()".includes(at(x, y));
           if ("#^%45".includes(at(c, r - 1)) || slope(c, r - 1) || slope(c, r + 1) || slope(c - 1, r) || slope(c + 1, r)) continue;
-          if (open ? !open(c, r) : rng.next() < (density[AREAS[a]!.id] ?? 0)) put(c, r, "T");
+          // Nor where a slope ends, checked after the draw so the woods elsewhere keep their shape.
+          if ((open ? !open(c, r) : rng.next() < (density[AREAS[a]!.id] ?? 0)) && !slope(c - 1, r - 1) && !slope(c + 1, r - 1)) put(c, r, "T");
         }
       }
 
@@ -1163,6 +1171,7 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
         start: { a: { castle: centre, barracks: centre }, b: { castle: centre, barracks: centre } },
         mines: [],
         lair: centre,
+        diagonalStairs: true,
       });
       // Woods never wall a clearing off: a pocket nobody can reach gets a path cut to the rest.
       for (let pass = 0; pass < 300; pass++) {
@@ -1257,8 +1266,8 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
         name: info.name,
         blurb: info.blurb,
         base: info.base,
-        // Built on the war's step rule, so no pocket leans on a side step a prop may later fill; walked side-on.
-        island: { ...islandOf(), sideways: true },
+        // Built on the war's step rule, so no pocket leans on a stair a prop may later fill; climbed along its slope.
+        island: { ...islandOf(), diagonalStairs: true },
         areaAt: owned.map((l, r) => l.map((a, c) => (a >= 0 && grid[r]![c] !== wall && grid[r]![c] !== "~" ? AREA_CODE[a]! : "-")).join("")),
         gates: t.gates,
         roads: [...t.roadSet]
