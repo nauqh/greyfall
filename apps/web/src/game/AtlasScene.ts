@@ -852,6 +852,8 @@ export class AtlasScene extends Phaser.Scene {
   /** The solid tiles that are a prop's or a rock's: the hero's feet meet the art's base there, not the whole tile. */
   private boxed = new Set<string>();
   private bases: Box[] = [];
+  /** The townsfolk and creatures afoot, who block the hero where they stand. */
+  private walkers: Phaser.GameObjects.Sprite[] = [];
   private fog: Phaser.GameObjects.Sprite[] = [];
   /** Mist over the boss room, hiding it until the captain is inside. */
   private mist: Phaser.GameObjects.Image[] = [];
@@ -923,6 +925,7 @@ export class AtlasScene extends Phaser.Scene {
     this.solid = new Set();
     this.boxed = new Set();
     this.bases = [];
+    this.walkers = [];
     this.fog = [];
     this.mist = [];
     // The page keeps the last area's bar through a crossing; clear it, or a key of "" never sends the null.
@@ -2329,7 +2332,10 @@ export class AtlasScene extends Phaser.Scene {
     // A prop or a rock stops the feet at its art's base, not at its tile's edge; feet already in one can always step out.
     const hit = (b: Box, x: number, y: number): boolean => x + FEET.w > b.x0 && x - FEET.w < b.x1 && y + FEET.down > b.y0 && y - FEET.up < b.y1;
     let { x, y } = hero.s;
-    const clear = (nx: number, ny: number): boolean => !this.bases.some((b) => hit(b, nx, ny) && !hit(b, x, y));
+    // Everyone afoot stands as solid as a prop, but the hero's own band, who would hem them in.
+    const feet = (s: Phaser.GameObjects.Sprite): Box => ({ x0: s.x - 0.3 * CELL, x1: s.x + 0.3 * CELL, y0: s.y - 12, y1: s.y });
+    const others = [...this.walkers, ...this.folk.map((f) => f.s), ...this.foes.filter((f) => !f.dead).map((f) => f.s)].filter((s) => s.active).map(feet);
+    const clear = (nx: number, ny: number): boolean => ![...this.bases, ...others].some((b) => hit(b, nx, ny) && !hit(b, x, y));
     const canX = !!dx && open(x + Math.sign(dx) * ahead + dx * step, y) && clear(x + dx * step, y);
     const canY = !!dy && open(x, y + Math.sign(dy) * ahead + dy * step) && clear(x, y + dy * step);
     // A stair is taken along its slope, both axes at once: a push that snags on it is turned up or down the slope.
@@ -3215,6 +3221,7 @@ export class AtlasScene extends Phaser.Scene {
       this.track(s, 160);
       return;
     }
+    if (!look.swim && !d.perch) this.walkers.push(s);
     // A walker keeps to the ground it can walk: round the cliffs, up and down only by the stairs, in and out of a pen by its gate.
     const found = d.to && !look.swim ? findPath({ col: d.col, row: d.row }, d.to, (c) => posts.has(`${c.col},${c.row}`)) : null;
     // A beat that only goes the long way round, down one stair and up another, is not walked: it stays at its post.
@@ -3434,7 +3441,6 @@ export class AtlasScene extends Phaser.Scene {
       return;
     }
     this.loop(s, look.idle.key);
-    this.bases.push({ x0: s.x - 0.3 * CELL, x1: s.x + 0.3 * CELL, y0: y - 12, y1: y });
     // Named over their heads, so they stand out from the villagers at work round them.
     const tag = this.add
       .text(s.x, y - 1.05 * CELL, n.short ?? n.name, { fontFamily: FONT, fontSize: "20px", fontStyle: "bold", color: "#f2d48a", stroke: "#1c2634", strokeThickness: 5 })
