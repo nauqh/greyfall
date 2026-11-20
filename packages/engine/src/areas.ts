@@ -1739,9 +1739,10 @@ function harbour(): AreaMap {
   prop("fishHut", sx(9.3), 55.25, pinned);
   prop("house2", sx(19.1), 55.65, { ...blue, ...pinned });
   prop("boat", sx(13.5), 55.6, pinned);
-  for (const [c, r] of [[5.6, 4.6], [12.4, 3.6], [5.4, 5.8], [4.5, 7.2], [3.6, 8.6], [2.8, 10.4], [20.8, 4.8], [22.4, 6.2], [23, 8], [12.4, 10.8], [7, 10.2], [4.4, 15.4], [21.4, 15.8], [14.5, 2.6]] as const) prop("tree", sx(c), 41 + r, pinned);
+  // The title's trees and stones, less those that land on a stair here, shut a nook off or stand on the causeway.
+  for (const [c, r] of [[12.4, 3.6], [4.5, 7.2], [2.8, 10.4], [20.8, 4.8], [22.4, 6.2], [23, 8], [12.4, 10.8], [7, 10.2], [4.4, 15.4]] as const) prop("tree", sx(c), 41 + r, pinned);
   for (const [c, r] of [[9.4, 10.6], [6.4, 10.6], [18.6, 12.5], [3.3, 12.6], [21.4, 10.6], [6.3, 6.6]] as const) prop("bush", sx(c), 41 + r, pinned);
-  for (const [c, r] of [[6.5, 13.8], [23, 11.6], [14.6, 9.7]] as const) prop("rock", sx(c), 41 + r, pinned);
+  for (const [c, r] of [[23, 11.6], [14.6, 9.7]] as const) prop("rock", sx(c), 41 + r, pinned);
   for (const [c, r] of [[12.2, 16.8], [16.4, 16.4], [8.6, 17.4], [24.6, 17]] as const) prop("waterRock", sx(c), 41 + r, pinned);
   who("monk", sx(11), 53, blue);
   who("pawn", sx(14), 53, { ...blue, flip: true });

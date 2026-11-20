@@ -2771,6 +2771,12 @@ export class AtlasScene extends Phaser.Scene {
     for (const f of [...tier.fires, ...tier.campfires]) for (let r = f.row - 1; r <= f.row + 1; r++) for (let c = f.col - 1; c <= f.col + 1; c++) built.add(r * STRAT_COLS + c);
     // Nor on a note or the two rows south of it, whose art would stand over the paper; woods keep their trees.
     for (const n of this.local?.notes ?? []) for (let r = n.at.row; r <= n.at.row + 2; r++) for (let c = n.at.col - 1; c <= n.at.col + 1; c++) if (!isForest(c, r)) built.add(r * STRAT_COLS + c);
+    // Nor round a stair or a way out, where even scenery reads as a block.
+    const ways = (this.local?.exits ?? []).map((e) => e.at);
+    for (let r = 0; r < STRAT_ROWS; r++) for (let c = 0; c < STRAT_COLS; c++) if (isSlope(c, r)) ways.push({ col: c, row: r });
+    for (const w of ways) for (let r = w.row - 1; r <= w.row + 1; r++) for (let c = w.col - 1; c <= w.col + 1; c++) if (!isForest(c, r)) built.add(r * STRAT_COLS + c);
+    // What a rock may not crowd: every solid prop and post, and each rock already set in the way.
+    const shut = solidCells(tier);
     for (let r = 0; r < STRAT_ROWS; r++) {
       for (let c = 0; c < STRAT_COLS; c++) {
         // A thin line of woods is a hedgerow; a mass of them is a wood, whose trees take their kind from a spot a few
@@ -2818,11 +2824,12 @@ export class AtlasScene extends Phaser.Scene {
           }
           continue;
         }
-        // Trees on the high ground, back from its rim: the engine leaves it open, so they are only dressing.
+        // Trees on the high ground, two tiles back from its rim: the engine leaves it open, so they are only dressing, and
+        // a strip too narrow for that is a way across, kept clear.
         const byLift = this.map.lifts.some((l) => [l.up, l.down].some((e) => e.tier === tier.id && Math.abs(e.at.col - c) <= 1 && Math.abs(e.at.row - r) <= 2));
         if (level(c, r) >= 2 && isWalkable(c, r) && !isSlope(c, r) && tier.base !== "rock" && !byLift) {
           let rim = false;
-          for (let dr = -1; dr <= 2; dr++) for (let dc = -1; dc <= 1; dc++) rim ||= level(c + dc, r + dr) !== level(c, r) || isSlope(c + dc, r + dr);
+          for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) rim ||= level(c + dc, r + dr) !== level(c, r) || isSlope(c + dc, r + dr);
           const own = (this.local && districtOf(this.local, c, r)?.trees);
           const odds = own ?? (id === "emberwood" ? 0.3 : id === "crags" && this.local ? 0.16 : id === "crags" || id === "saltreach" ? 0.08 : 0.03);
           if (!rim && r01() < odds) {
@@ -2855,9 +2862,15 @@ export class AtlasScene extends Phaser.Scene {
         if (roll < chance) {
           const x = (c + 0.2 + r01() * 0.6) * CELL;
           const y = (r + 0.5 + r01() * 0.35) * CELL;
-          // A rock or stump with open ground all round stands in the way; one at an edge stays scenery, or it could seal a pass.
+          // A rock or stump with two tiles of open level ground all round stands in the way; one nearer a cliff, a stair,
+          // a building or another rock stays scenery, or it could narrow a pass to one tile or seal it.
           const block = (s: Phaser.GameObjects.Sprite, art: string): void => {
             if (edgy || !this.local) return;
+            for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) {
+              const [x, y] = [c + dc, r + dr];
+              if (!isWalkable(x, y) || isSlope(x, y) || level(x, y) !== level(c, r) || shut.has(`${x},${y}`)) return;
+            }
+            shut.add(`${c},${r}`);
             this.solid.add(`${c},${r}`);
             this.boxed.add(`${c},${r}`);
             const b = BASE[art]!;
