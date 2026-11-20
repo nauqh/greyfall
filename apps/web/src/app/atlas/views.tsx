@@ -58,8 +58,9 @@ function markWarned(name: string): void {
 }
 
 /** One area's own map, the camera kept inside it; its exits cross to the next without leaving the page. */
-export function AreaView({ area: first }: { area: AreaId }) {
+export function AreaView({ area: first, devRoute = false }: { area: AreaId; devRoute?: boolean }) {
   const router = useRouter();
+  const base = devRoute ? "/atlas/dev" : "/atlas";
   const [area, setArea] = useState(first);
   // The name up out of the dark: the area's as you arrive, a quarter's as you walk into it.
   const [reveal, setReveal] = useState<string | null>(null);
@@ -113,7 +114,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
     setMenu(null);
     setNear(null);
     setTravel({ ...d, phase: "hold" });
-    window.history.pushState(null, "", rest ? `/atlas/${d.to}` : `/atlas/${d.to}?from=${from}`);
+    window.history.pushState(null, "", rest ? `${base}/${d.to}` : `${base}/${d.to}?from=${from}`);
     api.current?.travel(d.to, from, d.kind);
   };
   // Through the crossing: the name of where they are.
@@ -194,13 +195,10 @@ export function AreaView({ area: first }: { area: AreaId }) {
   }).current;
   // The HUD hides with H; there is no button for it on an area map.
   const [hud] = useHud();
-  // Dev mode: the camera free over the whole map, remembered on this browser; the backquote key toggles it.
-  const [dev, setDev] = useState(false);
+  // Dev mode, on the dev route only: the camera free over the whole map; the backquote key toggles it to play.
+  const [dev, setDev] = useState(devRoute);
   const toggleDev = (): void =>
     setDev((on) => {
-      try {
-        localStorage.setItem("greyfall.dev", on ? "0" : "1");
-      } catch {}
       api.current?.dev(!on);
       return !on;
     });
@@ -210,7 +208,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
     try {
       for (const k of ["band", "bought", "class", "flags", "gold", "heard", "hero", "keys", "kindled", "levels", "lost", "prologue", "rest", "slain", "taken"]) localStorage.removeItem(`greyfall.${k}`);
     } catch {}
-    window.location.assign("/atlas/landing?rest");
+    window.location.assign(`${base}/landing?rest`);
   };
   // The title gone, the black lifts close on the captain and the camera eases back; the name comes up as it settles.
   const revealLanding = (): void => {
@@ -257,6 +255,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fire, atlas, mapCover]);
   useEffect(() => {
+    if (!devRoute) return;
     const key = (e: KeyboardEvent): void => {
       if (e.key === "`" && !(e.target instanceof HTMLInputElement)) toggleDev();
     };
@@ -272,12 +271,11 @@ export function AreaView({ area: first }: { area: AreaId }) {
           const q = new URLSearchParams(window.location.search);
           hooks.from = (q.get("from") as AreaId | null) ?? undefined;
           if (q.has("rest")) hooks.arrive = "rest";
+          hooks.dev = devRoute;
           try {
-            hooks.dev = localStorage.getItem("greyfall.dev") === "1";
-            now.current.prologue = first === "landing" && localStorage.getItem("greyfall.prologue") !== "1";
+            now.current.prologue = !devRoute && first === "landing" && localStorage.getItem("greyfall.prologue") !== "1";
           } catch {}
           setPicking(now.current.prologue);
-          setDev(!!hooks.dev);
           return import("../../game/AtlasScene").then(({ startAtlas }) => startAtlas(el, hooks));
         }}
       >
@@ -365,6 +363,7 @@ export function AreaView({ area: first }: { area: AreaId }) {
               api.current?.pause(true);
               setAtlas("travel");
             }}
+            onCreate={() => setPicking(true)}
           />
         )}
         {menu && <Shop menu={menu} api={api} />}
@@ -490,9 +489,11 @@ export function AreaView({ area: first }: { area: AreaId }) {
               <button className="linkBtn" type="button" onClick={newGame}>
                 New game
               </button>
-              <button className="linkBtn" type="button" onClick={toggleDev} aria-pressed={dev} title="See the whole map (`)">
-                {dev ? "Play" : "Dev: whole map"}
-              </button>
+              {devRoute && (
+                <button className="linkBtn" type="button" onClick={toggleDev} aria-pressed={dev} title="See the whole map (`)">
+                  {dev ? "Play" : "Dev: whole map"}
+                </button>
+              )}
             </div>
           </header>
         </div>
@@ -506,7 +507,8 @@ export function AreaView({ area: first }: { area: AreaId }) {
           gifts={() => api.current?.gifts() ?? []}
           onBegin={(cls, gift, name) => {
             api.current?.begin(cls, gift, name);
-            setPrologue(true);
+            // The prologue's cutscene is the Landing's own arrival; dev mode makes the hero wherever it stands.
+            if (!devRoute) setPrologue(true);
           }}
           onDone={() => setPicking(false)}
         />

@@ -88,7 +88,19 @@ function wasShown(): boolean {
 }
 
 /** Dev mode's side panel: the save as the scene holds it, and a way to anywhere and anyone. Hidden, it folds to a tab. */
-export function DevPanel({ state: s, api, onArea, onMap }: { state: DevState; api: RefObject<AtlasApi | null>; onArea: (to: AreaId) => void; onMap: () => void }) {
+export function DevPanel({
+  state: s,
+  api,
+  onArea,
+  onMap,
+  onCreate,
+}: {
+  state: DevState;
+  api: RefObject<AtlasApi | null>;
+  onArea: (to: AreaId) => void;
+  onMap: () => void;
+  onCreate: () => void;
+}) {
   // Keys are kept by the kind of boss that drops them; these are the ones a gate or lock asks for.
   const keys = useMemo(() => {
     const asked = MAPPED_AREAS.flatMap((a) => {
@@ -134,6 +146,9 @@ export function DevPanel({ state: s, api, onArea, onMap }: { state: DevState; ap
         </select>
         <button type="button" className="devBtn" onClick={onMap}>
           Open map
+        </button>
+        <button type="button" className="devBtn" onClick={onCreate}>
+          New hero
         </button>
         <button type="button" className="devBtn" aria-expanded={true} aria-label="Hide the dev panel" onClick={() => show(false)}>
           Hide

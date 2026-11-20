@@ -143,6 +143,7 @@ Environment Variables), not in a file:
 | `AWS_ACCESS_KEY_ID` | the deploy user's key |
 | `AWS_SECRET_ACCESS_KEY` | its secret |
 | `AWS_REGION` | `ap-southeast-1` |
+| `DEV_PASSWORD` | opens the atlas dev mode at `/atlas/dev/<area>`; unset, it stays locked |
 
 - On Vercel, set the Root Directory to `apps/web`. A missing `TINY_SWORDS_S3`
   fails the build there rather than shipping a game with no art;
