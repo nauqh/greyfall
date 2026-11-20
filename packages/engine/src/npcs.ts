@@ -993,22 +993,22 @@ export const NPCS: readonly Npc[] = [
     ],
   },
   {
-    // On the Bull's Wall's east tower past the bull, between the silent guns: the gunner who outlived his powder.
+    // At the Bull's Wall's east end past the boar, by the Gun Bridge: the gunner who outlived his powder.
     id: "odo",
     name: "Odo the Gunner",
     short: "Odo",
     area: "bullwall",
-    at: { col: 71, row: 16 },
+    at: { col: 72, row: 12 },
     kind: "warrior",
-    greet: "Bull's dead, then. Good. I was running out of things to throw.",
+    greet: "Boar's dead, then. Good. I was running out of things to throw.",
     part: "Mind the ladder. It sticks.",
     talks: [
       {
         id: "first",
         lines: [
-          "Two guns on this tower. No powder since the Grey came.",
-          "The bull was the garrison's. The smiths shod him in iron for the parade.",
-          "Then he forgot who fed him, and the goblins came over the wall.",
+          "Two guns on that tower. The goblins found my powder, and turned them on the wall.",
+          "The boar was the garrison's. The smiths shod him in iron for the parade.",
+          "Then the goblins took him, and their chief rode him over the wall.",
         ],
       },
       { id: "ladder", lines: ["There's a ladder down the south face to the Burg's square.", "Kick it loose. Their fire is right under it, if you need one."] },

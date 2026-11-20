@@ -200,7 +200,7 @@ then walks back. The engine already has a guard leash.
    leaving on Old Town's height straight behind the crown.
 
    The Lower Burg is a town of walled yards and lanes, with the square's
-   fire. The Ramparts hold the Rampart Bull on the wall walk. The Chapel
+   fire. The Ramparts lead to the Rampart Boar on the Bull's Wall. The Chapel
    Ward holds the Stone Warden, the Old Lift home to Old Town's foot, and
    the Postern to the Emberwood. The Keep comes last, shut until the Troll Key.
    West, the Lantern Road runs to the fields and the Old Bridge to Saltreach
@@ -324,13 +324,13 @@ crag, and only that.
 | Surface | Saltreach | militia in the City's yellow and pay, fishing villages, turtles, sharks offshore, pirate towers | |
 | Surface | Last Harbour (hub) | the town's castle on its own height above the town, the bonfire square, the Old Well, pawns at work | |
 | Surface | Emberwood | goblin warrens in pine the Grey burned, the big pines (standing still), gnolls on Smoke Bluff | |
-| Surface | Troll's Hollow | a round floor of ash in the pines, the goblins' fires round it, the Crag Stair past it | Cinder Troll |
+| Surface | Troll's Hollow | a round floor of ash in the pines, the goblins' fires round it | Cinder Troll |
 | Surface | Tinker Crags | a rock that climbs in five steps to the Tinker Peak, gnomes, bears, pandas, the Gnome Lift up | Old Bamboo |
 | Surface | Barrowmoor | barrows, bones, the cave down into the King's Barrow | |
 | Surface | Lizard Fen | a chapel of the Order that prays to the Grey, lizards, the sinkhole | |
 | Surface | The Greyfall | the Citadel, the Grey Keep on its crown, the Grey wearing its lord, the Throne Stair up | The Grey Warlord |
 | Below | The Landing (start) | the sea cave where a new game starts, notes in the tunnels that teach the controls, two goblins to learn on | Shore Minotaur |
-| Below | The King's Barrow | the coffin hall, the throne hall round its pillars, the stair down to the Deeps | The Barrow King |
+| Below | The King's Barrow | the throne hall round its ring of pillars | The Barrow King |
 | Below | The Undercroft | cisterns and pillars under the well, a crypt, spiders, a thief | |
 | Below | Barrow Deeps | tomb daises, skull guards, a dead troll's bones | The Weaver (a giant spider) |
 | Below | The Drowned Hollow | the underground lake, stone trees, turtles, glowing gold | The Shell Below (a giant turtle) |
@@ -743,26 +743,22 @@ crossing are gone.
   two steps in, and it holds until the boss or you fall. The side a
   crossing comes out on is `plain`, no fog.
   Since then, after the Ring, the first four bosses each hold an area of
-  their own, a small land between two others: in through a gate from the
-  land before, a short approach, fog into the room, and past the boss his
-  exit (`guard`) into a new land. Each room is fogged at both its ways,
-  `inside` set equally far from every fog tile so either side reads as
-  outside. The Bull's Wall (`bullwall`), off the Ramparts' walk: the wall
-  alone, three wide over the drop between two towers, no way round him;
-  past him the east tower with the Ladder down to the Burg and the Gun
-  Bridge (a deck) to the Chapel Ward. The Belfry (`belfry`), off the
-  chapel terrace's Bell Stair: a climb, landing to gallery to the bell
-  loft a height above everything, cramped round the bell's timber frame
-  (a fence), and the Postern stair down the tower's back a height a step
-  to the Emberwood. Troll's Hollow (`trollpit`), up the Emberwood's Ash
-  Road: a goblins' bone field, then a wide round floor of ash walled by
-  pines and ringed by their fires, room for every charge; past him the
-  gnomes' Crag Stair two heights up to the Crags, so the Crags now come
-  after the troll. The King's Barrow (`barrow`), under the moor: the Barrow
-  Cave's lift lands in it, not the Deeps; the bone ramp, the coffin hall in
-  rows, the throne hall round a ring of pillars, and behind the throne the
-  King's Stair down to the Deeps' Great Barrow. On the world map the
-  Chapel moved east and the Emberwood six tiles west to make room.
+  their own, and that area is the arena and nothing else, a land apart:
+  in at a gate from the land before, straight into the room, and
+  past the boss his exit (`guard`) into a new land. Like the Ring, each is
+  walked straight into with no fog (an empty `gate`): the land is the room. The Bull's Wall (`bullwall`): the curtain wall
+  alone, three wide over the drop, from the Ramparts' walk to the Chapel
+  Door, no way round him; the Ladder to the Burg drops off it past him.
+  The Belfry (`belfry`): the bell loft alone, cramped round the bell's
+  timber frame (a fence), from the chapel terrace's Bell Stair to the
+  Postern down to the Emberwood. Troll's Hollow (`trollpit`): a round floor
+  of ash walled by pines and ringed by fires, room for every charge, from
+  the Emberwood's Ash Road to the Crag Stair, so the Crags now come after
+  the troll. The King's Barrow (`barrow`, under the moor): the throne hall
+  alone round its ring of pillars; the Barrow Cave's lift lands in it, not
+  the Deeps, and the King's Stair goes on down to the Deeps' Great Barrow.
+  On the world map the Chapel moved east and the Emberwood six tiles west
+  to make room.
   For a time, the hub moved off the town to Lantern Point, a headland in
   the south-east corner (Firelink is a ledge at the edge, not the middle):
   the Shore Road from the Landing lands on it, the lighthouse fire is the
@@ -879,11 +875,28 @@ back; it is remembered on the browser and carries across crossings.
 - The hero walks, fights, rolls, rests at bonfires, drinks flasks, picks
   up gold and leads a band hired in the Harbour. The Cinder Troll drops
   the Troll Key, which opens the Keep Gate.
-- Eight bosses can be killed: the Minotaur, Rampart Bull, Stone Warden,
-  Cinder Troll, Barrow King, Weaver, Shell Below and Grey Warlord. The
-  last four fight with plain blows on borrowed sheets (minotaur, spider,
-  turtle, black warrior), with no moves of their own like the troll's.
-  Old Bamboo and the Sun Sentinel are still scenery.
+- Eight bosses can be killed: the Minotaur, Rampart Boar, Stone Warden,
+  Cinder Troll, Barrow King, Weaver, Shell Below and Grey Warlord. Five
+  fight with moves of their own (`BOSS_KITS` in `hero.ts`), each warned
+  on the ground for its wind-up; the last three hurry below half health:
+  - The Shore Minotaur, the lesson: a horn swipe and a rush, both warned
+    long, and a rush cut short by the Ring's rocks leaves him dazed and
+    open; a note at the Ring's mouth says so.
+  - The Cinder Troll: club slam, charge, embers that burn.
+  - The Rampart Boar (the pig rider's sheets): a gore up close, a charge
+    the whole width of its wall, the goblins' cannons scattered down on
+    the wall, and raging, its spearmen called up onto the wall.
+  - The Stone Warden (the giant bat's sheets, in stone): stone-skinned,
+    a blow takes a fifth but while it stands open after a move; a wing
+    buffet up close, the bell's toll in a ring round it, a dive over the
+    bell's frame, the roof's stones shaken down.
+  - The Barrow King (the hex shaman's sheets, huge): warded from all harm
+    while the three grave totems round his hall stand; a hex burst under
+    the mark, grave fire along the ground to it that burns on, and the
+    dead raised, three at most.
+  The last three fight with plain blows on borrowed sheets (spider,
+  turtle, black warrior). Old Bamboo and the Sun
+  Sentinel are still scenery.
 - No minimap. Zoom out with the wheel; ride a lift to change tier.
 
 

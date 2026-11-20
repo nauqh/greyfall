@@ -18,10 +18,8 @@ import {
   areaMap,
   districtOf,
   FOES,
-  TROLL,
-  chargeLine,
-  trollMove,
-  type TrollMove,
+  BOSS_KITS,
+  bossAim,
   type Note,
   GOLD_STONE,
   HERO,
@@ -434,11 +432,11 @@ const BEAST: Record<string, Beast> = {
   thief: { idle: `${EP}Thief/Thief_Idle.png`, move: `${EP}Thief/Thief_Run.png`, attack: `${EP}Thief/Thief_Attack.png`, frame: 192, anchor: 131 / 192 },
   gnoll: { idle: `${EP}Gnoll/Gnoll_Idle.png`, move: `${EP}Gnoll/Gnoll_Walk.png`, attack: `${EP}Gnoll/Gnoll_Throw.png`, frame: 192, anchor: 133 / 192 },
   minotaur: { idle: `${EP}Minotaur/Minotaur_Idle.png`, move: `${EP}Minotaur/Minotaur_Walk.png`, attack: `${EP}Minotaur/Minotaur_Attack.png`, frame: 320, anchor: 213 / 320 },
-  // The Ramparts' bull: the Landing's minotaur shod in iron, bigger, steel-grey.
-  rampartBull: { idle: `${EP}Minotaur/Minotaur_Idle.png`, move: `${EP}Minotaur/Minotaur_Walk.png`, attack: `${EP}Minotaur/Minotaur_Attack.png`, frame: 320, anchor: 213 / 320, scale: 1.2, tint: 0x9fb0c8 },
+  // The Bull's Wall's boss: a goblin chief on a war boar, big, its hide iron-dark.
+  rampartBull: { idle: `${EP}Extra/Pig Rider Spear Goblin/Pig Rider_Idle.png`, move: `${EP}Extra/Pig Rider Spear Goblin/Pig Rider_Run.png`, attack: `${EP}Extra/Pig Rider Spear Goblin/Pig Rider_Attack.png`, frame: 256, anchor: 0.7, scale: 1.5, tint: 0xc8b0a0 },
   troll: { idle: `${EP}Troll/Troll_Idle.png`, move: `${EP}Troll/Troll_Walk.png`, attack: `${EP}Troll/Troll_Attack.png`, frame: 384, anchor: 296 / 384, scale: 0.8 },
-  // The Chapel Ward's bell boss: the troll's sheets in stone, a warden squatting on the bell. No troll's moves: plain blows.
-  stoneWarden: { idle: `${EP}Troll/Troll_Idle.png`, move: `${EP}Troll/Troll_Walk.png`, attack: `${EP}Troll/Troll_Attack.png`, frame: 384, anchor: 296 / 384, scale: 0.85, tint: 0xa8acb4 },
+  // The Belfry's boss: the giant bat's sheets in stone, a gargoyle off the bell loft's eaves.
+  stoneWarden: { idle: `${EP}Giant Bat/Giant Bat_Idle.png`, move: `${EP}Giant Bat/Giant Bat_Move.png`, attack: `${EP}Giant Bat/Giant Bat_Attack.png`, frame: 192, anchor: 0.7, scale: 2, tint: 0xa8acb4 },
   skull: { idle: `${EP}Skull/Skull_Idle.png`, move: `${EP}Skull/Skull_Run.png`, attack: `${EP}Skull/Skull_Attack.png`, frame: 192, anchor: 128 / 192 },
   skullGuard: { idle: `${EP}Extra/Skull Guard/Skull_Guard.png`, frame: 192, anchor: 128 / 192 },
   shaman: { idle: `${EP}Hex Shaman/Hex Shaman_Idle.png`, move: `${EP}Hex Shaman/Hex Shaman_Run.png`, attack: `${EP}Hex Shaman/Hex Shaman_Attack.png`, frame: 192, anchor: 136 / 192 },
@@ -453,7 +451,10 @@ const BEAST: Record<string, Beast> = {
   pandaGuard: { idle: `${EP}Extra/Panda Guard/Panda_Guard.png`, frame: 256, anchor: 0.68, scale: 1.2 },
   minotaurGuard: { idle: `${EP}Extra/Minotaur Guard/Minotaur_Guard.png`, frame: 320, anchor: 213 / 320, scale: 1.1 },
   // The late bosses on the sheets they share with the rank and file, set apart by size and colour.
-  barrowKing: { idle: `${EP}Minotaur/Minotaur_Idle.png`, move: `${EP}Minotaur/Minotaur_Walk.png`, attack: `${EP}Minotaur/Minotaur_Attack.png`, frame: 320, anchor: 213 / 320, tint: 0x8c9a7c },
+  // The King's Barrow's boss: the hex shaman's sheets, a dead king grown huge, bone-pale.
+  barrowKing: { idle: `${EP}Hex Shaman/Hex Shaman_Idle.png`, move: `${EP}Hex Shaman/Hex Shaman_Run.png`, attack: `${EP}Hex Shaman/Hex Shaman_Attack.png`, frame: 192, anchor: 136 / 192, scale: 2.2, tint: 0xd8d0b8 },
+  // The grave totems warding the king: the skull guard's statue, ghost-green.
+  graveTotem: { idle: `${EP}Extra/Skull Guard/Skull_Guard.png`, frame: 192, anchor: 128 / 192, scale: 1.1, tint: 0x8cf0b4 },
   weaver: { idle: `${EP}Spider/Spider_Idle.png`, move: `${EP}Spider/Spider_Run.png`, attack: `${EP}Spider/Spider_Attack.png`, frame: 192, anchor: 0.68, tint: 0xe4dccb },
   shellBelow: { idle: `${EP}Turtle/Turtle_Idle.png`, move: `${EP}Turtle/Turtle_Walk.png`, attack: `${EP}Turtle/Turtle_Attack.png`, frame: 320, anchor: 0.66, tint: 0x9cc0b0 },
   warlord: { idle: "Units/Black Units/Warrior/Warrior_Idle.png", move: "Units/Black Units/Warrior/Warrior_Run.png", attack: "Units/Black Units/Warrior/Warrior_Attack1.png", frame: 192, anchor: 136 / 192, scale: 1.5, tint: 0xb8b8b8 },
@@ -574,15 +575,22 @@ interface Foe extends Body {
   home: Cell;
   stats: FoeStats;
   /** A blow drawn back: when it lands, and on whom; a boss's, which blow and the cells it falls on. */
-  windup: { at: number; mark: Body; move?: TrollMove; aim?: Cell[] } | null;
+  windup: { at: number; mark: Body; move?: string; aim?: Cell[] } | null;
   /** A boss's last blow, so it does not repeat one at range. */
-  last?: TrollMove;
+  last?: string;
+  /** Until when a boss stands open after a blow: a stone one is hurt in full only then. */
+  open?: number;
+  /** The boss that raised it, which raises no more while its cap of them stands. */
+  raisedBy?: Foe;
 }
-/** Embers on the ground after the troll's toss: they burn whoever stands in them until they die down. */
+/** Ground left burning by a boss's blow (the troll's embers, the king's grave fire): it hurts whoever stands in it
+ *  every `every` ms until it dies down. */
 interface Ember {
   at: Cell;
   until: number;
   tick: number;
+  every: number;
+  damage: number;
   from: Foe;
   s: Phaser.GameObjects.Sprite;
 }
@@ -1054,7 +1062,16 @@ export class AtlasScene extends Phaser.Scene {
         const b = BEAST[d.kind];
         if (FOES[d.kind] && b?.attack) sheet(`beast_${d.kind}_attack`, { file: b.attack, frame: b.frame, anchor: 0 });
         if (d.kind === "troll") for (const k of ["Windup", "Recovery"]) sheet(`beast_troll_${k.toLowerCase()}`, { file: `${EP}Troll/Troll_${k}.png`, frame: 384, anchor: 0 });
+        for (const m of Object.values(BOSS_KITS[d.kind]?.moves ?? {})) {
+          if (!m.summon) continue;
+          const { idle, move, frame } = this.look({ kind: m.summon.kind, col: 0, row: 0 });
+          sheet(idle.key, { file: idle.file, frame, anchor: 0 });
+          if (move) sheet(move.key, { file: move.file, frame, anchor: 0 });
+          const b = BEAST[m.summon.kind];
+          if (b?.attack) sheet(`beast_${m.summon.kind}_attack`, { file: b.attack, frame: b.frame, anchor: 0 });
+        }
       }
+      sheet("blast", { file: "Particle FX/Explosion_01.png", frame: 192, anchor: 0 });
     }
     for (const k of ["deadTree", "stump", "bones", "skullSpike", "goldStone"]) sheet(`prop_${k}`, PROP[k]!);
     BIG_TREE.forEach((t, i) => sheet(`bigTree${i}`, t));
@@ -1754,7 +1771,14 @@ export class AtlasScene extends Phaser.Scene {
         this.float(to.s.x, to.s.y - to.lift - 40, "Guard broken", "#fdfaf0");
       }
     }
-    const dealt = blocked ? throughGuard(attack) : attack;
+    const kit = this.foes.includes(to as Foe) ? BOSS_KITS[(to as Foe).kind] : undefined;
+    if (kit?.wards && this.foes.some((o) => o.kind === kit.wards && !o.dead)) {
+      this.float(to.s.x, to.s.y - to.lift - 40, "Warded", "#8cf0b4");
+      return;
+    }
+    const stone = kit?.stone !== undefined && now >= ((to as Foe).open ?? 0) ? kit.stone : 1;
+    const whole = blocked ? throughGuard(attack) : attack;
+    const dealt = stone < 1 ? Math.max(1, Math.round(whole * stone)) : whole;
     to.hp = struck(to.hp, dealt);
     to.s.setTintFill(blocked ? 0x9cc4e8 : 0xffffff);
     this.time.delayedCall(90, () => untint(to.s));
@@ -2512,9 +2536,14 @@ export class AtlasScene extends Phaser.Scene {
       const m = foeTarget(f.at, f.stats.aggro, marks.map((b) => ({ at: b.at, draws: (b as Companion).kind === "lancer" })));
       const mark = marks[m] ?? hero;
       const intent = foeIntent(f.at, f.home, m >= 0 ? mark.at : null, f.stats);
-      if (f.kind === "troll" && m >= 0 && intent !== "return" && time >= f.next) {
-        const move = trollMove(tileDistance(f.at, mark.at), f.last ?? null);
-        if (move) return this.trollWindUp(f, mark, move, time);
+      // A foe that notices nothing (a grave totem) only stands.
+      if (f.stats.aggro === 0) return;
+      const kit = BOSS_KITS[f.kind];
+      if (kit && m >= 0 && intent !== "return" && time >= f.next) {
+        let move = kit.pick(tileDistance(f.at, mark.at), f.last ?? null, this.raging(f));
+        const raise = move && kit.moves[move]!.summon;
+        if (raise && this.foes.filter((o) => o.raisedBy === f && !o.dead).length >= raise.cap) move = Object.keys(kit.moves).find((k) => !kit.moves[k]!.summon && k !== f.last) ?? null;
+        if (move) return this.bossWindUp(f, mark, move, time);
       }
       const missile = MISSILE[f.kind];
       const sighted = missile ? clearShot(f.at, mark.at, this.blocks) : Math.hypot(mark.s.x - f.s.x, mark.s.y - f.s.y) < 1.5 * CELL;
@@ -2577,7 +2606,7 @@ export class AtlasScene extends Phaser.Scene {
   private land(f: Foe, time: number): void {
     const { mark, move, aim } = f.windup!;
     f.windup = null;
-    if (move) return this.trollLands(f, move, aim!, time);
+    if (move) return this.bossLands(f, move, aim!, time);
     if (BEAST[f.kind]?.hit) f.s.anims.msPerFrame = 100;
     f.busy = time + PACE.recover * 1000;
     if (mark.dead) return;
@@ -2586,76 +2615,110 @@ export class AtlasScene extends Phaser.Scene {
     if (tileDistance(f.at, mark.at) <= 1 && Math.hypot(mark.s.x - f.s.x, mark.s.y - f.s.y) < 1.6 * CELL) this.hurt(f, mark, f.stats.attack);
   }
 
-  /** The troll draws back for a blow, its cells glowing red on the ground until it falls. */
-  private trollWindUp(f: Foe, mark: Body, move: TrollMove, time: number): void {
-    const ms = TROLL[move].windup * 1000;
-    const aim = move === "slam" ? this.around(mark.at, TROLL.slam.radius) : move === "charge" ? chargeLine(f.at, mark.at) : this.scatter(mark.at, TROLL.toss.patches);
-    Object.assign(f, { last: move, way: [], windup: { at: time + ms, mark, move, aim }, next: time + f.stats.every * 1000, busy: time + ms });
+  /** Whether a boss is down past its kit's rage line, and winds up the quicker for it. */
+  private raging(f: Foe): boolean {
+    const rage = BOSS_KITS[f.kind]?.rage;
+    return !!rage && f.hp <= f.max * rage.at;
+  }
+
+  /** A boss draws back for one of its moves, the cells it will fall on glowing on the ground until it lands. */
+  private bossWindUp(f: Foe, mark: Body, name: string, time: number): void {
+    const kit = BOSS_KITS[f.kind]!;
+    const move = kit.moves[name]!;
+    const ms = move.windup * 1000 * (this.raging(f) ? kit.rage!.haste : 1);
+    const aim = bossAim(move, f.at, mark.at, (c) => isWalkable(c.col, c.row) && !this.shut(c));
+    Object.assign(f, { last: name, way: [], windup: { at: time + ms, mark, move: name, aim }, next: time + f.stats.every * 1000, busy: time + ms });
     if (Math.abs(mark.s.x - f.s.x) > 4) f.s.setFlipX(mark.s.x < f.s.x);
     f.s.setTintFill(0xffffff);
     this.time.delayedCall(70, () => untint(f.s));
-    f.s.play("beast_troll_windup_once");
+    if (this.anims.exists(`beast_${f.kind}_windup_once`)) f.s.play(`beast_${f.kind}_windup_once`);
+    else if (f.attack && this.anims.exists(`${f.attack}_once`)) {
+      // No wind-up sheet: its attack, drawn out over the wind-up.
+      f.s.play({ key: `${f.attack}_once`, frameRate: (this.textures.get(f.attack).frameTotal * 1000) / ms });
+      f.s.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => !f.dead && this.play(f.s, f.idle));
+    }
+    const colour = move.summon ? 0x9a6ae0 : move.burn ? 0xff9a3a : 0xe03a2a;
     const g = this.add.graphics().setDepth(DEPTH.unit - 1);
-    for (const c of aim) g.fillStyle(move === "toss" ? 0xff9a3a : 0xe03a2a, 0.45).fillRect(c.col * CELL + 2, c.row * CELL + 2, CELL - 4, CELL - 4);
+    for (const c of aim) g.fillStyle(colour, 0.45).fillRect(c.col * CELL + 2, c.row * CELL + 2, CELL - 4, CELL - 4);
     this.tweens.add({ targets: g, alpha: { from: 0.4, to: 1 }, duration: ms, onComplete: () => g.destroy() });
   }
 
-  /** The troll's blow falls: the club on its circle, the charge down its line, or embers that burn on. */
-  private trollLands(f: Foe, move: TrollMove, aim: Cell[], time: number): void {
-    f.busy = time + TROLL.recover * 1000;
-    f.s.play("beast_troll_attack_once");
-    f.s.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => !f.dead && f.s.play("beast_troll_recovery_once").once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => !f.dead && this.play(f.s, f.idle)));
+  /** A boss's move lands on its cells: a blow, a charge carrying it down its line, ground left burning, or the dead raised. */
+  private bossLands(f: Foe, name: string, aim: Cell[], time: number): void {
+    const kit = BOSS_KITS[f.kind]!;
+    const move = kit.moves[name]!;
+    f.busy = time + kit.recover * 1000;
+    f.open = f.busy;
+    if (this.anims.exists(`beast_${f.kind}_recovery_once`)) {
+      f.s.play(`${f.attack}_once`);
+      f.s.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => !f.dead && f.s.play(`beast_${f.kind}_recovery_once`).once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => !f.dead && this.play(f.s, f.idle)));
+    } else this.play(f.s, f.idle);
+    if (move.summon) {
+      for (const at of aim) {
+        this.addFoe({ kind: move.summon.kind, col: at.col, row: at.row });
+        const raised = this.foes.at(-1)!;
+        raised.raisedBy = f;
+        raised.s.setAlpha(0);
+        this.tweens.add({ targets: raised.s, alpha: 1, duration: 500 });
+        this.blast(at, 0x9a6ae0);
+      }
+      return;
+    }
     const on = new Set(aim.map((c) => `${c.col},${c.row}`));
     const struck = (dmg: number) => {
       for (const b of [this.hero!, ...this.band]) if (!b.dead && on.has(`${b.at.col},${b.at.row}`)) this.hurt(f, b, dmg);
     };
-    if (move === "slam") {
-      this.cameras.main.shake(160, 0.006);
-      return struck(TROLL.slam.damage);
-    }
-    if (move === "charge") {
+    if (move.shape === "line") {
       const end = aim.at(-1);
       if (!end) return;
-      struck(TROLL.charge.damage);
-      const ms = (aim.length / TROLL.charge.speed) * 1000;
+      struck(move.damage);
+      const ms = (aim.length / (move.speed ?? 12)) * 1000;
       f.busy += ms;
+      // Cut short by a wall: dazed where it stopped.
+      if (move.stun && aim.length < (move.tiles ?? 0) * (move.width ?? 1)) {
+        f.busy += move.stun * 1000;
+        this.time.delayedCall(ms, () => !f.dead && (this.cameras.main.shake(200, 0.008), this.float(f.s.x, f.s.y - f.lift - 40, "Dazed", "#fdfaf0")));
+      }
+      f.open = f.busy;
       f.at = end;
       this.tweens.add({ targets: f.s, x: (end.col + 0.5) * CELL, y: (end.row + 0.75) * CELL, duration: ms, onUpdate: () => f.s.setDepth(standing(f.s.y)) });
       return;
     }
-    for (const at of aim) {
-      const y = (at.row + 0.75) * CELL;
-      const s = this.add.sprite((at.col + 0.5) * CELL, y, "fire").setOrigin(0.5, FIRE.anchor).setScale(0.55).setDepth(standing(y));
-      this.loop(s, "fire");
-      this.embers.push({ at, until: time + TROLL.toss.burn * 1000, tick: time, from: f, s });
+    if (move.burn) {
+      for (const at of aim) {
+        const y = (at.row + 0.75) * CELL;
+        const s = this.add.sprite((at.col + 0.5) * CELL, y, "fire").setOrigin(0.5, FIRE.anchor).setScale(0.55).setDepth(standing(y));
+        // The king's grave fire burns cold.
+        if (f.kind === "barrowKing") s.setTint(0x7cf0b0);
+        this.loop(s, "fire");
+        this.embers.push({ at, until: time + move.burn * 1000, tick: time, every: (move.tick ?? 0.5) * 1000, damage: move.damage, from: f, s });
+      }
+      return;
     }
+    this.cameras.main.shake(160, 0.006);
+    if (move.shape === "scatter" || move.shape === "mark") for (const at of aim) this.blast(at, f.kind === "barrowKing" ? 0x9a6ae0 : 0xffffff);
+    struck(move.damage);
   }
 
-  /** Embers die down in time, and burn whoever stands in them every tick; a shield is no help against the ground. */
+  /** A burst on a cell: the pack's explosion, played once. */
+  private blast(at: Cell, tint: number): void {
+    if (!this.textures.exists("blast")) return;
+    if (!this.anims.exists("blast_once")) this.anims.create({ key: "blast_once", frames: this.anims.generateFrameNumbers("blast"), frameRate: 16, repeat: 0 });
+    const y = (at.row + 0.5) * CELL;
+    const s = this.add.sprite((at.col + 0.5) * CELL, y, "blast").setScale(0.5).setDepth(DEPTH.fx).setTint(tint);
+    s.play("blast_once").once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => s.destroy());
+  }
+
+  /** Burning ground dies down in time, and burns whoever stands in it every tick; a shield is no help against the ground. */
   private burn(time: number): void {
     this.embers = this.embers.filter((e) => {
       if (time >= e.until) return void e.s.destroy();
       if (time >= e.tick) {
-        e.tick = time + TROLL.toss.tick * 1000;
-        for (const b of [this.hero!, ...this.band]) if (!b.dead && b.at.col === e.at.col && b.at.row === e.at.row) this.hurt(e.from, b, TROLL.toss.damage, true);
+        e.tick = time + e.every;
+        for (const b of [this.hero!, ...this.band]) if (!b.dead && b.at.col === e.at.col && b.at.row === e.at.row) this.hurt(e.from, b, e.damage, true);
       }
       return true;
     });
-  }
-
-  /** The open cells within `r` of a cell, itself among them. */
-  private around(at: Cell, r: number): Cell[] {
-    const cells: Cell[] = [];
-    for (let dr = -r; dr <= r; dr++) for (let dc = -r; dc <= r; dc++) if (isWalkable(at.col + dc, at.row + dr)) cells.push({ col: at.col + dc, row: at.row + dr });
-    return cells;
-  }
-
-  /** `n` open cells where embers land: the mark's own, the rest scattered near it. */
-  private scatter(at: Cell, n: number): Cell[] {
-    const near = this.around(at, 2).filter((c) => c.col !== at.col || c.row !== at.row);
-    const picked = [at];
-    while (picked.length < n && near.length) picked.push(near.splice(Math.floor(Math.random() * near.length), 1)[0]!);
-    return picked;
   }
 
   // A boss kind counts only where the area places that boss: the Greyfall's own troll is rank and file.

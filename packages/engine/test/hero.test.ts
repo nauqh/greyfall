@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FOES, GIFTS, HERO, LENT, ITEMS, LEVEL_UP, kit, levelCost, onOffer, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
+import { BOSS_KITS, bossAim, FOES, GIFTS, HERO, LENT, ITEMS, LEVEL_UP, kit, levelCost, onOffer, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
 
 const goblin = FOES.torch!;
 const home = { col: 10, row: 10 };
@@ -175,5 +175,32 @@ describe("levelling at a bonfire", () => {
     const costs = [0, 1, 2, 5, 10].map((n) => levelCost({ hp: n, attack: 0, stamina: 0 }));
     expect(costs[0]).toBe(150);
     expect(costs.every((c, i) => i === 0 || c > costs[i - 1]!)).toBe(true);
+  });
+});
+
+describe("a boss's moves", () => {
+  const open = () => true;
+  const boar = BOSS_KITS.rampartBull!;
+  it("charges the wall's whole width, and stops where it says", () => {
+    useIsland({ rows: Array.from({ length: 12 }, () => ".".repeat(24)), start: { a: { castle: { col: 1, row: 1 }, barracks: { col: 1, row: 1 } }, b: { castle: { col: 1, row: 1 }, barracks: { col: 1, row: 1 } } }, mines: [], lair: { col: 1, row: 1 } });
+    const line = bossAim(boar.moves.charge!, { col: 0, row: 5 }, { col: 20, row: 5 }, open);
+    expect(line).toHaveLength(30);
+    expect(line.at(-1)).toEqual({ col: 10, row: 5 });
+    expect(new Set(line.map((c) => c.row))).toEqual(new Set([4, 5, 6]));
+  });
+  it("stops the minotaur's rush at a rock, short of its reach", () => {
+    useIsland({ rows: ["............", ".....%......", "............"], start: { a: { castle: { col: 1, row: 1 }, barracks: { col: 1, row: 1 } }, b: { castle: { col: 1, row: 1 }, barracks: { col: 1, row: 1 } } }, mines: [], lair: { col: 1, row: 1 } });
+    const rush = BOSS_KITS.minotaur!.moves.rush!;
+    expect(bossAim(rush, { col: 0, row: 1 }, { col: 11, row: 1 }, () => true)).toHaveLength(4);
+  });
+  it("tolls a ring round the warden, safe up close", () => {
+    const ring = bossAim(BOSS_KITS.stoneWarden!.moves.toll!, { col: 5, row: 5 }, { col: 7, row: 5 }, open);
+    expect(ring.every((c) => Math.max(Math.abs(c.col - 5), Math.abs(c.row - 5)) >= 2)).toBe(true);
+    expect(ring).toHaveLength(49 - 9);
+  });
+  it("raises only while the king's raised dead are few, and rallies the boar's men only raging", () => {
+    expect(BOSS_KITS.barrowKing!.moves.raise!.summon).toEqual({ kind: "skull", n: 2, cap: 3 });
+    expect(boar.pick(5, "charge", false)).toBe("cannons");
+    expect(boar.pick(5, "charge", true)).toBe("rally");
   });
 });

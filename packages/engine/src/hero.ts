@@ -64,22 +64,24 @@ export const FOES: Partial<Record<string, FoeStats>> = {
   // Throwers and shooters: they stop at range and let fly.
   gnoll: { hp: 45, attack: 9, every: 3.0, windup: 0.8, poise: true, aggro: 7, leash: 10, speed: 2.2, gold: 12, range: 4 },
   slingshot: { hp: 18, attack: 5, every: 2.6, windup: 0.6, aggro: 7, leash: 10, speed: 2.2, gold: 7, range: 5 },
+  // A grave totem in the King's Barrow: it never moves or strikes, only stands, and while one does the king is warded.
+  graveTotem: { hp: 60, attack: 2, every: 99, windup: 1, poise: true, aggro: 0, leash: 0, speed: 0, gold: 0 },
   shaman: { hp: 35, attack: 9, every: 3.2, windup: 0.9, poise: true, aggro: 7, leash: 10, speed: 1.9, gold: 14, range: 5 },
   // On the wing, over anything, quick: only an archer brings them down.
   bat: { hp: 16, attack: 4, every: 2.2, windup: 0.5, aggro: 6, leash: 9, speed: 3, gold: 5, flies: true },
   imp: { hp: 22, attack: 6, every: 2.4, windup: 0.6, aggro: 6, leash: 9, speed: 3, gold: 9, flies: true },
   bee: { hp: 8, attack: 3, every: 2.0, windup: 0.45, aggro: 4, leash: 6, speed: 3.2, gold: 2, flies: true },
   // Bosses: never back once slain.
-  // The Landing's end: plain blows, but heavy ones, to teach the roll and the guard before the Harbour.
+  // The Landing's end: its moves are BOSS_KITS', warned long, to teach the roll and the guard before the Harbour.
   minotaur: { hp: 220, attack: 22, every: 2.6, windup: 0.9, poise: true, aggro: 6, leash: 8, speed: 1.9, gold: 80 },
-  // The Ramparts' wall boss, after the Taurus Demon: an iron-shod bull on a wall too narrow to circle, so every blow is
-  // rolled through or taken.
-  rampartBull: { hp: 300, attack: 24, every: 2.4, windup: 0.85, poise: true, aggro: 6, leash: 9, speed: 2.0, gold: 120 },
-  // The Chapel Ward's bell boss, after the Bell Gargoyles: a stone warden squatting on the bell roof, slow and very heavy.
-  stoneWarden: { hp: 380, attack: 26, every: 2.8, windup: 1.0, poise: true, aggro: 6, leash: 8, speed: 1.6, gold: 160 },
+  // The Bull's Wall's boss, after the Taurus Demon: a goblin chief on a war boar, on a wall too narrow to circle. Its
+  // moves are BOSS_KITS'; it sees the length of its wall.
+  rampartBull: { hp: 300, attack: 24, every: 2.4, windup: 0.85, poise: true, aggro: 10, leash: 40, speed: 2.4, gold: 120 },
+  // The Belfry's boss, after the Bell Gargoyles: a stone gargoyle on the bell loft.
+  stoneWarden: { hp: 380, attack: 26, every: 2.6, windup: 1.0, poise: true, aggro: 9, leash: 14, speed: 2.0, gold: 160 },
   troll: { hp: 320, attack: 24, every: 2.4, windup: 1.1, poise: true, aggro: 7, leash: 9, speed: 1.6, gold: 150 },
-  // Barrowmoor's crown, after Gaping Dragon's slowness and Ornstein's weight: the Horned Key.
-  barrowKing: { hp: 480, attack: 28, every: 2.6, windup: 1.0, poise: true, aggro: 6, leash: 9, speed: 1.8, gold: 220 },
+  // The King's Barrow's hex-priest king, after Gaping Dragon's slowness: the Horned Key.
+  barrowKing: { hp: 480, attack: 28, every: 2.6, windup: 1.0, poise: true, aggro: 9, leash: 14, speed: 1.6, gold: 220 },
   // The Deeps' web, after Quelaag: quick and often, lighter blows. The Silk Key.
   weaver: { hp: 360, attack: 18, every: 1.6, windup: 0.6, poise: true, aggro: 6, leash: 8, speed: 2.6, gold: 200 },
   // Optional, asleep on its isle: slow, the heaviest blows in the Reach. Killing it greys the lake.
@@ -89,36 +91,177 @@ export const FOES: Partial<Record<string, FoeStats>> = {
 };
 
 /**
- * The Cinder Troll's three blows, after `ATLAS.md`: a club slam on a ground circle, a charge down a line, embers tossed
- * to burn. Each warns for its `windup` seconds, then it stands `recover` seconds, open. Tiles, seconds and points.
+ * A boss's blow, warned on the ground for `windup` seconds before it lands, where `shape` says:
+ * - mark: a circle `radius` round the mark;
+ * - self: a circle `radius` round the boss;
+ * - ring: round the boss from `inner` out to `radius`, safe up close and far off;
+ * - front: within `radius` of the boss, on the mark's side;
+ * - line: a charge `tiles` long and `width` wide at the mark, the boss carried down it at `speed`; stopped by a wall
+ *   unless it `flies`;
+ * - scatter: `patches` cells within `radius` of the mark, the mark's own first;
+ * - trail: the cells from the boss to the mark;
+ * - summon: `n` of `kind` raised beside the boss, while fewer than `cap` it raised still stand.
+ * With `burn`, the cells stay alight that many seconds, hurting `damage` every `tick`, guard or no.
  */
-export const TROLL = {
-  slam: { windup: 1.1, radius: 1, damage: 24 },
-  charge: { windup: 0.9, tiles: 6, damage: 20, speed: 12 },
-  toss: { windup: 1.0, patches: 3, damage: 5, burn: 4, tick: 0.5 },
-  recover: 1.3,
-} as const;
-export type TrollMove = "slam" | "charge" | "toss";
-
-/** The troll's next blow at a mark `distance` tiles off: a slam up close, a charge or embers in turn further out, none past a charge's reach. */
-export function trollMove(distance: number, last: TrollMove | null): TrollMove | null {
-  if (distance <= 2) return "slam";
-  if (distance > TROLL.charge.tiles) return null;
-  return last === "charge" ? "toss" : "charge";
+export interface BossMove {
+  shape: "mark" | "self" | "ring" | "front" | "line" | "scatter" | "trail" | "summon";
+  windup: number;
+  damage: number;
+  radius?: number;
+  inner?: number;
+  tiles?: number;
+  width?: number;
+  speed?: number;
+  flies?: boolean;
+  patches?: number;
+  burn?: number;
+  tick?: number;
+  summon?: { kind: string; n: number; cap: number };
+  /** A charge cut short by a wall leaves the boss dazed: this many seconds more standing open. */
+  stun?: number;
 }
 
-/** The cells a charge crosses from `from` toward `to`, up to its reach, stopping where a step is barred (a wall, a cliff). */
-export function chargeLine(from: Cell, to: Cell): Cell[] {
-  const [dc, dr] = [to.col - from.col, to.row - from.row];
+/** A boss's moves, the seconds it stands open after each, and how it picks the next: by how far off its mark is, what
+ *  it did last, and whether it rages, below `rage.at` of its health, winding up in `rage.haste` of the time.
+ *  `stone`: the share of a blow it takes except while it stands open after a move. `wards`: a dweller kind that keeps
+ *  it from all harm while any of them stands in its arena. */
+export interface BossKit {
+  moves: Record<string, BossMove>;
+  recover: number;
+  rage?: { at: number; haste: number };
+  stone?: number;
+  wards?: string;
+  pick(distance: number, last: string | null, raging: boolean): string | null;
+}
+
+/** The bosses with moves of their own, after `ATLAS.md`. Tiles, seconds and points. */
+export const BOSS_KITS: Partial<Record<string, BossKit>> = {
+  // The Cinder Troll: a club slam on a ground circle, a charge down a line, embers tossed to burn.
+  troll: {
+    moves: {
+      slam: { shape: "mark", windup: 1.1, radius: 1, damage: 24 },
+      charge: { shape: "line", windup: 0.9, tiles: 6, width: 1, speed: 12, damage: 20 },
+      toss: { shape: "scatter", windup: 1.0, patches: 3, radius: 2, damage: 5, burn: 4, tick: 0.5 },
+    },
+    recover: 1.3,
+    pick: (d, last) => (d <= 2 ? "slam" : d > 6 ? null : last === "charge" ? "toss" : "charge"),
+  },
+  // The Shore Minotaur, the Landing's lesson: long warnings and only two blows, a horn swipe up close and a rush
+  // that a rock in the Ring stops dead, leaving him dazed and open.
+  minotaur: {
+    moves: {
+      swipe: { shape: "front", windup: 1.0, radius: 1, damage: 18 },
+      rush: { shape: "line", windup: 1.3, tiles: 8, width: 1, speed: 10, damage: 20, stun: 2.5 },
+    },
+    recover: 1.2,
+    pick: (d) => (d <= 1 ? "swipe" : d <= 8 ? "rush" : null),
+  },
+  // The Rampart Boar: a goblin chief on the garrison's war boar. On a wall three wide its charge takes the whole wall,
+  // rolled through or taken; up close it gores; at range it calls the goblins' cannons down on the wall; raging, it
+  // horns up its spearmen onto the wall after each charge.
+  rampartBull: {
+    moves: {
+      gore: { shape: "front", windup: 0.7, radius: 2, damage: 20 },
+      charge: { shape: "line", windup: 1.0, tiles: 10, width: 3, speed: 14, damage: 26 },
+      cannons: { shape: "scatter", windup: 1.4, patches: 6, radius: 3, damage: 18 },
+      rally: { shape: "summon", windup: 1.0, damage: 0, summon: { kind: "spear", n: 2, cap: 2 } },
+    },
+    recover: 1.1,
+    rage: { at: 0.5, haste: 0.7 },
+    pick: (d, last, raging) =>
+      raging && last === "charge" ? "rally" : d <= 2 ? (last === "gore" ? "charge" : "gore") : last === "charge" || d > 10 ? "cannons" : "charge",
+  },
+  // The Stone Warden: a gargoyle on the bell loft, its skin stone: a blow takes a fifth off it but while it stands open
+  // after a move. Up close its wings beat; a step off, the bell tolls round it, safe only hugging it or past the ring;
+  // further, it dives the length of the loft over the bell's frame; and it shakes the roof's stones down.
+  stoneWarden: {
+    moves: {
+      buffet: { shape: "self", windup: 0.7, radius: 1, damage: 18 },
+      toll: { shape: "ring", windup: 1.2, inner: 2, radius: 3, damage: 20 },
+      dive: { shape: "line", windup: 0.9, tiles: 8, width: 1, speed: 16, flies: true, damage: 22 },
+      rubble: { shape: "scatter", windup: 1.5, patches: 7, radius: 4, damage: 16 },
+    },
+    recover: 1.6,
+    rage: { at: 0.5, haste: 0.75 },
+    stone: 0.2,
+    pick: (d, last) =>
+      d <= 1 ? (last === "buffet" ? "rubble" : "buffet") : d <= 3 ? (last === "toll" ? "dive" : "toll") : d <= 8 ? (last === "dive" ? "rubble" : "dive") : "rubble",
+  },
+  // The Barrow King: the old kings' hex-priest, dead and still crowned, and no blade bites him while the grave totems
+  // round his hall stand. A curse bursts under the mark, grave fire runs the ground from him to it and burns on, and he
+  // raises the barrow's dead; raging, he raises them more often.
+  barrowKing: {
+    moves: {
+      hex: { shape: "mark", windup: 1.0, radius: 1, damage: 22 },
+      gravefire: { shape: "trail", windup: 1.1, damage: 6, burn: 5, tick: 0.6 },
+      raise: { shape: "summon", windup: 1.4, damage: 0, summon: { kind: "skull", n: 2, cap: 3 } },
+    },
+    recover: 1.2,
+    rage: { at: 0.5, haste: 0.75 },
+    wards: "graveTotem",
+    pick: (d, last, raging) => (d > 9 ? null : last === "hex" ? (raging ? "raise" : "gravefire") : last === "gravefire" || last === null ? "raise" : "hex"),
+  },
+};
+
+/**
+ * The cells a boss's blow falls on, from where the boss stands at the mark: `open` says where a body could stand, and
+ * `rnd` (0 to 1) scatters. A charge's cells run in order, so the last is where the boss ends up.
+ */
+export function bossAim(move: BossMove, self: Cell, mark: Cell, open: (c: Cell) => boolean, rnd: () => number = Math.random): Cell[] {
+  const round = (at: Cell, r: number, keep: (dc: number, dr: number) => boolean = () => true): Cell[] => {
+    const out: Cell[] = [];
+    for (let dr = -r; dr <= r; dr++) for (let dc = -r; dc <= r; dc++) if (keep(dc, dr) && open({ col: at.col + dc, row: at.row + dr })) out.push({ col: at.col + dc, row: at.row + dr });
+    return out;
+  };
+  const [dc, dr] = [mark.col - self.col, mark.row - self.row];
   const n = Math.max(Math.abs(dc), Math.abs(dr));
-  const line: Cell[] = [];
-  let prev = from;
-  for (let i = 1; n > 0 && i <= TROLL.charge.tiles; i++) {
-    const c = { col: from.col + Math.round((dc * i) / n), row: from.row + Math.round((dr * i) / n) };
-    if (!canStep(prev, c)) break;
-    line.push((prev = c));
+  switch (move.shape) {
+    case "mark":
+      return round(mark, move.radius ?? 1);
+    case "self":
+      return round(self, move.radius ?? 1);
+    case "ring":
+      return round(self, move.radius ?? 3, (x, y) => Math.max(Math.abs(x), Math.abs(y)) >= (move.inner ?? 2));
+    case "front":
+      return round(self, move.radius ?? 1, (x, y) => (x !== 0 || y !== 0) && x * dc + y * dr >= 0);
+    case "scatter": {
+      const near = round(mark, move.radius ?? 2, (x, y) => x !== 0 || y !== 0);
+      const picked = open(mark) ? [mark] : [];
+      while (picked.length < (move.patches ?? 3) && near.length) picked.push(near.splice(Math.floor(rnd() * near.length), 1)[0]!);
+      return picked;
+    }
+    case "trail": {
+      const out: Cell[] = [];
+      for (let i = 1; i <= n; i++) {
+        const c = { col: self.col + Math.round((dc * i) / n), row: self.row + Math.round((dr * i) / n) };
+        if (open(c)) out.push(c);
+      }
+      return out;
+    }
+    case "summon": {
+      const ring = round(self, 2, (x, y) => Math.max(Math.abs(x), Math.abs(y)) === 2);
+      const picked: Cell[] = [];
+      while (picked.length < (move.summon?.n ?? 1) && ring.length) picked.push(ring.splice(Math.floor(rnd() * ring.length), 1)[0]!);
+      return picked;
+    }
+    case "line": {
+      // Each step of the charge: its centre cell, and the cells abreast of it across its way.
+      const out: Cell[] = [];
+      const half = Math.floor((move.width ?? 1) / 2);
+      const across = Math.abs(dc) >= Math.abs(dr) ? [0, 1] : [1, 0];
+      let prev = self;
+      for (let i = 1; n > 0 && i <= (move.tiles ?? 6); i++) {
+        const c = { col: self.col + Math.round((dc * i) / n), row: self.row + Math.round((dr * i) / n) };
+        if (move.flies ? !open(c) : !canStep(prev, c)) break;
+        for (let k = -half; k <= half; k++) {
+          const side = { col: c.col + across[0]! * k, row: c.row + across[1]! * k };
+          if (k !== 0 && open(side)) out.push(side);
+        }
+        out.push((prev = c));
+      }
+      return out;
+    }
   }
-  return line;
 }
 
 /** Whether a missile flies clear from `a` to `b`: no tile it crosses, the two ends aside, is cover (a wall, a wood). */

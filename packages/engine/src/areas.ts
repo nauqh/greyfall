@@ -3419,6 +3419,8 @@ function ring(): AreaMap {
   prop("boat", 48, 20);
   t.bosses.push({ name: "Shore Minotaur", area: "ring", col: 26, row: 20 });
   who("minotaur", 26, 20, { to: { col: 27, row: 20 } });
+  // A note at the Ring's mouth: the lesson in its rocks.
+  const notes: Note[] = [{ at: { col: 9, row: 21 }, text: "Red ground is a blow coming. Lead him into the rocks." }];
 
   const exits: AreaExit[] = [
     { to: "landing", name: "Ring Gate", kind: "open", at: { col: 1, row: 20 }, plain: true },
@@ -3432,265 +3434,166 @@ function ring(): AreaMap {
   const tier = stone(t.finish({}, [{ col: 3, row: 20 }]));
   // No fog: the Ring is the arena, walked straight into from the cave; the bull's guard on the boat holds the way on.
   const arena = { boss: "minotaur", gate: [], inside: { col: 24, row: 20 } };
-  return { ...tier, area: "ring", entry: { col: 3, row: 20 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], arena };
+  return { ...tier, area: "ring", entry: { col: 3, row: 20 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes, arena };
 }
 
 /**
- * The Bull's Wall, after Dark Souls' Taurus Demon: the curtain wall past the Ramparts' walk, its own area. In at the
- * west tower off the walk, then the wall, three tiles wide and the drop both sides, too narrow to circle what holds it:
- * the Rampart Bull, fogged in at both its ends. Past him the east tower, the Ladder down its south face to the Burg's
- * square, and the Gun Bridge over the ravine under the slingers to the Chapel Ward's door.
+ * The Bull's Wall, after Dark Souls' Taurus Demon: a boss room of its own, a land apart. The castle's curtain wall
+ * alone, three tiles wide over the drop, in off the Ramparts' walk at its west end and out over the Gun Bridge to
+ * the Chapel Ward at its east, the Rampart Boar holding the middle: no way round him. Past him
+ * the Ladder drops off the wall's south face to the Burg's square.
  */
 function bullwall(): AreaMap {
   const rng = makeRng("area:bullwall");
-  const t = tierBuilder("surface", rng, { cols: 96, rows: 30 });
+  const t = tierBuilder("surface", rng, { cols: 72, rows: 20 });
   const { prop, who } = t;
-  const blue = { color: "blue" } as const;
 
-  // All of it a height up on the wall, nothing beneath but the hill's woods: the two towers, the wall between them, and
-  // the Chapel Door's landing past the bridge.
-  for (const [x, y, w, h] of [[2, 9, 14, 13], [16, 14, 46, 3], [62, 8, 14, 15], [84, 10, 8, 11]] as const) {
-    t.ground("bullwall", x, y, w, h);
-    t.block(3, x, y, w, h);
-  }
-  const decks = t.span(3, 75, 14, 10, 3);
-  edgeWay(t, { col: 3, row: 15 }, { col: 1, row: 15 }, 3);
-  edgeWay(t, { col: 90, row: 15 }, { col: 94, row: 15 }, 3);
-  t.road([1, 15], [94, 15]);
+  t.ground("bullwall", 2, 9, 68, 3);
+  t.block(3, 2, 9, 68, 3);
+  edgeWay(t, { col: 3, row: 10 }, { col: 1, row: 10 }, 3);
+  edgeWay(t, { col: 68, row: 10 }, { col: 70, row: 10 }, 3);
+  t.road([1, 10], [70, 10]);
+  for (const [c, r] of [[14, 11], [22, 9], [47, 11], [56, 9]] as const) prop("bones", c, r);
+  who("rampartBull", 35, 10);
+  t.bosses.push({ name: "The Rampart Boar", area: "bullwall", col: 35, row: 10 });
 
-  // The west tower: its watch gone, the guns pointed at the wall they were meant to keep.
-  prop("tower", 7, 11, blue);
-  for (const [c, r] of [[5, 19], [12, 19]] as const) prop("cannon", c, r);
-  for (const [c, r, art] of [[12, 11, "woodPile"], [4, 13, "bones"]] as const) prop(art, c, r);
-  // The wall: what the bull left of those who tried it.
-  for (const [c, r] of [[22, 16], [29, 14], [47, 16], [55, 14]] as const) prop("bones", c, r);
-  who("rampartBull", 39, 15);
-  t.bosses.push({ name: "The Rampart Bull", area: "bullwall", col: 39, row: 15 });
-  // The east tower: the guns silent, the Ladder down its south face.
-  prop("tower", 69, 10, blue);
-  for (const [c, r] of [[64, 12], [73, 12]] as const) prop("cannon", c, r);
-  for (const [c, r] of [[64, 20], [73, 19]] as const) prop("woodPile", c, r);
-  // The Gun Bridge's far end: slingers on the landing, a shaman at the door.
-  for (const [c, r] of [[86, 11], [86, 19]] as const) who("slingshot", c, r);
-  who("shaman", 89, 13);
-  prop("skullSpike", 85, 13);
-
-  const notes: Note[] = [{ at: { col: 10, row: 16 }, text: "No way round him. Only through." }];
+  const notes: Note[] = [{ at: { col: 3, row: 9 }, text: "No way round him. Only through." }];
   const exits: AreaExit[] = [
-    { to: "ramparts", name: "The Bull's Gate", kind: "open", at: { col: 1, row: 15 }, plain: true },
-    { to: "burg", name: "The Ladder", kind: "shortcut", at: { col: 67, row: 22 }, opens: "ladderDown" },
-    { to: "chapel", name: "Chapel Door", kind: "open", at: { col: 94, row: 15 }, guard: "rampartBull" },
+    { to: "ramparts", name: "The Bull's Gate", kind: "open", at: { col: 1, row: 10 }, plain: true },
+    { to: "burg", name: "The Ladder", kind: "shortcut", at: { col: 60, row: 11 }, opens: "ladderDown", guard: "rampartBull" },
+    { to: "chapel", name: "Chapel Door", kind: "open", at: { col: 70, row: 10 }, guard: "rampartBull" },
   ];
   const districts: District[] = [
-    { name: "The West Tower", at: { col: 8, row: 15 }, levels: [3], palette: [2], dress: "greyfall", decor: 0.5 },
-    { name: "The Bull's Wall", at: { col: 39, row: 15 }, palette: [5, 4, 3], gloom: true, dress: "barrowmoor", decor: 0.3, box: { x: 16, y: 13, w: 46, h: 5 } },
-    { name: "The East Tower", at: { col: 69, row: 15 }, levels: [3], palette: [2], dress: "greyfall", decor: 0.5 },
-    { name: "The Gun Bridge", at: { col: 87, row: 15 }, levels: [3], palette: [2], dress: "greyfall", decor: 1 },
+    { name: "The Bull's Wall", at: { col: 35, row: 10 }, palette: [5, 4, 3], gloom: true, dress: "barrowmoor", decor: 0.3, box: { x: 7, y: 8, w: 57, h: 5 } },
+    { name: "The Bull's Gate", at: { col: 3, row: 10 }, levels: [3], palette: [2], dress: "greyfall", decor: 0.3 },
+    { name: "The Gun Bridge", at: { col: 67, row: 10 }, levels: [3], palette: [2], dress: "greyfall", decor: 0.3 },
   ];
-  const tier = t.finish({}, [{ col: 4, row: 15 }]);
-  // Fog across both ends of the wall, and `inside` its middle, so either end reads as outside from beyond it.
-  const across = (c: number) => [14, 15, 16].map((row) => ({ col: c, row }));
-  const arena = { boss: "rampartBull", gate: [...across(16), ...across(61)], inside: { col: 38, row: 15 } };
-  return { ...tier, area: "bullwall", entry: { col: 4, row: 15 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks, streets: true, notes, arena };
+  const tier = t.finish({}, [{ col: 3, row: 10 }]);
+  // No fog: the whole land is the arena, walked straight into; the boar's guard on the Chapel Door holds the way on.
+  const arena = { boss: "rampartBull", gate: [], inside: { col: 35, row: 10 } };
+  return { ...tier, area: "bullwall", entry: { col: 3, row: 10 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], streets: true, notes, arena };
 }
 
 /**
- * The Belfry, after Dark Souls' Bell Gargoyles: the Chapel Ward's bell tower, its own area, a climb. In from the
- * chapel terrace at the Bell Stair's foot, up onto the gallery where the dead ringers still walk, and up again through
- * fog onto the bell loft, a height above everything: cramped round the bell's timber frame, and the Stone Warden
- * squatting under it. Off the loft's far side the Postern stair goes down the tower's back, a height a step, to the
- * wood's gate.
+ * The Belfry, after Dark Souls' Bell Gargoyles: a boss room of its own, a land apart. The bell loft on top of the
+ * Chapel Ward's tower, in off the Bell Stair at its east side and out by the Postern stair at its west, the Stone
+ * Warden squatting under the bell: cramped round the bell's timber frame, a turret at each back corner.
  */
 function belfry(): AreaMap {
   const rng = makeRng("area:belfry");
-  const t = tierBuilder("surface", rng, { cols: 64, rows: 42 });
+  const t = tierBuilder("surface", rng, { cols: 30, rows: 22 });
   const { prop, who } = t;
   const blue = { color: "blue" } as const;
 
-  // Each step of the climb its own table, each stair at the foot of the one above: the Bell Stair's landing, the
-  // gallery, the loft on top; down the far side the upper leads, the lower leads, and the Postern's foot.
-  for (const [lv, x, y, w, h] of [[2, 50, 22, 12, 13], [3, 37, 14, 13, 13], [4, 22, 7, 15, 10], [3, 12, 14, 10, 10], [2, 4, 20, 8, 10]] as const) {
-    t.ground("belfry", x, y, w, h);
-    t.block(lv, x, y, w, h);
-  }
-  // The Postern's foot on the wood's own floor, under the lower leads and round their stair.
-  t.ground("belfry", 2, 27, 2, 3);
-  t.ground("belfry", 2, 30, 6, 7);
-  t.stair(3, 50, 26, "R");
-  t.stair(4, 37, 16, "R");
-  t.stair(4, 21, 16, "L");
-  t.stair(3, 11, 23, "L");
-  t.stair(2, 3, 29, "L");
-  edgeWay(t, { col: 60, row: 29 }, { col: 62, row: 29 }, 2);
-  edgeWay(t, { col: 4, row: 34 }, { col: 1, row: 34 });
+  t.ground("belfry", 6, 4, 18, 13);
+  edgeWay(t, { col: 23, row: 11 }, { col: 28, row: 11 });
+  edgeWay(t, { col: 6, row: 11 }, { col: 1, row: 11 });
+  t.fences.push({ col: 12, row: 7, w: 5, h: 3 });
+  for (const c of [7, 22]) prop("tower", c, 5, blue);
+  for (const [c, r] of [[9, 14], [20, 15]] as const) prop("bones", c, r);
+  who("stoneWarden", 14, 13);
+  t.bosses.push({ name: "The Stone Warden", area: "belfry", col: 14, row: 13 });
 
-  // The Bell Stair's landing: the belfry's door tower.
-  prop("tower", 57, 24, blue);
-  // The gallery: the dead ringers on their rounds.
-  who("skull", 40, 18, { to: { col: 47, row: 18 } });
-  who("skull", 46, 24, { to: { col: 40, row: 24 } });
-  for (const [c, r] of [[48, 15], [39, 25]] as const) prop("bones", c, r);
-  // The loft: the bell's frame in the middle, a turret at each back corner, no room for anything else.
-  t.fences.push({ col: 27, row: 10, w: 5, h: 3 });
-  for (const c of [23, 35]) prop("tower", c, 8, blue);
-  who("stoneWarden", 29, 14);
-  t.bosses.push({ name: "The Stone Warden", area: "belfry", col: 29, row: 14 });
-  // The Postern stair: the way the ringers used, the dead who tried it the other way.
-  for (const [c, r, art] of [[14, 16, "bones"], [7, 25, "skullSpike"], [5, 32, "deadTree"]] as const) prop(art, c, r);
-
-  const notes: Note[] = [{ at: { col: 54, row: 30 }, text: "No room to run on the bell roof." }];
+  const notes: Note[] = [{ at: { col: 27, row: 10 }, text: "No room to run on the bell roof." }];
   const exits: AreaExit[] = [
-    { to: "chapel", name: "The Bell Stair", kind: "open", at: { col: 62, row: 29 }, plain: true },
-    { to: "emberwood", name: "The Postern", kind: "gate", at: { col: 1, row: 34 }, guard: "stoneWarden" },
+    { to: "chapel", name: "The Bell Stair", kind: "open", at: { col: 28, row: 11 }, plain: true },
+    { to: "emberwood", name: "The Postern", kind: "gate", at: { col: 1, row: 11 }, guard: "stoneWarden" },
   ];
   const districts: District[] = [
-    { name: "The Bell Stair", at: { col: 55, row: 29 }, levels: [2], palette: [3], dress: "harbour", decor: 0.5 },
-    { name: "The Gallery", at: { col: 43, row: 20 }, levels: [3], palette: [2], dress: "harbour", decor: 0.5 },
-    { name: "The Bell Loft", at: { col: 29, row: 12 }, palette: [5, 3, 2], dress: "barrowmoor", decor: 0.3, box: { x: 22, y: 6, w: 15, h: 11 } },
-    { name: "The Postern Stair", at: { col: 12, row: 22 }, levels: [1, 2, 3], palette: [3], dress: "emberwood", decor: 1 },
+    { name: "The Bell Loft", at: { col: 14, row: 11 }, palette: [5, 3, 2], dress: "barrowmoor", decor: 0.3, box: { x: 5, y: 3, w: 19, h: 15 } },
+    { name: "The Bell Stair", at: { col: 26, row: 11 }, palette: [3], dress: "harbour", decor: 0.3 },
+    { name: "The Postern", at: { col: 2, row: 11 }, palette: [3], dress: "emberwood", decor: 0.3 },
   ];
-  const tier = t.finish({}, [{ col: 58, row: 29 }]);
-  // Fog on both stairs onto the loft; `inside` the loft's middle, as far from each.
-  const arena = { boss: "stoneWarden", gate: [{ col: 37, row: 16 }, { col: 21, row: 16 }], inside: { col: 29, row: 12 } };
-  return { ...tier, area: "belfry", entry: { col: 58, row: 29 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], streets: true, notes, arena };
+  const tier = t.finish({}, [{ col: 27, row: 11 }]);
+  // No fog: the whole land is the arena, walked straight into; the warden's guard on the Postern holds the way on.
+  const arena = { boss: "stoneWarden", gate: [], inside: { col: 14, row: 11 } };
+  return { ...tier, area: "belfry", entry: { col: 27, row: 11 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], streets: true, notes, arena };
 }
 
 /**
- * Troll's Hollow, the Cinder Troll's own ground off the Emberwood's north: up the Ash Road through the goblins'
- * bone field to a gap in the burning pines, and through fog into the hollow, a wide round floor of ash ringed by
- * the goblins' fires, room for every charge he has. Past him a gap in the north-east pines, fogged too while he
- * stands, and the gnomes' Crag Stair, two heights up out of the smoke to the rock.
+ * Troll's Hollow: a boss room of its own, a land apart. A round floor of ash in the burning pines, ringed by the
+ * goblins' fires, room for every charge the Cinder Troll has; in by the Ash Road from the Emberwood at its south gap,
+ * out by the gnomes' Crag Stair at its north.
  */
 function trollpit(): AreaMap {
   const rng = makeRng("area:trollpit");
-  const t = tierBuilder("surface", rng, { cols: 80, rows: 60 });
+  const t = tierBuilder("surface", rng, { cols: 60, rows: 46 });
   const { prop, who } = t;
 
-  // One wood floor, the pines walling everything but the hollow, the road and the ways off it.
-  t.ground("trollpit", 2, 2, 76, 56);
-  // The Crag Stair: a ledge a height up, the rock's foot a height above it, the way off along the top.
-  for (const [lv, x, y, w, h] of [[2, 56, 4, 12, 7], [3, 66, 2, 12, 6]] as const) t.block(lv, x, y, w, h);
-  t.stair(2, 55, 10, "L");
-  t.stair(3, 65, 7, "L");
-  edgeWay(t, { col: 76, row: 4 }, { col: 78, row: 4 }, 3);
-  edgeWay(t, { col: 40, row: 55 }, { col: 40, row: 58 });
-  const road: [number, number][] = [[40, 57], [40, 54], [34, 50], [36, 47], [40, 45], [40, 43]];
-  t.track(...road);
-  const hollow = { col: 40, row: 28, rx: 18, ry: 13 };
+  t.ground("trollpit", 2, 2, 56, 42);
+  edgeWay(t, { col: 30, row: 38 }, { col: 30, row: 44 });
+  edgeWay(t, { col: 30, row: 6 }, { col: 30, row: 1 });
+  const hollow = { col: 30, row: 22, rx: 18, ry: 13 };
   const ragged = noise("trollpit:hollow", 3);
-  const near = (c: number, r: number, pts: readonly (readonly [number, number])[], w: number) =>
-    pts.some(([x, y], i) => i > 0 && segment(c, r, pts[i - 1]!, [x, y]) <= w);
-  // The fog's row exactly three wide, so no way round it.
+  // The pines wall all but the hollow and the road through it.
   const open = (c: number, r: number): boolean =>
-    r === 44 ? c >= 39 && c <= 41 :
-    ((c - hollow.col) / hollow.rx) ** 2 + ((r - hollow.row) / hollow.ry) ** 2 < 1 + ragged(c, r) * 0.12 ||
-    near(c, r, road, 1.5 + Math.max(0, ragged(c, r))) ||
-    Math.hypot(c - 33, (r - 51) * 1.3) < 4.5 ||
-    (c >= 52 && c <= 54 && r >= 10 && r <= 18);
+    r < 11 || r > 33 ? c >= 29 && c <= 31 : ((c - hollow.col) / hollow.rx) ** 2 + ((r - hollow.row) / hollow.ry) ** 2 < 1 + ragged(c, r) * 0.12;
 
-  // The Ash Road: the goblins' bone field, their trophies, a few still keeping it.
-  for (const [c, r] of [[30, 49], [36, 54], [31, 53], [37, 48]] as const) prop("skullSpike", c, r);
-  for (const [c, r] of [[33, 51], [29, 51], [35, 53]] as const) prop("bones", c, r);
-  who("spear", 32, 50);
-  who("torch", 38, 46, { to: { col: 41, row: 52 } });
-  // The hollow: a ring of the goblins' fires round the ash, the bones of all it caught, a few pines burnt standing.
   for (let i = 0; i < 8; i++) {
     const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
     t.campfires.push({ col: Math.round(hollow.col + Math.cos(a) * 15), row: Math.round(hollow.row + Math.sin(a) * 10) });
   }
-  for (const [c, r] of [[35, 24], [46, 31], [38, 35], [44, 22], [31, 30], [50, 27]] as const) prop("bones", c, r);
-  for (const [c, r] of [[28, 21], [53, 34], [27, 35]] as const) prop("deadTree", c, r, { scale: 0.7 });
-  who("troll", 40, 27, { to: { col: 44, row: 29 } });
-  t.bosses.push({ name: "Cinder Troll", area: "trollpit", col: 40, row: 27 });
-  // The Crag Stair: the gnomes' path, their hut at its head and the gold they brought down.
-  prop("gnomeHut", 71, 4);
-  prop("goldStone", 60, 6);
-  who("gnome", 62, 8, { to: { col: 58, row: 6 } });
-  who("gnome", 69, 6, { to: { col: 74, row: 5 } });
+  for (const [c, r] of [[25, 18], [36, 25], [28, 29], [34, 16], [21, 24], [40, 21]] as const) prop("bones", c, r);
+  for (const [c, r] of [[18, 15], [43, 28], [17, 29]] as const) prop("deadTree", c, r, { scale: 0.7 });
+  who("troll", 30, 21, { to: { col: 34, row: 23 } });
+  t.bosses.push({ name: "Cinder Troll", area: "trollpit", col: 30, row: 21 });
 
-  const notes: Note[] = [{ at: { col: 41, row: 50 }, text: "It throws fire. Where the ash glows, do not stand." }];
+  const notes: Note[] = [{ at: { col: 31, row: 40 }, text: "It throws fire. Where the ash glows, do not stand." }];
   const exits: AreaExit[] = [
-    { to: "emberwood", name: "The Ash Road", kind: "open", at: { col: 40, row: 58 }, plain: true },
-    { to: "crags", name: "Crag Stair", kind: "open", at: { col: 78, row: 4 }, guard: "troll" },
+    { to: "emberwood", name: "The Ash Road", kind: "open", at: { col: 30, row: 44 }, plain: true },
+    { to: "crags", name: "Crag Stair", kind: "open", at: { col: 30, row: 1 }, guard: "troll" },
   ];
   const districts: District[] = [
-    { name: "The Ash Road", at: { col: 37, row: 50 }, levels: [1], palette: [3], dress: "emberwood", decor: 2 },
-    { name: "Troll's Hollow", at: { col: 40, row: 28 }, palette: [1], dress: "greyfall", decor: 1.5, box: { x: 21, y: 13, w: 39, h: 31 } },
-    { name: "The Crag Stair", at: { col: 64, row: 6 }, levels: [1, 2, 3], palette: [3], dress: "crags", decor: 1 },
+    { name: "Troll's Hollow", at: { col: 30, row: 22 }, palette: [1], dress: "greyfall", decor: 1.5, box: { x: 10, y: 8, w: 41, h: 29 } },
+    { name: "The Ash Road", at: { col: 30, row: 40 }, levels: [1], palette: [3], dress: "emberwood", decor: 1 },
+    { name: "The Crag Stair", at: { col: 30, row: 4 }, levels: [1], palette: [3], dress: "crags", decor: 1 },
   ];
-  const tier = t.finish({}, [{ col: 40, row: 55 }], open);
-  // Fog across the gap in the pines each side, every fog tile as far from `inside` as the rest.
-  const gate = [39, 40, 41].map((col) => ({ col, row: 44 })).concat([52, 53, 54].map((col) => ({ col, row: 12 })));
-  const arena = { boss: "troll", gate, inside: { col: 40, row: 28 } };
-  return { ...tier, area: "trollpit", entry: { col: 40, row: 55 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes, arena };
+  const tier = t.finish({}, [{ col: 30, row: 42 }], open);
+  // No fog: the whole land is the arena, walked straight into; the troll's guard on the Crag Stair holds the way on.
+  const arena = { boss: "troll", gate: [], inside: { col: 30, row: 22 } };
+  return { ...tier, area: "trollpit", entry: { col: 30, row: 42 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes, arena };
 }
 
 /**
- * The King's Barrow, after Dark Souls' tombs and Ornstein's hall: inside the greatest of the moor's barrows, its own
- * area under the moor. Down the Barrow Cave's lift onto the long ramp of bones, through the coffin hall where the old
- * kings lie in rows and their guard still stands, and through fog into the throne hall, round under its dome on a ring
- * of pillars, the Barrow King risen off his throne in the middle. Past him, fogged too while he stands, the King's
- * Stair east and down into the Deeps.
+ * The King's Barrow: a boss room of its own, under the moor. The throne hall inside the greatest of the barrows,
+ * round under its dome on a ring of pillars, the Barrow King risen off his throne in the middle; in by the Barrow
+ * Cave's lift at its south, out by the King's Stair east and down into the Deeps.
  */
 function barrow(): AreaMap {
   const rng = makeRng("area:barrow");
-  const t = tierBuilder("below", rng, { cols: 72, rows: 56 });
+  const t = tierBuilder("below", rng, { cols: 50, rows: 36 });
   const { prop, who } = t;
 
-  // The throne hall under its dome, the coffin hall south of it, the ramp down to it from the lift.
-  t.blob("barrow", 35, 16, 13, 9);
-  t.ground("barrow", 24, 31, 23, 9);
-  tunnel(t, [[35, 25], [35, 31]]);
-  tunnel(t, [[35, 39], [35, 52]]);
-  tunnel(t, [[47, 17], [58, 17], [62, 22], [70, 22]]);
-  openEdge(t, t.grid[0]!.length - 1, 22);
-  // The dome's pillars, a ring to put between you and him; the coffins in rows down the hall.
+  t.blob("barrow", 25, 17, 13, 9);
+  tunnel(t, [[25, 25], [25, 34]]);
+  tunnel(t, [[37, 17], [49, 17]]);
+  openEdge(t, t.grid[0]!.length - 1, 17);
   for (let i = 0; i < 8; i++) {
     const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
-    t.pillar(Math.round(35 + Math.cos(a) * 8), Math.round(16 + Math.sin(a) * 5.5), 2, 1);
+    t.pillar(Math.round(25 + Math.cos(a) * 8), Math.round(17 + Math.sin(a) * 5.5), 2, 1);
   }
-  for (const c of [27, 31, 39, 43]) for (const r of [33, 36]) t.pillar(c, r, 2, 1);
+  for (const [c, r] of [[14, 13], [36, 13], [14, 21], [36, 21], [20, 9], [30, 9], [20, 25], [30, 25]] as const) prop("sconce", c, r);
+  for (const [c, r] of [[22, 10], [28, 10]] as const) prop("skullSpike", c, r);
+  for (const [c, r] of [[21, 20], [30, 15], [26, 22]] as const) prop("bones", c, r);
+  who("barrowKing", 25, 16);
+  // The grave totems round the hall: while one stands, no blade bites the king.
+  for (const [c, r] of [[25, 10], [16, 21], [34, 21]] as const) who("graveTotem", c, r);
+  t.bosses.push({ name: "The Barrow King", area: "barrow", col: 25, row: 16 });
 
-  // The ramp: the dead laid along it, a torch at the bottom.
-  for (const [c, r] of [[34, 50], [36, 46], [34, 42]] as const) prop("bones", c, r);
-  for (const [c, r] of [[33, 48], [37, 41]] as const) prop("sconce", c, r);
-  // The coffin hall: the kings' guard at their posts between the rows.
-  for (const [c, r] of [[26, 32], [44, 32], [26, 38], [44, 38]] as const) prop("sconce", c, r);
-  for (const [c, r] of [[29, 35], [41, 35]] as const) who("skullGuard", c, r);
-  who("skull", 30, 38, { to: { col: 40, row: 38 } });
-  for (const [c, r] of [[33, 32], [38, 38]] as const) prop("goldStone", c, r);
-  // The throne hall: braziers round the wall, skulls staked either side of the empty throne, the king off it.
-  for (const [c, r] of [[24, 12], [46, 12], [24, 20], [46, 20], [30, 8], [40, 8], [30, 24], [40, 24]] as const) prop("sconce", c, r);
-  for (const [c, r] of [[32, 9], [38, 9]] as const) prop("skullSpike", c, r);
-  for (const [c, r] of [[31, 19], [40, 14], [36, 21]] as const) prop("bones", c, r);
-  who("barrowKing", 35, 15, { scale: 1.6 });
-  t.bosses.push({ name: "The Barrow King", area: "barrow", col: 35, row: 15 });
-  // The King's Stair: what the dead carried down to him.
-  for (const [c, r] of [[56, 17], [64, 22]] as const) prop("skullSpike", c, r);
-
-  const notes: Note[] = [{ at: { col: 37, row: 44 }, text: "He wears the horn. Keep a pillar between." }];
+  const notes: Note[] = [{ at: { col: 26, row: 32 }, text: "Break what he leans on, then the king." }];
   const exits: AreaExit[] = [
-    { to: "barrowmoor", name: "Barrow Cave", kind: "lift", at: { col: 35, row: 51 } },
-    { to: "deeps", name: "The King's Stair", kind: "open", at: { col: 70, row: 22 }, guard: "barrowKing" },
+    { to: "barrowmoor", name: "Barrow Cave", kind: "lift", at: { col: 25, row: 33 } },
+    { to: "deeps", name: "The King's Stair", kind: "open", at: { col: 48, row: 17 }, guard: "barrowKing" },
   ];
   const districts: District[] = [
-    { name: "The Bone Ramp", at: { col: 35, row: 46 }, palette: [4], dress: "deeps" },
-    { name: "The Coffin Hall", at: { col: 35, row: 35 }, palette: [4], dress: "deeps", box: { x: 22, y: 28, w: 27, h: 11 } },
-    { name: "The Throne Hall", at: { col: 35, row: 16 }, palette: [5, 4], dress: "barrowmoor", box: { x: 20, y: 5, w: 30, h: 22 } },
-    { name: "The King's Stair", at: { col: 60, row: 19 }, palette: [4], dress: "deeps" },
+    { name: "The King's Barrow", at: { col: 25, row: 17 }, palette: [5, 4], dress: "barrowmoor", box: { x: 10, y: 6, w: 30, h: 24 } },
+    { name: "The Barrow Cave", at: { col: 25, row: 32 }, palette: [4], dress: "deeps" },
+    { name: "The King's Stair", at: { col: 45, row: 17 }, palette: [4], dress: "deeps" },
   ];
-  const tier = stone(t.finish({}, [{ col: 35, row: 49 }]));
-  // Fog across the doorway from the coffin hall and the stair's mouth, each fog tile as far from `inside` as the rest.
-  const gate = [34, 35, 36].map((col) => ({ col, row: 28 })).concat([16, 17, 18].map((row) => ({ col: 50, row })));
-  const arena = { boss: "barrowKing", gate, inside: { col: 39, row: 17 } };
-  return { ...tier, area: "barrow", entry: { col: 35, row: 49 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes, arena };
-}
-
-/** How far a tile is from the segment `a` to `b`, in tiles. */
-function segment(c: number, r: number, a: readonly [number, number], b: readonly [number, number]): number {
-  const [dx, dy] = [b[0] - a[0], b[1] - a[1]];
-  const k = Math.max(0, Math.min(1, ((c - a[0]) * dx + (r - a[1]) * dy) / (dx * dx + dy * dy || 1)));
-  return Math.hypot(c - a[0] - k * dx, r - a[1] - k * dy);
+  const tier = stone(t.finish({}, [{ col: 25, row: 32 }]));
+  // No fog: the whole land is the arena, walked straight into; the king's guard on the King's Stair holds the way on.
+  const arena = { boss: "barrowKing", gate: [], inside: { col: 25, row: 17 } };
+  return { ...tier, area: "barrow", entry: { col: 25, row: 32 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes, arena };
 }
 
 const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour, emberwood, crags, greyfall, gilded, steps, undercroft, deeps, hollow, barrowmoor, fen, saltreach, landing, burg, ramparts, chapel, ring, keep: keepArea, bullwall, belfry, trollpit, barrow };
