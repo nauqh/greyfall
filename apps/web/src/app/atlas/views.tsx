@@ -206,7 +206,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   const newGame = (): void => {
     if (!window.confirm("Start a new game? Your gold, band, bonfires and slain bosses are lost.")) return;
     try {
-      for (const k of ["band", "bought", "class", "flags", "gold", "heard", "hero", "keys", "kindled", "levels", "lost", "prologue", "rest", "slain", "taken"]) localStorage.removeItem(`greyfall.${k}`);
+      for (const k of ["band", "bought", "class", "flags", "gold", "heard", "hero", "keys", "kindled", "levels", "lost", "prologue", "rest", "slain", "taken", "thrown"]) localStorage.removeItem(`greyfall.${k}`);
     } catch {}
     window.location.assign(`${base}/landing?rest`);
   };

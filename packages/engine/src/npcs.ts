@@ -1036,7 +1036,14 @@ export const NPCS: readonly Npc[] = [
           "Another one the tide brought in. Come and sit by the fire a while. It costs nothing, and I could do with the company.",
           "I washed up here the same way you did, but I came down on the rocks badly and this leg hasn't held me since. So I sit here and keep the fire going.",
           "You'll want something with an edge before you go any further. My old gaff is only a fishing hook with the point filed sharp, but it will do more good out there with you than in here with me.",
-          "It's a loan, mind, so look after it. Here, I'll throw it over to you.",
+          "It's a loan, mind, so look after it. I'll throw it over to you. Pick it up, then press Tab to open your sack, and you'll find it in there.",
+        ],
+      },
+      {
+        id: "sack",
+        lines: [
+          "Got it? Good. Everything you pick up or are given goes into your sack. Press Tab to open it and Tab again to put it away.",
+          "Look at what each thing does in there. The gaff makes your blows bite harder, and whatever you brought ashore is in there with it. Your health, attack and flasks are listed too, so you can see where you stand.",
         ],
       },
       {
