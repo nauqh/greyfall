@@ -374,7 +374,7 @@ textarea {
 	z-index: -1;
 	border: 3px solid #2e1a0e;
 	border-radius: 999px;
-	background: #fbf5e6;
+	background: #f2e3c2;
 	box-shadow: 3px 4px 0 #2e1a0e;
 	transition: opacity 200ms ease-out;
 }
@@ -673,7 +673,7 @@ textarea {
 
 .btn.light {
 	color: #2e1a0e;
-	background: #fbf5e6;
+	background: #f2e3c2;
 }
 
 .btn.red {
