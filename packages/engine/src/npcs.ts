@@ -982,12 +982,12 @@ export const NPCS: readonly Npc[] = [
     ],
   },
   {
-    // On the Ramparts' east tower past the bull, between the silent guns: the gunner who outlived his powder.
+    // On the Bull's Wall's east tower past the bull, between the silent guns: the gunner who outlived his powder.
     id: "odo",
     name: "Odo the Gunner",
     short: "Odo",
-    area: "ramparts",
-    at: { col: 70, row: 14 },
+    area: "bullwall",
+    at: { col: 71, row: 16 },
     kind: "warrior",
     greet: "Bull's dead, then. Good. I was running out of things to throw.",
     part: "Mind the ladder. It sticks.",

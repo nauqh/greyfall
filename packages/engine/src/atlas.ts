@@ -37,7 +37,11 @@ export type AreaId =
   | "ramparts"
   | "chapel"
   | "ring"
-  | "keep";
+  | "keep"
+  | "bullwall"
+  | "belfry"
+  | "trollpit"
+  | "barrow";
 
 export interface AtlasArea {
   id: AreaId;
@@ -176,7 +180,7 @@ export interface AtlasMap {
 export const ATLAS_SIZE = { cols: 128, rows: 80 } as const;
 export const TIERS: readonly TierId[] = ["sky", "surface", "below"];
 /** One character a tile in `areaAt`, by the area's index in AREAS. */
-export const AREA_CODE = "0123456789abcdefgh";
+export const AREA_CODE = "0123456789abcdefghijkl";
 
 export const AREAS: readonly AtlasArea[] = [
   {
@@ -208,7 +212,7 @@ export const AREAS: readonly AtlasArea[] = [
     palette: [4, 4, 4],
     mood: 0xffe2c8,
     rise: 0,
-    label: { col: 25, row: 10 },
+    label: { col: 19, row: 10 },
   },
   {
     id: "crags",
@@ -336,7 +340,7 @@ export const AREAS: readonly AtlasArea[] = [
     palette: [5, 5, 5],
     mood: 0xf2ece4,
     rise: 5,
-    label: { col: 60, row: 28 },
+    label: { col: 76, row: 30 },
   },
   {
     id: "ring",
@@ -356,6 +360,45 @@ export const AREAS: readonly AtlasArea[] = [
     mood: 0xffffff,
     rise: 1,
     label: { col: 33, row: 24 },
+  },
+  {
+    id: "bullwall",
+    tier: "surface",
+    name: "The Bull's Wall",
+    blurb: "The curtain wall past the Ramparts' walk, three paces wide over the drop. An iron-shod bull holds it between the towers; past him the Ladder down to the Burg and the Gun Bridge to the Chapel Ward.",
+    palette: [4, 4, 4],
+    mood: 0xe4dcd4,
+    rise: 3,
+    label: { col: 60, row: 25 },
+  },
+  {
+    id: "belfry",
+    tier: "surface",
+    name: "The Belfry",
+    blurb: "The Chapel Ward's bell tower, climbed by its outside stair to the loft where the bell hangs silent and a warden of stone squats under it. The Postern stair goes down its back to the Emberwood.",
+    palette: [5, 5, 5],
+    mood: 0xe8e4f0,
+    rise: 5,
+    label: { col: 61, row: 30 },
+  },
+  {
+    id: "trollpit",
+    tier: "surface",
+    name: "Troll's Hollow",
+    blurb: "A round hollow of ash in the north of the Emberwood, ringed by pines that burn and do not fall. The Cinder Troll keeps it, and past him the gnomes' Crag Stair climbs out of the smoke to the rock.",
+    palette: [4, 4, 4],
+    mood: 0xffc8a0,
+    rise: 0,
+    label: { col: 43, row: 6 },
+  },
+  {
+    id: "barrow",
+    tier: "below",
+    name: "The King's Barrow",
+    blurb: "Inside the greatest of the moor's barrows: a hall of the old kings' coffins, and the horned king who will not lie in his. Behind his throne the tomb goes on down into the Deeps.",
+    palette: [4, 4, 4],
+    mood: 0xa898c8,
+    label: { col: 78, row: 35 },
   },
 ];
 
@@ -1300,9 +1343,9 @@ export const LIFTS: readonly AtlasLift[] = [
     id: "barrow-cave",
     name: "Barrow Cave",
     kind: "lift",
-    note: "The moor's cave, down a long ramp of bones into the tombs, and back up.",
+    note: "The moor's cave at the King's Barrow's foot, down a long ramp of bones into the barrow, and back up.",
     up: { tier: "surface", area: "barrowmoor", at: { col: 78, row: 43 } },
-    down: { tier: "below", area: "deeps", at: { col: 78, row: 44 } },
+    down: { tier: "below", area: "barrow", at: { col: 77, row: 39 } },
   },
   {
     id: "sinkhole",
@@ -1348,14 +1391,17 @@ export const LIFTS: readonly AtlasLift[] = [
 
 function surface(rng: Rng): AtlasTier {
   const t = tierBuilder("surface", rng);
-  // Each land in its own map's shape, all at one scale; the castle wards at half that, as insets.
+  // Each land in its own map's shape, all at one scale; the castle wards at half that, as insets, and the boss rooms
+  // smaller again.
   const LAY: [AreaId, number, number, number][] = [
-    ["emberwood", 10, 2, 4], ["crags", 50, 2, 4], ["greyfall", 92, 2, 4],
-    ["burg", 38, 25, 8], ["ramparts", 41, 17, 8], ["chapel", 54, 24, 8], ["keep", 30, 22, 8],
+    ["emberwood", 4, 2, 4], ["crags", 50, 2, 4], ["greyfall", 92, 2, 4],
+    ["burg", 38, 25, 8], ["ramparts", 41, 17, 8], ["chapel", 70, 27, 8], ["keep", 30, 22, 8],
+    ["bullwall", 56, 25, 10], ["belfry", 58, 29, 8], ["trollpit", 40, 3, 10],
     ["saltreach", 3, 38, 4], ["harbour", 29, 35, 4], ["barrowmoor", 62, 38, 4], ["fen", 30, 60, 4],
   ];
-  // The wards' maps are framed in woods; the Keep west of the Burg, the Ramparts over it, the Chapel past the Gun Bridge.
-  for (const [a, x, y, s] of LAY) t.real(a, x, y, s, s === 8);
+  // The wards' and boss rooms' maps are framed in woods; the Keep west of the Burg, the Ramparts over it, the Bull's
+  // Wall east of them, the Chapel past it and the Belfry off the Chapel's west; Troll's Hollow between the wood and the rock.
+  for (const [a, x, y, s] of LAY) t.real(a, x, y, s, s >= 8);
   // Saltreach's isles are joined by causeways too thin to survive the shrink: a tile of each.
   for (const [c, r] of [[6, 41], [16, 40], [20, 44], [13, 41], [14, 43], [10, 46], [4, 41], [4, 42], [13, 47], [14, 47]] as const) t.ground("saltreach", c, r, 1, 1);
   t.separate();
@@ -1372,10 +1418,13 @@ function surface(rng: Rng): AtlasTier {
   t.gate("old-bridge", "Old Bridge", "open", "saltreach", "harbour", { col: 25, row: 40 }, { col: 33, row: 46 }, "The way in from the shore, always open.");
   t.gate("burg-gate", "Burg Gate", "open", "harbour", "burg", { col: 43, row: 35 }, { col: 44, row: 32 }, "Up out of Old Town, through the castle's outer wall into the Lower Burg.");
   t.gate("rampart-gate", "Rampart Gate", "open", "burg", "ramparts", { col: 45, row: 26 }, { col: 43, row: 21 }, "Up off the Burg's crest through the gatehouse onto the castle's curtain wall.");
-  t.gate("chapel-door", "Chapel Door", "open", "ramparts", "chapel", { col: 49, row: 18 }, { col: 56, row: 28 }, "Over the Gun Bridge into the Chapel Ward's cloister.");
+  t.gate("bulls-gate", "The Bull's Gate", "open", "ramparts", "bullwall", { col: 46, row: 21 }, { col: 58, row: 25 }, "Off the walk's east end onto the wall the bull holds.");
+  t.gate("chapel-door", "Chapel Door", "open", "bullwall", "chapel", { col: 64, row: 25 }, { col: 71, row: 29 }, "Over the Gun Bridge into the Chapel Ward's cloister.");
+  t.gate("bell-stair", "The Bell Stair", "open", "chapel", "belfry", { col: 71, row: 31 }, { col: 64, row: 31 }, "Up off the chapel terrace's west end into the bell tower.");
   t.gate("keep-gate", "Keep Gate", "locked", "burg", "keep", { col: 40, row: 27 }, { col: 35, row: 25 }, "Off the Burg's Upper Streets, west into the castle's bailey. The Troll Key fits it.");
-  t.gate("ember-gate", "Ember Gate", "shortcut", "harbour", "emberwood", { col: 33, row: 36 }, { col: 19, row: 17 }, "A palisade on the causeway north. The town bars it at night.");
-  t.gate("crag-stair", "Crag Stair", "open", "emberwood", "crags", { col: 40, row: 5 }, { col: 55, row: 12 }, "A gnome path out of the smoke, up to the rock.");
+  t.gate("ember-gate", "Ember Gate", "shortcut", "harbour", "emberwood", { col: 33, row: 36 }, { col: 13, row: 17 }, "A palisade on the causeway north. The town bars it at night.");
+  t.gate("ash-road", "The Ash Road", "open", "emberwood", "trollpit", { col: 32, row: 6 }, { col: 42, row: 6 }, "North out of the burning wood to the troll's hollow.");
+  t.gate("crag-stair", "Crag Stair", "open", "trollpit", "crags", { col: 46, row: 4 }, { col: 55, row: 8 }, "A gnome path past the troll, out of the smoke and up to the rock.");
   t.gate("moor-gate", "Moor Gate", "shortcut", "harbour", "barrowmoor", { col: 56, row: 47 }, { col: 63, row: 47 }, "Barred from the moor side. Whoever comes through the moor can open it, and come home the short way.");
   t.gate("fen-causeway", "Fen Causeway", "open", "saltreach", "fen", { col: 16, row: 51 }, { col: 31, row: 68 }, "A long spit of shingle along the south shore.", 2);
   t.gate("barrow-path", "Barrow Path", "open", "fen", "barrowmoor", { col: 38, row: 61 }, { col: 77, row: 56 }, "Duckboards over the reeds, up onto the moor.");
@@ -1383,9 +1432,9 @@ function surface(rng: Rng): AtlasTier {
   t.gate("sky-bridge", "Sky Bridge", "high", "crags", "greyfall", { col: 79, row: 5 }, { col: 96, row: 5 }, "The gnomes' high road off the top of the rock, straight onto the Greyfall's wall.", 2);
 
   t.road([22, 41], [25, 40], [33, 46], [40, 45], [44, 47]);
-  t.road([44, 47], [43, 40], [43, 35], [44, 31], [45, 26], [43, 21], [46, 18], [49, 18], [56, 28], [60, 27]);
-  t.road([43, 40], [36, 38], [33, 36], [19, 17], [20, 15]);
-  t.road([20, 15], [28, 9], [40, 5], [55, 12], [60, 15]);
+  t.road([44, 47], [43, 40], [43, 35], [44, 31], [45, 26], [43, 21], [46, 21], [58, 25], [64, 25], [71, 29], [76, 30]);
+  t.road([43, 40], [36, 38], [33, 36], [13, 17], [14, 15]);
+  t.road([14, 15], [22, 9], [32, 6], [42, 6], [46, 4], [55, 8], [60, 15]);
   t.road([44, 47], [50, 47], [56, 47], [63, 47], [70, 47], [78, 46], [92, 45], [97, 18]);
   t.road([16, 48], [16, 51], [31, 68], [38, 66], [38, 61], [77, 56], [78, 50]);
   const { prop, who } = t;
@@ -1431,28 +1480,29 @@ function surface(rng: Rng): AtlasTier {
   prop("tower", 45, 21, { color: "blue" });
   prop("cannon", 42, 21);
   prop("bones", 45, 19);
-  t.bosses.push({ name: "The Rampart Bull", area: "ramparts", col: 47, row: 17 });
-  // The Chapel Ward: the monastery, its bell tower and the cloister.
-  prop("monastery", 60, 28, { color: "blue" });
-  prop("tower", 57, 27, { color: "blue" });
-  t.fires.push({ col: 63, row: 28 });
-  who("thief", 58, 29, { to: { col: 62, row: 29 } });
-  t.bosses.push({ name: "The Stone Warden", area: "chapel", col: 63, row: 26 });
+  // The Bull's Wall past them, the bull on it.
+  t.bosses.push({ name: "The Rampart Bull", area: "bullwall", col: 60, row: 25 });
+  // The Chapel Ward: the monastery and the cloister; the Belfry off its west end, the warden in it.
+  prop("monastery", 76, 31, { color: "blue" });
+  t.fires.push({ col: 79, row: 31 });
+  who("thief", 74, 32, { to: { col: 78, row: 32 } });
+  prop("tower", 61, 30, { color: "blue" });
+  t.bosses.push({ name: "The Stone Warden", area: "belfry", col: 61, row: 30 });
   // The Keep: the castle's crown, its bailey round it.
   prop("castle", 32, 24, { color: "blue" });
   t.fires.push({ col: 31, row: 25 });
   who("archer", 35, 26, { color: "blue" });
 
-  // Emberwood: goblin warrens, the troll's hollow, cinders.
-  for (const [c, r, f] of [[15, 12, 0], [17, 6, 3], [26, 12, 6], [30, 7, 9]] as const) prop("goblinHut", c, r, { frame: f });
-  prop("deadTree", 34, 14);
-  prop("trollDead", 36, 9, { scale: 0.6 });
-  t.fires.push({ col: 20, row: 15 }, { col: 22, row: 9 });
-  who("torch", 18, 9, { to: { col: 18, row: 13 } });
-  who("spear", 28, 10);
-  who("gnoll", 32, 12);
-  who("thief", 24, 15, { to: { col: 29, row: 15 } });
-  t.bosses.push({ name: "Cinder Troll", area: "emberwood", col: 25, row: 4 });
+  // Emberwood: goblin warrens, cinders; Troll's Hollow past its north road.
+  for (const [c, r, f] of [[9, 12, 0], [11, 6, 3], [20, 12, 6], [24, 7, 9]] as const) prop("goblinHut", c, r, { frame: f });
+  prop("deadTree", 28, 14);
+  prop("trollDead", 30, 9, { scale: 0.6 });
+  t.fires.push({ col: 14, row: 15 }, { col: 16, row: 9 });
+  who("torch", 12, 9, { to: { col: 12, row: 13 } });
+  who("spear", 22, 10);
+  who("gnoll", 26, 12);
+  who("thief", 18, 15, { to: { col: 23, row: 15 } });
+  t.bosses.push({ name: "Cinder Troll", area: "trollpit", col: 43, row: 6 });
 
   // Tinker Crags: huts on the low rock, gold on the steps, the lift on the peak.
   prop("gnomeTower", 54, 10);
@@ -1478,7 +1528,6 @@ function surface(rng: Rng): AtlasTier {
   who("skullGuard", 70, 42);
   who("shaman", 85, 46);
   who("bat", 76, 42);
-  t.bosses.push({ name: "The Barrow King", area: "barrowmoor", col: 78, row: 40 });
 
   // Lizard Fen: the purple chapel among the pools.
   prop("tower", 39, 70, { color: "purple" });
@@ -1544,10 +1593,11 @@ function sky(rng: Rng): AtlasTier {
 function below(rng: Rng): AtlasTier {
   const t = tierBuilder("below", rng);
   // Under the town the Undercroft, its well bottom under the Old Well; the Ring at the Boat's end, the Landing west of it;
-  // the Deeps under the moor's cave; the Hollow under the fen's sinkhole.
+  // the King's Barrow under the moor's cave, the Deeps below it; the Hollow under the fen's sinkhole.
   t.real("undercroft", 34, 50);
   t.real("ring", 37, 45, 8);
   t.real("landing", 19, 43);
+  t.real("barrow", 76, 34, 8);
   t.real("deeps", 68, 43);
   t.real("hollow", 31, 66);
   // Rock casts a cliff on the row under it: a back wall a tile high over every cavern keeps its laid floor walkable.
@@ -1562,6 +1612,7 @@ function below(rng: Rng): AtlasTier {
   // The shrink leaves the Hollow's east shore on a diagonal thread to its lake; a ledge joins them.
   t.bridge({ col: 48, row: 70 }, { col: 50, row: 75 });
   t.gate("ring-gate", "Ring Gate", "open", "landing", "ring", { col: 33, row: 46 }, { col: 37, row: 46 }, "The sea cave's last passage, into the bull's cavern.");
+  t.gate("kings-stair", "The King's Stair", "open", "barrow", "deeps", { col: 79, row: 35 }, { col: 81, row: 43 }, "Behind the Barrow King's throne, down out of his barrow into the tombs.");
   t.gate("cistern-run", "Cistern Run", "open", "undercroft", "deeps", { col: 57, row: 66 }, { col: 68, row: 47 }, "A tunnel east out of the cisterns. It comes up in the tombs.");
   // Round the Undercroft's foot to the Hollow's east shore.
   t.gate("sinking-stair", "Sinking Stair", "open", "deeps", "hollow", { col: 77, row: 65 }, { col: 51, row: 75 }, "Steps cut down from the tombs to the Hollow's shore.");
@@ -1573,6 +1624,8 @@ function below(rng: Rng): AtlasTier {
   who("spider", 37, 58, { to: { col: 39, row: 58 } });
   who("skull", 44, 54);
   who("bat", 40, 55);
+  // The King's Barrow: the king in his hall.
+  t.bosses.push({ name: "The Barrow King", area: "barrow", col: 78, row: 35 });
   // Barrow Deeps.
   for (const [c, r] of [[76, 46], [80, 46]] as const) prop("skullSpike", c, r);
   for (const [c, r] of [[72, 52], [84, 51], [77, 60]] as const) prop("bones", c, r);
