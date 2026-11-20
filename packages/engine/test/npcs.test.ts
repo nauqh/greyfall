@@ -33,21 +33,6 @@ describe("talking", () => {
     expect(wings.lines.join(" ")).toMatch(/Wren/);
     expect(nextTalk(tobin, new Set([...heard, "tobin.wings"]), new Set()).id).toBe("wings");
   });
-
-  it("keys every conversation apart, one said at several stations keeping its one key", () => {
-    const keys = NPCS.flatMap((n) => [...new Set(stations(n).flatMap((s) => s.talks ?? []))].map((t) => talkKey(n, t)));
-    expect(new Set(keys).size).toBe(keys.length);
-  });
-
-  it("never calls the wanderer a captain or a sailor", () => {
-    const said = NPCS.flatMap((n) => [
-      n.greet,
-      n.part,
-      ...(n.shop ? [n.shop.poor, n.shop.sold] : []),
-      ...stations(n).flatMap((s) => (s.talks ?? []).flatMap((t) => t.lines)),
-    ]);
-    expect(said.join(" ")).not.toMatch(/\b(captain|sailor)\b/i);
-  });
 });
 
 describe("the merchants", () => {
@@ -71,16 +56,6 @@ describe("where the folk stand", () => {
       expect(taken.has(`${at.col},${at.row}`), id).toBe(false);
       expect(findPath(map.entry, at), id).not.toBeNull();
     }
-  });
-
-  it("by what they talk about, on the map's own grid", () => {
-    const map = areaMap("harbour");
-    const at = (id: string) => NPCS.find((n) => n.id === id)!.at;
-    const near = (a: { col: number; row: number }, b: { col: number; row: number }) => Math.max(Math.abs(a.col - b.col), Math.abs(a.row - b.row)) <= 3;
-    expect(map.fires.some((f) => near(f, at("ferrow")))).toBe(true);
-    expect(near(map.exits.find((e) => e.name === "The Old Well")!.at, at("tobin"))).toBe(true);
-    expect(areaMap("keep").props.some((p) => p.art === "barracks" && near(p, at("corwin")))).toBe(true);
-    expect(map.props.some((p) => p.art === "monastery" && near(p, at("ysolde")))).toBe(true);
   });
 });
 

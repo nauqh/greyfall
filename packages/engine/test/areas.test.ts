@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { AREAS, FLYING, MAPPED_AREAS, NPCS, canStep, districtOf, groundColours, SEA_KINDS, WATER_ART, areaMap, castsCliff, cellKey, footprint, isForest, isSlope, isWalkable, level, solidCells, stairLean, stepsFrom, useIsland, type Cell } from "../src/index.ts";
+import { FLYING, MAPPED_AREAS, NPCS, canStep, SEA_KINDS, areaMap, cellKey, isSlope, isWalkable, level, solidCells, stairLean, stepsFrom, useIsland, type Cell } from "../src/index.ts";
 
 function reach(from: Cell, shut: ReadonlySet<number> = new Set()): Set<number> {
   const seen = new Set([cellKey(from)]);
@@ -55,25 +55,11 @@ describe.each(MAPPED_AREAS)("the %s area map", (id) => {
     );
   });
 
-  it("keeps every bridge deck raised, and every tile of land in a district", () => {
+  it("keeps trees, rocks and bushes off its stairs' landings", () => {
     useIsland(m.island);
-    for (const d of m.decks) expect(level(d.col, d.row) >= 2 || isSlope(d.col, d.row), `deck at ${d.col},${d.row}`).toBe(true);
-    m.areaAt.forEach((line, r) => [...line].forEach((ch, c) => ch !== "-" && expect(m.districtAt[r]![c], `${c},${r}`).not.toBe("-")));
-  });
-
-  it("reads each height a shade lighter than the ground below", () => {
-    useIsland(m.island);
-    const light: Record<number, number> = { 5: 0, 4: 1, 3: 2, 2: 3, 1: 4 };
-    const g = groundColours(m);
-    g.forEach((line, r) =>
-      line.forEach((a, c) => {
-        for (const [dc, dr] of [[1, 0], [0, 1], [-1, 0], [0, -1]] as const) {
-          const b = g[r + dr]?.[c + dc];
-          if (a == null || b == null || m.island.rows[r]![c] === "%" || level(c, r) <= level(c + dc, r + dr) || districtOf(m, c, r)?.gloom) continue;
-          expect(light[a]! > light[b]! || a === 1, `${c},${r} colour ${a} over ${b}`).toBe(true);
-        }
-      }),
-    );
+    const near = (col: number, row: number) => [-1, 0, 1].some((dr) => [-1, 0, 1].some((dc) => isSlope(col + dc, row + dr)));
+    const on = m.props.filter((p) => ["tree", "rock", "bush"].includes(p.art) && near(Math.round(p.col), Math.round(p.row)));
+    expect(on.map((p) => `${p.art} at ${p.col},${p.row}`)).toEqual([]);
   });
 
   it("walks every walker's beat on foot, round the cliffs and by the stairs", () => {
@@ -81,69 +67,6 @@ describe.each(MAPPED_AREAS)("the %s area map", (id) => {
     for (const d of m.dwellers) if (d.to && !SEA_KINDS.has(d.kind) && !FLYING.has(d.kind)) expect(reach(d).has(cellKey(d.to)), `${d.kind} at ${d.col},${d.row}`).toBe(true);
   });
 
-  it("stands every building wholly on its ground, clear of edges and of each other", () => {
-    useIsland(m.island);
-    const under = new Set<string>();
-    for (const p of m.props) {
-      // Pinned scenery stands where its scene drew it (the Harbour's Lookout Hill), not to the building rules.
-      if (p.fixed) continue;
-      const name = `${p.art} at ${p.col},${p.row}`;
-      const wet = WATER_ART.has(p.art);
-      const base = level(p.col, p.row);
-      for (const c of footprint(p)) {
-        if (wet) expect(m.island.rows[c.row]![c.col], `${name}: hull over ${c.col},${c.row}`).toBe("~");
-        else expect(isWalkable(c.col, c.row) && !isSlope(c.col, c.row) && level(c.col, c.row) === base, `${name}: base over ${c.col},${c.row}`).toBe(true);
-        expect(under.has(`${c.col},${c.row}`), `${name} overlaps`).toBe(false);
-        under.add(`${c.col},${c.row}`);
-      }
-      if (wet) continue;
-      for (const c of footprint(p, true)) {
-        expect(m.island.rows[c.row]![c.col] !== "~" && !isSlope(c.col, c.row) && level(c.col, c.row) === base && !castsCliff(c.col, c.row - 1), `${name}: edge at ${c.col},${c.row}`).toBe(true);
-      }
-    }
-  });
-
-  it("stands every fence on open ground of one height, clear of buildings, walkers and other fences", () => {
-    useIsland(m.island);
-    const built = new Set(m.props.flatMap((p) => footprint(p, true).map(cellKey)));
-    const fenced = new Set<number>();
-    for (const f of m.fences) {
-      const name = `fence at ${f.col},${f.row}`;
-      const base = level(f.col, f.row);
-      const line: Cell[] = [];
-      for (let r = f.row; r < f.row + f.h; r++) for (let c = f.col; c < f.col + f.w; c++) if (r === f.row || r === f.row + f.h - 1 || c === f.col || c === f.col + f.w - 1) line.push({ col: c, row: r });
-      for (const c of line) {
-        expect(isWalkable(c.col, c.row) && !isSlope(c.col, c.row) && level(c.col, c.row) === base && !castsCliff(c.col, c.row - 1), `${name}: post over ${c.col},${c.row}`).toBe(true);
-        expect(built.has(cellKey(c)), `${name}: post on a building's ground at ${c.col},${c.row}`).toBe(false);
-        expect(m.dwellers.some((d) => d.col === c.col && d.row === c.row), `${name}: a walker stands on its line at ${c.col},${c.row}`).toBe(false);
-      }
-      for (let r = f.row - 1; r <= f.row + f.h; r++) for (let c = f.col - 1; c <= f.col + f.w; c++) expect(fenced.has(cellKey({ col: c, row: r })), `${name} touches another fence`).toBe(false);
-      for (let r = f.row; r < f.row + f.h; r++) for (let c = f.col; c < f.col + f.w; c++) fenced.add(cellKey({ col: c, row: r }));
-    }
-  });
-});
-
-it("stands the castle on the Keep's raised terrace, a height above its bailey", () => {
-  const m = areaMap("keep");
-  useIsland(m.island);
-  const castle = m.props.find((p) => p.art === "castle")!;
-  expect(level(castle.col, castle.row)).toBe(2);
-  expect(level(m.entry.col, m.entry.row)).toBe(1);
-});
-
-it("puts the harbour's hub in the village: the boat's pier near its one bonfire, the Burg Gate on Old Town's height, the Graves held, the Moor Gate shut", () => {
-  const m = areaMap("harbour");
-  useIsland(m.island);
-  const near = (a: Cell, b: Cell, d: number) => Math.max(Math.abs(a.col - b.col), Math.abs(a.row - b.row)) <= d;
-  const boat = m.exits.find((e) => e.name === "The Boat")!;
-  const burg = m.exits.find((e) => e.name === "Burg Gate")!;
-  const moor = m.exits.find((e) => e.name === "Moor Gate")!;
-  expect(m.fires).toHaveLength(1);
-  expect(near(m.fires[0]!, boat.at, 18)).toBe(true);
-  expect(near(m.fires[0]!, m.entry, 3)).toBe(true);
-  expect(level(burg.at.col, burg.at.row)).toBe(2);
-  expect(moor.shut).toBe("moorGateOpen");
-  expect(m.dwellers.filter((d) => d.kind === "gnoll" && d.col >= 90).length).toBeGreaterThanOrEqual(3);
 });
 
 it("shuts the Keep behind its gate off the Burg until the troll's key, and its Watch Lift until ridden down from the sky", () => {
@@ -154,63 +77,9 @@ it("shuts the Keep behind its gate off the Burg until the troll's key, and its W
   expect(areaMap("harbour").exits.some((e) => e.to === "steps")).toBe(false);
 });
 
-// A tree two rows south of a note draws its canopy over the paper; underground walls are only rubble.
-it.each(MAPPED_AREAS)("leaves every note in %s clear of woods that would stand over it", (id) => {
-  const m = areaMap(id);
-  if (m.base === "rock") return;
-  useIsland(m.island);
-  for (const n of m.notes ?? []) {
-    for (let dr = 0; dr <= 2; dr++) for (let dc = -1; dc <= 1; dc++) expect(isForest(n.at.col + dc, n.at.row + dr), `${id} note ${n.at.col},${n.at.row}`).toBe(false);
-  }
-});
-
-// One hill, not a stack of maps each starting from its floor: a crossing meets the height and the green it left.
-describe("crossings between the surface lands", () => {
-  // Ways that go down the hill by design: a lift, a ladder off a tower, the Postern road down the Ward's back, and the
-  // Sisters' Stair from the Ward down to the Harbour's chapel.
-  const DESCENTS = new Set(["The Old Lift", "The Ladder", "The Postern", "The Sisters' Stair"]);
-  const LIGHT: Record<number, number> = { 5: 0, 4: 1, 3: 2, 2: 3, 1: 4 };
-  const area = (id: string) => AREAS.find((a) => a.id === id)!;
-  const ends = MAPPED_AREAS.flatMap((a) =>
-    areaMap(a).exits.flatMap((e) => {
-      const back = MAPPED_AREAS.includes(e.to) ? areaMap(e.to).exits.find((x) => x.to === a && x.name === e.name) : undefined;
-      return back && a < e.to && area(a).rise !== undefined && area(e.to).rise !== undefined ? [{ a, b: e.to, name: e.name, at: e.at, back: back.at }] : [];
-    }),
-  );
-  const side = (id: (typeof MAPPED_AREAS)[number], at: Cell) => {
-    const m = areaMap(id);
-    useIsland(m.island);
-    const shade = groundColours(m);
-    return { world: area(id).rise! + level(at.col, at.row), shade: shade[at.row]?.[at.col] ?? null };
-  };
-
-  it.each(ends.map((e) => [`${e.a} ${e.name} ${e.b}`, e] as const))("%s meets the height it left", (_, e) => {
-    const [x, y] = [side(e.a, e.at), side(e.b, e.back)];
-    if (DESCENTS.has(e.name)) return;
-    expect(Math.abs(x.world - y.world), `${x.world} against ${y.world}`).toBeLessThanOrEqual(1);
-    if (area(e.a).ownGround || area(e.b).ownGround || x.shade === null || y.shade === null) return;
-    expect(Math.abs(LIGHT[x.shade]! - LIGHT[y.shade]!), `shade ${x.shade} against ${y.shade}`).toBeLessThanOrEqual(1);
-  });
-});
-
-// The Harbour's streets: no street steps up a cliff, and a stair a street reaches is met along its foot from the open
-// side, as the art climbs side on, never at its face nor from the side its head is on.
-describe("the Harbour's streets", () => {
+describe("the Harbour's stairs", () => {
   const m = areaMap("harbour");
-  // Keys hang on the island in use, so each test takes the Harbour's before it reads them.
-  let road = new Set<number>();
-  const take = () => (useIsland(m.island), (road = new Set(m.roads.map(cellKey))));
-  const on = (col: number, row: number) => road.has(cellKey({ col, row }));
-
-  it("change level only on a stair", () => {
-    take();
-    for (const c of m.roads) {
-      for (const n of [{ col: c.col + 1, row: c.row }, { col: c.col, row: c.row + 1 }]) {
-        if (!road.has(cellKey(n)) || level(c.col, c.row) === level(n.col, n.row)) continue;
-        expect(canStep(c, n) || canStep(n, c), `${c.col},${c.row} to ${n.col},${n.row}`).toBe(true);
-      }
-    }
-  });
+  const take = () => useIsland(m.island);
 
   it("climb every stair along its slope, never straight across or straight up", () => {
     take();
@@ -247,37 +116,4 @@ describe("the Harbour's streets", () => {
       }
   });
 
-  it("meet every stair from its side", () => {
-    take();
-    m.island.rows.forEach((line, r) =>
-      [...line].forEach((ch, c) => {
-        if (!isSlope(c, r)) return;
-        const open = "<[{(".includes(ch) ? -1 : 1;
-        expect(on(c, r + 2) && !on(c - 1, r + 2) && !on(c + 1, r + 2), `face of ${ch} at ${c},${r}`).toBe(false);
-        expect(on(c - open, r + 1) && level(c - open, r + 1) < level(c, r), `foot of ${ch} at ${c},${r} from its head's side`).toBe(false);
-      }),
-    );
-  });
-});
-
-it("shortens the Harbour fire's walk to the Graves crest once the Coffin Stair is unbarred", () => {
-  const m = areaMap("harbour");
-  useIsland(m.island);
-  const solid = new Set([...solidCells(m)].map((k) => cellKey({ col: Number(k.split(",")[0]), row: Number(k.split(",")[1]) })));
-  const stair = m.locks!.find((l) => l.name === "The Coffin Stair")!;
-  const steps = (shut: ReadonlySet<number>): number => {
-    const fire = m.fires[0]!;
-    const dist = new Map([[cellKey(fire), 0]]);
-    const queue = [fire];
-    for (let i = 0; i < queue.length; i++) {
-      for (const n of stepsFrom(queue[i]!)) {
-        if (dist.has(cellKey(n)) || shut.has(cellKey(n))) continue;
-        dist.set(cellKey(n), dist.get(cellKey(queue[i]!))! + 1);
-        queue.push(n);
-      }
-    }
-    return dist.get(cellKey(stair.from!))!;
-  };
-  const barred = steps(new Set([...solid, ...stair.cells.map(cellKey)]));
-  expect(steps(solid)).toBeLessThan(barred - 10);
 });

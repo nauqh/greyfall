@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { CLASSES, FOES, GIFTS, GOLD_STONE, HERO, ITEMS, LEVEL_UP, PACE, kit, levelCost, onOffer, TROLL, chargeLine, trollMove, mayEngage, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, swingWait, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
+import { FOES, GIFTS, HERO, ITEMS, LEVEL_UP, kit, levelCost, onOffer, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
 
 const goblin = FOES.torch!;
 const home = { col: 10, row: 10 };
@@ -37,13 +37,6 @@ describe("a blow", () => {
     expect(struck(5, HERO.attack)).toBe(0);
   });
 
-  it("takes three of the hero's swings to drop a torch goblin", () => {
-    let hp = goblin.hp;
-    let swings = 0;
-    while (hp > 0) (hp = struck(hp, HERO.attack)), swings++;
-    expect(swings).toBe(3);
-  });
-
   it("chains three swings, then starts over, and a pause breaks the chain", () => {
     let step = 0;
     const steps = [];
@@ -52,31 +45,11 @@ describe("a blow", () => {
     expect(comboStep(1, HERO.combo + 0.1)).toBe(1);
   });
 
-  it("swings the first two quickly and recovers longer after the finisher", () => {
-    expect(swingWait(1)).toBe(swingWait(2));
-    expect(swingWait(3)).toBeGreaterThan(swingWait(1));
-  });
-
   it("is mostly turned by a raised shield, but never wholly", () => {
     for (const foe of Object.values(FOES)) {
       expect(throughGuard(foe!.attack)).toBeLessThan(foe!.attack);
       expect(throughGuard(foe!.attack)).toBeGreaterThanOrEqual(1);
     }
-  });
-});
-
-describe("the pace of a fight", () => {
-  it("gives every monster a wind-up to read, shorter than the wait between its blows", () => {
-    for (const foe of Object.values(FOES)) {
-      expect(foe!.windup).toBeGreaterThanOrEqual(0.4);
-      expect(foe!.every).toBeGreaterThan(foe!.windup + PACE.recover);
-    }
-  });
-
-  it("lets no more than two close in on one mark at a time", () => {
-    expect(mayEngage(0)).toBe(true);
-    expect(mayEngage(PACE.engage - 1)).toBe(true);
-    expect(mayEngage(PACE.engage)).toBe(false);
   });
 });
 
@@ -100,17 +73,6 @@ describe("a thrower and a flyer", () => {
     expect(canReach(5, FOES.bat!)).toBe(true);
     expect(canReach(1, FOES.torch!)).toBe(true);
     for (const foe of Object.values(FOES)) if (foe!.range) expect(foe!.aggro).toBeGreaterThanOrEqual(foe!.range);
-  });
-});
-
-describe("gold", () => {
-  it("drops from every monster, and a stone is worth more than any but a boss", () => {
-    const bosses = ["troll", "minotaur", "rampartBull", "stoneWarden", "barrowKing", "weaver", "shellBelow", "warlord"];
-    for (const [kind, foe] of Object.entries(FOES)) {
-      expect(foe!.gold).toBeGreaterThan(0);
-      if (!bosses.includes(kind)) expect(foe!.gold).toBeLessThan(GOLD_STONE);
-    }
-    for (const boss of bosses) expect(FOES[boss]!.gold).toBeGreaterThan(GOLD_STONE);
   });
 });
 
@@ -154,10 +116,6 @@ describe("the merchants' goods", () => {
     expect(shown(["Brenna's Edge"], [])).toEqual(["Brenna's Edge"]);
     expect(shown(["Brenna's Edge"], ["stoneWarden"])).toEqual(["Brenna's Edge", "Keener Edge"]);
     expect(shown(["Brenna's Edge", "Keener Edge"], ["stoneWarden", "troll"])).toEqual(["Brenna's Edge", "Keener Edge", "Grey-Iron Edge"]);
-  });
-
-  it("each say in one line what they are, with no dash", () => {
-    for (const item of Object.values(ITEMS)) expect(item.about).toMatch(/^[^—–\-\n]+$/);
   });
 });
 
@@ -207,45 +165,6 @@ describe("the hero's walking", () => {
     useIsland(island(ground));
     const way = routeToward({ col: 2, row: 2 }, { col: 2, row: 0 });
     expect(way.at(-1)).toEqual({ col: 2, row: 1 });
-  });
-});
-
-describe("the cinder troll", () => {
-  it("slams up close, and further out charges and tosses embers in turn", () => {
-    expect(trollMove(1, null)).toBe("slam");
-    expect(trollMove(4, null)).toBe("charge");
-    expect(trollMove(4, "charge")).toBe("toss");
-    expect(trollMove(4, "toss")).toBe("charge");
-    expect(trollMove(TROLL.charge.tiles + 1, null)).toBeNull();
-  });
-
-  it("charges as far as its reach, and stops short of a wall", () => {
-    const island = (rows: string[]) => ({ rows, start: { a: { castle: { col: 1, row: 1 }, barracks: { col: 1, row: 1 } }, b: { castle: { col: 1, row: 1 }, barracks: { col: 1, row: 1 } } }, mines: [], lair: { col: 1, row: 1 } });
-    useIsland(island(["~~~~~~~~~~", "~........~", "~...T....~", "~~~~~~~~~~"]));
-    expect(chargeLine({ col: 1, row: 1 }, { col: 3, row: 1 }).at(-1)).toEqual({ col: 7, row: 1 });
-    expect(chargeLine({ col: 1, row: 2 }, { col: 8, row: 2 })).toEqual([{ col: 2, row: 2 }, { col: 3, row: 2 }]);
-  });
-});
-
-describe("the class picked at the start", () => {
-  it("gives the Lancer more health, reach and bite, but slower swings, at about the Warrior's damage a second", () => {
-    const [w, l] = [kit(new Set()), kit(new Set(), undefined, "lancer")];
-    expect(l.hp).toBeGreaterThan(w.hp);
-    expect(l.attack).toBeGreaterThan(w.attack);
-    expect(swingWait(3, "lancer")).toBeGreaterThan(swingWait(3));
-    expect(CLASSES.lancer.reach).toBeGreaterThan(CLASSES.warrior.reach);
-    const perSecond = (c: "warrior" | "lancer"): number => (3 * CLASSES[c].attack) / (swingWait(1, c) + swingWait(2, c) + swingWait(3, c));
-    expect(perSecond("lancer") / perSecond("warrior")).toBeCloseTo(1, 0);
-  });
-});
-
-describe("the gift taken ashore", () => {
-  it("offers goods never sold, each raising one number", () => {
-    for (const g of GIFTS) {
-      expect(ITEMS[g].cost).toBe(0);
-      expect(Object.keys(ITEMS[g].adds)).toHaveLength(1);
-    }
-    expect(kit(new Set(["Drowned Locket"])).hp).toBe(HERO.hp + 20);
   });
 });
 

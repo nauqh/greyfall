@@ -1755,7 +1755,7 @@ function harbour(): AreaMap {
   prop("house2", sx(19.1), 55.65, { ...blue, ...pinned });
   prop("boat", sx(13.5), 55.6, pinned);
   // The title's trees and stones, less those that land on a stair here, shut a nook off or stand on the causeway.
-  for (const [c, r] of [[12.4, 3.6], [4.5, 6.2], [2.8, 10.4], [20.8, 4.8], [22.4, 6.2], [23, 8], [12.4, 10.8], [7, 10.2], [4.4, 15.4]] as const) prop("tree", sx(c), 41 + r, pinned);
+  for (const [c, r] of [[12.4, 3.6], [2.8, 10.4], [20.8, 4.8], [22.4, 6.2], [23, 8], [12.4, 10.8], [7, 10.2], [4.4, 15.4]] as const) prop("tree", sx(c), 41 + r, pinned);
   for (const [c, r] of [[9.4, 10.6], [6.4, 10.6], [18.6, 12.5], [3.3, 12.6], [21.4, 10.6], [6.3, 6.6]] as const) prop("bush", sx(c), 41 + r, pinned);
   for (const [c, r] of [[23, 11.6], [14.6, 9.7]] as const) prop("rock", sx(c), 41 + r, pinned);
   for (const [c, r] of [[12.2, 16.8], [16.4, 16.4], [8.6, 17.4], [24.6, 17]] as const) prop("waterRock", sx(c), 41 + r, pinned);
