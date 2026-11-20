@@ -93,8 +93,15 @@ export function Sack({ sack, gold, onCover }: { sack: SackView; gold: number; on
             <span className="sackWho">
               {name} <b>Level {sack.level}</b>
             </span>
-            <button type="button" className="btn small light sackClose" onMouseDown={(e) => e.preventDefault()} onClick={() => setOpen(false)}>
-              <kbd>Tab</kbd> or <kbd>Esc</kbd> close
+            <button
+              type="button"
+              className="btn small light sackClose"
+              aria-label="Close"
+              title="Close (Tab or Esc)"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => setOpen(false)}
+            >
+              ×
             </button>
           </header>
           <div className="sackBody">
