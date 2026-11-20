@@ -828,7 +828,7 @@ export class AtlasScene extends Phaser.Scene {
   private shieldUp = false;
   /** Where the last attack was aimed, for a press kept until the hero is ready. */
   private aim: { x: number; y: number } | null = null;
-  private keys: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d" | "shift", Phaser.Input.Keyboard.Key> | null = null;
+  private keys: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d", Phaser.Input.Keyboard.Key> | null = null;
   private stamina: number = STAMINA.max;
   /** When stamina was last spent: it comes back only after a pause. */
   private spentAt = -1e9;
@@ -1629,7 +1629,7 @@ export class AtlasScene extends Phaser.Scene {
     this.play(s, look.idle.key);
     this.hero = { ...this.body(s, at, this.gear.hp, CLASSES[this.cls].speed, { idle: look.idle.key, move: look.move?.key, attack: art.attack.key }) };
     const k = this.input.keyboard;
-    if (k) this.keys = k.addKeys({ up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT", w: "W", a: "A", s: "S", d: "D", shift: "SHIFT" }, false) as typeof this.keys;
+    if (k) this.keys = k.addKeys({ up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT", w: "W", a: "A", s: "S", d: "D" }, false) as typeof this.keys;
     // Captured, so Space never scrolls the page or presses a focused button.
     k?.addCapture("SPACE");
   }
@@ -2369,7 +2369,7 @@ export class AtlasScene extends Phaser.Scene {
     const hero = this.hero!;
     const rolling = time < this.roll.until;
     if (!hero.dead) hero.s.setAngle(0);
-    this.guarding = !rolling && !hero.dead && !this.gone && this.playing && (!!this.keys?.shift.isDown || this.shieldUp) && time >= this.guardBroken;
+    this.guarding = !rolling && !hero.dead && !this.gone && this.playing && this.shieldUp && time >= this.guardBroken;
     if (rolling) {
       this.slide(this.roll.dx, this.roll.dy, (this.roll.speed * dt) / 1000, !this.roll.back);
       if (time - this.roll.trail > 45) {
@@ -2377,17 +2377,11 @@ export class AtlasScene extends Phaser.Scene {
         this.echo();
       }
     } else if (this.guarding) {
-      // Behind the shield it walks at its pace, no sprint, once any swing is through, the shield kept to the nearest monster.
+      // Behind the shield it stands its ground, once any swing is through, the shield kept to the nearest monster.
       hero.way = [];
       this.queued = false;
       if (time >= hero.busy) {
-        const [kx, ky] = this.keyDir();
         const foe = this.foes.filter((f) => !f.dead && tileDistance(f.at, hero.at) <= 3).sort((a, b) => tileDistance(a.at, hero.at) - tileDistance(b.at, hero.at))[0];
-        if (kx || ky) {
-          this.slide(kx, ky, (CLASSES[this.cls].speed * CELL * dt) / 1000, !foe);
-          // The pack has no guarding walk: the guard pose rocks foot to foot about the feet, a step each swing.
-          hero.s.setAngle(Math.sin((time / 1000) * Math.PI * 5) * 6);
-        }
         if (foe && Math.abs(foe.s.x - hero.s.x) > 4) hero.s.setFlipX(foe.s.x < hero.s.x);
         this.play(hero.s, HERO_ART[this.cls].guard.key);
       }

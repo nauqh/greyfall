@@ -22,7 +22,7 @@ export const CONTROLS: Mode[] = [
         title: "Combat",
         binds: [
           { action: "Attack toward cursor", keys: ["Mouse Left"] },
-          { action: "Raise shield (hold)", keys: ["Mouse Right", "Shift"] },
+          { action: "Raise shield (hold)", keys: ["Mouse Right"] },
           { action: "Drink flask", keys: ["R"] },
         ],
       },
