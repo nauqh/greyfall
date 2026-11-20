@@ -112,12 +112,13 @@ export function isWalkable(col: number, row: number): boolean {
 
 /** One move to a neighbouring cell. The level only changes on a ramp, one
  *  level at a time, from a slope's top straight down to its foot or back up,
- *  and on a sideways island also across to its open side. Diagonals stay on
+ *  and on a sideways island also off its open side. Other diagonals stay on
  *  one level and never cut a corner. */
 export function canStep(from: Cell, to: Cell): boolean {
   if (!isWalkable(to.col, to.row)) return false;
   const dc = to.col - from.col;
   const dr = to.row - from.row;
+  if (SIDEWAYS && (isSlope(from.col, from.row) || isSlope(to.col, to.row)) && offStair(from, to)) return true;
   if (dc !== 0 && dr !== 0) {
     const lv = level(from.col, from.row);
     return (
@@ -127,14 +128,19 @@ export function canStep(from: Cell, to: Cell): boolean {
     );
   }
   if (level(from.col, from.row) === level(to.col, to.row)) return true;
-  if (dc !== 0) {
-    if (!SIDEWAYS) return false;
-    const [top, low] = level(from.col, from.row) > level(to.col, to.row) ? [from, to] : [to, from];
-    const open = top.col + ("<[{(".includes(at(top.col, top.row)) ? -1 : 1);
-    return isSlope(top.col, top.row) && low.col === open && level(top.col, top.row) - level(low.col, low.row) === 1;
-  }
+  if (dc !== 0) return false;
   const [top, foot] = dr > 0 ? [from, to] : [to, from];
   return isSlope(top.col, top.row) && level(top.col, top.row) - level(foot.col, foot.row) === 1;
+}
+
+/** A stair and the ground one level down off its open side: beside it, or below that, where its art runs out. */
+function offStair(a: Cell, b: Cell): boolean {
+  const [top, low] = level(a.col, a.row) > level(b.col, b.row) ? [a, b] : [b, a];
+  if (!isSlope(top.col, top.row) || level(top.col, top.row) - level(low.col, low.row) !== 1) return false;
+  const open = top.col + ("<[{(".includes(at(top.col, top.row)) ? -1 : 1);
+  if (low.col !== open) return false;
+  if (low.row === top.row) return true;
+  return low.row === top.row + 1 && isWalkable(open, top.row) && isWalkable(top.col, low.row);
 }
 
 const STEPS = new Map<number, readonly Cell[]>();

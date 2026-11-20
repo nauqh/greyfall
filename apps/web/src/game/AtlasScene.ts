@@ -3039,11 +3039,15 @@ export class AtlasScene extends Phaser.Scene {
       const beside = (up || down) && this.map.tiers[here].props.some((p) => ["cave", "gnomeTower", "watchtower", "tower", "castle", "monastery"].includes(p.art) && footprint(p).some((c) => Math.abs(c.col - e.at.col) <= 3 && Math.abs(c.row - e.at.row) <= 3));
       if (!beside) {
         // A lift: a plank floor railed on its left and right, open front and back, in the pack's own wood (its fence's and
-        // its boats' browns, the navy outline every sprite has).
-        this.add.rectangle(x, y - 0.3 * CELL, 2.4 * CELL, 1.6 * CELL, 0xbd8a59).setStrokeStyle(4, 0x161c2e).setDepth(ground);
-        this.add.rectangle(x, y - 1.05 * CELL, 2.4 * CELL - 8, 6, 0xe5be76).setDepth(ground + 1);
-        for (let i = -1; i <= 1; i++) this.add.rectangle(x + i * 0.8 * CELL, y - 0.3 * CELL, 3, 1.5 * CELL, 0x8d6857).setDepth(ground + 1);
-        for (const side of [-1, 1]) this.fence(e.at.col + side, e.at.row - 1, 1, 2);
+        // its boats' browns, the navy outline every sprite has). The Harbour's end of the Old Lift is a small one, in its
+        // corner under the landing, railed by posts at its own edges.
+        const k = e.name === "The Old Lift" && this.local!.area === "harbour" ? 0.6 : 1;
+        const [w, h, cy] = [2.4 * k * CELL, 1.6 * k * CELL, y - 0.3 * k * CELL];
+        this.add.rectangle(x, cy, w, h, 0xbd8a59).setStrokeStyle(4, 0x161c2e).setDepth(ground);
+        this.add.rectangle(x, cy - h / 2 + 3, w - 8, 6, 0xe5be76).setDepth(ground + 1);
+        for (let i = -1; i <= 1; i++) this.add.rectangle(x + i * 0.8 * k * CELL, cy, 3, h - 0.1 * CELL, 0x8d6857).setDepth(ground + 1);
+        if (k < 1) for (const side of [-1, 1]) this.add.rectangle(x + (side * w) / 2, cy, 8, h + 0.3 * CELL, 0x8d6857).setStrokeStyle(2, 0x161c2e).setDepth(ground + 2);
+        else for (const side of [-1, 1]) this.fence(e.at.col + side, e.at.row - 1, 1, 2);
       }
     } else if (e.name.includes("Ladder")) {
       // A ladder, from the pack's fence: one upright run of it against the wall, rails and rungs.

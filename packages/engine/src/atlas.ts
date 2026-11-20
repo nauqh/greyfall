@@ -143,7 +143,8 @@ export interface AtlasTier {
   /** The area each tile belongs to, one character a tile (AREA_CODE), "-" for none. */
   areaAt: string[];
   gates: AtlasGate[];
-  roads: Cell[];
+  /** Paved ways, drawn two rows deep unless narrow. */
+  roads: (Cell & { narrow?: boolean })[];
   props: Placed[];
   dwellers: Dweller[];
   /** Bonfires: where the warband would rest. */
@@ -899,6 +900,7 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
     at,
     gates: [] as AtlasGate[],
     roadSet: new Set<string>(),
+    lanes: new Set<string>(),
     props: [] as Placed[],
     dwellers: [] as Dweller[],
     fires: [] as Cell[],
@@ -1096,6 +1098,11 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
     road(...pts: [number, number][]): void {
       for (let i = 1; i < pts.length; i++) line({ col: pts[i - 1]![0], row: pts[i - 1]![1] }, { col: pts[i]![0], row: pts[i]![1] }, (c) => t.roadSet.add(`${c.col},${c.row}`));
     },
+    /** A road paved one row deep, where two would run past what it meets. */
+    lane(...pts: [number, number][]): void {
+      for (let i = 1; i < pts.length; i++)
+        line({ col: pts[i - 1]![0], row: pts[i - 1]![1] }, { col: pts[i]![0], row: pts[i]![1] }, (c) => (t.roadSet.add(`${c.col},${c.row}`), t.lanes.add(`${c.col},${c.row}`)));
+    },
     /** A way kept as clear as a road but never paved: a track across the country, where a street would read painted on. */
     track(...pts: [number, number][]): void {
       for (let i = 1; i < pts.length; i++) line({ col: pts[i - 1]![0], row: pts[i - 1]![1] }, { col: pts[i]![0], row: pts[i]![1] }, (c) => t.paths.add(`${c.col},${c.row}`));
@@ -1249,7 +1256,9 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
         island: { ...islandOf(), sideways: true },
         areaAt: owned.map((l, r) => l.map((a, c) => (a >= 0 && grid[r]![c] !== wall && grid[r]![c] !== "~" ? AREA_CODE[a]! : "-")).join("")),
         gates: t.gates,
-        roads: [...t.roadSet].map((k) => ({ col: Number(k.split(",")[0]), row: Number(k.split(",")[1]) })).filter((c) => ".#^45".includes(at(c.col, c.row))),
+        roads: [...t.roadSet]
+          .map((k) => ({ col: Number(k.split(",")[0]), row: Number(k.split(",")[1]), ...(t.lanes.has(k) ? { narrow: true } : {}) }))
+          .filter((c) => ".#^45".includes(at(c.col, c.row))),
         props: t.props,
         dwellers: t.dwellers,
         fires: t.fires,

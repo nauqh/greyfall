@@ -160,12 +160,13 @@ function roadTiles(): Set<number> {
 
 /** A walk as a track a row wider, never on a stair nor under a `solid` base ("col,row"); on lowland only unless
  *  `raised`, as a town's streets climb. */
-export function trailTiles(walk: readonly Cell[], raised = false, solid: ReadonlySet<string> = new Set()): Set<number> {
+export function trailTiles(walk: readonly (Cell & { narrow?: boolean })[], raised = false, solid: ReadonlySet<string> = new Set()): Set<number> {
   const out = new Set<number>();
   for (const c of walk) {
     const lv = level(c.col, c.row);
     if (lv < 1 || (!raised && lv !== 1) || isSlope(c.col, c.row) || solid.has(`${c.col},${c.row}`)) continue;
     out.add(c.row * STRAT_COLS + c.col);
+    if (c.narrow) continue;
     const wider = { col: c.col, row: c.row + 1 };
     if (isOpen(wider) && level(wider.col, wider.row) === lv && !isSlope(wider.col, wider.row) && !solid.has(`${wider.col},${wider.row}`)) out.add(wider.row * STRAT_COLS + wider.col);
   }

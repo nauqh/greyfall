@@ -32,6 +32,17 @@ it.each(MAPPED_AREAS)("leaves every way out, fire, note and dweller of %s in rea
 describe.each(MAPPED_AREAS)("the %s area map", (id) => {
   const m = areaMap(id);
 
+  it("tops every stair with ground that goes on, not a tile whose one way off is back down", () => {
+    useIsland(m.island);
+    m.island.rows.forEach((line, row) =>
+      [...line].forEach((ch, col) => {
+        if (!isSlope(col, row)) return;
+        const top = { col: col + ("<[{(".includes(ch) ? 1 : -1), row };
+        expect(stepsFrom(top).some((n) => n.col !== col || n.row !== row), `${ch} at ${col},${row}`).toBe(true);
+      }),
+    );
+  });
+
   it("is a whole rectangle of tiles, every exit and every height walkable from the entry", () => {
     expect(m.island.rows.every((l) => l.length === m.island.rows[0]!.length)).toBe(true);
     useIsland(m.island);
@@ -210,6 +221,10 @@ describe("the Harbour's streets", () => {
         const open = { col: col + ("<[{(".includes(ch) ? -1 : 1), row };
         if (!isWalkable(open.col, open.row) || level(open.col, open.row) !== level(col, row) - 1) continue;
         expect(canStep({ col, row }, open) && canStep(open, { col, row }), `${ch} at ${col},${row}`).toBe(true);
+        // Down off its end, as the ramp's art runs, where the foot beside it is open too.
+        const below = { col: open.col, row: row + 1 };
+        if (!isWalkable(below.col, below.row) || !isWalkable(col, row + 1) || level(below.col, below.row) !== level(col, row) - 1) continue;
+        expect(canStep({ col, row }, below) && canStep(below, { col, row }), `${ch} at ${col},${row} down its end`).toBe(true);
       }
   });
 

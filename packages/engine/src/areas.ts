@@ -26,6 +26,8 @@ export interface AreaExit {
   opens?: string;
   /** No fog across it: the side a crossing comes out on, or a passage straight to a boss's own fog. */
   plain?: boolean;
+  /** Its way to the map's edge is a track, not paved. */
+  unpaved?: boolean;
   /** Bosses' kinds: shut until every key those bosses drop is carried. */
   keys?: readonly string[];
 }
@@ -262,7 +264,7 @@ function pad(m: AreaMap, n: number): AreaMap {
         area[py]![px] = area[r]![c]!;
         district[py]![px] = district[r]![c]!;
       }
-      roads.push({ col: x, row: y });
+      if (!e.unpaved) roads.push({ col: x, row: y });
       if (x >= 1 && x < W - 1 && y >= 1 && y < H - 1) [ex, ey] = [x, y];
     }
     return { ...e, at: { col: ex, row: ey } };
@@ -612,8 +614,9 @@ function rim(t: Builder, cx: number, cy: number, rx: number, ry: number, width: 
   t.shapes.push({ level: 2, keys, owner });
 }
 
-/** A way out three wide from `a` to `b` on the map's edge, at `level`, paved: a gate the eye can follow off the map. */
-function edgeWay(t: Builder, a: Cell, b: Cell, level: 1 | 2 | 3 | 4 | 5 = 1): void {
+/** A way out three wide from `a` to `b` on the map's edge, at `level`, paved unless `track`: a gate the eye can follow
+ *  off the map. */
+function edgeWay(t: Builder, a: Cell, b: Cell, level: 1 | 2 | 3 | 4 | 5 = 1, track = false): void {
   const own = t.area[a.row]![a.col]!;
   t.cut(a, b, 3, (c) => {
     t.put(c.col, c.row, ".");
@@ -624,7 +627,8 @@ function edgeWay(t: Builder, a: Cell, b: Cell, level: 1 | 2 | 3 | 4 | 5 = 1): vo
     const across = Math.abs(b.col - a.col) >= Math.abs(b.row - a.row);
     t.block(level, across ? x0 : x0 - 1, across ? y0 - 1 : y0, across ? x1 - x0 + 1 : 3, across ? 3 : y1 - y0 + 1);
   }
-  t.road([a.col, a.row], [b.col, b.row]);
+  if (track) t.track([a.col, a.row], [b.col, b.row]);
+  else t.road([a.col, a.row], [b.col, b.row]);
 }
 
 function clearRoads(t: Builder, keys: Set<string>): void {
@@ -1271,17 +1275,17 @@ function harbour(): AreaMap {
     "~~~~~~~~~~^^^4444^^^^~~~~~~~",
     "~~~~~~~~^^^444444444^^^~~~~~",
     "~~~~~~^^^4444444444444^^~~~~",
-    "~~~~~^^4444444^444^444^^^~~~",
-    "~~~#^^444444^^^^^^^^^^4}^~~~",
-    "~~~#^{44444^^^^^^^^^^^^^^^~~",
-    "~~##^^^4444^^^^^^^^^^^^^^^~~",
-    "~~~##^^^^^^^^^^^^^^^^^^##~~~",
-    "~~~##^^^^^^^^#^^^^^^^^^]#~~~",
+    "~~~~~^^4444444^444^4444^^~~~",
+    "~~~~^^444444^^^^^^^^^^4}^~~~",
+    "~~~~^{44444^^^^^^^^^^^^^^^~~",
+    "~~~~^^^4444^^^^^^^^^^^^^^^~~",
+    "~~~~^^^^^^^^^^^^^^^^^^^##~~~",
+    "~~~~#^^^^^^^^#^^^^^^^^^]#~~~",
     "~~~#[^^^^^^^##^^^^^^^^###~~~",
     "~~~###^^^^^^##^^^^^^^#####~~",
-    "~~~~###^^^#####^^^^######~~~",
+    "~~~####^^^#####^^^^######~~~",
     "~~~~###################~~~~~",
-    "~~~~~##############~~~~~~~~~",
+    "~~~~###############~~~~~~~~~",
     "~~~~~#############~~~~~~~~~~",
     "~~~~~################~~~~~~~",
     "~~~~~##################~~~~~",
@@ -1326,17 +1330,18 @@ function harbour(): AreaMap {
   // Lift, turning down into the fire square, and the castle's climb off it. Out in the country the ways are tracks,
   // kept clear but grass: the Ember Gate road north through the wood, and the farm road down between the fields.
   t.road([1, 42], [58, 42]);
-  t.road([61, 42], [72, 42]);
+  // East of the deck it starts at the foot of the landing's stair, never under its head.
+  t.road([64, 42], [72, 42]);
   t.road([71, 42], [71, 46]);
   t.track([26, 42], [33, 41], [34, 30], [28, 4], [26, 1]);
   t.track([26, 42], [27, 54], [27, 66], [3, 66]);
   t.track([15, 66], [15, 61]);
   // The citadel's terraces go unpaved: only the east ring's town keeps its streets, the alley two tiles wide between its
   // two rows of houses. The way on round the Upper Town's east side to the hill's back is a track.
-  t.road([72, 10], [72, 29]);
   t.road([73, 10], [73, 29]);
-  t.track([72, 10], [66, 3], [56, 3]);
-  edgeWay(t, { col: 56, row: 3 }, { col: 56, row: 1 }, 2);
+  t.road([74, 10], [74, 29]);
+  t.track([73, 10], [66, 3], [56, 3]);
+  edgeWay(t, { col: 56, row: 3 }, { col: 56, row: 1 }, 2, true);
   // The village's shore street, two wide and straight from the fire square down between its houses, round the inlet's
   // head and along the burned east lane to the Shore Road off Lantern Point's tip. The track out to the mine, and the
   // climb up the Graves to the Moor Gate, stay grass.
@@ -1353,12 +1358,14 @@ function harbour(): AreaMap {
   // and a stair up each of its outer ends onto Old Town, the castle above.
   t.block(2, 52, 40, 10, 1);
   t.stair(2, 51, 40, "L");
-  t.stair(2, 62, 40, "R");
-  t.track([62, 41], [66, 41]);
-  // The paved way from the citadel to the island: off the Great Gate's west stair, down the alley between Old Town's
-  // houses onto the landing, and over a bridge deck across the high street onto the island's east rim, so the two
-  // first heights meet. A walker along the street goes up the landing's stairs and over.
-  t.road([50, 33], [46, 33], [46, 37], [52, 37], [52, 40], [58, 40]);
+  // The east end steps down two rows onto the high street, its stair on the lower; the Old Lift lands in the corner
+  // over it, by the watch tower.
+  t.block(2, 61, 41, 1, 1);
+  t.block(2, 61, 42, 2, 1);
+  t.stair(2, 63, 42, "R");
+  // Old Town goes unpaved, so the only streets on the heights are the east ring's crossroads. Off the landing a bridge
+  // deck crosses the high street onto the island's east rim, so the two first heights meet; a walker along the street
+  // goes up the landing's stairs and over.
   t.road([48, 41], [51, 41]);
   const decks = t.span(2, 59, 41, 2, 4);
   // A gate tower at the mouth of each pass, so from the fire the bowl's sides read as its ways out.
@@ -1377,9 +1384,10 @@ function harbour(): AreaMap {
   // Watchtowers round the outer wall and the town, and one at each front corner of the crown.
   // Each with its archer: on the platform of the crown's and of the outer towers, walking the foot of the rest. A
   // perched archer stands a quarter tile in front of its tower's base, so it draws over the tower.
-  const watch = [[72, 8], [67, 29], [63, 36], [42, 32], [42, 5], [65, 18], [63, 27], [59, 24], [49, 29], [52, 9], [58, 9]] as const;
-  const atop = new Set(["72,8", "63,36", "52,9", "58,9"]);
-  for (const [c, r] of watch) prop("tower", c, r, blue);
+  const watch = [[72, 8], [67, 29], [60, 39], [42, 32], [42, 5], [65, 18], [63, 27], [59, 24], [49, 29], [52, 9], [58, 9]] as const;
+  const atop = new Set(["72,8", "60,39", "52,9", "58,9"]);
+  // The landing's pinned against its stair's head, the first thing seen coming up it.
+  for (const [c, r] of watch) prop("tower", c, r, c === 60 && r === 39 ? { ...blue, fixed: true } : blue);
   for (const [c, r] of watch) {
     if (atop.has(`${c},${r}`)) who("archer", c, r + 0.25, { ...blue, perch: 1.85 });
     else who("archer", c - 1, r + 1, { ...blue, to: { col: c + 1, row: r + 1 } });
@@ -1493,12 +1501,15 @@ function harbour(): AreaMap {
   // back street, a stair west up into the garrison's ward.
   // The terrace's head house is a hall under the Burg road's tower: the Lane House, where the east lane's last folk
   // sleep. Pinned, as the strip between the rock and the road is its own width and no wider.
-  for (const c of [70, 75])
+  // The east row is pinned a tile off the road, along the ring's lip.
+  for (const c of [70, 76])
     for (const r of [12, 15, 18, 23, 26, 29])
       if (c === 70 && r === 12) prop("barracks", c, r, { ...blue, fixed: true });
-      else prop(["house1", "house2", "house3"][(r + c) % 3]!, c, r, blue);
-  // Paved two rows deep, so the houses south of it stand clear of it.
-  t.road([69, 20], [78, 20]);
+      else prop(["house1", "house2", "house3"][(r + c) % 3]!, c, r, c === 76 ? { ...blue, fixed: true } : blue);
+  // One row deep each side of the alley, level with the stair it heads for: low to the west, high to the east, each
+  // stopping a tile short of it.
+  t.lane([70, 21], [72, 21]);
+  t.lane([75, 20], [77, 20]);
   prop("goldStone", 76, 21);
   // The ring's east lip pushed out under the right-hand row, stepping as it goes.
   for (const [r, c] of [[14, 78], [15, 77], [17, 78]] as const) t.block(2, c, r, 1, 1);
@@ -1508,11 +1519,12 @@ function harbour(): AreaMap {
   // Off the market a cross street down a stair off the ring to a back street along the lowland under it, a row of houses
   // down each side, the west row broken where the stair comes down.
   for (const [c, r, art] of [[80, 14, "house1"], [80, 17, "house3"], [80, 23, "house2"], [80, 26, "house1"], [80, 29, "house3"]] as const) prop(art, c, r, blue);
-  // The east row stands only where the Mine Hills' foot leaves it room.
-  // Its middle is the Weighhouse, where the Mine Hills' loads are weighed before the castle road, pinned against the
-  // hill's foot.
-  for (const [c, r, art] of [[84, 15, "house2"], [84, 30, "house1"]] as const) prop(art, c, r, blue);
-  prop("barracks", 84, 27, { ...blue, fixed: true });
+  // The east row stands only where the Mine Hills' foot leaves it room: the lower two pinned against it, clear of the
+  // street, and last the Weighhouse, where the hill's loads are weighed before the castle road, clear of the landing
+  // under the bench stair.
+  prop("house2", 84, 15, blue);
+  for (const [r, art] of [[18, "house3"], [21, "house1"]] as const) prop(art, 84, r, { ...blue, fixed: true });
+  prop("barracks", 84, 30, { ...blue, fixed: true });
   t.block(1, 79, 20, 1, 1);
   t.stair(2, 79, 20, "R");
   t.road([82, 13], [82, 21], [82, 29]);
@@ -1804,9 +1816,9 @@ function harbour(): AreaMap {
     { to: "saltreach", name: "Old Bridge", kind: "open", at: { col: 1, row: 42 }, plain: true },
     { to: "barrowmoor", name: "Moor Gate", kind: "shortcut", at: { col: 109, row: 50 }, shut: "moorGateOpen" },
     { to: "emberwood", name: "Ember Gate", kind: "gate", at: { col: 26, row: 1 }, shut: "emberGateOpen" },
-    { to: "chapel", name: "The Old Lift", kind: "shortcut", at: { col: 72, row: 41 }, shut: "oldLiftDown" },
+    { to: "chapel", name: "The Old Lift", kind: "shortcut", at: { col: 63, row: 40 }, shut: "oldLiftDown" },
     { to: "chapel", name: "The Sisters' Stair", kind: "gate", at: { col: 35, row: 29 }, shut: "sistersStair" },
-    { to: "burg", name: "Burg Gate", kind: "open", at: { col: 56, row: 1 }, plain: true },
+    { to: "burg", name: "Burg Gate", kind: "open", at: { col: 56, row: 1 }, plain: true, unpaved: true },
     { to: "undercroft", name: "The Old Well", kind: "drop", at: { col: Math.round(sx(10)), row: 50 } },
     { to: "ring", name: "The Boat", kind: "lift", at: { col: 62, row: 61 } },
   ];
