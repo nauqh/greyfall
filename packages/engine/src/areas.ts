@@ -1816,7 +1816,7 @@ function harbour(): AreaMap {
     { to: "saltreach", name: "Old Bridge", kind: "open", at: { col: 1, row: 42 }, plain: true },
     { to: "barrowmoor", name: "Moor Gate", kind: "shortcut", at: { col: 109, row: 50 }, shut: "moorGateOpen" },
     { to: "emberwood", name: "Ember Gate", kind: "gate", at: { col: 26, row: 1 }, shut: "emberGateOpen" },
-    { to: "chapel", name: "The Old Lift", kind: "shortcut", at: { col: 63, row: 40 }, shut: "oldLiftDown" },
+    { to: "chapel", name: "The Old Lift", kind: "shortcut", at: { col: 63, row: 41 }, shut: "oldLiftDown" },
     { to: "chapel", name: "The Sisters' Stair", kind: "gate", at: { col: 35, row: 29 }, shut: "sistersStair" },
     { to: "burg", name: "Burg Gate", kind: "open", at: { col: 56, row: 1 }, plain: true, unpaved: true },
     { to: "undercroft", name: "The Old Well", kind: "drop", at: { col: Math.round(sx(10)), row: 50 } },

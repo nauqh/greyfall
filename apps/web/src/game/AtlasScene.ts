@@ -3040,13 +3040,13 @@ export class AtlasScene extends Phaser.Scene {
       if (!beside) {
         // A lift: a plank floor railed on its left and right, open front and back, in the pack's own wood (its fence's and
         // its boats' browns, the navy outline every sprite has). The Harbour's end of the Old Lift is a small one, in its
-        // corner under the landing, railed by posts at its own edges.
+        // corner under the landing, hung from a hoist frame: its wheel, ropes and counterweight are what read as a lift.
         const k = e.name === "The Old Lift" && this.local!.area === "harbour" ? 0.6 : 1;
-        const [w, h, cy] = [2.4 * k * CELL, 1.6 * k * CELL, y - 0.3 * k * CELL];
+        const [w, h, cy] = [2.4 * k * CELL, 1.6 * k * CELL, y - 0.3 * k * CELL - (k < 1 ? 0.3 * CELL : 0)];
         this.add.rectangle(x, cy, w, h, 0xbd8a59).setStrokeStyle(4, 0x161c2e).setDepth(ground);
         this.add.rectangle(x, cy - h / 2 + 3, w - 8, 6, 0xe5be76).setDepth(ground + 1);
         for (let i = -1; i <= 1; i++) this.add.rectangle(x + i * 0.8 * k * CELL, cy, 3, h - 0.1 * CELL, 0x8d6857).setDepth(ground + 1);
-        if (k < 1) for (const side of [-1, 1]) this.add.rectangle(x + (side * w) / 2, cy, 8, h + 0.3 * CELL, 0x8d6857).setStrokeStyle(2, 0x161c2e).setDepth(ground + 2);
+        if (k < 1) this.liftHoist(x, cy - h / 2, w, cy + h / 2);
         else for (const side of [-1, 1]) this.fence(e.at.col + side, e.at.row - 1, 1, 2);
       }
     } else if (e.name.includes("Ladder")) {
@@ -3058,6 +3058,35 @@ export class AtlasScene extends Phaser.Scene {
     } else if (!e.plain) {
       this.fogDoor(e);
     }
+  }
+
+  /** A lift's hoist over its platform: two uprights at the back corners, a beam across with the rope wheel at its middle,
+   *  ropes down to the platform's front corners, and a counterweight hung off the beam's east end. */
+  private liftHoist(x: number, back: number, w: number, front: number): void {
+    const [ink, wood, dark, rope] = [0x161c2e, 0xbd8a59, 0x8d6857, 0xd9c28a];
+    const top = back - 1.1 * w;
+    const [post, r, over] = [0.09 * w, 0.13 * w, 0.22 * w];
+    const g = this.add.graphics().setDepth(standing(back));
+    const plank = (px: number, py: number, pw: number, ph: number, fill: number): void => {
+      g.fillStyle(fill, 1).fillRect(px, py, pw, ph);
+      g.lineStyle(3, ink, 1).strokeRect(px, py, pw, ph);
+    };
+    for (const s of [-1, 1]) plank(x + (s * w) / 2 - post / 2, top, post, back - top + 4, dark);
+    // Ropes before the beam, so they run out from behind the wheel.
+    g.lineStyle(2, rope, 1);
+    for (const s of [-1, 1]) g.lineBetween(x + s * r * 0.8, top + r, x + s * (w / 2 - 8), front - 6);
+    const cw = x + w / 2 + over - post / 2;
+    g.lineBetween(cw, top, cw, top + 0.55 * w);
+    plank(x - w / 2 - post, top - post / 2, w + over + 1.5 * post, post, wood);
+    plank(cw - 0.09 * w, top + 0.55 * w, 0.18 * w, 0.2 * w, 0x5a6170);
+    g.fillStyle(dark, 1).fillCircle(x, top + r, r);
+    g.lineStyle(3, ink, 1).strokeCircle(x, top + r, r);
+    g.lineStyle(2, ink, 1);
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI;
+      g.lineBetween(x - Math.cos(a) * r, top + r - Math.sin(a) * r, x + Math.cos(a) * r, top + r + Math.sin(a) * r);
+    }
+    g.fillStyle(0xe5be76, 1).fillCircle(x, top + r, 0.03 * w + 2);
   }
 
   /** The Sisters' Stair: no fog bank but a low arch cut in the rock under the altar, the sisters' incense still threading
