@@ -498,7 +498,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
           </header>
         </div>
         {/* Outside the HUD, so Tab opens the sack with the HUD hidden too, from the first step, goods or none. */}
-        {sack && !fire && !menu && !intro && !prologue && !picking && <Sack sack={sack} gold={gold ?? 0} />}
+        {sack && !fire && !menu && !intro && !prologue && !picking && <Sack sack={sack} gold={gold ?? 0} onCover={(c) => api.current?.look(c)} />}
       </GameCanvas>
       {prologue && <Prologue onReveal={revealLanding} onDone={() => setPrologue(false)} />}
       {picking && (

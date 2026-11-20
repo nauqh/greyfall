@@ -106,6 +106,8 @@ export interface AtlasApi {
   next: () => void;
   /** At a bonfire just rested at: sit by it, the camera drawn in, or stand again; sitting gives the bonfire's name. */
   sit: (on: boolean) => string | null;
+  /** The sack open over `cover` of the screen's width from the right: the camera in close on the captain in what is left. 0 when shut. */
+  look: (cover: number) => void;
   /** Sat at a bonfire: the levels bought, the gold the next one costs, the gold carried and the numbers they raise. */
   levels: () => LevelView;
   /** Sat at a bonfire: buy a level in `stat`, if the gold is there. */
@@ -879,6 +881,8 @@ export class AtlasScene extends Phaser.Scene {
   private menu: { folk: Folk; pick: number; shopping?: boolean } | null = null;
   /** The camera in close: at a bonfire, or on a merchant through their menu and the talks it opens. */
   private close: "fire" | "folk" | null = null;
+  /** The share of the screen the open sack covers, 0 when shut. */
+  private sackCover = 0;
   private flasks: number = HERO.flasks;
   private cls: HeroClass = "warrior";
   /** The captain's numbers with the goods bought. */
@@ -951,6 +955,7 @@ export class AtlasScene extends Phaser.Scene {
     this.nearName = null;
     this.menu = null;
     this.close = null;
+    this.sackCover = 0;
     this.heard = remembered(HEARD);
     this.flags = remembered(FLAGS);
     this.cls = heroClass();
@@ -1177,6 +1182,7 @@ export class AtlasScene extends Phaser.Scene {
       dev: (on) => this.setDev(on),
       next: () => (this.reading ? this.read(null) : this.nextPage()),
       sit: (on) => this.sit(on),
+      look: (cover) => this.frameSack(cover),
       levels: () => ({ levels: levels(), cost: levelCost(levels()), gold: this.gold, now: { hp: this.gear.hp, attack: this.gear.attack, stamina: this.gear.stamina } }),
       levelUp: (stat) => this.levelUp(stat),
       gifts: () => GIFTS.map(sackItem),
@@ -1953,6 +1959,19 @@ export class AtlasScene extends Phaser.Scene {
       this.tweens.add({ targets: [f.s, f.tag], alpha: out ? 0 : 1, duration: 500 });
     }
     this.close = at ? (keep ? "folk" : "fire") : null;
+    this.sackCover = 0;
+  }
+
+  /** The camera in close on the captain, centred in the screen the sack leaves clear; one that covers it all just shuts. */
+  private frameSack(cover: number): void {
+    // Only on a change: the sack reports 0 as it mounts and unmounts, which must not cut into the intro's shot.
+    if (!this.hero || this.close || this.dev || this.gone || cover === this.sackCover) return;
+    this.sackCover = cover;
+    const cam = this.active;
+    const base = this.zoomFor(AREA_ROWS);
+    const zoom = cover > 0 && cover < 0.9 ? Math.ceil(base * 2.2) : base;
+    cam.zoomTo(zoom, 600, "Sine.easeInOut", true);
+    cam.setFollowOffset(zoom === base ? 0 : -(cam.width * cover) / 2 / zoom, 0);
   }
 
   /** The opening shot: in close on the captain waking, then easing back to the play view; the map is never shown whole. */
