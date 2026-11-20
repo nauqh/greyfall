@@ -66,6 +66,8 @@ export interface Island {
   start: Record<WarSide, { castle: Cell; barracks: Cell }>;
   mines: readonly Mine[];
   lair: Cell;
+  /** Stairs drawn side-on: a slope is also walked on and off from its open side, away from its table. */
+  sideways?: boolean;
 }
 
 // ponytail: one island per process, live `let` bindings swapped by useIsland(); thread an Island through if a server ever runs two at once.
@@ -109,8 +111,9 @@ export function isWalkable(col: number, row: number): boolean {
 }
 
 /** One move to a neighbouring cell. The level only changes on a ramp, one
- *  level at a time, from a slope's top straight down to its foot or back up.
- *  Diagonals stay on one level and never cut a corner. */
+ *  level at a time, from a slope's top straight down to its foot or back up,
+ *  and on a sideways island also across to its open side. Diagonals stay on
+ *  one level and never cut a corner. */
 export function canStep(from: Cell, to: Cell): boolean {
   if (!isWalkable(to.col, to.row)) return false;
   const dc = to.col - from.col;
@@ -124,8 +127,14 @@ export function canStep(from: Cell, to: Cell): boolean {
     );
   }
   if (level(from.col, from.row) === level(to.col, to.row)) return true;
+  if (dc !== 0) {
+    if (!SIDEWAYS) return false;
+    const [top, low] = level(from.col, from.row) > level(to.col, to.row) ? [from, to] : [to, from];
+    const open = top.col + ("<[{(".includes(at(top.col, top.row)) ? -1 : 1);
+    return isSlope(top.col, top.row) && low.col === open && level(top.col, top.row) - level(low.col, low.row) === 1;
+  }
   const [top, foot] = dr > 0 ? [from, to] : [to, from];
-  return dc === 0 && isSlope(top.col, top.row) && level(top.col, top.row) - level(foot.col, foot.row) === 1;
+  return isSlope(top.col, top.row) && level(top.col, top.row) - level(foot.col, foot.row) === 1;
 }
 
 const STEPS = new Map<number, readonly Cell[]>();
@@ -298,6 +307,7 @@ export let LAIR: Cell = { col: 30, row: 18 };
 export const WAR_ISLAND: Island = { rows: WAR_MAP, start: START, mines: MINES, lair: LAIR };
 
 let HOME: Record<WarSide, Set<number>>;
+let SIDEWAYS = false;
 let MINE_CELLS: Set<number>;
 
 /** Make `island` the ground every rule reads. The war's is in use until then. */
@@ -308,6 +318,7 @@ export function useIsland(island: Island): void {
   START = island.start;
   MINES = island.mines;
   LAIR = island.lair;
+  SIDEWAYS = island.sideways ?? false;
   STEPS.clear();
   HOME = {
     a: new Set(plateauOf(START.a.castle).map(cellKey)),

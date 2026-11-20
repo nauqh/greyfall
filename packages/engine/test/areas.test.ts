@@ -201,6 +201,18 @@ describe("the Harbour's streets", () => {
     }
   });
 
+  it("walk every stair on and off from its open side, as its art climbs", () => {
+    take();
+    for (let row = 0; row < m.island.rows.length; row++)
+      for (let col = 0; col < m.island.rows[0]!.length; col++) {
+        const ch = m.island.rows[row]![col]!;
+        if (!isSlope(col, row)) continue;
+        const open = { col: col + ("<[{(".includes(ch) ? -1 : 1), row };
+        if (!isWalkable(open.col, open.row) || level(open.col, open.row) !== level(col, row) - 1) continue;
+        expect(canStep({ col, row }, open) && canStep(open, { col, row }), `${ch} at ${col},${row}`).toBe(true);
+      }
+  });
+
   it("meet every stair from its side", () => {
     take();
     m.island.rows.forEach((line, r) =>

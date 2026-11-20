@@ -1245,7 +1245,8 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
         name: info.name,
         blurb: info.blurb,
         base: info.base,
-        island: islandOf(),
+        // Built on the war's step rule, so no pocket leans on a side step a prop may later fill; walked side-on.
+        island: { ...islandOf(), sideways: true },
         areaAt: owned.map((l, r) => l.map((a, c) => (a >= 0 && grid[r]![c] !== wall && grid[r]![c] !== "~" ? AREA_CODE[a]! : "-")).join("")),
         gates: t.gates,
         roads: [...t.roadSet].map((k) => ({ col: Number(k.split(",")[0]), row: Number(k.split(",")[1]) })).filter((c) => ".#^45".includes(at(c.col, c.row))),
