@@ -3417,8 +3417,10 @@ function landing(): AreaMap {
   const notes: Note[] = [
     { at: { col: 33, row: 43 }, text: "Hold Space while walking to run." },
     { at: { col: 30, row: 41 }, text: "R to drink a flask. Rest at a fire to refill." },
+    { at: { col: 36, row: 44 }, text: "M to open the map." },
     { at: { col: 22, row: 32 }, text: "Left click to attack." },
     { at: { col: 18, row: 18 }, text: "Tap Space to roll." },
+    { at: { col: 41, row: 11 }, text: "Tab to open your sack." },
     { at: { col: 49, row: 18 }, text: "Hold Shift to guard." },
     { at: { col: 52, row: 20 }, text: "Die, and your gold stays where you fell." },
   ];
