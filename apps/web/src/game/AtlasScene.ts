@@ -89,7 +89,7 @@ import * as Phaser from "phaser";
 import { BUILDINGS, packUrl } from "./art";
 import { DPR, startGame } from "./boot";
 import { CELL, buildMap, loadGroundColours, trailTiles } from "./islandMap";
-import { STRAT_COLS, STRAT_ROWS, at, climbsStair, findPath, isForest, isLand, isSlope, isWalkable, level } from "./stratMap";
+import { STRAT_COLS, STRAT_ROWS, at, climbsStair, findPath, isForest, isLand, isSlope, isWalkable, level, stairLean } from "./stratMap";
 import { DEPTH, addDecor, cloudCover, loadTerrain, prepareTerrain, standing } from "./terrain";
 import { HAND } from "./ui";
 
@@ -2330,19 +2330,29 @@ export class AtlasScene extends Phaser.Scene {
     const hit = (b: Box, x: number, y: number): boolean => x + FEET.w > b.x0 && x - FEET.w < b.x1 && y + FEET.down > b.y0 && y - FEET.up < b.y1;
     let { x, y } = hero.s;
     const clear = (nx: number, ny: number): boolean => !this.bases.some((b) => hit(b, nx, ny) && !hit(b, x, y));
-    // A stair is taken along its slope, both axes at once; one axis alone never changes level.
-    const [fx, fy] = [x + Math.sign(dx) * ahead + dx * step, y + Math.sign(dy) * ahead + dy * step];
-    const to = cellAt(fx, fy);
-    if (dx && dy && level(to.col, to.row) !== level(hero.at.col, hero.at.row) && open(fx, fy, dx, dy) && clear(x + dx * step, y + dy * step)) {
-      x += dx * step;
-      y += dy * step;
+    const canX = !!dx && open(x + Math.sign(dx) * ahead + dx * step, y) && clear(x + dx * step, y);
+    const canY = !!dy && open(x, y + Math.sign(dy) * ahead + dy * step) && clear(x, y + dy * step);
+    // A stair is taken along its slope, both axes at once: a push that snags on it is turned up or down the slope.
+    const lean = (dx && !canX) || (dy && !canY) ? stairLean(hero.at, dx, dy) : null;
+    if (lean) {
+      const [vx, vy] = lean;
+      const s = px / Math.SQRT2;
+      const go = (nx: number, ny: number): boolean => open(nx, ny, vx, vy) && clear(nx, ny);
+      if (go(x + vx * s, y + vy * s)) {
+        x += vx * s;
+        y += vy * s;
+      } else {
+        if (go(x + vx * s, y)) x += vx * s;
+        if (go(x, y + vy * s)) y += vy * s;
+      }
     } else {
-      if (dx && open(x + Math.sign(dx) * ahead + dx * step, y) && clear(x + dx * step, y)) x += dx * step;
+      if (canX) x += dx * step;
       if (dy && open(x, y + Math.sign(dy) * ahead + dy * step) && clear(x, y + dy * step)) y += dy * step;
     }
     hero.s.setPosition(x, y).setDepth(standing(y));
     hero.at = cellAt(x, y);
-    if (face && Math.abs(dx) > 0.01) hero.s.setFlipX(dx < 0);
+    const fx = lean ? lean[0] : dx;
+    if (face && Math.abs(fx) > 0.01) hero.s.setFlipX(fx < 0);
   }
 
   /** A tap of Space: a roll the way the hero walks, or a backstep standing still; nothing lands on it while it lasts. */

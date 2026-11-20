@@ -146,6 +146,19 @@ export function climbsStair(a: Cell, b: Cell, dx: number, dy: number): boolean {
   return Math.sign(dx) === toTable * up && Math.sign(dy) === -up;
 }
 
+/** The slope, as (±1, ±1), that a push of (dx, dy) from `from` leans onto: a stair beside it that climbs or descends
+ *  at less than a right angle to the push. Null with no such stair. */
+export function stairLean(from: Cell, dx: number, dy: number): [number, number] | null {
+  for (const vx of [-1, 1])
+    for (const vy of [-1, 1]) {
+      if (vx * dx + vy * dy <= 0) continue;
+      for (const [cx, cy] of [[vx, vy], [vx, 0], [0, vy]] as const) {
+        if (climbsStair(from, { col: from.col + cx, row: from.row + cy }, vx, vy)) return [vx, vy];
+      }
+    }
+  return null;
+}
+
 const STEPS = new Map<number, readonly Cell[]>();
 
 /** The neighbours one legal step away, in the fixed order routes use.

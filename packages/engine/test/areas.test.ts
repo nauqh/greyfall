@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { AREAS, FLYING, MAPPED_AREAS, NPCS, canStep, districtOf, groundColours, SEA_KINDS, WATER_ART, areaMap, castsCliff, cellKey, footprint, isForest, isSlope, isWalkable, level, solidCells, stepsFrom, useIsland, type Cell } from "../src/index.ts";
+import { AREAS, FLYING, MAPPED_AREAS, NPCS, canStep, districtOf, groundColours, SEA_KINDS, WATER_ART, areaMap, castsCliff, cellKey, footprint, isForest, isSlope, isWalkable, level, solidCells, stairLean, stepsFrom, useIsland, type Cell } from "../src/index.ts";
 
 function reach(from: Cell, shut: ReadonlySet<number> = new Set()): Set<number> {
   const seen = new Set([cellKey(from)]);
@@ -225,6 +225,25 @@ describe("the Harbour's streets", () => {
         expect(canStep(top, { col, row: row + 1 }) || canStep({ col, row: row + 1 }, top), `${ch} at ${col},${row} up its foot`).toBe(false);
         const low = { col: open, row: row + 1 };
         expect(canStep(top, low) && canStep(low, top), `${ch} at ${col},${row} along its slope`).toBe(true);
+      }
+  });
+
+  it("turn any push that leans into a stair up or down its slope", () => {
+    take();
+    for (let row = 0; row < m.island.rows.length; row++)
+      for (let col = 0; col < m.island.rows[0]!.length; col++) {
+        const ch = m.island.rows[row]![col]!;
+        if (!isSlope(col, row)) continue;
+        const t = "<[{(".includes(ch) ? 1 : -1;
+        const top = { col, row };
+        const up: [number, number] = [t, -1];
+        const down: [number, number] = [-t, 1];
+        for (const from of [{ col: col - t, row }, { col: col - t, row: row + 1 }, { col, row: row + 1 }]) {
+          expect(stairLean(from, 0, -1), `up from ${from.col},${from.row} to ${ch} at ${col},${row}`).toEqual(up);
+          expect(stairLean(from, t, 0), `${t > 0 ? "right" : "left"} from ${from.col},${from.row} to ${ch} at ${col},${row}`).toEqual(up);
+        }
+        expect(stairLean(top, 0, 1), `down off ${ch} at ${col},${row}`).toEqual(down);
+        expect(stairLean(top, -t, 0), `off the open side of ${ch} at ${col},${row}`).toEqual(down);
       }
   });
 

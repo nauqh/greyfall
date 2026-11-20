@@ -56,6 +56,7 @@ export {
   at,
   canStep,
   climbsStair,
+  stairLean,
   castlePlot,
   castsCliff,
   cellKey,
