@@ -1752,7 +1752,6 @@ function harbour(): AreaMap {
   prop("barracks", sx(10.4), 43.85, { ...blue, ...pinned });
   prop("archery", sx(15.7), 44.85, { ...blue, ...pinned });
   prop("house1", sx(21.8), 52.85, { ...blue, ...pinned });
-  prop("fishHut", sx(9.3), 55.25, pinned);
   prop("house2", sx(19.1), 55.65, { ...blue, ...pinned });
   prop("boat", sx(13.5), 55.6, pinned);
   // The title's trees and stones, less those that land on a stair here, shut a nook off or stand on the causeway.
@@ -1803,6 +1802,8 @@ function harbour(): AreaMap {
   prop("house1", 68, 53, blue);
   prop("house3", 69, 56, blue);
   prop("fishHut", 75, 55);
+  // A fish hut on stilts in the pond above Maren's post.
+  prop("fishHut", 64, 58, pinned);
   for (const [c, r, art] of [[75, 58, "house2"], [75, 62, "house1"], [76, 66, "house3"]] as const) prop(art, c, r, blue);
   // A trader for each road opened, so the market by the docks fills as the captain's work goes on: Saltreach's fish
   // once the bull is beaten, the brother freed from the chapel in the Harbour's blue, ore down from the hills once the
