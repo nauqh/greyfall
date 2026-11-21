@@ -123,7 +123,7 @@ come ashore alone.
   way out of Lanternport: the Barrow King's Horned Key, from Kingsrest out
   the Moor Gate, and the Weaver's Silk Key, from the Graveroad down the Old
   Well. The Sky Bridge from Brasscrag is the other, harder way into the
-  Greyfall. The Warlord holds no key. He is the lock. The Grey Gate is
+  Greyfall. The Warlord holds no key. He is the drain the Grey runs into. The Grey Gate is
   locked from Kingsrest until both keys are carried, and opens freely from
   Greyfall's side.
 
@@ -306,7 +306,7 @@ given back warm by the Hearth's water; no text in the game says so.
 | Surface | Brasscrag | a rock that climbs in five steps to the Tinker Peak, gnomes, bears, pandas, the Gnome Lift up | Old Bamboo |
 | Surface | Kingsrest | barrows, bones, the cave down into the King's Barrow | |
 | Surface | Stillmere | a chapel of the Order that prays to the Grey, lizards, the sinkhole | |
-| Surface | Greyfall | the Citadel, the Grey Keep on its crown, the Grey wearing its lord, the Throne Stair up | The Grey Warlord |
+| Surface | Greyfall | the Citadel, the Grey Keep on its crown, the Warlord kept warm by his crown, the Throne Stair up | The Grey Warlord |
 | Below | Tidewake (start) | the sea cave where a new game starts, notes in the tunnels that teach the controls, two goblins to learn on | Cinder Troll (in the Ring) |
 | Below | The King's Barrow | the throne hall round its ring of pillars | The Barrow King |
 | Below | Underwell | cisterns and pillars under the well, a crypt, spiders, a thief | |

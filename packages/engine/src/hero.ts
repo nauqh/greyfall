@@ -57,6 +57,8 @@ export const FOES: Partial<Record<string, FoeStats>> = {
   torch: { hp: 30, attack: 6, every: 2.4, windup: 0.6, aggro: 6, leash: 10, speed: 2.2, gold: 6 },
   spear: { hp: 40, attack: 8, every: 2.8, windup: 0.75, aggro: 6, leash: 10, speed: 2.2, gold: 9 },
   skull: { hp: 25, attack: 5, every: 2.2, windup: 0.55, aggro: 5, leash: 9, speed: 1.9, gold: 7 },
+  // The Citadel's garrison, taken by the Grey at their posts and drawn to the Warlord's warmth.
+  taken: { hp: 40, attack: 8, every: 2.4, windup: 0.65, poise: true, aggro: 6, leash: 10, speed: 1.8, gold: 6 },
   spider: { hp: 22, attack: 5, every: 2.0, windup: 0.5, aggro: 5, leash: 8, speed: 3, gold: 5 },
   thief: { hp: 28, attack: 7, every: 2.0, windup: 0.45, aggro: 5, leash: 8, speed: 3, gold: 15 },
   lizard: { hp: 35, attack: 7, every: 2.6, windup: 0.7, poise: true, aggro: 5, leash: 9, speed: 2.2, gold: 8 },
@@ -85,9 +87,9 @@ export const FOES: Partial<Record<string, FoeStats>> = {
   barrowKing: { hp: 480, attack: 28, every: 2.6, windup: 1.0, poise: true, aggro: 9, leash: 14, speed: 1.6, gold: 220 },
   // The bosses past the Ember Key, each in an arena of its own; their moves are BOSS_KITS'. The Weaver: the Silk Key.
   weaver: { hp: 360, attack: 18, every: 1.8, windup: 0.6, poise: true, aggro: 9, leash: 16, speed: 2.6, gold: 200 },
-  // Optional, asleep on its isle. Killing it greys the lake.
+  // Optional, asleep on its isle: a beast grown vast on the Hearth's warmth.
   shellBelow: { hp: 600, attack: 32, every: 2.6, windup: 1.3, poise: true, aggro: 9, leash: 16, speed: 1.4, gold: 260 },
-  // The last: a knight the Grey wore longest, quick for his weight.
+  // The last: the Citadel's lord, kept warm by his crown, quick for his weight.
   warlord: { hp: 700, attack: 30, every: 2.0, windup: 0.75, poise: true, aggro: 10, leash: 18, speed: 2.2, gold: 400 },
   oldBamboo: { hp: 440, attack: 22, every: 2.4, windup: 0.9, poise: true, aggro: 9, leash: 16, speed: 2.0, gold: 220 },
   sunSentinel: { hp: 520, attack: 26, every: 2.4, windup: 0.9, poise: true, aggro: 9, leash: 16, speed: 2.0, gold: 280 },
@@ -152,19 +154,19 @@ export interface BossKit {
 
 /** The bosses with moves of their own, after `ATLAS.md`. Tiles, seconds and points. */
 export const BOSS_KITS: Partial<Record<string, BossKit>> = {
-  // The Cinder Troll, the Landing's lesson: a club slam on a ground circle, a charge down a line, embers tossed to
-  // burn, each warned long; a charge a rock in the Ring stops dead leaves him dazed and open.
+  // The Cinder Troll, Tidewake's lesson: a club slam on a ground circle, a charge down a line, the outflow's hot
+  // water flung to scald, each warned long; a charge a rock in the Ring stops dead leaves him dazed and open.
   troll: {
     moves: {
       slam: { shape: "mark", windup: 1.4, radius: 1, damage: 16 },
       charge: { shape: "line", windup: 1.2, tiles: 6, width: 1, speed: 10, damage: 14, stun: 2.5 },
-      toss: { shape: "scatter", windup: 1.3, patches: 3, radius: 2, damage: 4, burn: 3, tick: 0.6 },
+      toss: { shape: "scatter", windup: 1.3, patches: 3, radius: 2, damage: 4, burn: 3, tick: 0.6, colour: 0xd8f0ff },
     },
     recover: 1.6,
     pick: (d, last) => (d <= 2 ? "slam" : d > 6 ? null : last === "charge" ? "toss" : "charge"),
   },
   // The Ember Bull: a horn swipe up close and a stomp round him after it, so beside him is no safe place; from four
-  // tiles off a rush that ends a tile past the mark and leaves him open, never two rushes running; a rush the pines
+  // tiles off a rush that ends a tile past the mark and leaves him open, never two rushes running; a rush the trees
   // round the hollow stop dead leaves him dazed.
   minotaur: {
     moves: {
@@ -207,8 +209,8 @@ export const BOSS_KITS: Partial<Record<string, BossKit>> = {
     pick: (d, last) =>
       d <= 1 ? (last === "buffet" ? "rubble" : "buffet") : d <= 3 ? (last === "toll" ? "dive" : "toll") : d <= 8 ? (last === "dive" ? "rubble" : "dive") : "rubble",
   },
-  // The Barrow King: the old kings' hex-priest, dead and still crowned, and no blade bites him while the grave totems
-  // round his hall stand. A curse bursts under the mark, grave fire runs the ground from him to it and burns on, and he
+  // The Barrow King: the eldest barrow-warden in an old king's bone face, and no blade bites him while the grave
+  // totems round his hall stand. A curse bursts under the mark, grave fire runs the ground from him to it and burns on, and he
   // raises the barrow's dead; raging, he raises them more often.
   barrowKing: {
     moves: {
@@ -251,16 +253,18 @@ export const BOSS_KITS: Partial<Record<string, BossKit>> = {
     pick: (d, last) => (d <= 1 ? (last === "bite" ? "stamp" : "bite") : d <= 2 ? "stamp" : d <= 10 ? "spin" : null),
   },
   // The Grey Warlord, the last: a cleave up close, a lunge that ends at the mark, the Grey run along the ground to it
-  // and left lying; past half, the Grey's dead rise round him after every lunge.
+  // and left lying; past half, his taken garrison comes to him after every lunge, and his crown drinks their warmth
+  // to mend him while any of them stands, so they go first.
   warlord: {
     moves: {
       cleave: { shape: "front", windup: 0.7, radius: 2, damage: 28 },
       lunge: { shape: "line", windup: 0.8, tiles: 7, width: 1, speed: 16, damage: 26, past: 1 },
       grey: { shape: "trail", windup: 1.0, damage: 7, burn: 6, tick: 0.6, colour: 0x9c9fa8 },
-      legion: { shape: "summon", windup: 1.2, damage: 0, summon: { kind: "skull", n: 2, cap: 4 } },
+      legion: { shape: "summon", windup: 1.2, damage: 0, summon: { kind: "taken", n: 2, cap: 4 } },
     },
     recover: 1.0,
     rage: { at: 0.5, haste: 0.65 },
+    heals: 8,
     pick: (d, last, raging) =>
       raging && last === "lunge" ? "legion" : d <= 2 ? (last === "cleave" ? "grey" : "cleave") : last === "lunge" ? "grey" : d <= 8 ? "lunge" : "grey",
   },
@@ -278,7 +282,7 @@ export const BOSS_KITS: Partial<Record<string, BossKit>> = {
     heals: 6,
     pick: (d, last) => (last === null || last === "toss" ? "cubs" : d <= 2 ? "slam" : last === "roll" ? "toss" : d <= 8 ? "roll" : "toss"),
   },
-  // The Sun Sentinel, the Gilded City's hall guard: its shield turns every blow from the side it faces, so it is beaten
+  // The Sun Sentinel, Sunhold's hall guard: its shield turns every blow from the side it faces, so it is beaten
   // from behind. A thrust that runs it past the mark (turn and strike), a sunburst in a ring round it, and sunfire
   // falling to burn.
   sunSentinel: {

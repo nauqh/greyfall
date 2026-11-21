@@ -2347,9 +2347,9 @@ function greyfall(): AreaMap {
   prop("house2", 98, 34, black);
   prop("woodPile", 92, 33);
   prop("tools", 92, 35);
-  // The streets: the dead patrol them, a lancer rides the long one.
-  who("skull", 68, 14, { to: { col: 68, row: 38 } });
-  who("skull", 88, 24, { to: { col: 88, row: 38 } });
+  // The streets: the taken patrol them, a lancer rides the long one.
+  who("taken", 68, 14, { to: { col: 68, row: 38 } });
+  who("taken", 88, 24, { to: { col: 88, row: 38 } });
   who("lancer", 55, 24, { ...black, to: { col: 85, row: 24 } });
 
   // The Grey Keep: the black castle on the fourth height, the Warlord on the tier before it, his guard, guns on the tier.

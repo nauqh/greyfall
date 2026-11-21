@@ -467,7 +467,9 @@ const BEAST: Record<string, Beast> = {
   pandaCub: { idle: `${EP}Panda/Panda_Idle.png`, move: `${EP}Panda/Panda_Run.png`, attack: `${EP}Panda/Panda_Attack.png`, frame: 256, anchor: 0.68, scale: 0.6 },
   // The Sun Sentinel: the yellow guard's lancer grown huge, standing behind its shield.
   sunSentinel: { idle: "Units/Yellow Units/Lancer/Lancer_Right_Defence.png", move: "Units/Yellow Units/Lancer/Lancer_Run.png", attack: "Units/Yellow Units/Lancer/Lancer_Right_Attack.png", frame: 320, anchor: 0.62, scale: 1.7, tint: 0xfff0b0 },
-  warlord: { idle: "Units/Black Units/Warrior/Warrior_Idle.png", move: "Units/Black Units/Warrior/Warrior_Run.png", attack: "Units/Black Units/Warrior/Warrior_Attack1.png", frame: 192, anchor: 136 / 192, scale: 1.5, tint: 0xb8b8b8 },
+  // The Warlord keeps his colour, warm gold, where his taken have gone grey.
+  warlord: { idle: "Units/Black Units/Warrior/Warrior_Idle.png", move: "Units/Black Units/Warrior/Warrior_Run.png", attack: "Units/Black Units/Warrior/Warrior_Attack1.png", frame: 192, anchor: 136 / 192, scale: 1.5, tint: 0xf0d890 },
+  taken: { idle: "Units/Black Units/Warrior/Warrior_Idle.png", move: "Units/Black Units/Warrior/Warrior_Run.png", attack: "Units/Black Units/Warrior/Warrior_Attack1.png", frame: 192, anchor: 136 / 192, tint: 0x9c9fa8 },
   gnome: { idle: `${EP}Gnome/Gnome_Idle.png`, move: `${EP}Gnome/Gnome_Run.png`, frame: 192, anchor: 0.68 },
   slingshot: { idle: `${EP}Slingshot Gnome/Slingshot Gnome_Idle.png`, move: `${EP}Slingshot Gnome/Slingshot Gnome_Run.png`, attack: `${EP}Slingshot Gnome/Slingshot Gnome_Shoot.png`, frame: 192, anchor: 0.68 },
   turtle: { idle: `${EP}Turtle/Turtle_Idle.png`, move: `${EP}Turtle/Turtle_Walk.png`, frame: 320, anchor: 0.66, scale: 0.8 },

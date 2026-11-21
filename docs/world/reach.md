@@ -290,7 +290,8 @@ Bosses are these scaled or tinted: the Cinder Troll (troll), the Ember Bull
 (minotaur), the Rampart Boar (pig rider), the Stone Warden (giant bat, in
 stone), the Barrow King (hex shaman), Old Bamboo (panda), the Weaver
 (spider), the Shell Below (turtle), the Sun Sentinel (yellow lancer). The
-Grey Warlord has no sheet of his own. Never on screen: the Hearth itself,
+Grey Warlord is the Black Warrior grown and tinted warm gold, and his taken
+the Black Warrior tinted grey. Never on screen: the Hearth itself,
 the old kings, the gnome-kings, the crown up close.
 
 ## Glossary
@@ -337,9 +338,10 @@ the old kings, the gnome-kings, the crown up close.
 3. **The prologue.** Settled 2026-11-21: rewritten to the text below, now
    in `prologue.ts`, with the subtitle "Aurum" on the prologue, title screen
    and settings.
-4. **The Warlord's and the Sentinel's look.** Neither has a sheet. Proposed:
-   a Black Warrior scaled up and crowned in gold for the Warlord, a Yellow
-   Lancer scaled up for the Sentinel.
+4. **The Warlord's and the Sentinel's look.** Settled 2026-11-21: the
+   Warlord is a Black Warrior scaled up and tinted warm gold, the one colour
+   left in Greyfall; the Sentinel a Yellow Lancer scaled up behind its
+   shield.
 
 The prologue, in Lanternport's voice:
 
