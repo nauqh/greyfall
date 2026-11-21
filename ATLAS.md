@@ -870,9 +870,12 @@ arrived, whole. Bonfires and dropped gold come next. The first fight is the
 goblins' camp outside Lanternport's Ember Gate: two torches and a spear,
 winnable with the sword alone (three met at once killed in five seconds).
 
-Dev mode (the backquote key, or "Dev: whole map" at the top) frees the
-camera to show the whole area map, centred, with the wheel and drag
-back; it is remembered on the browser and carries across crossings.
+Dev mode (`/atlas/dev/<area>`, behind `DEV_PASSWORD`) plays as the game
+does, with a side panel to go to any area (grouped by land), talk to
+anyone from anywhere and set the save; H hides it with the HUD. Its free camera (the backquote
+key, or "Free camera" at the top) shows the whole area map, centred,
+with the wheel and drag back, and stands the hero still; it carries
+across crossings.
 
 
 ## Not done yet

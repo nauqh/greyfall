@@ -189,6 +189,14 @@ The Grey Gate's two keys, from the Barrow King and the Weaver. Always capitalise
 Highward's Keep Gate key, from the Ember Bull.
 _Avoid_: the Troll Key, a key to the Grey Gate
 
+**Dev mode**:
+The game as its makers see it, behind a password: the hero plays on, with tools to go anywhere, talk to anyone and set the save.
+_Avoid_: debug mode, cheat mode
+
+**Free camera**:
+Dev mode's view of a whole area map, loose of the hero, who stands still while it is on.
+_Avoid_: whole map, dev view
+
 ## The folk's lines
 
 **Talk**:

@@ -1,7 +1,7 @@
 "use client";
 
-import { AREAS, FOES, MAPPED_AREAS, areaMap, type AreaId, type WorldFlag } from "@greyfall/engine";
-import { useMemo, useState, type KeyboardEvent, type RefObject } from "react";
+import { AREAS, FOES, LANDS, MAPPED_AREAS, areaMap, type AreaId, type WorldFlag } from "@greyfall/engine";
+import { useMemo, type KeyboardEvent, type RefObject } from "react";
 
 import type { AtlasApi, DevState } from "../../game/AtlasScene";
 import "./dev.css";
@@ -38,6 +38,8 @@ const FLAGS = Object.keys({
   drankClear: 1,
 } satisfies Record<WorldFlag, 1>) as WorldFlag[];
 const KINDS = Object.keys(FOES);
+const GROUPS = LANDS.map((land) => AREAS.filter((a) => a.land === land && MAPPED_AREAS.includes(a.id))).filter((g) => g.length > 0);
+const TIER = { sky: "Sky", surface: "Surface", below: "Below" };
 
 const flip = <T,>(list: readonly T[], v: T): T[] => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
@@ -54,12 +56,14 @@ function Checks<T extends string>({ title, all, on, set }: { title: string; all:
       <summary>
         {title} <b>{on.length}</b>
       </summary>
-      {shown.map((v) => (
-        <label key={v} className="devCheck">
-          <input type="checkbox" checked={on.includes(v)} onChange={() => set(flip(on, v))} />
-          {v}
-        </label>
-      ))}
+      <div className="devGrid">
+        {shown.map((v) => (
+          <label key={v} className="devCheck">
+            <input type="checkbox" checked={on.includes(v)} onChange={() => set(flip(on, v))} />
+            {v}
+          </label>
+        ))}
+      </div>
     </details>
   );
 }
@@ -79,18 +83,7 @@ function List({ title, items }: { title: string; items: readonly string[] }) {
   );
 }
 
-const SHOWN = "greyfall.devPanel";
-
-/** Whether the panel was last left open in this browser; open when the store is blocked. */
-function wasShown(): boolean {
-  try {
-    return localStorage.getItem(SHOWN) !== "0";
-  } catch {
-    return true;
-  }
-}
-
-/** Dev mode's side panel: the save as the scene holds it, and a way to anywhere and anyone. Hidden, it folds to a tab. */
+/** Dev mode's side panel: the save as the scene holds it, and a way to anywhere and anyone. It hides with the HUD. */
 export function DevPanel({
   state: s,
   api,
@@ -112,52 +105,44 @@ export function DevPanel({
     });
     return [...new Set(asked.filter((k): k is string => !!k))];
   }, []);
-  const [shown, setShown] = useState(wasShown);
-  const show = (on: boolean): void => {
-    setShown(on);
-    try {
-      localStorage.setItem(SHOWN, on ? "1" : "0");
-    } catch {}
-  };
   const setGold = (v: string): void => {
     const n = Math.floor(Number(v));
     if (v !== "" && Number.isFinite(n) && n >= 0 && n !== s.gold) api.current?.devSet({ gold: n });
   };
-  if (!shown) {
-    return (
-      <button type="button" className="devBtn devTab" aria-expanded={false} aria-label="Show the dev panel" onClick={() => show(true)}>
-        Dev
-      </button>
-    );
-  }
   return (
     <aside className="devPanel" aria-label="Dev" onKeyDown={keep} onKeyUp={keep}>
-      <div className="devRow">
-        <select
-          value={s.area}
-          aria-label="Area"
-          onChange={(e) => {
-            e.currentTarget.blur();
-            onArea(e.target.value as AreaId);
-          }}
-        >
-          {MAPPED_AREAS.map((id) => (
-            <option key={id} value={id}>
-              {AREAS.find((a) => a.id === id)?.name ?? id}
-            </option>
-          ))}
-        </select>
+      <header className="devHead">
+        <h2>Dev</h2>
+        <kbd>H hides</kbd>
+      </header>
+      <select
+        className="devArea"
+        value={s.area}
+        aria-label="Area"
+        onChange={(e) => {
+          e.currentTarget.blur();
+          onArea(e.target.value as AreaId);
+        }}
+      >
+        {GROUPS.map((g) => (
+          <optgroup key={g[0]!.land} label={`${TIER[g[0]!.tier]} · ${g[0]!.land}`}>
+            {g.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+      <div className="devActions">
         <button type="button" className="devBtn" onClick={onMap}>
           Open map
         </button>
         <button type="button" className="devBtn" onClick={onCreate}>
           New hero
         </button>
-        <button type="button" className="devBtn" aria-expanded={true} aria-label="Hide the dev panel" onClick={() => show(false)}>
-          Hide
-        </button>
       </div>
-      <dl>
+      <dl className="devStats">
         <dt>Hero</dt>
         <dd>{s.hero ? `${s.hero.col}, ${s.hero.row}` : "-"}</dd>
         <dt>District</dt>
@@ -183,7 +168,7 @@ export function DevPanel({
           <div key={n.id} className="devRow">
             <span>
               {n.name}
-              {n.shop && " (shop)"}
+              {n.shop && <i className="devTag">shop</i>}
             </span>
             <button type="button" className="devBtn" onClick={() => api.current?.devTalk(n.id)}>
               Talk
@@ -198,7 +183,7 @@ export function DevPanel({
         {s.exits.map((x) => (
           <button key={`${x.name}${x.col},${x.row}`} type="button" className="devRow devLink" onClick={() => api.current?.devLook(x.col, x.row)}>
             {x.name}
-            {x.barred && " (barred)"}
+            {x.barred && <i className="devTag devBarred">barred</i>}
           </button>
         ))}
       </details>

@@ -99,8 +99,8 @@ export interface AtlasApi {
   tier: (id: TierId) => void;
   /** In an area's map: rebuild the scene as another area's map, arriving at its exit back to `from`. */
   travel: (to: AreaId, from: AreaId, arrive: Crossing) => void;
-  /** In an area's map: dev mode frees the camera to see the whole map; off, it holds on the hero. */
-  dev: (on: boolean) => void;
+  /** In an area's map, in dev mode: the free camera over the whole map; off, it holds on the hero. */
+  freeCamera: (on: boolean) => void;
   /** In a talk: the next page, or the end of it. */
   next: () => void;
   /** At a bonfire just rested at: sit by it, the camera drawn in, or stand again; sitting gives the bonfire's name. */
@@ -130,9 +130,9 @@ export interface AtlasApi {
   /** On the atlas: outline a land on its own tier and fly to it; null clears the outline. */
   select: (id: AreaId | null) => void;
   devState: () => DevState;
-  /** Dev: the camera flown to that NPC, and their talk, or their menu if they have one, wherever the hero stands. */
+  /** Dev: their talk, or their menu if they have one, wherever the hero stands; the free camera flies to them. */
   devTalk: (npcId: string) => void;
-  /** Dev: the camera flown in on a cell at the play zoom. */
+  /** Dev: the free camera, on, flown in on a cell at the play zoom. */
   devLook: (col: number, row: number) => void;
   /** Dev: writes the save and the live scene. */
   devSet: (patch: { gold?: number; flags?: WorldFlag[]; keys?: string[]; slain?: string[] }) => void;
@@ -167,6 +167,7 @@ export interface DevState {
   /** The folk standing on this area's map. */
   npcs: DevNpc[];
   exits: DevExit[];
+  free: boolean;
 }
 
 /** A bonfire as the atlas marks it: on its area's own map, named, whether the captain sits at it, and whether it is lit. */
@@ -204,8 +205,10 @@ export interface AtlasHooks {
   arrive?: Crossing;
   /** The hero's health and flasks carried across a crossing; a rest or a reload starts whole. */
   carry?: { hp: number; flasks: number; band: number[] };
-  /** Dev mode: the camera free over the whole area map, not held on the hero. */
+  /** Dev mode: the tools, on the dev route only. */
   dev?: boolean;
+  /** Dev mode's free camera, carried across a crossing. */
+  free?: boolean;
   /** Asks the page to travel through an exit to another area. */
   onExit?: (exit: Departure) => void;
   /** Asks the page to show an area's card, or with null (a click on no land) to close it. */
@@ -939,6 +942,7 @@ export class AtlasScene extends Phaser.Scene {
   private heard = new Set<string>();
   private flags = new Set<WorldFlag>();
   private dev = false;
+  private free = false;
   private devKey = "";
   private devText: Phaser.GameObjects.Text[] = [];
   /** Where the free camera (dev mode, the world map) is kept, in px: the island with a margin, or the whole atlas. */
@@ -1020,6 +1024,7 @@ export class AtlasScene extends Phaser.Scene {
     this.gone = false;
     this.district = { name: "", next: "", since: 0, shown: new Set<string>() };
     this.dev = !!data.dev;
+    this.free = this.dev && !!data.free;
     this.devKey = "";
     this.devText = [];
     this.freeBox = null;
@@ -1210,7 +1215,7 @@ export class AtlasScene extends Phaser.Scene {
       this.district.name = districtOf(local, near.col, near.row)?.name ?? "";
       this.district.shown.add(this.district.name);
       this.input.keyboard?.on("keydown-E", (e: KeyboardEvent) => this.interact(e.repeat));
-      this.setDev(this.dev);
+      this.setFree(this.free);
       if (this.hooks.arrive === "fall") {
         // Dropped in: the hero comes down onto the spot and lands with a jolt.
         const s = this.hero!.s;
@@ -1233,9 +1238,9 @@ export class AtlasScene extends Phaser.Scene {
       },
       travel: (to, from, arrive) => {
         const carry = arrive === "rest" || !this.hero ? undefined : { hp: this.hero.hp, flasks: this.flasks, band: this.band.map((c) => (c.dead ? 0 : c.hp)) };
-        this.scene.restart({ ...this.hooks, area: to, from, arrive, dev: this.dev, carry });
+        this.scene.restart({ ...this.hooks, area: to, from, arrive, free: this.free, carry });
       },
-      dev: (on) => this.setDev(on),
+      freeCamera: (on) => this.setFree(on),
       next: () => (this.reading ? this.read(null) : this.nextPage()),
       sit: (on) => this.sit(on),
       look: (cover) => this.frameSack(cover),
@@ -1265,7 +1270,10 @@ export class AtlasScene extends Phaser.Scene {
       back: () => this.back(),
       devState: () => this.devState(),
       devTalk: (id) => this.devTalk(id),
-      devLook: (col, row) => this.flyTo({ col: col + 0.5, row: row + 0.5 }, AREA_ROWS),
+      devLook: (col, row) => {
+        if (!this.free) this.setFree(true);
+        this.flyTo({ col: col + 0.5, row: row + 0.5 }, AREA_ROWS);
+      },
       devSet: (patch) => this.devSet(patch),
       tier: (id) => this.show(id),
     });
@@ -1530,7 +1538,7 @@ export class AtlasScene extends Phaser.Scene {
       const w = this.active.getWorldPoint(p.x, p.y);
       const cell = { col: Math.floor(w.x / CELL), row: Math.floor(w.y / CELL) };
       // A bonfire mark, an exit travels, else the area under the pointer.
-      const folk = this.dev && this.hero ? this.folk.filter((f) => tileDistance(f.at, cell) <= 1).sort((a, b) => tileDistance(a.at, cell) - tileDistance(b.at, cell))[0] : undefined;
+      const folk = this.free && this.hero ? this.folk.filter((f) => tileDistance(f.at, cell) <= 1).sort((a, b) => tileDistance(a.at, cell) - tileDistance(b.at, cell))[0] : undefined;
       if (folk) return this.devTalk(folk.npc.id);
       const fire = this.markAt.findIndex((m) => m.tier === this.view && Math.abs(m.cell.col - cell.col) <= 2 && Math.abs(m.cell.row - cell.row) <= 2);
       if (fire >= 0) return this.hooks.onFire?.(fire);
@@ -1640,16 +1648,17 @@ export class AtlasScene extends Phaser.Scene {
     this.bases.push({ x0: cx - half, x1: cx + half, y0: y1 - (new Set(cells.map(([, r]) => r)).size - 0.5) * CELL, y1 });
   }
 
-  /** In play: an area map with the hero on it and dev mode off. */
+  /** In play: an area map with the hero on it and the free camera off. */
   private get playing(): boolean {
-    return !!this.hero && !this.dev;
+    return !!this.hero && !this.free;
   }
 
-  /** Dev mode frees the camera over the whole map; off, it holds on the hero at the play zoom. */
-  private setDev(on: boolean): void {
-    this.dev = on;
+  /** The free camera over the whole map, the hero stood still; off, it holds on the hero at the play zoom. */
+  private setFree(on: boolean): void {
+    on &&= this.dev;
+    this.free = on;
     this.shieldUp = false;
-    this.hooks.dev = on;
+    this.hooks.free = on;
     this.devLabels();
     this.devKey = "";
     this.emitDev();
@@ -2092,7 +2101,7 @@ export class AtlasScene extends Phaser.Scene {
   /** The camera in close on the captain, centred in the screen the sack leaves clear; one that covers it all just shuts. */
   private frameSack(cover: number): void {
     // Only on a change: the sack reports 0 as it mounts and unmounts, which must not cut into the intro's shot.
-    if (!this.hero || this.close || this.dev || this.gone || cover === this.sackCover) return;
+    if (!this.hero || this.close || this.free || this.gone || cover === this.sackCover) return;
     this.sackCover = cover;
     const cam = this.active;
     const base = this.zoomFor(AREA_ROWS);
@@ -2104,7 +2113,7 @@ export class AtlasScene extends Phaser.Scene {
   /** The opening shot: in close on the captain waking, then easing back to the play view; the map is never shown whole. */
   private intro(hold: number, fly: number, done: () => void): void {
     const hero = this.hero;
-    if (!hero || !this.local || this.dev) return done();
+    if (!hero || !this.local || this.free) return done();
     const cam = this.active;
     this.gone = true;
     hero.way = [];
@@ -3679,7 +3688,7 @@ export class AtlasScene extends Phaser.Scene {
     if (this.menu) return void (!repeat && this.choose());
     if (this.reading) return void (!repeat && this.read(null));
     if (this.talk) return void (!repeat && this.nextPage());
-    // Dev mode carries on a talk or menu opened by a click, but starts nothing on E.
+    // The free camera carries on a talk or menu opened by a click, but starts nothing on E.
     if (!this.playing) return;
     const t = this.eTarget();
     if (!t || repeat) return;
@@ -3806,12 +3815,13 @@ export class AtlasScene extends Phaser.Scene {
         f.near = true;
         f.s.setFlipX(hero.s.x < f.s.x);
       } else if (d > TALK_RANGE + 1) f.near = false;
-      if (this.talk?.folk === f && d > TALK_RANGE) {
+      // Dev mode talks from anywhere, so a talk there is not walked away from.
+      if (this.talk?.folk === f && d > TALK_RANGE && !this.dev) {
         this.talk = null;
         this.say();
         this.callOut(f, f.npc.part);
       }
-      if (this.menu?.folk === f && d > TALK_RANGE) this.closeMenu(true);
+      if (this.menu?.folk === f && d > TALK_RANGE && !this.dev) this.closeMenu(true);
     }
     if (this.reading && tileDistance(this.reading.at, hero.at) > 1) this.read(null);
     const t = this.talk || this.menu || this.reading || hero.dead || this.gone ? undefined : this.eTarget();
@@ -3878,6 +3888,7 @@ export class AtlasScene extends Phaser.Scene {
       heard: [...this.heard],
       npcs: this.folk.map((f) => ({ id: f.npc.id, name: f.npc.name, col: f.at.col, row: f.at.row, shop: !!f.npc.shop, here: true })),
       exits: (local?.exits ?? []).map((e) => ({ name: e.name, to: e.to, col: e.at.col, row: e.at.row, barred: barred(e) })),
+      free: this.free,
     };
   }
 
@@ -3896,7 +3907,7 @@ export class AtlasScene extends Phaser.Scene {
     this.names = this.names.filter((n) => !gone.has(n.text));
     for (const t of this.devText) t.destroy();
     this.devText = [];
-    if (!this.dev || !this.local) return;
+    if (!this.free || !this.local) return;
     const label = (x: number, y: number, s: string, color: string): void => {
       const t = this.add.text(x, y, s, { fontFamily: FONT, fontSize: "24px", fontStyle: "bold", color, stroke: "#1c2634", strokeThickness: 5 }).setOrigin(0.5, 1).setDepth(DEPTH.fx + 3);
       this.names.push({ text: t, px: 12, tier: this.view });
@@ -3909,7 +3920,7 @@ export class AtlasScene extends Phaser.Scene {
   private devTalk(id: string): void {
     const f = this.folk.find((x) => x.npc.id === id);
     if (!f || !this.hero) return;
-    this.flyTo({ col: f.at.col + 0.5, row: f.at.row + 0.5 }, AREA_ROWS);
+    if (this.free) this.flyTo({ col: f.at.col + 0.5, row: f.at.row + 0.5 }, AREA_ROWS);
     this.closeMenu(false);
     this.talk = null;
     this.read(null);
@@ -3931,8 +3942,8 @@ export class AtlasScene extends Phaser.Scene {
     this.clampFree();
     const act = this.active;
     if (this.hero) {
-      // Dev mode takes the hero out of the world: nothing walks, greets, prompts, picks up or parts for it.
-      if (!this.dev) {
+      // The free camera takes the hero out of the world: nothing walks, greets, prompts, picks up or parts for it.
+      if (!this.free) {
         // A long stall (a tab in the background) is not a long stride.
         this.fight(time, Math.min(delta, 100));
         this.mind();
@@ -3959,8 +3970,8 @@ export class AtlasScene extends Phaser.Scene {
         const arena = this.local?.arena;
         const inRoom = !!arena && this.mist.length === 0 && districtOf(this.local!, hero.at.col, hero.at.row)?.name === this.roomOf(arena);
         const seen = (f: Foe): boolean => this.active.worldView.contains(f.s.x, f.s.y);
-        // No fight in dev mode, and its whole-map camera has every boss in view.
-        const boss = hero.dead || this.dev
+        // No fight under the free camera, and its whole map has every boss in view.
+        const boss = hero.dead || this.free
           ? undefined
           : this.foes.find((f) => this.isBoss(f) && !f.dead && (f.kind === arena?.boss ? inRoom && seen(f) : tileDistance(f.at, hero.at) <= f.stats.leash));
         const name = boss && this.local?.bosses.slice().sort((a, b) => tileDistance(a, boss.home) - tileDistance(b, boss.home))[0]?.name;

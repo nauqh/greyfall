@@ -163,6 +163,7 @@ export {
   AREA_CODE,
   ATLAS_SIZE,
   FLYING,
+  LANDS,
   SEA_KINDS,
   WATER_ART,
   LIFTS,

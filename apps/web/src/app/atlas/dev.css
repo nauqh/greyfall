@@ -1,62 +1,151 @@
 /* Dev mode's panel: the band panel's dark glass, docked right, above the purse and clear of the talk at the foot. */
 .devPanel {
+	--gold: #c9a35c;
+	--ink: #fdfaf0;
+	--dim: rgb(253 250 240 / 0.62);
+	--line: rgb(201 163 92 / 0.22);
+	--field: #1c2634;
+
 	position: absolute;
 	top: 16px;
 	right: 16px;
 	z-index: 6;
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
-	width: min(280px, calc(100vw - 32px));
+	gap: 8px;
+	width: min(292px, calc(100vw - 32px));
 	max-height: calc(100dvh - 96px);
 	overflow-y: auto;
-	padding: 8px 12px 10px;
-	border-radius: 4px;
-	background: rgb(7 10 16 / 0.8);
-	color: #fdfaf0;
+	padding: 10px 12px 12px;
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	background: rgb(7 10 16 / 0.84);
+	box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+	backdrop-filter: blur(6px);
+	color: var(--ink);
 	font: 700 13px "Nunito", "Segoe UI", sans-serif;
+	/* Native controls, the select's list and the scrollbar drawn dark, ticked in gold. */
+	color-scheme: dark;
+	accent-color: var(--gold);
+	scrollbar-color: #9c8150 transparent;
 }
 
-.devPanel summary {
-	cursor: pointer;
-	color: #c9a35c;
+.devPanel :focus-visible {
+	outline: 2px solid var(--gold);
+	outline-offset: 1px;
 }
 
-.devPanel summary b {
-	color: #fdfaf0;
+.devHead {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
 }
 
-.devPanel dl {
-	display: grid;
-	grid-template-columns: auto 1fr;
-	gap: 2px 10px;
+.devHead h2 {
 	margin: 0;
+	color: var(--gold);
+	font-size: 12px;
+	font-weight: 800;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
 }
 
-.devPanel dd {
-	margin: 0;
-}
-
-.devPanel ul {
-	margin: 2px 0 0;
-	padding-left: 16px;
+.devHead kbd {
+	color: var(--dim);
+	font-family: inherit;
+	font-size: 11px;
 	font-weight: 400;
-	word-break: break-all;
 }
 
 .devPanel select,
 .devPanel input[type="number"] {
 	min-width: 0;
-	padding: 1px 4px;
+	padding: 3px 6px;
 	border: 1px solid #6b5740;
-	border-radius: 3px;
-	background: #1c2634;
+	border-radius: 4px;
+	background: var(--field);
 	color: inherit;
 	font: inherit;
 }
 
-.devPanel input[type="number"] {
-	width: 90px;
+.devArea {
+	width: 100%;
+}
+
+.devActions {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 6px;
+}
+
+.devStats {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	align-items: center;
+	gap: 3px 10px;
+	margin: 0;
+	padding: 6px 8px;
+	border-radius: 4px;
+	background: rgb(255 255 255 / 0.04);
+}
+
+.devStats dt {
+	color: var(--dim);
+	font-weight: 400;
+}
+
+.devStats dd {
+	margin: 0;
+}
+
+.devStats input[type="number"] {
+	width: 96px;
+}
+
+.devPanel details {
+	padding-top: 6px;
+	border-top: 1px solid var(--line);
+}
+
+.devPanel summary {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 4px;
+	list-style: none;
+	color: var(--gold);
+	cursor: pointer;
+}
+
+.devPanel summary::-webkit-details-marker {
+	display: none;
+}
+
+.devPanel summary::before {
+	content: "▸";
+	font-size: 10px;
+	transition: rotate 120ms ease;
+}
+
+.devPanel details[open] > summary::before {
+	rotate: 90deg;
+}
+
+.devPanel summary b {
+	margin-left: auto;
+	padding: 0 6px;
+	border-radius: 8px;
+	background: var(--line);
+	color: var(--ink);
+	font-size: 11px;
+}
+
+.devPanel ul {
+	margin: 0;
+	padding-left: 16px;
+	color: var(--dim);
+	font-weight: 400;
+	word-break: break-all;
 }
 
 .devRow {
@@ -64,7 +153,12 @@
 	align-items: center;
 	justify-content: space-between;
 	gap: 8px;
-	padding: 1px 0;
+	padding: 2px 4px;
+	border-radius: 3px;
+}
+
+.devRow:hover {
+	background: rgb(255 255 255 / 0.06);
 }
 
 .devLink {
@@ -77,26 +171,48 @@
 	cursor: pointer;
 }
 
-.devLink:hover {
-	text-decoration: underline;
+.devTag {
+	margin-left: 6px;
+	padding: 0 5px;
+	border-radius: 8px;
+	background: var(--line);
+	color: var(--gold);
+	font-size: 11px;
+	font-style: normal;
 }
 
-.devRow select {
-	flex: 1;
+.devBarred {
+	background: rgb(232 143 122 / 0.15);
+	color: #e88f7a;
+}
+
+.devGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1px 8px;
 }
 
 .devCheck {
 	display: flex;
 	align-items: center;
-	gap: 6px;
+	gap: 5px;
+	min-width: 0;
+	color: var(--dim);
+	font-size: 12px;
 	font-weight: 400;
+	overflow-wrap: anywhere;
+	cursor: pointer;
+}
+
+.devCheck:has(:checked) {
+	color: var(--ink);
 }
 
 .devBtn {
 	flex: none;
-	padding: 0 8px;
-	border: 1px solid #c9a35c;
-	border-radius: 3px;
+	padding: 3px 8px;
+	border: 1px solid var(--gold);
+	border-radius: 4px;
 	background: rgb(242 212 138 / 0.15);
 	color: inherit;
 	font: inherit;
@@ -107,14 +223,7 @@
 	background: rgb(242 212 138 / 0.35);
 }
 
-/* The panel folded away: a tab where its corner was. */
-.devTab {
-	position: absolute;
-	top: 16px;
-	right: 16px;
-	z-index: 6;
-	padding: 4px 12px;
-	background: rgb(7 10 16 / 0.8);
-	color: #fdfaf0;
-	font: 700 13px "Nunito", "Segoe UI", sans-serif;
+.devRow .devBtn {
+	padding: 0 8px;
+	font-size: 12px;
 }

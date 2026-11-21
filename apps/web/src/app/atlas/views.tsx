@@ -195,13 +195,12 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   }).current;
   // The HUD hides with H; there is no button for it on an area map.
   const [hud] = useHud();
-  // Dev mode, on the dev route only: the camera free over the whole map; the backquote key toggles it to play.
-  const [dev, setDev] = useState(devRoute);
-  const toggleDev = (): void =>
-    setDev((on) => {
-      api.current?.dev(!on);
-      return !on;
-    });
+  // Dev mode, on the dev route only: the backquote key toggles its free camera over the whole map.
+  const free = devState?.free ?? devRoute;
+  const toggleFree = (): void => {
+    const a = api.current;
+    a?.freeCamera(!a.devState().free);
+  };
   // Every save of a run, so the captain comes ashore at the Landing again, alone; settings and the duel name stay.
   const newGame = (): void => {
     if (!window.confirm("Start a new game? Your gold, band, bonfires and slain bosses are lost.")) return;
@@ -257,7 +256,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   useEffect(() => {
     if (!devRoute) return;
     const key = (e: KeyboardEvent): void => {
-      if (e.key === "`" && !(e.target instanceof HTMLInputElement)) toggleDev();
+      if (e.key === "`" && !(e.target instanceof HTMLInputElement)) toggleFree();
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
@@ -272,6 +271,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
           hooks.from = (q.get("from") as AreaId | null) ?? undefined;
           if (q.has("rest")) hooks.arrive = "rest";
           hooks.dev = devRoute;
+          hooks.free = devRoute;
           try {
             now.current.prologue = !devRoute && first === "landing" && localStorage.getItem("greyfall.prologue") !== "1";
           } catch {}
@@ -324,7 +324,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
           <TravelMap
             from={now.current.area}
             travel={atlas === "travel"}
-            dev={dev}
+            dev={devRoute}
             onBack={closeAtlas}
             onTravel={(f) => {
               closeAtlas();
@@ -354,7 +354,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
             )}
           </div>
         )}
-        {dev && devState && !atlas && (
+        {devRoute && devState && hud && !atlas && (
           <DevPanel
             state={devState}
             api={api}
@@ -489,8 +489,8 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
                 New game
               </button>
               {devRoute && (
-                <button className="linkBtn" type="button" onClick={toggleDev} aria-pressed={dev} title="See the whole map (`)">
-                  {dev ? "Play" : "Dev: whole map"}
+                <button className="linkBtn" type="button" onClick={toggleFree} aria-pressed={free} title="See the whole map (`)">
+                  Free camera
                 </button>
               )}
             </div>
