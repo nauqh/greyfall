@@ -803,6 +803,8 @@ interface Pile {
   at: Cell;
   gold: number;
   item?: ItemName;
+  /** The kind of the boss whose key this is. */
+  key?: string;
   s: Phaser.GameObjects.Image;
   stone?: string;
   lost?: boolean;
@@ -925,6 +927,8 @@ export class AtlasScene extends Phaser.Scene {
   /** The monster the captain last struck: on "attack my target", the band goes for it. */
   private lastHit: Foe | null = null;
   private piles: Pile[] = [];
+  /** When the banner on screen goes, so the next waits its turn. */
+  private heraldUntil = 0;
   /** The tiles under what a missile cannot pass, as "col,row". */
   private cover = new Set<string>();
   private readonly blocks = (c: Cell): boolean => this.cover.has(`${c.col},${c.row}`) || isForest(c.col, c.row);
@@ -1011,6 +1015,7 @@ export class AtlasScene extends Phaser.Scene {
     this.bandOrder = "follow";
     this.lastHit = null;
     this.piles = [];
+    this.heraldUntil = 0;
     this.cover = new Set();
     this.gone = false;
     this.district = { name: "", next: "", since: 0, shown: new Set<string>() };
@@ -1197,6 +1202,8 @@ export class AtlasScene extends Phaser.Scene {
       const lost = stored<Lost | null>(LOST, null);
       if (lost?.area === local.area) this.dropGold({ col: lost.col, row: lost.row }, lost.gold, { lost: true });
       for (const t of stored<Thrown[]>(THROWN, [])) if (t.area === local.area) this.dropItem({ col: t.col, row: t.row }, t.item);
+      const boss = local.arena?.boss;
+      if (boss && BOSS_KEY[boss] && remembered(SLAIN).has(boss) && !remembered(KEYS).has(boss) && local.bosses[0]) this.dropKey(local.bosses[0], boss);
       this.input.keyboard?.on("keydown-R", (e: KeyboardEvent) => !e.repeat && this.quaff());
       for (const [n, w] of this.folkHere()) this.addFolk(n, w);
       // Arriving, the area's own name is shown; only the quarters walked into after are.
@@ -1867,7 +1874,8 @@ export class AtlasScene extends Phaser.Scene {
       this.tweens.add({ targets: b.s, alpha: 0, duration: 500, onComplete: () => b.s.destroy() });
       const gold = (b as Foe).stats?.gold;
       if (gold) this.dropGold(b.at, Math.round(gold * this.gear.greed));
-      if (this.isBoss(b as Foe)) this.felled(b as Foe, BOSS_KEY[(b as Foe).kind]);
+      if (this.isBoss(b as Foe)) this.felled(b as Foe);
+      if (this.isBoss(b as Foe) && BOSS_KEY[(b as Foe).kind]) this.dropKey(b.at, (b as Foe).kind);
       return;
     }
     const hero = this.hero!;
@@ -1924,6 +1932,16 @@ export class AtlasScene extends Phaser.Scene {
     this.piles.push({ at: { ...at }, gold, s, ...more });
   }
 
+  /** A boss's key on the ground where it fell, glowing until it is picked up. */
+  private dropKey(at: Cell, kind: string): void {
+    const [x, y] = [(at.col + 0.5) * CELL, (at.row + 0.75) * CELL];
+    const s = this.add.image(x, y, "gold").setOrigin(0.5, 0.62).setScale(0.6).setTint(0xfff0b0).setDepth(standing(y) - 1);
+    const shine = this.add.image(x, y - 10, "glow").setBlendMode(Phaser.BlendModes.ADD).setTint(0xfff0b0).setAlpha(0.7).setDepth(DEPTH.clouds - 2);
+    this.tweens.add({ targets: [s, shine], scale: "*=1.15", duration: 600, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    this.tweens.add({ targets: s, y: { from: y - 40, to: y }, duration: 500, ease: "Bounce.easeOut" });
+    this.piles.push({ at: { ...at }, gold: 0, key: kind, s, shine });
+  }
+
   /** A good on the ground, drawn as a blade: Hollis's gaff is the only one thrown so far. */
   private dropItem(at: Cell, item: ItemName): Phaser.GameObjects.Image {
     const [x, y] = [(at.col + 0.5) * CELL, (at.row + 0.75) * CELL];
@@ -1965,8 +1983,16 @@ export class AtlasScene extends Phaser.Scene {
   private gather(): void {
     const hero = this.hero!;
     if (hero.dead || this.gone) return;
-    for (const p of this.piles.filter((p) => tileDistance(p.at, hero.at) <= 1)) {
+    // A key is walked onto; the rest is swept up from a tile off.
+    for (const p of this.piles.filter((p) => tileDistance(p.at, hero.at) <= (p.key ? 0 : 1))) {
       this.piles.splice(this.piles.indexOf(p), 1);
+      if (p.key) {
+        remember(KEYS, remembered(KEYS).add(p.key));
+        p.shine?.destroy();
+        p.s.destroy();
+        this.herald(`${BOSS_KEY[p.key]} gained`);
+        continue;
+      }
       if (p.item) {
         store(THROWN, stored<Thrown[]>(THROWN, []).filter((t) => t.item !== p.item));
         p.s.destroy();
@@ -2763,24 +2789,32 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** A boss down: it stays down for good, and its key, if it has one, is the captain's. */
-  private felled(boss: Foe, key?: string): void {
+  private felled(boss: Foe): void {
     const kind = boss.kind;
     const name = this.local?.bosses.slice().sort((a, b) => tileDistance(a, boss.home) - tileDistance(b, boss.home))[0]?.name ?? "Enemy";
     remember(SLAIN, remembered(SLAIN).add(kind));
     if (this.local?.arena?.boss === kind) this.liftFog();
-    if (key) remember(KEYS, remembered(KEYS).add(kind));
     const flask = BOSS_FLASK.has(kind);
     if (flask) {
       this.flasks += 1;
       this.hooks.onFlasks?.(this.flasks);
     }
+    this.herald(`${name} fell`);
+    if (flask) this.herald("Flask gained");
+  }
+
+  /** A line across the screen, after any still showing. */
+  private herald(text: string): void {
+    const wait = Math.max(0, this.heraldUntil - this.time.now);
+    this.heraldUntil = this.time.now + wait + 3600;
     const cam = this.cameras.main;
     const t = this.add
-      .text(cam.width / 2, cam.height * 0.4, `${name} fell${key ? `\n${key} gained` : flask ? "\nFlask gained" : ""}`, { fontFamily: FONT, fontSize: "40px", fontStyle: "bold", color: "#f4cf6b", stroke: "#1c2634", strokeThickness: 8, align: "center" })
+      .text(cam.width / 2, cam.height * 0.4, text, { fontFamily: FONT, fontSize: "40px", fontStyle: "bold", color: "#f4cf6b", stroke: "#1c2634", strokeThickness: 8, align: "center" })
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(DEPTH.clouds + 10);
-    this.tweens.add({ targets: t, alpha: { from: 0, to: 1 }, duration: 600, hold: 2400, yoyo: true, onComplete: () => t.destroy() });
+    t.setAlpha(0);
+    this.tweens.add({ targets: t, alpha: { from: 0, to: 1 }, delay: wait, duration: 600, hold: 2400, yoyo: true, onComplete: () => t.destroy() });
   }
 
   /** A hit breaks a monster's wind-up, unless it is one that does not flinch. */
