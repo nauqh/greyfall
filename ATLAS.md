@@ -437,7 +437,7 @@ crossing are gone.
   rises off the summit, and the Sky Bridge runs off it east, raised, to the
   map's edge toward the Greyfall. Its terraces carry cannon batteries on every rim, watchtowers, a raised Gun Platform with
   its own stair, and fenced workshop yards with wood, tools and stores.
-  Reworked after the Harbour and the Emberwood (`docs/crags.md`): the rock
+  Reworked after the Harbour and the Emberwood (`docs/world/tinker-crags/design.md`): the rock
   is stamped whole (`TINKER_ROCK`) and climbed on switchbacks, gnome
   gantries reaching off the fourth step to the Workshop's knob and the
   East Ridge. Tinker Town at its foot is the hub (fire, Nim's goods, the
@@ -629,7 +629,7 @@ crossing are gone.
   tiles off, so two districts' woods mingle at their border. A fire at
   the Cinder Ford is the rest before the bull, and goblin posts hold the
   ford and the climb to Crag Foot.
-  Reworked after the Harbour (`docs/emberwood.md`): two storeys cut by one
+  Reworked after the Harbour (`docs/world/emberwood/design.md`): two storeys cut by one
   river. The floor is the burnt maze; the Boughs are the goblins' raised
   tables over it, Warren Hill and Smoke Bluff joined by the Treetop Walk
   over the Run, the Chief's Mound in the Burn by the Ash Walk to the
@@ -984,7 +984,7 @@ tool icons and ore laid out beside it.
 
 The folk move out into the Reach as you do, after Dark Souls. There is no log and no choice, and you never speak. Where each stands comes from `whereabouts()` in `npcs.ts`, read from world flags. Some flags are set by hearing a talk to its end (`Talk.sets`). Positions change only on entering an area.
 
-The full lines and stations are in [docs/questline.md](docs/questline.md).
+The full lines and stations are in [docs/world/](docs/world/README.md), each land's folk in its own `questline.md`.
 
 
 | Who | Moved on by | Turns up | Ends |

@@ -1,10 +1,12 @@
-# Greyfall lore bible
+# The Shattered Reach
 
 The one telling of the Shattered Reach. Where a README line, an ATLAS
 paragraph, a blurb, a note or a line of dialogue disagrees with this file,
-this file wins and the Audit table below says what to change. Places, people,
+this file and the lands' `lore.md` files win and the Audit table below says what to change. Places, people,
 bosses and plot are the ones already in the game; this file only fixes the
 contradictions between them and the wording.
+
+Each land has its own folder beside this file: its `lore.md`, its folk in `questline.md`, its keepers in `bosses.md`. See [README.md](README.md).
 
 ## Rules
 
@@ -126,46 +128,7 @@ shut its gates and sent none, and the lords rode out alone. The castle over
 the Harbour sent its forty spears under Sergeant Corwin to the moor, to hold
 the barrow seal. Their banners did not return. Corwin did.
 
-The Throne Isle is the Citadel's hall in the sky: the seat its lords kept at
-the gnome-kings' court, joined to the Citadel's keep by the Throne Stair.
-When the Citadel fell the City barred the Gilded Span against it and left
-the isle to the Grey. Imps hold it now, round a seat the Warlord does not
-sit in, and the City's guard hold the span's foot. That is why a black isle
-hangs off the City that refused him.
-
-### The castle falls, the town holds
-
-The Grey came down off the crag. The pines it passed caught and never fell:
-that is the Emberwood, where goblins took the clearings and a bull took the
-hollow.
-
-The bull was the lumber camp's. It hauled the Harbour's timber out through
-the Ember Gate, and the night the goblins came over the Palisade fence it
-was left in its traces when the woodcutters ran. The Grey was in the
-burning wood, and the bull stood in it until the embers took to its hide
-and stayed. The goblins found a thing their fire could not kill, so they
-fed it, walled it in the hollow, and called it lord: the Ember Bull.
-
-The castle over the Harbour fell ward by ward, from the outside in, the way
-the Grey takes anything. First the chapel's bell stopped; nobody below knows
-why, and a warden of stone squats on the bell roof now. With the bell
-silent the Lower Burg turned, its watch one man at a time and its folk to
-thieving. The Ramparts went next: the garrison's iron-shod bull forgot who
-fed him, and goblins came over the wall. The Chapel Ward emptied after.
-
-The Keep alone held. Its steward barred the Keep Gate on the Burg, went out
-the monks' Postern for the Emberwood road with the only key, and did not come
-back. Dunn of the Gate Watch heard him knock at the barred Ember Gate and
-did not open. He went north up the Ash Road, and the Ember Bull gored him
-there; the key hangs from its harness still. Behind the gate the garrison is
-Corwin, boys drilled with broom handles, and Ansel on the wall. The Watch
-Lift that served the castle's watch posts in the sky hangs chained from
-above.
-
-Below the castle, Last Harbour, the town, alone held. It lost its east lane in
-the first nights; the taken carried its people off to the Greyfall's Gallows
-Yard. Then its people barred the gates, kept the harbour, and kept the
-fire, and Old Ferrow kept the watch. No ship has put in for three winters.
+What became of the Throne Isle is in [gilded-city/lore.md](gilded-city/lore.md); how the castle and the wood fell, in [castle/lore.md](castle/lore.md) and [emberwood/lore.md](emberwood/lore.md).
 
 ### Now
 
@@ -174,99 +137,6 @@ nameless and alive. Last Harbour takes them in. From its fire every road
 goes out and comes back: up through the castle for the Ember Key, out the
 Moor Gate or down the Old Well for the two seals' keys, and through the Grey
 Gate to the Warlord.
-
-### The lands
-
-**The sky**
-
-- **Skyward Steps.** Drifting isles that were the castle's watch posts in
-  the sky, from the Cloud Bridge down to the Watch Isle and its lift onto
-  the Keep. Imps pick over a wrecked gold barge. Whoever rides the lift down
-  unchains it for good.
-- **The Gilded City.** The gnome-kings' city of isles, gold behind a shut
-  gate. Its yellow guard hold the walls and the span's foot, the Sun
-  Sentinel keeps the Sun Hall, and the Throne Isle hangs dark off its east
-  end. Its gold has not made it safe, only quiet.
-
-**The surface**
-
-- **Saltreach.** A stilt town of platforms and boardwalks on the western
-  shallows. Its militia wear the City's yellow and take the City's pay to
-  keep the sea road; the Grey has not come down to the water. Pirates hold
-  the far cove, smugglers the steps under the village.
-- **Last Harbour.** The hub: a town in a bowl round the one bonfire, with
-  the Old Well in the hill's cave west of it, the docks below and the castle above. It held.
-- **The Mine Hills.** The Harbour's worked hill, north-east of the town,
-  its quarried face stepping up to a crest over the sea. The best ore came
-  off the deep face under the crest until, one shift in the first winter, it
-  came up grey: cold in the hand, and the men who worked it went slow. The
-  foreman nailed the cave shut, and the hill works only the old face now,
-  which is why its ore is soft. The Grey got into the ground here too; it
-  just got no further.
-- **The Weighhouse and the Lane House.** The east ring's two halls. Every
-  load off the Mine Hills is weighed and paid out at the Weighhouse, on the
-  back street at the hill's foot, before it goes up the castle road to the
-  forge; since the deep face was shut, half its scales stand idle. The Lane
-  House, at the head of the ring's terrace under the Burg road's tower, was
-  the east lane's guild hall. The lane went in the first nights, its people carried
-  off to the Gallows Yard; the few who got out sleep in the hall now, and
-  the town keeps a lamp in its window for the rest.
-- **The castle (Lower Burg, Ramparts, Chapel Ward, Keep).** The Harbour's
-  own castle, climbed ward by ward: the Burg's fallen streets and Hale's
-  square, the Ramparts and the Rampart Bull, the Chapel Ward's cloister,
-  forge yard and the Stone Warden on the bell roof, and the Keep behind the
-  Keep Gate.
-- **Emberwood.** Pine the Grey burned and left standing, still warm under
-  the ash. Goblin warrens, gnolls on Smoke Bluff, and the Ember Bull, the
-  lumber camp's own beast, in the Ember Hollow with the steward's key.
-- **Tinker Crags.** Gnome country: a rock that climbs in five steps to the
-  Tinker Peak, cannons on every rim, Old Bamboo on the fourth step. The
-  gnomes are the gnome-kings' kin left below; their lift off the peak is the
-  old way up, and their Sky Bridge runs east onto the Greyfall's wall.
-- **Barrowmoor.** The old kings' moor. Barrows, the dead on their own roads
-  after dusk, Corwin's forty somewhere under Barrow Field, and the Barrow
-  King on the King's Barrow keeping the barrow seal and the Horned Key.
-- **Lizard Fen.** Reed and black water coiling inward to a chapel of the
-  Order that prays to the Grey as to a god, over a sinkhole that drinks the
-  pools. Lizard-folk guard its stair; a drowned village lies on the way.
-- **The Greyfall.** A crag over a rot marsh, and the Citadel on it: the
-  Lower City, the High City, the Warlord's Hall and the Grey Keep on its
-  crown. The Grey Gate is its front door; the gnomes' Sky Bridge its back.
-
-**The underneath**
-
-- **The Landing and the Bull's Ring.** The sea cave under the Harbour where
-  the tide leaves the wanderer, with notes scratched by those who woke there
-  before, and the Shore Minotaur keeping the fishers' boat out.
-- **The Undercroft.** The Harbour's cisterns and catacombs under the Old
-  Well: black water, spiders in the pillars, smugglers in their nook, the
-  Drowned Chapel where Ysolde's sisters went to pray the Grey out of the
-  water, and the Dig nobody admits to.
-- **Barrow Deeps.** The tombs under the moor, down to the Weaver's Web. The
-  Weaver keeps the deep seal and the second key. Tobin's brother runs the
-  robbers' camp.
-- **The Drowned Hollow.** The bottom of the world: a still, clear lake under
-  the fen, stone trees, gold glowing in the rock, pilgrims of the Order at
-  Pilgrims' Rest, and the Shell Below asleep on its isle.
-
-### The folk
-
-| Who | Where | Their place in it |
-| --- | --- | --- |
-| Old Ferrow | Last Harbour, by the fire | Kept the watch when the town held; keeps the fire now. Sends the wanderer on and says why the Keep is shut. |
-| Tobin | Last Harbour, by the Old Well | His brother went down the well after a coin. Follows him to the Deeps and stays to count what he steals. |
-| Mother Ysolde | Last Harbour, the Upper Town | Of the Order. Her sisters went down to the Drowned Chapel; she follows the one freed down to the Hollow, where the rest kneel drowned. |
-| Wren | Last Harbour, the butts in West Fields | Hires out the Harbour's bows. Goes shooting goblins in the Emberwood once the bull is dead. |
-| Dunstan the Foreman | Last Harbour, the Mine Hills | Boarded the deep face when its ore came up grey, and counts the boards every morning. Feels them warm once the Warlord falls, and still leaves them up. |
-| Maren the Harbourmaster | Last Harbour, the docks | Has watched an empty sea for three winters. Sails on the first ship after the Warlord falls. |
-| The Moor Watchman | Last Harbour, the Moor Watch | Keeps the Moor Gate barred on orders. Once it is opened from the moor, goes to look at the lights, and into the barrows. |
-| Penny | Last Harbour, hiding in West Fields | Escaped when the east lane was taken. Follows the wanderer to the Gallows Yard to be with her mum; freed when the Warlord falls. |
-| Mags the Peddler | The Lower Burg, a nook under the wall | A Saltreach trader in the City's yellow who stayed when the Burg turned. Sells everything that is not a blade. |
-| Hale of the Watch | The Lower Burg, the square | Held the square with six men; watched them turn after the bell stopped. Keeps the Burg's one fire. |
-| Odo the Gunner | The Ramparts, the east tower | Outlived his powder. Saw the bull turn and the goblins come over the wall. |
-| Brenna the Smith | The Chapel Ward, the forge yard | The castle's smith. Puts an edge on the wanderer's sword for gold and ore. |
-| Sergeant Corwin | The Keep, the bailey | Led the castle's forty spears to the moor; came back alone. Hires out lancers; digs his forty out of Barrow Field once the King is dead. |
-| Ansel of the Wall | The Keep, on the wall | Once a wanderer in the castle's blue with a band and a banner; stopped going out. Roused by the bull's death, goes ahead into the Greyfall and dies below the Warlord's Hall unless the Warlord falls first. |
 
 ### What the art can carry
 
@@ -293,10 +163,11 @@ hex shamans, lizards, the minotaur, skulls (the moor's and the tombs'
 dead), spiders, snakes, the troll, turtles, harpoon and paddle sharks,
 bears, pandas, imps, giant bats, bumblebees, bomb fish and thieves, plus
 boats, a pirate tower and fish huts. Bosses are these scaled or tinted: the
-Shore Minotaur, Rampart Bull and Barrow King (minotaur), the Cinder Troll
-and Stone Warden (troll), Old Bamboo (panda), the Weaver (spider), the Shell
-Below (turtle). The Grey Warlord and the Sun Sentinel have no sheet of their
-own (see Open questions). Not drawable, so only ever spoken of: crows,
+Cinder Troll (troll), the Ember Bull (minotaur), the Rampart Boar (pig
+rider), the Stone Warden (giant bat, in stone), the Barrow King (hex shaman),
+Old Bamboo (panda), the Weaver (spider), the Shell Below (turtle) and the Sun
+Sentinel (yellow lancer). The Grey Warlord has no sheet of his own (see Open
+questions). Not drawable, so only ever spoken of: crows,
 eels, the old kings, the gnome-kings, the steward.
 
 ## Glossary
@@ -329,7 +200,7 @@ eels, the old kings, the gnome-kings, the steward.
 | the Watch Lift | The castle's lift to the Steps | the watchtower lift, the sky-lift |
 | the Old Lift | The Chapel Ward's lift to Old Town's foot | |
 | the Old Well | The well in the Lower Town hill's cave, west of the square | |
-| the Shore Minotaur; the bull (folk) | The Bull's Ring keeper | |
+| the Cinder Troll; the troll in the Ring (folk) | The Bull's Ring keeper | the Shore Minotaur (he was swapped out) |
 | the Sky Bridge | The gnomes' high road from the Crags to the Greyfall | for any bridge in the Harbour |
 | the Robbers' Camp | Tobin's brother's camp in the Deeps | for the moor's diggers' camp |
 | the Diggings | The grave-robbers' camp on Barrowmoor (proposed) | |

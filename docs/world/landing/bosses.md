@@ -1,0 +1,13 @@
+# The Landing: the keepers
+
+Each boss fights in an arena area of its own and holds the way on until it falls. Numbers live in the code, not here.
+
+## The Cinder Troll
+
+- **Where:** the Bull's Ring, a cavern past the Landing's tunnels, walked straight into with no fog (area `ring`).
+- **Who:** The Ring's keeper, and the first fight that is a lesson. The folk call him the troll in the Ring. Why a troll of the wood sits in a sea cave is not told.
+- **Guards:** The Boat to Last Harbour.
+- **Its fall:** Falling to him washes the wanderer up at the Harbour's fire (`bullWon`), and Ferrow remarks on it. Killing him is worth a flask more, for good.
+- **Moves:** Club slam, charge, embers that burn, all warned long and light. A charge cut short by the Ring's rocks leaves him dazed and open; a note at the Ring's mouth says so.
+- **Drawn with:** the troll's sheets.
+- **In the code:** stats `FOES.troll` and moves `BOSS_KITS.troll` in [hero.ts](../../../packages/engine/src/hero.ts); the arena is `ring()` in [areas.ts](../../../packages/engine/src/areas.ts); its look, key and flag in `BEAST`, `BOSS_KEY` and `BOSS_FLAG` in [AtlasScene.ts](../../../apps/web/src/game/AtlasScene.ts).

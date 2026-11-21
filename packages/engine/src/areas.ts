@@ -1827,7 +1827,7 @@ function harbour(): AreaMap {
 }
 
 /**
- * The Emberwood (docs/emberwood.md): two storeys cut by one river. The floor is the burnt maze; the Boughs are the
+ * The Emberwood (docs/world/emberwood/design.md): two storeys cut by one river. The floor is the burnt maze; the Boughs are the
  * goblins' tables standing out of the smoke, joined by plank walks; the Ember Run splits the Harbour's bank from the
  * goblins', met only at its crossings. In off the Belfry at the Postern Crag, out by the Ash Road to the bull.
  */
