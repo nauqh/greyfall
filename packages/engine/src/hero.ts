@@ -72,14 +72,15 @@ export const FOES: Partial<Record<string, FoeStats>> = {
   imp: { hp: 22, attack: 6, every: 2.4, windup: 0.6, aggro: 6, leash: 9, speed: 3, gold: 9, flies: true },
   bee: { hp: 8, attack: 3, every: 2.0, windup: 0.45, aggro: 4, leash: 6, speed: 3.2, gold: 2, flies: true },
   // Bosses: never back once slain.
-  // The Landing's end: its moves are BOSS_KITS', warned long, to teach the roll and the guard before the Harbour.
-  minotaur: { hp: 220, attack: 22, every: 2.6, windup: 0.9, poise: true, aggro: 6, leash: 8, speed: 1.9, gold: 80 },
+  // The Ember Hollow's boss, the Ember Bull: its moves are BOSS_KITS'. The Ember Key.
+  minotaur: { hp: 340, attack: 24, every: 2.4, windup: 0.9, poise: true, aggro: 9, leash: 14, speed: 2.0, gold: 150 },
   // The Bull's Wall's boss, after the Taurus Demon: a goblin chief on a war boar, on a wall too narrow to circle. Its
   // moves are BOSS_KITS'; it sees the length of its wall.
   rampartBull: { hp: 300, attack: 24, every: 2.4, windup: 0.85, poise: true, aggro: 10, leash: 40, speed: 2.4, gold: 120 },
   // The Belfry's boss, after the Bell Gargoyles: a stone gargoyle on the bell loft.
   stoneWarden: { hp: 380, attack: 26, every: 2.6, windup: 1.0, poise: true, aggro: 9, leash: 14, speed: 2.0, gold: 160 },
-  troll: { hp: 320, attack: 24, every: 2.4, windup: 1.1, poise: true, aggro: 7, leash: 9, speed: 1.6, gold: 150 },
+  // The Landing's end, the Cinder Troll in the Bull's Ring: its moves are BOSS_KITS', warned long, to teach the roll.
+  troll: { hp: 220, attack: 18, every: 2.8, windup: 1.1, poise: true, aggro: 7, leash: 9, speed: 1.5, gold: 80 },
   // The King's Barrow's hex-priest king, after Gaping Dragon's slowness: the Horned Key.
   barrowKing: { hp: 480, attack: 28, every: 2.6, windup: 1.0, poise: true, aggro: 9, leash: 14, speed: 1.6, gold: 220 },
   // The Deeps' web, after Quelaag: quick and often, lighter blows. The Silk Key.
@@ -119,6 +120,10 @@ export interface BossMove {
   summon?: { kind: string; n: number; cap: number };
   /** A charge cut short by a wall leaves the boss dazed: this many seconds more standing open. */
   stun?: number;
+  /** A charge runs only this many tiles past the mark, so it ends near enough to punish. */
+  past?: number;
+  /** Seconds it stands open after this move, in place of its kit's. */
+  recover?: number;
 }
 
 /** A boss's moves, the seconds it stands open after each, and how it picks the next: by how far off its mark is, what
@@ -136,25 +141,29 @@ export interface BossKit {
 
 /** The bosses with moves of their own, after `ATLAS.md`. Tiles, seconds and points. */
 export const BOSS_KITS: Partial<Record<string, BossKit>> = {
-  // The Cinder Troll: a club slam on a ground circle, a charge down a line, embers tossed to burn.
+  // The Cinder Troll, the Landing's lesson: a club slam on a ground circle, a charge down a line, embers tossed to
+  // burn, each warned long; a charge a rock in the Ring stops dead leaves him dazed and open.
   troll: {
     moves: {
-      slam: { shape: "mark", windup: 1.1, radius: 1, damage: 24 },
-      charge: { shape: "line", windup: 0.9, tiles: 6, width: 1, speed: 12, damage: 20 },
-      toss: { shape: "scatter", windup: 1.0, patches: 3, radius: 2, damage: 5, burn: 4, tick: 0.5 },
+      slam: { shape: "mark", windup: 1.4, radius: 1, damage: 16 },
+      charge: { shape: "line", windup: 1.2, tiles: 6, width: 1, speed: 10, damage: 14, stun: 2.5 },
+      toss: { shape: "scatter", windup: 1.3, patches: 3, radius: 2, damage: 4, burn: 3, tick: 0.6 },
     },
-    recover: 1.3,
+    recover: 1.6,
     pick: (d, last) => (d <= 2 ? "slam" : d > 6 ? null : last === "charge" ? "toss" : "charge"),
   },
-  // The Shore Minotaur, the Landing's lesson: long warnings and only two blows, a horn swipe up close and a rush
-  // that a rock in the Ring stops dead, leaving him dazed and open.
+  // The Ember Bull: a horn swipe up close and a stomp round him after it, so beside him is no safe place; from four
+  // tiles off a rush that ends a tile past the mark and leaves him open, never two rushes running; a rush the pines
+  // round the hollow stop dead leaves him dazed.
   minotaur: {
     moves: {
-      swipe: { shape: "front", windup: 1.0, radius: 1, damage: 18 },
-      rush: { shape: "line", windup: 1.3, tiles: 8, width: 1, speed: 10, damage: 20, stun: 2.5 },
+      swipe: { shape: "front", windup: 0.8, radius: 1, damage: 18 },
+      stomp: { shape: "self", windup: 0.9, radius: 2, damage: 20 },
+      rush: { shape: "line", windup: 1.0, tiles: 9, width: 1, speed: 11, damage: 22, past: 1, recover: 2, stun: 2.5 },
     },
-    recover: 1.2,
-    pick: (d) => (d <= 1 ? "swipe" : d <= 8 ? "rush" : null),
+    recover: 1.1,
+    rage: { at: 0.5, haste: 0.75 },
+    pick: (d, last) => (d <= 1 ? (last === "swipe" ? "stomp" : "swipe") : d >= 4 && d <= 9 && last !== "rush" ? "rush" : null),
   },
   // The Rampart Boar: a goblin chief on the garrison's war boar. On a wall three wide its charge takes the whole wall,
   // rolled through or taken; up close it gores; at range it calls the goblins' cannons down on the wall; raging, it
@@ -250,7 +259,7 @@ export function bossAim(move: BossMove, self: Cell, mark: Cell, open: (c: Cell) 
       const half = Math.floor((move.width ?? 1) / 2);
       const across = Math.abs(dc) >= Math.abs(dr) ? [0, 1] : [1, 0];
       let prev = self;
-      for (let i = 1; n > 0 && i <= (move.tiles ?? 6); i++) {
+      for (let i = 1; n > 0 && i <= Math.min(move.tiles ?? 6, n + (move.past ?? Infinity)); i++) {
         const c = { col: self.col + Math.round((dc * i) / n), row: self.row + Math.round((dr * i) / n) };
         if (move.flies ? !open(c) : !canStep(prev, c)) break;
         for (let k = -half; k <= half; k++) {
@@ -352,7 +361,7 @@ export const ITEMS = {
   "Grey-Iron Edge": { cost: 1200, adds: { attack: 4 }, needs: "Keener Edge", about: "Iron from the chapel's own bell, quenched cold. What it cuts does not quite mend." },
   "Pine Resin": { cost: 450, adds: { flask: 15 }, about: "Sap boiled thick and stirred into the flask. Bitter, but it closes wounds the faster for it." },
   "Banded Shield": { cost: 600, adds: { block: -0.75 }, about: "Oak bound in iron bands. A blow on it jars the arm far less than it ought to." },
-  "Kindled Shard": { cost: 900, adds: { flasks: 1 }, about: "A shard of the fire the troll sat on, burning again now it is gone. One more flask." },
+  "Kindled Shard": { cost: 900, adds: { flasks: 1 }, about: "A shard of the fire the bull lay on, burning again now it is gone. One more flask." },
   "Prospector's Purse": { cost: 500, adds: { greed: 0.25 }, about: "A dead prospector's purse, never quite full. Coin finds its way into it." },
   // Given by the folk, or sold once their questline goes the hard way; a cost of nothing is never sold.
   "The Forty's Banner": { cost: 0, adds: { hp: 40 }, about: "The forty's banner, kept dry under the one who ran. It has been carried further since." },

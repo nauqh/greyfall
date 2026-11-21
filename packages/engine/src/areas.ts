@@ -650,7 +650,7 @@ function crowd(t: Builder, rng: Rng, kind: string, at: Cell, n: number, spread: 
 
 /**
  * The Keep, the castle's crown: the castle between the Harbour and the Burg, its
- * gate off the Burg's west ward shut until the Troll Key is carried. In through
+ * gate off the Burg's west ward shut until the Ember Key is carried. In through
  * the Keep Gate court on the east, the quiet bailey where the Keep's fire burns,
  * the rest after the climb and the troll; up the stair to the castle on its terrace,
  * the wall Ansel watches from, and the Watch Lift up to the sky, shut until ridden
@@ -1141,7 +1141,7 @@ function burg(): AreaMap {
     { to: "harbour", name: "Burg Gate", kind: "open", at: { col: 48, row: 62 }, plain: true },
     { to: "ramparts", name: "Rampart Gate", kind: "open", at: { col: 52, row: 1 }, plain: true },
     { to: "bullwall", name: "The Ladder", kind: "shortcut", at: { col: 56, row: 32 }, shut: "ladderDown" },
-    { to: "keep", name: "Keep Gate", kind: "locked", at: { col: 1, row: 20 }, keys: ["troll"] },
+    { to: "keep", name: "Keep Gate", kind: "locked", at: { col: 1, row: 20 }, keys: ["minotaur"] },
   ];
   const districts: District[] = [
     { name: "Market Row", at: { col: 48, row: 56 }, levels: [1], palette: [4], dress: "greyfall", decor: 1.5 },
@@ -3393,7 +3393,7 @@ function landing(): AreaMap {
 
 /**
  * The Bull's Ring, the sea cave's end and its own area: a round cavern, an arena,
- * fog across both its ways while the Shore Minotaur holds it, the tunnel in from
+ * fog across both its ways while the Cinder Troll holds it, the tunnel in from
  * the cave and the tunnel out to the sea channel, where the fishers' boat crosses to the Harbour.
  * Fall to him and you wash up in the Harbour; he waits, and the boat
  * sails back to him.
@@ -3417,14 +3417,14 @@ function ring(): AreaMap {
   for (const [c, r] of [[23, 22], [29, 17], [27, 24], [22, 18]] as const) prop("bones", c, r);
   for (const [c, r] of [[6, 19], [43, 18]] as const) prop("sconce", c, r);
   prop("boat", 48, 20);
-  t.bosses.push({ name: "Shore Minotaur", area: "ring", col: 26, row: 20 });
-  who("minotaur", 26, 20, { to: { col: 27, row: 20 } });
+  t.bosses.push({ name: "Cinder Troll", area: "ring", col: 26, row: 20 });
+  who("troll", 26, 20, { to: { col: 27, row: 20 } });
   // A note at the Ring's mouth: the lesson in its rocks.
-  const notes: Note[] = [{ at: { col: 9, row: 21 }, text: "Red ground is a blow coming. Lead him into the rocks." }];
+  const notes: Note[] = [{ at: { col: 9, row: 21 }, text: "Red ground is a blow coming. Step out of it, and lead him into the rocks." }];
 
   const exits: AreaExit[] = [
     { to: "landing", name: "Ring Gate", kind: "open", at: { col: 1, row: 20 }, plain: true },
-    { to: "harbour", name: "The Boat", kind: "lift", at: { col: 45, row: 20 }, guard: "minotaur" },
+    { to: "harbour", name: "The Boat", kind: "lift", at: { col: 45, row: 20 }, guard: "troll" },
   ];
   const districts: District[] = [
     { name: "The Bull's Ring", at: { col: 26, row: 20 }, palette: [5], dress: "barrowmoor", decor: 0.6 },
@@ -3433,7 +3433,7 @@ function ring(): AreaMap {
   ];
   const tier = stone(t.finish({}, [{ col: 3, row: 20 }]));
   // No fog: the Ring is the arena, walked straight into from the cave; the bull's guard on the boat holds the way on.
-  const arena = { boss: "minotaur", gate: [], inside: { col: 24, row: 20 } };
+  const arena = { boss: "troll", gate: [], inside: { col: 24, row: 20 } };
   return { ...tier, area: "ring", entry: { col: 3, row: 20 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes, arena };
 }
 
@@ -3512,7 +3512,7 @@ function belfry(): AreaMap {
 
 /**
  * Troll's Hollow: a boss room of its own, a land apart. A round floor of ash in the burning pines, ringed by the
- * goblins' fires, room for every charge the Cinder Troll has; in by the Ash Road from the Emberwood at its south gap,
+ * goblins' fires, room for every rush the Ember Bull has; in by the Ash Road from the Emberwood at its south gap,
  * out by the gnomes' Crag Stair at its north.
  */
 function trollpit(): AreaMap {
@@ -3535,22 +3535,22 @@ function trollpit(): AreaMap {
   }
   for (const [c, r] of [[25, 18], [36, 25], [28, 29], [34, 16], [21, 24], [40, 21]] as const) prop("bones", c, r);
   for (const [c, r] of [[18, 15], [43, 28], [17, 29]] as const) prop("deadTree", c, r, { scale: 0.7 });
-  who("troll", 30, 21, { to: { col: 34, row: 23 } });
-  t.bosses.push({ name: "Cinder Troll", area: "trollpit", col: 30, row: 21 });
+  who("minotaur", 30, 21, { to: { col: 34, row: 23 } });
+  t.bosses.push({ name: "The Ember Bull", area: "trollpit", col: 30, row: 21 });
 
-  const notes: Note[] = [{ at: { col: 31, row: 40 }, text: "It throws fire. Where the ash glows, do not stand." }];
+  const notes: Note[] = [{ at: { col: 31, row: 40 }, text: "Make him run. The pines stop him dead." }];
   const exits: AreaExit[] = [
     { to: "emberwood", name: "The Ash Road", kind: "open", at: { col: 30, row: 44 }, plain: true },
-    { to: "crags", name: "Crag Stair", kind: "open", at: { col: 30, row: 1 }, guard: "troll" },
+    { to: "crags", name: "Crag Stair", kind: "open", at: { col: 30, row: 1 }, guard: "minotaur" },
   ];
   const districts: District[] = [
-    { name: "Troll's Hollow", at: { col: 30, row: 22 }, palette: [1], dress: "greyfall", decor: 1.5, box: { x: 10, y: 8, w: 41, h: 29 } },
+    { name: "The Ember Hollow", at: { col: 30, row: 22 }, palette: [1], dress: "greyfall", decor: 1.5, box: { x: 10, y: 8, w: 41, h: 29 } },
     { name: "The Ash Road", at: { col: 30, row: 40 }, levels: [1], palette: [3], dress: "emberwood", decor: 1 },
     { name: "The Crag Stair", at: { col: 30, row: 4 }, levels: [1], palette: [3], dress: "crags", decor: 1 },
   ];
   const tier = t.finish({}, [{ col: 30, row: 42 }], open);
-  // No fog: the whole land is the arena, walked straight into; the troll's guard on the Crag Stair holds the way on.
-  const arena = { boss: "troll", gate: [], inside: { col: 30, row: 22 } };
+  // No fog: the whole land is the arena, walked straight into; the bull's guard on the Crag Stair holds the way on.
+  const arena = { boss: "minotaur", gate: [], inside: { col: 30, row: 22 } };
   return { ...tier, area: "trollpit", entry: { col: 30, row: 42 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes, arena };
 }
 

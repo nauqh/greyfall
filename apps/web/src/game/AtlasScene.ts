@@ -431,7 +431,8 @@ const BEAST: Record<string, Beast> = {
   spear: { idle: `${EP}Spear Goblin/Spear Goblin_Idle.png`, move: `${EP}Spear Goblin/Spear Goblin_Run.png`, attack: `${EP}Spear Goblin/Spear Goblin_Attack Fast.png`, hit: 5, frame: 256, anchor: 174 / 256 },
   thief: { idle: `${EP}Thief/Thief_Idle.png`, move: `${EP}Thief/Thief_Run.png`, attack: `${EP}Thief/Thief_Attack.png`, frame: 192, anchor: 131 / 192 },
   gnoll: { idle: `${EP}Gnoll/Gnoll_Idle.png`, move: `${EP}Gnoll/Gnoll_Walk.png`, attack: `${EP}Gnoll/Gnoll_Throw.png`, frame: 192, anchor: 133 / 192 },
-  minotaur: { idle: `${EP}Minotaur/Minotaur_Idle.png`, move: `${EP}Minotaur/Minotaur_Walk.png`, attack: `${EP}Minotaur/Minotaur_Attack.png`, frame: 320, anchor: 213 / 320 },
+  // The Ember Hollow's bull, scorched by the wood it lies in.
+  minotaur: { idle: `${EP}Minotaur/Minotaur_Idle.png`, move: `${EP}Minotaur/Minotaur_Walk.png`, attack: `${EP}Minotaur/Minotaur_Attack.png`, frame: 320, anchor: 213 / 320, scale: 1.2, tint: 0xe8a080 },
   // The Bull's Wall's boss: a goblin chief on a war boar, big, its hide iron-dark.
   rampartBull: { idle: `${EP}Extra/Pig Rider Spear Goblin/Pig Rider_Idle.png`, move: `${EP}Extra/Pig Rider Spear Goblin/Pig Rider_Run.png`, attack: `${EP}Extra/Pig Rider Spear Goblin/Pig Rider_Attack.png`, frame: 256, anchor: 0.7, scale: 1.5, tint: 0xc8b0a0 },
   troll: { idle: `${EP}Troll/Troll_Idle.png`, move: `${EP}Troll/Troll_Walk.png`, attack: `${EP}Troll/Troll_Attack.png`, frame: 384, anchor: 296 / 384, scale: 0.8 },
@@ -575,7 +576,7 @@ interface Foe extends Body {
   home: Cell;
   stats: FoeStats;
   /** A blow drawn back: when it lands, and on whom; a boss's, which blow and the cells it falls on. */
-  windup: { at: number; mark: Body; move?: string; aim?: Cell[] } | null;
+  windup: { at: number; mark: Body; move?: string; aim?: Cell[]; dazed?: boolean } | null;
   /** A boss's last blow, so it does not repeat one at range. */
   last?: string;
   /** Until when a boss stands open after a blow: a stone one is hurt in full only then. */
@@ -710,14 +711,14 @@ const GOLD = "greyfall.gold";
 /** Bosses slain, which never come back, and the keys they drop, by the boss's kind. */
 const SLAIN = "greyfall.slain";
 const KEYS = "greyfall.keys";
-const BOSS_KEY: Partial<Record<string, string>> = { troll: "Troll Key", barrowKing: "Horned Key", weaver: "Silk Key" };
+const BOSS_KEY: Partial<Record<string, string>> = { minotaur: "Ember Key", barrowKing: "Horned Key", weaver: "Silk Key" };
 /** What a boss's fall proves, raised from SLAIN on each entry so old saves have it too. */
-const BOSS_FLAG: Partial<Record<string, WorldFlag>> = { troll: "trollKey", barrowKing: "hornedKey", warlord: "warlordDead", shellBelow: "shellDead" };
+const BOSS_FLAG: Partial<Record<string, WorldFlag>> = { minotaur: "trollKey", barrowKing: "hornedKey", warlord: "warlordDead", shellBelow: "shellDead" };
 const BOSSES = new Set(["troll", "minotaur", "rampartBull", "stoneWarden", "barrowKing", "weaver", "shellBelow", "warlord"]);
 /** The exit last gone through, so a crossing lands at the way of the same name when two ways join the same areas. */
 const VIA = "greyfall.via";
-/** A boss whose fall is worth a flask more, for good: the Landing's bull, the reward for going back to him. */
-const BOSS_FLASK: ReadonlySet<string> = new Set(["minotaur"]);
+/** A boss whose fall is worth a flask more, for good: the Landing's troll, the reward for going back to him. */
+const BOSS_FLASK: ReadonlySet<string> = new Set(["troll"]);
 /** A hit flash over: back to the sprite's own colour, its base tint if it has one. */
 function untint(s: Phaser.GameObjects.Sprite): void {
   const tint = s.getData("tint") as number | undefined;
@@ -974,7 +975,7 @@ export class AtlasScene extends Phaser.Scene {
     this.heard = remembered(HEARD);
     this.flags = remembered(FLAGS);
     this.cls = heroClass();
-    // Ashore anywhere past the Ring, whatever was lent on the Landing is gone: by the boat, or washed up off the bull.
+    // Ashore anywhere past the Ring, whatever was lent on the Landing is gone: by the boat, or washed up off the troll.
     const bought = remembered<ItemName>(BOUGHT);
     this.seaTook = data.area && data.area !== "landing" && data.area !== "ring" ? LENT.filter((i) => bought.has(i)) : [];
     if (this.seaTook.length) remember(BOUGHT, new Set([...bought].filter((i) => !LENT.includes(i))));
@@ -1855,9 +1856,9 @@ export class AtlasScene extends Phaser.Scene {
     this.tweens.add({ targets: b.s, alpha: 0.25, duration: 600 });
     // Felled by the boss guarding a way out, as at the Landing's end: the captain wakes past it, at the far side's first fire.
     const kind = (by as Foe | undefined)?.kind;
-    const past = kind === "minotaur" && this.local!.exits.find((e) => e.guard === kind);
+    const past = kind === "troll" && this.local!.area === "ring" && this.local!.exits.find((e) => e.guard === kind);
     if (past) {
-      // Lost, not over, after Elden Ring's Grafted Scion: the bull keeps the Ring and waits to be come back for.
+      // Lost, not over, after Elden Ring's Grafted Scion: the troll keeps the Ring and waits to be come back for.
       this.flag("bullWon");
       const fire = areaMap(past.to).fires[0]!;
       store(REST, { area: past.to, ...fire });
@@ -2604,9 +2605,9 @@ export class AtlasScene extends Phaser.Scene {
 
   /** The wind-up's end: a missile flies, or a blade lands if the mark is still in reach; a roll or a step away is a miss. */
   private land(f: Foe, time: number): void {
-    const { mark, move, aim } = f.windup!;
+    const { mark, move, aim, dazed } = f.windup!;
     f.windup = null;
-    if (move) return this.bossLands(f, move, aim!, time);
+    if (move) return this.bossLands(f, move, aim!, !!dazed, time);
     if (BEAST[f.kind]?.hit) f.s.anims.msPerFrame = 100;
     f.busy = time + PACE.recover * 1000;
     if (mark.dead) return;
@@ -2627,7 +2628,10 @@ export class AtlasScene extends Phaser.Scene {
     const move = kit.moves[name]!;
     const ms = move.windup * 1000 * (this.raging(f) ? kit.rage!.haste : 1);
     const aim = bossAim(move, f.at, mark.at, (c) => isWalkable(c.col, c.row) && !this.shut(c));
-    Object.assign(f, { last: name, way: [], windup: { at: time + ms, mark, move: name, aim }, next: time + f.stats.every * 1000, busy: time + ms });
+    // A charge that stops short of its full run has hit a wall.
+    const reach = Math.min(move.tiles ?? 0, tileDistance(f.at, mark.at) + (move.past ?? Infinity));
+    const dazed = !!move.stun && aim.length < reach * (move.width ?? 1);
+    Object.assign(f, { last: name, way: [], windup: { at: time + ms, mark, move: name, aim, dazed }, next: time + f.stats.every * 1000, busy: time + ms });
     if (Math.abs(mark.s.x - f.s.x) > 4) f.s.setFlipX(mark.s.x < f.s.x);
     f.s.setTintFill(0xffffff);
     this.time.delayedCall(70, () => untint(f.s));
@@ -2644,10 +2648,10 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** A boss's move lands on its cells: a blow, a charge carrying it down its line, ground left burning, or the dead raised. */
-  private bossLands(f: Foe, name: string, aim: Cell[], time: number): void {
+  private bossLands(f: Foe, name: string, aim: Cell[], dazed: boolean, time: number): void {
     const kit = BOSS_KITS[f.kind]!;
     const move = kit.moves[name]!;
-    f.busy = time + kit.recover * 1000;
+    f.busy = time + (move.recover ?? kit.recover) * 1000;
     f.open = f.busy;
     if (this.anims.exists(`beast_${f.kind}_recovery_once`)) {
       f.s.play(`${f.attack}_once`);
@@ -2675,7 +2679,7 @@ export class AtlasScene extends Phaser.Scene {
       const ms = (aim.length / (move.speed ?? 12)) * 1000;
       f.busy += ms;
       // Cut short by a wall: dazed where it stopped.
-      if (move.stun && aim.length < (move.tiles ?? 0) * (move.width ?? 1)) {
+      if (move.stun && dazed) {
         f.busy += move.stun * 1000;
         this.time.delayedCall(ms, () => !f.dead && (this.cameras.main.shake(200, 0.008), this.float(f.s.x, f.s.y - f.lift - 40, "Dazed", "#fdfaf0")));
       }

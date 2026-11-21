@@ -46,7 +46,7 @@ against one over a room code. The design is in
 ## Current state
 
 The Atlas is the focus. The Landing and Harbour are playable; the campaign is
-built area by area: Emberwood and the Cinder Troll are the next slice.
+built area by area: Emberwood and the Ember Bull are the next slice.
 
 The real-time war is playable solo against the red AI. Versus is auto chess:
 three AI clans solo, or one against one online joined by a room code. Each
@@ -54,8 +54,8 @@ planning phase lasts 30s and ends early once both players are ready.
 
 ## Goals
 
-- Finish the Atlas first slice: the Harbour, Emberwood, the Cinder Troll, the
-  Troll Key.
+- Finish the Atlas first slice: the Harbour, Emberwood, the Ember Bull, the
+  Ember Key.
 - Then the rest of the Reach: Barrowmoor, the Tinker Crags, the Greyfall.
 - Balance the war and give the AI real-time play of its own.
 - Lockstep multiplayer on the island. The engine already takes commands

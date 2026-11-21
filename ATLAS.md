@@ -109,7 +109,7 @@ come ashore alone.
   After a rest you sit by the fire, as in Dark Souls 3: Travel opens the
   map to any lit bonfire, and Leave stands you up.
 - **Death.** You wake at the last bonfire you rested at. The exception is a
-  boss who guards a way out, the Shore Minotaur: fall to him and you wake
+  boss who guards a way out, the Cinder Troll in the Ring: fall to him and you wake
   past him. Your carried gold stays where you fell, marked on the map. Reach
   it again and it is yours; die on the way and it is gone.
 - **Shortcuts.** Gates and lifts that open from one side only, such as the
@@ -118,7 +118,7 @@ come ashore alone.
   into a loop.
 - **Keys.** Keys follow Firelink's two bells, one up and one down. The Troll
   Key is the castle's own. Its steward fled into the Emberwood with it when
-  the Grey came, and the Cinder Troll has it now. It opens the Keep Gate.
+  the Grey came, and the Ember Bull has it now (the Ember Key). It opens the Keep Gate.
   Above it stand the bailey and the garrison (Corwin's Lancers), the Keep and
   the Watch Lift to the sky. The Grey Gate takes two other keys, one from each
   way out of the Harbour: the Barrow King's Horned Key, from Barrowmoor out
@@ -134,7 +134,7 @@ All from the Tiny Swords enemy pack.
 
 | Area | Rank and file | Elite | Boss |
 | --- | --- | --- | --- |
-| Emberwood | Torch and spear goblins | Shaman (fire) | Cinder Troll |
+| Emberwood | Torch and spear goblins | Shaman (fire) | Ember Bull |
 | Tinker Crags | Gnomes, slingers, cannons | Panda guard | Old Bamboo |
 | Undercroft | Skeletons, spiders | Skull guard | Ossuary Warden (mini-boss) |
 | Barrowmoor | Skeletons, bats | Skull guard | The Barrow King (minotaur) |
@@ -181,13 +181,13 @@ then walks back. The engine already has a guard leash.
    up the Shore Road.) You come ashore alone.
 
    A bonfire, two goblins, notes on the ground that teach the controls (read
-   with E), and the Shore Minotaur, a tutorial boss in the Bull's Ring. The
+   with E), and the Cinder Troll, a tutorial boss in the Bull's Ring. The
    Ring is a round cavern, walked straight into from the cave's tunnel, with
-   no fog. It is the arena, and the bull guards the boat on. A boss bar with
+   no fog. It is the arena, and the troll guards the boat on. A boss bar with
    his name shows low and centred once you stand in the Ring with him in
    view. Kill him and the road opens. Fall to him and you wash up at the
    Harbour's fire, as after Elden Ring's Grafted Scion: lost, not over. The
-   bull keeps the Ring, the boat goes back to him whenever you like, and
+   troll keeps the Ring, the boat goes back to him whenever you like, and
    his fall is worth a fourth flask for good. Either way the training is
    over.
 2. **The Harbour:** the hub is the village's bowl, after Firelink. The
@@ -202,7 +202,7 @@ then walks back. The engine already has a guard leash.
    The Lower Burg is a town of walled yards and lanes, with the square's
    fire. The Ramparts lead to the Rampart Boar on the Bull's Wall. The Chapel
    Ward holds the Stone Warden, the Old Lift home to Old Town's foot, and
-   the Postern to the Emberwood. The Keep comes last, shut until the Troll Key.
+   the Postern to the Emberwood. The Keep comes last, shut until the Ember Key.
    West, the Lantern Road runs to the fields and the Old Bridge to Saltreach
    (hard). North-west, the Ember Gate is shut from this side and opens later
    from the wood. East, past Lantern Point's lighthouse, the Graves stand on
@@ -213,11 +213,9 @@ then walks back. The engine already has a guard leash.
    solid: no one walks through them.
 3. **The Emberwood:** the first hostile area. Goblin camps through the maze,
    two bonfires, the Treetop Walk shortcut.
-4. **The Cinder Troll** in Troll's Hollow, with three attacks:
-   - **Club slam:** a ground circle that warns before it lands.
-   - **Charge:** a straight line across the arena.
-   - **Ember toss:** fire patches on the ground.
-5. **Reward:** the Troll Key and its gold.
+4. **The Ember Bull** in the Ember Hollow (it was the Cinder Troll's,
+   who now keeps the Ring): a horn swipe, a stomp, a rush that ends by you.
+5. **Reward:** the Ember Key and its gold.
 
 **Done when:** you can walk out of the Harbour, die in the Emberwood, recover
 your gold, open the shortcut, and kill the Troll with a band of two.
@@ -324,12 +322,12 @@ crag, and only that.
 | Surface | Saltreach | militia in the City's yellow and pay, fishing villages, turtles, sharks offshore, pirate towers | |
 | Surface | Last Harbour (hub) | the town's castle on its own height above the town, the bonfire square, the Old Well, pawns at work | |
 | Surface | Emberwood | goblin warrens in pine the Grey burned, the big pines (standing still), gnolls on Smoke Bluff | |
-| Surface | Troll's Hollow | a round floor of ash in the pines, the goblins' fires round it | Cinder Troll |
+| Surface | The Ember Hollow | a round floor of ash in the pines, the goblins' fires round it | The Ember Bull |
 | Surface | Tinker Crags | a rock that climbs in five steps to the Tinker Peak, gnomes, bears, pandas, the Gnome Lift up | Old Bamboo |
 | Surface | Barrowmoor | barrows, bones, the cave down into the King's Barrow | |
 | Surface | Lizard Fen | a chapel of the Order that prays to the Grey, lizards, the sinkhole | |
 | Surface | The Greyfall | the Citadel, the Grey Keep on its crown, the Grey wearing its lord, the Throne Stair up | The Grey Warlord |
-| Below | The Landing (start) | the sea cave where a new game starts, notes in the tunnels that teach the controls, two goblins to learn on | Shore Minotaur |
+| Below | The Landing (start) | the sea cave where a new game starts, notes in the tunnels that teach the controls, two goblins to learn on | Cinder Troll (in the Ring) |
 | Below | The King's Barrow | the throne hall round its ring of pillars | The Barrow King |
 | Below | The Undercroft | cisterns and pillars under the well, a crypt, spiders, a thief | |
 | Below | Barrow Deeps | tomb daises, skull guards, a dead troll's bones | The Weaver (a giant spider) |
@@ -348,7 +346,7 @@ BELOW     The Undercroft ──Cistern Run── Barrow Deeps ──Sinking Stai
 ```
 
 - **Surface gates:**
-  - Open: Old Bridge, Crag Stair (from Troll's Hollow), Fen Causeway, Barrow Path.
+  - Open: Old Bridge, Crag Stair (from the Ember Hollow), Fen Causeway, Barrow Path.
   - Barred: the Ember Gate.
   - Shortcut: the Moor Gate.
   - Locked: the Grey Gate.
@@ -729,7 +727,7 @@ crossing are gone.
   (`keep`), the castle's crown, its own area where the harbour's castle
   and Keep terraces used to be: in at the Keep Gate off the Burg's Upper
   Streets (an exit with a `key`, barred by the pack's fence until the
-  Troll Key is carried), the gate court, the bailey (Corwin at the
+  Ember Key is carried), the gate court, the bailey (Corwin at the
   barracks, the Keep's bonfire; no guns or drill, so after the Burg and
   the troll it reads as a rest, like Firelink), and the castle on its terrace a
   stair up, Ansel on the wall, the Watch Lift up to the Skyward Steps,
@@ -752,7 +750,7 @@ crossing are gone.
   Door, no way round him; the Ladder to the Burg drops off it past him.
   The Belfry (`belfry`): the bell loft alone, cramped round the bell's
   timber frame (a fence), from the chapel terrace's Bell Stair to the
-  Postern down to the Emberwood. Troll's Hollow (`trollpit`): a round floor
+  Postern down to the Emberwood. The Ember Hollow (`trollpit`): a round floor
   of ash walled by pines and ringed by fires, room for every charge, from
   the Emberwood's Ash Road to the Crag Stair, so the Crags now come after
   the troll. The King's Barrow (`barrow`, under the moor): the throne hall
@@ -781,7 +779,7 @@ crossing are gone.
   moor's dead along the Moor Gate road, the mine's ore carried to the
   smith; the lighthouse keeps gold and a note. Notes on the ground at the
   well's lip, on the Keep looking east, and at the lighthouse. The castle's stairs are an
-  area `lock`: shut until the Troll Key is carried, or opened from inside
+  area `lock`: shut until the Ember Key is carried, or opened from inside
   by coming down the Watch Lift.
   Reworked since, and what holds now: the hub is the bowl's fire in the
   village, the Harbour's one bonfire (a corner hub with the way on in the
@@ -874,16 +872,20 @@ back; it is remembered on the browser and carries across crossings.
 ## Not done yet
 
 - The hero walks, fights, rolls, rests at bonfires, drinks flasks, picks
-  up gold and leads a band hired in the Harbour. The Cinder Troll drops
-  the Troll Key, which opens the Keep Gate.
-- Eight bosses can be killed: the Minotaur, Rampart Boar, Stone Warden,
-  Cinder Troll, Barrow King, Weaver, Shell Below and Grey Warlord. Five
-  fight with moves of their own (`BOSS_KITS` in `hero.ts`), each warned
-  on the ground for its wind-up; the last three hurry below half health:
-  - The Shore Minotaur, the lesson: a horn swipe and a rush, both warned
-    long, and a rush cut short by the Ring's rocks leaves him dazed and
-    open; a note at the Ring's mouth says so.
-  - The Cinder Troll: club slam, charge, embers that burn.
+  up gold and leads a band hired in the Harbour. The Ember Bull drops
+  the Ember Key, which opens the Keep Gate.
+- Eight bosses can be killed: the Cinder Troll, Rampart Boar, Stone
+  Warden, Ember Bull, Barrow King, Weaver, Shell Below and Grey Warlord.
+  Five fight with moves of their own (`BOSS_KITS` in `hero.ts`), each
+  warned on the ground for its wind-up; the last four hurry below half
+  health:
+  - The Cinder Troll, in the Ring, the lesson: club slam, charge, embers
+    that burn, all warned long and light; a charge cut short by the Ring's
+    rocks leaves him dazed and open; a note at the Ring's mouth says so.
+  - The Ember Bull, in the Ember Hollow: a horn swipe and a stomp round
+    him after it up close; from four tiles off a rush that ends a tile past
+    the mark and leaves him open, never two running; the pines round the
+    hollow stop a rush and daze him.
   - The Rampart Boar (the pig rider's sheets): a gore up close, a charge
     the whole width of its wall, the goblins' cannons scattered down on
     the wall, and raging, its spearmen called up onto the wall.
@@ -943,12 +945,12 @@ The full lines and stations are in [docs/questline.md](docs/questline.md).
 | Mother Ysolde | the sister freed, then a talk | Undercroft, the Drowned Chapel; then the Hollow, Pilgrims' Rest | Shell Below alive: kneels over her sisters for good, and Jory sells her candle. Shell Below dead: walks home to the Upper Town and gives the Sister's Candle |
 | A Drowned Sister | her second talk | Undercroft, the Drowned Chapel | Freed, walks with the wanderer as the Monk |
 | The Pilgrim | | the Hollow, Pilgrims' Rest | Gives Hollow Water; lies dead once the Shell Below is killed |
-| Ansel of the Wall | his remark on the Troll Key | The Greyfall, the Ashen Approach | Hear him out twice and he goes ahead and dies in the High City, and Brenna sells his edge; kill the Warlord first and he is back on the wall and gives Ansel's Edge |
+| Ansel of the Wall | his remark on the Ember Key | The Greyfall, the Ashen Approach | Hear him out twice and he goes ahead and dies in the High City, and Brenna sells his edge; kill the Warlord first and he is back on the wall and gives Ansel's Edge |
 | Penny | her crows talk, then reaching the Greyfall | The Greyfall, Gallows Yard, penned with her mum | Talked to: freed in the Yard when the Warlord falls. Never talked to: stays hidden, her mum walks home. Mum's Bread either way |
 | Sergeant Corwin | the Barrow King dead | Barrowmoor, Barrow Field, digging out his forty | Watchman heard out: finds the fortieth and gives the Forty's Banner. Otherwise: stops at thirty-nine |
 | The Moor Watchman | his remark on the open Moor Gate | Barrowmoor, Gibbet Hill, watching the lights | Lies dead in Barrow Field once the King is dead, the fortieth of Corwin's spears |
 | Maren | her remark on the Warlord dead | | Sails on the first ship in three winters, and Mags stocks the Salt-Glass Flask; missed only by never hearing her sail talk |
-| Wren | the Troll Key | Emberwood, Old Pines | Stays, shooting; remarks on Penny gone |
+| Wren | the Ember Key | Emberwood, Old Pines | Stays, shooting; remarks on Penny gone |
 | The Last One | | Barrowmoor, the Grey Road, dead from the start | Ferrow's last one, who went east; never named |
 | Old Ferrow, Brenna, Mags | | | Stay; remark on the folk's news. Brenna and Mags sell what the questlines turn up |
 | Hale, Odo | | | Stay at their posts in the Burg and on the Ramparts |

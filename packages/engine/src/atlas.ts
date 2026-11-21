@@ -208,7 +208,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "emberwood",
     tier: "surface",
     name: "Emberwood",
-    blurb: "Pine that caught when the Grey left the Citadel and has burned without falling since. Goblins hold the clearings, a troll holds the hollow, and the cinder is still warm underfoot.",
+    blurb: "Pine that caught when the Grey left the Citadel and has burned without falling since. Goblins hold the clearings, a bull holds the hollow, and the cinder is still warm underfoot.",
     palette: [4, 4, 4],
     mood: 0xffe2c8,
     rise: 0,
@@ -355,7 +355,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "keep",
     tier: "surface",
     name: "The Keep",
-    blurb: "The castle's crown over the Harbour: its bailey and garrison, the hall, and the Watch Lift up to the sky. Its gate off the Burg opens to the Troll Key.",
+    blurb: "The castle's crown over the Harbour: its bailey and garrison, the hall, and the Watch Lift up to the sky. Its gate off the Burg opens to the Ember Key.",
     palette: [3, 3, 3],
     mood: 0xffffff,
     rise: 1,
@@ -384,8 +384,8 @@ export const AREAS: readonly AtlasArea[] = [
   {
     id: "trollpit",
     tier: "surface",
-    name: "Troll's Hollow",
-    blurb: "A round hollow of ash in the north of the Emberwood, ringed by pines that burn and do not fall. The Cinder Troll keeps it, and past him the gnomes' Crag Stair climbs out of the smoke to the rock.",
+    name: "The Ember Hollow",
+    blurb: "A round hollow of ash in the north of the Emberwood, ringed by pines that burn and do not fall. The Ember Bull keeps it, and past him the gnomes' Crag Stair climbs out of the smoke to the rock.",
     palette: [4, 4, 4],
     mood: 0xffc8a0,
     rise: 0,
@@ -1421,10 +1421,10 @@ function surface(rng: Rng): AtlasTier {
   t.gate("bulls-gate", "The Bull's Gate", "open", "ramparts", "bullwall", { col: 46, row: 21 }, { col: 58, row: 25 }, "Off the walk's east end onto the wall the bull holds.");
   t.gate("chapel-door", "Chapel Door", "open", "bullwall", "chapel", { col: 62, row: 25 }, { col: 71, row: 29 }, "Over the Gun Bridge into the Chapel Ward's cloister.");
   t.gate("bell-stair", "The Bell Stair", "open", "chapel", "belfry", { col: 71, row: 31 }, { col: 60, row: 30 }, "Up off the chapel terrace's west end into the bell tower.");
-  t.gate("keep-gate", "Keep Gate", "locked", "burg", "keep", { col: 40, row: 27 }, { col: 35, row: 25 }, "Off the Burg's Upper Streets, west into the castle's bailey. The Troll Key fits it.");
+  t.gate("keep-gate", "Keep Gate", "locked", "burg", "keep", { col: 40, row: 27 }, { col: 35, row: 25 }, "Off the Burg's Upper Streets, west into the castle's bailey. The Ember Key fits it.");
   t.gate("ember-gate", "Ember Gate", "shortcut", "harbour", "emberwood", { col: 33, row: 36 }, { col: 13, row: 17 }, "A palisade on the causeway north. The town bars it at night.");
-  t.gate("ash-road", "The Ash Road", "open", "emberwood", "trollpit", { col: 32, row: 6 }, { col: 42, row: 6 }, "North out of the burning wood to the troll's hollow.");
-  t.gate("crag-stair", "Crag Stair", "open", "trollpit", "crags", { col: 43, row: 5 }, { col: 55, row: 8 }, "A gnome path past the troll, out of the smoke and up to the rock.");
+  t.gate("ash-road", "The Ash Road", "open", "emberwood", "trollpit", { col: 32, row: 6 }, { col: 42, row: 6 }, "North out of the burning wood to the bull's hollow.");
+  t.gate("crag-stair", "Crag Stair", "open", "trollpit", "crags", { col: 43, row: 5 }, { col: 55, row: 8 }, "A gnome path past the bull, out of the smoke and up to the rock.");
   t.gate("moor-gate", "Moor Gate", "shortcut", "harbour", "barrowmoor", { col: 56, row: 47 }, { col: 63, row: 47 }, "Barred from the moor side. Whoever comes through the moor can open it, and come home the short way.");
   t.gate("fen-causeway", "Fen Causeway", "open", "saltreach", "fen", { col: 16, row: 51 }, { col: 31, row: 68 }, "A long spit of shingle along the south shore.", 2);
   t.gate("barrow-path", "Barrow Path", "open", "fen", "barrowmoor", { col: 38, row: 61 }, { col: 77, row: 56 }, "Duckboards over the reeds, up onto the moor.");
@@ -1502,7 +1502,7 @@ function surface(rng: Rng): AtlasTier {
   who("spear", 22, 10);
   who("gnoll", 26, 12);
   who("thief", 18, 15, { to: { col: 23, row: 15 } });
-  t.bosses.push({ name: "Cinder Troll", area: "trollpit", col: 41, row: 4 });
+  t.bosses.push({ name: "The Ember Bull", area: "trollpit", col: 41, row: 4 });
 
   // Tinker Crags: huts on the low rock, gold on the steps, the lift on the peak.
   prop("gnomeTower", 54, 10);

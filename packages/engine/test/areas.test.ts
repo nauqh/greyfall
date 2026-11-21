@@ -69,9 +69,9 @@ describe.each(MAPPED_AREAS)("the %s area map", (id) => {
 
 });
 
-it("shuts the Keep behind its gate off the Burg until the troll's key, and its Watch Lift until ridden down from the sky", () => {
+it("shuts the Keep behind its gate off the Burg until the bull's key, and its Watch Lift until ridden down from the sky", () => {
   const gate = areaMap("burg").exits.find((e) => e.to === "keep")!;
-  expect(gate.keys).toEqual(["troll"]);
+  expect(gate.keys).toEqual(["minotaur"]);
   const lift = areaMap("keep").exits.find((e) => e.name === "Watch Lift")!;
   expect(lift.shut).toBe("watchLiftOpen");
   expect(areaMap("harbour").exits.some((e) => e.to === "steps")).toBe(false);

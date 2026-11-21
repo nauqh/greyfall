@@ -192,6 +192,8 @@ describe("a boss's moves", () => {
     useIsland({ rows: ["............", ".....%......", "............"], start: { a: { castle: { col: 1, row: 1 }, barracks: { col: 1, row: 1 } }, b: { castle: { col: 1, row: 1 }, barracks: { col: 1, row: 1 } } }, mines: [], lair: { col: 1, row: 1 } });
     const rush = BOSS_KITS.minotaur!.moves.rush!;
     expect(bossAim(rush, { col: 0, row: 1 }, { col: 11, row: 1 }, () => true)).toHaveLength(4);
+    expect(bossAim(rush, { col: 6, row: 1 }, { col: 9, row: 1 }, () => true).at(-1)).toEqual({ col: 10, row: 1 });
+    expect(BOSS_KITS.minotaur!.pick(5, "rush", false)).toBe(null);
   });
   it("tolls a ring round the warden, safe up close", () => {
     const ring = bossAim(BOSS_KITS.stoneWarden!.moves.toll!, { col: 5, row: 5 }, { col: 7, row: 5 }, open);

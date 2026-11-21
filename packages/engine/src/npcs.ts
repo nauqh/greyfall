@@ -8,7 +8,7 @@ import type { Cell } from "./island.ts";
 /** What the world remembers that folk remark on, and that moves them on. */
 export type WorldFlag =
   | "died"
-  // Felled by the bull in the Ring and washed up at the Harbour fire: it waits there still.
+  // Felled by the troll in the Ring and washed up at the Harbour fire: it waits there still.
   | "bullWon"
   | "wellDescended"
   | "monkFreed"
@@ -157,7 +157,7 @@ export const NPCS: readonly Npc[] = [
         id: "bull",
         when: "bullWon",
         lines: [
-          "So the tide brought you back. That bull in the Ring, I'd wager.",
+          "So the tide brought you back. That troll in the Ring, I'd wager.",
           "He'll keep. Take the boat back when your arm is stronger.",
           "Whatever he guards is worth a fall or two. Hm.",
         ],
@@ -174,7 +174,7 @@ export const NPCS: readonly Npc[] = [
         id: "castle",
         lines: [
           "The Keep? Shut, since the Burg turned. Its steward ran for the wood with the key.",
-          "A troll had him for supper, so they say... Still has the key, I'd wager.",
+          "A bull had him for supper, so they say... Still has the key, I'd wager.",
         ],
       },
       {
@@ -194,7 +194,7 @@ export const NPCS: readonly Npc[] = [
       {
         id: "key",
         when: "trollKey",
-        lines: ["That key's warm. Troll's blood, or the fire inside the brute.", "Either way, keep it away from my kindling."],
+        lines: ["That key's warm. Bull's blood, or the fire inside the brute.", "Either way, keep it away from my kindling."],
       },
       {
         id: "warlord",
@@ -224,7 +224,7 @@ export const NPCS: readonly Npc[] = [
     act: "hammer",
     // Each edge a little later, as Andre's titanite and Elden Ring's bell bearings: the better one once a boss falls.
     shop: {
-      stock: [{ item: "Brenna's Edge" }, { item: "Keener Edge", after: "stoneWarden" }, { item: "Grey-Iron Edge", after: "troll" }, { item: "Banded Shield" }, { item: "Ansel's Edge", flag: "anselAhead" }],
+      stock: [{ item: "Brenna's Edge" }, { item: "Keener Edge", after: "stoneWarden" }, { item: "Grey-Iron Edge", after: "minotaur" }, { item: "Banded Shield" }, { item: "Ansel's Edge", flag: "anselAhead" }],
       poor: "Gold first. Then sparks.",
       sold: "That's done. I don't make the same thing twice.",
     },
@@ -251,7 +251,7 @@ export const NPCS: readonly Npc[] = [
       {
         id: "key",
         when: "trollKey",
-        lines: ["Let me see that key... Hm. The Keep's. I cut that blank myself, years back.", "Smells of troll now. Wash it."],
+        lines: ["Let me see that key... Hm. The Keep's. I cut that blank myself, years back.", "Smells of bull now. Wash it."],
       },
       {
         id: "ansel",
@@ -367,7 +367,7 @@ export const NPCS: readonly Npc[] = [
           {
             id: "bluff",
             lines: [
-              "Ha! The troll's dead! The goblins don't know which way to run.",
+              "Ha! The bull's dead! The goblins don't know which way to run.",
               "Best shooting in years. Don't tell the Harbour, they'll want me back being useful.",
             ],
           },
@@ -866,7 +866,7 @@ export const NPCS: readonly Npc[] = [
         when: "trollKey",
         sets: "anselRoused",
         lines: [
-          "The troll. You killed it. With that.",
+          "The bull. You killed it. With that.",
           "...I had a sword once. It's under the bed, I think.",
           "Maybe I've sat long enough. Don't say anything. You'll talk me out of it.",
         ],
@@ -926,9 +926,9 @@ export const NPCS: readonly Npc[] = [
     kind: "pawn",
     act: "gold",
     color: "yellow",
-    // Everything that is not a blade; the deeper fire only once the troll that sat on it is gone.
+    // Everything that is not a blade; the deeper fire only once the bull that lay on it is gone.
     shop: {
-      stock: [{ item: "Ember Shard" }, { item: "Smoked Haunch" }, { item: "Pine Resin" }, { item: "Prospector's Purse" }, { item: "Kindled Shard", after: "troll" }, { item: "Salt-Glass Flask", flag: "marenSails" }],
+      stock: [{ item: "Ember Shard" }, { item: "Smoked Haunch" }, { item: "Pine Resin" }, { item: "Prospector's Purse" }, { item: "Kindled Shard", after: "minotaur" }, { item: "Salt-Glass Flask", flag: "marenSails" }],
       poor: "Hehe. Come back richer, dearie.",
       sold: "That was the only one, dearie.",
     },
@@ -987,7 +987,7 @@ export const NPCS: readonly Npc[] = [
       {
         id: "keep",
         when: "trollKey",
-        lines: ["That's the troll's key on your belt?", "The Keep Gate's off the west alley. Corwin's lancers are behind it, if any are left."],
+        lines: ["That's the bull's key on your belt?", "The Keep Gate's off the west alley. Corwin's lancers are behind it, if any are left."],
       },
       { id: "rest", lines: ["Sit. The fire's the one thing in the Burg that's still ours."] },
     ],
@@ -1074,11 +1074,11 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "If you mean to leave, it's south. Through the flooded cave.",
           "Goblins in there. One slings stones from over the water. Don't give him a still mark.",
-          "Past that, a ring. A bull lives in it. And behind the bull, a boat.",
+          "Past that, a ring. A troll lives in it. And behind the troll, a boat.",
           "...The sea will want my gaff back, when you cross. It takes back what it lends. Always has.",
         ],
       },
-      { id: "still", lines: ["You again? I've nothing left to tell you.", "Go on. The bull won't come to you... Heh heh..."] },
+      { id: "still", lines: ["You again? I've nothing left to tell you.", "Go on. The troll won't come to you... Heh heh..."] },
     ],
   },
 ];
