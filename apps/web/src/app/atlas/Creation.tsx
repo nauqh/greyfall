@@ -22,7 +22,7 @@ export const CLASS_ROWS: { cls: HeroClass; name: string; kit: string; idle: stri
     frames: 8,
     frame: 192,
     feet: 136,
-    about: "The levy's oldest trade: a blade, a board of oak, and the nerve to stand inside a monster's reach. Two quick cuts, then a finisher that knocks the foe back.",
+    about: "The levy's oldest trade: a blade, a board of oak, and the nerve to stand inside the reach of something bigger. Two quick cuts, then a finisher that knocks the foe back.",
   },
   {
     cls: "lancer",

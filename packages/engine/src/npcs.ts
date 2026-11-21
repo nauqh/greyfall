@@ -1148,7 +1148,7 @@ export const NPCS: readonly Npc[] = [
           "The Grey took the Burg. Not my trade. Hehe.",
           "A shard of the old fire, a haunch, a pot of resin, a purse that sews itself fatter.",
           "One of each, mind. Keep them in your sack, where your hands can find them.",
-          "Kill whatever sits in the Emberwood, and I'll find you a warmer shard. Hehe.",
+          "Kill whatever sits in Emberwood, and I'll find you a warmer shard. Hehe.",
         ],
       },
       { id: "thieves", lines: ["The thieves in the market? Burg folk, all of them.", "Went bad when the bell stopped. Bad for business, worse for them."] },

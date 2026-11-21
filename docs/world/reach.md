@@ -390,8 +390,14 @@ them a cause. Follow-ups, in files this pass did not touch:
   Barrow King is the eldest barrow-warden, not an old king; Old Bamboo is the
   one bamboo-folk the Grey has; Underwell's Dig is Lanternport's own, since
   the Cold Year, so the one hold that held broke the Old Law too.
-- **Dropped:** the old Audit table. Its rows were checked against the old
-  canon; rerun it against this one when the land files are rewritten.
+- **Audited 2026-11-21:** every player string in `npcs.ts`, `areas.ts`,
+  `hero.ts`, `atlas.ts`, `AtlasScene.ts` and the atlas screens was checked
+  against this canon and its Never words. The deep places now carry the
+  notes Who knows what promises: Tidewake (a waking), Greyfall's Lower and
+  High City (the Cut, the pay), Underwell's Dig (the town's order),
+  Graveroad (the Old Law), the Gold Wreck (imps), Sunhold's Gold Market
+  (the isles sinking), Stillmere's chapel (the eggs). Left: "slain bosses"
+  in the new game prompt in `views.tsx`.
 
 ## How we tell it
 

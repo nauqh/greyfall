@@ -453,7 +453,7 @@ export const ITEMS = {
   "The Thrown Coin": { cost: 0, adds: { greed: 0.25 }, about: "Thrown down the Old Well to see who would come after. Coin follows it now." },
   "Smuggler's Coat": { cost: 400, adds: { hp: 25 }, about: "Swapped, its last wearer said, deeper in. Nobody down there ever swapped a thing." },
   "Sister's Candle": { cost: 600, adds: { flask: 15 }, about: "A sister's candle, burned down a winter of nights. Its light closes wounds, or seems to." },
-  "Hollow Water": { cost: 0, adds: { flasks: 1 }, about: "Water from the drowned hollow at the bottom of the world, warm as a hand. The Pilgrims drink nothing else. Ferrow would not." },
+  "Hollow Water": { cost: 0, adds: { flasks: 1 }, about: "Water from the lake at the bottom of the world, warm as a hand. The Pilgrims drink nothing else. Ferrow would not." },
   "Mum's Bread": { cost: 0, adds: { hp: 20 }, about: "Baked in an east lane oven that sat cold a long while. Mostly ash. Eaten anyway." },
   "Salt-Glass Flask": { cost: 600, adds: { flasks: 1 }, about: "Blown on the salt coast, thick as a thumb. It came in on the first ship in three winters." },
   "Hollis's Gaff": { cost: 0, adds: { attack: 3 }, about: "A fishing gaff, its hook filed to an edge. Lent, not given: the sea wants it back past the Ring." },

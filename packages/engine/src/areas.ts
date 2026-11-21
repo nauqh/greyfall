@@ -2378,7 +2378,7 @@ function greyfall(): AreaMap {
   // A castle, not a maze: open courts and streets, only clumps of dead wood in the bailey and before the gate.
   for (const [x, y, rx, ry, d] of [[40, 30, 5, 7, 0.35], [10, 52, 6, 6, 0.3], [44, 18, 4, 3, 0.3], [92, 56, 7, 4, 0.3], [26, 46, 3, 4, 0.4]] as const) t.grove(x, y, rx, ry, d);
   const tier = t.finish({}, [{ col: 6, row: 44 }]);
-  return { ...tier, area: "greyfall", entry: { col: 6, row: 44 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks };
+  return { ...tier, area: "greyfall", entry: { col: 6, row: 44 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks, notes: [{ at: { col: 96, row: 48 }, text: "The lamps in the Cut went out from the bottom up. Then the cold came up the ladders after us." }, { at: { col: 64, row: 34 }, text: "Paid the diggers in coal and fire for the Deep Cut. Deeper next year. By his order." }] };
 }
 
 function gilded(): AreaMap {
@@ -2514,7 +2514,7 @@ function gilded(): AreaMap {
   const tier = t.finish({}, [{ col: 6, row: 36 }]);
   // The Gilded Span barred at the city's end until the Sentinel's Sun Key is carried: the Throne Isle is the far side of its hall.
   const locks = [{ key: "sunSentinel", name: "The Gilded Span", cells: [{ col: 81, row: 33 }, { col: 81, row: 34 }] }];
-  return { ...tier, area: "gilded", entry: { col: 6, row: 36 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks, locks };
+  return { ...tier, area: "gilded", entry: { col: 6, row: 36 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks, locks, notes: [{ at: { col: 32, row: 34 }, text: "The isles ride lower. Heap the gold in the Hall, and spend none." }] };
 }
 
 function steps(): AreaMap {
@@ -2628,7 +2628,7 @@ function steps(): AreaMap {
   ];
   // Isles, not a maze: bare and wind-scoured, a lone tree here and there.
   const tier = t.finish({ steps: 0.04 }, [{ col: 104, row: 16 }]);
-  return { ...tier, area: "steps", entry: { col: 104, row: 16 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks };
+  return { ...tier, area: "steps", entry: { col: 104, row: 16 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks, notes: [{ at: { col: 88, row: 59 }, text: "Left the gold one night. By morning the sparks were in it. More every night it lies." }] };
 }
 
 function undercroft(): AreaMap {
@@ -2738,7 +2738,7 @@ function undercroft(): AreaMap {
     { name: "The Dig", at: { col: 92, row: 79 }, palette: [5], dress: "undercroft" },
   ];
   const tier = stone(t.finish({}, [{ col: 52, row: 14 }]));
-  return { ...tier, area: "undercroft", entry: { col: 52, row: 14 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [] };
+  return { ...tier, area: "undercroft", entry: { col: 52, row: 14 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes: [{ at: { col: 99, row: 72 }, text: "By the town's order: dig east till the gold runs warm. The moor is not to know." }] };
 }
 
 function deeps(): AreaMap {
@@ -2835,7 +2835,7 @@ function deeps(): AreaMap {
     { name: "The Weaver's Web", at: { col: 38, row: 90 }, palette: [5], dress: "deeps" },
   ];
   const tier = stone(t.finish({}, [{ col: 12, row: 22 }]));
-  return { ...tier, area: "deeps", entry: { col: 12, row: 22 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [] };
+  return { ...tier, area: "deeps", entry: { col: 12, row: 22 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes: [{ at: { col: 30, row: 18 }, text: "Cut over the arch: NO DEEPER THAN A GRAVE." }] };
 }
 
 function hollow(): AreaMap {
@@ -3264,7 +3264,7 @@ function fen(): AreaMap {
   const districtAt = tier.areaAt.map((line, r) =>
     [...line].map((ch, c) => (ch === "-" ? "-" : "5()".includes(tier.island.rows[r]![c]!) || (heart(c, r) && Math.hypot(c - cx, (r - cy + 1) * 1.6) < 6) ? "4" : String(tierAt(c, r)))).join(""),
   );
-  return { ...tier, area: "fen", entry: { col: 6, row: cy }, exits, districts, districtAt, decks: [] };
+  return { ...tier, area: "fen", entry: { col: 6, row: cy }, exits, districts, districtAt, decks: [], notes: [{ at: { col: cx, row: cy + 6 }, text: "Keep the eggs dry. Keep the water going down. Soon everything rests." }] };
 }
 
 function saltreach(): AreaMap {
@@ -3470,6 +3470,7 @@ function landing(): AreaMap {
     { at: { col: 33, row: 12 }, text: "R to drink a flask." },
     { at: { col: 45, row: 13 }, text: "M to open the map. Sat at a fire, travel to any fire you have rested at." },
     { at: { col: 63, row: 28 }, text: "Die, and your gold stays where you fell." },
+    { at: { col: 36, row: 44 }, text: "Woke on this rock, warm, with the sea in my mouth. Could not say my own name. Went up anyway." },
   ];
   const exits: AreaExit[] = [{ to: "ring", name: "Ring Gate", kind: "open", at: { col: 78, row: 28 }, plain: true }];
   // Unnamed: no room's name shows walking in, and both fires go by the Landing's own.

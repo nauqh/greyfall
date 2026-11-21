@@ -1637,7 +1637,7 @@ function sky(rng: Rng): AtlasTier {
   t.gate("gilded-span", "The Gilded Span", "open", "sunhall", "gilded", { col: 105, row: 25 }, { col: 106, row: 16 }, "From the hall of gold over to the Throne Isle, the Sentinel's key in hand.");
   // The Steps' path from the Watch Lift's isle to the Cloud Bridge, kept clear of the woods.
   t.road([42, 21], [48, 15], [54, 15]);
-  t.gate("cloud-bridge", "Cloud Bridge", "open", "steps", "gilded", { col: 54, row: 15 }, { col: 67, row: 7 }, "A rope bridge over nothing at all, from the Steps to the gnome-kings' landing.", 2);
+  t.gate("cloud-bridge", "Cloud Bridge", "open", "steps", "gilded", { col: 54, row: 15 }, { col: 67, row: 7 }, "A rope bridge over nothing at all, from Cloudstair to the gnome-kings' landing.", 2);
 
   const { prop, who } = t;
   // The Gilded City: the high hall, its gnomes and guards; the Throne Isle's black stone at its east end.
