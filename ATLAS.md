@@ -874,11 +874,12 @@ back; it is remembered on the browser and carries across crossings.
 - The hero walks, fights, rolls, rests at bonfires, drinks flasks, picks
   up gold and leads a band hired in the Harbour. The Ember Bull drops
   the Ember Key, which opens the Keep Gate.
-- Eight bosses can be killed: the Cinder Troll, Rampart Boar, Stone
-  Warden, Ember Bull, Barrow King, Weaver, Shell Below and Grey Warlord.
-  Five fight with moves of their own (`BOSS_KITS` in `hero.ts`), each
-  warned on the ground for its wind-up; the last four hurry below half
-  health:
+- Ten bosses can be killed: the Cinder Troll, Rampart Boar, Stone
+  Warden, Ember Bull, Barrow King, Weaver, Shell Below, Old Bamboo, the
+  Sun Sentinel and the Grey Warlord.
+  Ten bosses fight with moves of their own (`BOSS_KITS` in `hero.ts`),
+  each warned on the ground for its wind-up; all but the first two
+  hurry below half health:
   - The Cinder Troll, in the Ring, the lesson: club slam, charge, embers
     that burn, all warned long and light; a charge cut short by the Ring's
     rocks leaves him dazed and open; a note at the Ring's mouth says so.
@@ -897,9 +898,31 @@ back; it is remembered on the browser and carries across crossings.
     while the three grave totems round his hall stand; a hex burst under
     the mark, grave fire along the ground to it that burns on, and the
     dead raised, three at most.
-  The last three fight with plain blows on borrowed sheets (spider,
-  turtle, black warrior). Old Bamboo and the Sun
-  Sentinel are still scenery.
+  - The Weaver, in the Weaver's Web (`web`, under the Deeps, the Sinking
+    Stair on past her to the Hollow): a bite, a leap over anything,
+    venom that burns on, webs that hold whoever walks into them (a
+    `snare` on the burning ground), and her brood let down, four at most.
+  - The Shell Below, on the Shell Isle (`shellisle`, off the Hollow): no
+    blade gets through its shell but while it stands open (`stone` 0); a
+    bite, a stamp round it, a spin that the lake stops dead and flips it
+    open. Past it the Shell Stair up to the Fen, shut from the Fen until
+    it falls (a `guard` on the Fen's side).
+  - The Grey Warlord, in the Grey Keep (`throne`, off the Greyfall's
+    crown, the Throne Stair up behind his throne): a cleave, a lunge that
+    ends at the mark, the Grey run along the ground to burn on, and past
+    half the Grey's dead raised after every lunge.
+  - Old Bamboo, on the Tinker Peak (`peak`, the Gnome Lift up past him):
+    now fought (the panda's sheets). A roll, a belly slam, bamboo hurled,
+    and his cubs called down: he heals while any of them stands.
+  - The Sun Sentinel, in the Sun Hall (`sunhall`, in the sky between the
+    city and the Throne Isle): now fought (the yellow lancer's sheets
+    behind its shield). Its shield parries every blow from the side it
+    faces, so it is beaten from behind; a thrust that runs it past you,
+    a sunburst ring, sunfire that burns on. It drops the Sun Key, which
+    unbars the Gilded Span to the Throne Isle.
+  Every boss now has an arena area of its own. On the world map the Fen
+  moved ten tiles east for the Shell Stair, and the Steps keep a road to
+  the Cloud Bridge so its scattered woods never cut it.
 - No minimap. Zoom out with the wheel; ride a lift to change tier.
 
 

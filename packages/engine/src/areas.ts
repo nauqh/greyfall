@@ -2029,7 +2029,6 @@ function crags(): AreaMap {
   crowd(t, rng, "gnome", { col: 72, row: 52 }, 3, 3, { walk: false });
 
   // The West Shoulder: Old Bamboo waits on its crown, his pandas on its slopes.
-  t.bosses.push({ name: "Old Bamboo", area: "crags", col: 51, row: 36 });
   who("pandaGuard", 51, 36);
   who("panda", 48, 40, { flip: true });
   who("panda", 56, 42);
@@ -2073,7 +2072,7 @@ function crags(): AreaMap {
 
   const exits: AreaExit[] = [
     { to: "trollpit", name: "Crag Stair", kind: "open", at: { col: 1, row: 46 } },
-    { to: "gilded", name: "Gnome Lift", kind: "lift", at: { col: 73, row: 15 } },
+    { to: "peak", name: "The Tinker Peak", kind: "open", at: { col: 73, row: 15 } },
     { to: "greyfall", name: "Sky Bridge", kind: "high", at: { col: 110, row: 15 } },
   ];
   const districts: District[] = [
@@ -2258,8 +2257,6 @@ function greyfall(): AreaMap {
 
   // The Grey Keep: the black castle on the fourth height, the Warlord on the tier before it, his guard, guns on the tier.
   prop("castle", 78, 13, black);
-  t.bosses.push({ name: "The Grey Warlord", area: "greyfall", col: 78, row: 18 });
-  who("warlord", 78, 18);
   for (const [c, r] of [[75, 18], [81, 18]] as const) who("skullGuard", c, r);
   for (const [c, r] of [[72, 17], [84, 17], [73, 12], [84, 12]] as const) prop("skullSpike", c, r);
   for (const c of [70, 86]) prop("cannon", c, 21);
@@ -2267,7 +2264,7 @@ function greyfall(): AreaMap {
   const exits: AreaExit[] = [
     { to: "barrowmoor", name: "Grey Gate", kind: "locked", at: { col: 1, row: 44 } },
     { to: "crags", name: "Sky Bridge", kind: "high", at: { col: 1, row: 8 } },
-    { to: "gilded", name: "Throne Stair", kind: "lift", at: { col: 81, row: 12 } },
+    { to: "throne", name: "The Grey Keep", kind: "open", at: { col: 81, row: 12 } },
   ];
   // The rock's tiers alternate stone colours so each step reads; the marsh below in its own.
   const districts: District[] = [
@@ -2373,8 +2370,6 @@ function gilded(): AreaMap {
   prop("monastery", 58, 27, gold);
   prop("castle", 65, 26, gold);
   for (const [c, r] of [[57, 33], [72, 31]] as const) prop("goldStone", c, r);
-  t.bosses.push({ name: "The Sun Sentinel", area: "gilded", col: 65, row: 29 });
-  who("lancer", 65, 29, { ...gold, scale: 1.8 });
   for (const [c, r] of [[57, 23], [73, 23]] as const) who("archer", c, r, gold);
   who("warrior", 60, 38, { ...gold, to: { col: 70, row: 38 } });
   who("monk", 66, 33, gold);
@@ -2398,8 +2393,10 @@ function gilded(): AreaMap {
 
   const exits: AreaExit[] = [
     { to: "steps", name: "Cloud Bridge", kind: "open", at: { col: 1, row: 36 } },
-    { to: "crags", name: "Gnome Lift", kind: "lift", at: { col: 26, row: 58 } },
-    { to: "greyfall", name: "Throne Stair", kind: "lift", at: { col: 99, row: 34 } },
+    { to: "peak", name: "Gnome Lift", kind: "lift", at: { col: 26, row: 58 } },
+    { to: "throne", name: "Throne Stair", kind: "lift", at: { col: 99, row: 34 } },
+    { to: "sunhall", name: "The Sun Hall", kind: "open", at: { col: 65, row: 29 } },
+    { to: "sunhall", name: "The Gilded Span", kind: "open", at: { col: 94, row: 34 }, plain: true },
   ];
   const districts: District[] = [
     // All gold and sunlight: the city in fresh green climbing to gold, the market, gate and chapel gold; the gardens
@@ -2418,7 +2415,9 @@ function gilded(): AreaMap {
   avenue(t, [[52, 45], [78, 45]], 1, 3);
   t.grove(36, 9, 10, 5, 0.6);
   const tier = t.finish({}, [{ col: 6, row: 36 }]);
-  return { ...tier, area: "gilded", entry: { col: 6, row: 36 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks };
+  // The Gilded Span barred at the city's end until the Sentinel's Sun Key is carried: the Throne Isle is the far side of its hall.
+  const locks = [{ key: "sunSentinel", name: "The Gilded Span", cells: [{ col: 81, row: 33 }, { col: 81, row: 34 }] }];
+  return { ...tier, area: "gilded", entry: { col: 6, row: 36 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks, locks };
 }
 
 function steps(): AreaMap {
@@ -2722,14 +2721,12 @@ function deeps(): AreaMap {
   // The Weaver's Web: the deepest vault, bones of what it caught, its brood, the Weaver at the heart.
   for (const [c, r] of [[34, 76], [42, 76], [32, 80], [44, 81], [38, 84]] as const) prop("bones", c, r);
   crowd(t, rng, "spider", { col: 38, row: 78 }, 5, 6);
-  t.bosses.push({ name: "The Weaver", area: "deeps", col: 38, row: 78 });
-  who("weaver", 38, 78, { scale: 2.2 });
   for (const [c, r] of [[30, 79], [46, 79]] as const) prop("goldStone", c, r);
 
   const exits: AreaExit[] = [
     { to: "undercroft", name: "Cistern Run", kind: "open", at: { col: 1, row: 22 } },
     { to: "barrow", name: "The King's Stair", kind: "open", at: { col: 44, row: 11 } },
-    { to: "hollow", name: "Sinking Stair", kind: "open", at: { col: 38, row: 94 } },
+    { to: "web", name: "The Web", kind: "open", at: { col: 38, row: 94 } },
   ];
   const districts: District[] = [
     { name: "Cistern Mouth", at: { col: 12, row: 29 }, palette: [4], dress: "undercroft" },
@@ -2815,11 +2812,12 @@ function hollow(): AreaMap {
   // The Shell Isle: gold round the sleeper, its young in the shallows, the Shell Below on the height.
   for (const [c, r] of [[48, 44], [60, 44]] as const) prop("goldStone", c, r);
   who("turtle", 54, 45);
-  t.bosses.push({ name: "The Shell Below", area: "hollow", col: 54, row: 38 });
-  who("shellBelow", 54, 38, { scale: 2.4 });
   for (const [c, r] of [[40, 40], [74, 42]] as const) prop("goldStone", c, r);
 
-  const exits: AreaExit[] = [{ to: "deeps", name: "Sinking Stair", kind: "open", at: { col: 50, row: 2 } }];
+  const exits: AreaExit[] = [
+    { to: "web", name: "Sinking Stair", kind: "open", at: { col: 50, row: 2 } },
+    { to: "shellisle", name: "The Shell", kind: "open", at: { col: 54, row: 38 } },
+  ];
   const districts: District[] = [
     { name: "The Stair Foot", at: { col: 60, row: 8 }, palette: [4, 5], dress: "deeps" },
     { name: "The North Shore", at: { col: 54, row: 25 }, palette: [5, 3], dress: "hollow" },
@@ -3154,6 +3152,7 @@ function fen(): AreaMap {
     { to: "saltreach", name: "Fen Causeway", kind: "open", at: { col: 1, row: cy } },
     { to: "barrowmoor", name: "Barrow Path", kind: "open", at: { col: moor.col, row: 1 } },
     { to: "hollow", name: "Fen Sinkhole", kind: "drop", at: { col: cx, row: cy + 4 } },
+    { to: "shellisle", name: "The Shell Stair", kind: "lift", at: { col: 55, row: 33 }, guard: "shellBelow" },
   ];
   // Lighter as it climbs: the tileset's teal, olive, green, fresh green and gold, darkest to lightest.
   const districts: District[] = [
@@ -3596,7 +3595,182 @@ function barrow(): AreaMap {
   return { ...tier, area: "barrow", entry: { col: 25, row: 32 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes, arena };
 }
 
-const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour, emberwood, crags, greyfall, gilded, steps, undercroft, deeps, hollow, barrowmoor, fen, saltreach, landing, burg, ramparts, chapel, ring, keep: keepArea, bullwall, belfry, trollpit, barrow };
+/**
+ * The Weaver's Web: a boss room of its own under the Deeps, a land apart. A cavern strung between stalagmites, in from
+ * the Deeps' bottom at its north and out by the Sinking Stair at its south, down to the Drowned Hollow.
+ */
+function web(): AreaMap {
+  const rng = makeRng("area:web");
+  const t = tierBuilder("below", rng, { cols: 60, rows: 44 });
+  const { prop, who } = t;
+
+  t.blob("web", 30, 22, 18, 12);
+  tunnel(t, [[30, 2], [30, 11]]);
+  tunnel(t, [[30, 33], [30, 42]]);
+  rubble(t, rng, 30, 22, 18, 12, 14);
+  for (const [c, r] of [[22, 18], [37, 26], [26, 29], [35, 15], [19, 25]] as const) prop("bones", c, r);
+  for (const [c, r] of [[29, 4], [29, 39]] as const) prop("sconce", c, r);
+  who("weaver", 30, 21, { scale: 2.2 });
+  t.bosses.push({ name: "The Weaver", area: "web", col: 30, row: 21 });
+
+  const notes: Note[] = [{ at: { col: 31, row: 6 }, text: "White ground holds. Cut the brood down first." }];
+  const exits: AreaExit[] = [
+    { to: "deeps", name: "The Web", kind: "open", at: { col: 30, row: 3 }, plain: true },
+    { to: "hollow", name: "Sinking Stair", kind: "open", at: { col: 30, row: 42 }, guard: "weaver" },
+  ];
+  const districts: District[] = [
+    { name: "The Weaver's Web", at: { col: 30, row: 22 }, palette: [5], dress: "deeps", box: { x: 10, y: 8, w: 41, h: 28 } },
+    { name: "The Deeps' Floor", at: { col: 30, row: 4 }, palette: [5], dress: "deeps" },
+    { name: "Sinking Stair", at: { col: 30, row: 40 }, palette: [4], dress: "hollow" },
+  ];
+  const tier = stone(t.finish({}, [{ col: 30, row: 5 }]));
+  const arena = { boss: "weaver", gate: [], inside: { col: 30, row: 22 } };
+  return { ...tier, area: "web", entry: { col: 30, row: 5 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes, arena };
+}
+
+/**
+ * The Shell Isle: the Shell Below's room of its own, an isle in a lake under the fen, a land apart. Over the causeway
+ * from the Drowned Hollow, the stone trees on the isle, the turtle asleep in the middle of it; past it the Shell
+ * Stair up to the Fen, the one way back up from the bottom of the world.
+ */
+function shellisle(): AreaMap {
+  const rng = makeRng("area:shellisle");
+  const t = tierBuilder("below", rng, { cols: 64, rows: 48 });
+  const { prop, who } = t;
+
+  t.blob("shellisle", 34, 24, 27, 19);
+  lake(t, 34, 24, 23, 16);
+  t.blob("shellisle", 34, 24, 13, 9);
+  t.bridge({ col: 1, row: 24 }, { col: 22, row: 24 }, 3);
+  openEdge(t, 0, 24);
+  t.bridge({ col: 34, row: 15 }, { col: 34, row: 8 }, 3);
+  t.blob("shellisle", 34, 6, 4, 3);
+  for (const [c, r] of [[27, 20], [41, 20], [28, 29], [40, 29]] as const) prop("deadTree", c, r, { scale: 0.55 });
+  for (const [c, r] of [[31, 27], [38, 22]] as const) prop("goldStone", c, r);
+  who("shellBelow", 34, 24, { scale: 1.3 });
+  t.bosses.push({ name: "The Shell Below", area: "shellisle", col: 34, row: 24 });
+
+  const notes: Note[] = [{ at: { col: 6, row: 23 }, text: "Its shell turns every blade. Make it spin into the lake." }];
+  const exits: AreaExit[] = [
+    { to: "hollow", name: "The Shell", kind: "open", at: { col: 1, row: 24 }, plain: true },
+    { to: "fen", name: "The Shell Stair", kind: "lift", at: { col: 34, row: 5 }, guard: "shellBelow" },
+  ];
+  const districts: District[] = [
+    { name: "The Shell Isle", at: { col: 34, row: 24 }, palette: [5, 3], dress: "hollow", box: { x: 19, y: 13, w: 31, h: 22 } },
+    { name: "The Causeway", at: { col: 8, row: 24 }, palette: [4], dress: "hollow" },
+    { name: "The Shell Stair", at: { col: 34, row: 6 }, palette: [4], dress: "undercroft" },
+  ];
+  const tier = stone(t.finish({}, [{ col: 4, row: 24 }]));
+  const arena = { boss: "shellBelow", gate: [], inside: { col: 34, row: 24 } };
+  return { ...tier, area: "shellisle", entry: { col: 4, row: 24 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes, arena };
+}
+
+/**
+ * The Grey Keep's hall: the Grey Warlord's room of its own, a land apart. In off the Greyfall's crown at the hall's
+ * south door, down the nave between the black towers, to the dais with the throne he does not sit in; behind it the
+ * Throne Stair up to the Throne Isle in the sky.
+ */
+function throne(): AreaMap {
+  const rng = makeRng("area:throne");
+  const t = tierBuilder("surface", rng, { cols: 64, rows: 44 });
+  const { prop, who } = t;
+  const black = { color: "black" } as const;
+
+  t.ground("throne", 8, 5, 48, 33);
+  t.block(2, 20, 5, 24, 8);
+  t.stair(2, 19, 12, "L");
+  t.stair(2, 44, 12, "R");
+  edgeWay(t, { col: 32, row: 37 }, { col: 32, row: 42 });
+  t.road([32, 42], [32, 14]);
+  for (const r of [18, 28]) for (const c of [14, 23, 41, 50]) prop("tower", c, r, black);
+  prop("castle", 32, 7, black);
+  for (const [c, r] of [[24, 10], [40, 10], [17, 33], [47, 33]] as const) prop("skullSpike", c, r);
+  for (const [c, r] of [[28, 22], [38, 26], [20, 24]] as const) prop("bones", c, r);
+  who("warlord", 32, 21);
+  t.bosses.push({ name: "The Grey Warlord", area: "throne", col: 32, row: 21 });
+
+  const exits: AreaExit[] = [
+    { to: "greyfall", name: "The Grey Keep", kind: "open", at: { col: 32, row: 42 }, plain: true },
+    { to: "gilded", name: "Throne Stair", kind: "lift", at: { col: 36, row: 9 }, guard: "warlord" },
+  ];
+  const districts: District[] = [
+    { name: "The Grey Keep", at: { col: 32, row: 22 }, palette: [5, 4], gloom: true, dress: "greyfall", decor: 0.5, box: { x: 7, y: 4, w: 50, h: 35 } },
+    { name: "The Keep Door", at: { col: 32, row: 40 }, levels: [1], palette: [4], dress: "greyfall", decor: 0.5 },
+  ];
+  const tier = t.finish({}, [{ col: 32, row: 40 }]);
+  const arena = { boss: "warlord", gate: [], inside: { col: 32, row: 22 } };
+  return { ...tier, area: "throne", entry: { col: 32, row: 40 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], arena };
+}
+
+/**
+ * The Tinker Peak: Old Bamboo's room of its own, the rock's summit, a land apart. Up off the Crags' top step onto the
+ * bamboo-ringed summit where the old panda sits, and past him the gnomes' crane, the Gnome Lift up into the clouds.
+ */
+function peak(): AreaMap {
+  const rng = makeRng("area:peak");
+  const t = tierBuilder("surface", rng, { cols: 56, rows: 44 });
+  const { prop, who } = t;
+
+  t.blob("peak", 28, 22, 18, 13);
+  edgeWay(t, { col: 28, row: 34 }, { col: 28, row: 42 });
+  t.ground("peak", 25, 4, 7, 6);
+  t.grove(28, 22, 21, 16, 0.08);
+  for (const [c, r] of [[20, 16], [36, 15], [19, 28], [37, 29]] as const) prop("stump", c, r);
+  prop("gnomeTower", 31, 6);
+  who("oldBamboo", 28, 22);
+  t.bosses.push({ name: "Old Bamboo", area: "peak", col: 28, row: 22 });
+
+  const notes: Note[] = [{ at: { col: 29, row: 39 }, text: "He eats while his cubs stand." }];
+  const exits: AreaExit[] = [
+    { to: "crags", name: "The Tinker Peak", kind: "open", at: { col: 28, row: 42 }, plain: true },
+    { to: "gilded", name: "Gnome Lift", kind: "lift", at: { col: 28, row: 6 }, guard: "oldBamboo" },
+  ];
+  const districts: District[] = [
+    { name: "The Tinker Peak", at: { col: 28, row: 22 }, palette: [2], dress: "crags", decor: 1, box: { x: 9, y: 10, w: 38, h: 25 } },
+    { name: "The Crane", at: { col: 28, row: 6 }, palette: [2], dress: "crags", decor: 0.5 },
+    { name: "The Summit Path", at: { col: 28, row: 38 }, palette: [2], dress: "crags", decor: 1 },
+  ];
+  const tier = t.finish({}, [{ col: 28, row: 38 }]);
+  const arena = { boss: "oldBamboo", gate: [], inside: { col: 28, row: 22 } };
+  return { ...tier, area: "peak", entry: { col: 28, row: 38 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes, arena };
+}
+
+/**
+ * The Sun Hall: the Sun Sentinel's room of its own, hung in the sky between the Gilded City and the Throne Isle, a
+ * land apart. In over the west bridge from the city's crown, the hall of gold between its two rows of towers, the
+ * Sentinel behind its shield; out over the Gilded Span to the Throne Isle, its key in hand.
+ */
+function sunhall(): AreaMap {
+  const rng = makeRng("area:sunhall");
+  const t = tierBuilder("sky", rng, { cols: 64, rows: 30 });
+  const { prop, who } = t;
+  const gold = { color: "yellow" } as const;
+
+  t.ground("sunhall", 9, 7, 46, 16);
+  t.bridge({ col: 1, row: 15 }, { col: 9, row: 15 }, 3);
+  t.bridge({ col: 54, row: 15 }, { col: 62, row: 15 }, 3);
+  t.road([1, 15], [62, 15]);
+  for (const r of [9, 21]) for (const c of [16, 26, 38, 48]) prop("tower", c, r, gold);
+  for (const [c, r] of [[22, 13], [42, 17]] as const) prop("goldStone", c, r);
+  who("sunSentinel", 32, 15);
+  t.bosses.push({ name: "The Sun Sentinel", area: "sunhall", col: 32, row: 15 });
+
+  const notes: Note[] = [{ at: { col: 4, row: 14 }, text: "Its shield faces you. Be where it does not." }];
+  const exits: AreaExit[] = [
+    { to: "gilded", name: "The Sun Hall", kind: "open", at: { col: 1, row: 15 }, plain: true },
+    { to: "gilded", name: "The Gilded Span", kind: "open", at: { col: 62, row: 15 }, guard: "sunSentinel" },
+  ];
+  const districts: District[] = [
+    { name: "The Sun Hall", at: { col: 32, row: 15 }, palette: [1], dress: "gilded", decor: 0.5, box: { x: 9, y: 6, w: 46, h: 18 } },
+    { name: "The West Bridge", at: { col: 4, row: 15 }, palette: [1], dress: "gilded" },
+    { name: "The Gilded Span", at: { col: 59, row: 15 }, palette: [1], dress: "gilded" },
+  ];
+  const tier = t.finish({}, [{ col: 4, row: 15 }]);
+  const arena = { boss: "sunSentinel", gate: [], inside: { col: 32, row: 15 } };
+  return { ...tier, area: "sunhall", entry: { col: 4, row: 15 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], streets: true, notes, arena };
+}
+
+const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour, emberwood, crags, greyfall, gilded, steps, undercroft, deeps, hollow, barrowmoor, fen, saltreach, landing, burg, ramparts, chapel, ring, keep: keepArea, bullwall, belfry, trollpit, barrow, web, shellisle, throne, peak, sunhall };
 
 /** The areas that have a map of their own so far. */
 export const MAPPED_AREAS = Object.keys(BUILT) as AreaId[];
@@ -3605,7 +3779,7 @@ export const MAPPED_AREAS = Object.keys(BUILT) as AreaId[];
 const made = new Map<AreaId, AreaMap>();
 
 /** Areas up on the hill or deep in the wood, not on the shore: the sea round them is woods instead. */
-const HILL: ReadonlySet<AreaId> = new Set(["burg", "ramparts", "chapel", "keep", "bullwall", "belfry", "trollpit"]);
+const HILL: ReadonlySet<AreaId> = new Set(["burg", "ramparts", "chapel", "keep", "bullwall", "belfry", "trollpit", "throne", "peak"]);
 
 /** Every tile of open sea reached from the map's edge (above row `top`, if given) turned to woods of the nearest
  *  district's kind; a pond stays water. */

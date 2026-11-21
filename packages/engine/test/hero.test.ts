@@ -195,6 +195,17 @@ describe("a boss's moves", () => {
     expect(bossAim(rush, { col: 6, row: 1 }, { col: 9, row: 1 }, () => true).at(-1)).toEqual({ col: 10, row: 1 });
     expect(BOSS_KITS.minotaur!.pick(5, "rush", false)).toBe(null);
   });
+  it("picks only moves each boss has, at any range and after any move, raging or not", () => {
+    for (const [kind, kit] of Object.entries(BOSS_KITS)) {
+      for (const last of [null, ...Object.keys(kit!.moves)])
+        for (let d = 0; d <= 14; d++)
+          for (const raging of [false, true]) {
+            const move = kit!.pick(d, last, raging);
+            if (move !== null) expect(kit!.moves[move], `${kind} picks ${move}`).toBeDefined();
+          }
+      expect(FOES[kind], kind).toBeDefined();
+    }
+  });
   it("tolls a ring round the warden, safe up close", () => {
     const ring = bossAim(BOSS_KITS.stoneWarden!.moves.toll!, { col: 5, row: 5 }, { col: 7, row: 5 }, open);
     expect(ring.every((c) => Math.max(Math.abs(c.col - 5), Math.abs(c.row - 5)) >= 2)).toBe(true);

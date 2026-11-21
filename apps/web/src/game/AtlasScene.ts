@@ -424,6 +424,9 @@ interface Beast {
   swim?: boolean;
   /** A colour laid over its sheets, kept through every hit flash: one pack sheet dressed as another monster. */
   tint?: number;
+  /** A boss's sheets for drawing back before a move and coming out of it, if the pack has them. */
+  windup?: string;
+  recovery?: string;
 }
 const EP = "Enemy Pack/";
 const BEAST: Record<string, Beast> = {
@@ -435,7 +438,7 @@ const BEAST: Record<string, Beast> = {
   minotaur: { idle: `${EP}Minotaur/Minotaur_Idle.png`, move: `${EP}Minotaur/Minotaur_Walk.png`, attack: `${EP}Minotaur/Minotaur_Attack.png`, frame: 320, anchor: 213 / 320, scale: 1.2, tint: 0xe8a080 },
   // The Bull's Wall's boss: a goblin chief on a war boar, big, its hide iron-dark.
   rampartBull: { idle: `${EP}Extra/Pig Rider Spear Goblin/Pig Rider_Idle.png`, move: `${EP}Extra/Pig Rider Spear Goblin/Pig Rider_Run.png`, attack: `${EP}Extra/Pig Rider Spear Goblin/Pig Rider_Attack.png`, frame: 256, anchor: 0.7, scale: 1.5, tint: 0xc8b0a0 },
-  troll: { idle: `${EP}Troll/Troll_Idle.png`, move: `${EP}Troll/Troll_Walk.png`, attack: `${EP}Troll/Troll_Attack.png`, frame: 384, anchor: 296 / 384, scale: 0.8 },
+  troll: { idle: `${EP}Troll/Troll_Idle.png`, move: `${EP}Troll/Troll_Walk.png`, attack: `${EP}Troll/Troll_Attack.png`, windup: `${EP}Troll/Troll_Windup.png`, recovery: `${EP}Troll/Troll_Recovery.png`, frame: 384, anchor: 296 / 384, scale: 0.8 },
   // The Belfry's boss: the giant bat's sheets in stone, a gargoyle off the bell loft's eaves.
   stoneWarden: { idle: `${EP}Giant Bat/Giant Bat_Idle.png`, move: `${EP}Giant Bat/Giant Bat_Move.png`, attack: `${EP}Giant Bat/Giant Bat_Attack.png`, frame: 192, anchor: 0.7, scale: 2, tint: 0xa8acb4 },
   skull: { idle: `${EP}Skull/Skull_Idle.png`, move: `${EP}Skull/Skull_Run.png`, attack: `${EP}Skull/Skull_Attack.png`, frame: 192, anchor: 128 / 192 },
@@ -457,7 +460,13 @@ const BEAST: Record<string, Beast> = {
   // The grave totems warding the king: the skull guard's statue, ghost-green.
   graveTotem: { idle: `${EP}Extra/Skull Guard/Skull_Guard.png`, frame: 192, anchor: 128 / 192, scale: 1.1, tint: 0x8cf0b4 },
   weaver: { idle: `${EP}Spider/Spider_Idle.png`, move: `${EP}Spider/Spider_Run.png`, attack: `${EP}Spider/Spider_Attack.png`, frame: 192, anchor: 0.68, tint: 0xe4dccb },
-  shellBelow: { idle: `${EP}Turtle/Turtle_Idle.png`, move: `${EP}Turtle/Turtle_Walk.png`, attack: `${EP}Turtle/Turtle_Attack.png`, frame: 320, anchor: 0.66, tint: 0x9cc0b0 },
+  // The Shell Below draws into its shell before each move, and comes out of it after.
+  shellBelow: { idle: `${EP}Turtle/Turtle_Idle.png`, move: `${EP}Turtle/Turtle_Walk.png`, attack: `${EP}Turtle/Turtle_Attack.png`, windup: `${EP}Extra/Turtle Guard/Turtle_Guard_In.png`, recovery: `${EP}Extra/Turtle Guard/Turtle_Guard_Out.png`, frame: 320, anchor: 0.66, scale: 1.8, tint: 0x9cc0b0 },
+  // Old Bamboo, the pandas' grandsire, and the cubs he calls.
+  oldBamboo: { idle: `${EP}Panda/Panda_Idle.png`, move: `${EP}Panda/Panda_Run.png`, attack: `${EP}Panda/Panda_Attack.png`, frame: 256, anchor: 0.68, scale: 1.9, tint: 0xe8e0d0 },
+  pandaCub: { idle: `${EP}Panda/Panda_Idle.png`, move: `${EP}Panda/Panda_Run.png`, attack: `${EP}Panda/Panda_Attack.png`, frame: 256, anchor: 0.68, scale: 0.6 },
+  // The Sun Sentinel: the yellow guard's lancer grown huge, standing behind its shield.
+  sunSentinel: { idle: "Units/Yellow Units/Lancer/Lancer_Right_Defence.png", move: "Units/Yellow Units/Lancer/Lancer_Run.png", attack: "Units/Yellow Units/Lancer/Lancer_Right_Attack.png", frame: 320, anchor: 0.62, scale: 1.7, tint: 0xfff0b0 },
   warlord: { idle: "Units/Black Units/Warrior/Warrior_Idle.png", move: "Units/Black Units/Warrior/Warrior_Run.png", attack: "Units/Black Units/Warrior/Warrior_Attack1.png", frame: 192, anchor: 136 / 192, scale: 1.5, tint: 0xb8b8b8 },
   gnome: { idle: `${EP}Gnome/Gnome_Idle.png`, move: `${EP}Gnome/Gnome_Run.png`, frame: 192, anchor: 0.68 },
   slingshot: { idle: `${EP}Slingshot Gnome/Slingshot Gnome_Idle.png`, move: `${EP}Slingshot Gnome/Slingshot Gnome_Run.png`, attack: `${EP}Slingshot Gnome/Slingshot Gnome_Shoot.png`, frame: 192, anchor: 0.68 },
@@ -592,6 +601,8 @@ interface Ember {
   tick: number;
   every: number;
   damage: number;
+  /** A web: whoever stands in it walks at this share of their pace. */
+  snare?: number;
   from: Foe;
   s: Phaser.GameObjects.Sprite;
 }
@@ -711,10 +722,10 @@ const GOLD = "greyfall.gold";
 /** Bosses slain, which never come back, and the keys they drop, by the boss's kind. */
 const SLAIN = "greyfall.slain";
 const KEYS = "greyfall.keys";
-const BOSS_KEY: Partial<Record<string, string>> = { minotaur: "Ember Key", barrowKing: "Horned Key", weaver: "Silk Key" };
+const BOSS_KEY: Partial<Record<string, string>> = { minotaur: "Ember Key", barrowKing: "Horned Key", weaver: "Silk Key", sunSentinel: "Sun Key" };
 /** What a boss's fall proves, raised from SLAIN on each entry so old saves have it too. */
 const BOSS_FLAG: Partial<Record<string, WorldFlag>> = { minotaur: "trollKey", barrowKing: "hornedKey", warlord: "warlordDead", shellBelow: "shellDead" };
-const BOSSES = new Set(["troll", "minotaur", "rampartBull", "stoneWarden", "barrowKing", "weaver", "shellBelow", "warlord"]);
+const BOSSES = new Set(["troll", "minotaur", "rampartBull", "stoneWarden", "barrowKing", "weaver", "shellBelow", "warlord", "oldBamboo", "sunSentinel"]);
 /** The exit last gone through, so a crossing lands at the way of the same name when two ways join the same areas. */
 const VIA = "greyfall.via";
 /** A boss whose fall is worth a flask more, for good: the Landing's troll, the reward for going back to him. */
@@ -1062,7 +1073,7 @@ export class AtlasScene extends Phaser.Scene {
       for (const d of this.local.dwellers) {
         const b = BEAST[d.kind];
         if (FOES[d.kind] && b?.attack) sheet(`beast_${d.kind}_attack`, { file: b.attack, frame: b.frame, anchor: 0 });
-        if (d.kind === "troll") for (const k of ["Windup", "Recovery"]) sheet(`beast_troll_${k.toLowerCase()}`, { file: `${EP}Troll/Troll_${k}.png`, frame: 384, anchor: 0 });
+        for (const k of ["windup", "recovery"] as const) if (b?.[k]) sheet(`beast_${d.kind}_${k}`, { file: b[k]!, frame: b.frame, anchor: 0 });
         for (const m of Object.values(BOSS_KITS[d.kind]?.moves ?? {})) {
           if (!m.summon) continue;
           const { idle, move, frame } = this.look({ kind: m.summon.kind, col: 0, row: 0 });
@@ -1777,7 +1788,15 @@ export class AtlasScene extends Phaser.Scene {
       this.float(to.s.x, to.s.y - to.lift - 40, "Warded", "#8cf0b4");
       return;
     }
+    if (kit?.shield && this.facing(to, from)) {
+      this.float(to.s.x, to.s.y - to.lift - 40, "Parried", "#ffe080");
+      return;
+    }
     const stone = kit?.stone !== undefined && now >= ((to as Foe).open ?? 0) ? kit.stone : 1;
+    if (stone === 0) {
+      this.float(to.s.x, to.s.y - to.lift - 40, "Shelled", "#9cc0b0");
+      return;
+    }
     const whole = blocked ? throughGuard(attack) : attack;
     const dealt = stone < 1 ? Math.max(1, Math.round(whole * stone)) : whole;
     to.hp = struck(to.hp, dealt);
@@ -2509,7 +2528,8 @@ export class AtlasScene extends Phaser.Scene {
       // Space held past a tap, while moving: a sprint, for as long as the stamina lasts.
       const [kx, ky] = this.keyDir();
       const sprinting = this.spaceAt >= 0 && time - this.spaceAt >= TAP && (kx || ky || hero.way.length > 0) && canAct(this.stamina) && time >= hero.busy;
-      hero.speed = CLASSES[this.cls].speed * (sprinting ? HERO.sprint : 1);
+      const web = this.embers.find((e) => e.snare && e.at.col === hero.at.col && e.at.row === hero.at.row);
+      hero.speed = CLASSES[this.cls].speed * (sprinting ? HERO.sprint : 1) * (web?.snare ?? 1);
       if (sprinting) {
         this.stamina = spend(this.stamina, (STAMINA.sprint * dt) / 1000);
         this.spentAt = time;
@@ -2540,6 +2560,7 @@ export class AtlasScene extends Phaser.Scene {
       // A foe that notices nothing (a grave totem) only stands.
       if (f.stats.aggro === 0) return;
       const kit = BOSS_KITS[f.kind];
+      if (kit?.heals && this.foes.some((o) => o.raisedBy === f && !o.dead)) f.hp = Math.min(f.max, f.hp + (kit.heals * dt) / 1000);
       if (kit && m >= 0 && intent !== "return" && time >= f.next) {
         let move = kit.pick(tileDistance(f.at, mark.at), f.last ?? null, this.raging(f));
         const raise = move && kit.moves[move]!.summon;
@@ -2630,7 +2651,7 @@ export class AtlasScene extends Phaser.Scene {
     const aim = bossAim(move, f.at, mark.at, (c) => isWalkable(c.col, c.row) && !this.shut(c));
     // A charge that stops short of its full run has hit a wall.
     const reach = Math.min(move.tiles ?? 0, tileDistance(f.at, mark.at) + (move.past ?? Infinity));
-    const dazed = !!move.stun && aim.length < reach * (move.width ?? 1);
+    const dazed = !!move.stun && bossAim({ ...move, width: 1 }, f.at, mark.at, (c) => isWalkable(c.col, c.row) && !this.shut(c)).length < reach;
     Object.assign(f, { last: name, way: [], windup: { at: time + ms, mark, move: name, aim, dazed }, next: time + f.stats.every * 1000, busy: time + ms });
     if (Math.abs(mark.s.x - f.s.x) > 4) f.s.setFlipX(mark.s.x < f.s.x);
     f.s.setTintFill(0xffffff);
@@ -2641,7 +2662,7 @@ export class AtlasScene extends Phaser.Scene {
       f.s.play({ key: `${f.attack}_once`, frameRate: (this.textures.get(f.attack).frameTotal * 1000) / ms });
       f.s.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => !f.dead && this.play(f.s, f.idle));
     }
-    const colour = move.summon ? 0x9a6ae0 : move.burn ? 0xff9a3a : 0xe03a2a;
+    const colour = move.summon ? 0x9a6ae0 : move.snare ? 0xf0ece0 : move.burn ? 0xff9a3a : 0xe03a2a;
     const g = this.add.graphics().setDepth(DEPTH.unit - 1);
     for (const c of aim) g.fillStyle(colour, 0.45).fillRect(c.col * CELL + 2, c.row * CELL + 2, CELL - 4, CELL - 4);
     this.tweens.add({ targets: g, alpha: { from: 0.4, to: 1 }, duration: ms, onComplete: () => g.destroy() });
@@ -2691,16 +2712,17 @@ export class AtlasScene extends Phaser.Scene {
     if (move.burn) {
       for (const at of aim) {
         const y = (at.row + 0.75) * CELL;
-        const s = this.add.sprite((at.col + 0.5) * CELL, y, "fire").setOrigin(0.5, FIRE.anchor).setScale(0.55).setDepth(standing(y));
-        // The king's grave fire burns cold.
-        if (f.kind === "barrowKing") s.setTint(0x7cf0b0);
-        this.loop(s, "fire");
-        this.embers.push({ at, until: time + move.burn * 1000, tick: time, every: (move.tick ?? 0.5) * 1000, damage: move.damage, from: f, s });
+        const s = this.add.sprite((at.col + 0.5) * CELL, y, "fire").setOrigin(0.5, FIRE.anchor).setScale(move.snare ? 0.4 : 0.55).setDepth(standing(y));
+        if (move.colour) s.setTint(move.colour);
+        // A web is a thread strung on the ground, not a flame: drawn pale and still.
+        if (move.snare) s.setAlpha(0.7);
+        else this.loop(s, "fire");
+        this.embers.push({ at, until: time + move.burn * 1000, tick: time, every: (move.tick ?? 0.5) * 1000, damage: move.damage, snare: move.snare, from: f, s });
       }
       return;
     }
     this.cameras.main.shake(160, 0.006);
-    if (move.shape === "scatter" || move.shape === "mark") for (const at of aim) this.blast(at, f.kind === "barrowKing" ? 0x9a6ae0 : 0xffffff);
+    if (move.shape === "scatter" || move.shape === "mark" || move.shape === "ring") for (const at of move.shape === "ring" ? aim.filter((_, i) => i % 3 === 0) : aim) this.blast(at, move.colour ?? 0xffffff);
     struck(move.damage);
   }
 
@@ -2719,7 +2741,7 @@ export class AtlasScene extends Phaser.Scene {
       if (time >= e.until) return void e.s.destroy();
       if (time >= e.tick) {
         e.tick = time + e.every;
-        for (const b of [this.hero!, ...this.band]) if (!b.dead && b.at.col === e.at.col && b.at.row === e.at.row) this.hurt(e.from, b, e.damage, true);
+        if (e.damage) for (const b of [this.hero!, ...this.band]) if (!b.dead && b.at.col === e.at.col && b.at.row === e.at.row) this.hurt(e.from, b, e.damage, true);
       }
       return true;
     });

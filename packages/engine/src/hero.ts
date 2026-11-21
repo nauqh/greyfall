@@ -83,12 +83,16 @@ export const FOES: Partial<Record<string, FoeStats>> = {
   troll: { hp: 220, attack: 18, every: 2.8, windup: 1.1, poise: true, aggro: 7, leash: 9, speed: 1.5, gold: 80 },
   // The King's Barrow's hex-priest king, after Gaping Dragon's slowness: the Horned Key.
   barrowKing: { hp: 480, attack: 28, every: 2.6, windup: 1.0, poise: true, aggro: 9, leash: 14, speed: 1.6, gold: 220 },
-  // The Deeps' web, after Quelaag: quick and often, lighter blows. The Silk Key.
-  weaver: { hp: 360, attack: 18, every: 1.6, windup: 0.6, poise: true, aggro: 6, leash: 8, speed: 2.6, gold: 200 },
-  // Optional, asleep on its isle: slow, the heaviest blows in the Reach. Killing it greys the lake.
-  shellBelow: { hp: 600, attack: 32, every: 3.4, windup: 1.3, poise: true, aggro: 5, leash: 7, speed: 1.2, gold: 260 },
+  // The bosses past the Ember Key, each in an arena of its own; their moves are BOSS_KITS'. The Weaver: the Silk Key.
+  weaver: { hp: 360, attack: 18, every: 1.8, windup: 0.6, poise: true, aggro: 9, leash: 16, speed: 2.6, gold: 200 },
+  // Optional, asleep on its isle. Killing it greys the lake.
+  shellBelow: { hp: 600, attack: 32, every: 2.6, windup: 1.3, poise: true, aggro: 9, leash: 16, speed: 1.4, gold: 260 },
   // The last: a knight the Grey wore longest, quick for his weight.
-  warlord: { hp: 700, attack: 30, every: 2.0, windup: 0.75, poise: true, aggro: 7, leash: 10, speed: 2.2, gold: 400 },
+  warlord: { hp: 700, attack: 30, every: 2.0, windup: 0.75, poise: true, aggro: 10, leash: 18, speed: 2.2, gold: 400 },
+  oldBamboo: { hp: 440, attack: 22, every: 2.4, windup: 0.9, poise: true, aggro: 9, leash: 16, speed: 2.0, gold: 220 },
+  sunSentinel: { hp: 520, attack: 26, every: 2.4, windup: 0.9, poise: true, aggro: 9, leash: 16, speed: 2.0, gold: 280 },
+  // Old Bamboo's cubs, called down to fight beside him.
+  pandaCub: { hp: 30, attack: 6, every: 2.2, windup: 0.6, aggro: 7, leash: 14, speed: 2.4, gold: 4 },
 };
 
 /**
@@ -118,6 +122,10 @@ export interface BossMove {
   burn?: number;
   tick?: number;
   summon?: { kind: string; n: number; cap: number };
+  /** Burning ground that also holds: whoever stands in it walks at this share of their pace. */
+  snare?: number;
+  /** The colour its blasts and burning ground take, where not the fire's own. */
+  colour?: number;
   /** A charge cut short by a wall leaves the boss dazed: this many seconds more standing open. */
   stun?: number;
   /** A charge runs only this many tiles past the mark, so it ends near enough to punish. */
@@ -129,13 +137,16 @@ export interface BossMove {
 /** A boss's moves, the seconds it stands open after each, and how it picks the next: by how far off its mark is, what
  *  it did last, and whether it rages, below `rage.at` of its health, winding up in `rage.haste` of the time.
  *  `stone`: the share of a blow it takes except while it stands open after a move. `wards`: a dweller kind that keeps
- *  it from all harm while any of them stands in its arena. */
+ *  it from all harm while any of them stands in its arena. `heals`: health a second it regains while any dweller it
+ *  raised stands. `shield`: a blow from the side it faces is parried, so it is hurt only from behind. */
 export interface BossKit {
   moves: Record<string, BossMove>;
   recover: number;
   rage?: { at: number; haste: number };
   stone?: number;
   wards?: string;
+  heals?: number;
+  shield?: boolean;
   pick(distance: number, last: string | null, raging: boolean): string | null;
 }
 
@@ -201,14 +212,85 @@ export const BOSS_KITS: Partial<Record<string, BossKit>> = {
   // raises the barrow's dead; raging, he raises them more often.
   barrowKing: {
     moves: {
-      hex: { shape: "mark", windup: 1.0, radius: 1, damage: 22 },
-      gravefire: { shape: "trail", windup: 1.1, damage: 6, burn: 5, tick: 0.6 },
+      hex: { shape: "mark", windup: 1.0, radius: 1, damage: 22, colour: 0x9a6ae0 },
+      gravefire: { shape: "trail", windup: 1.1, damage: 6, burn: 5, tick: 0.6, colour: 0x7cf0b0 },
       raise: { shape: "summon", windup: 1.4, damage: 0, summon: { kind: "skull", n: 2, cap: 3 } },
     },
     recover: 1.2,
     rage: { at: 0.5, haste: 0.75 },
     wards: "graveTotem",
     pick: (d, last, raging) => (d > 9 ? null : last === "hex" ? (raging ? "raise" : "gravefire") : last === "gravefire" || last === null ? "raise" : "hex"),
+  },
+  // The Weaver, after Quelaag: quick and often. It strings webs that hold whoever stands in them, spits venom that
+  // burns on, leaps the length of its web over anything, bites up close, and lets its brood down on threads.
+  weaver: {
+    moves: {
+      bite: { shape: "front", windup: 0.6, radius: 1, damage: 16 },
+      leap: { shape: "line", windup: 0.8, tiles: 7, width: 1, speed: 18, flies: true, damage: 18 },
+      venom: { shape: "scatter", windup: 0.9, patches: 4, radius: 2, damage: 5, burn: 4, tick: 0.5, colour: 0x9cf060 },
+      web: { shape: "scatter", windup: 1.0, patches: 6, radius: 3, damage: 0, burn: 8, tick: 1, snare: 0.4, colour: 0xf0ece0 },
+      brood: { shape: "summon", windup: 1.2, damage: 0, summon: { kind: "spider", n: 3, cap: 4 } },
+    },
+    recover: 0.9,
+    rage: { at: 0.5, haste: 0.75 },
+    pick: (d, last, raging) =>
+      d <= 1 ? (last === "bite" ? "web" : "bite") : last === "leap" ? (raging ? "brood" : "venom") : last === "venom" ? "web" : last === "web" ? "brood" : d <= 7 ? "leap" : "venom",
+  },
+  // The Shell Below, asleep on its isle: no blade gets through its shell but while it stands open after a move. It
+  // bites, it stamps the isle round it, and it draws in and spins down a line, flipped on its back if a stone tree or
+  // the lake stops it, belly up and open.
+  shellBelow: {
+    moves: {
+      bite: { shape: "front", windup: 0.9, radius: 1, damage: 26 },
+      stamp: { shape: "self", windup: 1.2, radius: 2, damage: 22 },
+      spin: { shape: "line", windup: 1.2, tiles: 10, width: 3, speed: 13, damage: 28, stun: 3 },
+    },
+    recover: 1.6,
+    rage: { at: 0.4, haste: 0.8 },
+    stone: 0,
+    pick: (d, last) => (d <= 1 ? (last === "bite" ? "stamp" : "bite") : d <= 2 ? "stamp" : d <= 10 ? "spin" : null),
+  },
+  // The Grey Warlord, the last: a cleave up close, a lunge that ends at the mark, the Grey run along the ground to it
+  // and left lying; past half, the Grey's dead rise round him after every lunge.
+  warlord: {
+    moves: {
+      cleave: { shape: "front", windup: 0.7, radius: 2, damage: 28 },
+      lunge: { shape: "line", windup: 0.8, tiles: 7, width: 1, speed: 16, damage: 26, past: 1 },
+      grey: { shape: "trail", windup: 1.0, damage: 7, burn: 6, tick: 0.6, colour: 0x9c9fa8 },
+      legion: { shape: "summon", windup: 1.2, damage: 0, summon: { kind: "skull", n: 2, cap: 4 } },
+    },
+    recover: 1.0,
+    rage: { at: 0.5, haste: 0.65 },
+    pick: (d, last, raging) =>
+      raging && last === "lunge" ? "legion" : d <= 2 ? (last === "cleave" ? "grey" : "cleave") : last === "lunge" ? "grey" : d <= 8 ? "lunge" : "grey",
+  },
+  // Old Bamboo, the pandas' grandsire on the Tinker Peak: he rolls, he belly-slams round him, he hurls bamboo, and he
+  // calls his cubs, eating while they stand: he heals while any of them lives, so the cubs go first.
+  oldBamboo: {
+    moves: {
+      slam: { shape: "self", windup: 1.0, radius: 2, damage: 22 },
+      roll: { shape: "line", windup: 1.0, tiles: 8, width: 2, speed: 12, damage: 22, stun: 2 },
+      toss: { shape: "scatter", windup: 1.1, patches: 4, radius: 2, damage: 14 },
+      cubs: { shape: "summon", windup: 1.2, damage: 0, summon: { kind: "pandaCub", n: 2, cap: 3 } },
+    },
+    recover: 1.2,
+    rage: { at: 0.5, haste: 0.75 },
+    heals: 6,
+    pick: (d, last) => (last === null || last === "toss" ? "cubs" : d <= 2 ? "slam" : last === "roll" ? "toss" : d <= 8 ? "roll" : "toss"),
+  },
+  // The Sun Sentinel, the Gilded City's hall guard: its shield turns every blow from the side it faces, so it is beaten
+  // from behind. A thrust that runs it past the mark (turn and strike), a sunburst in a ring round it, and sunfire
+  // falling to burn.
+  sunSentinel: {
+    moves: {
+      thrust: { shape: "line", windup: 0.9, tiles: 6, width: 1, speed: 22, damage: 26, past: 2 },
+      sunburst: { shape: "ring", windup: 1.2, inner: 2, radius: 4, damage: 22, colour: 0xffe080 },
+      sunfire: { shape: "scatter", windup: 1.2, patches: 5, radius: 3, damage: 6, burn: 3, tick: 0.5, colour: 0xffd040 },
+    },
+    recover: 1.4,
+    rage: { at: 0.5, haste: 0.75 },
+    shield: true,
+    pick: (d, last) => (d <= 2 ? (last === "sunburst" ? "thrust" : "sunburst") : last === "thrust" ? "sunfire" : d <= 6 ? "thrust" : "sunfire"),
   },
 };
 

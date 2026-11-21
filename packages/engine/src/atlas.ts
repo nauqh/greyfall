@@ -41,7 +41,12 @@ export type AreaId =
   | "bullwall"
   | "belfry"
   | "trollpit"
-  | "barrow";
+  | "barrow"
+  | "web"
+  | "shellisle"
+  | "throne"
+  | "peak"
+  | "sunhall";
 
 export interface AtlasArea {
   id: AreaId;
@@ -180,7 +185,7 @@ export interface AtlasMap {
 export const ATLAS_SIZE = { cols: 128, rows: 80 } as const;
 export const TIERS: readonly TierId[] = ["sky", "surface", "below"];
 /** One character a tile in `areaAt`, by the area's index in AREAS. */
-export const AREA_CODE = "0123456789abcdefghijkl";
+export const AREA_CODE = "0123456789abcdefghijklmnopq";
 
 export const AREAS: readonly AtlasArea[] = [
   {
@@ -245,7 +250,7 @@ export const AREAS: readonly AtlasArea[] = [
     mood: 0xdcecdc,
     rise: 1,
     ownGround: true,
-    label: { col: 40, row: 66 },
+    label: { col: 54, row: 66 },
   },
   {
     id: "greyfall",
@@ -399,6 +404,55 @@ export const AREAS: readonly AtlasArea[] = [
     palette: [4, 4, 4],
     mood: 0xa898c8,
     label: { col: 78, row: 35 },
+  },
+  {
+    id: "web",
+    tier: "below",
+    name: "The Weaver's Web",
+    blurb: "A cavern under the Deeps strung from wall to wall, where the Weaver hangs over her brood. Its threads hold whoever walks into them, and the Sinking Stair goes on down past her to the Hollow.",
+    palette: [5, 5, 5],
+    mood: 0x8c84a8,
+    label: { col: 70, row: 74 },
+  },
+  {
+    id: "shellisle",
+    tier: "below",
+    name: "The Shell Isle",
+    blurb: "An isle in a lake under the fen, stone trees round its crown and something vast asleep in its shell. Past it the Shell Stair climbs to the fen, the one way back up from the bottom of the world.",
+    palette: [5, 5, 5],
+    mood: 0x9ab4c8,
+    label: { col: 61, row: 69 },
+  },
+  {
+    id: "throne",
+    tier: "surface",
+    name: "The Grey Keep",
+    blurb: "The Citadel's hall on the Greyfall's crown, a nave of black towers up to the throne the Grey crowned its lord on. He stands before it, and behind it the Throne Stair goes up into the sky.",
+    palette: [4, 4, 4],
+    mood: 0x9c9fa8,
+    rise: 3,
+    ownGround: true,
+    label: { col: 103, row: 24 },
+  },
+  {
+    id: "peak",
+    tier: "surface",
+    name: "The Tinker Peak",
+    blurb: "The rock's summit, ringed in bamboo, where the pandas' grandsire sits and eats. Past him the gnomes' crane swings its basket up into the clouds.",
+    palette: [2, 2, 2],
+    mood: 0xfff8e6,
+    rise: 5,
+    ownGround: true,
+    label: { col: 82, row: 11 },
+  },
+  {
+    id: "sunhall",
+    tier: "sky",
+    name: "The Sun Hall",
+    blurb: "The gnome-kings' hall of gold, hung between the city and the Throne Isle. The Sun Sentinel keeps it behind its shield, and it holds the key to the span beyond.",
+    palette: [1, 1, 1],
+    mood: 0xfff0d0,
+    label: { col: 102, row: 25 },
   },
 ];
 
@@ -1352,24 +1406,32 @@ export const LIFTS: readonly AtlasLift[] = [
     name: "Fen Sinkhole",
     kind: "drop",
     note: "The pools drain into it, and so does anyone who steps too close. The Hollow is a long fall down.",
-    up: { tier: "surface", area: "fen", at: { col: 42, row: 69 } },
-    down: { tier: "below", area: "hollow", at: { col: 39, row: 67 } },
+    up: { tier: "surface", area: "fen", at: { col: 52, row: 69 } },
+    down: { tier: "below", area: "hollow", at: { col: 50, row: 70 } },
   },
   {
     id: "gnome-lift",
     name: "Gnome Lift",
     kind: "lift",
     note: "A basket on a gnome-built crane, off the Tinker Peak up into the clouds.",
-    up: { tier: "sky", area: "gilded", at: { col: 69, row: 6 } },
-    down: { tier: "surface", area: "crags", at: { col: 69, row: 5 } },
+    up: { tier: "sky", area: "gilded", at: { col: 82, row: 8 } },
+    down: { tier: "surface", area: "peak", at: { col: 82, row: 10 } },
   },
   {
     id: "throne-stair",
     name: "Throne Stair",
     kind: "lift",
     note: "From the Grey Keep, a stair of floating stones up to the Throne Isle, the Citadel's old seat at the gnome-kings' court.",
-    up: { tier: "sky", area: "gilded", at: { col: 113, row: 9 } },
-    down: { tier: "surface", area: "greyfall", at: { col: 113, row: 5 } },
+    up: { tier: "sky", area: "gilded", at: { col: 104, row: 17 } },
+    down: { tier: "surface", area: "throne", at: { col: 103, row: 21 } },
+  },
+  {
+    id: "shell-stair",
+    name: "The Shell Stair",
+    kind: "lift",
+    note: "From the Shell Isle up through the rock to the fen's east edge: the one way back up from the Hollow, shut until the Shell Below has fallen.",
+    up: { tier: "surface", area: "fen", at: { col: 58, row: 68 } },
+    down: { tier: "below", area: "shellisle", at: { col: 60, row: 68 } },
   },
   {
     id: "ring-lift",
@@ -1397,7 +1459,8 @@ function surface(rng: Rng): AtlasTier {
     ["emberwood", 4, 2, 4], ["crags", 50, 2, 4], ["greyfall", 92, 2, 4],
     ["burg", 38, 25, 8], ["ramparts", 41, 17, 8], ["chapel", 70, 27, 8], ["keep", 30, 22, 8],
     ["bullwall", 56, 25, 10], ["belfry", 58, 29, 8], ["trollpit", 40, 3, 10],
-    ["saltreach", 3, 38, 4], ["harbour", 29, 35, 4], ["barrowmoor", 62, 38, 4], ["fen", 30, 60, 4],
+    ["saltreach", 3, 38, 4], ["harbour", 29, 35, 4], ["barrowmoor", 62, 38, 4], ["fen", 40, 60, 4],
+    ["peak", 80, 9, 8], ["throne", 100, 21, 8],
   ];
   // The wards' and boss rooms' maps are framed in woods; the Keep west of the Burg, the Ramparts over it, the Bull's
   // Wall east of them, the Chapel past it and the Belfry off the Chapel's west; Troll's Hollow between the wood and the rock.
@@ -1426,9 +1489,11 @@ function surface(rng: Rng): AtlasTier {
   t.gate("ash-road", "The Ash Road", "open", "emberwood", "trollpit", { col: 32, row: 6 }, { col: 42, row: 6 }, "North out of the burning wood to the bull's hollow.");
   t.gate("crag-stair", "Crag Stair", "open", "trollpit", "crags", { col: 43, row: 5 }, { col: 55, row: 8 }, "A gnome path past the bull, out of the smoke and up to the rock.");
   t.gate("moor-gate", "Moor Gate", "shortcut", "harbour", "barrowmoor", { col: 56, row: 47 }, { col: 63, row: 47 }, "Barred from the moor side. Whoever comes through the moor can open it, and come home the short way.");
-  t.gate("fen-causeway", "Fen Causeway", "open", "saltreach", "fen", { col: 16, row: 51 }, { col: 31, row: 68 }, "A long spit of shingle along the south shore.", 2);
-  t.gate("barrow-path", "Barrow Path", "open", "fen", "barrowmoor", { col: 38, row: 61 }, { col: 77, row: 56 }, "Duckboards over the reeds, up onto the moor.");
+  t.gate("fen-causeway", "Fen Causeway", "open", "saltreach", "fen", { col: 16, row: 51 }, { col: 41, row: 68 }, "A long spit of shingle along the south shore.", 2);
+  t.gate("barrow-path", "Barrow Path", "open", "fen", "barrowmoor", { col: 48, row: 61 }, { col: 77, row: 56 }, "Duckboards over the reeds, up onto the moor.");
   t.gate("grey-gate", "Grey Gate", "locked", "barrowmoor", "greyfall", { col: 92, row: 45 }, { col: 97, row: 18 }, "Two locks, one key from each way out of the Harbour: the Barrow King's Horned Key, and the Weaver's Silk Key from below.");
+  t.gate("tinker-peak", "The Tinker Peak", "open", "crags", "peak", { col: 76, row: 11 }, { col: 81, row: 11 }, "Off the rock's top step onto the summit, where the old panda sits.");
+  t.gate("grey-keep", "The Grey Keep", "open", "greyfall", "throne", { col: 104, row: 17 }, { col: 103, row: 22 }, "Off the Greyfall's crown into the Citadel's hall.");
   t.gate("sky-bridge", "Sky Bridge", "high", "crags", "greyfall", { col: 79, row: 5 }, { col: 96, row: 5 }, "The gnomes' high road off the top of the rock, straight onto the Greyfall's wall.", 2);
 
   t.road([22, 41], [25, 40], [33, 46], [40, 45], [44, 47]);
@@ -1436,7 +1501,7 @@ function surface(rng: Rng): AtlasTier {
   t.road([43, 40], [36, 38], [33, 36], [13, 17], [14, 15]);
   t.road([14, 15], [22, 9], [32, 6], [42, 6], [43, 5], [55, 8], [60, 15]);
   t.road([44, 47], [50, 47], [56, 47], [63, 47], [70, 47], [78, 46], [92, 45], [97, 18]);
-  t.road([16, 48], [16, 51], [31, 68], [38, 66], [38, 61], [77, 56], [78, 50]);
+  t.road([16, 48], [16, 51], [41, 68], [48, 66], [48, 61], [77, 56], [78, 50]);
   const { prop, who } = t;
 
   // Saltreach: fishing isles too narrow to build on but for a hut, the militia on them, pirates offshore.
@@ -1515,7 +1580,7 @@ function surface(rng: Rng): AtlasTier {
   who("bear", 70, 19);
   who("bee", 60, 20);
   who("panda", 76, 13);
-  t.bosses.push({ name: "Old Bamboo", area: "crags", col: 63, row: 10 });
+  t.bosses.push({ name: "Old Bamboo", area: "peak", col: 82, row: 11 });
 
   // Barrowmoor: barrows, bones, the cave, and the minotaur's grave.
   prop("cave", 80, 42);
@@ -1530,13 +1595,13 @@ function surface(rng: Rng): AtlasTier {
   who("bat", 76, 42);
 
   // Lizard Fen: the purple chapel among the pools.
-  prop("tower", 39, 70, { color: "purple" });
-  prop("house1", 46, 66, { color: "purple" });
-  t.fires.push({ col: 36, row: 66 });
-  who("monk", 41, 72, { color: "purple" });
-  who("lizard", 44, 64);
-  who("snake", 47, 69);
-  who("turtle", 33, 70);
+  prop("tower", 49, 70, { color: "purple" });
+  prop("house1", 56, 66, { color: "purple" });
+  t.fires.push({ col: 46, row: 66 });
+  who("monk", 51, 72, { color: "purple" });
+  who("lizard", 54, 64);
+  who("snake", 57, 69);
+  who("turtle", 43, 70);
 
   // The Greyfall: the black legion on the walls, the castle on the crown, imps round it.
   prop("castle", 112, 5, { color: "black" });
@@ -1549,7 +1614,7 @@ function surface(rng: Rng): AtlasTier {
   who("imp", 108, 8);
   who("imp", 117, 6);
   who("bombFish", 125, 22, { to: { col: 115, row: 22 } });
-  t.bosses.push({ name: "The Grey Warlord", area: "greyfall", col: 112, row: 7 });
+  t.bosses.push({ name: "The Grey Warlord", area: "throne", col: 103, row: 24 });
 
   return t.finish(
     { saltreach: 0.07, harbour: 0.05, emberwood: 0.5, crags: 0.12, barrowmoor: 0.05, fen: 0.14, greyfall: 0.03 },
@@ -1562,10 +1627,16 @@ function sky(rng: Rng): AtlasTier {
   // The Gilded City over the Greyfall, its Throne Stair over the Grey Keep's; the Steps over the castle, the Watch Lift over the Keep's.
   t.real("gilded", 88, 2);
   t.real("steps", 29, 13);
+  // The Sun Hall hung under the city's south edge, between the Sun Steps and the Throne Isle.
+  t.real("sunhall", 99, 24, 8);
   // The Gnome Landing: an islet over the Tinker Peak, out of the city's line, the lift's basket at it.
   t.blob("gilded", 70, 6, 4, 3);
   t.separate();
   t.bridge({ col: 73, row: 7 }, { col: 89, row: 10 });
+  t.gate("sun-hall", "The Sun Hall", "open", "gilded", "sunhall", { col: 96, row: 16 }, { col: 101, row: 25 }, "Down off the Sun Steps onto the bridge to the hall of gold.");
+  t.gate("gilded-span", "The Gilded Span", "open", "sunhall", "gilded", { col: 105, row: 25 }, { col: 106, row: 16 }, "From the hall of gold over to the Throne Isle, the Sentinel's key in hand.");
+  // The Steps' path from the Watch Lift's isle to the Cloud Bridge, kept clear of the woods.
+  t.road([42, 21], [48, 15], [54, 15]);
   t.gate("cloud-bridge", "Cloud Bridge", "open", "steps", "gilded", { col: 54, row: 15 }, { col: 67, row: 7 }, "A rope bridge over nothing at all, from the Steps to the gnome-kings' landing.", 2);
 
   const { prop, who } = t;
@@ -1578,7 +1649,7 @@ function sky(rng: Rng): AtlasTier {
   t.fires.push({ col: 105, row: 13 });
   who("archer", 99, 8, { color: "yellow" });
   who("warrior", 92, 10, { color: "yellow", to: { col: 100, row: 10 } });
-  t.bosses.push({ name: "The Sun Sentinel", area: "gilded", col: 104, row: 11 });
+  t.bosses.push({ name: "The Sun Sentinel", area: "sunhall", col: 102, row: 25 });
   who("bee", 96, 12);
   who("gnome", 71, 7, { to: { col: 68, row: 7 } });
   who("imp", 112, 10);
@@ -1600,6 +1671,9 @@ function below(rng: Rng): AtlasTier {
   t.real("barrow", 76, 34, 8);
   t.real("deeps", 68, 43);
   t.real("hollow", 31, 66);
+  // The Weaver's Web between the Deeps and the Hollow; the Shell Isle off the Hollow's east shore, under the fen's.
+  t.real("web", 66, 70, 8);
+  t.real("shellisle", 57, 66, 8);
   // Rock casts a cliff on the row under it: a back wall a tile high over every cavern keeps its laid floor walkable.
   for (let r = 3; r < t.grid.length - 2; r++) {
     for (let c = 2; c < t.grid[r]!.length - 2; c++) {
@@ -1613,9 +1687,10 @@ function below(rng: Rng): AtlasTier {
   t.bridge({ col: 48, row: 70 }, { col: 50, row: 75 });
   t.gate("ring-gate", "Ring Gate", "open", "landing", "ring", { col: 33, row: 46 }, { col: 37, row: 46 }, "The sea cave's last passage, into the bull's cavern.");
   t.gate("kings-stair", "The King's Stair", "open", "barrow", "deeps", { col: 79, row: 35 }, { col: 81, row: 43 }, "Behind the Barrow King's throne, down out of his barrow into the tombs.");
-  t.gate("cistern-run", "Cistern Run", "open", "undercroft", "deeps", { col: 57, row: 66 }, { col: 68, row: 47 }, "A tunnel east out of the cisterns. It comes up in the tombs.");
-  // Round the Undercroft's foot to the Hollow's east shore.
-  t.gate("sinking-stair", "Sinking Stair", "open", "deeps", "hollow", { col: 77, row: 65 }, { col: 51, row: 75 }, "Steps cut down from the tombs to the Hollow's shore.");
+  t.gate("cistern-run", "Cistern Run", "open", "undercroft", "deeps", { col: 56, row: 52 }, { col: 68, row: 47 }, "A tunnel east out of the cisterns. It comes up in the tombs.");
+  t.gate("the-web", "The Web", "open", "deeps", "web", { col: 76, row: 63 }, { col: 69, row: 71 }, "Down off the Deeps' floor into the Weaver's cavern.");
+  t.gate("sinking-stair", "Sinking Stair", "open", "web", "hollow", { col: 67, row: 75 }, { col: 51, row: 75 }, "Steps cut on down past the Weaver to the Hollow's shore.");
+  t.gate("the-shell", "The Shell", "open", "hollow", "shellisle", { col: 51, row: 71 }, { col: 58, row: 69 }, "Over the causeway to the Shell Isle.");
 
   const { prop, who } = t;
   // The Undercroft.
@@ -1632,14 +1707,14 @@ function below(rng: Rng): AtlasTier {
   t.fires.push({ col: 81, row: 46 });
   who("skullGuard", 75, 45);
   who("skull", 83, 50, { to: { col: 83, row: 53 } });
-  t.bosses.push({ name: "The Weaver", area: "deeps", col: 77, row: 61 });
+  t.bosses.push({ name: "The Weaver", area: "web", col: 69, row: 73 });
   // The Drowned Hollow.
   for (const [c, r] of [[36, 70], [49, 76]] as const) prop("deadTree", c, r, { scale: 0.55 });
   prop("goldStone", 46, 70);
   t.fires.push({ col: 40, row: 70 });
   who("turtle", 42, 76);
   who("lizard", 44, 69, { to: { col: 48, row: 69 } });
-  t.bosses.push({ name: "The Shell Below", area: "hollow", col: 46, row: 76 });
+  t.bosses.push({ name: "The Shell Below", area: "shellisle", col: 60, row: 68 });
   return t.finish({ undercroft: 0.02, deeps: 0.03, hollow: 0.06 }, LIFTS.flatMap((l) => [l.up, l.down]).filter((e) => e.tier === "below").map((e) => e.at));
 }
 
