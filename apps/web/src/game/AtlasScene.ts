@@ -1867,7 +1867,7 @@ export class AtlasScene extends Phaser.Scene {
       this.tweens.add({ targets: b.s, alpha: 0, duration: 500, onComplete: () => b.s.destroy() });
       const gold = (b as Foe).stats?.gold;
       if (gold) this.dropGold(b.at, Math.round(gold * this.gear.greed));
-      if (this.isBoss(b as Foe)) this.felled((b as Foe).kind, BOSS_KEY[(b as Foe).kind]);
+      if (this.isBoss(b as Foe)) this.felled(b as Foe, BOSS_KEY[(b as Foe).kind]);
       return;
     }
     const hero = this.hero!;
@@ -2252,7 +2252,7 @@ export class AtlasScene extends Phaser.Scene {
     remember(BOUGHT, bought.add(item));
     this.regear();
     const hero = this.hero!;
-    this.float(hero.s.x, hero.s.y - hero.lift - 30, item, "#f4cf6b");
+    this.float(hero.s.x, hero.s.y - hero.lift - 30, `${item} gained`, "#f4cf6b");
     // The sack has no button on a keyboard: its key is told once, with the first good got past the gift come ashore.
     if (first) this.time.delayedCall(900, () => this.float(hero.s.x, hero.s.y - hero.lift - 30, "Press Tab to open your sack", "#fdfaf0", 3200));
   }
@@ -2310,7 +2310,7 @@ export class AtlasScene extends Phaser.Scene {
     store(BAND, h.band);
     this.addCompanion(kind);
     this.emitBand();
-    this.float(hero.s.x, hero.s.y - hero.lift - 30, `A ${COMPANION_NAME[kind]} joins`, "#9cc4e8");
+    this.float(hero.s.x, hero.s.y - hero.lift - 30, `${COMPANION_NAME[kind]} joined`, "#9cc4e8");
     this.showMenu();
   }
 
@@ -2763,7 +2763,9 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** A boss down: it stays down for good, and its key, if it has one, is the captain's. */
-  private felled(kind: string, key?: string): void {
+  private felled(boss: Foe, key?: string): void {
+    const kind = boss.kind;
+    const name = this.local?.bosses.slice().sort((a, b) => tileDistance(a, boss.home) - tileDistance(b, boss.home))[0]?.name ?? "Enemy";
     remember(SLAIN, remembered(SLAIN).add(kind));
     if (this.local?.arena?.boss === kind) this.liftFog();
     if (key) remember(KEYS, remembered(KEYS).add(kind));
@@ -2774,7 +2776,7 @@ export class AtlasScene extends Phaser.Scene {
     }
     const cam = this.cameras.main;
     const t = this.add
-      .text(cam.width / 2, cam.height * 0.4, key ? `${key}\nobtained` : flask ? "Victory achieved\nA flask more" : "Victory\nachieved", { fontFamily: FONT, fontSize: "40px", fontStyle: "bold", color: "#f4cf6b", stroke: "#1c2634", strokeThickness: 8, align: "center" })
+      .text(cam.width / 2, cam.height * 0.4, `${name} fell${key ? `\n${key} gained` : flask ? "\nFlask gained" : ""}`, { fontFamily: FONT, fontSize: "40px", fontStyle: "bold", color: "#f4cf6b", stroke: "#1c2634", strokeThickness: 8, align: "center" })
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(DEPTH.clouds + 10);
@@ -3584,7 +3586,7 @@ export class AtlasScene extends Phaser.Scene {
       store(BAND, [...band, "monk"]);
       this.addCompanion("monk");
       this.emitBand();
-      this.float(this.hero.s.x, this.hero.s.y - this.hero.lift - 30, "The Monk joins", "#9cc4e8");
+      this.float(this.hero.s.x, this.hero.s.y - this.hero.lift - 30, "Monk joined", "#9cc4e8");
     }
   }
 
