@@ -99,6 +99,8 @@ export interface AtlasApi {
   tier: (id: TierId) => void;
   /** In an area's map: rebuild the scene as another area's map, arriving at its exit back to `from`. */
   travel: (to: AreaId, from: AreaId, arrive: Crossing) => void;
+  /** Builds an area's map ahead of a crossing, so the rebuild behind the clouds finds it made. */
+  warm: (to: AreaId) => void;
   /** In an area's map, in dev mode: the free camera over the whole map; off, it holds on the hero. */
   freeCamera: (on: boolean) => void;
   /** In a talk: the next page, or the end of it. */
@@ -1239,6 +1241,11 @@ export class AtlasScene extends Phaser.Scene {
       travel: (to, from, arrive) => {
         const carry = arrive === "rest" || !this.hero ? undefined : { hp: this.hero.hp, flasks: this.flasks, band: this.band.map((c) => (c.dead ? 0 : c.hp)) };
         this.scene.restart({ ...this.hooks, area: to, from, arrive, free: this.free, carry });
+      },
+      warm: (to) => {
+        areaMap(to);
+        // Building a map swaps the engine's island; this scene still walks its own.
+        useIsland(this.map.tiers[this.view].island);
       },
       freeCamera: (on) => this.setFree(on),
       next: () => (this.reading ? this.read(null) : this.nextPage()),

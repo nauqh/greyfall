@@ -96,6 +96,8 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   const depart = (d: Departure): void => {
     now.current.travelling = true;
     setTravel({ ...d, phase: "cover" });
+    // The next map is built while the clouds draw in, once their motion is on the compositor.
+    setTimeout(() => api.current?.warm(d.to), 100);
   };
   // Waking after a death: the dark comes down, and the captain wakes at the bonfire.
   const wake = (to: AreaId): void => depart({ to, name: "", kind: "rest", dir: "down", x: 0.5, y: 0.5 });
