@@ -726,9 +726,9 @@ crossing are gone.
   cloister closes the loop. The town's Ember Gate is now a shortcut, opened from the wood: Emberwood
   comes after Highward. Every way between areas is a thing to see: a
   stair in the terrain's own tiles, a gateway between towers or a bridge or causeway to it, and
-  across it a fog gate from the pack's art, fence end-posts with the
-  pack's white clouds banked between; a ladder is a run of fence, a lift
-  its platform. Solid props block a base centred under their art (an
+  no fog across it (fog marks only a boss room): a road off the map's edge ends between two
+  torch posts, a way in the map's middle is a building's door or an arch in the rock, gone
+  into with E; a ladder is a run of fence, a lift its platform. Solid props block a base centred under their art (an
   even width rounds down), so none juts out to one side. The Keep
   (`keep`), Highward's crown, its own area where the harbour's castle
   and Keep terraces used to be: in at the Keep Gate off the Burg's Upper
@@ -744,8 +744,7 @@ crossing are gone.
   boss bar shows once you stand in the room with the boss in
   view), and the boat out to Lanternport. Every
   fightable boss fights in a closed arena; walking into its fog walks you
-  two steps in, and it holds until the boss or you fall. The side a
-  crossing comes out on is `plain`, no fog.
+  two steps in, and it holds until the boss or you fall.
   Since then, after the Ring, the first four bosses each hold an area of
   their own, and that area is the arena and nothing else, a land apart:
   in at a gate from the land before, straight into the room, and

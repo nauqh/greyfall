@@ -1313,10 +1313,10 @@ export class AtlasScene extends Phaser.Scene {
       return missing.length ? `Locked: the ${missing.join(" and the ")} ${missing.length > 1 ? "open" : "opens"} it` : "Barred";
     }
     const there = AREAS.find((a) => a.id === e.to)?.name;
-    return there ? `Traverse the clouds to ${there}` : "Traverse the clouds";
+    return there ? `Walk on to ${there}` : "Walk on";
   }
 
-  /** E at a way out: a slow walk off the edge into the crossing's clouds; a lift or a drop goes at once (a drop still warns). */
+  /** E at a way out: a slow walk off the edge; a lift or a drop goes at once (a drop still warns). */
   private traverse(e: Exit): void {
     if (barred(e)) return;
     const { kind, dir } = this.crossing(e);
@@ -1324,8 +1324,9 @@ export class AtlasScene extends Phaser.Scene {
     const hero = this.hero!;
     this.gone = true;
     hero.way = [];
-    // On out past the gate the way it leads, wherever the captain stood: never back onto its tile from beyond it.
-    const [dc, dr] = ({ left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] } as const)[dir];
+    // On out past the gate the way it leads, wherever the captain stood: never back onto its tile from beyond it. A door
+    // or an arch in the map's middle is gone into, up from its step.
+    const [dc, dr] = this.inward(e) ? [0, -0.6] : ({ left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] } as const)[dir];
     const [x, y] = [(e.at.col + 0.5 + 2 * dc) * CELL, (e.at.row + 0.75 + 2 * dr) * CELL];
     if (Math.abs(x - hero.s.x) > 2) hero.s.setFlipX(x < hero.s.x);
     this.play(hero.s, hero.move ?? hero.idle);
@@ -3266,7 +3267,7 @@ export class AtlasScene extends Phaser.Scene {
     } else if (e.name === "The Boat") {
       // A boat crossing: the map moors the boat itself in the water beside it, so nothing more is drawn.
     } else if (e.name === "The Sisters' Stair") {
-      this.sistersDoor(e);
+      this.archway(e);
     } else if (up || down || e.name.includes("Lift")) {
       const beside = (up || down) && this.map.tiers[here].props.some((p) => ["cave", "gnomeTower", "watchtower", "tower", "castle", "monastery"].includes(p.art) && footprint(p).some((c) => Math.abs(c.col - e.at.col) <= 3 && Math.abs(c.row - e.at.row) <= 3));
       if (!beside) {
@@ -3285,11 +3286,38 @@ export class AtlasScene extends Phaser.Scene {
       // A ladder, from the pack's fence: one upright run of it against the wall, rails and rungs.
       this.fence(e.at.col, e.at.row - 2, 1, 3);
     } else if (missingKeys(e).length) {
-      // Locked: the pack's fence across the way until its key is carried, then fog like any other.
+      // Locked: the pack's fence across the way until its key is carried, then open like any other.
       this.gatehouse("locked", this.doorway(e));
-    } else if (!e.plain) {
-      this.fogDoor(e);
+    } else if (this.inward(e) === "arch") {
+      this.archway(e);
+    } else if (!this.inward(e)) {
+      // A road off the map's edge: a lit post either side of its last tile, or just outside a way too narrow for them.
+      const way = this.doorway(e);
+      const [a, b] = [way[0]!, way[way.length - 1]!];
+      const [dc, dr] = [Math.sign(b.col - a.col), Math.sign(b.row - a.row)];
+      const ends = way.length >= 3 ? [a, b] : [{ col: a.col - dc, row: a.row - dr }, { col: b.col + dc, row: b.row + dr }];
+      for (const c of ends) this.torchPost(c);
     }
+  }
+
+  /** How a way out in the map's middle is gone through: a building's door, or an arch cut in the rock; none at an edge. */
+  private inward(e: Exit): "door" | "arch" | undefined {
+    const { rows } = this.local!.island;
+    const edge = e.at.col <= 2 || e.at.row <= 2 || e.at.col >= rows[0]!.length - 3 || e.at.row >= rows.length - 3;
+    if (edge) return undefined;
+    const door = this.local!.props.some((p) => ["castle", "tower", "monastery"].includes(p.art) && footprint(p).some((c) => c.col === e.at.col && c.row === e.at.row - 1));
+    return door ? "door" : "arch";
+  }
+
+  /** A gatepost from the pack's fence with a torch burning on it. */
+  private torchPost(c: Cell): void {
+    this.fence(c.col, c.row, 1, 1);
+    const [x, y] = [(c.col + 0.5) * CELL, (c.row + 1) * CELL];
+    const flame = this.add.sprite(x, y - 58, "fire").setOrigin(0.5, FIRE.anchor).setScale(0.3).setDepth(standing(y) + 1);
+    this.loop(flame, "fire");
+    this.track(flame);
+    const glow = this.add.image(x, y - 66, "glow").setBlendMode(Phaser.BlendModes.ADD).setTint(0xffb870).setAlpha(0.4).setScale(0.7).setDepth(DEPTH.clouds - 2);
+    this.tweens.add({ targets: glow, alpha: 0.55, duration: 700 + Math.random() * 500, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
   }
 
   /** A lift's hoist over its platform: two uprights at the back corners, a beam across with the rope wheel at its middle,
@@ -3321,9 +3349,9 @@ export class AtlasScene extends Phaser.Scene {
     g.fillStyle(0xe5be76, 1).fillCircle(x, top + r, 0.03 * w + 2);
   }
 
-  /** The Sisters' Stair: no fog bank but a low arch cut in the rock under the altar, the sisters' incense still threading
-   *  out of it one wisp at a time; dark and grey while the way is barred, candle-lit and gold once Ysolde has told of it. */
-  private sistersDoor(e: Exit): void {
+  /** A stair or postern cut in the rock: a low arch, a draught threading out of it one wisp at a time; dark and grey while
+   *  the way is barred (the Sisters' Stair, until Ysolde has told of it), candle-lit and gold once open. */
+  private archway(e: Exit): void {
     const x = (e.at.col + 0.5) * CELL;
     const y = (e.at.row + 0.95) * CELL;
     const lit = !barred(e);
@@ -3348,11 +3376,6 @@ export class AtlasScene extends Phaser.Scene {
         this.tweens.add({ targets: wisp, y: sy - 46, x: sx + (Math.random() - 0.5) * 20, scale: 0.7, duration: 1600, onComplete: () => wisp.destroy() });
       },
     });
-  }
-
-  /** A way out to the next area on foot: a fog gate across the way. */
-  private fogDoor(e: Exit): void {
-    this.fogVeil(this.doorway(e));
   }
 
   /** The cells a gate spans: the walkable run on the exit's own level across the narrower way through it, so it fills the

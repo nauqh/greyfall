@@ -24,8 +24,6 @@ export interface AreaExit {
   shut?: string;
   /** A world flag set by going through it: the far side's way back opens, as a ladder kicked down. */
   opens?: string;
-  /** No fog across it: the side a crossing comes out on, or a passage straight to a boss's own fog. */
-  plain?: boolean;
   /** Its way to the map's edge is a track, not paved. */
   unpaved?: boolean;
   /** Bosses' kinds: shut until every key those bosses drop is carried. */
@@ -695,7 +693,7 @@ function keepArea(): AreaMap {
 
   const notes: Note[] = [{ at: { col: 44, row: 6 }, text: "Look east. In the Citadel a crown keeps one man warm." }];
   const exits: AreaExit[] = [
-    { to: "burg", name: "Keep Gate", kind: "open", at: { col: 62, row: 30 }, plain: true },
+    { to: "burg", name: "Keep Gate", kind: "open", at: { col: 62, row: 30 } },
     { to: "steps", name: "Watch Lift", kind: "shortcut", at: { col: 13, row: 6 }, shut: "watchLiftOpen" },
   ];
   const districts: District[] = [
@@ -800,10 +798,10 @@ function chapel(): AreaMap {
     { at: { col: 6, row: 31 }, text: "The bell has not rung since the Grey came." },
   ];
   const exits: AreaExit[] = [
-    { to: "bullwall", name: "Chapel Door", kind: "open", at: { col: 1, row: 30 }, plain: true },
+    { to: "bullwall", name: "Chapel Door", kind: "open", at: { col: 1, row: 30 } },
     { to: "harbour", name: "The Old Lift", kind: "shortcut", at: { col: 68, row: 55 }, opens: "oldLiftDown" },
-    { to: "belfry", name: "The Bell Stair", kind: "open", at: { col: 27, row: 9 } },
-    { to: "harbour", name: "The Sisters' Stair", kind: "open", at: { col: 33, row: 58 }, opens: "sistersStair", plain: true },
+    { to: "belfry", name: "The Bell Stair", kind: "open", at: { col: 27, row: 6 } },
+    { to: "harbour", name: "The Sisters' Stair", kind: "open", at: { col: 33, row: 58 }, opens: "sistersStair" },
   ];
   const districts: District[] = [
     { name: "The Cloister Gate", at: { col: 9, row: 30 }, levels: [1], palette: [4], dress: "greyfall", decor: 1.5 },
@@ -934,7 +932,7 @@ function ramparts(): AreaMap {
     { at: { col: 10, row: 44 }, text: "A narrow wall. What holds it does not turn aside." },
   ];
   const exits: AreaExit[] = [
-    { to: "burg", name: "Rampart Gate", kind: "open", at: { col: 10, row: 48 }, plain: true },
+    { to: "burg", name: "Rampart Gate", kind: "open", at: { col: 10, row: 48 } },
     { to: "bullwall", name: "The Bull's Gate", kind: "open", at: { col: 82, row: 8 } },
   ];
   const districts: District[] = [
@@ -1138,8 +1136,8 @@ function burg(): AreaMap {
     { at: { col: 48, row: 50 }, text: "Too deep to wade. Find a bridge." },
   ];
   const exits: AreaExit[] = [
-    { to: "harbour", name: "Burg Gate", kind: "open", at: { col: 48, row: 62 }, plain: true },
-    { to: "ramparts", name: "Rampart Gate", kind: "open", at: { col: 52, row: 1 }, plain: true },
+    { to: "harbour", name: "Burg Gate", kind: "open", at: { col: 48, row: 62 } },
+    { to: "ramparts", name: "Rampart Gate", kind: "open", at: { col: 52, row: 1 } },
     { to: "bullwall", name: "The Ladder", kind: "shortcut", at: { col: 56, row: 32 }, shut: "ladderDown" },
     { to: "keep", name: "Keep Gate", kind: "locked", at: { col: 1, row: 20 }, keys: ["minotaur"] },
   ];
@@ -1779,12 +1777,12 @@ function harbour(): AreaMap {
   who("pawn", 70, 71, { ...home, act: "hammer", flip: true });
 
   const exits: AreaExit[] = [
-    { to: "saltreach", name: "Old Bridge", kind: "open", at: { col: 1, row: 42 }, plain: true },
+    { to: "saltreach", name: "Old Bridge", kind: "open", at: { col: 1, row: 42 } },
     { to: "barrowmoor", name: "Moor Gate", kind: "shortcut", at: { col: 109, row: 50 }, shut: "moorGateOpen" },
     { to: "emberwood", name: "Ember Gate", kind: "gate", at: { col: 26, row: 1 }, shut: "emberGateOpen" },
     { to: "chapel", name: "The Old Lift", kind: "shortcut", at: { col: 63, row: 41 }, shut: "oldLiftDown" },
     { to: "chapel", name: "The Sisters' Stair", kind: "gate", at: { col: 35, row: 29 }, shut: "sistersStair" },
-    { to: "burg", name: "Burg Gate", kind: "open", at: { col: 56, row: 1 }, plain: true, unpaved: true },
+    { to: "burg", name: "Burg Gate", kind: "open", at: { col: 56, row: 1 }, unpaved: true },
     { to: "undercroft", name: "The Old Well", kind: "drop", at: { col: Math.round(sx(10)), row: 50 } },
     { to: "ring", name: "The Boat", kind: "lift", at: { col: 62, row: 61 } },
   ];
@@ -1985,7 +1983,7 @@ function emberwood(): AreaMap {
   const tier = t.finish({}, [{ col: 40, row: 64 }], maze(t, rng, rooms));
   const exits: AreaExit[] = [
     { to: "harbour", name: "Ember Gate", kind: "gate", at: { col: 40, row: 70 }, opens: "emberGateOpen" },
-    { to: "belfry", name: "The Postern", kind: "open", at: { col: 113, row: 55 }, plain: true },
+    { to: "belfry", name: "The Postern", kind: "open", at: { col: 113, row: 55 } },
     { to: "trollpit", name: "The Ash Road", kind: "open", at: { col: 62, row: 1 } },
   ];
   return { ...tier, area: "emberwood", entry: { col: 40, row: 64 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [...treetop, ...ashWalk], notes, locks };
@@ -2361,7 +2359,7 @@ function greyfall(): AreaMap {
   const exits: AreaExit[] = [
     { to: "barrowmoor", name: "Grey Gate", kind: "locked", at: { col: 1, row: 44 } },
     { to: "crags", name: "Sky Bridge", kind: "high", at: { col: 1, row: 8 } },
-    { to: "throne", name: "The Grey Keep", kind: "open", at: { col: 81, row: 12 } },
+    { to: "throne", name: "The Grey Keep", kind: "open", at: { col: 78, row: 15 } },
   ];
   // The rock's tiers alternate stone colours so each step reads; the marsh below in its own.
   const districts: District[] = [
@@ -2492,8 +2490,8 @@ function gilded(): AreaMap {
     { to: "steps", name: "Cloud Bridge", kind: "open", at: { col: 1, row: 36 } },
     { to: "peak", name: "Gnome Lift", kind: "lift", at: { col: 26, row: 58 } },
     { to: "throne", name: "Throne Stair", kind: "lift", at: { col: 99, row: 34 } },
-    { to: "sunhall", name: "The Sun Hall", kind: "open", at: { col: 65, row: 29 } },
-    { to: "sunhall", name: "The Gilded Span", kind: "open", at: { col: 94, row: 34 }, plain: true },
+    { to: "sunhall", name: "The Sun Hall", kind: "open", at: { col: 65, row: 27 } },
+    { to: "sunhall", name: "The Gilded Span", kind: "open", at: { col: 95, row: 32 } },
   ];
   const districts: District[] = [
     // All gold and sunlight: the city in fresh green climbing to gold, the market, gate and chapel gold; the gardens
@@ -2822,7 +2820,7 @@ function deeps(): AreaMap {
 
   const exits: AreaExit[] = [
     { to: "undercroft", name: "Cistern Run", kind: "open", at: { col: 1, row: 22 } },
-    { to: "barrow", name: "The King's Stair", kind: "open", at: { col: 44, row: 11 } },
+    { to: "barrow", name: "The King's Stair", kind: "open", at: { col: 46, row: 14 } },
     { to: "web", name: "The Web", kind: "open", at: { col: 38, row: 94 } },
   ];
   const districts: District[] = [
@@ -3472,7 +3470,7 @@ function landing(): AreaMap {
     { at: { col: 63, row: 28 }, text: "Die, and your gold stays where you fell." },
     { at: { col: 36, row: 44 }, text: "Woke on this rock, warm, with the sea in my mouth. Could not say my own name. Went up anyway." },
   ];
-  const exits: AreaExit[] = [{ to: "ring", name: "Ring Gate", kind: "open", at: { col: 78, row: 28 }, plain: true }];
+  const exits: AreaExit[] = [{ to: "ring", name: "Ring Gate", kind: "open", at: { col: 78, row: 28 } }];
   // Unnamed: no room's name shows walking in, and both fires go by the Landing's own.
   const districts: District[] = [
     { name: "", at: { col: 34, row: 42 }, palette: [5], dress: "saltreach", decor: 1 },
@@ -3520,7 +3518,7 @@ function ring(): AreaMap {
   const notes: Note[] = [{ at: { col: 9, row: 21 }, text: "Red ground is a blow coming. Step out of it, and lead him into the rocks." }];
 
   const exits: AreaExit[] = [
-    { to: "landing", name: "Ring Gate", kind: "open", at: { col: 1, row: 20 }, plain: true },
+    { to: "landing", name: "Ring Gate", kind: "open", at: { col: 1, row: 20 } },
     { to: "harbour", name: "The Boat", kind: "lift", at: { col: 45, row: 20 }, guard: "troll" },
   ];
   const districts: District[] = [
@@ -3556,7 +3554,7 @@ function bullwall(): AreaMap {
 
   const notes: Note[] = [{ at: { col: 3, row: 9 }, text: "No way round him. Only through." }];
   const exits: AreaExit[] = [
-    { to: "ramparts", name: "The Bull's Gate", kind: "open", at: { col: 1, row: 10 }, plain: true },
+    { to: "ramparts", name: "The Bull's Gate", kind: "open", at: { col: 1, row: 10 } },
     { to: "burg", name: "The Ladder", kind: "shortcut", at: { col: 60, row: 11 }, opens: "ladderDown", guard: "rampartBull" },
     { to: "chapel", name: "Chapel Door", kind: "open", at: { col: 70, row: 10 }, guard: "rampartBull" },
   ];
@@ -3593,7 +3591,7 @@ function belfry(): AreaMap {
 
   const notes: Note[] = [{ at: { col: 27, row: 10 }, text: "No room to run on the bell roof." }];
   const exits: AreaExit[] = [
-    { to: "chapel", name: "The Bell Stair", kind: "open", at: { col: 28, row: 11 }, plain: true },
+    { to: "chapel", name: "The Bell Stair", kind: "open", at: { col: 28, row: 11 } },
     { to: "emberwood", name: "The Postern", kind: "gate", at: { col: 1, row: 11 }, guard: "stoneWarden" },
   ];
   const districts: District[] = [
@@ -3637,7 +3635,7 @@ function trollpit(): AreaMap {
 
   const notes: Note[] = [{ at: { col: 31, row: 40 }, text: "Make him run. The trees stop him dead." }];
   const exits: AreaExit[] = [
-    { to: "emberwood", name: "The Ash Road", kind: "open", at: { col: 30, row: 44 }, plain: true },
+    { to: "emberwood", name: "The Ash Road", kind: "open", at: { col: 30, row: 44 } },
     { to: "crags", name: "Crag Stair", kind: "open", at: { col: 30, row: 1 }, guard: "minotaur" },
   ];
   const districts: District[] = [
@@ -3713,7 +3711,7 @@ function web(): AreaMap {
 
   const notes: Note[] = [{ at: { col: 31, row: 6 }, text: "White ground holds. Cut the brood down first." }];
   const exits: AreaExit[] = [
-    { to: "deeps", name: "The Web", kind: "open", at: { col: 30, row: 3 }, plain: true },
+    { to: "deeps", name: "The Web", kind: "open", at: { col: 30, row: 3 } },
     { to: "hollow", name: "Sinking Stair", kind: "open", at: { col: 30, row: 42 }, guard: "weaver" },
   ];
   const districts: District[] = [
@@ -3750,7 +3748,7 @@ function shellisle(): AreaMap {
 
   const notes: Note[] = [{ at: { col: 6, row: 23 }, text: "Its shell turns every blade. Make it spin into the lake." }];
   const exits: AreaExit[] = [
-    { to: "hollow", name: "The Shell", kind: "open", at: { col: 1, row: 24 }, plain: true },
+    { to: "hollow", name: "The Shell", kind: "open", at: { col: 1, row: 24 } },
     { to: "fen", name: "The Shell Stair", kind: "lift", at: { col: 34, row: 5 }, guard: "shellBelow" },
   ];
   const districts: District[] = [
@@ -3788,7 +3786,7 @@ function throne(): AreaMap {
   t.bosses.push({ name: "The Grey Warlord", area: "throne", col: 32, row: 21 });
 
   const exits: AreaExit[] = [
-    { to: "greyfall", name: "The Grey Keep", kind: "open", at: { col: 32, row: 42 }, plain: true },
+    { to: "greyfall", name: "The Grey Keep", kind: "open", at: { col: 32, row: 42 } },
     { to: "gilded", name: "Throne Stair", kind: "lift", at: { col: 36, row: 9 }, guard: "warlord" },
   ];
   const districts: District[] = [
@@ -3820,7 +3818,7 @@ function peak(): AreaMap {
 
   const notes: Note[] = [{ at: { col: 29, row: 39 }, text: "He eats while his cubs stand." }];
   const exits: AreaExit[] = [
-    { to: "crags", name: "The Tinker Peak", kind: "open", at: { col: 28, row: 42 }, plain: true },
+    { to: "crags", name: "The Tinker Peak", kind: "open", at: { col: 28, row: 42 } },
     { to: "gilded", name: "Gnome Lift", kind: "lift", at: { col: 28, row: 6 }, guard: "oldBamboo" },
   ];
   const districts: District[] = [
@@ -3855,7 +3853,7 @@ function sunhall(): AreaMap {
 
   const notes: Note[] = [{ at: { col: 4, row: 14 }, text: "Its shield faces you. Be where it does not." }];
   const exits: AreaExit[] = [
-    { to: "gilded", name: "The Sun Hall", kind: "open", at: { col: 1, row: 15 }, plain: true },
+    { to: "gilded", name: "The Sun Hall", kind: "open", at: { col: 1, row: 15 } },
     { to: "gilded", name: "The Gilded Span", kind: "open", at: { col: 62, row: 15 }, guard: "sunSentinel" },
   ];
   const districts: District[] = [
