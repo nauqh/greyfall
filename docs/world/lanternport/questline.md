@@ -6,7 +6,7 @@ Who lives here, and every line they say. How talks, flags and moving on work is 
 
 Folk from elsewhere who turn up here; their lines are in their own land.
 
-- Jory: [Graveroad](../barrow-deeps/questline.md)
+- Jory: [Graveroad](../graveroad/questline.md)
 
 ## Old Ferrow
 

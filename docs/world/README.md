@@ -10,19 +10,19 @@ Each land is a folder with its `lore.md` (the canon for that land, and its folk)
 
 | Land | Areas (ids) | Bosses |
 | --- | --- | --- |
-| [Tidewake](landing/) | `landing`, `ring` | the Cinder Troll |
-| [Lanternport](last-harbour/) | `harbour` | none: the hub |
-| [Highward](castle/) | `burg`, `ramparts`, `chapel`, `keep`, `bullwall`, `belfry` | the Rampart Boar, the Stone Warden |
+| [Tidewake](tidewake/) | `landing`, `ring` | the Cinder Troll |
+| [Lanternport](lanternport/) | `harbour` | none: the hub |
+| [Highward](highward/) | `burg`, `ramparts`, `chapel`, `keep`, `bullwall`, `belfry` | the Rampart Boar, the Stone Warden |
 | [Emberwood](emberwood/) | `emberwood`, `trollpit` | the Ember Bull |
-| [Brasscrag](tinker-crags/) | `crags`, `peak` | Old Bamboo |
-| [Stiltwater](saltreach/) | `saltreach` | none |
-| [Kingsrest](barrowmoor/) | `barrowmoor`, `barrow` | the Barrow King |
-| [Stillmere](lizard-fen/) | `fen` | none |
+| [Brasscrag](brasscrag/) | `crags`, `peak` | Old Bamboo |
+| [Stiltwater](stiltwater/) | `saltreach` | none |
+| [Kingsrest](kingsrest/) | `barrowmoor`, `barrow` | the Barrow King |
+| [Stillmere](stillmere/) | `fen` | none |
 | [Greyfall](greyfall/) | `greyfall`, `throne` | the Grey Warlord |
-| [Cloudstair](skyward-steps/) | `steps` | none |
-| [Sunhold](gilded-city/) | `gilded`, `sunhall` | the Sun Sentinel |
-| [Underwell](undercroft/) | `undercroft` | none built (`ATLAS.md` plans an Ossuary Warden) |
-| [Graveroad](barrow-deeps/) | `deeps`, `web` | the Weaver |
-| [Hearthdeep](drowned-hollow/) | `hollow`, `shellisle` | the Shell Below |
+| [Cloudstair](cloudstair/) | `steps` | none |
+| [Sunhold](sunhold/) | `gilded`, `sunhall` | the Sun Sentinel |
+| [Underwell](underwell/) | `undercroft` | none built (`ATLAS.md` plans an Ossuary Warden) |
+| [Graveroad](graveroad/) | `deeps`, `web` | the Weaver |
+| [Hearthdeep](hearthdeep/) | `hollow`, `shellisle` | the Shell Below |
 
 When a line of dialogue changes in `packages/engine/src/npcs.ts`, change it in the speaker's land `questline.md` too; a new flag goes in [questline.md](questline.md).

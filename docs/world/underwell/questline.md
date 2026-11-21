@@ -6,8 +6,8 @@ Who lives here, and every line they say. How talks, flags and moving on work is 
 
 Folk from elsewhere who turn up here; their lines are in their own land.
 
-- Tobin: [Lanternport](../last-harbour/questline.md)
-- Mother Ysolde: [Lanternport](../last-harbour/questline.md)
+- Tobin: [Lanternport](../lanternport/questline.md)
+- Mother Ysolde: [Lanternport](../lanternport/questline.md)
 
 ## A Drowned Sister
 

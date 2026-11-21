@@ -6,5 +6,5 @@ Who lives here, and every line they say. How talks, flags and moving on work is 
 
 Folk from elsewhere who turn up here; their lines are in their own land.
 
-- Penny: [Lanternport](../last-harbour/questline.md)
-- Ansel of the Wall: [Highward](../castle/questline.md)
+- Penny: [Lanternport](../lanternport/questline.md)
+- Ansel of the Wall: [Highward](../highward/questline.md)

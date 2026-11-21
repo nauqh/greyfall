@@ -6,8 +6,8 @@ Who lives here, and every line they say. How talks, flags and moving on work is 
 
 Folk from elsewhere who turn up here; their lines are in their own land.
 
-- Sergeant Corwin: [Highward](../castle/questline.md)
-- The Moor Watchman: [Lanternport](../last-harbour/questline.md)
+- Sergeant Corwin: [Highward](../highward/questline.md)
+- The Moor Watchman: [Lanternport](../lanternport/questline.md)
 
 ## The Last One
 

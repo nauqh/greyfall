@@ -6,9 +6,9 @@ Who lives here, and every line they say. How talks, flags and moving on work is 
 
 Folk from elsewhere who turn up here; their lines are in their own land.
 
-- Wren: [Lanternport](../last-harbour/questline.md)
-- Garth the Woodcutter: [Lanternport](../last-harbour/questline.md)
-- Dunn of the Gate Watch: [Lanternport](../last-harbour/questline.md)
+- Wren: [Lanternport](../lanternport/questline.md)
+- Garth the Woodcutter: [Lanternport](../lanternport/questline.md)
+- Dunn of the Gate Watch: [Lanternport](../lanternport/questline.md)
 
 ## Brother Fenn
 
