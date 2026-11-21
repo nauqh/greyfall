@@ -1,144 +1,271 @@
-# The Shattered Reach
+# Aurum
 
-The one telling of the Shattered Reach. Where a README line, an ATLAS
+The one telling of Aurum. Where a README line, an ATLAS
 paragraph, a blurb, a note or a line of dialogue disagrees with this file,
-this file and the lands' `lore.md` files win and the Audit table below says what to change. Places, people,
-bosses and plot are the ones already in the game; this file only fixes the
-contradictions between them and the wording.
+this file and the lands' `lore.md` files win.
 
-Each land has its own folder beside this file: its `lore.md`, its folk in `questline.md`, its keepers in `bosses.md`. See [README.md](README.md).
+This canon was written from scratch on 2026-11-21. It keeps every place,
+beast and boss the map already draws and gives them one story underneath;
+the lands have new names, listed under The lands. What changed from the
+old canon, and the rules for telling it, are at the end.
 
-## Rules
+Each land has its own folder beside this file: its `lore.md`, its folk in
+`questline.md`, its keepers in `bosses.md`. The other peoples are in
+[peoples.md](peoples.md). See [README.md](README.md).
 
-How we tell it, taken from Dark Souls (1) and Skyrim.
+## The heart of it
 
-1. **Lore is stated, never explained.** Dark Souls opens with flat facts and
-   dropped names ("In the Age of Ancients the world was unformed, shrouded by
-   fog... Then from the dark, They came, and found the Souls of Lords within
-   the flame") and never stops to gloss them. Name the Citadel, the seals,
-   the Horned Key; do not define them in the same breath.
-   [Dark Souls transcript](https://game-scripts-wiki.blogspot.com/2021/10/dark-souls-transcript.html)
-2. **Lore rides on text the player already reads for its use.** In Dark
-   Souls the story of a fallen knight sits in the same lines that say how
-   well his shield blocks magic. Our carriers are area blurbs, gate notes,
-   notes on the ground, shop lines and the item text: each gives its use
-   first and one fact of the world after it.
-   [Narrative Design in Dark Souls, Game Developer](https://www.gamedeveloper.com/design/narrative-design-in-dark-souls)
-3. **Folk say little, and more only when you come back.** Dark Souls talk is
-   "brief, usually only a few lines, and only expounded upon should the
-   player choose to repeatedly engage a character". A talk is two or three
-   pages; anything more is a second talk.
-   [Game Developer](https://www.gamedeveloper.com/design/narrative-design-in-dark-souls)
-4. **No speaker knows everything.** Item text in the series is past tense,
-   third person, fragmentary and sometimes wrong, mixing fact with hearsay.
-   Folk may be mistaken ("they say", "I'd wager"); blurbs and notes may not.
-   A blurb is the one voice that is always true.
-   [Narration of Things, First Person Scholar](https://www.firstpersonscholar.com/narration-of-things/)
-5. **What stands where is the story.** A corpse with a bow in the wood a
-   character spoke of; enemies placed where a test or a fall happened. Put
-   each camp, grave and building where its people would have put it, and
-   let a line elsewhere pay it off.
-   [Game Developer](https://www.gamedeveloper.com/design/narrative-design-in-dark-souls),
-   [Environmental Storytelling, Rempton Games](https://remptongames.com/2018/11/24/what-you-give-is-what-you-get-environmental-storytelling-in-games/)
-6. **Every text leaves one question open.** The silence is the pull: the
-   player builds the story from pieces. Never answer the question a text
-   raises in the same text.
-   [The Ludic Shift](https://theludicshift.com/2024/12/04/why-the-story-of-dark-souls-is-so-powerful-despite-its-silence/)
-7. **The wanderer never speaks and is never named.** Dark Souls greets you
-   with "Well, what do we have here? You must be a new arrival."; Skyrim
-   opens on a prisoner in a cart who does not know why. Folk talk at the
-   wanderer, judge them by what they have done, and never ask their name.
-   [Dark Souls transcript](https://game-scripts-wiki.blogspot.com/2021/10/dark-souls-transcript.html),
-   [Skyrim, Wikipedia](https://en.wikipedia.org/wiki/The_Elder_Scrolls_V:_Skyrim)
-8. **Places get plain English compounds.** Skyrim's holds read as White +
-   Run, Wind + Helm: evocative with no invented language. Ours already do
-   (Saltreach, Barrowmoor, Emberwood, Last Harbour); new names follow the
-   same rule, and none uses an apostrophe-laden made-up word.
-   [Skyrim holds](https://skyrimmap.com/holds)
-9. **Power is local and has working titles.** Skyrim splits into holds,
-   each under a jarl, roughly an earl and in practice a petty king. The
-   Reach is the same shape without the word: lords in their holds, each
-   with a steward, a sergeant, a watch, a harbourmaster. Rank names are
-   jobs, never fantasy titles.
-   [Skyrim, Wikipedia](https://en.wikipedia.org/wiki/The_Elder_Scrolls_V:_Skyrim),
-   [Jarl, Skyrim Wiki](https://skyrim.fandom.com/wiki/Jarl)
-10. **One people, one look.** Skyrim's longhouses share one style so a
-    player knows a culture at a glance. Ours is the art pack's colour: one
-    colour is one people (the faction table under Canon), and a building or
-    unit never wears another people's colour.
-    [The Jarl's Longhouses of Skyrim](https://piesandheavyarmor.com/2021/04/02/show-me-the-research-the-jarls-longhouses-of-skyrim/)
-11. **Grounded nouns, northern register.** Folk talk of salt, nets, ore,
-    forty spears, a stool, a candle; never of destiny or prophecy. Short
-    sentences, plain words, dry humour under the weight.
-12. **No outside words in player text.** No "feudal", "tutorial", "boss",
-    "quest", "NPC", "zombie", "undead" or "hollow". The game's words are in
-    the Glossary.
-13. **Claim only what we can draw.** Every people, beast and building the
-    lore puts on screen must exist in `apps/web/public/tiny-swords` (see
-    "What the art can carry"). Things only spoken of (crows, eels, the old
-    kings) stay off screen.
-14. **Narration is the Harbour's voice.** The prologue and the blurbs say
-    what the Harbour knows and how it would put it, so "out of the east" is
-    true from the Harbour even though the Grey rose from below.
+**Aurum is going cold, because the rich burned its warmth to stay
+aloft.** Under Aurum lies the Hearth, the warmth the land lives on, and
+every grain of gold is a little of it. The lords of the Citadel dug it up to
+raise a city in the sky. They dug once too deep, let the water in, and put
+the Hearth half out. The cold that came up is the Grey.
+
+Every land is a consequence of that one cut, and every faction wants
+something different from what is left of the warmth: Sunhold to keep it,
+the Warlord to wear it, Stillmere to let it go out, Lanternport to keep one
+fire lit. The wanderer is the last thing the Hearth did on its own.
 
 ## Canon
 
-### The Reach before
+### The Hearth
 
-The Shattered Reach is a realm of lords, not a kingdom. Its old kings are a
-memory and a moor: they lie in the barrows of Barrowmoor, and no crown has
-sat in the Reach since. Each lord kept a hold (the Harbour and its castle,
-Saltreach, the moor, the Greyfall) and swore oaths to the others, and the
-roads ran from one hall to the next.
+Under Aurum there is a warmth in the rock. Folk who have never seen it
+call it the Hearth. It is why Aurum's winters are soft for a northern
+land, why its springs run warm, and, the Order says, why anything here lives
+at all.
 
-The first among them was the lord of the Citadel, the fortress on the crag
-of the Greyfall. His house kept the Grey Gate and the two seals: one in the
-barrows, one in the deep places under them. For a long age the seals held.
-What they held back is the Grey.
+Where the Hearth's warmth comes near the surface it sets in the rock as gold.
+Gold here is warm in the hand, and stays warm: that is the whole of its
+worth, and it is why a man who dies drops his purse and not his sword. A
+little warmth goes with it.
 
-Above the Reach floats the Gilded City, built in gold by the old gnome-kings.
-The Reach's lords owed it nothing and asked nothing of it, until the Grey.
+### The Old Law
+
+The first rulers were the old kings, who lie now in the barrows of
+Kingsrest. They kept one law above the rest: **dig no deeper than a grave.**
+Gold above that line was Aurum's to take; below it, the Hearth's to
+keep. The kings were buried as deep as the law allowed, as near the warmth as
+a man may lie, so they would keep warm till the world's end. Kingsrest's dead
+are not restless. They are warm, and walk because of it.
+
+### The Broken Crown
+
+The last of the old kings died without an heir, and his lords broke the
+crown between them: one piece to each hold: Lanternport and Highward over it,
+Stiltwater, Kingsrest, the Citadel on its crag in the east. No crown has sat
+in the land since, and the lords swore oaths to one another instead of to a
+king.
+
+The land is Aurum, "gold" in the old kings' tongue. The lords say it was
+named for its riches. The barrows say the kings meant the warm stone under
+it, and that a gold you spend was never what the name was for.
+
+### The Age of Gold
+
+The lords of the Citadel were first among them because their crag stood on
+the richest gold in Aurum, and because they were the first to break the
+Old Law.
+
+The gnomes of Brasscrag taught them how. Gnomes were Aurum's tinkers,
+small and clever with a lift, a winch and a cannon. They had learned that
+enough warm gold, worked right, rises the way warm air does. With the
+Citadel's gold they built Sunhold on the sky and went up to live in
+it, and became the gnome-kings. The gnomes who stayed below kept the lifts
+and the Sky Bridge running and were paid in the leavings.
+
+Gold went up the Throne Stair by the barge-load. For it the Citadel's lords
+were given a seat at the gnome-kings' court, the Throne Isle, and the other
+lords got rich enough not to ask where the stair began. The Order of the
+Hearth, the purple faith, kept the fires and rang the bells in every hold
+and said the Old Law aloud on feast days. Nobody stopped digging.
+
+### The Cut and the Cold Year
+
+The richest gold lies nearest the Hearth, so the Citadel's shafts went down
+year on year. Goblins dug them, small enough for the narrowest seams and paid
+in coal and fire. The last of them, the Deep Cut, ran under the marsh and broke
+into the Hearth itself: a hollow in the bottom of the world, warm and gold
+and dry.
+
+Stillmere above it drained into the hole. Water poured down onto the Hearth
+for a season, and half of it went out. What came up the Cut after was cold:
+not the cold of winter, but the cold of a hearth with its fire gone. It rose
+out of the shaft into the Citadel, and from the Citadel it went out over the
+land. Folk call that first winter the Cold Year. Since then they call the
+cold the Grey.
+
+The Hearth is not out. It burns at the bottom of a drowned hollow, under
+still water, and the water keeps coming down. Stillmere's sinkhole is still
+drinking.
 
 ### The Grey
 
-The Grey is a condition, not an army: like rust or frost or a fever that will
-not break. It starts at the edge of a thing and works inward until the thing
-is grey through, and then the thing goes on moving after its name is gone. It
-gets into the ground, then the water, then the blood.
+The Grey is cold that has learned to take. It is not an army and it has no
+will of its own. It works from the edge of a thing inward, like frost on a
+pane, and it takes in order:
 
-It rose out of the old deeps under the Greyfall. The Harbour lies west of
-the Greyfall, so to the Harbour it came out of the east, and that is how the
-Harbour tells it. The Citadel took it first. Its last lord took the Grey into
-himself to keep it from the Reach. It kept him instead, and crowned him: the
-Grey Warlord is the Grey wearing a lord's shape, thickest where he stands
-and thinner the further it reaches. He holds no key. He is the lock.
+1. **Colour.** Fields, faces and banners go grey first.
+2. **Name.** Then memory: what a thing was called, who it loved, why it
+   stood where it stands.
+3. **Will.** The body goes on by habit. A sentry keeps his post, a bull
+   keeps its traces, a sister keeps praying. These are **the taken**.
+4. **Stone.** Last of all, slow as a season, the taken stop and go to
+   stone. The stone trees in Hearthdeep and the warden on the bell roof are
+   what that looks like.
 
-The soldiers on the Citadel's walls were its garrison once. They are the
-taken: they keep their posts because the posts are all they remember.
-Gnolls run with the Grey as its dogs.
+The taken are drawn to warmth the way the cold is: they walk toward fires,
+toward the living, toward gold. Gnolls run with them because gnolls follow
+anything that hunts. Folk call them the Grey's dogs.
 
-Kill the Warlord and the shape goes out of the Grey. The Grey does not go
-with it. It thins, the way a fever thins, and the Reach is left to bury what
-it lost.
+Three things hold it off. **Fire** keeps the Grey out of a body and warms a
+little of it back, which is why a fire is where a wanderer rests and why
+the taken come to it. **Salt** slows it: the Grey has never come down to the
+sea, and Stiltwater sells salt dear on the strength of it. **Gold** pushes it
+back, a little and for a while, the way a coal in the pocket would.
 
-### The refusal and the lost banners
+### The Grey Warlord
 
-When the Grey rose the Reach sent up to the Gilded City for spears. The City
-shut its gates and sent none, and the lords rode out alone. The castle over
-the Harbour sent its forty spears under Sergeant Corwin to the moor, to hold
-the barrow seal. Their banners did not return. Corwin did.
+The last lord of the Citadel ordered the Deep Cut. When the cold came up it,
+he did what lords do: he held on. He took the greatest piece of gold the Cut
+ever raised, the warm stone the miners lifted out of the Hearth itself, had
+it set as a crown, and put it on.
 
-What became of the Throne Isle is in [gilded-city/lore.md](gilded-city/lore.md); how the castle and the wood fell, in [castle/lore.md](castle/lore.md) and [emberwood/lore.md](emberwood/lore.md).
+It kept him. Nothing else in the Citadel was kept. The crown drinks warmth
+from everything near it to keep one man warm, and so the Grey lies thickest
+where he stands and thins the further it reaches from him. The taken climb
+his crag because his is the warmest place left in the east. He has forgotten
+his name and kept his crown. Folk call what wears it **the Grey Warlord**.
+
+He is not the Grey. He is the drain it runs into. Kill him and the crown
+stops drinking: the Grey thins, the way a fever thins. It does not go, because
+the Hearth is still under water.
+
+### The Grey Gate and its two keys
+
+When the Citadel went grey, Kingsrest barred its road at the Grey Gate, on
+the moor's east edge, to keep the taken in. The gate took two keys, so no one
+hold could open it alone, and the two holds that had to live beside it each
+put theirs where nobody would fetch it:
+
+- **The Horned Key** Kingsrest **buried**, with the barrow-warden in the
+  King's Barrow. The Barrow King will not lie down on it.
+- **The Silk Key** Lanternport **threw down** its Old Well, into the dark
+  that runs under Kingsrest, where nobody would follow it. It fell further
+  than anyone knew the well went, and the Weaver found it.
+
+Highward has a key of its own, the **Ember Key** to its Keep Gate. Its
+steward barred the Keep behind him and ran with it for the Emberwood road,
+and the Ember Bull has it now. It opens nothing in the east, only Highward's
+own Keep, the Watch Lift, and the way to the sky.
+
+To end the Grey someone has to open the door Aurum shut. Not every one of
+the folk will thank the wanderer for it.
+
+### Sunhold
+
+Sunhold asked the Citadel for gold for a hundred years and never asked
+where it came from. When the Cold Year came the lords below sent up for
+spears, and Sunhold shut its gates, barred the Gilded Span against the
+Throne Isle, and sent none. Folk say it was cowardice. It was arithmetic: the
+City floats on warm gold, no gold has come up the Throne Stair since the Cut,
+and it will not spend what keeps it in the air.
+
+It is cooling. Its last gold barge went down on Cloudstair. It pays
+Stiltwater in gold for salt and for soldiers to keep the sea road, and
+packs its foundations with the salt. The Sun Sentinel keeps the Sun Hall,
+where Sunhold's hoard is heaped to keep the isles up. The gnome-kings
+themselves are not seen. Whether anyone rules up there is a question no one
+below can answer.
+
+### The Order, broken three ways
+
+The Order kept the Hearth's fires for as long as there were lords to pay
+for them. The Cold Year broke it three ways, and the purple does not say
+which:
+
+- **The Keepers** keep the fires burning and the taken out, and wait. Mother
+  Ysolde is one. Most of Aurum's fires are theirs.
+- **The Stilled** pray to the Grey. Warmth, they say, was the world's fever,
+  and the cold is it breaking: let the Hearth go out and everything rest. The
+  chapel at Stillmere and Greyfall's Ruined Chapel are theirs. They pour water
+  into the sinkhole.
+- **The Pilgrims** go down to the Hearth itself, to kneel by the warm water
+  and wake what sleeps on it, and do not come back up.
+
+### The tide
+
+The water that pours onto the Hearth does not stop there. It runs out under
+Aurum, warm, and comes up in the sea caves under Lanternport.
+
+Sometimes it brings someone with it: a body Aurum's water took, given
+back warm. They wake in Tidewake alive, half-drowned and nameless,
+because the Grey had their name before the water had them. Tidewake's
+walls are scratched with notes from the ones who woke there before.
+
+That is the one truth no text in the game states. Lanternport says the tide
+brings survivors. The notes say there were others. Hearthdeep, at the very
+end, shows the same warm water. The player puts it together or does not.
 
 ### Now
 
-A survivor is carried in by the tide to the sea cave under the Harbour,
-nameless and alive. Last Harbour takes them in. From its fire every road
-goes out and comes back: up through the castle for the Ember Key, out the
-Moor Gate or down the Old Well for the two seals' keys, and through the Grey
-Gate to the Warlord.
+Lanternport held because it is on the salt, because Highward stood
+between it and Emberwood, and because Old Ferrow never let its fire go
+out. No ship has put in for three winters. The wanderer comes up out of the
+sea cave beneath it.
 
-### What the art can carry
+From its fire every road goes out and comes back: up through Highward and its Keep
+to the sky, over Kingsrest for the Horned Key, down the Old Well and under
+Kingsrest for the Silk Key, through the Grey Gate to the Warlord.
+
+### The end, and what is left open
+
+Killing the Warlord takes the crown off. The Grey thins, the taken stop
+walking, Aurum is left to bury what it lost. That is the ending the game
+has now, and it holds without anything below.
+
+The canon leaves a further road open, for when Hearthdeep is built: the
+crown is the warmest thing in Aurum, and the Hearth is under water. Carry
+the crown down, and the Hearth may take it. Keep it, and the wanderer is the
+next one wearing it. Give it up the Throne Stair, and Sunhold rises again
+on Aurum's cold. Which roads the game offers is an open question below.
+
+## The lands
+
+Each land is one consequence of the Cut. One line each; the full telling is
+in the land's `lore.md`.
+
+| Land | Was | Its place in the story |
+| --- | --- | --- |
+| Tidewake | the Landing | Where the Hearth's warm water comes up and gives back the drowned. |
+| Lanternport | Last Harbour | The one hold that kept its fire. Salt in the air, Highward above, the Old Well below. |
+| Highward | the castle | Fell ward by ward from the outside in, the way the Grey takes anything. Its steward ran with the Ember Key to its Keep. |
+| Emberwood | the Emberwood (pine, now jungle) | Jungle over ground where the Hearth runs shallow: hot springs, steam, flowers red as coals. The warmest place left on the surface, so everything that fears the cold crowds into it, goblins first. The Grey eats at its edges and never gets in far. |
+| Brasscrag | Tinker Crags | The gnomes who stayed below: the hands that built Sunhold, the lifts and the Sky Bridge, and were left the leavings. |
+| Stiltwater | Saltreach | Rich on the one thing the Grey will not cross, and in Sunhold's pay for it. |
+| Kingsrest | Barrowmoor | The old kings, buried as deep as the Old Law allowed, warm and walking. The Horned Key is buried here. |
+| Stillmere | Lizard Fen | The water that put the Hearth half out, still draining into the sinkhole, and the Stilled praying it on. |
+| Greyfall | the Greyfall | The Citadel on its crag over the Cut, where the cold came up, and where the Grey still falls like ash. |
+| Cloudstair | Skyward Steps | Highward's watch posts in the sky, and the wreck of the last gold barge. |
+| Sunhold | the Gilded City | The Citadel's gold, aloft and cooling, behind a shut gate. |
+| Underwell | the Undercroft | Lanternport's own digging under the Old Well, and the Dig nobody admits to: the Old Law broken again, small. |
+| Graveroad | Barrow Deeps | The old kings' grave-roads, deeper than any grave should go. The Silk Key was thrown down here. |
+| Hearthdeep | the Drowned Hollow | The Hearth itself, under still water, gold glowing in the rock, and the Shell Below asleep on it. |
+
+## Who knows what
+
+Rule 4 in one table: what each voice may say.
+
+| Truth | Lanternport (blurbs, prologue) | Folk | Notes on the ground, deep places |
+| --- | --- | --- | --- |
+| There is a Hearth | An old word for the warmth in the land | The Order's word; the old say it | Yes, and where |
+| The Old Law | A saying: "no deeper than a grave" | Kingsrest folk keep it; miners laugh at it | The barrows carve it |
+| The Citadel's dig caused the Grey | No: "the Grey rose in the east" | Rumour, denied by the lords' men | Miners' notes in Greyfall |
+| The crown drains Aurum | No | No: they think the Warlord is the Grey | Greyfall's notes, the Throne Isle |
+| Sunhold floats on the same gold | No: "it sent no aid" | Grumbled in Stiltwater | The barge wreck, the Sun Hall |
+| The wanderer is one of the drowned | No: "a survivor" | Ferrow suspects, never says | Tidewake's notes; Hearthdeep |
+
+## What the art can carry
 
 Colours are the art pack's `Units/<Colour> Units` and `Buildings/<Colour>
 Buildings`. Every colour has Warrior, Lancer, Archer, Monk and Pawn, and
@@ -146,147 +273,194 @@ Castle, Tower, Barracks, Archery, Monastery and three houses.
 
 | Colour | People | Seen in |
 | --- | --- | --- |
-| Blue | The Harbour and its castle, and the wanderer's band | Last Harbour, Burg, Ramparts, Chapel Ward, Keep; every companion |
-| Black | The taken, and whatever the Grey holds (the Greying set) | The Citadel's garrison, the Grey Road, the Throne Isle, the Burned Hamlet |
-| Yellow | The Gilded City, and those in its pay | The City's guard; Saltreach's militia; Mags |
-| Purple | The Order: monks and sisters in all their houses | The Drowned Chapel, Pilgrims' Rest, the Great Barrow's chapel, the fen chapel, the Greyfall's Ruined Chapel, the hermit in Old Pines |
-| Red | Unused in the Atlas (the war mode's enemy) | Proposed: Saltreach's pirates (see Open questions) |
+| Blue | Lanternport and Highward, and the wanderer's band | Lanternport, Highward's wards; every companion |
+| Black | The taken, and whatever the Grey holds | The Citadel's garrison, the Grey Road, the Throne Isle, the Burned Hamlet |
+| Yellow | Sunhold, and those in its pay | Sunhold's guard; Stiltwater's militia; Mags |
+| Purple | The Order, all three ways | The Drowned Chapel, Pilgrims' Rest, Stillmere chapel, the Ruined Chapel |
+| Red | Unused in the Atlas | Proposed: Stiltwater's pirates |
 
-The Order broke three ways and the colour does not say which: the houses
-that kept faith (the Drowned Chapel), the ones that pray to the Grey (the
-fen chapel, the Ruined Chapel), and the pilgrims who pray to what sleeps in
-the Hollow. A freed monk joins the band in blue.
-
-The Enemy Pack carries the beasts: goblins (torch, spear, pig rider),
-gnomes (gnome, slingshot gnome, their huts, towers and cannons), gnolls,
-hex shamans, lizards, the minotaur, skulls (the moor's and the tombs'
-dead), spiders, snakes, the troll, turtles, harpoon and paddle sharks,
-bears, pandas, imps, giant bats, bumblebees, bomb fish and thieves, plus
-boats, a pirate tower and fish huts. Bosses are these scaled or tinted: the
-Cinder Troll (troll), the Ember Bull (minotaur), the Rampart Boar (pig
-rider), the Stone Warden (giant bat, in stone), the Barrow King (hex shaman),
-Old Bamboo (panda), the Weaver (spider), the Shell Below (turtle) and the Sun
-Sentinel (yellow lancer). The Grey Warlord has no sheet of his own (see Open
-questions). Not drawable, so only ever spoken of: crows,
-eels, the old kings, the gnome-kings, the steward.
+The Enemy Pack carries the other peoples and the beasts. Peoples (see
+[peoples.md](peoples.md)): gnomes and their huts, towers and cannons,
+goblins, gnolls, fenfolk (lizards), trolls, the horned (minotaurs),
+bamboo-folk (pandas), finfolk (sharks) and imps. Men: the masks (hex
+shamans) and thieves. The dead: skulls. Beasts: spiders, snakes, turtles,
+bears, giant bats, bumblebees and bomb fish. Plus boats, a pirate tower and
+fish huts.
+Bosses are these scaled or tinted: the Cinder Troll (troll), the Ember Bull
+(minotaur), the Rampart Boar (pig rider), the Stone Warden (giant bat, in
+stone), the Barrow King (hex shaman), Old Bamboo (panda), the Weaver
+(spider), the Shell Below (turtle), the Sun Sentinel (yellow lancer). The
+Grey Warlord has no sheet of his own. Never on screen: the Hearth itself,
+the old kings, the gnome-kings, the crown up close.
 
 ## Glossary
 
 | Use | For | Never |
 | --- | --- | --- |
-| the Shattered Reach, the Reach | The whole world | the kingdom, the country, the realm under one crown |
-| a realm of lords; a lord's hold | How the Reach was ruled | feudal, kingdom, jarl |
+| Aurum | The whole world; "gold" in the old kings' tongue | the Reach, the kingdom, the realm under one crown |
+| the Broken Crown | The old kings' crown, split between the holds | the Shattering |
 | the old kings | The dead in the barrows | for any living ruler |
-| the Grey | The condition: a name, always capitalised. Lower-case grey is only a colour ("the fields went grey"), or a child's "grey men" | the grey (for the condition), gray, the Greying (code only), the plague |
-| the taken | People and soldiers the Grey has kept | grey-bound, zombies, undead, hollows; "grey men" and "grey ones" only in a child's mouth |
+| the Old Law; "no deeper than a grave" | The kings' law against deep digging | |
+| the Hearth | The warmth under Aurum | the core, the heart of the world, magic |
+| the Deep Cut, the Cut | The Citadel's last shaft, into the Hearth | |
+| the Cold Year | The first winter of the Grey | |
+| the Grey | The cold that takes. Always capitalised; lower-case grey is only a colour | the plague, the rot (as its name), the Greying (code only) |
+| the taken | Those the Grey has kept | zombies, undead, hollows; "grey men" only in a child's mouth |
 | the Grey's dogs, dogs (folk) | Gnolls | |
-| the Greyfall | The land: the crag and the rot marsh round it | |
-| the Citadel | The fortress on the Greyfall's crag, and only that | the citadel (lower case), for the Harbour's castle |
-| the Grey Keep | The keep on the Citadel's crown | the Keep (that is the Harbour's) |
-| the castle; the Lower Burg (the Burg), the Ramparts, the Chapel Ward, the Keep | The Harbour's castle and its wards | the Citadel, the Harbour's citadel |
-| the Grey Warlord, the Warlord | The Grey wearing the Citadel's last lord | warlord (lower case), the Grey King, his name |
-| the Gilded City; the sky city (folk) | The city in the sky | the high city (that is the Greyfall's High City) |
-| the sky | The tier | the Gilded City (as the tier's name) |
-| the Throne Isle | The Citadel's old hall in the sky | the Warlord's isle, his throne isle |
-| the seals: the barrow seal, the deep seal | What the Citadel's house kept | |
-| the Ember Key, the Horned Key, the Silk Key | The three keys | the bull's key, the horned key (lower case) |
-| the wanderer (docs and code); a survivor (narration) | The player | the hero (in player text), the chosen, the Undead |
+| Greyfall | The land of the crag and its rot marsh, where the Grey falls like ash | |
+| the Citadel; the Grey Keep | The fortress on the crag; the keep on its crown | the Citadel, for Highward |
+| Highward; the Burg, the Ramparts, the Chapel Ward, the Keep | The castle over Lanternport, and its wards | |
+| the Grey Warlord, the Warlord | The Citadel's last lord, kept by his crown | the Grey King, the Grey itself, his name |
+| the crown | The Warlord's crown of Hearth gold | the Hearth Crown in folk mouths (they do not know) |
+| Sunhold; the sky city (folk) | The gnome-kings' city | the high city (that is Greyfall's High City) |
+| the gnome-kings | The gnomes who went up with the gold | |
+| the Throne Isle, the Throne Stair | The Citadel's seat at court, and its stair up | |
+| the Grey Gate | The barred road into Greyfall | |
+| the Horned Key, the Silk Key | The Grey Gate's two keys | lower case |
+| the Ember Key | Highward's Keep Gate key | a key to the Grey Gate |
+| the Order; the Keepers, the Stilled, the Pilgrims | The purple faith and its three ways | the cult (folk may say it of the Stilled) |
+| a bonfire (UI), the fire (folk) | A rest point | checkpoint |
+| the wanderer (docs, code); a survivor (narration) | The player | the hero, the chosen |
 | the band | The wanderer's companions | party, squad |
-| the Order; sisters, monks | The purple faith | the cult (except the fen chapel, by folk) |
-| a bonfire (UI), the fire (folk) | A rest point | checkpoint, campfire (a campfire is a fire you cannot rest at) |
-| Last Harbour, the Harbour | The hub town | Harbor |
-| Tinker Crags | The gnomes' rock | Tinkers' Crags, the mesa |
-| Barrowmoor | The moor | the Barrowmoor |
-| the Watch Lift | The castle's lift to the Steps | the watchtower lift, the sky-lift |
-| the Old Lift | The Chapel Ward's lift to Old Town's foot | |
-| the Old Well | The well in the Lower Town hill's cave, west of the square | |
-| the Cinder Troll; the troll in the Ring (folk) | The Bull's Ring keeper | the Shore Minotaur (he was swapped out) |
-| the Sky Bridge | The gnomes' high road from the Crags to the Greyfall | for any bridge in the Harbour |
-| the Robbers' Camp | Tobin's brother's camp in the Deeps | for the moor's diggers' camp |
-| the Diggings | The grave-robbers' camp on Barrowmoor (proposed) | |
-
-## Audit
-
-Every clash found, with the fix. Rows marked **other team** are in files
-this worker may not edit (`AtlasScene.ts`, `views.tsx`, `TravelMap.tsx`,
-`DevPanel.tsx`, `dev.css`) and are follow-ups for their owner.
-
-| file:line | Current text | Problem | Fix |
-| --- | --- | --- | --- |
-| ATLAS.md:242 | "The Reach was one country once: holds and moors and fishing towns under a single crown, and the crown's seat was the Greyfall" | Clashes with "a realm of lords" (prologue.ts:5, ATLAS.md:910) | "The Reach was a realm of lords once: holds and moors and fishing towns, each under its own lord, and the first of them sat in the Citadel on the Greyfall's crag above the rot marsh." |
-| ATLAS.md:251 | "It rose out of the old deeps." | Reads as a clash with "came out of the east" (README.md:16, prologue.ts:6, ATLAS.md:960) | Keep, and add: "It rose out of the old deeps under the Greyfall, east of the Harbour, so the Harbour says it came out of the east." |
-| ATLAS.md:960 | "The Grey is a condition out of the east" | Same clash from the other side | "The Grey rose from the deeps under the Greyfall; the Harbour, west of it, says it came out of the east." |
-| ATLAS.md:261-262 | "That refusal is older than the rot and harder to forgive." | The refusal happened when the Grey rose, so it cannot be older than it | "The rot was the Grey's doing. The refusal was theirs, and that is harder to forgive." |
-| ATLAS.md:269-270 | "The castle over Last Harbour is the town's castle, not the Citadel." | Right, but `areas.ts:1834` still names the Greyfall's crown "The Keep", the same as the Harbour's Keep area | Keep the line; rename the Greyfall district (next row) |
-| packages/engine/src/areas.ts:1834 | `name: "The Keep"` (Greyfall district) | Same name as the Harbour castle's Keep area (`atlas.ts:322`, `areas.ts:600`) | `"The Grey Keep"` |
-| ATLAS.md:985-987 | "'the Citadel' names two different places in the world" | No longer true once the canon holds: the Citadel is only the Greyfall's fortress | "...and 'the Citadel' was easy to confuse with the Harbour's castle" |
-| README.md:57 | "the Barrowmoor, the Tinkers' Crags, the Citadel" | Wrong names: no article on Barrowmoor, Tinker Crags, and the land is the Greyfall | "Barrowmoor, the Tinker Crags, the Greyfall" |
-| README.md:16 | "The feudal lords are ash." | "feudal" is an outside word (Rule 12) | "The lords are ash." |
-| packages/engine/src/atlas.ts:239 | "the Warlord's throne isle hangs off the east end" | Why does his isle hang off the City that refused him? | "and off its east end hangs the Throne Isle, the Citadel's old hall at court, barred off and left to the Grey." |
-| packages/engine/src/atlas.ts:1238 | "From the warlord's keep, a stair of floating stones up to his throne isle." | Same; also lower-case "warlord" | "From the Grey Keep, a stair of floating stones up to the Throne Isle, the Citadel's old seat at the gnome-kings' court." |
-| ATLAS.md:289 | "the Warlord's throne isle with imps" | Same | "the Throne Isle, given up to the Grey, with imps" |
-| ATLAS.md:430-435 | "only the warlord's isle is dark ... the one way the warlord's creatures can come in" | Same; lower-case "warlord" | "only the Throne Isle is dark ... the one way the Grey's creatures can come in" |
-| packages/engine/src/areas.ts:1865, 1953 | "the warlord's black plaza", "the warlord's empty seat" (comments) | Same | "the Throne Isle's black plaza", "a seat the Warlord does not sit in" |
-| packages/engine/src/atlas.ts:166 | "under a castle the Grey took ward by ward ... up the watchtower lift" | "ward by ward" unexplained in-game; "watchtower lift" is not a name, and the Watch Lift is in the Keep, not the town | "under a castle the Grey took ward by ward from the outside in. Every road starts at the fire in its square and comes back to it: down the Old Well, up through the castle to the Watch Lift." The why is in Canon, told by Hale, Mags, Odo and the bell note |
-| packages/engine/src/atlas.ts:284 | "fallen to the Grey before the town below" | The town below never fell | "fallen to the Grey while the town below held" |
-| packages/engine/src/atlas.ts:304 | "Its lift goes down to the point" | The Old Lift lands at Old Town's east foot (ATLAS.md:742), not Lantern Point | "Its lift goes down to Old Town" |
-| packages/engine/src/atlas.ts:333 | "Eight lands on the sea" | ATLAS.md:230 says seven; the code has seven lands plus the four castle wards | "Seven lands on the sea and the castle over the Harbour, joined at their gates." |
-| packages/engine/src/atlas.ts:332 | sky tier `name: "The Gilded City"` | The tier and one of its areas share a name | `name: "The Sky"`; ATLAS.md:228 likewise |
-| packages/engine/src/atlas.ts:208 | "A purple chapel in the middle of it prays to the Grey" | An art colour as description; the chapel is the Order's | "A chapel of the Order in the middle of it prays to the Grey" |
-| packages/engine/src/atlas.ts:156 | "the yellow militia hold the villages" | Colour as a name; shares yellow with the City's guard unexplained | "the militia, in the Gilded City's yellow and pay, hold the villages" |
-| packages/engine/src/atlas.ts:1320 | "the barrow king's horned key, and the weaver's from below" | Lower-case names | "the Barrow King's Horned Key, and the Weaver's from below" |
-| ATLAS.md:293 | "a mesa that steps up three heights to the Tinker Peak" | atlas.ts:186 and ATLAS.md:396 say five steps | "a rock that climbs in five steps to the Tinker Peak" |
-| ATLAS.md:314 | "Open: Shore Road, Old Bridge, ..." | No Shore Road gate exists in `atlas.ts`; it was the old beach route (ATLAS.md:155) | Drop "Shore Road" |
-| ATLAS.md:386-387 | "Three raised bridges: the Knoll Bridge, the Sky Bridge (upper bailey to the hills) and the Sea Wall." | The Sky Bridge is the Crags' high road to the Greyfall; no Harbour bridge of that name exists in code | Drop the Harbour's "Sky Bridge" or rename it "the Bailey Bridge" if it returns |
-| ATLAS.md:292 | "gnolls on Smoke Ridge" | The district is Smoke Bluff (`areas.ts`, ATLAS.md:579); "Smoke Ridge" survives only here and in a comment at `atlas.ts:1293` | "gnolls on Smoke Bluff"; Canon's Emberwood line likewise |
-| ATLAS.md:115 | "Grey-bound soldiers" | Glossary term is "the taken" | "The taken, gnolls" |
-| ATLAS.md:145-147, 829, 832-858 | "The blacksmith in the Harbour ... (see 'Planned')"; "No blacksmith in the Harbour yet" | Brenna already stands in the Chapel Ward's forge yard (`npcs.ts:178`) | "Brenna, in the Chapel Ward's forge yard, puts an edge on your sword"; drop the "not done" bullet and mark the plan as built there |
-| packages/engine/src/areas.ts:2299, 2541 | Two districts named "Robbers' Camp" (Deeps) and "The Robbers' Camp" (Barrowmoor) | Two places, one name; Tobin's ending names the Deeps one | Rename Barrowmoor's to "The Diggings"; ATLAS.md:560 likewise |
-| packages/engine/src/areas.ts:2821 | Pirate Cove shacks in `{ color: "black" }` | Black is the taken; the pirates are not the Grey's | Red (the one colour the Atlas does not use); see Open questions |
-| packages/engine/src/npcs.ts:109 | "Follow the lanterns west, through the lower town, up to the Ember Gate." | The Lantern Road west goes to the Old Bridge; the Ember Gate is north-west and barred from this side; the way on is up to the Burg | "Follow the lanterns up through Old Town, to the Burg Gate. Someone lit them before you came. They always do." |
-| packages/engine/src/npcs.ts:110 | "The dogs on the moor don't care that it's barred." | The gnolls are on the Graves hill this side of the gate (`areas.ts:1370`: "Dogs on the hill") | "The dogs on that hill don't care that it's barred." |
-| packages/engine/src/npcs.ts:132 | "The castle? Shut since the Grey first fell." | The Burg, Ramparts and Chapel Ward are open; only the Keep is shut | "The Keep? Shut since the Burg turned. Its steward ran for the wood with the key." |
-| packages/engine/src/npcs.ts:170 | "Ansel's stool is empty. First time in years." | Ansel sits on the Keep's wall (`npcs.ts:602`), not at Ferrow's fire | "Ansel's off the wall. I can see it from here. First time in years." |
-| packages/engine/src/npcs.ts:617, 630 | "Someone in the high city decided..."; "The high city never is." | "the High City" is the Greyfall's ward (`areas.ts`, ATLAS.md:870) | "the sky city" in both |
-| packages/engine/src/npcs.ts:560 | "Off to the citadel, where the Grey falls." | Lower-case "citadel"; a child would not know the name | "Off to the Greyfall, where the Grey comes from." |
-| packages/engine/src/npcs.ts:704 | "a pot of pitch" | The item is Pine Resin | "a pot of resin" |
-| docs/questline.md:7 | "The Gilded City, the high city that glints above the clouds" | Same "high city" clash | "the sky city that glints above the clouds" |
-| docs/questline.md:99-101, 348, 356, 371 | Brenna's first talk lacks the shield line; Ansel's after-Warlord spot is (25, 10); no sections for Mags, Hale, Odo | Stale against `npcs.ts` (shield line at `npcs.ts:198`, Ansel at (43, 11), `npcs.ts:669`) | Regenerate from `npcs.ts` after the dialogue fixes above |
-| apps/web/src/app/atlas/prologue.ts:5-6 | "a realm of lords ... out of the east ... crowned the lord of the Citadel" | Consistent with this canon | No change. Kept as the Harbour's telling (Rule 14) |
-| apps/web/src/game/AtlasScene.ts:3097 (**other team**) | `name: "A note in the sand"` for every note | The Keep, Burg, Chapel and Ramparts notes are not in sand; the Landing blurb says they are scratched | Title by area: "A note in the sand" below ground, "A note scratched in the stone" in the castle, or plain "A note" |
-| apps/web/src/game/terrain.ts:193 | "the desaturated Greying set" (comment) | Code-only word for the Grey | Fine in code; never in player text |
+| Lanternport | The hub town | Last Harbour, the Harbour (old names) |
+| Brasscrag | The gnomes' rock | Tinker Crags (old name) |
+| the Diggings; the Robbers' Camp | Kingsrest's grave-robbers; Tobin's brother's camp in Graveroad | |
 
 ## Open questions
 
-1. **Saltreach and the City's yellow.** The canon makes Saltreach's militia
-   the City's paid men (which also explains why the Grey has not reached
-   them and why the salt men's prices sting). The alternative is to give
-   Saltreach its own colour. Which?
-2. **Red for the pirates.** Pirate Cove is drawn in Black Buildings, which
-   says "taken". Recolour it red, the one colour the Atlas leaves unused?
-3. **The Grey Warlord's and the Sun Sentinel's look.** Neither has a sheet.
-   Proposed: a Black Warrior scaled up for the Warlord, a Yellow Lancer
-   scaled up for the Sentinel. Agree?
-4. **Three minotaurs.** The Shore Minotaur, the Rampart Bull and the Barrow
-   King share one sheet, and the Greyfall's elite is a fourth. Keep the
-   Barrow King a minotaur, or draw him from another sheet?
-5. **Who chained the Watch Lift?** The canon says the castle's own watch on
-   the Steps; Ansel blames the City. Leave it unanswered in game (Rule 6),
-   but which is true?
-6. **How does the shut Keep live?** Corwin's boys and Ansel are behind a
-   locked gate with no key for years. A well and stores in the bailey are
-   assumed; say so in a line, or leave it?
-7. **Who rules the Gilded City now** that the gnome-kings are gone: the Sun
-   Sentinel, or someone the player never sees?
-8. **The Weaver's key has no name.** The Troll Key and the Horned Key do.
-   Name it (for example "the Silk Key"), or keep it nameless on purpose?
-9. **Why did the bell stop?** The canon leaves it a mystery with the Stone
-   Warden on the roof. Keep it that way?
+1. **Which endings?** Killing the Warlord is the ending built now. Offer the
+   crown's three roads (down to the Hearth, worn, up to Sunhold) once the
+   Hearthdeep is built, or keep one ending?
+2. **Does the Shell Below wake?** Settled 2026-11-21: it is a beast grown
+   on the warmth; the Pilgrims think it the Hearth's keeper. Whether it ever
+   wakes for them is still open.
+3. **The prologue.** Settled 2026-11-21: rewritten to the text below, now
+   in `prologue.ts`, with the subtitle "Aurum" on the prologue, title screen
+   and settings.
+4. **The Warlord's and the Sentinel's look.** Neither has a sheet. Proposed:
+   a Black Warrior scaled up and crowned in gold for the Warlord, a Yellow
+   Lancer scaled up for the Sentinel.
 
-## Decided
+The prologue, in Lanternport's voice:
 
-- Saltreach's militia are the Gilded City's paid men, in its yellow (question 1).
-- The Weaver's key is **the Silk Key** (question 8). Glossary: the Troll Key, the Horned Key, the Silk Key.
-- Renames approved: the Greyfall's "The Keep" district is **the Grey Keep**; Barrowmoor's "The Robbers' Camp" is **the Diggings**; the sky tier is named **The Sky**.
-- Pirate Cove stays in black buildings for now; recolouring it is an art follow-up, not part of this pass (question 2).
-- Questions 3, 4, 5, 6, 7 and 9 stay open and unanswered in player text.
+> Aurum was a land of lords, and warm, until the Grey rose in the east.
+> It was no army. It was a cold that took colour, then names, and the men it
+> took went on walking after.
+>
+> It took the first of the lords in his Citadel. He wears a crown still, and
+> it keeps him warm. He is called the Grey Warlord.
+>
+> The others rode against him. / Their banners did not return.
+>
+> Only Lanternport held, one fire still burning. Now the tide has carried a
+> stranger into the caves beneath it. Nameless, half-drowned, and warm.
+
+## Changed from the old canon
+
+The old canon fixed contradictions between existing lines; this one gives
+them a cause. Follow-ups, in files this pass did not touch:
+
+- **The Grey's origin.** Was "rose out of the old deeps", held back by two
+  seals. Now: cold from the half-quenched Hearth, up the Citadel's Deep Cut.
+  The seals are gone; the Grey Gate's two keys (Kingsrest's buried, Lanternport's
+  thrown down the Old Well) replace them. The Ember Key is Highward's own Keep
+  Gate key, as the code has it.
+- **The Warlord.** Was a lord who took the Grey into himself to save the
+  Reach. Now: the lord who ordered the Cut and kept himself warm with its
+  crown. He is the drain, not the lock.
+- **Sunhold's refusal.** Was cowardice. Now: it floats on the same gold and
+  will not spend it.
+- **The world's name.** Was the Shattered Reach. Now Aurum, "gold" in the
+  old kings' tongue. Still "the Reach" in the README,
+  ATLAS.md and some code comments (`grep -rn "Reach\b"`).
+- **The Order's three ways** are named: the Keepers, the Stilled, the
+  Pilgrims.
+- **The wanderer** is one of the drowned, given back by the Hearth's water.
+  Never stated in game.
+- **Land names.** Twelve of the fourteen lands are renamed (see The lands,
+  "Was" column); Greyfall and Emberwood keep their names. Emberwood is
+  now a jungle, the old pines only on its west edge. The code, ATLAS.md, the land
+  folders (still named by area id) and every `questline.md` still use the old
+  names, and rename with the code so dialogue stays in step with `npcs.ts`.
+- **Kept as is:** every boss, key and district name; the Glossary decisions
+  (the Silk Key, the Grey Keep, the Diggings, the sky tier named The Sky);
+  the art colours.
+- **Settled in the land files, 2026-11-21:** the Ember Bull is one of the
+  horned, who left the Citadel's pits for the warm and is not taken; the
+  Barrow King is the eldest barrow-warden, not an old king; Old Bamboo is the
+  one bamboo-folk the Grey has; Underwell's Dig is Lanternport's own, since
+  the Cold Year, so the one hold that held broke the Old Law too.
+- **Dropped:** the old Audit table. Its rows were checked against the old
+  canon; rerun it against this one when the land files are rewritten.
+
+## How we tell it
+
+### Why this shape
+
+Its shape is taken from the strongest worlds in the genre:
+
+- **One wound, one motive.** Elden Ring's lands are all fallout of a single
+  act with a personal reason behind it (Marika breaking the Ring), so every
+  region answers the same question differently.
+  [Story analysis, StoryRPG](https://storyrpg.com/games/elden-ring-story-analysis)
+- **A fix that caused the ruin.** Hallownest fell to its king's own remedy,
+  and to factions that never wanted the same thing; the world is a record of
+  a mistake, not of an invasion.
+  [The Tragedy of Hallownest, Medium](https://medium.com/@LoreLogic/the-tragedy-of-hallownest-the-complete-timeline-explained-30734e76cf8a)
+- **One area explains the next.** Hallownest reads as an ecosystem where each
+  place gives the reason for another, so every land here is a cause or an
+  effect of the cut.
+  [Hollow Knight analysis, Paragraph](https://paragraph.com/@ludologist/architecture-of-silence-and-melancholy-a-comprehensive-analysis-of-hollow-knight-as-a-new-paradigm-for-modern-metroidvanias)
+- **The core conflict is the nexus** every fight and every tension derives
+  from, set before anything else is built.
+  [Worldbuilding, Game Design Skills](https://gamedesignskills.com/game-design/worldbuilding/)
+- **"What happened here?"** The place carries the history and the player
+  pulls it out; the text does not push it in.
+  [Smith and Worch, GDC 2010](https://www.worch.com/files/gdc/What_Happened_Here_Web_Notes.pdf)
+
+### Rules
+
+Taken from Dark Souls (1) and Skyrim.
+
+1. **Lore is stated, never explained.** Dark Souls opens with flat facts and
+   dropped names and never stops to gloss them. Name the Hearth, the Old
+   Law, the Cold Year; do not define them in the same breath.
+   [Dark Souls transcript](https://game-scripts-wiki.blogspot.com/2021/10/dark-souls-transcript.html)
+2. **Lore rides on text the player already reads for its use.** Area blurbs,
+   gate notes, notes on the ground, shop lines and item text each give their
+   use first and one fact of the world after it.
+   [Narrative Design in Dark Souls, Game Developer](https://www.gamedeveloper.com/design/narrative-design-in-dark-souls)
+3. **Folk say little, and more only when you come back.** A talk is two or
+   three pages; anything more is a second talk.
+4. **No speaker knows everything.** Folk may be mistaken ("they say", "I'd
+   wager"); blurbs and notes may not. A blurb is the one voice that is
+   always true, and it only ever says what Lanternport could know.
+   [Narration of Things, First Person Scholar](https://www.firstpersonscholar.com/narration-of-things/)
+5. **What stands where is the story.** Put each camp, grave, shaft and
+   building where its people would have put it, and let a line elsewhere pay
+   it off.
+   [Environmental Storytelling, Rempton Games](https://remptongames.com/2018/11/24/what-you-give-is-what-you-get-environmental-storytelling-in-games/)
+6. **Every text leaves one question open.** Never answer the question a text
+   raises in the same text.
+7. **The wanderer never speaks and is never named.** Folk talk at them, judge
+   them by what they have done, and never ask their name.
+8. **Places get plain English compounds.** Stiltwater, Kingsrest, Emberwood,
+   the Hearth, the Old Law. No made-up words, no apostrophes. The one
+   exception is the land itself, Aurum, a word in the old kings' tongue.
+   [Skyrim holds](https://skyrimmap.com/holds)
+9. **Power is local and has working titles.** Lords in their holds, each
+   with a steward, a sergeant, a watch, a harbourmaster. Rank names are jobs.
+10. **One people, one look.** One art colour is one people (see "What the
+    art can carry"), and a building or unit never wears another's colour.
+11. **Grounded nouns, northern register.** Salt, nets, ore, coal, a stool, a
+    candle, a cold hearth. Never destiny or prophecy. Short sentences, dry
+    humour under the weight.
+12. **No outside words in player text.** No "feudal", "tutorial", "boss",
+    "quest", "NPC", "zombie", "undead", "hollow" (as a state), "magic".
+13. **Claim only what we can draw.** Every people, beast and building put on
+    screen must exist in `apps/web/public/tiny-swords`. The Hearth itself,
+    the old kings and the gnome-kings are only ever spoken of.
+14. **Warm and cold carry the meaning.** Warmth is life, memory and name;
+    cold is their loss. Gold is warm, fire is warm, salt holds, stone is the
+    end. Every text that touches the Grey keeps to this, so the player learns
+    the physics without being told it.

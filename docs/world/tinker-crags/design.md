@@ -1,21 +1,21 @@
-# Tinker Crags
+# Brasscrag
 
 The design for `crags()` in `packages/engine/src/areas.ts`, after the
-Harbour and Emberwood reworks. The map stays 112 by 90, entered from the
+Lanternport and Emberwood reworks. The map stays 112 by 90, entered from the
 west off the Crag Stair out of the Ember Hollow.
 
-## What the Crags are for
+## What Brasscrag is for
 
 The wanderer comes up out of the Ember Hollow with the Ember Bull behind
 them. The way on is the top of the rock: the Bridgehead on the fifth step,
-where the Sky Bridge leaves for the Greyfall's wall, and above it the
+where the Sky Bridge leaves for Greyfall's wall, and above it the
 summit path up to the Tinker Peak, its own area, where Old Bamboo stands
-between the wanderer and the Gnome Lift into the Gilded City.
+between the wanderer and the Gnome Lift into Sunhold.
 
 The story the ground tells: the gnomes worked the rock in five steps, a
 town at its foot, a mine on the second step, guns on the third, the
 wheel's ropes and their gear on the fourth, the bridge on the fifth and the
-lift on the summit. Old Bamboo, their great panda, walked the wheel that
+lift on the summit. Old Bamboo, grandsire of the bamboo-folk, walked the wheel that
 winds the Gnome Lift. Then the Grey came over the Sky Bridge. Gnolls took
 the Bridgehead, the Grey got into Old Bamboo at his wheel, and the gnomes
 fell back down the rock, barring the Hoist behind them. The tinkers keep
@@ -44,7 +44,7 @@ gantries.**
   Bridgehead's east end to the map's edge.
 - **Guns on every rim.** Each step's south rim carries a battery, the guns
   turned out and down, so walking a ledge is walking along a gun line. At
-  the Bridgehead the guns face east, at the Greyfall.
+  the Bridgehead the guns face east, at Greyfall.
 - **Gnome building.** Huts on every ledge that takes one, towers at the
   turns of the climb, fenced yards with wood, tools and ore. Wood and stone,
   no paving above the town.
@@ -75,7 +75,7 @@ Heights are 1 (lowland) to 5.
 ### Crag Gate
 
 - **Job:** where the Crag Stair comes up out of the smoke. The first fire
-  in the Crags, so a death on the steps is never sent back through the
+  on Brasscrag, so a death on the steps is never sent back through the
   Hollow.
 - **Why go:** you arrive here. Rest, and read the gnomes' warning.
 - **Stands there:** the bonfire (10, 49), a gnome tower watching the stair,
@@ -104,8 +104,8 @@ Heights are 1 (lowland) to 5.
 
 ### Tinker Town
 
-- **Job:** the hub. The tinkers' town at the rock's foot, the Crags' Last
-  Harbour.
+- **Job:** the hub. The tinkers' town at the rock's foot, Brasscrag's
+  Lanternport.
 - **Why go:** the bonfire (48, 63), the folk (merchant and quest hooks
   live here), the first stair of the climb at its north-east, and the foot
   of the Hoist, the shortcut down from step 4.
@@ -188,15 +188,15 @@ Heights are 1 (lowland) to 5.
 
 ### The Bridgehead (step 5)
 
-- **Job:** the top of the Crags and the way on, both ways: the Sky Bridge
+- **Job:** the top of Brasscrag and the way on, both ways: the Sky Bridge
   east and the summit path north out of the map to the Tinker Peak.
 - **Why go:** the bonfire (74, 11), the rest before Old Bamboo; the Sky
-  Bridge onto the Greyfall; and The Tinker Peak exit, with Old Bamboo and
+  Bridge onto Greyfall; and The Tinker Peak exit, with Old Bamboo and
   the Gnome Lift beyond it.
 - **Stands there:** the gnomes' two towers and the fire; at the east end
   the gatehouse over the Sky Bridge's deck, towers and guns turned east,
-  held by gnolls come over the bridge from the Greyfall (foes, the only
-  gnolls in the Crags); the summit path climbing north from the fire to
+  held by gnolls come over the bridge from Greyfall (foes, the only
+  gnolls on Brasscrag); the summit path climbing north from the fire to
   the map's edge, the lift's ropes beside it.
 - **Hooks:** Moss and Pip's later spots; gnomes come back up once Old
   Bamboo is dead (`when:` his flag). Note at the gatehouse: "They came over
@@ -211,7 +211,7 @@ Heights are 1 (lowland) to 5.
   the Foothills.
 - **Why go:** a route up that skips the Works and the Batteries, harder
   (slingers on the wind, the watchtower's gun) but open from the start; its
-  watchtower over the Greyfall.
+  watchtower over Greyfall.
 - **Stands there:** watchtower (93, 20), two side guns over the shore,
   slingers walking the ridge. The Sky Bridge passes over its north end.
 - **Hooks:** note at the watchtower: "You can see the Citadel from here.
@@ -240,7 +240,7 @@ Heights are 1 (lowland) to 5.
 **Main route.** Crag Stair, Crag Gate (fire), road east, Tinker Town
 (fire), the Works (on west, up east), the Batteries (on east, up west), the
 Wheel Step (on west, up east), the Bridgehead (fire), then the Sky Bridge
-to the Greyfall, or the summit path to The Tinker Peak, Old Bamboo and the
+to Greyfall, or the summit path to The Tinker Peak, Old Bamboo and the
 Gnome Lift.
 
 **Loops.**
@@ -295,9 +295,9 @@ Exactly three.
 ## Settled with the lead
 
 1. Old Bamboo's arena is the area `peak`, the summit itself, entered by
-   The Tinker Peak and not a way back into the Crags. The Gnome Lift
-   leaves from inside it, so the Crags have no Gnome Lift exit.
+   The Tinker Peak and not a way back onto Brasscrag. The Gnome Lift
+   leaves from inside it, so Brasscrag has no Gnome Lift exit.
 2. The stair from the Wheel Step onto the Bridgehead is open; the Hoist
-   (`hoistOpen`) is the Crags' one shortcut.
+   (`hoistOpen`) is Brasscrag's one shortcut.
 3. The Sky Bridge stays as it is.
 4. Old Bamboo's boss marker in `atlas.ts` belongs to late-arenas.

@@ -1,11 +1,11 @@
-# The Castle: the keepers
+# Highward: the keepers
 
 Each boss fights in an arena area of its own and holds the way on until it falls. Numbers live in the code, not here.
 
 ## The Rampart Boar
 
 - **Where:** the Bull's Wall, the curtain wall alone, three wide over the drop, from the Ramparts' walk to the Chapel Door (area `bullwall`).
-- **Who:** The garrison's iron-shod beast that forgot who fed him; with it turned, goblins came over the wall. The lore still calls it the Rampart Bull, and Odo saw it turn.
+- **Who:** The garrison's iron-shod war boar, taken by the Grey at its post: it forgot who fed it but not the wall. Goblins running west for Emberwood came over the wall behind it, and one rides it; goblins know pit pigs. Folk still call it the Rampart Bull, and Odo saw it turn.
 - **Guards:** The Ladder down to the Burg's square, and the Chapel Door.
 - **Its fall:** The Ladder drops (`ladderDown`), a loop home through the wards.
 - **Moves:** A gore up close, a charge the whole width of its wall, the goblins' cannons scattered down on the wall, and raging, its spearmen called up onto the wall.
@@ -15,7 +15,7 @@ Each boss fights in an arena area of its own and holds the way on until it falls
 ## The Stone Warden
 
 - **Where:** the Belfry, the bell loft alone, cramped round the bell's timber frame (area `belfry`).
-- **Who:** A warden of stone that squats on the bell roof. The chapel's bell stopped first of all, and the castle fell from there; why it stopped is kept a mystery.
+- **Who:** The belfry's bat, which roosted in the warm loft over the Keepers' bell. The bell roof is Highward's highest, coldest edge, so the Grey reached it first: the bell stopped, and the bat, taken, went on to the last stage and set as stone, still keeping the loft. It is what the end of the Grey looks like. In game, why the bell stopped is never said.
 - **Guards:** The Postern down to the Emberwood.
 - **Its fall:** The Postern opens: the way into the Emberwood.
 - **Moves:** Stone-skinned: a blow takes a fifth but while it stands open after a move. A wing buffet up close, the bell's toll in a ring round it, a dive over the bell's frame, the roof's stones shaken down.

@@ -1,8 +1,9 @@
-# The Emberwood
+# Emberwood
 
-The wood between the castle and the bull. Pine the Grey burned and left
-standing, still warm under the ash; goblins took the clearings, a bull took
-the hollow. The player comes down into it from the Belfry, after the Stone
+The wood between Highward and the Ember Bull. A jungle over warm ground,
+the old pines only on its west edge; goblins burned clearings for their
+camps, the Bull took the hollow. The story is in [lore.md](lore.md). The
+player comes down into it from the Belfry, after the Stone
 Warden, and leaves it north for the Ember Hollow. Built by `emberwood()` in
 `packages/engine/src/areas.ts`.
 
@@ -14,11 +15,11 @@ on each axis: Wren's spot (29, 44) is (26, 41) here.
 
 Two storeys, cut by one river.
 
-- **The floor** is the burnt maze: woods everywhere but the lanes `maze()`
-  carves, the trees the walls. Smoke, goblins in the clearings, no way to see
-  far. Every road on it is a goblin path or the Harbour's old timber road.
+- **The floor** is the jungle maze: woods everywhere but the lanes `maze()`
+  carves, the trees the walls. Steam off the warm ground, goblins in the
+  clearings, no way to see far. Every road on it is a goblin path or Highward's old timber road.
 - **The Boughs** are the goblins' second storey: raised tables of rock and
-  timber (landforms at height 2 and 3) standing up out of the smoke, the
+  timber (landforms at height 2 and 3) standing up out of the steam, the
   warrens and lookouts on them, joined by plank walks (raised `span` decks)
   over the floor and the water. Up there the goblins move fast and shoot
   down; down on the floor the player picks a way through the trees. The wood
@@ -26,7 +27,7 @@ Two storeys, cut by one river.
   over the Run, and the Chief's Mound in the Burn, joined by the Ash Walk to
   the Postern Crag's first step.
 - **The Ember Run** crosses the whole map west to east, edge to edge, so the
-  south bank (the Harbour's side) and the north bank (the goblins' and the
+  south bank (Lanternport's side) and the north bank (the goblins' and the
   bull's) meet only at its crossings, and every way north picks one: the
   Pine Ford in the west, the Treetop Walk raised over it, the Cinder Ford in
   the middle, the East Bridge under Crag Foot.
@@ -39,14 +40,14 @@ way to earn.
 The player arrives on the Postern Crag's crown and leaves by the Ash Road. In
 between, three jobs pull them across the wood:
 
-1. **Open the way home.** The Ember Gate is barred from the Harbour's side.
+1. **Open the way home.** The Ember Gate is barred from Lanternport's side.
    Walking through it from the wood opens it for good (`emberGateOpen`), and
-   the Harbour's fire is then one step from the wood.
+   Lanternport's fire is then one step from the wood.
 2. **Rest before the bull.** The Cinder Ford's fire is the wood's one
    bonfire, on the north bank where the Ash Road starts. Every other fire is
    a goblin campfire: lit, no rest.
 3. **Follow the steward.** He came out the same Postern with the Keep's key
-   and never reached the Harbour. His notes run from the crag to the Ash
+   and never reached Lanternport. His notes run from the crag to the Ash
    Road, and the last one says where the key went.
 
 ### Main route
@@ -70,13 +71,13 @@ bonfire, and up the Ash Road out.
 
 ### Shortcuts opened from the far side
 
-- **The Ember Gate** (exit, `opens: "emberGateOpen"`): the wood to the
-  Harbour's square.
+- **The Ember Gate** (exit, `opens: "emberGateOpen"`): the wood to
+  Lanternport's square.
 - **The Drawn Plank** (a `lock` with `from`, flag `drawnPlankDown`): the
   Treetop Walk's north end is barred. From Smoke Bluff it is a fence across
   the planks; reached the long way (the Pine Ford and Warren Hill), E on the
   hill's side drops the plank, and from then the walk runs from Smoke Bluff,
-  a short way from the Palisade and the Harbour, straight onto the warrens.
+  a short way from the Palisade and Lanternport, straight onto the warrens.
 
 No one-way drops: the engine's drops are area exits, and the wood has none.
 
@@ -94,15 +95,15 @@ bend.
 - **Why go:** it is the way in, and the way back to the Chapel Ward.
 - **Stands there:** The Postern (exit to the Belfry) on the crown; the
   steward's first note beside it; the bones of his escort on the second
-  ledge, a goblin spear post on the first step below (spears in threes); dead pines on
-  the ledges. The first step's west end carries the Ash Walk.
+  ledge, a goblin spear post on the first step below (spears in threes);
+  scorched trees on the ledges. The first step's west end carries the Ash Walk.
 - **Note:** "Keep Gate barred behind me. The key is on my belt. The wood
   road to the Harbour, then."
 
 ### The Burn (60-95, 44-71), the goblins' war camp
 
 - **Job:** the wood's big fight, between the arrival and the gate. The
-  goblins cleared it by fire: ash, stumps and dead trees, huts round one
+  goblins cleared the jungle by fire: ash, stumps and dead trees, huts round one
   great fire.
 - **Why go:** it lies between the crag and the Palisade; its Chief's Mound
   holds the goblins' plunder (gold).
@@ -115,10 +116,10 @@ bend.
 
 ### The Palisade (28-58, 54-71), the gate camp
 
-- **Job:** the shortcut home. The Harbour's lumber camp at the Ember Gate,
+- **Job:** the shortcut home. Highward's lumber camp at the Ember Gate,
   overrun: its fences broken, the woodcutters fled through the gate and the
   town barred it behind them. Goblins camp in it, in threes, as Wren warns.
-- **Why go:** the Ember Gate (to the Harbour), and the gate road north.
+- **Why go:** the Ember Gate (to Lanternport), and the gate road north.
 - **Stands there:** the blue watchtower and the lumber house, stumps and
   wood piles, the camp's fire (a campfire); torches and spears in threes.
   Once the gate is open (`emberGateOpen`) the woodcutters come back to work
@@ -126,10 +127,11 @@ bend.
 - **Note:** "Ran for the gate. They barred it with us still outside. Can't
   blame them."
 
-### Old Pines (0-27, 44-71), the unburnt wood
+### Old Pines (0-27, 44-71), the cool edge
 
-- **Job:** the quiet district. The one stand the goblins have not burnt:
-  thick pines, a pool, beasts, no goblins.
+- **Job:** the quiet district. The west edge, where the ground runs cooler
+  and the old pine wood still stands: thick pines, a pool, beasts, no goblins,
+  who will not live where it is cold.
 - **Why go:** the hermit, loot in the thicket behind the bears, and the Pine
   Ford north (the west loop).
 - **Stands there:** the hermit's hut by the pool and the hermit (purple,
@@ -178,7 +180,7 @@ bend.
 
 ### Crag Foot (77-127, 0-30), the gnomes' rock
 
-- **Job:** the rock rising toward Tinker Crags in two steps, the gnome
+- **Job:** the rock rising toward Brasscrag in two steps, the gnome
   prospectors cut off on it.
 - **Why go:** gold in the seams, and the East Bridge: the east loop from the
   Burn to the Cinder Ford.

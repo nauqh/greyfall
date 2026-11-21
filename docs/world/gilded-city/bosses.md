@@ -1,11 +1,11 @@
-# The Gilded City: the keepers
+# Sunhold: the keepers
 
 Each boss fights in an arena area of its own and holds the way on until it falls. Numbers live in the code, not here.
 
 ## The Sun Sentinel
 
 - **Where:** the Sun Hall, hung in the sky between the city's crown and the Throne Isle (area `sunhall`).
-- **Who:** The Gilded City's keeper of the Sun Hall, behind its shield. Who rules the City now the gnome-kings are gone is left open.
+- **Who:** Sunhold's keeper of the Sun Hall, behind its shield. The hoard heaped in the hall keeps the isles in the air; the Sentinel guards the city's height, not its treasure. Who rules Sunhold now the gnome-kings are not seen is left open.
 - **Guards:** The Gilded Span over to the Throne Isle.
 - **Its fall:** Drops the Sun Key, which unbars the Gilded Span.
 - **Moves:** Its shield parries every blow from the side it faces, so it is beaten from behind. A thrust that runs it past you, a sunburst ring, sunfire that burns on.
