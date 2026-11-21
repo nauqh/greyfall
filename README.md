@@ -2,7 +2,7 @@
 
 # Greyfall
 
-**The Atlas: a dark medieval action RPG in the Shattered Reach.**
+**The Atlas: a dark medieval action RPG in Aurum.**
 
 [![CI](https://github.com/nauqh/greyfall/actions/workflows/ci.yml/badge.svg)](https://github.com/nauqh/greyfall/actions/workflows/ci.yml)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
@@ -13,13 +13,14 @@
 
 </div>
 
-The lords are ash. The Grey came out of the east, and the Gilded City
-sent no aid. One fire remains, and a nameless survivor wakes beside it.
+Aurum is going cold. The Grey rose in the east, and Sunhold, the city in the
+sky, sent no aid. One fire remains, and a nameless survivor wakes beneath it.
 
-The Atlas is the focus: a Souls-structured action RPG in the Shattered Reach.
-Come ashore at Last Harbour with no name and no lord, take the boss keys, open
+The Atlas is the focus: a Souls-structured action RPG in Aurum.
+Come ashore at Lanternport with no name and no lord, take the boss keys, open
 the Grey Gate, and put an end to the Grey Warlord. The design is in
-[ATLAS.md](ATLAS.md).
+[ATLAS.md](ATLAS.md); the world and its folk are in
+[docs/world](docs/world/README.md).
 
 Greyfall is played in the browser, drawn entirely with Pixel Frog's
 [Tiny Swords](https://pixelfrog-assets.itch.io/tiny-swords) pack, and headed
@@ -27,14 +28,14 @@ for Discord as an Activity that friends launch from a voice call.
 
 ## The Atlas
 
-- **One world.** The Shattered Reach in three tiers: the sky, the surface, the
+- **One world.** Aurum in three tiers: the sky, the surface, the
   underneath. Every area its own map, joined by gates and lifts. `/atlas`
-  starts at the Landing; the world map opens from a bonfire.
+  starts at Tidewake; the world map opens from a bonfire.
 - **Souls structure.** Bonfires, shortcuts, keys, bosses, and gold you drop
   when you die. A band of up to three: Lancer, Archer, Monk.
-- **The Grey.** A condition, not an army. It crowned the Grey Warlord. The
-  Gilded City shut its gates and sent no aid. The player is a nameless
-  survivor.
+- **The Grey.** A cold, not an army: it takes colour, then names, then will.
+  The Grey Warlord keeps himself warm in a crown of its gold. Sunhold shut
+  its gates and sent no aid. The player is a nameless survivor.
 
 ## Other modes
 
@@ -45,7 +46,7 @@ against one over a room code. The design is in
 
 ## Current state
 
-The Atlas is the focus. The Landing and Harbour are playable; the campaign is
+The Atlas is the focus. Tidewake and Lanternport are playable; the campaign is
 built area by area: Emberwood and the Ember Bull are the next slice.
 
 The real-time war is playable solo against the red AI. Versus is auto chess:
@@ -54,9 +55,9 @@ planning phase lasts 30s and ends early once both players are ready.
 
 ## Goals
 
-- Finish the Atlas first slice: the Harbour, Emberwood, the Ember Bull, the
+- Finish the Atlas first slice: Lanternport, Emberwood, the Ember Bull, the
   Ember Key.
-- Then the rest of the Reach: Barrowmoor, the Tinker Crags, the Greyfall.
+- Then the rest of Aurum: Kingsrest, Brasscrag, Greyfall.
 - Balance the war and give the AI real-time play of its own.
 - Lockstep multiplayer on the island. The engine already takes commands
   between ticks, so this adds networking without touching the rules.
@@ -69,7 +70,7 @@ planning phase lasts 30s and ends early once both players are ready.
 
 | Mode | Route | |
 | --- | --- | --- |
-| Atlas | `/atlas` | The focus: the Souls action RPG in the Shattered Reach |
+| Atlas | `/atlas` | The focus: the Souls action RPG in Aurum |
 | Play | `/map` | The real-time war against the AI |
 | Versus | `/versus` | Auto chess, solo (`/battle`) or online over a room code |
 

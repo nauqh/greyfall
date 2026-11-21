@@ -1,13 +1,12 @@
 # The Atlas
 
-The Shattered Reach and the game played on it. The game comes first, the world
+Aurum and the game played on it. The game comes first, the world
 second, the opening last. The map reference is in
 [docs/atlas-map.md](docs/atlas-map.md).
 
 ## The game
 
-A Souls-structured action RPG. You lead a small warband through the Shattered
-Reach with Diablo-style control and maze maps, and Dark Souls structure:
+A Souls-structured action RPG. You lead a small warband through Aurum with Diablo-style control and maze maps, and Dark Souls structure:
 bonfires, shortcuts, keys, bosses, and gold you drop when you die.
 
 The world is the Atlas below: three tiers of areas joined by gates and
@@ -16,10 +15,10 @@ on it. The numbers are starting values, to be tuned once it is playable.
 
 ### The pitch
 
-You come ashore at Last Harbour with no name and no lord. With a band of up
-to three companions you push out through the Reach, take the boss keys, open
+You come ashore at Lanternport with no name and no lord. With a band of up
+to three companions you push out through Aurum, take the boss keys, open
 the Grey Gate, and put an end to the thing the Grey made of the Citadel's
-last lord. Every road loops back to the bonfire in the Harbour square.
+last lord. Every road loops back to the bonfire in Lanternport square.
 
 
 ### Controls
@@ -46,8 +45,8 @@ inside the area map.
 
 A knight in blue, with no banner. On the prologue's black before the
 Landing, after Dark Souls' character creation, the player picks a class, a
-gift and a name, all kept for the run. The name is the player's own; the
-Reach does not know it, and the folk still never say it. Blank, it is
+gift and a name, all kept for the run. The name is the player's own; Aurum
+does not know it, and the folk still never say it. Blank, it is
 Nameless. A save from before the pick is a Warrior with no gift, and the
 sack calls it the Wanderer.
 
@@ -91,9 +90,9 @@ come ashore alone.
 | --- | --- | --- | --- |
 | Lancer | Tank | Charges your target and draws aggro | Hire from Sergeant Corwin at the barracks, 75 gold: E beside him opens Talk / Hire / Leave |
 | Archer | Ranged | Keeps 5 tiles back and shoots | Hire from Wren at the archery range, 60 gold, the same way |
-| Monk | Healer | Heals whoever is lowest below 60% within 4 tiles for 30, 8 s cooldown; never fights | Joins free, for good, once the Drowned Sister in the Drowned Chapel (Undercroft) is heard out, even past a full band |
+| Monk | Healer | Heals whoever is lowest below 60% within 4 tiles for 30, 8 s cooldown; never fights | Joins free, for good, once the Drowned Sister in the Drowned Chapel (Underwell) is heard out, even past a full band |
 | Pawn | Utility | Carries more loot, picks up gold, repairs bridges | Recruit in Old Town, cheap |
-| Gnome | Special | Throws bombs | Won after Old Bamboo (Tinker Crags) |
+| Gnome | Special | Throws bombs | Won after Old Bamboo (Brasscrag) |
 
 - A companion who falls stays down until the next bonfire rest. On Hardcore,
   a fallen companion is gone for good.
@@ -114,19 +113,19 @@ come ashore alone.
   it again and it is yours; die on the way and it is gone.
 - **Shortcuts.** Gates and lifts that open from one side only, such as the
   Moor Gate and the Watch Lift, or the Coffin Stair from the Graves' crest
-  down toward the Harbour's fire. Opening one is permanent and turns the area
+  down toward Lanternport's fire. Opening one is permanent and turns the area
   into a loop.
 - **Keys.** Keys follow Firelink's two bells, one up and one down. The Troll
-  Key is the castle's own. Its steward fled into the Emberwood with it when
+  Key is Highward's own. Its steward fled into Emberwood with it when
   the Grey came, and the Ember Bull has it now (the Ember Key). It opens the Keep Gate.
   Above it stand the bailey and the garrison (Corwin's Lancers), the Keep and
   the Watch Lift to the sky. The Grey Gate takes two other keys, one from each
-  way out of the Harbour: the Barrow King's Horned Key, from Barrowmoor out
-  the Moor Gate, and the Weaver's Silk Key, from the Barrow Deeps down the Old
-  Well. The Sky Bridge from the Crags is the other, harder way into the
+  way out of Lanternport: the Barrow King's Horned Key, from Kingsrest out
+  the Moor Gate, and the Weaver's Silk Key, from the Graveroad down the Old
+  Well. The Sky Bridge from Brasscrag is the other, harder way into the
   Greyfall. The Warlord holds no key. He is the lock. The Grey Gate is
-  locked from Barrowmoor until both keys are carried, and opens freely from
-  the Greyfall's side.
+  locked from Kingsrest until both keys are carried, and opens freely from
+  Greyfall's side.
 
 ### Enemies by area
 
@@ -135,13 +134,13 @@ All from the Tiny Swords enemy pack.
 | Area | Rank and file | Elite | Boss |
 | --- | --- | --- | --- |
 | Emberwood | Torch and spear goblins | Shaman (fire) | Ember Bull |
-| Tinker Crags | Gnomes, slingers, cannons | Panda guard | Old Bamboo |
-| Undercroft | Skeletons, spiders | Skull guard | Ossuary Warden (mini-boss) |
-| Barrowmoor | Skeletons, bats | Skull guard | The Barrow King (minotaur) |
-| The Greyfall | The taken, gnolls | Minotaur champion | The Grey Warlord |
-| Gilded City | Yellow guard | Lancers | The Sun Sentinel |
+| Brasscrag | Gnomes, slingers, cannons | Bamboo-folk guard | Old Bamboo |
+| Underwell | Skeletons, spiders | Skull guard | Ossuary Warden (mini-boss) |
+| Kingsrest | Skeletons, bats | Skull guard | The Barrow King (a mask) |
+| Greyfall | The taken, gnolls | Minotaur champion | The Grey Warlord |
+| Sunhold | Yellow guard | Lancers | The Sun Sentinel |
 
-The soldiers on the Greyfall's walls are what the Grey left of the Citadel's
+The soldiers on Greyfall's walls are what the Grey left of the Citadel's
 garrison. They keep their posts because the posts are all they remember.
 
 Gnolls, slingshot gnomes and hex shamans throw from four or five tiles away
@@ -169,15 +168,15 @@ then walks back. The engine already has a guard leash.
 - **No gear.** Your sprite is fixed, so there are no weapons or armour to
   find or wear.
 - **Brenna**, in the Chapel Ward's forge yard, puts an edge on your sword,
-  +1 to +5, for gold and ore from the Mine Hills and the Crags.
+  +1 to +5, for gold and ore from the Mine Hills and Brasscrag.
 
 ### The first slice
 
-1. **The Landing:** a sea cave under the Harbour, where a new game starts.
+1. **Tidewake:** a sea cave under Lanternport, where a new game starts.
    You wake with the tide and find the way out through narrow lit tunnels,
    past two goblins and the notes, to the antechamber's gate and the Bull's
    Ring, a cavern of its own. From the Ring the boat goes out along the sea
-   channel to the Harbour's docks. (Earlier, the beach south of the Harbour
+   channel to Lanternport's docks. (Earlier, the beach south of Lanternport
    up the Shore Road.) You come ashore alone.
 
    A bonfire, two goblins, notes on the ground that teach the controls (read
@@ -186,12 +185,12 @@ then walks back. The engine already has a guard leash.
    no fog. It is the arena, and the troll guards the boat on. A boss bar with
    his name shows low and centred once you stand in the Ring with him in
    view. Kill him and the road opens. Fall to him and you wash up at the
-   Harbour's fire, as after Elden Ring's Grafted Scion: lost, not over. The
+   Lanternport's fire, as after Elden Ring's Grafted Scion: lost, not over. The
    troll keeps the Ring, the boat goes back to him whenever you like, and
    his fall is worth a fourth flask for good. Either way the training is
    over.
-2. **The Harbour:** the hub is the village's bowl, after Firelink. The
-   Harbour's one bonfire stands at its centre, with Old Ferrow beside it
+2. **Lanternport:** the hub is the village's bowl, after Firelink. The
+   Lanternport's one bonfire stands at its centre, with Old Ferrow beside it
    saying where to go and the Old Well in the hill's cave west of it going down (bats below;
    only bows reach them). The boat's pier lies just south, on the docks. The
    climb runs straight up from the fire through Old Town and the Upper Town
@@ -202,8 +201,8 @@ then walks back. The engine already has a guard leash.
    The Lower Burg is a town of walled yards and lanes, with the square's
    fire. The Ramparts lead to the Rampart Boar on the Bull's Wall. The Chapel
    Ward holds the Stone Warden, the Old Lift home to Old Town's foot, and
-   the Postern to the Emberwood. The Keep comes last, shut until the Ember Key.
-   West, the Lantern Road runs to the fields and the Old Bridge to Saltreach
+   the Postern to Emberwood. The Keep comes last, shut until the Ember Key.
+   West, the Lantern Road runs to the fields and the Old Bridge to Stiltwater
    (hard). North-west, the Ember Gate is shut from this side and opens later
    from the wood. East, past Lantern Point's lighthouse, the Graves stand on
    the hill: gold in plain view, three gnolls and a shaman among the graves,
@@ -211,16 +210,16 @@ then walks back. The engine already has a guard leash.
    that kills a new arrival. Every way out on foot is a path running off the
    map's edge. Buildings, heaps, fence posts and rocks in open ground are
    solid: no one walks through them.
-3. **The Emberwood:** the first hostile area. Goblin camps through the maze,
+3. **Emberwood:** the first hostile area. Goblin camps through the maze,
    two bonfires, the Treetop Walk shortcut.
 4. **The Ember Bull** in the Ember Hollow (it was the Cinder Troll's,
    who now keeps the Ring): a horn swipe, a stomp, a rush that ends by you.
 5. **Reward:** the Ember Key and its gold.
 
-**Done when:** you can walk out of the Harbour, die in the Emberwood, recover
+**Done when:** you can walk out of Lanternport, die in Emberwood, recover
 your gold, open the shortcut, and kill the Troll with a band of two.
 
-Build order: the hero walking and swinging in the Harbour with one enemy
+Build order: the hero walking and swinging in Lanternport with one enemy
 camp; then death, bonfires and dropped gold; then companions; then the
 Emberwood and the Troll.
 
@@ -244,11 +243,11 @@ Defaults in brackets, used until decided.
 
 ## Summary
 
-The Shattered Reach as one world. `/atlas` starts the game on the Landing;
+Aurum as one world. `/atlas` starts the game on Tidewake;
 the whole world is the travel map at `/atlas/map`, opened from a bonfire.
 It stands in three tiers on one grid:
 
-- **The Sky:** the Gilded City and the Skyward Steps overhead.
+- **The Sky:** Sunhold and the Cloudstair overhead.
 - **The Surface:** seven lands on the sea.
 - **The Underneath:** caverns cut from the rock below.
 
@@ -259,57 +258,38 @@ the same spot on the grid, so what is above a place is really above it.
 
 The map format, terrain, buildings and tests are in [docs/atlas-map.md](docs/atlas-map.md).
 
-## The Reach
+## Aurum
 
-The Reach was a realm of lords once: holds and moors and fishing towns, each
-under its own lord, and the first of them sat in the Citadel on the
-Greyfall's crag above the rot marsh. The old kings lie in the barrows of
-Barrowmoor, and no crown has sat in the Reach since. The Citadel's house
-kept the Grey Gate and two seals, one in the barrows and one in the deep
-places under them, and for a long age the seals held. What they held back is
-the Grey.
+The world and its story are told in full in [docs/world/reach.md](docs/world/reach.md),
+which wins wherever this file disagrees. In short:
 
-The Grey is not an army. It is a condition, like rust or frost or a fever
-that will not break. It starts at the edge of a thing and works inward until
-the thing is grey through, and then the thing goes on moving after its name
-is gone. It rose out of the old deeps under the Greyfall, east of the
-Harbour, so the Harbour says it came out of the east. The Citadel took it
-first, and the Citadel's last lord took it into himself to keep it from the
-Reach. It kept him instead, and crowned him. What sits in the Grey Keep now
-is the Grey wearing a lord's shape, thickest where he is and thinner the
-further it reaches. He holds no key. He is the lock. The soldiers on his
-walls were the garrison once. They are the taken now, no more his than the
-rain is.
+Under Aurum lies the Hearth, the warmth the land lives on, and every grain of
+gold is a little of it. The old kings' law was to dig no deeper than a grave.
+The lords of the Citadel broke it: the gnomes raised Sunhold into the sky on
+warm gold, goblins dug the shafts, and the last of them, the Deep Cut, broke
+into the Hearth. Stillmere drained down onto it and half put it out. The cold
+that came up is the Grey. It takes colour, then name, then will; the taken
+walk on by habit toward any warmth, and last of all go to stone. Fire holds it
+off, salt slows it, gold pushes it back.
 
-Kill him and the shape goes out of the Grey. The Grey does not go with it. It
-thins, the way a fever thins, and the Reach is left to bury what it lost.
+The Citadel's last lord ordered the Cut and wears a crown of the Hearth's own
+gold, which drinks warmth from everything round him to keep one man warm. Folk
+think he is the Grey. He is only the drain it runs into: kill him and the Grey
+thins, the way a fever thins, and Aurum is left to bury what it lost.
 
-Above the Reach, the Gilded City kept its gates shut. The Reach sent to it
-for spears when the Grey rose, and the sky city sent none. The rot was the
-grey's doing. The refusal was theirs, and that is harder to forgive. When
-the Citadel fell, the City barred the Gilded Span against it and left the
-Throne Isle, the Citadel's old hall at court, to the Grey. Its gold has not
-made it safe. It has only made it quiet.
-
-The Emberwood is what the Grey left when it came down off the crag: pine
-that caught and never fell, still warm under the ash. Goblins took the
-clearings because nothing else wanted them, and the troll took the hollow.
-
-The castle over Last Harbour is the town's castle, not the Citadel. It fell
-ward by ward, from the outside in, while the town below held. Its steward
-barred the Keep Gate, went out the Postern for the Emberwood with the only
-key, and did not come back. The Citadel is the fortress on the Greyfall's
-crag, and only that.
-
+Sunhold shut its gate and sent no spears, because it floats on the same gold
+and will not spend it. Lanternport held, on the salt, under Highward, round one
+fire. The wanderer comes up out of the sea cave beneath it, one of the drowned
+given back warm by the Hearth's water; no text in the game says so.
 
 ## From Dark Souls
 
 | Dark Souls | Here |
 | --- | --- |
-| Areas stacked over each other: Anor Londo over Blighttown, the Depths under the Burg ([TheGamer](https://www.thegamer.com/dark-souls-1-fromsoftwares-magnum-opus-of-interconnected-level-design/), [James Roha](https://medium.com/@Jamesroha/world-design-lessons-from-fromsoftware-78cadc8982df)) | The Gilded City floats over the Crags and the Greyfall; the Undercroft lies under the town, the Deeps under the moor, the Hollow under the fen |
-| Firelink as the hub every road returns to | Last Harbour: the Old Bridge, the Ember Gate, the Moor Gate, the Old Well down and the Watch Lift up all start in it |
-| Elevators that open as shortcuts home | The Moor Gate opens from the moor; the Watch Lift opens from the sky and drops you on the castle |
-| Ash Lake: a quiet wonder at the very bottom ([Medium](https://medium.com/@bramasolejm030206/preface-ec08bc1459d0)) | The Drowned Hollow: a still lake under the fen, stone trees, gold in the rock, and the Shell Below asleep |
+| Areas stacked over each other: Anor Londo over Blighttown, the Depths under the Burg ([TheGamer](https://www.thegamer.com/dark-souls-1-fromsoftwares-magnum-opus-of-interconnected-level-design/), [James Roha](https://medium.com/@Jamesroha/world-design-lessons-from-fromsoftware-78cadc8982df)) | Sunhold floats over Brasscrag and Greyfall; Underwell lies under the town, Graveroad under the moor, Hearthdeep under the fen |
+| Firelink as the hub every road returns to | Lanternport: the Old Bridge, the Ember Gate, the Moor Gate, the Old Well down and the Watch Lift up all start in it |
+| Elevators that open as shortcuts home | The Moor Gate opens from the moor; the Watch Lift opens from the sky and drops you on Highward |
+| Ash Lake: a quiet wonder at the very bottom ([Medium](https://medium.com/@bramasolejm030206/preface-ec08bc1459d0)) | Hearthdeep: a still lake under the fen, stone trees, gold in the rock, and the Shell Below asleep |
 | One-way drops that commit you | The Old Well and the Fen Sinkhole go down only. The Underneath has its own way back up: the Barrow Cave. |
 
 
@@ -317,31 +297,31 @@ crag, and only that.
 
 | Tier | Area | Who's there | Keeper |
 | --- | --- | --- | --- |
-| Sky | Skyward Steps | drifting isles with watch posts, a lift down onto the castle | |
-| Sky | The Gilded City | the gnome-kings' sky city, its gate shut, yellow guard, a monastery, bees, the Throne Isle, given up to the Grey, with imps | The Sun Sentinel |
-| Surface | Saltreach | militia in the City's yellow and pay, fishing villages, turtles, sharks offshore, pirate towers | |
-| Surface | Last Harbour (hub) | the town's castle on its own height above the town, the bonfire square, the Old Well, pawns at work | |
+| Sky | Cloudstair | drifting isles with watch posts, a lift down onto Highward | |
+| Sky | Sunhold | the gnome-kings' sky city, its gate shut, yellow guard, a monastery, bees, the Throne Isle, given up to the Grey, with imps | The Sun Sentinel |
+| Surface | Stiltwater | militia in Sunhold's yellow and pay, fishing villages, turtles, sharks offshore, pirate towers | |
+| Surface | Lanternport (hub) | Highward on its own height above the town, the bonfire square, the Old Well, pawns at work | |
 | Surface | Emberwood | goblin warrens in pine the Grey burned, the big pines (standing still), gnolls on Smoke Bluff | |
 | Surface | The Ember Hollow | a round floor of ash in the pines, the goblins' fires round it | The Ember Bull |
-| Surface | Tinker Crags | a rock that climbs in five steps to the Tinker Peak, gnomes, bears, pandas, the Gnome Lift up | Old Bamboo |
-| Surface | Barrowmoor | barrows, bones, the cave down into the King's Barrow | |
-| Surface | Lizard Fen | a chapel of the Order that prays to the Grey, lizards, the sinkhole | |
-| Surface | The Greyfall | the Citadel, the Grey Keep on its crown, the Grey wearing its lord, the Throne Stair up | The Grey Warlord |
-| Below | The Landing (start) | the sea cave where a new game starts, notes in the tunnels that teach the controls, two goblins to learn on | Cinder Troll (in the Ring) |
+| Surface | Brasscrag | a rock that climbs in five steps to the Tinker Peak, gnomes, bears, pandas, the Gnome Lift up | Old Bamboo |
+| Surface | Kingsrest | barrows, bones, the cave down into the King's Barrow | |
+| Surface | Stillmere | a chapel of the Order that prays to the Grey, lizards, the sinkhole | |
+| Surface | Greyfall | the Citadel, the Grey Keep on its crown, the Grey wearing its lord, the Throne Stair up | The Grey Warlord |
+| Below | Tidewake (start) | the sea cave where a new game starts, notes in the tunnels that teach the controls, two goblins to learn on | Cinder Troll (in the Ring) |
 | Below | The King's Barrow | the throne hall round its ring of pillars | The Barrow King |
-| Below | The Undercroft | cisterns and pillars under the well, a crypt, spiders, a thief | |
-| Below | Barrow Deeps | tomb daises, skull guards, a dead troll's bones | The Weaver (a giant spider) |
-| Below | The Drowned Hollow | the underground lake, stone trees, turtles, glowing gold | The Shell Below (a giant turtle) |
+| Below | Underwell | cisterns and pillars under the well, a crypt, spiders, a thief | |
+| Below | Graveroad | tomb daises, skull guards, a dead troll's bones | The Weaver (a giant spider) |
+| Below | Hearthdeep | the underground lake, stone trees, turtles, glowing gold | The Shell Below (a giant turtle) |
 
 
 ## Gates and lifts
 
 ```
-SKY       Skyward Steps ──Cloud Bridge── The Gilded City
+SKY       Cloudstair ──Cloud Bridge── Sunhold
                │ Watch Lift (shortcut)       │ Gnome Lift      │ Throne Stair
-SURFACE   Last Harbour ...(gates as before)... Tinker Crags ... The Greyfall
+SURFACE   Lanternport ...(gates as before)... Brasscrag ... Greyfall
                │ Old Well (drop)      │ Barrow Cave (lift)  │ Fen Sinkhole (drop)
-BELOW     The Undercroft ──Cistern Run── Barrow Deeps ──Sinking Stair── The Drowned Hollow
+BELOW     Underwell ──Cistern Run── Graveroad ──Sinking Stair── Hearthdeep
                                    King's Barrow ──King's Stair──┘
 ```
 
@@ -403,7 +383,7 @@ crossing are gone.
   11 tiles) with a randomized depth-first tree plus a few extra links for
   loops, carves those corridors about 3 tiles wide with ragged edges, opens
   small clearings at some waypoints and a room round each district's seed
-  (its `clearing`, 6 by default; the Harbour's town and fields are wider).
+  (its `clearing`, 6 by default; Lanternport's town and fields are wider).
   Roads, buildings, fires and stairs stay clear. Woods block, so the trees
   are the walls; cliffs wall the high ground.
 - After the woods, every pocket nobody can reach gets a path cut to the rest,
@@ -415,12 +395,12 @@ crossing are gone.
   the decor style of an atlas area it borrows (`dress`). Land goes to a
   district's `box` if it has one, otherwise to the nearest seed, with borders
   bent by noise.
-- The Harbour was mapped first, in eight districts: the castle (three
+- Lanternport was mapped first, in eight districts: Highward (three
   terraces up to the keep), Old Town (two raised streets round the square),
   the Docks (the Sea Wall across the bay), West Fields, the Northwood and the
   Keepwood, the Mine Hills and the Moor Watch. Two raised bridges: the Knoll
   Bridge and the Sea Wall.
-  The Emberwood is the second: the Ember Run (a river, cut with `river()`) splits
+  Emberwood is the second: the Ember Run (a river, cut with `river()`) splits
   it, crossed at the Cinder Ford, an east bridge, the Pine Ford, and the
   Treetop Walk raised from Smoke Bluff to the goblins' Warren Hill. The Cinder
   Troll waits in Troll's Hollow, a ring of rock with one gap. Exits carry no
@@ -429,15 +409,15 @@ crossing are gone.
   Burg Gate, the Keep west of it, the Ramparts north of it, and the Chapel
   east past the Gun Bridge, joined by the drawn road from the Burg Gate into
   the Chapel.
-  Tinker Crags is the third: the Tinker Rock climbs in five gnome-built
+  Brasscrag is the third: the Tinker Rock climbs in five gnome-built
   steps, each two overlapping blocks so no ledge runs an even width, with
   every stair at the far end from the last, so the climb walks each ledge
   (on at the south-west, up at the east, the west, the east again). Old
   Bamboo holds the fourth step where the climb arrives; the Gnome Lift
   rises off the summit, and the Sky Bridge runs off it east, raised, to the
-  map's edge toward the Greyfall. Its terraces carry cannon batteries on every rim, watchtowers, a raised Gun Platform with
+  map's edge toward Greyfall. Its terraces carry cannon batteries on every rim, watchtowers, a raised Gun Platform with
   its own stair, and fenced workshop yards with wood, tools and stores.
-  Reworked after the Harbour and the Emberwood (`docs/world/tinker-crags/design.md`): the rock
+  Reworked after Lanternport and Emberwood (`docs/world/tinker-crags/design.md`): the rock
   is stamped whole (`TINKER_ROCK`) and climbed on switchbacks, gnome
   gantries reaching off the fourth step to the Workshop's knob and the
   East Ridge. Tinker Town at its foot is the hub (fire, Nim's goods, the
@@ -448,13 +428,13 @@ crossing are gone.
   The Hoist (`hoistOpen`) drops from the Wheel Step to the town, unbarred
   from above; the East Ridge is a back way up past the first steps. Old
   Bamboo's fall raises `bambooDead`, and the gnomes come back up the rock.
-  The Greyfall began as the fourth, a castle that is the level, after
+  Greyfall began as the fourth, a castle that is the level, after
   Stormveil: a walkable curtain wall with a bastion on each corner, the
   locked Grey Gate a gap in its west side over the Ashen Approach, and the
   Sky Bridge landing on the north rampart. The rampart runs straight into
   the Middle Ward, the other way in, past the bailey. Inside were the
   ruined Outer Bailey, the Ruined Chapel and the Gallows Yard (the
-  Harbour's folk penned), then the Middle Ward, the Upper Ward with the
+  Lanternport's folk penned), then the Middle Ward, the Upper Ward with the
   Warlord's hall, and the Grey Keep on the fourth height, its stairs changing
   sides each step. `ground()` lays exact rectangles of land, so walls stand
   on ground to their corners.
@@ -467,9 +447,9 @@ crossing are gone.
   stairs), raised walkways over the streets, the Warlord's Hall and the
   Grey Keep's tier above, and the Grey Keep on the fourth height, each block
   furnished as its own quarter.
-  The Harbour's castle and Old Town and the Emberwood's warrens got the same
-  furnishing as the Crags: trails, guns on the walls, stores and trophies.
-  The Gilded City is the fifth, a city of isles in the sky after Anor Londo
+  Highward and Old Town and Emberwood's warrens got the same
+  furnishing as Brasscrag: trails, guns on the walls, stores and trophies.
+  Sunhold is the fifth, a city of isles in the sky after Anor Londo
   and Leyndell. Each quarter has its own isle (Cloud Landing, the Gold
   Market, the Bee Gardens, Gnome Landing, the Gilded Gate, the Sun Chapel),
   joined by narrow bridges over open sky. The capital climbs the Sun Steps
@@ -481,31 +461,31 @@ crossing are gone.
   archers on its landing, because the span is the one way the Grey's
   creatures can come in. The Gilded Gate isle is their garrison. The market
   keeps its livestock in a pen.
-  Skyward Steps is the sixth, a descent after the Ringed City's broken
+  Cloudstair is the sixth, a descent after the Ringed City's broken
   stairs. From the Cloud Pier, the way runs up the Broken Stair, across the
   raised Old Span to the Windward Rest, down its steps, then by rope bridges
   over the Hanging Graves and the Bell Isle to the Watch Isle and its lift
-  onto the Harbour's castle. The Hermit's Rock and the Gold Wreck are dead
+  onto Highward. The Hermit's Rock and the Gold Wreck are dead
   ends off the way. The Gold Wreck's barge hangs off the isle's edge where
   it fell short, its timbers and gold spilt across the rock for the imps. A
   stair onto the third height must rise from second-height ground, so a high
   isle steps down through a ledge to its lowland. A bridge must run from
   well inside one isle, as a ragged rim leaves one that stops at the edge
   joined to nothing.
-  The Undercroft is the seventh and the first underground: a chain of
+  Underwell is the seventh and the first underground: a chain of
   caverns joined by tunnels (Well Bottom, Cisterns, Spider Pillars,
   Drowned Chapel, the raised Ossuary, Smugglers' Nook, the Dig), its maze
   walls turned to standing rock by `stone()`, dressed in rubble, not
   trees. A tunnel must run from well inside one cavern to well inside the
   next: one ending at a ragged rim joins nothing, and everything past it
   goes to wall.
-  Barrow Deeps is the eighth, a tall shaft of tombs after the Catacombs
+  Graveroad is the eighth, a tall shaft of tombs after the Catacombs
   and the Tomb of Giants: the Barrow Cave lift lands on the crown of the
   Great Barrow, a tomb in two steps, and every way from it goes down, past
   the Ossuary Galleries, the Drowned Graves, the Robbers' Camp and the
   Collapsed Hall, to the Weaver's Web, a pillared vault where the Weaver
-  waits, and the Sinking Stair on toward the Hollow.
-  The Drowned Hollow is the ninth, the bottom of the world after Ash
+  waits, and the Sinking Stair on toward Hearthdeep.
+  Hearthdeep is the ninth, the bottom of the world after Ash
   Lake: a great still lake with a ring of shore round it (the Stair Foot,
   the Stone Grove, the West Shallows, Pilgrims' Rest, Sinkhole Landing),
   two causeways over the Gold Shoals out to the raised Shell Isle where
@@ -514,7 +494,7 @@ crossing are gone.
   tunnels centre to centre; and underground, rock is high ground, so a
   tile directly under rock is a cliff face: an exit at a map's top edge
   stands a row down.
-  Barrowmoor is the tenth, the old kings' moor after Limgrave's heath and
+  Kingsrest is the tenth, the old kings' moor after Limgrave's heath and
   Lordran's graveyards: a broad moor with three tongues out to its gates
   (the Moor Gate, the Grey Road to the Grey Gate, the Fen Path), grassy
   barrows rising out of the dead wood of the Heath and Barrow Field,
@@ -523,21 +503,21 @@ crossing are gone.
   relief lost its top step there, so the great mound is built from blocks,
   with land of its own under it so its back does not stand in the sea.
 - **The three underground maps are three different places.** The
-  Undercroft is the one people built: square halls and straight
+  Underwell is the one people built: square halls and straight
   corridors on a cross from the well (`ground()` rectangles, `tunnel()`
   lines), torches in brackets along the walls (`sconce`), lit warm amber
   on brown-black rock, with only the Dig left as ragged rock because it
-  is the tunnel nobody admits to. Barrow Deeps is a tomb: the darkest map,
+  is the tunnel nobody admits to. Graveroad is a tomb: the darkest map,
   cold black rock, its fires burning ghost-green, green grave-mist, and
   the dead laid in rows (the kings' two ranks before the Great Barrow,
   the Ossuary Galleries' rows, graves running into the Drowned Graves'
-  pool). The Drowned Hollow is the quiet wonder: the brightest map, pale
+  pool). Hearthdeep is the quiet wonder: the brightest map, pale
   blue on deep-blue rock, few fires, the gold glowing far over the
   water, stone trees standing in the lake and in the Stone Grove. Each
   map's light is `UNDER` in `AtlasScene.ts`.
 - **Every unit is under the light.** The cloud, light and HUD layers sit
   above any map up to 300 tiles tall: they once sat at 5000, so on a map
-  over 63 tiles tall (Barrow Deeps is 96) everything south of row 63
+  over 63 tiles tall (Graveroad is 96) everything south of row 63
   sorted above the darkness and shone at full brightness.
 - **Underground maps are rooms and passages in the dark**, not mazes:
   separate chambers cut from solid rock, joined by bending `tunnel()`s
@@ -545,8 +525,8 @@ crossing are gone.
   cannot be walked), fallen rock (`rubble()`) in the larger chambers, and
   most of the canvas left as rock. The scene lights them near black but in
   pools round fires, exits and gold, and open water takes the area's own
-  tone, dimmed. The Undercroft branches from the well, the Deeps zig-zag
-  down to the Weaver, the Hollow is a lake with shores on three sides and
+  tone, dimmed. Underwell branches from the well, Graveroad zig-zag
+  down to the Weaver, Hearthdeep is a lake with shores on three sides and
   bare rock on the fourth. Passages are `passage()`s: a tunnel with
   alcoves cut into alternate walls every few tiles, bones or a spike in
   most and a torch in one. Pools are ragged `lake()`s and winding
@@ -556,14 +536,14 @@ crossing are gone.
 - **Every area is built its own way, and floats.** Sea and sky maps are
   padded 10 tiles with open sea or sky (`pad()`, which runs each edge
   exit out along a causeway to the new edge), so land never fills the
-  frame. Only the Emberwood keeps the wooded `maze()`; elsewhere the ground
-  is shaped to its place: the Harbour an open town with hedgerowed fields
-  (`hedge()`), the Crags knolls, outcrops and scrub copses round the
-  mountain's foot, the Greyfall open courts with clumps of dead wood in
-  its bailey, the Gilded City plazas with tree avenues (`avenue()`) and
-  one hanging garden, the Steps bare isles with lone trees, Barrowmoor
+  frame. Only Emberwood keeps the wooded `maze()`; elsewhere the ground
+  is shaped to its place: Lanternport an open town with hedgerowed fields
+  (`hedge()`), Brasscrag knolls, outcrops and scrub copses round the
+  mountain's foot, Greyfall open courts with clumps of dead wood in
+  its bailey, Sunhold plazas with tree avenues (`avenue()`) and
+  one hanging garden, the Steps bare isles with lone trees, Kingsrest
   clearings walled by dead thicket.
-- **Lizard Fen** is a spiral that climbs: one causeway of reed coiling two
+- **Stillmere** is a spiral that climbs: one causeway of reed coiling two
   turns inward through black water, each district a tier higher than the
   last (Causeway Landing on the lowland, the Eel Shallows, the Drowned
   Village, the Lizard Warren ringing the heart, the Chapel Mound on the
@@ -576,7 +556,7 @@ crossing are gone.
   and the engine then erased every tier above.
   The fen tells its story inward along the causeway, and each thing stands
   where its people would put it (`spot(turns, along, out)` places on the
-  coil, `out` toward the water side). Saltreach's militia hold the landing,
+  coil, `out` toward the water side). Stiltwater's militia hold the landing,
   with a jetty, a hut over the water and its boat below. The moor's dead
   are buried at the Barrow Rise beside the Barrow Path, stakes in rows. The
   fishers' stilt village runs along Eel Shallows, each hut with its boat and
@@ -585,7 +565,7 @@ crossing are gone.
   lizard-folk's stakes stand at the top of the stair, their huts ringing
   one fire. The cult's ring of stakes circles the sinkhole under the chapel.
   Sharks keep to the deep channels, out of the shallows.
-- **Saltreach** is a stilt town: no land to speak of, a web of a dozen
+- **Stiltwater** is a stilt town: no land to speak of, a web of a dozen
   small timber platforms on the shallows knotted by boardwalks into short
   ways and loops. Each platform is a room with one job (the toll landing,
   the fish market, the saltworks, the net lofts, the village, Gull Rock,
@@ -600,7 +580,7 @@ crossing are gone.
   the village has no way on but the water. Boats are moored at the
   platforms, sharks keep offshore past the pirates, and the town stands on
   one green timber, the pirates' and smugglers' ground a shade darker.
-- **Barrowmoor is clearings in dead thicket**, about a screen each, so
+- **Kingsrest is clearings in dead thicket**, about a screen each, so
   every few steps is a new place: the Moor Gate, the Wayshrine (the first
   fire), Barrow Field's four mounds, Gibbet Hill, the Burned Hamlet, the
   Mourners' Way up to the King's Barrow (two steps, the Barrow King on its
@@ -612,13 +592,13 @@ crossing are gone.
   read as empty, and woods grow only on lowland, so nothing could wall
   it. Ground a landform names is never absorbed as a pocket, so a small
   barrow keeps its district's colour.
-- **The Greyfall is now a citadel-crag**: no walls or blocks, but one
+- **Greyfall is now a citadel-crag**: no walls or blocks, but one
   great rock rising out of the rot-marsh in four ragged tiers (the Lower
   City, the High City, the Warlord's Hall, the Grey Keep on its crown), the
   tiers alternating stone colours, with a spur west for the gnomes' Sky
   Bridge to land on. Rotfield, the Crater shrine, the Ruined Chapel, the
   Gallows Yard and the Ashen Approach lie in the marsh round its foot.
-- **The Emberwood** keeps its maze, but its hills and Troll's Hollow (once a
+- **Emberwood** keeps its maze, but its hills and Troll's Hollow (once a
   rectangular ring of blocks, now a raised arena of ash) are landforms.
   The whole wood has one floor colour: per-district colours met in
   straight lines through the trees and read as painted patches. Colour
@@ -629,7 +609,7 @@ crossing are gone.
   tiles off, so two districts' woods mingle at their border. A fire at
   the Cinder Ford is the rest before the bull, and goblin posts hold the
   ford and the climb to Crag Foot.
-  Reworked after the Harbour (`docs/world/emberwood/design.md`): two storeys cut by one
+  Reworked after Lanternport (`docs/world/emberwood/design.md`): two storeys cut by one
   river. The floor is the burnt maze; the Boughs are the goblins' raised
   tables over it, Warren Hill and Smoke Bluff joined by the Treetop Walk
   over the Run, the Chief's Mound in the Burn by the Ash Walk to the
@@ -644,9 +624,9 @@ crossing are gone.
   until dropped from Warren Hill. Folk back each place: Garth and Dunn
   return to the Palisade once the gate opens, Brother Fenn in Old Pines,
   Tam the Prospector at Crag Foot, Wren at Smoke Bluff's foot.
-- **No rectangles left.** The Gilded City's Sun Steps and Throne Isle,
-  the Skyward Steps' Broken Stair, Windward Rest and Bell Isle, the
-  Undercroft's Ossuary, the Deeps' Great Barrow and the Hollow's Shell
+- **No rectangles left.** Sunhold's Sun Steps and Throne Isle,
+  the Cloudstair' Broken Stair, Windward Rest and Bell Isle, the
+  Underwell's Ossuary, Graveroad's Great Barrow and Hearthdeep's Shell
   Isle are landforms now; no area map calls `block()`.
 - **Fences, buildings and woods keep their distance.** A fence stands on
   open ground of one height, a tile clear of any building, fire or other
@@ -665,10 +645,10 @@ crossing are gone.
   cy, rx, ry)` lays irregular ground at an exact height, an ellipse whose
   rim wanders by noise, with a corner squared off on each lower flank so a
   stair can stand there. Each landform finds its own stairs onto the ground
-  under it. The Harbour is built from them: the Keep on the castle's crown,
+  under it. Lanternport is built from them: the Keep on Highward's crown,
   the Upper Town and Old Town below it, the Northwood and the Mine Hills as
   uplands either side, and the Moor Watch's bluff. Land runs to the frame's
-  edge (sea and sky maps keep a margin of only 3 tiles), except behind the castle, where
+  edge (sea and sky maps keep a margin of only 3 tiles), except behind Highward, where
   open sea puts the Keep on a sea cliff. West Fields owns a `box` edged on
   its hedgerows: by nearest seed, flat ground met the Lower Town in a
   straight diagonal. A market of stock heaps and traders' houses fills the
@@ -677,7 +657,7 @@ crossing are gone.
   round, so a tier is reached only from the tier under it. Overhanging tiers
   stood on the lowland with stairs from the ground to the third and fourth
   heights. The hub is the brightest map, green ground climbing through fresh
-  green to a gold capital. The capital is a hill town: the castle on a
+  green to a gold capital. The capital is a hill town: Highward on a
   headland with the sea on two sides, the tiers stepping down to the
   south-east, each tier its own work (the garrison's soldiers drilling, the
   chapel and gardens, Old Town's market and trades). The Lower Town is
@@ -697,7 +677,7 @@ crossing are gone.
   under 60 tiles that is not its main piece goes to the district round it,
   so the noise in the borders leaves no islands. `districtAt` is base-36,
   read with `districtOf()`.
-- **One bonfire in the Harbour.** It stands in the market square; the
+- **One bonfire in Lanternport.** It stands in the market square; the
   town's other fires are `campfires`, lit but no rest. The Lower Town is a
   bowl after Firelink: `rim()` rings the square with raised ground, cut a
   tile clear of every road. The main road west and east and the docks lane
@@ -708,8 +688,8 @@ crossing are gone.
   bowl's centre, with copses on the rim and in its corners.
   Every way out starts on the bowl's floor. The high ground is the climb,
   after Firelink's stair to the Burg: twin stairs up the bowl's north wall
-  onto Old Town, then the Upper Town, the castle and the Keep stacked up
-  the bonfire's column to the castle on its sea cliff. Rim arms reaching
+  onto Old Town, then the Upper Town, Highward and the Keep stacked up
+  the bonfire's column to Highward on its sea cliff. Rim arms reaching
   out as ridges (`ridge()`) were tried and dropped: they read as nowhere.
   Lantern Point holds five ways, each with a tell: the Lantern Road west
   (`lanterns()` along it; golden motes drifting off the fire along it,
@@ -721,7 +701,7 @@ crossing are gone.
   every area round the solid props.
 - **The castle is a region, not a terrace stack.** After the Undead
   Burg, the Undead Parish and Dark Souls 3's Undead Settlement, the
-  castle above the Harbour splits into areas of their own, joined in a
+  castle above Lanternport splits into areas of their own, joined in a
   climb: the Lower Burg, the Ramparts, the Chapel Ward, the Keep (laid
   out as hillsides now, below). On the Ramparts the Rampart Bull (the
   minotaur's sheets, iron-tinted, bigger, harder) holds the Bull's Wall.
@@ -740,29 +720,29 @@ crossing are gone.
   Souls 3's Cleansing Chapel, one fire every way starts from. West along
   the terrace, the bell roof a height above, fogged while the Stone
   Warden (the troll's sheets in stone, no troll's moves) holds it, the
-  Postern to the Emberwood off the roof, barred until he falls; east along
+  Postern to Emberwood off the roof, barred until he falls; east along
   the terrace at its own height, the forge yard, Brenna, and the pier to
   the Old Lift (opened by riding it); the yard's stair down to the
-  cloister closes the loop. The town's Ember Gate is now a shortcut, opened from the wood: the Emberwood
-  comes after the castle. Every way between areas is a thing to see: a
+  cloister closes the loop. The town's Ember Gate is now a shortcut, opened from the wood: Emberwood
+  comes after Highward. Every way between areas is a thing to see: a
   stair in the terrain's own tiles, a gateway between towers or a bridge or causeway to it, and
   across it a fog gate from the pack's art, fence end-posts with the
   pack's white clouds banked between; a ladder is a run of fence, a lift
   its platform. Solid props block a base centred under their art (an
   even width rounds down), so none juts out to one side. The Keep
-  (`keep`), the castle's crown, its own area where the harbour's castle
+  (`keep`), Highward's crown, its own area where the harbour's castle
   and Keep terraces used to be: in at the Keep Gate off the Burg's Upper
   Streets (an exit with a `key`, barred by the pack's fence until the
   Ember Key is carried), the gate court, the bailey (Corwin at the
   barracks, the Keep's bonfire; no guns or drill, so after the Burg and
-  the troll it reads as a rest, like Firelink), and the castle on its terrace a
-  stair up, Ansel on the wall, the Watch Lift up to the Skyward Steps,
-  shut until ridden down. The Landing is a sea cave on the underground
+  the troll it reads as a rest, like Firelink), and Highward on its terrace a
+  stair up, Ansel on the wall, the Watch Lift up to the Cloudstair,
+  shut until ridden down. Tidewake is a sea cave on the underground
   tier, narrow tunnels from the grotto to the antechamber's fog; the
   Bull's Ring is its own cavern area past it, walked straight into with
   no fog (an arena with an empty `gate` has no fog, mist or seal; its
   boss bar shows once you stand in the room with the boss in
-  view), and the boat out to the Harbour. Every
+  view), and the boat out to Lanternport. Every
   fightable boss fights in a closed arena; walking into its fog walks you
   two steps in, and it holds until the boss or you fall. The side a
   crossing comes out on is `plain`, no fog.
@@ -776,18 +756,18 @@ crossing are gone.
   Door, no way round him; the Ladder to the Burg drops off it past him.
   The Belfry (`belfry`): the bell loft alone, cramped round the bell's
   timber frame (a fence), from the chapel terrace's Bell Stair to the
-  Postern down to the Emberwood. The Ember Hollow (`trollpit`): a round floor
+  Postern down to Emberwood. The Ember Hollow (`trollpit`): a round floor
   of ash walled by pines and ringed by fires, room for every charge, from
-  the Emberwood's Ash Road to the Crag Stair, so the Crags now come after
+  Emberwood's Ash Road to the Crag Stair, so Brasscrag now come after
   the troll. The King's Barrow (`barrow`, under the moor): the throne hall
   alone round its ring of pillars; the Barrow Cave's lift lands in it, not
-  the Deeps, and the King's Stair goes on down to the Deeps' Great Barrow.
-  On the world map the Chapel moved east and the Emberwood six tiles west
+  Graveroad, and the King's Stair goes on down to Graveroad's Great Barrow.
+  On the world map the Chapel moved east and Emberwood six tiles west
   to make room.
   For a time, the hub moved off the town to Lantern Point, a headland in
   the south-east corner (Firelink is a ledge at the edge, not the middle):
-  the Shore Road from the Landing lands on it, the lighthouse fire is the
-  Harbour's first bonfire, an inlet against the Moor Watch's bluff leaves
+  the Shore Road from Tidewake lands on it, the lighthouse fire is the
+  Lanternport's first bonfire, an inlet against the Moor Watch's bluff leaves
   the shore path the one way west, and the Moor Watch's hill behind the
   point is the Graves: a path up its slope through gnolls and gold bait
   to the Moor Gate on its seaward edge (the coast strip that once ran
@@ -796,11 +776,11 @@ crossing are gone.
   from the far one (the Moor Gate, the Watch Lift). The market's fire is
   a campfire; the goblin camp's on the Ember road is the second bonfire.
   After Firelink, the bowl carries one axis through the fire: north the
-  stair up to the castle and the sky, south the Old Well on the bowl's
+  stair up to Highward and the sky, south the Old Well on the bowl's
   floor, down to the drowned. A gate tower marks each pass mouth. Ferrow
-  at the fire says the goal (the Grey Gate's two keys), why the castle is
+  at the fire says the goal (the Grey Gate's two keys), why Highward is
   shut, and warns off the well. The countryside is thresholds, each a
-  taste of the region past it: Saltreach's fishers and yellow militia at
+  taste of the region past it: Stiltwater's fishers and yellow militia at
   the Old Bridge, the lumber and goblin camps on the Ember road, the
   moor's dead along the Moor Gate road, the mine's ore carried to the
   smith; the lighthouse keeps gold and a note. Notes on the ground at the
@@ -808,15 +788,15 @@ crossing are gone.
   area `lock`: shut until the Ember Key is carried, or opened from inside
   by coming down the Watch Lift.
   Reworked since, and what holds now: the hub is the bowl's fire in the
-  village, the Harbour's one bonfire (a corner hub with the way on in the
+  village, Lanternport's one bonfire (a corner hub with the way on in the
   far corner was a cross-map trek), Ferrow and Tobin at it, the Old Well
   beside it. You come from the Bull's Ring by boat (`The Boat`,
   a `lift` crossing drawn as a moored boat, E says "Take the boat to"), not a lift
   up through the rock, landing on the docks' pier below the bowl. The
   climb runs straight up from the fire to the Castle Gate on the hill's
-  crown, towers and the castle's keep beside it. The road to the Burg leaves
+  crown, towers and Highward's keep beside it. The road to the Burg leaves
   from Old Town's height straight behind the crown, off the map's north edge; the sea is gone, the
-  Harbour's north border woods (`wooded(m, top)`), since a gate to an
+  Lanternport's north border woods (`wooded(m, top)`), since a gate to an
   inland area must not lead into the sea. The Old Lift from the Chapel
   lands at Old Town's east foot, near the hub. The castle areas are no
   longer rooms in the void or terrace pyramids: each is a hillside of its
@@ -832,12 +812,12 @@ crossing are gone.
   Keep a gate court, bailey and castle terrace. Every way out on foot is
   a path three wide to the map's edge (`edgeWay()`), its road painted,
   and needs no fog: a gate is seen by its path, fog is for boss rooms only
-  (the Landing's antechamber gate lost its fog too). Two traps met on the way: high ground no
+  (Tidewake's antechamber gate lost its fog too). Two traps met on the way: high ground no
   stair reaches is lowered by `finish()`, so a stepped base with no
   stairs flattens; and a ground strip only reachable along a cliff's foot
   is no way at all, as the row under a terrace is its face.
 - **A district is one colour.** A district's `palette` can be a single
-  tileset colour for all its heights; the Harbour's districts each are, in
+  tileset colour for all its heights; Lanternport's districts each are, in
   the atlas's family (an olive lower town climbing to a gold castle,
   fresh-green fields), and district borders are
   broad and gentle so the colours meet in curves, not a patchwork. A
@@ -847,10 +827,10 @@ crossing are gone.
   each shelf is at least one shade lighter than the ground just below it
   (teal, olive, green, fresh green, gold, darkest to lightest), so every
   cliff reads as a step up; only gold over gold is allowed, at the
-  Harbour's Keep and the Crags' summit, five heights with no teal lowland
+  Lanternport's Keep and Brasscrag's summit, five heights with no teal lowland
   (teal ground reads as the sea). Palettes start dark enough to climb, so
   the lift rarely changes a tile; a test holds every area to it.
-- **Tinker Crags is a mountain, not a pyramid:** five reliefs of their own
+- **Brasscrag is a mountain, not a pyramid:** five reliefs of their own
   shapes grown into each other (the summit massif, a broad west shoulder
   where Old Bamboo waits, a long thin east ridge, a squat north crag with
   the workshop yard, a low south spur with the gold mine), outlines
@@ -861,11 +841,11 @@ crossing are gone.
   scrub dresses its lower slopes and boulders its upper. A stream runs off
   its west face under a footbridge, a tarn sits under the outcrops, and the
   gnomes' Terraces, a raised shelf on the southern spur, are fenced plots with their stock.
-- **Each area has its own frame and silhouette:** the Harbour taller,
-  with Lighthouse Point curling round the bay; the Emberwood a long valley
-  with the sea biting its corners; the Crags tall, with the Southern Spur
-  running into the sea; the Greyfall's coast broken into coves and
-  stacks; the Undercroft a chain of caverns.
+- **Each area has its own frame and silhouette:** Lanternport taller,
+  with Lighthouse Point curling round the bay; Emberwood a long valley
+  with the sea biting its corners; Brasscrag tall, with the Southern Spur
+  running into the sea; Greyfall's coast broken into coves and
+  stacks; Underwell a chain of caverns.
   `test/areas.test.ts` checks every mapped area: every exit and height can be
   reached from the entry, every bridge deck stays raised, all land belongs to
   a district, and every building sits wholly on its ground.
@@ -887,7 +867,7 @@ Monsters (`FOES` in `packages/engine/src/hero.ts`, the game section's numbers) w
 at their posts, chase a hero within their aggro range, strike when beside
 it, and walk home past their leash. A hero at nothing wakes where it
 arrived, whole. Bonfires and dropped gold come next. The first fight is the
-goblins' camp outside the Harbour's Ember Gate: two torches and a spear,
+goblins' camp outside Lanternport's Ember Gate: two torches and a spear,
 winnable with the sword alone (three met at once killed in five seconds).
 
 Dev mode (the backquote key, or "Dev: whole map" at the top) frees the
@@ -898,7 +878,7 @@ back; it is remembered on the browser and carries across crossings.
 ## Not done yet
 
 - The hero walks, fights, rolls, rests at bonfires, drinks flasks, picks
-  up gold and leads a band hired in the Harbour. The Ember Bull drops
+  up gold and leads a band hired in Lanternport. The Ember Bull drops
   the Ember Key, which opens the Keep Gate.
 - Ten bosses can be killed: the Cinder Troll, Rampart Boar, Stone
   Warden, Ember Bull, Barrow King, Weaver, Shell Below, Old Bamboo, the
@@ -924,16 +904,16 @@ back; it is remembered on the browser and carries across crossings.
     while the three grave totems round his hall stand; a hex burst under
     the mark, grave fire along the ground to it that burns on, and the
     dead raised, three at most.
-  - The Weaver, in the Weaver's Web (`web`, under the Deeps, the Sinking
-    Stair on past her to the Hollow): a bite, a leap over anything,
+  - The Weaver, in the Weaver's Web (`web`, under Graveroad, the Sinking
+    Stair on past her to Hearthdeep): a bite, a leap over anything,
     venom that burns on, webs that hold whoever walks into them (a
     `snare` on the burning ground), and her brood let down, four at most.
-  - The Shell Below, on the Shell Isle (`shellisle`, off the Hollow): no
+  - The Shell Below, on the Shell Isle (`shellisle`, off Hearthdeep): no
     blade gets through its shell but while it stands open (`stone` 0); a
     bite, a stamp round it, a spin that the lake stops dead and flips it
     open. Past it the Shell Stair up to the Fen, shut from the Fen until
     it falls (a `guard` on the Fen's side).
-  - The Grey Warlord, in the Grey Keep (`throne`, off the Greyfall's
+  - The Grey Warlord, in the Grey Keep (`throne`, off Greyfall's
     crown, the Throne Stair up behind his throne): a cleave, a lunge that
     ends at the mark, the Grey run along the ground to burn on, and past
     half the Grey's dead raised after every lunge.
@@ -982,32 +962,32 @@ tool icons and ore laid out beside it.
 
 ## The folk's questline
 
-The folk move out into the Reach as you do, after Dark Souls. There is no log and no choice, and you never speak. Where each stands comes from `whereabouts()` in `npcs.ts`, read from world flags. Some flags are set by hearing a talk to its end (`Talk.sets`). Positions change only on entering an area.
+The folk move out into Aurum as you do, after Dark Souls. There is no log and no choice, and you never speak. Where each stands comes from `whereabouts()` in `npcs.ts`, read from world flags. Some flags are set by hearing a talk to its end (`Talk.sets`). Positions change only on entering an area.
 
 The full lines and stations are in [docs/world/](docs/world/README.md), each land's folk in its own `questline.md`.
 
 
 | Who | Moved on by | Turns up | Ends |
 | --- | --- | --- | --- |
-| Tobin | his remark on the well, then a talk | Undercroft, Smugglers' Nook; then the Deeps, Robbers' Camp | Stays below counting what his brother steals; gives the Thrown Coin |
-| Jory | Tobin gone deeper and the Warlord dead | Barrow Deeps, Robbers' Camp, selling what his camp robbed; then the Old Well in Tobin's place | Stands at the well, Tobin left below |
-| Mother Ysolde | the sister freed, then a talk | Undercroft, the Drowned Chapel; then the Hollow, Pilgrims' Rest | Shell Below alive: kneels over her sisters for good, and Jory sells her candle. Shell Below dead: walks home to the Upper Town and gives the Sister's Candle |
-| A Drowned Sister | her second talk | Undercroft, the Drowned Chapel | Freed, walks with the wanderer as the Monk |
-| The Pilgrim | | the Hollow, Pilgrims' Rest | Gives Hollow Water; lies dead once the Shell Below is killed |
-| Ansel of the Wall | his remark on the Ember Key | The Greyfall, the Ashen Approach | Hear him out twice and he goes ahead and dies in the High City, and Brenna sells his edge; kill the Warlord first and he is back on the wall and gives Ansel's Edge |
-| Penny | her crows talk, then reaching the Greyfall | The Greyfall, Gallows Yard, penned with her mum | Talked to: freed in the Yard when the Warlord falls. Never talked to: stays hidden, her mum walks home. Mum's Bread either way |
-| Sergeant Corwin | the Barrow King dead | Barrowmoor, Barrow Field, digging out his forty | Watchman heard out: finds the fortieth and gives the Forty's Banner. Otherwise: stops at thirty-nine |
-| The Moor Watchman | his remark on the open Moor Gate | Barrowmoor, Gibbet Hill, watching the lights | Lies dead in Barrow Field once the King is dead, the fortieth of Corwin's spears |
+| Tobin | his remark on the well, then a talk | Underwell, Smugglers' Nook; then Graveroad, Robbers' Camp | Stays below counting what his brother steals; gives the Thrown Coin |
+| Jory | Tobin gone deeper and the Warlord dead | Graveroad, Robbers' Camp, selling what his camp robbed; then the Old Well in Tobin's place | Stands at the well, Tobin left below |
+| Mother Ysolde | the sister freed, then a talk | Underwell, the Drowned Chapel; then Hearthdeep, Pilgrims' Rest | Shell Below alive: kneels over her sisters for good, and Jory sells her candle. Shell Below dead: walks home to the Upper Town and gives the Sister's Candle |
+| A Drowned Sister | her second talk | Underwell, the Drowned Chapel | Freed, walks with the wanderer as the Monk |
+| The Pilgrim | | Hearthdeep, Pilgrims' Rest | Gives Hollow Water; lies dead once the Shell Below is killed |
+| Ansel of the Wall | his remark on the Ember Key | Greyfall, the Ashen Approach | Hear him out twice and he goes ahead and dies in the High City, and Brenna sells his edge; kill the Warlord first and he is back on the wall and gives Ansel's Edge |
+| Penny | her crows talk, then reaching Greyfall | Greyfall, Gallows Yard, penned with her mum | Talked to: freed in the Yard when the Warlord falls. Never talked to: stays hidden, her mum walks home. Mum's Bread either way |
+| Sergeant Corwin | the Barrow King dead | Kingsrest, Barrow Field, digging out his forty | Watchman heard out: finds the fortieth and gives the Forty's Banner. Otherwise: stops at thirty-nine |
+| The Moor Watchman | his remark on the open Moor Gate | Kingsrest, Gibbet Hill, watching the lights | Lies dead in Barrow Field once the King is dead, the fortieth of Corwin's spears |
 | Maren | her remark on the Warlord dead | | Sails on the first ship in three winters, and Mags stocks the Salt-Glass Flask; missed only by never hearing her sail talk |
 | Wren | the Ember Key | Emberwood, at Smoke Bluff's foot | Stays, shooting; remarks on Penny gone |
-| The Last One | | Barrowmoor, the Grey Road, dead from the start | Ferrow's last one, who went east; never named |
+| The Last One | | Kingsrest, the Grey Road, dead from the start | Ferrow's last one, who went east; never named |
 | Old Ferrow, Brenna, Mags | | | Stay; remark on the folk's news. Brenna and Mags sell what the questlines turn up |
 | Hale, Odo | | | Stay at their posts in the Burg and on the Ramparts |
 
 
 ## The opening
 
-What plays before a new game begins at the Landing. The script is `PROLOGUE`
+What plays before a new game begins at Tidewake. The script is `PROLOGUE`
 in `apps/web/src/app/atlas/prologue.ts`, played by `ProloguePlayer.tsx`; this
 file is the why.
 
@@ -1027,7 +1007,7 @@ file is the why.
 
 Taken from both: plain declaratives, no simile, and a turn to the player as a
 captive given to the tide. Unlike Dark Souls, each name is said with what it
-does (the Grey takes, the Warlord is what it wears, the Gilded City refused),
+does (the Grey takes, the Warlord is what it wears, Sunhold refused),
 because a cold reader lost the thread when names were only dropped. The cart becomes the tide. Every
 paragraph earns its place by carrying one fact: what the realm was, what broke
 it, who did not come, what is left, who the player is.
@@ -1039,11 +1019,11 @@ black. The wording and the pace of its reveal are the whole cutscene.
 
 #### The story it tells
 
-The Reach was a land of lords, bound by oaths and roads. The Grey rose in the
+Aurum was a land of lords, bound by oaths and roads. The Grey rose in the
 east: not an army but a rot, and what it took went on walking. In the Citadel
 it took the first of the lords and wears him still, as the Grey Warlord. The
-lords asked the Gilded City for aid, were refused, and rode against him alone.
-They did not come back. Only Last Harbour held, with one fire still burning.
+lords asked Sunhold for aid, were refused, and rode against him alone.
+They did not come back. Only Lanternport held, with one fire still burning.
 Now the tide has carried a stranger into the caves beneath it. That is the
 whole opening: a realm, the Grey, its Warlord, a refusal, a last fire, and the
 one left at its foot, who still has to climb to it.
@@ -1059,7 +1039,7 @@ one left at its foot, who still has to climb to it.
   [Writing a More Compelling Game Narrative](https://www.gamedeveloper.com/game-platforms/writing-a-more-compelling-game-narrative)
 - **One idea per paragraph.** Readers skip the rest once they lose the thread,
   so each paragraph carries one turn: the realm of lords, the Grey, the
-  Warlord it wears, the Gilded City's refusal, the last fire, the nameless
+  Warlord it wears, Sunhold's refusal, the last fire, the nameless
   survivor. The Grey and its Warlord used to share one paragraph, and readers
   could not tell who the Warlord was; they have one each now.
   [How Users Read on the Web, NN/g](https://www.nngroup.com/articles/how-users-read-on-the-web/)
@@ -1082,67 +1062,67 @@ one left at its foot, who still has to climb to it.
 
 The game and world sections above are the authority for places and mechanics. The opening is the
 front-facing telling, and it uses the names survivors would use: the Grey, the
-Gilded City, a nameless survivor for the hero the game later gives a class.
+Sunhold, a nameless survivor for the hero the game later gives a class.
 Where it chooses different words, it says why.
 
-- The Reach is a realm of lords in the world section above; Last
-  Harbour is its hub, and every road out of it comes back to the Harbour's
+- Aurum is a realm of lords in the world section above; Last
+  Lanternport is its hub, and every road out of it comes back to Lanternport's
   fire (Ferrow: "Every road out of here comes back to this fire").
-- The Grey rose from the deeps under the Greyfall; the Harbour, west of it,
-  says it came out of the east, and the script keeps the Harbour's telling.
-  It is thickest in the Greyfall. It crowned the Grey Warlord. The black
+- The Grey rose from the deeps under Greyfall; Lanternport, west of it,
+  says it came out of the east, and the script keeps Lanternport's telling.
+  It is thickest in Greyfall. It crowned the Grey Warlord. The black
   soldiers are the taken, and the gnolls run with the Grey as its dogs. Ansel
   says the Grey smells of "wet ash and old iron".
-- The Gilded City is the sky city. Ansel says it "never sent us a single
+- Sunhold is the sky city. Ansel says it "never sent us a single
   spear when the Grey came"; the script turns that into "sent no aid", which is
-  what the Reach remembers.
-- Old Ferrow keeps the Harbour's fire, and the script's "one fire still
+  what Aurum remembers.
+- Old Ferrow keeps Lanternport's fire, and the script's "one fire still
   burning" is his. He is not named in it: the player meets him a minute later
   and hears "Ah. Another one." from him, which the opening should not spoil.
 - The Grey Warlord has no personal name in the world; the script calls him
   only by his title. He is the Grey's crown, not its general.
 - The player is the survivor the tide brings in. The game's docs give the hero
   a class, not a rank; the opening refuses even the name. It ends in the
-  caves, not the town, because that is where the game starts: the Landing,
-  with the Harbour's fire still to reach.
+  caves, not the town, because that is where the game starts: Tidewake,
+  with Lanternport's fire still to reach.
 
 ### The beats
 
 Six short paragraphs, shown one at a time, then the title. The spine is a
-chain anyone can follow: the lords held the Reach, the Grey rose, it took the
-first lord and wears him as the Grey Warlord, the Gilded City sent no aid, the
-lords rode against him alone and did not return, Last Harbour held with one
+chain anyone can follow: the lords held Aurum, the Grey rose, it took the
+first lord and wears him as the Grey Warlord, Sunhold sent no aid, the
+lords rode against him alone and did not return, Lanternport held with one
 fire, and the tide left a stranger in the caves beneath it.
 
-Six names at most: the Reach, the Grey, the Citadel, the Grey Warlord, the
-Gilded City, Last Harbour. An earlier draft also named the old kings, their
+Six names at most: Aurum, the Grey, the Citadel, the Grey Warlord, the
+Sunhold, Lanternport. An earlier draft also named the old kings, their
 barrows and Old Ferrow; none paid off inside the opening, and a cold reader
 could not hold them all. Each beat is shown alone on black, so none leans on
 the one before it for its meaning ("the town", not "it").
 
 The forty spears and the Citadel were cut from an earlier draft. Corwin's forty
 died in the barrows, not at the Citadel, and "the Citadel" was easy to confuse
-with the Harbour's castle, so the line was both confusing and wrong. What remains is
-Ansel's plain claim: the Gilded City sent no aid.
+with Highward, so the line was both confusing and wrong. What remains is
+Ansel's plain claim: Sunhold sent no aid.
 
 | # | Paragraph | Why |
 | --- | --- | --- |
-| 1 | The Reach was a land of lords. Each kept his own hall, and oaths and roads bound the halls together. | The world before |
+| 1 | Aurum was a land of lords. Each kept his own hall, and oaths and roads bound the halls together. | The world before |
 | 2 | Then the Grey rose in the east. It was no army. It was a rot. The fields it touched went grey, and the men it took went on walking after their names were gone. | What the Grey is, and what it does to people |
 | 3 | In the Citadel it took the first of the lords, and wears him still. He is called the Grey Warlord, and where he stands, the Grey is thickest. | Who the Warlord is, and where the player must go |
-| 4 | The lords asked the Gilded City in the sky for aid. Its gates stayed shut, and they rode against the Warlord alone. Their banners did not return. | The refusal, then the cost after a pause |
-| 5 | Only Last Harbour held: a town at the edge of the sea, its gates barred, one fire still burning. | The last hold, and the fire the player will rest at |
+| 4 | The lords asked Sunhold in the sky for aid. Its gates stayed shut, and they rode against the Warlord alone. Their banners did not return. | The refusal, then the cost after a pause |
+| 5 | Only Lanternport held: a town at the edge of the sea, its gates barred, one fire still burning. | The last hold, and the fire the player will rest at |
 | 6 | Now the tide has carried a stranger into the caves beneath the town. Nameless, half-drowned, and alive. | The player, below the last hold, not yet in it; "Now" marks the turn from history to the present |
 
-Then the title card, **GREYFALL**, *The Shattered Reach*, and the black fades
-out on the Landing: the sea cave behind the overlay is the arrival.
+Then the title card, **GREYFALL**, *Aurum*, and the black fades
+out on Tidewake: the sea cave behind the overlay is the arrival.
 
 ### Playing it
 
 - Each paragraph opens on 1.5 s of black, fades in whole over 1.8 s, holds
   fully visible for 360 ms a word, then fades out over 1.2 s. The next
   paragraph starts on black again, so nothing is read while it moves. The
-  Gilded City card opens on 2.5 s of black; its paragraph holds, fades out
+  Sunhold card opens on 2.5 s of black; its paragraph holds, fades out
   over 1.2 s, and after 1 s of black its last sentence fades in alone in the
   same place, the cost given a card of its own. The whole run is about 90 s
   including the title.
@@ -1151,7 +1131,7 @@ out on the Landing: the sea cave behind the overlay is the arrival.
   (`intro()` in `AtlasScene.ts`). The wide shot holds 2.2 s from the title's
   end, then the camera flies in to the hero over 3.4 s, eased in and out,
   and lands exactly where the bounded follow camera sits, so play takes over
-  without a jump. Only then do the HUD fade up (0.9 s), the Landing's name
+  without a jump. Only then do the HUD fade up (0.9 s), Tidewake's name
   rise, and the hero answer the keys. This is the camera handoff of
   cutscene-led games (Uncharted 4, God of War 2018): the scripted camera
   blends into the gameplay one, and the interface comes last.
