@@ -84,6 +84,7 @@ select and right click to order; **H** opens the field guide.
 | [ATLAS.md](ATLAS.md) | The Atlas: the game, the world, the areas, the opening. |
 | [docs/atlas-map.md](docs/atlas-map.md) | The map reference: terrain, buildings, tests, dressing. |
 | [docs/world/](docs/world/README.md) | The world: its lore, its folk's questlines and its bosses, a folder per land. |
+| [GLOSSARY.md](GLOSSARY.md) | The words: one per thing, and what to avoid. |
 | [docs/skirmish.md](docs/skirmish.md) | Skirmish: the auto chess mode. |
 
 

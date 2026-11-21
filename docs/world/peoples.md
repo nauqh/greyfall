@@ -2,7 +2,7 @@
 
 Who else lives in Aurum besides men, how they stood before the Cold Year, and
 why they are on the roads now. The world's story is in [reach.md](reach.md);
-this file follows its rules and its Glossary.
+this file follows its rules and [GLOSSARY.md](../../GLOSSARY.md).
 
 ## The heart of it
 
@@ -192,20 +192,7 @@ Men do not count these as folk, and neither should player text.
 
 ## Glossary
 
-| Use | For | Never |
-| --- | --- | --- |
-| the other folk | All the peoples who are not men, in Lanternport's polite voice | races, monsters, creatures, demihumans |
-| gnomes; tinkers (folk) | The gnomes of Brasscrag | |
-| the gnome-kings | The gnomes who went up to Sunhold | for the gnomes below |
-| goblins; diggers (folk) | | |
-| gnolls; dogs, the Grey's dogs (folk) | | |
-| fenfolk; lizard-folk | The people of Stillmere | lizardmen |
-| trolls; sleepers (old folk) | | |
-| the horned; bullmen (folk) | The Citadel's oathsworn guard | minotaurs (in player text) |
-| bamboo-folk; hats (rude) | The pandas of Brasscrag | pandas (in player text) |
-| finfolk; sharks (folk) | The sea people | sharkmen |
-| imps; sparks (folk) | | demons |
-| the masks; barrow-wardens | The hex shamans of Kingsrest | shamans, witch doctors |
+The other folk's names are in [GLOSSARY.md](../../GLOSSARY.md).
 
 ## Open questions
 

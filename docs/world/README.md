@@ -2,7 +2,7 @@
 
 Everything told about Aurum: its story, its folk and their lines, and the keepers who hold its ways.
 
-- [reach.md](reach.md): the rules for telling it, the world's story, what the art can carry, the glossary, the audit and the open questions.
+- [reach.md](reach.md): the rules for telling it, the world's story, what the art can carry, the audit and the open questions.
 - [peoples.md](peoples.md): the other folk of Aurum, from gnomes to finfolk, and how the cold put them on the roads.
 - [questline.md](questline.md): how talks, flags and moving on work, what sets each flag, every questline at a glance, and the forks.
 

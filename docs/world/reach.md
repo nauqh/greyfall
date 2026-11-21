@@ -296,36 +296,7 @@ the old kings, the gnome-kings, the crown up close.
 
 ## Glossary
 
-| Use | For | Never |
-| --- | --- | --- |
-| Aurum | The whole world; "gold" in the old kings' tongue | the Reach, the kingdom, the realm under one crown |
-| the Broken Crown | The old kings' crown, split between the holds | the Shattering |
-| the old kings | The dead in the barrows | for any living ruler |
-| the Old Law; "no deeper than a grave" | The kings' law against deep digging | |
-| the Hearth | The warmth under Aurum | the core, the heart of the world, magic |
-| the Deep Cut, the Cut | The Citadel's last shaft, into the Hearth | |
-| the Cold Year | The first winter of the Grey | |
-| the Grey | The cold that takes. Always capitalised; lower-case grey is only a colour | the plague, the rot (as its name), the Greying (code only) |
-| the taken | Those the Grey has kept | zombies, undead, hollows; "grey men" only in a child's mouth |
-| the Grey's dogs, dogs (folk) | Gnolls | |
-| Greyfall | The land of the crag and its rot marsh, where the Grey falls like ash | |
-| the Citadel; the Grey Keep | The fortress on the crag; the keep on its crown | the Citadel, for Highward |
-| Highward; the Burg, the Ramparts, the Chapel Ward, the Keep | The castle over Lanternport, and its wards | |
-| the Grey Warlord, the Warlord | The Citadel's last lord, kept by his crown | the Grey King, the Grey itself, his name |
-| the crown | The Warlord's crown of Hearth gold | the Hearth Crown in folk mouths (they do not know) |
-| Sunhold; the sky city (folk) | The gnome-kings' city | the high city (that is Greyfall's High City) |
-| the gnome-kings | The gnomes who went up with the gold | |
-| the Throne Isle, the Throne Stair | The Citadel's seat at court, and its stair up | |
-| the Grey Gate | The barred road into Greyfall | |
-| the Horned Key, the Silk Key | The Grey Gate's two keys | lower case |
-| the Ember Key | Highward's Keep Gate key | a key to the Grey Gate |
-| the Order; the Keepers, the Stilled, the Pilgrims | The purple faith and its three ways | the cult (folk may say it of the Stilled) |
-| a bonfire (UI), the fire (folk) | A rest point | checkpoint |
-| the wanderer (docs, code); a survivor (narration) | The player | the hero, the chosen |
-| the band | The wanderer's companions | party, squad |
-| Lanternport | The hub town | Last Harbour, the Harbour (old names) |
-| Brasscrag | The gnomes' rock | Tinker Crags (old name) |
-| the Diggings; the Robbers' Camp | Kingsrest's grave-robbers; Tobin's brother's camp in Graveroad | |
+Every term, with what to avoid, is in [GLOSSARY.md](../../GLOSSARY.md).
 
 ## Open questions
 
