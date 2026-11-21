@@ -117,3 +117,22 @@ describe("the Harbour's stairs", () => {
   });
 
 });
+
+describe("the Emberwood", () => {
+  const m = areaMap("emberwood");
+
+  it("reaches every district and both ends of the Drawn Plank on foot with the plank still barred", () => {
+    useIsland(m.island);
+    const plank = m.locks!.find((l) => l.name === "The Drawn Plank")!;
+    const seen = reach(m.entry, new Set(plank.cells.map(cellKey)));
+    const byOne = (c: Cell) => [-1, 0, 1].some((dr) => [-1, 0, 1].some((dc) => seen.has(cellKey({ col: c.col + dc, row: c.row + dr }))));
+    for (const d of m.districts) expect(byOne(d.at), d.name).toBe(true);
+    expect(seen.has(cellKey(plank.from!)), "the plank's lever side").toBe(true);
+    for (const c of plank.cells) expect(byOne({ col: c.col, row: c.row + 1 }), "the plank's barred side").toBe(true);
+  });
+
+  it("keeps its three ways out by name", () => {
+    expect(m.exits.map((e) => [e.name, e.to])).toEqual([["Ember Gate", "harbour"], ["The Postern", "belfry"], ["The Ash Road", "trollpit"]]);
+    expect(m.exits[0]!.opens).toBe("emberGateOpen");
+  });
+});

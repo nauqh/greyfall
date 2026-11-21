@@ -653,6 +653,9 @@ const ITEM_ICON: Record<ItemName, ShopIcon> = {
   "Notched Whetstone": { url: packUrl("UI Elements/UI Elements/Icons/Icon_05.png") },
   "Brine Flask": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#a8e0d0" },
   "Gull-Picked Purse": { url: packUrl("UI Elements/UI Elements/Icons/Icon_03.png"), tint: "#d8b060" },
+  "Gnome Powder": { url: packUrl("UI Elements/UI Elements/Icons/Icon_05.png"), tint: "#e8d080" },
+  "Tinker's Buckler": { url: packUrl("UI Elements/UI Elements/Icons/Icon_06.png"), tint: "#d8a050" },
+  "Wheel Cog": { url: packUrl("Terrain/Resources/Gold/Gold Stones/Gold Stone 3.png"), tint: "#c8b090", crop: { x: 44, y: 44, w: 40, h: 40, sheetW: 128, sheetH: 128 } },
 };
 function sackItem(item: ItemName): SackItem {
   return { label: item, icon: ITEM_ICON[item], gives: gives(item), about: ITEMS[item].about };
@@ -724,7 +727,7 @@ const SLAIN = "greyfall.slain";
 const KEYS = "greyfall.keys";
 const BOSS_KEY: Partial<Record<string, string>> = { minotaur: "Ember Key", barrowKing: "Horned Key", weaver: "Silk Key", sunSentinel: "Sun Key" };
 /** What a boss's fall proves, raised from SLAIN on each entry so old saves have it too. */
-const BOSS_FLAG: Partial<Record<string, WorldFlag>> = { minotaur: "trollKey", barrowKing: "hornedKey", warlord: "warlordDead", shellBelow: "shellDead" };
+const BOSS_FLAG: Partial<Record<string, WorldFlag>> = { minotaur: "trollKey", barrowKing: "hornedKey", warlord: "warlordDead", shellBelow: "shellDead", oldBamboo: "bambooDead" };
 const BOSSES = new Set(["troll", "minotaur", "rampartBull", "stoneWarden", "barrowKing", "weaver", "shellBelow", "warlord", "oldBamboo", "sunSentinel"]);
 /** The exit last gone through, so a crossing lands at the way of the same name when two ways join the same areas. */
 const VIA = "greyfall.via";

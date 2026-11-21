@@ -437,6 +437,17 @@ crossing are gone.
   rises off the summit, and the Sky Bridge runs off it east, raised, to the
   map's edge toward the Greyfall. Its terraces carry cannon batteries on every rim, watchtowers, a raised Gun Platform with
   its own stair, and fenced workshop yards with wood, tools and stores.
+  Reworked after the Harbour and the Emberwood (`docs/crags.md`): the rock
+  is stamped whole (`TINKER_ROCK`) and climbed on switchbacks, gnome
+  gantries reaching off the fourth step to the Workshop's knob and the
+  East Ridge. Tinker Town at its foot is the hub (fire, Nim's goods, the
+  lift-keeper's family); the Works, the Batteries and the Wheel Step are
+  steps two to four; the Bridgehead on the fifth holds the gnolls come
+  over the Sky Bridge, a fire, and the summit path to The Tinker Peak,
+  Old Bamboo's own area (`peak`), which the Gnome Lift now leaves from.
+  The Hoist (`hoistOpen`) drops from the Wheel Step to the town, unbarred
+  from above; the East Ridge is a back way up past the first steps. Old
+  Bamboo's fall raises `bambooDead`, and the gnomes come back up the rock.
   The Greyfall began as the fourth, a castle that is the level, after
   Stormveil: a walkable curtain wall with a bastion on each corner, the
   locked Grey Gate a gap in its west side over the Ashen Approach, and the
@@ -616,8 +627,23 @@ crossing are gone.
   pines run through every wooded district with yellow among them. On
   every area map a forest tile takes its tree kind from a spot up to four
   tiles off, so two districts' woods mingle at their border. A fire at
-  the Cinder Ford is the rest before the troll, and goblin posts hold the
+  the Cinder Ford is the rest before the bull, and goblin posts hold the
   ford and the climb to Crag Foot.
+  Reworked after the Harbour (`docs/emberwood.md`): two storeys cut by one
+  river. The floor is the burnt maze; the Boughs are the goblins' raised
+  tables over it, Warren Hill and Smoke Bluff joined by the Treetop Walk
+  over the Run, the Chief's Mound in the Burn by the Ash Walk to the
+  Postern Crag. The Run now crosses edge to edge, so every way north picks
+  a crossing: the Pine Ford, the Treetop Walk, the Cinder Ford, the East
+  Bridge. The Postern lands on the crag's crown in the south-east and
+  steps down three ledges over the Burn. Three jobs pull the player across:
+  open the Ember Gate home through the overrun Palisade, rest at the
+  Cinder Ford (the wood's one bonfire, every other fire a campfire), and
+  follow the steward's notes from the crag to his bones on the Ash Road.
+  The Drawn Plank (`drawnPlankDown`) bars the Treetop Walk from the bluff
+  until dropped from Warren Hill. Folk back each place: Garth and Dunn
+  return to the Palisade once the gate opens, Brother Fenn in Old Pines,
+  Tam the Prospector at Crag Foot, Wren at Smoke Bluff's foot.
 - **No rectangles left.** The Gilded City's Sun Steps and Throne Isle,
   the Skyward Steps' Broken Stair, Windward Rest and Bell Isle, the
   Undercroft's Ossuary, the Deeps' Great Barrow and the Hollow's Shell
@@ -973,7 +999,7 @@ The full lines and stations are in [docs/questline.md](docs/questline.md).
 | Sergeant Corwin | the Barrow King dead | Barrowmoor, Barrow Field, digging out his forty | Watchman heard out: finds the fortieth and gives the Forty's Banner. Otherwise: stops at thirty-nine |
 | The Moor Watchman | his remark on the open Moor Gate | Barrowmoor, Gibbet Hill, watching the lights | Lies dead in Barrow Field once the King is dead, the fortieth of Corwin's spears |
 | Maren | her remark on the Warlord dead | | Sails on the first ship in three winters, and Mags stocks the Salt-Glass Flask; missed only by never hearing her sail talk |
-| Wren | the Ember Key | Emberwood, Old Pines | Stays, shooting; remarks on Penny gone |
+| Wren | the Ember Key | Emberwood, at Smoke Bluff's foot | Stays, shooting; remarks on Penny gone |
 | The Last One | | Barrowmoor, the Grey Road, dead from the start | Ferrow's last one, who went east; never named |
 | Old Ferrow, Brenna, Mags | | | Stay; remark on the folk's news. Brenna and Mags sell what the questlines turn up |
 | Hale, Odo | | | Stay at their posts in the Burg and on the Ramparts |

@@ -25,6 +25,9 @@ export type WorldFlag =
   | "sistersStair"
   // Unbarred from the Graves' crest: the stair off its south-west corner toward the fire square.
   | "coffinStairOpen"
+  | "drawnPlankDown"
+  | "hoistOpen"
+  | "bambooDead"
   | "shellDead"
   // Set by a talk, not by the world.
   | "tobinDown"
@@ -368,12 +371,198 @@ export const NPCS: readonly Npc[] = [
             id: "bluff",
             lines: [
               "Ha! The bull's dead! The goblins don't know which way to run.",
-              "Best shooting in years. Don't tell the Harbour, they'll want me back being useful.",
+              "They come down off the bluff one at a time. Best shooting in years.",
+              "Don't tell the Harbour. They'll want me back being useful.",
             ],
           },
           { id: "torches", lines: ["Torches first. Always torches first."] },
           wrenPenny,
         ],
+      },
+    ],
+  },
+  {
+    id: "garth",
+    name: "Garth the Woodcutter",
+    short: "Garth",
+    area: "harbour",
+    at: { col: 27, row: 44 },
+    kind: "pawn",
+    act: "axe",
+    greet: "Mind the axe.",
+    part: "Go on, then.",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "Hm? You're not from the wood. Nobody's from the wood any more.",
+          "Garth. I cut timber at the Palisade, past the Ember Gate. Before.",
+          "Now I cut what grows this side. Poor stuff. Hah...",
+        ],
+      },
+      {
+        id: "gate",
+        lines: [
+          "The goblins came over our fence one night. We ran for the gate.",
+          "Dunn had it barred before the last of us were through. ...Can't say I wouldn't have.",
+        ],
+      },
+      { id: "bar", lines: ["The bar only lifts from the wood's side now.", "Someone would have to go round, through the castle. ...Not me."] },
+    ],
+    later: [
+      {
+        when: ["emberGateOpen"],
+        area: "emberwood",
+        at: { col: 44, row: 64 },
+        talks: [
+          {
+            id: "back",
+            lines: ["You opened it. From the wrong side, too. Hah...", "So we're back at the Palisade. Someone has to cut what the goblins haven't burnt."],
+          },
+          {
+            id: "note",
+            lines: [
+              "Found a note in the camp. \"They barred it with us still outside.\"",
+              "A fine hand. A Keep hand. ...It was the steward knocking, that night.",
+              "He went north, after. Nobody comes back from north.",
+            ],
+          },
+          { id: "trunks", lines: ["The heat's still in these trunks.", "They burn slow, and they burn twice."] },
+          {
+            id: "bull",
+            when: "trollKey",
+            lines: [
+              "That bull in the hollow. He hauled for us. Pulled every log out through that gate.",
+              "We left him in his traces that night. ...He waited. Bulls wait.",
+              "Hah. Don't tell me how he looked at the end. I'd sooner not know.",
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "dunn",
+    name: "Dunn of the Gate Watch",
+    short: "Dunn",
+    area: "harbour",
+    at: { col: 30, row: 44 },
+    kind: "lancer",
+    greet: "Halt. ...Oh. You.",
+    part: "As you were.",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "Halt. ...You're no goblin. More's the pity. I'd know what to do with a goblin.",
+          "Dunn. The Gate Watch, what's left of it. I keep the woodcutters alive. Mostly.",
+          "The Ember Gate stays barred. Orders.",
+        ],
+      },
+      {
+        id: "orders",
+        lines: ["Whose orders? Mine. I barred it that night, with the goblins at the fence.", "There was knocking, after. A long while. I didn't open."],
+      },
+      { id: "barred", lines: ["Barred. Orders."] },
+    ],
+    later: [
+      {
+        when: ["emberGateOpen"],
+        area: "emberwood",
+        at: { col: 44, row: 68 },
+        talks: [
+          {
+            id: "watch",
+            lines: ["The gate's open, and I'm stood on the wrong side of it. Hah. Orders.", "Woodcutters cut. I watch. The goblins come in threes, same as before."],
+          },
+          {
+            id: "steward",
+            lines: [
+              "Garth showed me the note. The steward, knocking at my gate, with the Keep's key on him.",
+              "If I'd opened, that key would be in the Keep. Not up the Ash Road.",
+              "...Go on. Say it.",
+            ],
+          },
+          { id: "trees", lines: ["Watch the trees. They watch you."] },
+          {
+            id: "bull",
+            when: "trollKey",
+            lines: [
+              "The key was on the bull? On our bull?",
+              "So the steward got past my gate, and the goblins, and the fire. And the camp's own beast had him.",
+              "...I barred the gate on both of them. Hm.",
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "fenn",
+    name: "Brother Fenn",
+    short: "Fenn",
+    area: "emberwood",
+    at: { col: 23, row: 64 },
+    kind: "monk",
+    color: "purple",
+    greet: "Softly. The pines listen.",
+    part: "Go softly.",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "Softly, softly. You'll wake the bears. ...Or they'll wake you.",
+          "Fenn. Of the Order, once. Of the pines, now. They ask less.",
+          "The goblins burn everything but here. They won't come under these trees. I've never asked why.",
+        ],
+      },
+      {
+        id: "plank",
+        lines: [
+          "The goblins drew their plank up off the tree walk. Stand on the bluff all you like. It won't come down.",
+          "Go round. North over the stones, behind their hill. Drop it from their side.",
+        ],
+      },
+      { id: "thicket", lines: ["The bears keep something in the thicket behind them. Gold, by the shine.", "Bears don't spend it. ...Nor do I."] },
+      { id: "pray", lines: ["I pray for the pines. Someone should. Hm."] },
+      {
+        id: "cooling",
+        when: "trollKey",
+        lines: ["The wood is cooling. I can feel it in the bark. That was you.", "The goblins will want somewhere new to be afraid of. ...Mind it isn't here."],
+      },
+    ],
+  },
+  {
+    id: "tam",
+    name: "Tam the Prospector",
+    short: "Tam",
+    area: "emberwood",
+    at: { col: 93, row: 15 },
+    kind: "pawn",
+    act: "pickaxe",
+    greet: "Oi! Off my seam.",
+    part: "Mind the edge.",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "Oi! That's my seam you're on. ...No, go on. Nobody else is coming up for it.",
+          "Tam. Came up from the Mine Hills after better ore. The goblins shut the road behind me.",
+          "The gnomes let me dig, so long as I don't dig near them. Ha.",
+        ],
+      },
+      {
+        id: "bridge",
+        lines: [
+          "There's a bridge under the rock, east. It takes you round the goblins' camp, to the ford.",
+          "There's a fire at the ford. Last warm thing before the bull.",
+        ],
+      },
+      { id: "seams", lines: ["Gold shows in the rock up here, if you've the eye. Take what you can carry.", "I can't carry much. Never could."] },
+      {
+        id: "home",
+        when: "trollKey",
+        lines: ["Bull's dead? Then the road's open, and I can go home.", "...The gold's still in the rock, mind. I'll go home next year."],
       },
     ],
   },
@@ -1079,6 +1268,274 @@ export const NPCS: readonly Npc[] = [
         ],
       },
       { id: "still", lines: ["You again? I've nothing left to tell you.", "Go on. The troll won't come to you... Heh heh..."] },
+    ],
+  },
+  {
+    // The Crags' gnomes are the gnome-kings' kin left below, in the kings' yellow.
+    id: "pell",
+    name: "Pell the Gatekeeper",
+    short: "Pell",
+    area: "crags",
+    at: { col: 12, row: 48 },
+    kind: "pawn",
+    color: "yellow",
+    greet: "Road! Keep to the road!",
+    part: "Road, mind!",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "Road! You're on it. Good. Stay on it.",
+          "Pell. I keep the gate. Gnomes come down, I let them in. Nothing goes up.",
+          "The slingers on the rock shoot first. They used to ask.",
+          "...They stopped asking.",
+        ],
+      },
+      {
+        id: "guns",
+        lines: ["The last thing up the steps was grey. Walked up slow, smiling.", "So now they shoot anything slow. And anything smiling."],
+      },
+      {
+        id: "grove",
+        lines: ["North, over the stream, is the old one's grove. His cubs still sit in it.", "Bees, too. Bees never sit."],
+      },
+      { id: "road", lines: ["Road. East. The town's at the end of it.", "...Still here? Road!"] },
+      { id: "died", when: "died", lines: ["The fire caught you, did it? Better than the guns.", "Road, this time."] },
+      {
+        id: "bamboo",
+        when: "bambooDead",
+        lines: ["The old one's dead? Up at his wheel?", "...Hm. I'll tell the cubs. Someone has to tell the cubs."],
+      },
+    ],
+  },
+  {
+    id: "nim",
+    name: "Nim the Tinker",
+    short: "Nim",
+    area: "crags",
+    at: { col: 47, row: 63 },
+    kind: "pawn",
+    act: "hammer",
+    color: "yellow",
+    shop: {
+      stock: [{ item: "Gnome Powder" }, { item: "Tinker's Buckler" }],
+      poor: "Gold first. Fuses after.",
+      sold: "One of each. Gnome work takes a winter.",
+    },
+    greet: "Mind the fuses.",
+    part: "Tick, tick. Off you go.",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "Mind the fuses. No, that one. ...Fine. All of them.",
+          "Nim. I tinker. Powder, springs, brass. Gnome work.",
+          "Gold for gnome work. The old rate. The kings set it, before they went up.",
+        ],
+      },
+      {
+        id: "kings",
+        lines: ["The kings? Up. In the gold city, on the lift we built them.", "They rode it up and left us the rock. Kind of them. Ha."],
+      },
+      {
+        id: "ore",
+        lines: ["The best ore on the island is under the second step.", "Nobody mines it now. Nobody goes up the steps."],
+      },
+      {
+        id: "wheel",
+        when: "bambooDead",
+        lines: ["The wheel will turn again, then. Someone has to walk it.", "Not me. My knees are brass already."],
+      },
+    ],
+  },
+  {
+    id: "moss",
+    name: "Moss, the Lift-Keeper's Wife",
+    short: "Moss",
+    area: "crags",
+    at: { col: 61, row: 58 },
+    kind: "pawn",
+    color: "yellow",
+    greet: "Tam? ...No.",
+    part: "If you see him...",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "Tam? ...No. You're too tall.",
+          "Moss. My Tam kept the lift, up on the wheel step. Old Bamboo walked the wheel for him.",
+          "Then the wheel stopped. The old one never came down.",
+          "Nor did Tam.",
+        ],
+      },
+      {
+        id: "hoist",
+        lines: [
+          "The Hoist was our way home. Straight down the rock.",
+          "Barred from up top, since the gnolls. If you get up there, lift the bar.",
+          "...So I'll know someone can.",
+        ],
+      },
+      { id: "wait", lines: ["I sit by the Hoist. It's where he'd come down."] },
+      {
+        id: "hoisted",
+        when: "hoistOpen",
+        lines: ["You lifted the bar. I heard it go, all the way down here.", "...Only you came down it, though."],
+      },
+    ],
+    later: [
+      {
+        when: ["bambooDead"],
+        area: "crags",
+        at: { col: 74, row: 17 },
+        talks: [
+          {
+            id: "coat",
+            lines: [
+              "Tam's coat was on the wheel. Just the coat. He'd never have let the old one walk alone.",
+              "Someone has to keep the lift. I watched him do it twenty winters.",
+            ],
+          },
+          { id: "up", lines: ["Step in, if you're going up.", "The kings won't thank you. They never thanked him."] },
+        ],
+      },
+    ],
+  },
+  {
+    id: "pip",
+    name: "Pip",
+    area: "crags",
+    at: { col: 63, row: 59 },
+    kind: "pawn",
+    color: "yellow",
+    greet: "Are you going up?",
+    part: "Go up! Go up!",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "Are you going up? Grown folk go up and don't come down.",
+          "I'm Pip. My da keeps the lift. Kept. ...Keeps.",
+          "Bamboo let me ride on him. On the wheel. Round and round and round.",
+        ],
+      },
+      { id: "slingers", lines: ["The slingers shot at me once. On purpose, I think.", "I wasn't slow. I wasn't smiling either."] },
+    ],
+    later: [
+      {
+        when: ["bambooDead"],
+        area: "crags",
+        at: { col: 79, row: 16 },
+        talks: [
+          { id: "sick", lines: ["Mum says Bamboo was sick. The grey kind.", "She says you made him stop hurting. ...That's what she says."] },
+          { id: "lift", lines: ["I'm going to keep the lift when I'm big.", "Round and round. Someone has to."] },
+        ],
+      },
+    ],
+  },
+  {
+    id: "hask",
+    name: "Hask the Miner",
+    short: "Hask",
+    area: "crags",
+    at: { col: 69, row: 50 },
+    kind: "pawn",
+    color: "yellow",
+    greet: "Not going up.",
+    part: "Not going up. Said so.",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "Not going up. Don't ask.",
+          "Hask. I dig the second step. The second. Not the third.",
+          "The third's the guns. They don't know my face from grey any more.",
+        ],
+      },
+      {
+        id: "gold",
+        lines: ["There's gold in the mine. Take some. Up's not worth it.", "Down's not worth it either. Hah. Here's as far as I go."],
+      },
+      {
+        id: "quiet",
+        when: "bambooDead",
+        lines: ["The guns went quiet a whole morning. First time in three winters.", "...I still won't go up. But I looked."],
+      },
+    ],
+  },
+  {
+    // Built the Gnome Lift for the kings; keeps the yard on the North Crag, across his own gantry.
+    id: "fennick",
+    name: "Master Fennick",
+    short: "Fennick",
+    area: "crags",
+    at: { col: 57, row: 13 },
+    kind: "pawn",
+    act: "hammer",
+    color: "yellow",
+    greet: "Wheel first.",
+    part: "Cage second...",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "Wheel first, cage second, gnome last. Say it.",
+          "...No? Nobody says it. That's why it all fell.",
+          "Fennick. I built the lift. Built it for the kings. They rode it up, and never sent it down.",
+        ],
+      },
+      {
+        id: "cage",
+        lines: ["That cage? A new one. For when the wheel turns.", "The wheel won't turn. The old one stands in it, grey to the eyes."],
+      },
+      {
+        id: "gantry",
+        lines: ["The gnolls don't cross my gantry. Too narrow for four legs.", "I made it narrow. Ha. Gnome last."],
+      },
+      {
+        id: "cog",
+        when: "bambooDead",
+        gives: "Wheel Cog",
+        lines: [
+          "You put the old one down. ...Good. He'd have hated what he was.",
+          "This came off the wheel when it stopped. His feet wore it bright.",
+          "Take it. The new cage can have a new cog.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "quill",
+    name: "Quill the Fisher",
+    short: "Quill",
+    area: "crags",
+    at: { col: 102, row: 53 },
+    kind: "pawn",
+    color: "yellow",
+    greet: "Fog's coming.",
+    part: "Watch the bridge.",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "Fog's coming. Fog always comes off the Greyfall.",
+          "Quill. I fish under the bridge. The fish don't care what crosses over.",
+          "...I do, though.",
+        ],
+      },
+      {
+        id: "fog",
+        lines: ["They came over in the fog. Dogs, on two legs. Grey to the teeth.", "I counted till I couldn't. Then I hid."],
+      },
+      {
+        id: "bridge",
+        lines: ["The bridge runs to the Citadel's wall. Straight on, no gate.", "Just the dogs at this end. Mind the dogs."],
+      },
+      {
+        id: "guns",
+        when: "bambooDead",
+        lines: ["Gnomes on the peak again. I can see them from here.", "Lighting the guns, by the look. Good. Light them."],
+      },
     ],
   },
 ];

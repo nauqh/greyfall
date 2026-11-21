@@ -1826,150 +1826,228 @@ function harbour(): AreaMap {
   return { ...tier, area: "harbour", entry: { col: 71, row: 49 }, exits, districts, districtAt, decks: [...decks, ...keepBridge, ...sistersBridge], streets: true, notes, locks };
 }
 
+/**
+ * The Emberwood (docs/emberwood.md): two storeys cut by one river. The floor is the burnt maze; the Boughs are the
+ * goblins' tables standing out of the smoke, joined by plank walks; the Ember Run splits the Harbour's bank from the
+ * goblins', met only at its crossings. In off the Belfry at the Postern Crag, out by the Ash Road to the bull.
+ */
 function emberwood(): AreaMap {
   const rng = makeRng("area:emberwood");
   const t = tierBuilder("surface", rng, { cols: 128, rows: 72 });
   const { prop, who } = t;
+  const blue = { color: "blue" } as const;
 
   t.blob("emberwood", 56, 36, 52, 31);
   t.blob("emberwood", 22, 52, 18, 14);
+  t.blob("emberwood", 18, 20, 16, 15);
   t.blob("emberwood", 96, 16, 14, 12);
   t.blob("emberwood", 114, 18, 13, 8);
-  lake(t, 108, 62, 16, 11);
+  t.blob("emberwood", 110, 58, 16, 12);
   lake(t, 6, 6, 12, 9);
-  // The Ember Run: a river across the wood, west to east, so every way north picks its crossing.
-  river(t, [[2, 42], [18, 38], [34, 37], [50, 40], [66, 38], [82, 32], [98, 34], [110, 30]], 3);
-  t.pond(10, 57, 7, 4);
+  // The Ember Run, edge to edge: the Pine Ford, the Treetop Walk, the Cinder Ford and the East Bridge are the crossings.
+  river(t, [[0, 42], [18, 38], [34, 37], [50, 40], [66, 38], [82, 32], [98, 34], [127, 30]], 3);
+  lake(t, 11, 58, 4, 3);
 
-  // Landforms, each its own district's ground. Warren Hill: the goblins' hill, its warrens stacked in two heights.
+  // The Boughs. Warren Hill in two heights and Smoke Bluff across the Run, the Treetop Walk between them over the water.
   t.shape(2, 25, 23, 12, 10, 0.45, "Warren Hill");
   t.shape(3, 25, 20, 7, 5, 0.4, "Warren Hill");
-  // Smoke Bluff across the river from it, and the Treetop Walk between them over the water.
   t.shape(2, 26, 46, 8, 5, 0.4, "Smoke Bluff");
-  const decks = t.span(2, 27, 32, 2, 10);
-  // Crag Foot: the rock rising in the north-east, two steps toward the Crags; an ash mound in the Burn.
+  const treetop = t.span(2, 27, 32, 2, 10);
+  // The Chief's Mound in the Burn, and the Ash Walk off it east onto the Postern Crag's first step.
+  t.shape(2, 78, 56, 7, 5, 0.4, "The Burn");
+  // The Postern Crag: the Belfry's stair lands on its crown, and it steps down in three ledges to the floor.
+  t.shape(2, 111, 60, 11, 7, 0.3, "Postern Crag");
+  t.shape(3, 112, 58, 7, 4.5, 0.25, "Postern Crag");
+  t.shape(4, 113, 56, 3.5, 2, 0.15, "Postern Crag");
+  const ashWalk = t.span(2, 85, 56, 15, 2);
+  // Crag Foot: the rock rising in the north-east, two steps toward the Crags.
   t.shape(2, 92, 14, 11, 7, 0.45, "Crag Foot");
   t.shape(3, 93, 11, 6, 4, 0.4, "Crag Foot");
-  t.shape(2, 80, 58, 7, 5, 0.4, "The Burn");
 
-  // Woods: the Old Pines in the west, the north wood, copses in the east.
-  t.grove(16, 52, 13, 13, 0.75);
+  // Old Pines thick in the south-west, the north wood under the Ash Road, copses in the east.
+  t.grove(14, 56, 12, 12, 0.75);
   t.grove(36, 8, 16, 4, 0.6);
   t.grove(84, 44, 9, 5, 0.45);
-  t.grove(100, 50, 6, 8, 0.5);
   t.grove(44, 52, 6, 5, 0.4);
 
-  // Roads: north from the gate over the Cinder Ford and up the Ash Road to Troll's Hollow, east to Crag Foot,
-  // and round through the Burn and the east bridge: a loop back to the gate.
-  t.road([40, 64], [40, 56], [44, 44], [44, 34], [52, 28], [62, 25], [62, 8]);
+  // The gate road north over the Cinder Ford and up the Ash Road; the crag road east to Crag Foot; the Burn's road
+  // round the mound to the crag's foot, and its track north over the East Bridge.
+  t.road([40, 64], [40, 56], [44, 46], [44, 34], [52, 28], [62, 25], [62, 8]);
   edgeWay(t, { col: 62, row: 8 }, { col: 62, row: 1 });
   t.road([52, 28], [76, 24], [88, 26], [100, 20]);
   t.road([40, 56], [62, 54], [76, 48], [88, 40], [88, 26]);
+  t.road([62, 54], [68, 64], [92, 65], [100, 64]);
   t.bridge({ col: 44, row: 35 }, { col: 44, row: 43 }, 3);
-  // The Pine Ford: stepping stones from the Old Pines into the wood behind Warren Hill.
   t.bridge({ col: 13, row: 34 }, { col: 13, row: 41 }, 2);
   t.bridge({ col: 88, row: 28 }, { col: 88, row: 37 }, 3);
   t.bridge({ col: 40, row: 64 }, { col: 40, row: 70 }, 3);
-  // The Postern Crag: the Chapel Ward stands high on its hill, so its back road comes down onto a crag's top ledge
-  // west of the Burn, and on down a stair at each step to the wood floor.
-  t.shape(2, 60, 59, 9, 6, 0.3, "Postern Crag");
-  t.shape(3, 60, 58, 5.5, 3.5, 0.25, "Postern Crag");
-  t.shape(4, 60, 57, 2.5, 1.5, 0.15, "Postern Crag");
+  t.road([28, 33], [28, 40]);
 
-  // The Palisade: the Harbour's side of the gate, woodcutters and a watch fire.
-  t.fires.push({ col: 43, row: 61 });
+  // Postern Crag: the steward came this way with the Keep's key; his escort fell on the second ledge.
+  for (const [c, r] of [[106, 56], [118, 60], [103, 63]] as const) prop("deadTree", c, r, { scale: 0.7 });
+  prop("bones", 109, 59);
+  prop("bones", 111, 60);
+  crowd(t, rng, "spear", { col: 105, row: 61 }, 3, 2);
+
+  // The Burn: the goblins' war camp in the ash, huts round one great fire, the plunder on the Chief's Mound.
+  for (const [c, r] of [[64, 50], [70, 47], [66, 60], [86, 52], [88, 60]] as const) prop("goblinHut", c, r);
+  for (const [c, r] of [[60, 46], [72, 64], [86, 48], [58, 60], [92, 54]] as const) prop("deadTree", c, r, { scale: 0.7 });
+  for (const [c, r] of [[62, 62], [68, 44], [84, 62], [90, 50]] as const) prop("stump", c, r);
+  t.campfires.push({ col: 68, row: 52 });
+  crowd(t, rng, "torch", { col: 68, row: 51 }, 6, 6);
+  crowd(t, rng, "thief", { col: 66, row: 58 }, 2, 4);
+  who("shaman", 77, 55);
+  who("gnoll", 80, 57, { to: { col: 75, row: 57 } });
+  for (const [c, r] of [[78, 54], [79, 54]] as const) prop("goldStone", c, r);
+
+  // The Palisade: the Harbour's lumber camp at the gate, overrun. Goblins camp in it in threes until the gate opens;
+  // then the woodcutters come back to work (Garth and Dunn are in npcs.ts).
+  t.campfires.push({ col: 43, row: 61 });
   t.fences.push({ col: 32, row: 60, w: 6, h: 2 }, { col: 45, row: 60, w: 6, h: 2 });
-  prop("tower", 36, 64, { color: "blue" });
-  prop("house1", 47, 65, { color: "blue" });
+  prop("tower", 36, 64, blue);
+  prop("house1", 47, 65, blue);
   for (const [c, r] of [[34, 56], [37, 53], [48, 57], [51, 62]] as const) prop("stump", c, r);
-  crowd(t, rng, "pawn", { col: 40, row: 58 }, 4, 5, { color: "blue", act: "axe" });
-  who("archer", 36, 62, { color: "blue" });
-  who("lancer", 42, 66, { color: "blue", to: { col: 42, row: 58 } });
+  for (const [c, r] of [[33, 63], [50, 58]] as const) prop("woodPile", c, r);
+  for (const [c, r] of [[42, 59], [44, 59], [43, 58]] as const) who("torch", c, r, { unless: "emberGateOpen" });
+  for (const [c, r] of [[37, 57], [38, 58], [36, 58]] as const) who("spear", c, r, { unless: "emberGateOpen" });
+  for (const [c, r] of [[35, 56], [48, 56], [50, 61]] as const) who("pawn", c, r, { ...blue, act: "axe", when: "emberGateOpen" });
 
-  // Old Pines: the deep wood the goblins have not burnt yet, a hermit's hut by the pool.
+  // Old Pines: the one stand the goblins have not burnt. The hermit's hut by the pool, beasts, gold behind the bears.
   prop("house3", 18, 60, { color: "purple" });
-  who("monk", 20, 61, { color: "purple" });
-  who("bear", 10, 48, { to: { col: 20, row: 44 } });
-  who("bear", 24, 56);
-  who("turtle", 13, 59);
-  for (const [c, r] of [[8, 52], [26, 50]] as const) who("bee", c, r, { to: { col: c + 4, row: r - 2 } });
+  who("bear", 10, 48, { to: { col: 20, row: 46 } });
+  who("bear", 6, 64);
+  who("turtle", 13, 61);
+  for (const [c, r] of [[8, 52], [22, 54]] as const) who("bee", c, r, { to: { col: c + 4, row: r - 2 } });
+  prop("goldStone", 4, 66);
 
-  // Smoke Bluff and Warren Hill: goblin warrens on every height, slingers on the Treetop Walk.
-  for (const [c, r] of [[24, 45], [30, 46]] as const) prop("goblinHut", c, r);
-  for (const [c, r] of [[18, 26], [24, 30], [32, 26], [20, 20], [30, 20], [25, 16]] as const) prop("goblinHut", c, r);
-  t.fires.push({ col: 26, row: 24 });
+  // Smoke Bluff: the gnolls' perch over the Run, the Treetop Walk's south end.
+  for (const [c, r] of [[22, 46], [31, 47]] as const) prop("goblinHut", c, r);
+  for (const [c, r] of [[24, 44], [30, 44]] as const) who("gnoll", c, r, { to: { col: c, row: r + 3 } });
+  crowd(t, rng, "spear", { col: 26, row: 48 }, 3, 2);
+  prop("skullSpike", 26, 43);
+
+  // Warren Hill: warrens on both heights, the hoard on the crest, a slinger on the walk, a watchtower over its end.
+  for (const [c, r] of [[18, 26], [24, 30], [33, 27], [20, 20], [30, 20], [25, 16]] as const) prop("goblinHut", c, r);
+  t.campfires.push({ col: 26, row: 24 });
   crowd(t, rng, "torch", { col: 25, row: 24 }, 5, 6);
-  crowd(t, rng, "spear", { col: 26, row: 44 }, 3, 3);
-  who("slingshot", 27, 34, { to: { col: 28, row: 40 } });
+  who("slingshot", 27, 35, { to: { col: 28, row: 39 } });
   who("shaman", 27, 21);
-  prop("skullSpike", 22, 31);
-  prop("skullSpike", 31, 31);
+  prop("watchtower", 31, 30);
+  for (const [c, r] of [[24, 18], [26, 18]] as const) prop("goldStone", c, r);
+  for (const [c, r] of [[20, 23], [33, 23], [23, 33], [22, 31], [31, 33]] as const) prop("skullSpike", c, r);
+  for (const [c, r] of [[19, 28], [31, 21]] as const) prop("meat", c, r);
+  for (const [c, r] of [[22, 28], [29, 22]] as const) prop("woodPile", c, r);
 
-  // The Ash Road: the goblins' way north to the troll they feed, its skulls and its watch.
+  // Cinder Ford: the wood's one bonfire, on the north bank where the Ash Road starts; goblins watch the crossing.
+  t.fires.push({ col: 48, row: 31 });
+  who("lizard", 50, 39, { to: { col: 60, row: 38 } });
+  prop("goblinHut", 50, 46);
+  crowd(t, rng, "spear", { col: 48, row: 45 }, 3, 2);
+
+  // The Ash Road: the goblins' way north to the bull they feed, its skulls and its watch; halfway, the steward's end.
   for (const [c, r] of [[59, 24], [65, 24], [59, 12], [65, 12]] as const) prop("skullSpike", c, r);
-  for (const [c, r] of [[60, 16], [64, 18]] as const) who("spear", c, r);
+  for (const [c, r] of [[60, 18], [64, 20]] as const) who("spear", c, r);
   prop("deadTree", 58, 18, { scale: 0.7 });
+  prop("bones", 64, 15);
 
-  // The Burn: the goblins' cleared ground, huts and fires in the ash, the mound their chief holds.
-  for (const [c, r] of [[64, 50], [70, 47], [66, 57], [74, 52], [80, 57]] as const) prop("goblinHut", c, r);
-  for (const [c, r] of [[60, 46], [72, 60], [86, 52], [58, 58], [76, 44]] as const) prop("deadTree", c, r, { scale: 0.7 });
-  for (const [c, r] of [[62, 60], [68, 44], [84, 56], [78, 50]] as const) prop("stump", c, r);
-  t.fires.push({ col: 70, row: 53 });
-  crowd(t, rng, "torch", { col: 70, row: 52 }, 6, 7);
-  crowd(t, rng, "thief", { col: 66, row: 56 }, 2, 4);
-  who("shaman", 80, 56);
-  who("gnoll", 76, 49, { to: { col: 86, row: 46 } });
-
-  // Crag Foot: the gnomes' path up out of the smoke, their hut on the rock.
+  // Crag Foot: the gnome prospectors cut off on their rock, gold in its seams, a goblin post where the road leaves the wood.
   prop("gnomeHut", 92, 10);
   prop("gnomeTower", 98, 14);
   crowd(t, rng, "gnome", { col: 94, row: 12 }, 3, 3);
   who("gnome", 104, 19, { to: { col: 96, row: 22 } });
-  for (const [c, r] of [[86, 8], [100, 8]] as const) prop("goldStone", c, r);
-
-  // The Cinder Ford: where the road crosses the Run, the last fire before the troll, goblins watching the crossing.
-  who("lizard", 50, 39, { to: { col: 60, row: 38 } });
-  who("thief", 46, 30, { to: { col: 40, row: 28 } });
-  t.fires.push({ col: 48, row: 31 });
-  prop("goblinHut", 52, 30);
-  crowd(t, rng, "spear", { col: 53, row: 33 }, 3, 2);
-
-  // The climb to Crag Foot: a goblin post where the road leaves the wood.
+  for (const [c, r] of [[86, 8], [100, 8], [108, 14]] as const) prop("goldStone", c, r);
   prop("goblinHut", 80, 26);
   crowd(t, rng, "torch", { col: 82, row: 27 }, 3, 2);
   prop("skullSpike", 78, 24);
 
-  // The goblins' works: planks on the Treetop Walk, a lookout on Warren Hill's crest, their larders and trophies.
-  t.road([28, 33], [28, 40]);
-  prop("watchtower", 28, 29);
-  for (const [c, r] of [[20, 23], [33, 23], [23, 33], [31, 33], [26, 42]] as const) prop("skullSpike", c, r);
-  for (const [c, r] of [[19, 28], [31, 21]] as const) prop("meat", c, r);
-  for (const [c, r] of [[22, 28], [29, 22], [24, 46]] as const) prop("woodPile", c, r);
+  // The Drawn Plank: the Treetop Walk barred at its north end, dropped for good from Warren Hill's side.
+  const locks = [{ name: "The Drawn Plank", cells: [{ col: 27, row: 35 }, { col: 28, row: 35 }], flag: "drawnPlankDown", from: { col: 28, row: 32 } }];
+  const notes: Note[] = [
+    { at: { col: 111, row: 55 }, text: "Keep Gate barred behind me. The key is on my belt. The wood road to the Harbour, then." },
+    { at: { col: 38, row: 61 }, text: "Ran for the gate. They barred it with us still outside. Can't blame them." },
+    { at: { col: 63, row: 16 }, text: "Goblins on the ford. Round by the north road. Something big breathing in the smoke." },
+  ];
 
   const districts: District[] = [
     // One wood floor, so district borders never cut the forest into patches; only raised ground changes colour,
     // following its cliffs. The Burn is scorched by its dead trees, its mound ash.
     { name: "The Palisade", at: { col: 40, row: 61 }, levels: [1], palette: [3], dress: "emberwood", decor: 2 },
-    { name: "Old Pines", at: { col: 13, row: 50 }, levels: [1], palette: [3], dress: "emberwood", decor: 1.5 },
-    { name: "Smoke Bluff", at: { col: 26, row: 41 }, levels: [2], palette: [1], dress: "emberwood", decor: 2 },
+    { name: "Old Pines", at: { col: 12, row: 52 }, levels: [1], palette: [3], dress: "emberwood", decor: 1.5 },
+    { name: "Smoke Bluff", at: { col: 26, row: 46 }, levels: [2], palette: [1], dress: "emberwood", decor: 2 },
     { name: "Warren Hill", at: { col: 24, row: 17 }, levels: [2, 3], palette: [3], dress: "emberwood", decor: 2 },
-    { name: "Cinder Ford", at: { col: 46, row: 32 }, levels: [1], palette: [3], dress: "emberwood", decor: 2 },
+    { name: "Cinder Ford", at: { col: 48, row: 34 }, levels: [1], palette: [3], dress: "emberwood", decor: 2 },
     { name: "The Ash Road", at: { col: 62, row: 16 }, levels: [1], palette: [3], dress: "greyfall", decor: 2 },
     { name: "The Burn", at: { col: 72, row: 54 }, levels: [1, 2], palette: [3, 1], dress: "greyfall", decor: 2 },
     { name: "Crag Foot", at: { col: 94, row: 22 }, levels: [1, 2, 3], palette: [3], dress: "emberwood", decor: 2 },
-    { name: "Postern Crag", at: { col: 60, row: 58 }, levels: [2, 3, 4], palette: [3], dress: "crags", decor: 1 },
+    { name: "Postern Crag", at: { col: 110, row: 62 }, levels: [1, 2, 3, 4], palette: [3], dress: "crags", decor: 1 },
   ];
   const rooms = districts.map((d) => ({ at: d.at, r: d.clearing ?? 6 }));
   const tier = t.finish({}, [{ col: 40, row: 64 }], maze(t, rng, rooms));
   const exits: AreaExit[] = [
     { to: "harbour", name: "Ember Gate", kind: "gate", at: { col: 40, row: 70 }, opens: "emberGateOpen" },
-    { to: "belfry", name: "The Postern", kind: "open", at: { col: 60, row: 57 }, plain: true },
+    { to: "belfry", name: "The Postern", kind: "open", at: { col: 113, row: 55 }, plain: true },
     { to: "trollpit", name: "The Ash Road", kind: "open", at: { col: 62, row: 1 } },
   ];
-  return { ...tier, area: "emberwood", entry: { col: 40, row: 64 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks };
+  return { ...tier, area: "emberwood", entry: { col: 40, row: 64 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [...treetop, ...ashWalk], notes, locks };
 }
 
 const MOUNTAIN = [4, 3, 2, 1, 1] as const;
+
+/**
+ * The Tinker Rock, drawn: the gnomes' steps cut back north one above the other, Tinker Town's ground the first. The
+ * climb switches back, every stair at the far end of its ledge from the last: on at the Works' west end, up at its
+ * east, up at the Batteries' west, up at the Wheel Step's east onto the Bridgehead. The Hoist joins the Works' west end
+ * to the Batteries' straight under the Wheel Step's stair. The Workshop knob to the north-west and the East Ridge to
+ * the east stand apart on the fourth height, reached by gantries; the ridge steps down its south end to the Foothills.
+ */
+const TINKER_ROCK = [
+  "...........................555..............................",
+  "...........................555..............................",
+  "...........................555..............................",
+  "....44444444...............555..............................",
+  "...444444444...............555..............................",
+  "...4444444444.......555555555555555555555...................",
+  "....444444444.......555555555555555555555...................",
+  "...4444444444......5555555555555555555555...................",
+  "...4444444444......5555555555555555555555...................",
+  "....444444444......5555555555555555555555...................",
+  "...4444444444......5555555555555555555555...................",
+  "...444444444.......55555555555555555555554444...............",
+  "...................55555555555555555555554444...............",
+  "...................55555555555555555555554444...............",
+  "..........44444444455555555555555555555554444...............",
+  "..........44444444445555555555555555555554444...............",
+  "..........4444444444444444444445555555555)444.....444444^^##",
+  "..........44444444444444444444444444444444444.....444444^^##",
+  "....^^^^^^44444444444444444444444444444444444.....444444^^##",
+  "....^^^^^^44444444444444444444444444444444444...#^444444^^##",
+  "....^^^^^^44444444444444444444444444444444444...#^444444^^##",
+  "....^^^^^^44444444444444444444444444444444444...#^444444^^##",
+  "....^^^^^^44444444444444444444444444444444444...#^444444^^##",
+  "....^^^^^^444444^^^^^^4444444444444^^^4444444...#^444444^^##",
+  "....^^^^^{4444^^^^^^^^^^^^^^^^^4444^^^4444444...#^444444^^##",
+  "....^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^...#^444444^^##",
+  "....^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^...#^444444^^##",
+  "....^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^##.#^444444^^##",
+  "..##^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^##.#^444444}^##",
+  "..##^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^]#.#^^^^^^^^^##",
+  "..##^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^###.#^^^^^^^^^##",
+  "..##^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^###.#^^^^^^^^^##",
+  "..##^^^^^^^^^^^^#####^^^^^^^^^^^^^^^^^^^^^^^#...#^^^^^^^^^##",
+  "..#[^^^^^^^^^^#######^^^^########^^^^^^^^^^^#...#^^^^^^^^^##",
+  "..###########################################...#^^^^^^^^^]#",
+  "..###########################################...############",
+  "..###########################################...############",
+  "..###########################################...############",
+  "..###########################################...############",
+  "..###########################################...############",
+  "..###########################################..<############",
+  "..###########################################...............",
+  "..........###################################...............",
+  "..........############...####################...............",
+  ".........<############...####################...............",
+  "............................................................",
+];
 
 function crags(): AreaMap {
   const rng = makeRng("area:crags");
@@ -1982,38 +2060,38 @@ function crags(): AreaMap {
   // The Southern Spur: a ridge running down off the town into the sea.
   for (const [x, y, rx, ry] of [[60, 74, 16, 7], [70, 82, 10, 5]] as const) t.blob("crags", x, y, rx, ry);
   for (const [x, y, rx, ry] of [[20, 80, 5, 3], [100, 82, 4, 3]] as const) t.blob("crags", x, y, rx, ry);
-  t.pond(100, 30, 10, 14);
+  // Land under the Workshop knob and the East Ridge, where the sea would take it, and the summit path out to the Peak.
+  t.ground("crags", 47, 2, 13, 11);
+  t.ground("crags", 92, 14, 15, 28);
+  edgeWay(t, { col: 74, row: 6 }, { col: 74, row: 1 }, 5, true);
 
-  // The Tinker Rock: not steps but a mountain, five landforms of their own shapes grown into each other,
-  // each outline wandered by noise: the summit massif, a broad west shoulder, a long thin east ridge,
-  // a squat crag to the north-west and a low spur running south. Stairs find their own way up.
-  t.relief({ area: "crags", at: { col: 72, row: 28 }, rx: 22, ry: 18, levels: 5, core: { at: { col: 74, row: 15 }, r: 3.5 } });
-  t.relief({ area: "crags", at: { col: 52, row: 38 }, rx: 11, ry: 9, levels: 3, core: { at: { col: 51, row: 36 }, r: 2.2 } });
-  t.relief({ area: "crags", at: { col: 93, row: 28 }, rx: 6, ry: 15, levels: 4, core: { at: { col: 93, row: 21 }, r: 1.8 } });
-  t.relief({ area: "crags", at: { col: 57, row: 17 }, rx: 7, ry: 6, levels: 4, core: { at: { col: 57, row: 15 }, r: 1.6 } });
-  t.relief({ area: "crags", at: { col: 78, row: 46 }, rx: 12, ry: 6, levels: 2 });
-  // The Sky Bridge: the gnomes' high road off the summit, east over the ridge to the map's edge.
-  const decks = t.span(5, 78, 15, 33, 2);
+  stamp(t, TINKER_ROCK, 46, 0);
+  // The gantries: timber decks on the fourth height out to the Workshop and the East Ridge, and the Sky Bridge, the
+  // same made long, off the Bridgehead on the fifth.
+  const decks = [...t.span(4, 56, 12, 2, 2), ...t.span(4, 91, 19, 5, 2), ...t.span(5, 87, 9, 24, 2)];
 
-  // The foothills south-east, a knoll in the grove.
+  // The foothills south-east, a knoll in the grove, and the West Shoulder over the bamboo.
   t.relief({ area: "crags", at: { col: 80, row: 64 }, rx: 9, ry: 4, levels: 2 });
   t.relief({ area: "crags", at: { col: 12, row: 30 }, rx: 6, ry: 5, levels: 2 });
+  t.relief({ area: "crags", at: { col: 36, row: 26 }, rx: 7, ry: 5, levels: 3, core: { at: { col: 36, row: 25 }, r: 1.6 } });
 
-  // Roads: in from the Crag Stair to the foot of the climb, Tinker Town, the grove and round to the far stair.
+  // Roads: in from the Crag Stair to the foot of the climb, Tinker Town, the grove and round to the shore.
   t.road([2, 46], [20, 46], [36, 56], [45, 57]);
   t.road([36, 56], [36, 63], [70, 63], [98, 57]);
   t.road([20, 46], [20, 26]);
   t.bridge({ col: 6, row: 46 }, { col: 1, row: 46 }, 3);
 
-  // Crag Gate: where the path from the Emberwood comes up out of the trees.
+  // Crag Gate: where the Crag Stair comes up out of the smoke, the first fire, a gnome on the watch.
   t.fires.push({ col: 10, row: 49 });
   prop("gnomeTower", 8, 42);
   who("gnome", 9, 44, { to: { col: 16, row: 46 } });
 
-  // The Bamboo Grove: pandas in the thicket, their old one's cubs.
+  // The Bamboo Grove: pandas in the thicket, their old one's cubs, the bees' bones; two guns on the Shoulder's crown.
   for (const [c, r] of [[16, 22], [24, 24], [19, 30]] as const) who("panda", c, r, { to: { col: c + 3, row: r + 2 } });
   for (const [c, r] of [[10, 36], [28, 34]] as const) who("bee", c, r, { to: { col: c + 3, row: r - 2 } });
   for (const [c, r] of [[14, 26], [26, 28]] as const) prop("bones", c, r);
+  for (const c of [34, 38]) prop("cannon", c, 24);
+  prop("goldStone", 36, 27);
 
   // Tinker Town at the rock's foot: gnome huts and towers, the tinkers at work.
   for (const [c, r] of [[28, 60], [34, 66], [44, 62], [52, 66], [60, 62], [66, 66]] as const) prop("gnomeHut", c, r);
@@ -2022,66 +2100,87 @@ function crags(): AreaMap {
   t.fences.push({ col: 30, row: 63, w: 5, h: 2 });
   crowd(t, rng, "gnome", { col: 48, row: 62 }, 7, 9);
   who("slingshot", 42, 58, { to: { col: 54, row: 58 } });
+  // The mine cut into the Works' face at the town's back.
+  prop("goldMine", 70, 48);
 
-  // The Lower Works on the south spur's slope: the gnomes' gold mine and their ore.
-  prop("goldMine", 70, 50);
-  for (const [c, r] of [[64, 48], [84, 50], [76, 44]] as const) prop("goldStone", c, r);
-  crowd(t, rng, "gnome", { col: 72, row: 52 }, 3, 3, { walk: false });
+  // The Works, the second step: ore, a battery on the rim, miners, the first slingers.
+  for (const [c, r] of [[62, 38], [80, 40], [88, 36]] as const) prop("goldStone", c, r);
+  prop("woodPile", 74, 37);
+  prop("tools", 77, 38);
+  for (const c of [60, 72, 84]) prop("cannon", c, 42);
+  crowd(t, rng, "gnome", { col: 70, row: 39 }, 3, 3, { walk: false });
+  who("slingshot", 82, 37, { to: { col: 88, row: 37 } });
+  // The Hoist's foot on the Works' west strip, its tower, the stair up barred from the Batteries.
+  prop("gnomeTower", 51, 38);
 
-  // The West Shoulder: Old Bamboo waits on its crown, his pandas on its slopes.
-  who("pandaGuard", 51, 36);
-  who("panda", 48, 40, { flip: true });
-  who("panda", 56, 42);
-  for (const c of [47, 55]) prop("cannon", c, 38);
+  // The Batteries, the third step: the gun line along the rim, slingers walking it, a tower and huts at the turns.
+  for (const c of [58, 64, 70, 78, 86]) prop("cannon", c, 31);
+  prop("gnomeTower", 52, 20);
+  prop("gnomeHut", 87, 27);
+  prop("woodPile", 54, 27);
+  who("slingshot", 60, 28, { to: { col: 72, row: 28 } });
+  who("slingshot", 76, 29, { to: { col: 88, row: 29 } });
+  who("slingshot", 52, 25, { to: { col: 52, row: 31 } });
 
-  // The North Crag: the tinkers' workshop yard on a knob of its own.
-  t.fences.push({ col: 59, row: 12, w: 6, h: 4 });
-  for (const [c, r] of [[60, 13], [63, 14]] as const) prop("woodPile", c, r);
-  prop("tools", 62, 13);
-  who("gnome", 60, 14, { to: { col: 62, row: 14 } });
+  // The Wheel Step: the lift's broken wheel timbers, guns on the rim, the slingers' last post at its east end.
+  for (const [c, r] of [[60, 20], [66, 19]] as const) prop("woodPile", c, r);
+  for (const [c, r] of [[70, 20], [78, 21]] as const) prop("bones", c, r);
+  for (const c of [62, 80]) prop("cannon", c, 22);
+  who("slingshot", 84, 19, { to: { col: 84, row: 22 } });
+
+  // The Workshop on its knob: the tinkers' yard, wood and tools.
+  t.fences.push({ col: 50, row: 4, w: 5, h: 3 });
+  prop("woodPile", 56, 5);
+  prop("tools", 56, 8);
+
+  // The Bridgehead: the fire, the gnomes' towers, and the gatehouse over the Sky Bridge held by gnolls from the Greyfall.
+  t.fires.push({ col: 74, row: 11 });
+  for (const [c, r] of [[68, 7], [80, 6]] as const) prop("gnomeTower", c, r);
+  for (const r of [7, 12]) prop("tower", 85, r);
+  prop("cannonSide", 84, 10);
+  who("gnoll", 82, 10, { to: { col: 82, row: 13 } });
+  who("gnoll", 78, 12, { to: { col: 84, row: 12 } });
 
   // The East Ridge: a watch the length of the ridge, guns over the shore, slingers on the wind.
-  prop("watchtower", 93, 20);
-  for (const r of [26, 32]) prop("cannonSide", 95, r);
-  who("slingshot", 92, 24, { to: { col: 92, row: 34 } });
-
-  // Tinker Peak: the gnomes' towers, the fire at the top, the lift into the clouds.
-  t.fires.push({ col: 74, row: 17 });
-  for (const [c, r] of [[71, 14], [77, 17]] as const) prop("gnomeTower", c, r);
-  crowd(t, rng, "gnome", { col: 74, row: 16 }, 3, 2);
-  prop("goldStone", 76, 13);
-
-  // The slopes between: huts wherever a ledge takes one, guns on the shoulders of the massif.
-  for (const [c, r] of [[64, 26], [82, 30], [70, 36], [62, 34], [80, 22], [86, 38]] as const) prop("gnomeHut", c, r);
-  for (const [c, r] of [[66, 20], [82, 18], [72, 40], [60, 28]] as const) prop("cannon", c, r);
-  for (const [c, r] of [[66, 30], [78, 34], [88, 26]] as const) prop("goldStone", c, r);
-  crowd(t, rng, "gnome", { col: 72, row: 30 }, 4, 6);
-  who("slingshot", 64, 32, { to: { col: 76, row: 38 } });
+  prop("watchtower", 98, 20);
+  for (const r of [24, 27]) prop("cannonSide", 100, r);
+  who("slingshot", 98, 22, { to: { col: 98, row: 27 } });
 
   // The Southern Spur: the gnomes' far watch over the sea.
   prop("watchtower", 70, 83);
   prop("goldStone", 64, 78);
   who("gnome", 66, 80, { to: { col: 74, row: 82 } });
 
-  // The Foothills and the Windward Shore.
+  // The Foothills and the Windward Shore under the ridge.
   for (const [c, r] of [[78, 60], [86, 63]] as const) who("lizard", c, r, { to: { col: c - 6, row: r + 2 } });
   who("snake", 92, 64);
-  prop("fishHut", 104, 50);
-  prop("boat", 104, 34, {});
+  prop("fishHut", 101, 52);
+  prop("boat", 106, 49, {});
   who("turtle", 101, 46);
 
+  const notes: Note[] = [
+    { at: { col: 8, row: 48 }, text: "Keep to the road. The guns don't." },
+    { at: { col: 15, row: 27 }, text: "They weren't eaten. The cubs just sit with them." },
+    { at: { col: 52, row: 30 }, text: "Lift the bar. Save the walk." },
+    { at: { col: 53, row: 10 }, text: "Wheel first, cage second, gnome last. Never the other way." },
+    { at: { col: 83, row: 11 }, text: "They came over in the fog. Light the guns." },
+    { at: { col: 97, row: 22 }, text: "You can see the Citadel from here. It can see you." },
+    { at: { col: 68, row: 82 }, text: "Ships? Not in three winters. Watch the bridge instead." },
+  ];
+  const locks = [{ name: "The Hoist", cells: [{ col: 49, row: 33 }], flag: "hoistOpen", from: { col: 51, row: 31 } }];
   const exits: AreaExit[] = [
     { to: "trollpit", name: "Crag Stair", kind: "open", at: { col: 1, row: 46 } },
-    { to: "peak", name: "The Tinker Peak", kind: "open", at: { col: 73, row: 15 } },
-    { to: "greyfall", name: "Sky Bridge", kind: "high", at: { col: 110, row: 15 } },
+    { to: "peak", name: "The Tinker Peak", kind: "open", at: { col: 74, row: 1 } },
+    { to: "greyfall", name: "Sky Bridge", kind: "high", at: { col: 110, row: 9 } },
   ];
   const districts: District[] = [
-    // One colour a district: the bare rock of the climb, a gold summit, green town and grove, the shore's teal.
-    // No boxes: the mountain's districts are as ragged as its rock.
-    // The mountain's three share one ramp by height: grass at the foot, green slopes, bare rock, a gold summit.
-    { name: "Tinker Peak", at: { col: 74, row: 11 }, palette: MOUNTAIN, dress: "crags", decor: 2 },
-    { name: "The Climb", at: { col: 68, row: 34 }, palette: MOUNTAIN, dress: "crags", decor: 3 },
-    { name: "The East Ridge", at: { col: 93, row: 30 }, palette: MOUNTAIN, dress: "crags", decor: 3 },
+    // The rock's steps share one ramp by height: grass at the foot, green slopes, bare rock, a gold summit.
+    { name: "The Bridgehead", at: { col: 76, row: 9 }, levels: [5], palette: MOUNTAIN, dress: "crags", decor: 2 },
+    { name: "The Wheel Step", at: { col: 72, row: 20 }, levels: [4], palette: MOUNTAIN, dress: "crags", decor: 2.5 },
+    { name: "The Workshop", at: { col: 53, row: 7 }, levels: [4], palette: MOUNTAIN, dress: "crags", decor: 1.5 },
+    { name: "The Batteries", at: { col: 70, row: 29 }, levels: [3], palette: MOUNTAIN, dress: "crags", decor: 3 },
+    { name: "The Works", at: { col: 72, row: 39 }, levels: [2], palette: MOUNTAIN, dress: "crags", decor: 3 },
+    { name: "The East Ridge", at: { col: 99, row: 28 }, levels: [2, 3, 4], palette: MOUNTAIN, dress: "crags", decor: 3 },
     { name: "Crag Gate", at: { col: 8, row: 48 }, palette: [4], dress: "crags", decor: 2 },
     { name: "Bamboo Grove", at: { col: 20, row: 22 }, palette: [4, 3, 2], dress: "emberwood", decor: 2, clearing: 7 },
     { name: "Tinker Town", at: { col: 48, row: 63 }, palette: [4, 3, 2], dress: "harbour", decor: 2, clearing: 9 },
@@ -2101,18 +2200,16 @@ function crags(): AreaMap {
   for (const [c, r] of [[54, 76], [56, 76]] as const) who("pig", c, r);
   crowd(t, rng, "gnome", { col: 58, row: 74 }, 3, 3);
   // A mountain's foot, not a maze: rocky knolls with passes between, a bamboo thicket, scrub on the spur.
-  for (const [c, r] of [[30, 40], [36, 24], [14, 34], [40, 48], [24, 56], [86, 70], [70, 76]] as const) {
+  for (const [c, r] of [[14, 34], [40, 48], [24, 56], [86, 70], [70, 76]] as const) {
     t.relief({ area: "crags", at: { col: c, row: r }, rx: 3.5, ry: 2.5, levels: 2, core: { at: { col: c, row: r }, r: 1.2 } });
   }
   t.grove(20, 26, 9, 7, 0.7);
   t.grove(60, 80, 8, 3, 0.3);
-  // Rock outcrops standing up from the foot, a step higher than the knolls, and scrub copses in their lee.
-  for (const [c, r] of [[30, 30], [10, 54], [104, 24], [106, 44]] as const) {
-    t.relief({ area: "crags", at: { col: c, row: r }, rx: 4.5, ry: 3.5, levels: 3, core: { at: { col: c, row: r }, r: 1.4 } });
-  }
-  for (const [x, y, rx, ry] of [[36, 36, 4, 3], [16, 46, 3, 3], [44, 56, 4, 2], [108, 32, 3, 4], [100, 54, 4, 3], [28, 62, 4, 2], [80, 74, 3, 2]] as const) t.grove(x, y, rx, ry, 0.75);
+  // A rock outcrop standing up from the foot, a step higher than the knolls, and scrub copses in their lee.
+  t.relief({ area: "crags", at: { col: 10, row: 54 }, rx: 4.5, ry: 3.5, levels: 3, core: { at: { col: 10, row: 54 }, r: 1.4 } });
+  for (const [x, y, rx, ry] of [[16, 46, 3, 3], [44, 56, 4, 2], [100, 56, 4, 3], [28, 62, 4, 2], [80, 74, 3, 2]] as const) t.grove(x, y, rx, ry, 0.75);
   const tier = t.finish({}, [{ col: 6, row: 46 }]);
-  return { ...tier, area: "crags", entry: { col: 6, row: 46 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks };
+  return { ...tier, area: "crags", entry: { col: 6, row: 46 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks, notes, locks };
 }
 
 function greyfall(): AreaMap {

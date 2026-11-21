@@ -390,7 +390,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "trollpit",
     tier: "surface",
     name: "The Ember Hollow",
-    blurb: "A round hollow of ash in the north of the Emberwood, ringed by pines that burn and do not fall. The Ember Bull keeps it, and past him the gnomes' Crag Stair climbs out of the smoke to the rock.",
+    blurb: "A round hollow of ash in the north of the Emberwood, ringed by pines that burn and do not fall. The Ember Bull keeps it, the lumber camp's own beast, fed and crowned by the goblins, the steward's key on his harness; past him the gnomes' Crag Stair climbs out of the smoke to the rock.",
     palette: [4, 4, 4],
     mood: 0xffc8a0,
     rise: 0,

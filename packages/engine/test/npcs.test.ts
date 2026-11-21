@@ -135,6 +135,13 @@ describe("the questline", () => {
     expect(onOffer(mags, new Set(), new Set(), flags("marenSails")).map((s) => s.item)).toContain("Salt-Glass Flask");
   });
 
+  it("sends Garth and Dunn back to the Palisade once the Ember Gate is opened from the wood", () => {
+    for (const id of ["garth", "dunn"]) {
+      expect(whereabouts(npc(id), flags())?.area, id).toBe("harbour");
+      expect(whereabouts(npc(id), flags("emberGateOpen"))?.area, id).toBe("emberwood");
+    }
+  });
+
   it("leaves the last one dead on the Grey Road from the start", () => {
     expect(whereabouts(npc("last"), flags())).toMatchObject({ area: "barrowmoor", dead: true });
   });

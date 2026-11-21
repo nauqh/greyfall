@@ -136,8 +136,15 @@ hangs off the City that refused him.
 ### The castle falls, the town holds
 
 The Grey came down off the crag. The pines it passed caught and never fell:
-that is the Emberwood, where goblins took the clearings and a troll took the
+that is the Emberwood, where goblins took the clearings and a bull took the
 hollow.
+
+The bull was the lumber camp's. It hauled the Harbour's timber out through
+the Ember Gate, and the night the goblins came over the Palisade fence it
+was left in its traces when the woodcutters ran. The Grey was in the
+burning wood, and the bull stood in it until the embers took to its hide
+and stayed. The goblins found a thing their fire could not kill, so they
+fed it, walled it in the hollow, and called it lord: the Ember Bull.
 
 The castle over the Harbour fell ward by ward, from the outside in, the way
 the Grey takes anything. First the chapel's bell stopped; nobody below knows
@@ -148,7 +155,9 @@ fed him, and goblins came over the wall. The Chapel Ward emptied after.
 
 The Keep alone held. Its steward barred the Keep Gate on the Burg, went out
 the monks' Postern for the Emberwood road with the only key, and did not come
-back; the Cinder Troll has the key now. Behind the gate the garrison is
+back. Dunn of the Gate Watch heard him knock at the barred Ember Gate and
+did not open. He went north up the Ash Road, and the Ember Bull gored him
+there; the key hangs from its harness still. Behind the gate the garrison is
 Corwin, boys drilled with broom handles, and Ansel on the wall. The Watch
 Lift that served the castle's watch posts in the sky hangs chained from
 above.
@@ -162,7 +171,7 @@ fire, and Old Ferrow kept the watch. No ship has put in for three winters.
 
 A survivor is carried in by the tide to the sea cave under the Harbour,
 nameless and alive. Last Harbour takes them in. From its fire every road
-goes out and comes back: up through the castle for the Troll Key, out the
+goes out and comes back: up through the castle for the Ember Key, out the
 Moor Gate or down the Old Well for the two seals' keys, and through the Grey
 Gate to the Warlord.
 
@@ -208,8 +217,8 @@ Gate to the Warlord.
   forge yard and the Stone Warden on the bell roof, and the Keep behind the
   Keep Gate.
 - **Emberwood.** Pine the Grey burned and left standing, still warm under
-  the ash. Goblin warrens, gnolls on Smoke Bluff, and the Cinder Troll in
-  Troll's Hollow with the steward's key.
+  the ash. Goblin warrens, gnolls on Smoke Bluff, and the Ember Bull, the
+  lumber camp's own beast, in the Ember Hollow with the steward's key.
 - **Tinker Crags.** Gnome country: a rock that climbs in five steps to the
   Tinker Peak, cannons on every rim, Old Bamboo on the fourth step. The
   gnomes are the gnome-kings' kin left below; their lift off the peak is the
@@ -247,7 +256,7 @@ Gate to the Warlord.
 | Old Ferrow | Last Harbour, by the fire | Kept the watch when the town held; keeps the fire now. Sends the wanderer on and says why the Keep is shut. |
 | Tobin | Last Harbour, by the Old Well | His brother went down the well after a coin. Follows him to the Deeps and stays to count what he steals. |
 | Mother Ysolde | Last Harbour, the Upper Town | Of the Order. Her sisters went down to the Drowned Chapel; she follows the one freed down to the Hollow, where the rest kneel drowned. |
-| Wren | Last Harbour, the butts in West Fields | Hires out the Harbour's bows. Goes shooting goblins in the Emberwood once the troll is dead. |
+| Wren | Last Harbour, the butts in West Fields | Hires out the Harbour's bows. Goes shooting goblins in the Emberwood once the bull is dead. |
 | Dunstan the Foreman | Last Harbour, the Mine Hills | Boarded the deep face when its ore came up grey, and counts the boards every morning. Feels them warm once the Warlord falls, and still leaves them up. |
 | Maren the Harbourmaster | Last Harbour, the docks | Has watched an empty sea for three winters. Sails on the first ship after the Warlord falls. |
 | The Moor Watchman | Last Harbour, the Moor Watch | Keeps the Moor Gate barred on orders. Once it is opened from the moor, goes to look at the lights, and into the barrows. |
@@ -257,7 +266,7 @@ Gate to the Warlord.
 | Odo the Gunner | The Ramparts, the east tower | Outlived his powder. Saw the bull turn and the goblins come over the wall. |
 | Brenna the Smith | The Chapel Ward, the forge yard | The castle's smith. Puts an edge on the wanderer's sword for gold and ore. |
 | Sergeant Corwin | The Keep, the bailey | Led the castle's forty spears to the moor; came back alone. Hires out lancers; digs his forty out of Barrow Field once the King is dead. |
-| Ansel of the Wall | The Keep, on the wall | Once a wanderer in the castle's blue with a band and a banner; stopped going out. Roused by the troll's death, goes ahead into the Greyfall and dies below the Warlord's Hall unless the Warlord falls first. |
+| Ansel of the Wall | The Keep, on the wall | Once a wanderer in the castle's blue with a band and a banner; stopped going out. Roused by the bull's death, goes ahead into the Greyfall and dies below the Warlord's Hall unless the Warlord falls first. |
 
 ### What the art can carry
 
@@ -309,7 +318,7 @@ eels, the old kings, the gnome-kings, the steward.
 | the sky | The tier | the Gilded City (as the tier's name) |
 | the Throne Isle | The Citadel's old hall in the sky | the Warlord's isle, his throne isle |
 | the seals: the barrow seal, the deep seal | What the Citadel's house kept | |
-| the Troll Key, the Horned Key, the Weaver's key | The three keys | the troll's key, the horned key (lower case) |
+| the Ember Key, the Horned Key, the Silk Key | The three keys | the bull's key, the horned key (lower case) |
 | the wanderer (docs and code); a survivor (narration) | The player | the hero (in player text), the chosen, the Undead |
 | the band | The wanderer's companions | party, squad |
 | the Order; sisters, monks | The purple faith | the cult (except the fen chapel, by folk) |

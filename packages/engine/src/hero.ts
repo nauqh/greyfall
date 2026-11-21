@@ -445,6 +445,8 @@ export const ITEMS = {
   "Banded Shield": { cost: 600, adds: { block: -0.75 }, about: "Oak bound in iron bands. A blow on it jars the arm far less than it ought to." },
   "Kindled Shard": { cost: 900, adds: { flasks: 1 }, about: "A shard of the fire the bull lay on, burning again now it is gone. One more flask." },
   "Prospector's Purse": { cost: 500, adds: { greed: 0.25 }, about: "A dead prospector's purse, never quite full. Coin finds its way into it." },
+  "Gnome Powder": { cost: 500, adds: { attack: 2 }, about: "A gnome's blasting powder, rubbed into the edge. It bites with a crack." },
+  "Tinker's Buckler": { cost: 700, adds: { block: -0.5 }, about: "Brass plates riveted on springs. A blow on it rings, and the arm hardly knows." },
   // Given by the folk, or sold once their questline goes the hard way; a cost of nothing is never sold.
   "The Forty's Banner": { cost: 0, adds: { hp: 40 }, about: "The forty's banner, kept dry under the one who ran. It has been carried further since." },
   "Ansel's Edge": { cost: 700, adds: { attack: 2 }, about: "The second of two edges a wall sitter paid for. He came back for one." },
@@ -455,6 +457,7 @@ export const ITEMS = {
   "Mum's Bread": { cost: 0, adds: { hp: 20 }, about: "Baked in an east lane oven that sat cold a long while. Mostly ash. Eaten anyway." },
   "Salt-Glass Flask": { cost: 600, adds: { flasks: 1 }, about: "Blown on the salt coast, thick as a thumb. It came in on the first ship in three winters." },
   "Hollis's Gaff": { cost: 0, adds: { attack: 3 }, about: "A fishing gaff, its hook filed to an edge. Lent, not given: the sea wants it back past the Ring." },
+  "Wheel Cog": { cost: 0, adds: { stamina: 20 }, about: "A cog off the lift wheel, worn bright by a panda's feet. Carried, it seems to keep turning." },
   // The gifts: one picked at a new game's start, come ashore with the captain; never sold.
   "Drowned Locket": { cost: 0, adds: { hp: 20 }, about: "Salt in the hinge. Whoever's face was in it, the sea kept. It still sits warm against the chest." },
   "Notched Whetstone": { cost: 0, adds: { attack: 2 }, about: "Worn hollow by a hand that is not yours. An edge kept on it bites a little deeper." },
