@@ -59,7 +59,7 @@ export interface AtlasArea {
   mood: number;
   /** World height of its lowland, so ground shade and height agree on both sides of a crossing; none underground or in the sky. */
   rise?: number;
-  /** A land of its own colour (moor, fen, crags, the Greyfall): its ground keeps its palette, a way into it a change of country. */
+  /** A land of its own colour (moor, fen, crags, Greyfall): its ground keeps its palette, a way into it a change of country. */
   ownGround?: boolean;
   label: Cell;
 }
@@ -191,8 +191,8 @@ export const AREAS: readonly AtlasArea[] = [
   {
     id: "saltreach",
     tier: "surface",
-    name: "Saltreach",
-    blurb: "Fishing isles off the west shore. The salt is still cut and the boats still put in; the militia, in the Gilded City's yellow and pay, hold the villages, and the Grey has not yet come down to the water.",
+    name: "Stiltwater",
+    blurb: "A stilt town on the western shallows. The salt is still cut and the boats still put in; the militia, in Sunhold's yellow and pay, keep the sea road, and the Grey has never come down to the water.",
     palette: [5, 5, 5],
     mood: 0xffffff,
     rise: 0,
@@ -201,8 +201,8 @@ export const AREAS: readonly AtlasArea[] = [
   {
     id: "harbour",
     tier: "surface",
-    name: "Last Harbour",
-    blurb: "The last town with a fire in it, under a castle the Grey took ward by ward from the outside in. Every road starts at the fire in its square and comes back to it: down the Old Well, up through the castle to the Watch Lift.",
+    name: "Lanternport",
+    blurb: "The last town with a fire in it, under Highward, which the Grey took ward by ward from the outside in. Every road starts at the fire in its square and comes back to it: down the Old Well, up through Highward to the Watch Lift.",
     palette: [3, 3, 3],
     mood: 0xffffff,
     rise: 0,
@@ -213,7 +213,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "emberwood",
     tier: "surface",
     name: "Emberwood",
-    blurb: "Pine that caught when the Grey left the Citadel and has burned without falling since. Goblins hold the clearings, a bull holds the hollow, and the cinder is still warm underfoot.",
+    blurb: "A jungle over warm ground, steaming where no northern wood should grow. Everything that fears the cold has crowded into it: goblins in the trees, gnolls at its edge, and something horned in the hollow.",
     palette: [4, 4, 4],
     mood: 0xffe2c8,
     rise: 0,
@@ -221,9 +221,9 @@ export const AREAS: readonly AtlasArea[] = [
   },
   {
     id: "crags",
-    name: "Tinker Crags",
+    name: "Brasscrag",
     tier: "surface",
-    blurb: "Gnome country: a rock that climbs in five steps to the Tinker Peak, and a lift off the peak into the clouds. A high bridge runs off the rock to the Greyfall.",
+    blurb: "Gnome country: a rock that climbs in five steps to the Tinker Peak, and a lift off the peak into the clouds. The gnomes built the city up there, and own none of it. A high bridge runs off the rock to Greyfall.",
     palette: [2, 2, 2],
     mood: 0xfff8e6,
     rise: 0,
@@ -233,8 +233,8 @@ export const AREAS: readonly AtlasArea[] = [
   {
     id: "barrowmoor",
     tier: "surface",
-    name: "Barrowmoor",
-    blurb: "The old kings' barrows. The dead keep their own roads after dusk, a horned thing keeps the deepest grave, and the cave goes down further than the moor has names for.",
+    name: "Kingsrest",
+    blurb: "The old kings' barrows, dug no deeper than a grave. The dead keep their own roads after dusk, a masked king keeps the deepest barrow, and the cave goes down further than the moor has names for.",
     palette: [4, 4, 4],
     mood: 0xc4c4e4,
     rise: 1,
@@ -244,8 +244,8 @@ export const AREAS: readonly AtlasArea[] = [
   {
     id: "fen",
     tier: "surface",
-    name: "Lizard Fen",
-    blurb: "Reed and black water between the shore and the moor. A chapel of the Order in the middle of it prays to the Grey as to a god, over a sinkhole that drinks the pools.",
+    name: "Stillmere",
+    blurb: "Reed and black water between the shore and the moor, colder every year. A chapel of the Order in the middle of it prays to the Grey as to a god, over a sinkhole that drinks the pools.",
     palette: [5, 5, 5],
     mood: 0xdcecdc,
     rise: 1,
@@ -255,8 +255,8 @@ export const AREAS: readonly AtlasArea[] = [
   {
     id: "greyfall",
     tier: "surface",
-    name: "The Greyfall",
-    blurb: "The Citadel, where the Grey took a lord and wears him still. The Grey Keep stands on its crown over a hall of ash, and what holds the walls was the garrison once. Two keys open the Grey Gate; the gnomes' high road is the other way in.",
+    name: "Greyfall",
+    blurb: "The Citadel on its crag, where the Grey rose first and still falls like ash. Its lord wears a crown there yet, and what holds the walls was the garrison once. Two keys open the Grey Gate; the gnomes' high road is the other way in.",
     palette: [4, 4, 4],
     mood: 0x9c9fa8,
     rise: 2,
@@ -266,8 +266,8 @@ export const AREAS: readonly AtlasArea[] = [
   {
     id: "steps",
     tier: "sky",
-    name: "Skyward Steps",
-    blurb: "A chain of drifting isles from the Cloud Bridge west to a lift that drops onto the Harbour's castle. Nobody below can open it; whoever comes down it can.",
+    name: "Cloudstair",
+    blurb: "A chain of drifting isles, Highward's watch posts in the sky, from the Cloud Bridge west to a lift that drops onto its Keep. Nobody below can open it; whoever comes down it can.",
     palette: [1, 1, 1],
     mood: 0xfff4e0,
     label: { col: 42, row: 21 },
@@ -275,8 +275,8 @@ export const AREAS: readonly AtlasArea[] = [
   {
     id: "gilded",
     tier: "sky",
-    name: "The Gilded City",
-    blurb: "The sky city of the old gnome-kings, gold and sunlight behind a shut gate. When the Grey rose it sent no spears; its yellow guard still holds the walls, the Sentinel keeps the hall, and off its east end hangs the Throne Isle, the Citadel's old hall at court, barred off and left to the Grey.",
+    name: "Sunhold",
+    blurb: "The sky city of the gnome-kings, gold and sunlight behind a shut gate. When the Grey rose it sent no spears; its yellow guard still holds the walls, the Sentinel keeps the hall of gold, and off its east end hangs the Throne Isle, the Citadel's old hall at court, barred off and left to the Grey.",
     palette: [1, 1, 1],
     mood: 0xfff0d0,
     label: { col: 102, row: 11 },
@@ -284,8 +284,8 @@ export const AREAS: readonly AtlasArea[] = [
   {
     id: "undercroft",
     tier: "below",
-    name: "The Undercroft",
-    blurb: "The Harbour's cisterns and catacombs, under its well. Black water, old bones, spiders in the pillars, and a tunnel east that nobody admits to digging.",
+    name: "Underwell",
+    blurb: "Lanternport's cisterns and catacombs, under its well. Black water, old bones, spiders in the pillars, and a tunnel east that nobody admits to digging.",
     palette: [4, 4, 4],
     mood: 0x8c88a8,
     label: { col: 48, row: 54 },
@@ -293,8 +293,8 @@ export const AREAS: readonly AtlasArea[] = [
   {
     id: "deeps",
     tier: "below",
-    name: "Barrow Deeps",
-    blurb: "The tombs under the moor, where the barrows go down. The Weaver nests in the deepest vault, and the Sinking Stair goes deeper still.",
+    name: "Graveroad",
+    blurb: "The old kings' grave-roads under the moor, down as deep as a grave may go, and then deeper. The Weaver nests in the deepest cave, and the Sinking Stair goes on down past her.",
     palette: [4, 4, 4],
     mood: 0x8478a0,
     label: { col: 78, row: 60 },
@@ -302,8 +302,8 @@ export const AREAS: readonly AtlasArea[] = [
   {
     id: "hollow",
     tier: "below",
-    name: "The Drowned Hollow",
-    blurb: "The bottom of the world: a still lake under the fen, lit by gold in the rock, where stone trees stand in the shallows and something vast sleeps in its shell.",
+    name: "Hearthdeep",
+    blurb: "The bottom of the world: a still lake under the fen, warm, lit by gold in the rock, where stone trees stand in the shallows and something vast sleeps in its shell.",
     palette: [5, 5, 5],
     mood: 0x9ab4c8,
     label: { col: 44, row: 70 },
@@ -311,8 +311,8 @@ export const AREAS: readonly AtlasArea[] = [
   {
     id: "landing",
     tier: "below",
-    name: "The Landing",
-    blurb: "The sea cave under the Harbour where you wake with the tide. Narrow ways through the rock, and notes scratched by those who woke there before.",
+    name: "Tidewake",
+    blurb: "The sea cave under Lanternport where you wake with the tide. The water in it runs warm. Narrow ways through the rock, and notes scratched by those who woke there before.",
     palette: [5, 5, 5],
     mood: 0x8fb4c8,
     label: { col: 24, row: 45 },
@@ -321,7 +321,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "burg",
     tier: "surface",
     name: "The Lower Burg",
-    blurb: "The castle's outer town on the hill above the Harbour, fallen to the Grey while the town below held. Thieves in the lanes, the dead in the yards, and the Ramparts above.",
+    blurb: "Highward's outer town on the hill above Lanternport, fallen to the Grey while the town below held. Thieves in the lanes, the dead in the yards, and the Ramparts above.",
     palette: [5, 5, 5],
     mood: 0xeee8e0,
     rise: 1,
@@ -331,7 +331,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "ramparts",
     tier: "surface",
     name: "The Ramparts",
-    blurb: "The castle's curtain wall above the Burg, its walk running on to the wall the boar holds, and past him the Gun Bridge over the chasm to the Chapel Ward.",
+    blurb: "Highward's curtain wall above the Burg, its walk running on to the wall the boar holds, and past him the Gun Bridge over the chasm to the Chapel Ward.",
     palette: [4, 4, 4],
     mood: 0xeee8e0,
     rise: 3,
@@ -341,7 +341,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "chapel",
     tier: "surface",
     name: "The Chapel Ward",
-    blurb: "The castle's monastery behind the Gun Bridge: a cloister round a still pond, the chapel on its terrace, and on the bell roof a warden of stone. Its lift goes down to Old Town; its postern opens on the Emberwood.",
+    blurb: "Highward's monastery behind the Gun Bridge: a cloister round a still pond, the chapel on its terrace, and on the bell roof a warden of stone. Its lift goes down to Old Town; its postern opens on Emberwood.",
     palette: [5, 5, 5],
     mood: 0xf2ece4,
     rise: 5,
@@ -351,7 +351,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "ring",
     tier: "below",
     name: "The Bull's Ring",
-    blurb: "A cavern at the sea cave's end, round as an arena, where a bull keeps the boat out to the Harbour.",
+    blurb: "A cavern at the sea cave's end, round as an arena, where a troll sits in the warm water and keeps the boat out to Lanternport.",
     palette: [5, 5, 5],
     mood: 0xc8a888,
     label: { col: 40, row: 46 },
@@ -360,7 +360,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "keep",
     tier: "surface",
     name: "The Keep",
-    blurb: "The castle's crown over the Harbour: its bailey and garrison, the hall, and the Watch Lift up to the sky. Its gate off the Burg opens to the Ember Key.",
+    blurb: "Highward's crown over Lanternport: its bailey and garrison, the hall, and the Watch Lift up to the sky. Its gate off the Burg opens to the Ember Key.",
     palette: [3, 3, 3],
     mood: 0xffffff,
     rise: 1,
@@ -380,7 +380,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "belfry",
     tier: "surface",
     name: "The Belfry",
-    blurb: "The Chapel Ward's bell tower, climbed by its outside stair to the loft where the bell hangs silent and a gargoyle of stone squats under it, stone-skinned to all but a quick blade. The Postern stair goes down its back to the Emberwood.",
+    blurb: "The Chapel Ward's bell tower, climbed by its outside stair to the loft where the bell hangs silent and a gargoyle of stone squats under it, stone-skinned to all but a quick blade. The Postern stair goes down its back to Emberwood.",
     palette: [5, 5, 5],
     mood: 0xe8e4f0,
     rise: 5,
@@ -390,7 +390,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "trollpit",
     tier: "surface",
     name: "The Ember Hollow",
-    blurb: "A round hollow of ash in the north of the Emberwood, ringed by pines that burn and do not fall. The Ember Bull keeps it, the lumber camp's own beast, fed and crowned by the goblins, the steward's key on his harness; past him the gnomes' Crag Stair climbs out of the smoke to the rock.",
+    blurb: "A pan of hot ash in the north of Emberwood, where the ground smokes and the jungle stands back. The Ember Bull lies in it, fed and crowned by the goblins, the steward's key on his harness; past him the gnomes' Crag Stair climbs out of the steam to the rock.",
     palette: [4, 4, 4],
     mood: 0xffc8a0,
     rise: 0,
@@ -400,7 +400,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "barrow",
     tier: "below",
     name: "The King's Barrow",
-    blurb: "Inside the greatest of the moor's barrows: a hall of the old kings' coffins, and the hex-king who will not lie in his, warded by the totems round his hall. Behind his throne the tomb goes on down into the Deeps.",
+    blurb: "Inside the greatest of the moor's barrows: a hall of the old kings' coffins, and the hex-king who will not lie in his, warded by the totems round his hall. Behind his throne the tomb goes on down to Graveroad.",
     palette: [4, 4, 4],
     mood: 0xa898c8,
     label: { col: 78, row: 35 },
@@ -409,7 +409,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "web",
     tier: "below",
     name: "The Weaver's Web",
-    blurb: "A cavern under the Deeps strung from wall to wall, where the Weaver hangs over her brood. Its threads hold whoever walks into them, and the Sinking Stair goes on down past her to the Hollow.",
+    blurb: "A cavern under Graveroad strung from wall to wall, where the Weaver hangs over her brood. Its threads hold whoever walks into them, and the Sinking Stair goes on down past her to Hearthdeep.",
     palette: [5, 5, 5],
     mood: 0x8c84a8,
     label: { col: 70, row: 74 },
@@ -427,7 +427,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "throne",
     tier: "surface",
     name: "The Grey Keep",
-    blurb: "The Citadel's hall on the Greyfall's crown, a nave of black towers up to the throne the Grey crowned its lord on. He stands before it, and behind it the Throne Stair goes up into the sky.",
+    blurb: "The Citadel's hall on Greyfall's crown, a nave of black towers up to the throne of its last lord, who kept his crown when he lost his name. He stands before it, and behind it the Throne Stair goes up into the sky.",
     palette: [4, 4, 4],
     mood: 0x9c9fa8,
     rise: 3,
@@ -438,7 +438,7 @@ export const AREAS: readonly AtlasArea[] = [
     id: "peak",
     tier: "surface",
     name: "The Tinker Peak",
-    blurb: "The rock's summit, ringed in bamboo, where the pandas' grandsire sits and eats. Past him the gnomes' crane swings its basket up into the clouds.",
+    blurb: "The rock's summit, ringed in bamboo, where the bamboo-folk's grandsire sits and eats. Past him the gnomes' crane swings its basket up into the clouds.",
     palette: [2, 2, 2],
     mood: 0xfff8e6,
     rise: 5,
@@ -457,8 +457,8 @@ export const AREAS: readonly AtlasArea[] = [
 ];
 
 export const TIER_INFO: Record<TierId, { name: string; blurb: string; base: TierBase }> = {
-  sky: { name: "The Sky", blurb: "The sky over the rock and the Greyfall, where the gnome-kings built in gold.", base: "sky" },
-  surface: { name: "The Surface", blurb: "Seven lands on the sea and the castle over the Harbour, joined at their gates.", base: "sea" },
+  sky: { name: "The Sky", blurb: "The sky over the rock and Greyfall, where the gnome-kings built in gold.", base: "sky" },
+  surface: { name: "The Surface", blurb: "Seven lands on the sea and Highward over Lanternport, joined at their gates.", base: "sea" },
   below: { name: "The Underneath", blurb: "Caverns in the rock under the town, the moor and the fen.", base: "rock" },
 };
 
@@ -1405,7 +1405,7 @@ export const LIFTS: readonly AtlasLift[] = [
     id: "sinkhole",
     name: "Fen Sinkhole",
     kind: "drop",
-    note: "The pools drain into it, and so does anyone who steps too close. The Hollow is a long fall down.",
+    note: "The pools drain into it, and so does anyone who steps too close. Hearthdeep is a long fall down.",
     up: { tier: "surface", area: "fen", at: { col: 52, row: 69 } },
     down: { tier: "below", area: "hollow", at: { col: 50, row: 70 } },
   },
@@ -1429,7 +1429,7 @@ export const LIFTS: readonly AtlasLift[] = [
     id: "shell-stair",
     name: "The Shell Stair",
     kind: "lift",
-    note: "From the Shell Isle up through the rock to the fen's east edge: the one way back up from the Hollow, shut until the Shell Below has fallen.",
+    note: "From the Shell Isle up through the rock to the fen's east edge: the one way back up from Hearthdeep, shut until the Shell Below has fallen.",
     up: { tier: "surface", area: "fen", at: { col: 58, row: 68 } },
     down: { tier: "below", area: "shellisle", at: { col: 60, row: 68 } },
   },
@@ -1437,7 +1437,7 @@ export const LIFTS: readonly AtlasLift[] = [
     id: "ring-lift",
     name: "The Boat",
     kind: "lift",
-    note: "The fishers' boat out of the Bull's Ring, along the sea channel and round to the Harbour's docks.",
+    note: "The fishers' boat out of the Bull's Ring, along the sea channel and round to Lanternport's docks.",
     up: { tier: "surface", area: "harbour", at: { col: 44, row: 49 } },
     down: { tier: "below", area: "ring", at: { col: 42, row: 46 } },
   },
@@ -1445,7 +1445,7 @@ export const LIFTS: readonly AtlasLift[] = [
     id: "watch-lift",
     name: "Watch Lift",
     kind: "shortcut",
-    note: "The castle's old lift to its watch posts in the sky, chained from above. Ride it down once from the Steps and it runs both ways for good: the road home.",
+    note: "Highward's old lift to its watch posts in the sky, chained from above. Ride it down once from Cloudstair and it runs both ways for good: the road home.",
     up: { tier: "sky", area: "steps", at: { col: 31, row: 22 } },
     down: { tier: "surface", area: "keep", at: { col: 31, row: 22 } },
   },
@@ -1479,22 +1479,22 @@ function surface(rng: Rng): AtlasTier {
   t.relief({ area: "greyfall", at: { col: 112, row: 7 }, rx: 9, ry: 5, levels: 3, core: { at: { col: 112, row: 5 }, r: 2.2 } });
 
   t.gate("old-bridge", "Old Bridge", "open", "saltreach", "harbour", { col: 25, row: 40 }, { col: 33, row: 46 }, "The way in from the shore, always open.");
-  t.gate("burg-gate", "Burg Gate", "open", "harbour", "burg", { col: 43, row: 35 }, { col: 44, row: 32 }, "Up out of Old Town, through the castle's outer wall into the Lower Burg.");
-  t.gate("rampart-gate", "Rampart Gate", "open", "burg", "ramparts", { col: 45, row: 26 }, { col: 43, row: 21 }, "Up off the Burg's crest through the gatehouse onto the castle's curtain wall.");
-  t.gate("bulls-gate", "The Bull's Gate", "open", "ramparts", "bullwall", { col: 46, row: 21 }, { col: 58, row: 25 }, "Off the walk's east end onto the wall the bull holds.");
+  t.gate("burg-gate", "Burg Gate", "open", "harbour", "burg", { col: 43, row: 35 }, { col: 44, row: 32 }, "Up out of Old Town, through Highward's outer wall into the Lower Burg.");
+  t.gate("rampart-gate", "Rampart Gate", "open", "burg", "ramparts", { col: 45, row: 26 }, { col: 43, row: 21 }, "Up off the Burg's crest through the gatehouse onto Highward's curtain wall.");
+  t.gate("bulls-gate", "The Bull's Gate", "open", "ramparts", "bullwall", { col: 46, row: 21 }, { col: 58, row: 25 }, "Off the walk's east end onto the wall the boar holds.");
   t.gate("chapel-door", "Chapel Door", "open", "bullwall", "chapel", { col: 62, row: 25 }, { col: 71, row: 29 }, "Over the Gun Bridge into the Chapel Ward's cloister.");
   t.gate("bell-stair", "The Bell Stair", "open", "chapel", "belfry", { col: 71, row: 31 }, { col: 60, row: 30 }, "Up off the chapel terrace's west end into the bell tower.");
-  t.gate("keep-gate", "Keep Gate", "locked", "burg", "keep", { col: 40, row: 27 }, { col: 35, row: 25 }, "Off the Burg's Upper Streets, west into the castle's bailey. The Ember Key fits it.");
+  t.gate("keep-gate", "Keep Gate", "locked", "burg", "keep", { col: 40, row: 27 }, { col: 35, row: 25 }, "Off the Burg's Upper Streets, west into Highward's bailey. The Ember Key fits it.");
   t.gate("ember-gate", "Ember Gate", "shortcut", "harbour", "emberwood", { col: 33, row: 36 }, { col: 13, row: 17 }, "A palisade on the causeway north. The town bars it at night.");
-  t.gate("ash-road", "The Ash Road", "open", "emberwood", "trollpit", { col: 32, row: 6 }, { col: 42, row: 6 }, "North out of the burning wood to the bull's hollow.");
-  t.gate("crag-stair", "Crag Stair", "open", "trollpit", "crags", { col: 43, row: 5 }, { col: 55, row: 8 }, "A gnome path past the bull, out of the smoke and up to the rock.");
+  t.gate("ash-road", "The Ash Road", "open", "emberwood", "trollpit", { col: 32, row: 6 }, { col: 42, row: 6 }, "North out of the steaming wood to the Bull's hollow.");
+  t.gate("crag-stair", "Crag Stair", "open", "trollpit", "crags", { col: 43, row: 5 }, { col: 55, row: 8 }, "A gnome path past the Bull, out of the steam and up to the rock.");
   t.gate("moor-gate", "Moor Gate", "shortcut", "harbour", "barrowmoor", { col: 56, row: 47 }, { col: 63, row: 47 }, "Barred from the moor side. Whoever comes through the moor can open it, and come home the short way.");
   t.gate("fen-causeway", "Fen Causeway", "open", "saltreach", "fen", { col: 16, row: 51 }, { col: 41, row: 68 }, "A long spit of shingle along the south shore.", 2);
   t.gate("barrow-path", "Barrow Path", "open", "fen", "barrowmoor", { col: 48, row: 61 }, { col: 77, row: 56 }, "Duckboards over the reeds, up onto the moor.");
-  t.gate("grey-gate", "Grey Gate", "locked", "barrowmoor", "greyfall", { col: 92, row: 45 }, { col: 97, row: 18 }, "Two locks, one key from each way out of the Harbour: the Barrow King's Horned Key, and the Weaver's Silk Key from below.");
-  t.gate("tinker-peak", "The Tinker Peak", "open", "crags", "peak", { col: 76, row: 11 }, { col: 81, row: 11 }, "Off the rock's top step onto the summit, where the old panda sits.");
-  t.gate("grey-keep", "The Grey Keep", "open", "greyfall", "throne", { col: 104, row: 17 }, { col: 103, row: 22 }, "Off the Greyfall's crown into the Citadel's hall.");
-  t.gate("sky-bridge", "Sky Bridge", "high", "crags", "greyfall", { col: 79, row: 5 }, { col: 96, row: 5 }, "The gnomes' high road off the top of the rock, straight onto the Greyfall's wall.", 2);
+  t.gate("grey-gate", "Grey Gate", "locked", "barrowmoor", "greyfall", { col: 92, row: 45 }, { col: 97, row: 18 }, "Two locks, one key from each way out of Lanternport: the Barrow King's Horned Key, and the Weaver's Silk Key from below.");
+  t.gate("tinker-peak", "The Tinker Peak", "open", "crags", "peak", { col: 76, row: 11 }, { col: 81, row: 11 }, "Off the rock's top step onto the summit, where Old Bamboo sits.");
+  t.gate("grey-keep", "The Grey Keep", "open", "greyfall", "throne", { col: 104, row: 17 }, { col: 103, row: 22 }, "Off Greyfall's crown into the Citadel's hall.");
+  t.gate("sky-bridge", "Sky Bridge", "high", "crags", "greyfall", { col: 79, row: 5 }, { col: 96, row: 5 }, "The gnomes' high road off the top of the rock, straight onto Greyfall's wall.", 2);
 
   t.road([22, 41], [25, 40], [33, 46], [40, 45], [44, 47]);
   t.road([44, 47], [43, 40], [43, 35], [44, 31], [45, 26], [43, 21], [46, 21], [58, 25], [62, 25], [71, 29], [76, 30]);
@@ -1685,11 +1685,11 @@ function below(rng: Rng): AtlasTier {
   t.separate();
   // The shrink leaves the Hollow's east shore on a diagonal thread to its lake; a ledge joins them.
   t.bridge({ col: 48, row: 70 }, { col: 50, row: 75 });
-  t.gate("ring-gate", "Ring Gate", "open", "landing", "ring", { col: 33, row: 46 }, { col: 37, row: 46 }, "The sea cave's last passage, into the bull's cavern.");
+  t.gate("ring-gate", "Ring Gate", "open", "landing", "ring", { col: 33, row: 46 }, { col: 37, row: 46 }, "The sea cave's last passage, into the troll's cavern.");
   t.gate("kings-stair", "The King's Stair", "open", "barrow", "deeps", { col: 79, row: 35 }, { col: 81, row: 43 }, "Behind the Barrow King's throne, down out of his barrow into the tombs.");
   t.gate("cistern-run", "Cistern Run", "open", "undercroft", "deeps", { col: 56, row: 52 }, { col: 68, row: 47 }, "A tunnel east out of the cisterns. It comes up in the tombs.");
-  t.gate("the-web", "The Web", "open", "deeps", "web", { col: 76, row: 63 }, { col: 69, row: 71 }, "Down off the Deeps' floor into the Weaver's cavern.");
-  t.gate("sinking-stair", "Sinking Stair", "open", "web", "hollow", { col: 67, row: 75 }, { col: 51, row: 75 }, "Steps cut on down past the Weaver to the Hollow's shore.");
+  t.gate("the-web", "The Web", "open", "deeps", "web", { col: 76, row: 63 }, { col: 69, row: 71 }, "Down off Graveroad's floor into the Weaver's cavern.");
+  t.gate("sinking-stair", "Sinking Stair", "open", "web", "hollow", { col: 67, row: 75 }, { col: 51, row: 75 }, "Steps cut on down past the Weaver to Hearthdeep's shore.");
   t.gate("the-shell", "The Shell", "open", "hollow", "shellisle", { col: 51, row: 71 }, { col: 58, row: 69 }, "Over the causeway to the Shell Isle.");
 
   const { prop, who } = t;

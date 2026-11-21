@@ -153,7 +153,7 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
       ? row.about
       : step === 1
         ? (giftShown?.about ?? "One thing came ashore with you. The rest the sea kept.")
-        : "No one in the Reach will know it. Say it anyway.";
+        : "No one in Aurum will know it. Say it anyway.";
 
   return (
     <div

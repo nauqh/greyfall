@@ -1,6 +1,6 @@
 "use client";
 
-// The map, opened from a bonfire over the area it was opened in: the Shattered Reach in three tiers and every bonfire
+// The map, opened from a bonfire over the area it was opened in: Aurum in three tiers and every bonfire
 // on it, lit or not. A click on a land opens its panel; a lit bonfire travels. W/S steps through the land's bonfires,
 // A/D through the tiers, Esc goes back to the fire. Only a bonfire in the land panel travels.
 

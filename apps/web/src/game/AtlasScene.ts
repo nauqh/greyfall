@@ -1,4 +1,4 @@
-// The Atlas: the Shattered Reach in three tiers, drawn with the war map's
+// The Atlas: Aurum in three tiers, drawn with the war map's
 // autotiler and dressed area by area. Each tier renders to its own camera and
 // shows alone: the sky over its cloud bank, the Surface on the sea, the
 // Underneath as rock with its caverns lit. Lifts join the tiers where they
