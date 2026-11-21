@@ -5,6 +5,7 @@ Everything told about Aurum: its story, its folk and their lines, and the keeper
 - [reach.md](reach.md): the rules for telling it, the world's story, what the art can carry, the audit and the open questions.
 - [peoples.md](peoples.md): the other folk of Aurum, from gnomes to finfolk, and how the cold put them on the roads.
 - [questline.md](questline.md): how talks, flags and moving on work, what sets each flag, every questline at a glance, and the forks.
+- [inspirations.md](inspirations.md): the nearest land in Dark Souls, Elden Ring and Skyrim to each of Aurum's, as a touchstone for tone.
 
 Each land is a folder with its `lore.md` (the canon for that land, and its folk), `questline.md` (its folk's lines, station by station, and who passes through) and, where a boss keeps it, `bosses.md`. A boss's arena belongs to the land it guards the way out of. Emberwood and Brasscrag also keep `design.md`, the district-by-district layout the map is built to.
 
