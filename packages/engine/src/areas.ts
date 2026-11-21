@@ -2136,7 +2136,7 @@ function crags(): AreaMap {
   // The Bridgehead: the fire, the gnomes' towers, and the gatehouse over the Sky Bridge held by gnolls from the Greyfall.
   t.fires.push({ col: 74, row: 11 });
   for (const [c, r] of [[68, 7], [80, 6]] as const) prop("gnomeTower", c, r);
-  for (const r of [7, 12]) prop("tower", 85, r);
+  for (const r of [7, 12]) prop("tower", 85, r, { color: "black" });
   prop("cannonSide", 84, 10);
   who("gnoll", 82, 10, { to: { col: 82, row: 13 } });
   who("gnoll", 78, 12, { to: { col: 84, row: 12 } });

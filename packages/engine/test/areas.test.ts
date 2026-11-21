@@ -15,6 +15,12 @@ function reach(from: Cell, shut: ReadonlySet<number> = new Set()): Set<number> {
   return seen;
 }
 
+// The scene draws a building from its colour's sheet, so one with no colour has no art and crashes the map.
+it.each(MAPPED_AREAS)("gives every building on %s a colour", (id) => {
+  const buildings = new Set(["archery", "barracks", "castle", "house1", "house2", "house3", "monastery", "tower"]);
+  expect(areaMap(id).props.filter((p) => buildings.has(p.art) && !p.color).map((p) => `${p.art} ${p.col},${p.row}`)).toEqual([]);
+});
+
 it.each(MAPPED_AREAS)("leaves every way out, fire, note and dweller of %s in reach round the solid props", (id) => {
   const m = areaMap(id);
   useIsland(m.island);
