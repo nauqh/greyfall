@@ -810,7 +810,7 @@ interface Pile {
 /** No rest with a monster this near the fire. */
 const REST_CLEAR = 8;
 const FLAGS = "greyfall.flags";
-const npcLook = (n: Npc): Dweller => ({ kind: n.kind, col: n.at.col, row: n.at.row, color: n.color ?? "blue", act: n.act });
+const npcLook = (n: Npc): Dweller => ({ kind: n.kind, col: n.at.col, row: n.at.row, color: n.kind === "gnome" ? undefined : (n.color ?? "blue"), act: n.act });
 /**
  * Each underground map lit its own way: the rock's own dark, how much the open floor shows unlit, the colour its
  * lights cast. The Undercroft is torchlit masonry, the Deeps the darkest and lit ghost-green, the Hollow the

@@ -453,11 +453,11 @@ export const ITEMS = {
   "The Thrown Coin": { cost: 0, adds: { greed: 0.25 }, about: "Thrown down the Old Well to see who would come after. Coin follows it now." },
   "Smuggler's Coat": { cost: 400, adds: { hp: 25 }, about: "Swapped, its last wearer said, deeper in. Nobody down there ever swapped a thing." },
   "Sister's Candle": { cost: 600, adds: { flask: 15 }, about: "A sister's candle, burned down a winter of nights. Its light closes wounds, or seems to." },
-  "Hollow Water": { cost: 0, adds: { flasks: 1 }, about: "Lake water from under the fen, clear as glass. The Order's pilgrims drink nothing else. Ferrow would not." },
+  "Hollow Water": { cost: 0, adds: { flasks: 1 }, about: "Water from the drowned hollow at the bottom of the world, warm as a hand. The Pilgrims drink nothing else. Ferrow would not." },
   "Mum's Bread": { cost: 0, adds: { hp: 20 }, about: "Baked in an east lane oven that sat cold a long while. Mostly ash. Eaten anyway." },
   "Salt-Glass Flask": { cost: 600, adds: { flasks: 1 }, about: "Blown on the salt coast, thick as a thumb. It came in on the first ship in three winters." },
   "Hollis's Gaff": { cost: 0, adds: { attack: 3 }, about: "A fishing gaff, its hook filed to an edge. Lent, not given: the sea wants it back past the Ring." },
-  "Wheel Cog": { cost: 0, adds: { stamina: 20 }, about: "A cog off the lift wheel, worn bright by a panda's feet. Carried, it seems to keep turning." },
+  "Wheel Cog": { cost: 0, adds: { stamina: 20 }, about: "A cog off the lift wheel, worn bright by Old Bamboo's feet. Carried, it seems to keep turning." },
   // The gifts: one picked at a new game's start, come ashore with the captain; never sold.
   "Drowned Locket": { cost: 0, adds: { hp: 20 }, about: "Salt in the hinge. Whoever's face was in it, the sea kept. It still sits warm against the chest." },
   "Notched Whetstone": { cost: 0, adds: { attack: 2 }, about: "Worn hollow by a hand that is not yours. An edge kept on it bites a little deeper." },

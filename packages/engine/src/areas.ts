@@ -693,7 +693,7 @@ function keepArea(): AreaMap {
   prop("castle", 30, 10, blue);
   who("lancer", 26, 14, { ...blue, to: { col: 36, row: 14 } });
 
-  const notes: Note[] = [{ at: { col: 44, row: 6 }, text: "Look east. The Grey wears a crown in the Citadel." }];
+  const notes: Note[] = [{ at: { col: 44, row: 6 }, text: "Look east. In the Citadel a crown keeps one man warm." }];
   const exits: AreaExit[] = [
     { to: "burg", name: "Keep Gate", kind: "open", at: { col: 62, row: 30 }, plain: true },
     { to: "steps", name: "Watch Lift", kind: "shortcut", at: { col: 13, row: 6 }, shut: "watchLiftOpen" },
@@ -1963,7 +1963,7 @@ function emberwood(): AreaMap {
   // The Drawn Plank: the Treetop Walk barred at its north end, dropped for good from Warren Hill's side.
   const locks = [{ name: "The Drawn Plank", cells: [{ col: 27, row: 35 }, { col: 28, row: 35 }], flag: "drawnPlankDown", from: { col: 28, row: 32 } }];
   const notes: Note[] = [
-    { at: { col: 111, row: 55 }, text: "Keep Gate barred behind me. The key is on my belt. The wood road to the Harbour, then." },
+    { at: { col: 111, row: 55 }, text: "Keep Gate barred behind me. The key is on my belt. The wood road round to Lanternport, then." },
     { at: { col: 38, row: 61 }, text: "Ran for the gate. They barred it with us still outside. Can't blame them." },
     { at: { col: 63, row: 16 }, text: "Goblins on the ford. Round by the north road. Something big breathing in the smoke." },
   ];
@@ -3634,7 +3634,7 @@ function trollpit(): AreaMap {
   who("minotaur", 30, 21, { to: { col: 34, row: 23 } });
   t.bosses.push({ name: "The Ember Bull", area: "trollpit", col: 30, row: 21 });
 
-  const notes: Note[] = [{ at: { col: 31, row: 40 }, text: "Make him run. The pines stop him dead." }];
+  const notes: Note[] = [{ at: { col: 31, row: 40 }, text: "Make him run. The trees stop him dead." }];
   const exits: AreaExit[] = [
     { to: "emberwood", name: "The Ash Road", kind: "open", at: { col: 30, row: 44 }, plain: true },
     { to: "crags", name: "Crag Stair", kind: "open", at: { col: 30, row: 1 }, guard: "minotaur" },

@@ -82,9 +82,9 @@ export interface Npc {
   area: AreaId;
   /** On the map as areaMap() gives it: a surface map is padded with sea, so not the builder's own grid. */
   at: Cell;
-  kind: "pawn" | "lancer" | "archer" | "monk" | "warrior";
+  kind: "pawn" | "lancer" | "archer" | "monk" | "warrior" | "gnome";
   act?: string;
-  /** Blue, the castle's, unless they are from elsewhere. */
+  /** Blue, Highward's, unless they are from elsewhere; a gnome is drawn as itself, in no colour. */
   color?: "blue" | "red" | "yellow" | "purple" | "black";
   flip?: boolean;
   /** A merchant's goods, and what they say turning a sale down: short of gold, or already sold. */
@@ -105,14 +105,14 @@ export const TALK_RANGE = 2;
 const corwinDig: readonly Talk[] = [
   {
     id: "barrows",
-    lines: ["The Barrow King is dead... The barrows are only barrows now.", "My forty went into them. So I'm digging them out. One at a time."],
+    lines: ["The Barrow King is dead... The barrows are only barrows now.", "My forty went in after his key. So I'm digging them out. One at a time."],
   },
   { id: "count", lines: ["Twenty-two. Dace still had his pipe on him.", "Holm had nothing. ...Holm always had nothing."] },
 ];
 const corwinDone: Talk = {
   id: "done",
   when: "warlordDead",
-  lines: ["So. It's finished, up in the Grey.", "Tell them at the gate, will you? I've no hands left for carving."],
+  lines: ["So. The Warlord's down. My hands stopped aching this morning.", "The cold's let go a little. Tell them at the gate, will you? I've no hands left for carving."],
 };
 const wrenPenny: Talk = {
   id: "penny",
@@ -125,7 +125,7 @@ const wrenPenny: Talk = {
 const ysoldeClean: Talk = {
   id: "clean",
   when: "drankClear",
-  lines: ["You drank from the lake, child. I can smell it on you. Clean, as nothing is.", "...Nothing down here is clean. Remember that."],
+  lines: ["You drank the warm water, child. I can feel it on you, like a hearth through a wall.", "...Nothing that warm should lie so far down. Remember that."],
 };
 
 export const NPCS: readonly Npc[] = [
@@ -142,7 +142,7 @@ export const NPCS: readonly Npc[] = [
         id: "first",
         lines: [
           "...Hm. Another one the tide spat out.",
-          "Name's Ferrow. I keep this fire. Someone has to.",
+          "Name's Ferrow. I keep Lanternport's fire. Someone has to.",
           "The last one sat right where you're standing. Warmed his hands, then went east.",
           "He didn't come back. They never do. Hah...",
         ],
@@ -169,20 +169,20 @@ export const NPCS: readonly Npc[] = [
         id: "goal",
         lines: [
           "You'll be wanting the Grey Gate, east past the moor. Everyone does, in the end.",
-          "Two keys open it. The king under the barrows keeps one.",
-          "The other's far below, they say. In the Weaver's web, down the well and further down still.",
+          "Two locks on it. Kingsrest buried one key, with the king under the barrows.",
+          "The other we threw down our own Old Well. Landed in the Weaver's web, they say, and further down still.",
         ],
       },
       {
         id: "castle",
         lines: [
-          "The Keep? Shut, since the Burg turned. Its steward ran for the wood with the key.",
+          "The Keep? Shut, since the Burg turned. Its steward ran for the wood with the Ember Key.",
           "A bull had him for supper, so they say... Still has the key, I'd wager.",
         ],
       },
       {
         id: "well",
-        lines: ["The Old Well only goes one way. Down.", "And don't drink what's at the bottom. The Grey's in that water, and then it's in you."],
+        lines: ["The Old Well only goes one way. Down.", "And don't drink what's at the bottom. Water that cold has the Grey in it."],
       },
       {
         id: "roads",
@@ -202,7 +202,7 @@ export const NPCS: readonly Npc[] = [
       {
         id: "warlord",
         when: "warlordDead",
-        lines: ["So the Warlord's dead, they're saying. Hm.", "The Grey's still in the ground, mind. I'll keep the fire going anyway. Habit."],
+        lines: ["So the Warlord's dead, they're saying. Hm.", "Felt warmer this morning. Not warm, mind. I'll keep the fire going anyway. Habit."],
       },
       {
         id: "ansel",
@@ -246,7 +246,7 @@ export const NPCS: readonly Npc[] = [
       {
         id: "ore",
         lines: [
-          "Mine Hills ore is soft, but honest. The Crags have better, under the gnomes.",
+          "Mine Hills ore is soft, but honest. Brasscrag has better, under the gnomes.",
           "Go and be rude to them. They'll understand. It's how they talk to each other.",
         ],
       },
@@ -285,7 +285,7 @@ export const NPCS: readonly Npc[] = [
         id: "first",
         lines: [
           "You're not one of mine. ...No. Mine are all gone.",
-          "Sergeant Corwin. We were forty spears once. Forty.",
+          "Sergeant Corwin. I took forty spears onto the moor once. Forty.",
           "Now I drill boys with broom handles and call it a garrison.",
           "Want a lance at your side? Pay, and I'll find you one who still stands.",
         ],
@@ -372,7 +372,7 @@ export const NPCS: readonly Npc[] = [
             lines: [
               "Ha! The bull's dead! The goblins don't know which way to run.",
               "They come down off the bluff one at a time. Best shooting in years.",
-              "Don't tell the Harbour. They'll want me back being useful.",
+              "Don't tell Lanternport. They'll want me back being useful.",
             ],
           },
           { id: "torches", lines: ["Torches first. Always torches first."] },
@@ -396,7 +396,7 @@ export const NPCS: readonly Npc[] = [
         id: "first",
         lines: [
           "Hm? You're not from the wood. Nobody's from the wood any more.",
-          "Garth. I cut timber at the Palisade, past the Ember Gate. Before.",
+          "Garth. I cut hardwood at the Palisade, past the Ember Gate. Before.",
           "Now I cut what grows this side. Poor stuff. Hah...",
         ],
       },
@@ -407,7 +407,7 @@ export const NPCS: readonly Npc[] = [
           "Dunn had it barred before the last of us were through. ...Can't say I wouldn't have.",
         ],
       },
-      { id: "bar", lines: ["The bar only lifts from the wood's side now.", "Someone would have to go round, through the castle. ...Not me."] },
+      { id: "bar", lines: ["The bar only lifts from the wood's side now.", "Someone would have to go round, through Highward. ...Not me."] },
     ],
     later: [
       {
@@ -427,14 +427,14 @@ export const NPCS: readonly Npc[] = [
               "He went north, after. Nobody comes back from north.",
             ],
           },
-          { id: "trunks", lines: ["The heat's still in these trunks.", "They burn slow, and they burn twice."] },
+          { id: "trunks", lines: ["The ground's warm under these trunks. The heat comes up into them.", "They burn slow, and they burn twice."] },
           {
             id: "bull",
             when: "trollKey",
             lines: [
-              "That bull in the hollow. He hauled for us. Pulled every log out through that gate.",
-              "We left him in his traces that night. ...He waited. Bulls wait.",
-              "Hah. Don't tell me how he looked at the end. I'd sooner not know.",
+              "That bull in the hollow. Came out of the east the winter the cold came, and lay down in the ash.",
+              "The goblins feed it like a lord. Bowed to it, some of them. I saw.",
+              "Hah. Don't tell me how it looked at the end. I'd sooner not know.",
             ],
           },
         ],
@@ -488,9 +488,9 @@ export const NPCS: readonly Npc[] = [
             id: "bull",
             when: "trollKey",
             lines: [
-              "The key was on the bull? On our bull?",
-              "So the steward got past my gate, and the goblins, and the fire. And the camp's own beast had him.",
-              "...I barred the gate on both of them. Hm.",
+              "The key was on the bull? The goblins' bull?",
+              "So the steward got past my gate, and the goblins, and the heat. And their beast had him at the end of it.",
+              "...I barred the gate on him. Hm.",
             ],
           },
         ],
@@ -524,11 +524,18 @@ export const NPCS: readonly Npc[] = [
         ],
       },
       { id: "thicket", lines: ["The bears keep something in the thicket behind them. Gold, by the shine.", "Bears don't spend it. ...Nor do I."] },
+      {
+        id: "hearth",
+        lines: [
+          "Put your hand to the ground, past the pines. Warm. The Order calls it the Hearth, the warmth under everything.",
+          "Here it comes near the top. That's why the whole wood crowds in. ...Cold things know where warm is.",
+        ],
+      },
       { id: "pray", lines: ["I pray for the pines. Someone should. Hm."] },
       {
         id: "cooling",
         when: "trollKey",
-        lines: ["The wood is cooling. I can feel it in the bark. That was you.", "The goblins will want somewhere new to be afraid of. ...Mind it isn't here."],
+        lines: ["The bull's dead? Then the goblins will spill out of the hollow, looking for a new lord.", "Or a new fire. ...Mind it isn't these pines."],
       },
     ],
   },
@@ -558,7 +565,7 @@ export const NPCS: readonly Npc[] = [
           "There's a fire at the ford. Last warm thing before the bull.",
         ],
       },
-      { id: "seams", lines: ["Gold shows in the rock up here, if you've the eye. Take what you can carry.", "I can't carry much. Never could."] },
+      { id: "seams", lines: ["Gold shows in the rock up here, if you've the eye. Warm in the hand, when it's good.", "Take what you can carry. I can't carry much. Never could."] },
       {
         id: "home",
         when: "trollKey",
@@ -707,9 +714,9 @@ export const NPCS: readonly Npc[] = [
       {
         id: "first",
         lines: [
-          "Peace on you, child. I am Ysolde, mother to the Order here.",
-          "My sisters went down to the Drowned Chapel, to pray the Grey out of the water.",
-          "The water did not clear. ...Nor did they come back.",
+          "Peace on you, child. I am Ysolde, a Keeper of the Order, and mother to it here.",
+          "My sisters went down to the Drowned Chapel. The warmth was below us, they said, and they would kneel by it.",
+          "I keep the fire up here. ...They did not come back.",
         ],
       },
       {
@@ -743,7 +750,7 @@ export const NPCS: readonly Npc[] = [
             id: "lake",
             sets: "ysoldeDeeper",
             lines: [
-              "She speaks in her sleep. Of a lake under all of this, clear as glass.",
+              "She speaks in her sleep. Of water under all of this, warm as a hand, and gold shining in the rock.",
               "The others went on to it. I must go too.",
               "Do not follow. ...Or do. I am too old to forbid things.",
             ],
@@ -759,12 +766,12 @@ export const NPCS: readonly Npc[] = [
           {
             id: "clear",
             lines: [
-              "Look, child. The water is clear down here. Clear at last.",
+              "Look, child. The water is warm down here. Warm at last.",
               "I can see them at the bottom. All my sisters, kneeling. Still praying.",
               "...No. Don't pull me back. I have only just found them.",
             ],
           },
-          { id: "kneel", lines: ["I have stopped lighting candles.", "There is light enough down here. Cold, but enough."] },
+          { id: "kneel", lines: ["I have stopped lighting candles.", "There is warmth enough down here. More than enough."] },
           ysoldeClean,
         ],
       },
@@ -777,7 +784,7 @@ export const NPCS: readonly Npc[] = [
             id: "ash",
             gives: "Sister's Candle",
             lines: [
-              "The water went grey when it died. Then my sisters were only bones.",
+              "It died, and nothing woke. My sisters were kneeling to a beast. Only bones, now.",
               "I can leave bones, child. I couldn't leave them kneeling.",
               "Take this. I've stopped lighting it. Light it for the ones you lose.",
             ],
@@ -801,7 +808,7 @@ export const NPCS: readonly Npc[] = [
     talks: [
       {
         id: "first",
-        lines: ["...Is it night? It's always night, down here.", "We came to pray the water clear... I don't remember the others' faces."],
+        lines: ["...Is it night? It's always night, down here.", "We came down to kneel by the warm... I don't remember the others' faces."],
       },
       {
         id: "warm",
@@ -825,16 +832,16 @@ export const NPCS: readonly Npc[] = [
       {
         id: "first",
         lines: [
-          "Softly... The sisters came to pray the Grey out of the water.",
-          "And it went out of the water. Look.",
-          "It sleeps on the isle. The lake stays clear while it sleeps.",
+          "Softly... It sleeps on the isle, on the warm. Feel the water.",
+          "The Hearth's keeper. The Hearth is under it, and the sisters came down to kneel by it.",
+          "We wait for it to wake. ...It will wake.",
         ],
       },
       {
         id: "water",
         sets: "drankClear",
         gives: "Hollow Water",
-        lines: ["Drink. It is clear. Nothing clear is left up there.", "The old one by the harbour fire says not to. ...He has never been down."],
+        lines: ["Drink. It is warm. Nothing warm is left up there.", "The old one by the fire up there says not to. ...He has never been down."],
       },
     ],
     later: [{ when: ["shellDead"], area: "hollow", at: { col: 95, row: 49 }, dead: true }],
@@ -854,11 +861,21 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "Tide's out. ...Maren. I keep the harbour, for all the good it does.",
           "No ships in three winters.",
-          "The salt men down the coast still trade, if you can stomach their prices. And their pirates.",
+          "Stiltwater still trades down the coast, if you can stomach its prices. And its pirates.",
           "Mostly the pirates. Ha.",
         ],
       },
-      { id: "sharks", lines: ["Sharks off the Saltreach shore. Don't swim there.", "Don't even think wet thoughts."] },
+      {
+        id: "finfolk",
+        lines: [
+          "Finfolk off the Stiltwater shore. Sharks, the pirates call them. Don't swim there.",
+          "They pull things out of the warm water by the caves. Breathing things, the pirates say. ...I don't ask.",
+        ],
+      },
+      {
+        id: "lantern",
+        lines: ["The lantern on the wall? I light it every night. For ships.", "Three winters, no ships. You don't stop lighting it. That's how you lose it."],
+      },
       { id: "tide", lines: ["Tide's out. It's always out, lately.", "As if the sea's leaving too."] },
       {
         id: "sail",
@@ -866,7 +883,7 @@ export const NPCS: readonly Npc[] = [
         sets: "marenSails",
         lines: [
           "A sail. Off the point, this morning. First in three winters.",
-          "Salt men, likely. Pirates, likelier. I don't care.",
+          "Stiltwater, likely. Pirates, likelier. I don't care.",
           "Thirty years I've watched that water. I'd like to be on it once, before it leaves for good.",
         ],
       },
@@ -888,7 +905,7 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "Mind the carts. ...Dunstan. I run the Mine Hills, what's left to run.",
           "The good ore came off the deep face, under the crest. Forty loads a week.",
-          "Then one shift it came up grey. Cold in the hand. Cold in July.",
+          "Then one shift it came up grey. Cold in the hand. Cold in high summer.",
           "The lads who worked it went slow. Slower every day. So I nailed it shut myself.",
         ],
       },
@@ -962,7 +979,7 @@ export const NPCS: readonly Npc[] = [
         id: "first",
         lines: [
           "Shh! Don't tell them I'm here. The grey men.",
-          "They took my mum. The whole east lane. Off to the Greyfall, where the Grey comes from.",
+          "They took my mum. The whole east lane. Off to Greyfall, where the cold comes from.",
           "They keep them in a yard, with ropes. I squeezed out under the gate.",
         ],
       },
@@ -999,7 +1016,7 @@ export const NPCS: readonly Npc[] = [
         area: "harbour",
         at: { col: 68, row: 71 },
         talks: [
-          { id: "mum", lines: ["Mum came home! On her own feet!", "She says the grey ones just ran. She says it twice."] },
+          { id: "mum", lines: ["Mum came home! On her own feet!", "She says the grey ones just stopped. Stood like posts. She walked out between them. She says it twice."] },
           { id: "bread", gives: "Mum's Bread", lines: ["Mum made bread. It's mostly ash.", "Here. ...She says it's for you."] },
         ],
       },
@@ -1010,7 +1027,7 @@ export const NPCS: readonly Npc[] = [
         talks: [
           {
             id: "free",
-            lines: ["They ran! All the grey ones, they just ran!", "Mum says thank you. She says it twice. She's like that."],
+            lines: ["They stopped! All the grey ones, they just stopped!", "Mum says thank you. She says it twice. She's like that."],
           },
           { id: "home", gives: "Mum's Bread", lines: ["We're walking home. Mum says slowly.", "She's had enough of being hurried by ropes."] },
         ],
@@ -1031,14 +1048,14 @@ export const NPCS: readonly Npc[] = [
         id: "first",
         lines: [
           "Look up. See that glint, past the clouds?",
-          "The Gilded City. Gold walls, gold roofs. A city that never learned to bleed.",
+          "Sunhold. Gold walls, gold roofs. A city that floats on its money, and never learned to bleed.",
           "When the Grey came, it shut its gates. Not one spear. Not one prayer.",
           "...Ansel. Of the wall, they call me now. I used to be of something else.",
         ],
       },
       {
         id: "lift",
-        lines: ["The Watch Lift only comes down.", "Someone in the sky city decided who gets to visit."],
+        lines: ["The Watch Lift only comes down.", "Someone in Sunhold decided who gets to visit."],
       },
       {
         id: "blue",
@@ -1071,7 +1088,7 @@ export const NPCS: readonly Npc[] = [
             id: "out",
             lines: [
               "Don't look at me like that. I said I'd come out.",
-              "I'd forgotten the smell of the Grey. Wet ash and old iron.",
+              "I'd forgotten the smell of the Grey. Cold ash and old iron.",
               "Talk to me again and I'll go on up. So don't. Not unless you mean it.",
             ],
           },
@@ -1135,6 +1152,7 @@ export const NPCS: readonly Npc[] = [
         ],
       },
       { id: "thieves", lines: ["The thieves in the market? Burg folk, all of them.", "Went bad when the bell stopped. Bad for business, worse for them."] },
+      { id: "coin", lines: ["Feel that coin, dearie. Warm, isn't it? Even now.", "That's all gold ever was. A little warm you can carry. Hehe."] },
       { id: "rest", lines: ["Hehe. Still breathing, dearie? Good.", "Breathing folk buy things."] },
       {
         id: "fence",
@@ -1147,7 +1165,7 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "A ship in, and Maren off on it. Thirty years she waited. Hehe.",
           "Some of us don't wait.",
-          "The salt men left me a crate. Glass, dearie. Salt-glass. One, mind.",
+          "Stiltwater left me a crate. Glass, dearie. Salt-glass. One, mind.",
         ],
       },
     ],
@@ -1176,7 +1194,7 @@ export const NPCS: readonly Npc[] = [
       {
         id: "keep",
         when: "trollKey",
-        lines: ["That's the bull's key on your belt?", "The Keep Gate's off the west alley. Corwin's lancers are behind it, if any are left."],
+        lines: ["That's the Ember Key on your belt?", "The Keep Gate's off the west alley. Corwin's lancers are behind it, if any are left."],
       },
       { id: "rest", lines: ["Sit. The fire's the one thing in the Burg that's still ours."] },
     ],
@@ -1197,7 +1215,7 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "Two guns on that tower. The goblins found my powder, and turned them on the wall.",
           "The boar was the garrison's. The smiths shod him in iron for the parade.",
-          "Then the goblins took him, and their chief rode him over the wall.",
+          "Then the cold got into him, and he forgot who fed him. A goblin climbed on. ...It's been riding him since.",
         ],
       },
       { id: "ladder", lines: ["There's a ladder down the south face to the Burg's square.", "Kick it loose. Their fire is right under it, if you need one."] },
@@ -1271,14 +1289,13 @@ export const NPCS: readonly Npc[] = [
     ],
   },
   {
-    // The Crags' gnomes are the gnome-kings' kin left below, in the kings' yellow.
+    // Brasscrag's gnomes are the gnome-kings' kin left below, drawn as gnomes: one people, one look.
     id: "pell",
     name: "Pell the Gatekeeper",
     short: "Pell",
     area: "crags",
     at: { col: 12, row: 48 },
-    kind: "pawn",
-    color: "yellow",
+    kind: "gnome",
     greet: "Road! Keep to the road!",
     part: "Road, mind!",
     talks: [
@@ -1314,9 +1331,7 @@ export const NPCS: readonly Npc[] = [
     short: "Nim",
     area: "crags",
     at: { col: 47, row: 63 },
-    kind: "pawn",
-    act: "hammer",
-    color: "yellow",
+    kind: "gnome",
     shop: {
       stock: [{ item: "Gnome Powder" }, { item: "Tinker's Buckler" }],
       poor: "Gold first. Fuses after.",
@@ -1335,11 +1350,15 @@ export const NPCS: readonly Npc[] = [
       },
       {
         id: "kings",
-        lines: ["The kings? Up. In the gold city, on the lift we built them.", "They rode it up and left us the rock. Kind of them. Ha."],
+        lines: ["The kings? Up. In Sunhold, that we built them.", "They floated off with the gold and left us the rock. Kind of them. Ha."],
+      },
+      {
+        id: "owed",
+        lines: ["Sunhold owes this rock a hundred years of pay. Not a coin since the Cut.", "I've the sum, if you want it. To the coin. ...Nobody wants it."],
       },
       {
         id: "ore",
-        lines: ["The best ore on the island is under the second step.", "Nobody mines it now. Nobody goes up the steps."],
+        lines: ["The best ore in Aurum is under the second step.", "Nobody mines it now. Nobody goes up the steps."],
       },
       {
         id: "wheel",
@@ -1354,18 +1373,17 @@ export const NPCS: readonly Npc[] = [
     short: "Moss",
     area: "crags",
     at: { col: 61, row: 58 },
-    kind: "pawn",
-    color: "yellow",
-    greet: "Tam? ...No.",
+    kind: "gnome",
+    greet: "Wick? ...No.",
     part: "If you see him...",
     talks: [
       {
         id: "first",
         lines: [
-          "Tam? ...No. You're too tall.",
-          "Moss. My Tam kept the lift, up on the wheel step. Old Bamboo walked the wheel for him.",
+          "Wick? ...No. You're too tall.",
+          "Moss. My Wick kept the lift, up on the wheel step. Old Bamboo walked the wheel for him.",
           "Then the wheel stopped. The old one never came down.",
-          "Nor did Tam.",
+          "Nor did Wick.",
         ],
       },
       {
@@ -1392,7 +1410,7 @@ export const NPCS: readonly Npc[] = [
           {
             id: "coat",
             lines: [
-              "Tam's coat was on the wheel. Just the coat. He'd never have let the old one walk alone.",
+              "Wick's coat was on the wheel. Just the coat. He'd never have let the old one walk alone.",
               "Someone has to keep the lift. I watched him do it twenty winters.",
             ],
           },
@@ -1406,8 +1424,7 @@ export const NPCS: readonly Npc[] = [
     name: "Pip",
     area: "crags",
     at: { col: 63, row: 59 },
-    kind: "pawn",
-    color: "yellow",
+    kind: "gnome",
     greet: "Are you going up?",
     part: "Go up! Go up!",
     talks: [
@@ -1439,8 +1456,7 @@ export const NPCS: readonly Npc[] = [
     short: "Hask",
     area: "crags",
     at: { col: 69, row: 50 },
-    kind: "pawn",
-    color: "yellow",
+    kind: "gnome",
     greet: "Not going up.",
     part: "Not going up. Said so.",
     talks: [
@@ -1470,9 +1486,7 @@ export const NPCS: readonly Npc[] = [
     short: "Fennick",
     area: "crags",
     at: { col: 57, row: 13 },
-    kind: "pawn",
-    act: "hammer",
-    color: "yellow",
+    kind: "gnome",
     greet: "Wheel first.",
     part: "Cage second...",
     talks: [
@@ -1510,22 +1524,21 @@ export const NPCS: readonly Npc[] = [
     short: "Quill",
     area: "crags",
     at: { col: 102, row: 53 },
-    kind: "pawn",
-    color: "yellow",
+    kind: "gnome",
     greet: "Fog's coming.",
     part: "Watch the bridge.",
     talks: [
       {
         id: "first",
         lines: [
-          "Fog's coming. Fog always comes off the Greyfall.",
+          "Fog's coming. Fog always comes off Greyfall.",
           "Quill. I fish under the bridge. The fish don't care what crosses over.",
           "...I do, though.",
         ],
       },
       {
         id: "fog",
-        lines: ["They came over in the fog. Dogs, on two legs. Grey to the teeth.", "I counted till I couldn't. Then I hid."],
+        lines: ["They came over in the fog. Dogs, on two legs, running with the grey ones. Laughing.", "I counted till I couldn't. Then I hid."],
       },
       {
         id: "bridge",

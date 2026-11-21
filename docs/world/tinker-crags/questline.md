@@ -1,4 +1,4 @@
-# Tinker Crags: the folk
+# Brasscrag: the folk
 
 Who lives here, and every line they say. How talks, flags and moving on work is in [../questline.md](../questline.md).
 
@@ -6,7 +6,7 @@ Who lives here, and every line they say. How talks, flags and moving on work is 
 
 Greets you: *"Road! Keep to the road!"* Walked away from: *"Road, mind!"*
 
-### Home: Tinker Crags, Crag Gate, by the gate tower (12, 48)
+### Home: Brasscrag, Crag Gate, by the gate tower (12, 48)
 
 - **first**
   1. Road! You're on it. Good. Stay on it.
@@ -35,17 +35,20 @@ Greets you: *"Mind the fuses."* Walked away from: *"Tick, tick. Off you go."*
 
 Sells: Gnome Powder; Tinker's Buckler.
 
-### Home: Tinker Crags, Tinker Town, by the fire (47, 63)
+### Home: Brasscrag, Tinker Town, by the fire (47, 63)
 
 - **first**
   1. Mind the fuses. No, that one. ...Fine. All of them.
   2. Nim. I tinker. Powder, springs, brass. Gnome work.
   3. Gold for gnome work. The old rate. The kings set it, before they went up.
 - **kings**
-  1. The kings? Up. In the gold city, on the lift we built them.
-  2. They rode it up and left us the rock. Kind of them. Ha.
+  1. The kings? Up. In Sunhold, that we built them.
+  2. They floated off with the gold and left us the rock. Kind of them. Ha.
+- **owed**
+  1. Sunhold owes this rock a hundred years of pay. Not a coin since the Cut.
+  2. I've the sum, if you want it. To the coin. ...Nobody wants it.
 - **ore**
-  1. The best ore on the island is under the second step.
+  1. The best ore in Aurum is under the second step.
   2. Nobody mines it now. Nobody goes up the steps.
 - **wheel** (once, after meeting, when **bambooDead**)
   1. The wheel will turn again, then. Someone has to walk it.
@@ -53,15 +56,15 @@ Sells: Gnome Powder; Tinker's Buckler.
 
 ## Moss, the Lift-Keeper's Wife
 
-Greets you: *"Tam? ...No."* Walked away from: *"If you see him..."*
+Greets you: *"Wick? ...No."* Walked away from: *"If you see him..."*
 
-### Home: Tinker Crags, Tinker Town, at the Hoist's foot (61, 58)
+### Home: Brasscrag, Tinker Town, at the Hoist's foot (61, 58)
 
 - **first**
-  1. Tam? ...No. You're too tall.
-  2. Moss. My Tam kept the lift, up on the wheel step. Old Bamboo walked the wheel for him.
+  1. Wick? ...No. You're too tall.
+  2. Moss. My Wick kept the lift, up on the wheel step. Old Bamboo walked the wheel for him.
   3. Then the wheel stopped. The old one never came down.
-  4. Nor did Tam.
+  4. Nor did Wick.
 - **hoist**
   1. The Hoist was our way home. Straight down the rock.
   2. Barred from up top, since the gnolls. If you get up there, lift the bar.
@@ -72,10 +75,10 @@ Greets you: *"Tam? ...No."* Walked away from: *"If you see him..."*
   1. You lifted the bar. I heard it go, all the way down here.
   2. ...Only you came down it, though.
 
-### At Tinker Crags, Tinker Peak, by the fire under the lift (74, 17), once **bambooDead**
+### At Brasscrag, Tinker Peak, by the fire under the lift (74, 17), once **bambooDead**
 
 - **coat**
-  1. Tam's coat was on the wheel. Just the coat. He'd never have let the old one walk alone.
+  1. Wick's coat was on the wheel. Just the coat. He'd never have let the old one walk alone.
   2. Someone has to keep the lift. I watched him do it twenty winters.
 - **up**
   1. Step in, if you're going up.
@@ -85,7 +88,7 @@ Greets you: *"Tam? ...No."* Walked away from: *"If you see him..."*
 
 Greets you: *"Are you going up?"* Walked away from: *"Go up! Go up!"*
 
-### Home: Tinker Crags, Tinker Town, at the Hoist's foot (63, 59)
+### Home: Brasscrag, Tinker Town, at the Hoist's foot (63, 59)
 
 - **first**
   1. Are you going up? Grown folk go up and don't come down.
@@ -95,7 +98,7 @@ Greets you: *"Are you going up?"* Walked away from: *"Go up! Go up!"*
   1. The slingers shot at me once. On purpose, I think.
   2. I wasn't slow. I wasn't smiling either.
 
-### At Tinker Crags, Tinker Peak (79, 16), once **bambooDead**
+### At Brasscrag, Tinker Peak (79, 16), once **bambooDead**
 
 - **sick**
   1. Mum says Bamboo was sick. The grey kind.
@@ -108,7 +111,7 @@ Greets you: *"Are you going up?"* Walked away from: *"Go up! Go up!"*
 
 Greets you: *"Not going up."* Walked away from: *"Not going up. Said so."*
 
-### Home: Tinker Crags, the Works, by the mine (69, 50)
+### Home: Brasscrag, the Works, by the mine (69, 50)
 
 - **first**
   1. Not going up. Don't ask.
@@ -125,7 +128,7 @@ Greets you: *"Not going up."* Walked away from: *"Not going up. Said so."*
 
 Greets you: *"Wheel first."* Walked away from: *"Cage second..."*
 
-### Home: Tinker Crags, the Workshop (57, 13)
+### Home: Brasscrag, the Workshop (57, 13)
 
 - **first**
   1. Wheel first, cage second, gnome last. Say it.
@@ -146,14 +149,14 @@ Greets you: *"Wheel first."* Walked away from: *"Cage second..."*
 
 Greets you: *"Fog's coming."* Walked away from: *"Watch the bridge."*
 
-### Home: Tinker Crags, Windward Shore (102, 53)
+### Home: Brasscrag, Windward Shore (102, 53)
 
 - **first**
-  1. Fog's coming. Fog always comes off the Greyfall.
+  1. Fog's coming. Fog always comes off Greyfall.
   2. Quill. I fish under the bridge. The fish don't care what crosses over.
   3. ...I do, though.
 - **fog**
-  1. They came over in the fog. Dogs, on two legs. Grey to the teeth.
+  1. They came over in the fog. Dogs, on two legs, running with the grey ones. Laughing.
   2. I counted till I couldn't. Then I hid.
 - **bridge**
   1. The bridge runs to the Citadel's wall. Straight on, no gate.
