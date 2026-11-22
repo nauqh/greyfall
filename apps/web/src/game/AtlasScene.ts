@@ -3795,7 +3795,8 @@ export class AtlasScene extends Phaser.Scene {
         targets: f.s,
         x,
         y,
-        duration: 330,
+        // The townsfolk's own pace, 80 px a second.
+        duration: (Phaser.Math.Distance.Between(f.s.x, f.s.y, x, y) / 80) * 1000,
         onUpdate: () => {
           f.s.setDepth(standing(f.s.y));
           f.tag.setPosition(f.s.x, f.s.y - 1.05 * CELL);
