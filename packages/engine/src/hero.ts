@@ -409,7 +409,7 @@ export function swingWait(step: number, cls: HeroClass = "warrior"): number {
   return step >= 3 ? CLASSES[cls].every : CLASSES[cls].chain;
 }
 
-/** A flask drunk: `heal` back, never past whole; none drunk with none left or nothing to heal. */
+/** An ember spent: `heal` back, never past whole; none spent with none left or nothing to heal. */
 export function drink(hp: number, max: number, flasks: number, heal: number = HERO.flask): { hp: number; flasks: number } {
   if (flasks <= 0 || hp >= max) return { hp, flasks };
   return { hp: Math.min(max, hp + heal), flasks: flasks - 1 };
@@ -420,7 +420,7 @@ export interface Kit {
   hp: number;
   attack: number;
   flasks: number;
-  /** What a flask gives back. */
+  /** What an ember gives back. */
   flask: number;
   /** Stamina a blow on the shield costs, a point of its weight. */
   block: number;
@@ -447,13 +447,13 @@ export function levelCost(levels: Levels): number {
  */
 export const ITEMS = {
   "Smoked Haunch": { cost: 250, adds: { hp: 25 }, about: "Salt meat hung over a harbour fire, enough to keep a wanderer on their feet through one more bad night." },
-  "Ember Shard": { cost: 300, adds: { flasks: 1 }, about: "A splinter of the fire that was old before the Grey came. Pressed to a flask, it holds one more draught." },
+  "Ember Shard": { cost: 300, adds: { flasks: 1 }, about: "A splinter of the fire that was old before the Grey came. Carried with the rest, it is one more ember." },
   "Brenna's Edge": { cost: 400, adds: { attack: 3 }, about: "Brenna ground this edge and will not say on what. It bites deeper than it looks." },
   "Keener Edge": { cost: 800, adds: { attack: 3 }, needs: "Brenna's Edge", about: "Honed again once the warden on the bell roof fell silent, as if the stone had taught it something." },
   "Grey-Iron Edge": { cost: 1200, adds: { attack: 4 }, needs: "Keener Edge", about: "Iron from the chapel's own bell, quenched cold. What it cuts does not quite mend." },
-  "Pine Resin": { cost: 450, adds: { flask: 15 }, about: "Sap boiled thick and stirred into the flask. Bitter, but it closes wounds the faster for it." },
+  "Pine Resin": { cost: 450, adds: { flask: 15 }, about: "Sap boiled thick and rubbed into the embers. They burn bitter and hot, and close wounds the faster for it." },
   "Banded Shield": { cost: 600, adds: { block: -0.75 }, about: "Oak bound in iron bands. A blow on it jars the arm far less than it ought to." },
-  "Kindled Shard": { cost: 900, adds: { flasks: 1 }, about: "A shard of the fire the bull lay on, burning again now it is gone. One more flask." },
+  "Kindled Shard": { cost: 900, adds: { flasks: 1 }, about: "A shard of the fire the bull lay on, burning again now it is gone. One more ember." },
   "Prospector's Purse": { cost: 500, adds: { greed: 0.25 }, about: "A dead prospector's purse, never quite full. Coin finds its way into it." },
   "Gnome Powder": { cost: 500, adds: { attack: 2 }, about: "A gnome's blasting powder, rubbed into the edge. It bites with a crack." },
   "Tinker's Buckler": { cost: 700, adds: { block: -0.5 }, about: "Brass plates riveted on springs. A blow on it rings, and the arm hardly knows." },
@@ -463,20 +463,20 @@ export const ITEMS = {
   "The Thrown Coin": { cost: 0, adds: { greed: 0.25 }, about: "Thrown down the Old Well to see who would come after. Coin follows it now." },
   "Smuggler's Coat": { cost: 400, adds: { hp: 25 }, about: "Swapped, its last wearer said, deeper in. Nobody down there ever swapped a thing." },
   "Sister's Candle": { cost: 600, adds: { flask: 15 }, about: "A sister's candle, burned down a winter of nights. Its light closes wounds, or seems to." },
-  "Hollow Water": { cost: 0, adds: { flasks: 1 }, about: "Water from the lake at the bottom of the world, warm as a hand. The Pilgrims drink nothing else. Ferrow would not." },
+  "Hollow Water": { cost: 0, adds: { flasks: 1 }, about: "Water from the lake at the bottom of the world, warm as a hand. An ember dipped in it will not go out. The Pilgrims drink nothing else. Ferrow would not." },
   "Mum's Bread": { cost: 0, adds: { hp: 20 }, about: "Baked in an east lane oven that sat cold a long while. Mostly ash. Eaten anyway." },
-  "Salt-Glass Flask": { cost: 600, adds: { flasks: 1 }, about: "Blown on the salt coast, thick as a thumb. It came in on the first ship in three winters." },
+  "Salt-Glass Lantern": { cost: 600, adds: { flasks: 1 }, about: "Blown on the salt coast, thick as a thumb, and room in it for one more ember. It came in on the first ship in three winters." },
   "Hollis's Gaff": { cost: 0, adds: { attack: 3 }, about: "A fishing gaff, its hook filed to an edge. Lent, not given: the sea wants it back past the Ring." },
   "Wheel Cog": { cost: 0, adds: { stamina: 20 }, about: "A cog off the lift wheel, worn bright by Old Bamboo's feet. Carried, it seems to keep turning." },
   // The gifts: one picked at a new game's start, come ashore with the captain; never sold.
   "Drowned Locket": { cost: 0, adds: { hp: 20 }, about: "Salt in the hinge. Whoever's face was in it, the sea kept. It still sits warm against the chest." },
   "Notched Whetstone": { cost: 0, adds: { attack: 2 }, about: "Worn hollow by a hand that is not yours. An edge kept on it bites a little deeper." },
-  "Brine Flask": { cost: 0, adds: { flasks: 1 }, about: "Stoppered tight before the ship went down. One more draught, and it tastes of the sea." },
+  "Tinder Tin": { cost: 0, adds: { flasks: 1 }, about: "Shut tight before the ship went down, and the coal in it kept dry. One more ember, and it smells of the sea." },
   "Gull-Picked Purse": { cost: 0, adds: { greed: 0.25 }, about: "The gulls had the coins and left the purse. It has a knack for filling again." },
 } as const satisfies Record<string, { cost: number; adds: Partial<Kit>; needs?: string; about: string }>;
 export type ItemName = keyof typeof ITEMS;
 /** The gifts a new game offers: one taken ashore, kept for the run. */
-export const GIFTS: readonly ItemName[] = ["Drowned Locket", "Notched Whetstone", "Brine Flask", "Gull-Picked Purse"];
+export const GIFTS: readonly ItemName[] = ["Drowned Locket", "Notched Whetstone", "Tinder Tin", "Gull-Picked Purse"];
 /** Lent on the Landing, to learn the sack on: gone once the captain is ashore past the Ring. */
 export const LENT: readonly ItemName[] = ["Hollis's Gaff"];
 

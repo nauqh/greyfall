@@ -432,10 +432,10 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
         )}
         <div className={intro ? "worldHud worldHudIntro" : "worldHud"} hidden={!hud}>
           {vitals && (
-            // After Dark Souls 1: a round badge holding the flasks, and beside it health over stamina, the health bar as long as
+            // After Dark Souls 1: a round badge holding the embers, and beside it health over stamina, the health bar as long as
             // the captain's health is deep; a paler trail lingers where a blow took it.
-            <div className="vitals" aria-label={`Health ${vitals.hp} of ${vitals.max}, stamina ${vitals.stamina}, ${flasks ?? 0} flasks`}>
-              <span className="vitalBadge" title="Flasks">
+            <div className="vitals" aria-label={`Health ${vitals.hp} of ${vitals.max}, stamina ${vitals.stamina}, ${flasks ?? 0} embers`}>
+              <span className="vitalBadge" title="Embers">
                 <b>{String(flasks ?? 0).padStart(2, "0")}</b>
                 <img src={packUrl("ui/icon_heal.png")} alt="" />
               </span>

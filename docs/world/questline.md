@@ -50,7 +50,7 @@ After Dark Souls: no quest log, no choices, the wanderer never speaks.
 | Penny | her crows talk, then reaching Greyfall | Greyfall, Gallows Yard, penned with her mum | Talked to: freed in the Yard when the Warlord falls. Never talked to: stays hidden, her mum walks home. Mum's Bread either way |
 | Sergeant Corwin | the Barrow King dead | Kingsrest, Barrow Field, digging out his forty | Watchman heard out: finds the fortieth and gives the Forty's Banner. Otherwise: stops at thirty-nine |
 | The Moor Watchman | his remark on the open Moor Gate | Kingsrest, Gibbet Hill, watching the lights | Lies dead in Barrow Field once the King is dead, the fortieth of Corwin's spears |
-| Maren | her remark on the Warlord dead | | Sails on the first ship in three winters, and Mags stocks the Salt-Glass Flask; missed only by never hearing her sail talk |
+| Maren | her remark on the Warlord dead | | Sails on the first ship in three winters, and Mags stocks the Salt-Glass Lantern; missed only by never hearing her sail talk |
 | Wren | the Ember Key | Emberwood, at Smoke Bluff's foot | Stays, shooting; remarks on Penny gone |
 | Garth the Woodcutter | the Ember Gate opened from the wood | Emberwood, the Palisade | Back at work; finds the steward's note and knows whose knocking it was |
 | Dunn of the Gate Watch | the Ember Gate opened from the wood | Emberwood, the Palisade, at the gate | Stands the gate he barred on the steward |
@@ -71,4 +71,4 @@ Each turns on one thing the wanderer does, never on a choice in a menu.
 | Ansel | hear his `ahead` talk in Greyfall, or kill the Warlord first | dead and Ansel's Edge from Brenna for gold, or alive and the Edge free |
 | The Clear Water | kill the Shell Below, or leave it | Ysolde home, the Sister's Candle free and the Pilgrim dead; or Ysolde kneeling, the Pilgrim's Hollow Water, and the Candle from Jory for gold. Drink first, then kill it, and both are had |
 | The Loud Walker | talk Penny through her crows, or don't | penned in the Gallows Yard then freed, or safe at home; Mum's Bread either way |
-| The First Sail | hear Maren's sail talk after the Warlord, or don't | she sails and Mags stocks the Salt-Glass Flask, or she stays |
+| The First Sail | hear Maren's sail talk after the Warlord, or don't | she sails and Mags stocks the Salt-Glass Lantern, or she stays |

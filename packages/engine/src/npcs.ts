@@ -1134,7 +1134,7 @@ export const NPCS: readonly Npc[] = [
     color: "yellow",
     // Everything that is not a blade; the deeper fire only once the bull that lay on it is gone.
     shop: {
-      stock: [{ item: "Ember Shard" }, { item: "Smoked Haunch" }, { item: "Pine Resin" }, { item: "Prospector's Purse" }, { item: "Kindled Shard", after: "minotaur" }, { item: "Salt-Glass Flask", flag: "marenSails" }],
+      stock: [{ item: "Ember Shard" }, { item: "Smoked Haunch" }, { item: "Pine Resin" }, { item: "Prospector's Purse" }, { item: "Kindled Shard", after: "minotaur" }, { item: "Salt-Glass Lantern", flag: "marenSails" }],
       poor: "Hehe. Come back richer, dearie.",
       sold: "That was the only one, dearie.",
     },

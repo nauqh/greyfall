@@ -34,7 +34,7 @@ export function RestPanel({
     { label: "Health", icon: STAT_ICON.hp, value: view.now.hp },
     { label: "Attack", icon: STAT_ICON.attack, value: view.now.attack },
     { label: "Stamina", icon: STAT_ICON.stamina, value: view.now.stamina },
-    { label: "Flasks", icon: "ui/icon_heal.png", value: flasks },
+    { label: "Embers", icon: "ui/icon_heal.png", value: flasks },
     { label: "Gold", icon: "ui/icon_gold.png", value: view.gold, gold: true },
   ];
   return (
@@ -49,7 +49,7 @@ export function RestPanel({
       onChoose={onChoose}
       keys="W/S pick   E choose   Esc stand"
     >
-      <p className="panelNote">Health and flasks restored. The dead walk again.</p>
+      <p className="panelNote">Health and embers restored. The dead walk again.</p>
       <ul className="restStats panelRule">
         {stats.map((s) => (
           <li key={s.label} className={s.gold ? "restGold" : undefined}>

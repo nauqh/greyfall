@@ -34,7 +34,7 @@ inside the area map.
 | Space (tap) | Roll the way you walk, or backstep standing still: nothing lands during it, costs stamina |
 | Space (hold, moving) | Sprint, draining stamina |
 | E | Interact: talk and turn the page, rest at a bonfire, traverse the clouds at a way out (or ride the lift, or drop) |
-| R | Drink a flask |
+| R | Burn an ember |
 | 1 | Band: Follow (stay close, defend the hero) |
 | 2 | Band: Attack the monster you last struck |
 | 3 | Band: Hold here (guard the spot) |
@@ -64,7 +64,7 @@ The gifts, one taken ashore, are goods like the merchants', never sold:
 | --- | --- |
 | Drowned Locket | +20 max health |
 | Notched Whetstone | +2 attack |
-| Brine Flask | +1 flask |
+| Tinder Tin | +1 ember |
 | Gull-Picked Purse | +25% gold from kills |
 
 | Stat | Start | Notes |
@@ -72,7 +72,7 @@ The gifts, one taken ashore, are goods like the merchants', never sold:
 | HP | 100 | The Warrior's; the class sets it |
 | Stamina | 100 | As in Dark Souls: a swing 14, a roll 22, sprinting 15 a second, a blow on the shield 2.5 times its weight (too little left breaks the guard: it lands whole and staggers). Comes back 45 a second after half a second unspent, a third as fast behind the shield. At nothing, no swing or roll |
 | Attack | 12 a swing | The Warrior's. Combo of 3: the first two 0.65 s apart, the third knocks back and takes 1.1 s to recover |
-| Flasks | 3 | Each heals 40 HP; refilled at a bonfire |
+| Embers | 3 | Each heals 40 HP; refilled at a bonfire |
 
 Levelling is Souls-style: spend gold at a bonfire. Each level adds +10 HP,
 +2 attack or +10 stamina, the player's choice (Vigour, Strength, Endurance
@@ -102,7 +102,7 @@ come ashore alone.
 
 ### The Souls loop
 
-- **Bonfires.** Resting fully heals the hero and the band, refills flasks, saves,
+- **Bonfires.** Resting fully heals the hero and the band, refills embers, saves,
   and respawns every enemy in the area. Bosses and opened shortcuts stay as
   they are. Each area has 1 to 3 bonfires, already standing on the maps.
   After a rest you sit by the fire, as in Dark Souls 3: Travel opens the
@@ -187,7 +187,7 @@ then walks back. The engine already has a guard leash.
    view. Kill him and the road opens. Fall to him and you wash up at the
    Lanternport's fire, as after Elden Ring's Grafted Scion: lost, not over. The
    troll keeps the Ring, the boat goes back to him whenever you like, and
-   his fall is worth a fourth flask for good. Either way the training is
+   his fall is worth a fourth ember for good. Either way the training is
    over.
 2. **Lanternport:** the hub is the village's bowl, after Firelink. The
    Lanternport's one bonfire stands at its centre, with Old Ferrow beside it
@@ -229,7 +229,7 @@ Emberwood and the Troll.
   aggro and leash, companion AI, bonfire and respawn rules, save data. Runs
   at 20 ticks a second, like the existing battle sim.
 - **Scene** (`apps/web`): input, camera, animations, hit effects, the HUD
-  (hearts, stamina, flasks, band portraits), boss warning circles.
+  (hearts, stamina, embers, band portraits), boss warning circles.
 - **Save:** browser storage first. One save holds opened shortcuts, keys,
   the dropped gold's spot, and the band.
 
@@ -883,7 +883,7 @@ across crossings.
 
 ## Not done yet
 
-- The hero walks, fights, rolls, rests at bonfires, drinks flasks, picks
+- The hero walks, fights, rolls, rests at bonfires, burns embers, picks
   up gold and leads a band hired in Lanternport. The Ember Bull drops
   the Ember Key, which opens the Keep Gate.
 - Ten bosses can be killed: the Cinder Troll, Rampart Boar, Stone
@@ -984,7 +984,7 @@ The full lines and stations are in [docs/world/](docs/world/README.md), each lan
 | Penny | her crows talk, then reaching Greyfall | Greyfall, Gallows Yard, penned with her mum | Talked to: freed in the Yard when the Warlord falls. Never talked to: stays hidden, her mum walks home. Mum's Bread either way |
 | Sergeant Corwin | the Barrow King dead | Kingsrest, Barrow Field, digging out his forty | Watchman heard out: finds the fortieth and gives the Forty's Banner. Otherwise: stops at thirty-nine |
 | The Moor Watchman | his remark on the open Moor Gate | Kingsrest, Gibbet Hill, watching the lights | Lies dead in Barrow Field once the King is dead, the fortieth of Corwin's spears |
-| Maren | her remark on the Warlord dead | | Sails on the first ship in three winters, and Mags stocks the Salt-Glass Flask; missed only by never hearing her sail talk |
+| Maren | her remark on the Warlord dead | | Sails on the first ship in three winters, and Mags stocks the Salt-Glass Lantern; missed only by never hearing her sail talk |
 | Wren | the Ember Key | Emberwood, at Smoke Bluff's foot | Stays, shooting; remarks on Penny gone |
 | The Last One | | Kingsrest, the Grey Road, dead from the start | Ferrow's last one, who went east; never named |
 | Old Ferrow, Brenna, Mags | | | Stay; remark on the folk's news. Brenna and Mags sell what the questlines turn up |

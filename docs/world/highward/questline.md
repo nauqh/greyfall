@@ -145,7 +145,7 @@ Says nothing.
 
 Greets you: *"Hehe. A live one."* Walked away from: *"Come back with coin, dearie."*
 
-Sells: Ember Shard; Smoked Haunch; Pine Resin; Prospector's Purse; Kindled Shard (once the Ember Bull falls); Salt-Glass Flask (once **marenSails**).
+Sells: Ember Shard; Smoked Haunch; Pine Resin; Prospector's Purse; Kindled Shard (once the Ember Bull falls); Salt-Glass Lantern (once **marenSails**).
 
 ### Home: The Lower Burg, Market Row, in a nook under the wall (37, 39)
 

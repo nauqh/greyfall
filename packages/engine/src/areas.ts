@@ -3446,12 +3446,12 @@ function landing(): AreaMap {
   for (const [c, r] of [[61, 25], [68, 25]] as const) prop("skullSpike", c, r);
 
   const notes: Note[] = [
-    { at: { col: 34, row: 42 }, text: "E at a fire to rest. Resting refills your flasks." },
+    { at: { col: 34, row: 42 }, text: "E at a fire to rest. Resting refills your embers." },
     { at: { col: 32, row: 37 }, text: "Hold Space while walking to run." },
     { at: { col: 27, row: 31 }, text: "Left click to attack." },
     { at: { col: 18, row: 24 }, text: "Tap Space to roll." },
     { at: { col: 18, row: 21 }, text: "Hold right click to guard." },
-    { at: { col: 33, row: 12 }, text: "R to drink a flask." },
+    { at: { col: 33, row: 12 }, text: "R to burn an ember and mend." },
     { at: { col: 45, row: 13 }, text: "M to open the map. Sat at a fire, travel to any fire you have rested at." },
     { at: { col: 63, row: 28 }, text: "Die, and your gold stays where you fell." },
     { at: { col: 36, row: 44 }, text: "Woke on this rock, warm, with the sea in my mouth. Could not say my own name. Went up anyway." },

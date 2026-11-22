@@ -127,12 +127,12 @@ describe("the questline", () => {
     expect(whereabouts(sister, flags("monkFreed"))).toBeNull();
   });
 
-  it("puts Jory at the Old Well once Tobin is below and the Warlord dead, and Mags's flask on sale once Maren sails", () => {
+  it("puts Jory at the Old Well once Tobin is below and the Warlord dead, and Mags's lantern on sale once Maren sails", () => {
     expect(whereabouts(npc("jory"), flags("tobinDeeper"))?.area).toBe("deeps");
     expect(whereabouts(npc("jory"), flags("tobinDeeper", "warlordDead"))?.area).toBe("harbour");
     const mags = npc("mags").shop!.stock;
-    expect(onOffer(mags, new Set(), new Set(), flags()).map((s) => s.item)).not.toContain("Salt-Glass Flask");
-    expect(onOffer(mags, new Set(), new Set(), flags("marenSails")).map((s) => s.item)).toContain("Salt-Glass Flask");
+    expect(onOffer(mags, new Set(), new Set(), flags()).map((s) => s.item)).not.toContain("Salt-Glass Lantern");
+    expect(onOffer(mags, new Set(), new Set(), flags("marenSails")).map((s) => s.item)).toContain("Salt-Glass Lantern");
   });
 
   it("sends Garth and Dunn back to the Palisade once the Ember Gate is opened from the wood", () => {

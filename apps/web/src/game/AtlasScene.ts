@@ -205,7 +205,7 @@ export interface AtlasHooks {
   /** How the traveller arrived: set on a scene rebuilt by a crossing, which then opens without the clouds. A rest wakes at
    *  the bonfire last rested at. */
   arrive?: Crossing;
-  /** The hero's health and flasks carried across a crossing; a rest or a reload starts whole. */
+  /** The hero's health and embers carried across a crossing; a rest or a reload starts whole. */
   carry?: { hp: number; flasks: number; band: number[] };
   /** Dev mode: the tools, on the dev route only. */
   dev?: boolean;
@@ -230,7 +230,7 @@ export interface AtlasHooks {
   onSack?: (sack: SackView) => void;
   /** What E would do where the captain stands, other than swing: talk, or rest at a bonfire. */
   onNear?: (action: string | null) => void;
-  /** The flasks left. */
+  /** The embers left. */
   onFlasks?: (n: number) => void;
   /** The captain's health and stamina, a few times a second while they change. */
   onVitals?: (v: Vitals) => void;
@@ -581,9 +581,10 @@ const HERO_ART: Record<HeroClass, { look: Dweller; attack: { key: string; file: 
 };
 /** How long a hex holds its mark, in ms: the Skirmish Hex Shaman's 1.5 s. */
 const HEX_HOLD = 1500;
-/** A flask drunk: the Monk's healing swirl round the feet, and the green drop over the head (the pack has no flask). */
+/** The Monk's healing swirl, green for a monk's mending and tinted amber for an ember burned. */
 const HEAL_FX = { key: "healFx", file: "Units/Blue Units/Monk/Heal_Effect.png" };
-const FLASK_ICON = { key: "flaskIcon", file: "ui/icon_heal.png" };
+/** An ember rising off the hero: the Ember Shard's stone, cropped and tinted the same. */
+const EMBER_ICON = { key: "emberIcon", file: "Terrain/Resources/Gold/Gold Stones/Gold Stone 1.png" };
 
 /** One body in a fight on an area map: the hero or a monster. */
 interface Body {
@@ -675,11 +676,11 @@ const ITEM_ICON: Record<ItemName, ShopIcon> = {
   "Sister's Candle": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#fff0c0" },
   "Hollow Water": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#8fd8f0" },
   "Mum's Bread": { url: packUrl("UI Elements/UI Elements/Icons/Icon_04.png"), tint: "#c8a070" },
-  "Salt-Glass Flask": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#d8f0f0" },
+  "Salt-Glass Lantern": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#d8f0f0" },
   "Hollis's Gaff": { url: SWORDS, crop: { x: 0, y: 0, w: 128, h: 128, sheetW: 448, sheetH: 640 } },
   "Drowned Locket": { url: packUrl("UI Elements/UI Elements/Icons/Icon_06.png"), tint: "#9fc8d8" },
   "Notched Whetstone": { url: packUrl("UI Elements/UI Elements/Icons/Icon_05.png") },
-  "Brine Flask": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#a8e0d0" },
+  "Tinder Tin": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#a8e0d0" },
   "Gull-Picked Purse": { url: packUrl("UI Elements/UI Elements/Icons/Icon_03.png"), tint: "#d8b060" },
   "Gnome Powder": { url: packUrl("UI Elements/UI Elements/Icons/Icon_05.png"), tint: "#e8d080" },
   "Tinker's Buckler": { url: packUrl("UI Elements/UI Elements/Icons/Icon_06.png"), tint: "#d8a050" },
@@ -693,8 +694,8 @@ function gives(item: ItemName): string {
   const words: Record<keyof Kit, (n: number) => string> = {
     hp: (n) => `+${n} max health`,
     attack: (n) => `+${n} attack`,
-    flasks: (n) => `+${n} flask`,
-    flask: (n) => `+${n} healing per flask`,
+    flasks: (n) => `+${n} ember`,
+    flask: (n) => `+${n} healing per ember`,
     block: (n) => `Blocking costs ${Math.round((-n / STAMINA.block) * 100)}% less stamina`,
     greed: (n) => `+${Math.round(n * 100)}% gold from kills`,
     stamina: (n) => `+${n} stamina`,
@@ -705,8 +706,8 @@ function gives(item: ItemName): string {
 const STATS: Record<keyof Kit, { label: string; words: (n: number) => string }> = {
   hp: { label: "Health", words: String },
   attack: { label: "Attack", words: String },
-  flasks: { label: "Flasks", words: String },
-  flask: { label: "Flask heal", words: String },
+  flasks: { label: "Embers", words: String },
+  flask: { label: "Ember heal", words: String },
   block: { label: "Block cost", words: (n) => `${Math.round((n / STAMINA.block) * 100)}%` },
   greed: { label: "Gold from kills", words: (n) => `${Math.round(n * 100)}%` },
   stamina: { label: "Stamina", words: String },
@@ -759,7 +760,7 @@ const BOSS_FLAG: Partial<Record<string, WorldFlag>> = { minotaur: "trollKey", ba
 const BOSSES = new Set(["troll", "minotaur", "rampartBull", "stoneWarden", "barrowKing", "weaver", "shellBelow", "warlord", "oldBamboo", "sunSentinel"]);
 /** The exit last gone through, so a crossing lands at the way of the same name when two ways join the same areas. */
 const VIA = "greyfall.via";
-/** A boss whose fall is worth a flask more, for good: the Landing's troll, the reward for going back to him. */
+/** A boss whose fall is worth an ember more, for good: the Landing's troll, the reward for going back to him. */
 const BOSS_FLASK: ReadonlySet<string> = new Set(["troll"]);
 /** A hit flash over: back to the sprite's own colour, its base tint if it has one. */
 function untint(s: Phaser.GameObjects.Sprite): void {
@@ -783,14 +784,14 @@ function gearNow(): Kit {
 function levels(): Levels {
   return stored(LEVELS, NO_LEVELS);
 }
-/** Flasks carried at full: the base and the shards bought, and one for each boss that gives one. */
+/** Embers carried at full: the base and the shards bought, and one for each boss that gives one. */
 function maxFlasks(): number {
   return gearNow().flasks + bossFlasks();
 }
 function bossFlasks(): number {
   return [...remembered(SLAIN)].filter((k) => BOSS_FLASK.has(k)).length;
 }
-/** One of the captain's numbers in words, with `gear`: the flasks with those the bosses gave. */
+/** One of the captain's numbers in words, with `gear`: the embers with those the bosses gave. */
 function statWords(k: keyof Kit, gear: Kit): string {
   return STATS[k].words(k === "flasks" ? gear.flasks + bossFlasks() : gear[k]);
 }
@@ -826,6 +827,14 @@ function store(key: string, value: unknown): void {
 /** Goods thrown down by the folk and not picked up yet, kept on this browser so they wait there. */
 const THROWN = "greyfall.thrown";
 type Thrown = { item: ItemName; area: AreaId; col: number; row: number };
+/** Goods that changed their name, old to new, so a save from before keeps them. */
+const RENAMED: Record<string, ItemName> = { "Brine Flask": "Tinder Tin", "Salt-Glass Flask": "Salt-Glass Lantern" };
+function renameGoods(): void {
+  const bought = remembered(BOUGHT);
+  if ([...bought].some((i) => i in RENAMED)) remember(BOUGHT, new Set([...bought].map((i) => RENAMED[i] ?? i)));
+  const thrown = stored<Thrown[]>(THROWN, []);
+  if (thrown.some((t) => t.item in RENAMED)) store(THROWN, thrown.map((t) => ({ ...t, item: RENAMED[t.item] ?? t.item })));
+}
 /** Gold on the ground: a monster's drop, a gold stone, or the gold left at the last death; or a good thrown down. */
 interface Pile {
   at: Cell;
@@ -1024,6 +1033,7 @@ export class AtlasScene extends Phaser.Scene {
     this.heard = remembered(HEARD);
     this.flags = remembered(FLAGS);
     this.cls = heroClass();
+    renameGoods();
     // Ashore anywhere past the Ring, whatever was lent on the Landing is gone: by the boat, or washed up off the troll.
     const bought = remembered<ItemName>(BOUGHT);
     this.seaTook = data.area && data.area !== "landing" && data.area !== "ring" ? LENT.filter((i) => bought.has(i)) : [];
@@ -1094,7 +1104,7 @@ export class AtlasScene extends Phaser.Scene {
         for (const a of [art.attack, art.attack2, art.guard]) if (a) sheet(a.key, { file: a.file, frame, anchor: 0 });
       }
       sheet(HEAL_FX.key, { file: HEAL_FX.file, frame: 192, anchor: 0 });
-      if (!this.textures.exists(FLASK_ICON.key)) this.load.image(FLASK_ICON.key, packUrl(FLASK_ICON.file));
+      if (!this.textures.exists(EMBER_ICON.key)) this.load.image(EMBER_ICON.key, packUrl(EMBER_ICON.file));
       for (const kind of ["lancer", "archer", "monk"] as const) {
         const l = this.look({ kind, col: 0, row: 0, color: "blue" });
         sheet(l.idle.key, { file: l.idle.file, frame: l.frame, anchor: 0 });
@@ -2173,27 +2183,27 @@ export class AtlasScene extends Phaser.Scene {
     });
   }
 
-  /** R: a flask, if there is one and anything to heal; the hero stands still a moment to drink it. */
+  /** R: an ember, if there is one and anything to heal; the hero stands still a moment to burn it. */
   private quaff(): void {
     const hero = this.hero!;
     const time = this.time.now;
     if (!this.playing || hero.dead || this.gone || this.guarding || time < hero.busy) return;
     const was = hero.hp;
     const d = drink(hero.hp, hero.max, this.flasks, this.gear.flask);
-    if (d.flasks === this.flasks) return this.float(hero.s.x, hero.s.y - hero.lift - 30, this.flasks ? "Unhurt" : "No flasks", "#fdfaf0");
+    if (d.flasks === this.flasks) return this.float(hero.s.x, hero.s.y - hero.lift - 30, this.flasks ? "Unhurt" : "No embers", "#fdfaf0");
     Object.assign(hero, { hp: d.hp, way: [], busy: time + 600 });
     this.flasks = d.flasks;
     this.hooks.onFlasks?.(this.flasks);
     this.play(hero.s, hero.idle);
     const [x, y] = [hero.s.x, hero.s.y];
-    const drop = this.add.image(x, y - hero.lift - 6, FLASK_ICON.key).setScale(0.6).setDepth(DEPTH.fx + 1);
+    const drop = this.add.image(x, y - hero.lift - 6, EMBER_ICON.key).setCrop(44, 44, 40, 40).setTint(0xff7a3c).setScale(0.9).setDepth(DEPTH.fx + 1);
     this.tweens.add({ targets: drop, y: drop.y - 34, alpha: { from: 1, to: 0 }, duration: 650, ease: "Sine.easeOut", onComplete: () => drop.destroy() });
     // The swirl rises from the ground round the feet, in front of the hero.
-    const fx = this.add.sprite(x, y + 14, HEAL_FX.key).setOrigin(0.5, 0.72).setDepth(standing(y) + 1);
+    const fx = this.add.sprite(x, y + 14, HEAL_FX.key).setOrigin(0.5, 0.72).setDepth(standing(y) + 1).setTint(0xffa050);
     fx.play(`${HEAL_FX.key}_once`).once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => fx.destroy());
-    hero.s.setTint(0x9cf0a0);
+    hero.s.setTint(0xffc078);
     this.time.delayedCall(300, () => hero.s.clearTint());
-    this.time.delayedCall(250, () => this.float(x, y - hero.lift - 10, `+${d.hp - was}`, "#8fe08a"));
+    this.time.delayedCall(250, () => this.float(x, y - hero.lift - 10, `+${d.hp - was}`, "#ffc078"));
   }
 
   /** A companion beside the captain, at `hp` (carried across a crossing; 0 lies fallen), else whole. */
@@ -2345,7 +2355,7 @@ export class AtlasScene extends Phaser.Scene {
     this.regear();
   }
 
-  /** The numbers again after a good or a level: a shard's flask comes filled, a haunch's health with it. */
+  /** The numbers again after a good or a level: a shard's ember comes lit, a haunch's health with it. */
   private regear(): void {
     const was = this.gear;
     this.gear = gearNow();
@@ -2845,7 +2855,7 @@ export class AtlasScene extends Phaser.Scene {
       this.hooks.onFlasks?.(this.flasks);
     }
     this.herald(`${name} fell`);
-    if (flask) this.herald("Flask gained");
+    if (flask) this.herald("Ember gained");
   }
 
   /** A line across the screen, after any still showing. */

@@ -84,7 +84,7 @@ const STATS: { label: string; icon: string; frame?: number; of: (k: ReturnType<t
   { label: "Health", icon: "ui/icon_hp.png", of: (k) => k.hp },
   { label: "Stamina", icon: "UI Elements/UI Elements/Icons/Icon_08.png", of: (k) => k.stamina },
   { label: "Attack", icon: "ui/icon_damage.png", of: (k) => k.attack },
-  { label: "Flasks", icon: "ui/icon_heal.png", of: (k) => k.flasks },
+  { label: "Embers", icon: "ui/icon_heal.png", of: (k) => k.flasks },
   { label: "Reach", icon: "ui/icon_range.png", of: (_, cls) => CLASSES[cls].reach },
   { label: "Walk", icon: "Particle FX/Dust_02.png", frame: 1, of: (_, cls) => CLASSES[cls].speed },
 ];
