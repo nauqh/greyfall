@@ -688,11 +688,16 @@ const HEAPS = [
   [[0, 0, 3], [0.7, 0.35, 2], [1.1, -0.2, 4], [1.8, 0.3, 3], [2.3, -0.15, 1], [1.5, 0.7, 1]],
 ] as const;
 
-/** A miner at the front stone of a heap running off to its right, or to its left with `left`. The heap sits a quarter
- *  tile back, as a prop draws lower than a dweller on its row and would hide the pickaxe. */
-function mine(t: Builder, col: number, row: number, shape: 0 | 1 | 2 | 3, left = false): void {
+/** A heap running off to the right of the tile at `col`, `row`, or to its left with `left`. It sits a quarter tile
+ *  back, as a prop draws lower than a dweller on its row and would hide a pickaxe swung at it from that tile. */
+function heap(t: Builder, col: number, row: number, shape: 0 | 1 | 2 | 3, left = false): void {
   const dir = left ? -1 : 1;
   for (const [dc, dr, n] of HEAPS[shape]) t.prop(`ore${n}`, col + dir * (0.8 + dc), row + dr - 0.25, { fixed: true, flip: left });
+}
+
+/** A miner breaking a heap at its front stone. */
+function mine(t: Builder, col: number, row: number, shape: 0 | 1 | 2 | 3, left = false): void {
+  heap(t, col, row, shape, left);
   t.who("pawn", col, row, { color: "blue", act: "pickaxe", flip: left });
 }
 
@@ -1590,31 +1595,33 @@ function harbour(): AreaMap {
   who("warrior", 27, 4, gateOpen);
 
   // The Mine Hills, worked bench by bench: a mine cut into each face with its ore heaped beside the mouth and a miner
-  // breaking it, an outcrop broken where it stands, and the gold carried down the stairs to the camp at the foot. The
-  // deep face's cave under the crest is boarded up since its ore came up grey.
-  for (const [c, r] of [[86, 16], [104, 21], [99, 26], [93, 21], [97, 29]] as const) prop("goldStone", c, r);
+  // breaking it, an outcrop broken where it stands, and diggers out from the camp's stockpile at the foot, back down the
+  // stairs with the gold. The deep face's cave under the crest is boarded up since its ore came up grey. Loose gold lies
+  // only where the work spills it: by the mouths, the heaps and the stockpile.
   prop("cave", 100, 20);
   // The upper bench: the old mine in the crest's face, and the outcrop over the gully.
   prop("goldMine", 91, 21, { fixed: true });
   mine(t, 93, 19, 0);
   mine(t, 96, 22, 2);
-  who("pawn", 98, 18, { ...blue, act: "gold", to: { col: 97, row: 28 } });
+  for (const [c, r] of [[88, 20], [94, 20], [97, 20], [100, 23]] as const) prop("goldStone", c, r);
   // The draws of the crowd that stood here once, so the woods grown after keep their places.
   for (let i = 0; i < 12; i++) rng.next();
   // A lookout on the crest, over the sea the ships stopped coming in on.
   prop("watchtower", 97, 13);
   who("archer", 99, 14, blue);
-  prop("goldStone", 87, 19);
-  // The lower bench: the new mine in the upper bench's face, a shed for the tools, and the ore going down past it.
+  // The lower bench: the new mine in the upper bench's face, and a shed for the tools.
   prop("goldMine", 90, 26, { fixed: true });
   mine(t, 93, 27, 3);
+  for (const [c, r] of [[92, 28], [97, 28]] as const) prop("goldStone", c, r);
   prop("house3", 99, 29, blue);
-  // The miners' camp at the hill's foot where the mine road ends, and the ore carried down it and up the castle road
-  // to the forge.
-  for (const [c, r] of [[88, 35], [85, 39]] as const) prop("goldStone", c, r);
+  // The miners' camp at the foot of the bench stair: their houses, the stockpile the diggers bring the gold down to,
+  // and a carrier taking it on up the castle road to the forge.
   for (const [c, r, art] of [[92, 39, "house1"], [96, 38, "house2"]] as const) prop(art, c, r, blue);
-  who("pawn", 97, 28, { ...blue, act: "gold", to: { col: 87, row: 35 } });
-  who("pawn", 87, 38, { ...blue, act: "gold", to: { col: 56, row: 30 } });
+  heap(t, 88, 37, 1);
+  for (const [c, r] of [[91, 36], [88, 38]] as const) prop("goldStone", c, r);
+  who("pawn", 88, 36, { ...blue, act: "dig", to: { col: 98, row: 19 }, flip: true });
+  who("pawn", 87, 37, { ...blue, act: "dig", to: { col: 97, row: 27 }, flip: true });
+  who("pawn", 56, 30, { ...blue, act: "fetch", to: { col: 92, row: 37 }, flip: true });
 
   // The Old Bridge: Saltreach's toll and trade post, its yellow militia looking over every load that crosses, the
   // carriers waiting their turn.

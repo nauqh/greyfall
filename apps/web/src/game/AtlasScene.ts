@@ -510,6 +510,9 @@ const PAWN_ACT: Record<string, { idle: string; move?: string; work?: string; hau
   axe: { idle: "Pawn/Pawn_Idle Axe.png", move: "Pawn/Pawn_Run Axe.png" },
   fell: { idle: "Pawn/Pawn_Idle Axe.png", move: "Pawn/Pawn_Run Axe.png", work: "Pawn/Pawn_Interact Axe.png", haul: "Pawn/Pawn_Run Wood.png" },
   pickaxe: { idle: "Pawn/Pawn_Interact Pickaxe.png" },
+  // A digger out to a heap and back with its gold; a carrier out to the stockpile, loading, and back with it.
+  dig: { idle: "Pawn/Pawn_Idle Pickaxe.png", move: "Pawn/Pawn_Run Pickaxe.png", work: "Pawn/Pawn_Interact Pickaxe.png", haul: "Pawn/Pawn_Run Gold.png" },
+  fetch: { idle: "Pawn/Pawn_Idle.png", move: "Pawn/Pawn_Run.png", work: "Pawn/Pawn_Idle Gold.png", haul: "Pawn/Pawn_Run Gold.png" },
   hammer: { idle: "Pawn/Pawn_Interact Hammer.png" },
   knife: { idle: "Pawn/Pawn_Interact Knife.png" },
   meat: { idle: "Pawn/Pawn_Idle Meat.png", move: "Pawn/Pawn_Run Meat.png" },
