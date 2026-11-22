@@ -3552,7 +3552,7 @@ function bullwall(): AreaMap {
   const tier = t.finish({}, [{ col: 3, row: 10 }]);
   // No fog: the whole land is the arena, walked straight into; the boar's guard on the Chapel Door holds the way on.
   const arena = { boss: "rampartBull", gate: [], inside: { col: 35, row: 10 } };
-  return { ...tier, area: "bullwall", entry: { col: 3, row: 10 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], streets: true, notes, arena };
+  return { ...tier, area: "bullwall", entry: { col: 3, row: 10 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes, arena };
 }
 
 /**
@@ -3588,7 +3588,7 @@ function belfry(): AreaMap {
   const tier = t.finish({}, [{ col: 27, row: 11 }]);
   // No fog: the whole land is the arena, walked straight into; the warden's guard on the Postern holds the way on.
   const arena = { boss: "stoneWarden", gate: [], inside: { col: 14, row: 11 } };
-  return { ...tier, area: "belfry", entry: { col: 27, row: 11 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], streets: true, notes, arena };
+  return { ...tier, area: "belfry", entry: { col: 27, row: 11 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes, arena };
 }
 
 /**
@@ -3849,7 +3849,7 @@ function sunhall(): AreaMap {
   ];
   const tier = t.finish({}, [{ col: 4, row: 15 }]);
   const arena = { boss: "sunSentinel", gate: [], inside: { col: 32, row: 15 } };
-  return { ...tier, area: "sunhall", entry: { col: 4, row: 15 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], streets: true, notes, arena };
+  return { ...tier, area: "sunhall", entry: { col: 4, row: 15 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes, arena };
 }
 
 const BUILT: Partial<Record<AreaId, () => AreaMap>> = { harbour, emberwood, crags, greyfall, gilded, steps, undercroft, deeps, hollow, barrowmoor, fen, saltreach, landing, burg, ramparts, chapel, ring, keep: keepArea, bullwall, belfry, trollpit, barrow, web, shellisle, throne, peak, sunhall };
