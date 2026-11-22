@@ -502,9 +502,13 @@ const KNIGHT: Record<string, { idle: string; move: string; frame: number; anchor
   lancer: { idle: "Lancer/Lancer_Idle.png", move: "Lancer/Lancer_Run.png", frame: 320, anchor: 197 / 320 },
   pawn: { idle: "Pawn/Pawn_Idle.png", move: "Pawn/Pawn_Run.png", frame: 192, anchor: 134 / 192 },
 };
-/** A pawn at work: what it plays standing, and walking. */
-const PAWN_ACT: Record<string, { idle: string; move?: string }> = {
-  axe: { idle: "Pawn/Pawn_Interact Axe.png" },
+/** A unit sheet: its texture key and its file under the pack. */
+type Art = { key: string; file: string };
+
+/** A pawn at work: what it plays standing, and walking; a woodcutter also chops at the far end and hauls back. */
+const PAWN_ACT: Record<string, { idle: string; move?: string; work?: string; haul?: string }> = {
+  axe: { idle: "Pawn/Pawn_Idle Axe.png", move: "Pawn/Pawn_Run Axe.png" },
+  fell: { idle: "Pawn/Pawn_Idle Axe.png", move: "Pawn/Pawn_Run Axe.png", work: "Pawn/Pawn_Interact Axe.png", haul: "Pawn/Pawn_Run Wood.png" },
   pickaxe: { idle: "Pawn/Pawn_Interact Pickaxe.png" },
   hammer: { idle: "Pawn/Pawn_Interact Hammer.png" },
   knife: { idle: "Pawn/Pawn_Interact Knife.png" },
@@ -1102,9 +1106,8 @@ export class AtlasScene extends Phaser.Scene {
         else if (PROP[p.art]) sheet(`prop_${p.art}`, PROP[p.art]!);
       }
       for (const d of tier.dwellers) {
-        const { idle, move, frame } = this.look(d);
-        sheet(idle.key, { file: idle.file, frame, anchor: 0 });
-        if (move) sheet(move.key, { file: move.file, frame, anchor: 0 });
+        const { idle, move, work, haul, frame } = this.look(d);
+        for (const a of [idle, move, work, haul]) if (a) sheet(a.key, { file: a.file, frame, anchor: 0 });
       }
     }
     if (this.local) {
@@ -1148,6 +1151,7 @@ export class AtlasScene extends Phaser.Scene {
       sheet("blast", { file: "Particle FX/Explosion_01.png", frame: 192, anchor: 0 });
     }
     for (const k of ["deadTree", "stump", "bones", "skullSpike", "goldStone"]) sheet(`prop_${k}`, PROP[k]!);
+    for (const n of [3, 4]) sheet(`stump${n}`, { file: `Terrain/Resources/Wood/Trees/Stump ${n}.png`, frame: 192, frameH: 256, anchor: 0 });
     BIG_TREE.forEach((t, i) => sheet(`bigTree${i}`, t));
     sheet("fire", FIRE);
     sheet("kindle", { file: "Particle FX/Fire_03.png", frame: 64, anchor: 0.9 });
@@ -1158,16 +1162,17 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** The sheets a dweller plays, keyed so a colour and a job load once. */
-  private look(d: Dweller): { idle: { key: string; file: string }; move?: { key: string; file: string }; frame: number; anchor: number; scale: number; fly: boolean; swim: boolean } {
+  private look(d: Dweller): { idle: Art; move?: Art; work?: Art; haul?: Art; frame: number; anchor: number; scale: number; fly: boolean; swim: boolean } {
     if (d.color) {
       const k = KNIGHT[d.kind]!;
       const dir = `Units/${COLOR_DIR[d.color]} Units/`;
       const act = d.kind === "pawn" && d.act ? PAWN_ACT[d.act] : undefined;
-      const idle = act?.idle ?? k.idle;
-      const move = act?.move ?? k.move;
+      const art = (file: string): Art => ({ key: `${d.color}_${file}`, file: dir + file });
       return {
-        idle: { key: `${d.color}_${idle}`, file: dir + idle },
-        move: { key: `${d.color}_${move}`, file: dir + move },
+        idle: art(act?.idle ?? k.idle),
+        move: art(act?.move ?? k.move),
+        ...(act?.work && { work: art(act.work) }),
+        ...(act?.haul && { haul: art(act.haul) }),
         frame: k.frame,
         anchor: k.anchor,
         scale: d.scale ?? 1,
@@ -3558,8 +3563,8 @@ export class AtlasScene extends Phaser.Scene {
     this.track(s, points.length > 1 ? reach + 64 : 0);
     if (points.length < 2) return;
     const speed = look.swim ? 45 : 80;
-    const walk = (way: { x: number; y: number }[]): void => {
-      if (look.move) this.loop(s, look.move.key);
+    const go = (way: { x: number; y: number }[], move: string | undefined, done: () => void): void => {
+      if (move) this.loop(s, move);
       this.tweens.chain({
         targets: s,
         tweens: way.slice(1).map((to, i) => ({
@@ -3569,12 +3574,49 @@ export class AtlasScene extends Phaser.Scene {
           onStart: () => to.x !== way[i]!.x && s.setFlipX(to.x < way[i]!.x),
           onUpdate: () => !look.swim && s.setDepth(standing(s.y)),
         })),
-        onComplete: () => {
-          this.loop(s, look.idle.key);
-          this.time.delayedCall(1500 + Math.random() * 3000, () => walk([...way].reverse()));
-        },
+        onComplete: done,
       });
     };
+    const { work, haul } = look;
+    if (work && haul && d.to) {
+      // A woodcutter: out to its tree, chop while it shakes, the logs carried home, a rest, and out again.
+      const [tx, ty] = [(d.to.col + (d.flip ? -0.1 : 1.1)) * CELL, (d.to.row + 0.45) * CELL];
+      const tree = this.children.list.find((o): o is Phaser.GameObjects.Sprite => o instanceof Phaser.GameObjects.Sprite && Math.abs(o.x - tx) < 1 && Math.abs(o.y - ty) < 1);
+      const grown = tree && { key: tree.texture.key, origin: tree.originY };
+      // Felled, a tree is left its own stump (Stump 3 is Tree3's), its foot 64px lower in a frame 64px taller.
+      const fallen = (): void => void (tree && grown && tree.stop().setTexture(`stump${grown.key.slice(-1)}`).setOrigin(0.5, (grown.origin * 192 + 64) / 256));
+      const back = [...points].reverse();
+      const trip = (): void => {
+        if (tree && grown && tree.texture.key !== grown.key) {
+          // A new tree grows only where no one is looking; till then the woodcutter rests.
+          if (this.active.worldView.contains(tree.x, tree.y)) return void this.time.delayedCall(3000, trip);
+          tree.setTexture(grown.key).setOrigin(0.5, grown.origin).play(`${grown.key}_anim`);
+        }
+        go(points, look.move?.key, () => {
+          s.setFlipX(d.flip ?? false);
+          this.loop(s, work.key);
+          s.anims.setProgress(0);
+          // The axe lands on the third of six frames at 9 a second: the tree shakes on each blow.
+          const shake = tree && this.tweens.add({ targets: tree, angle: 2, delay: 222, duration: 110, yoyo: true, repeat: -1, repeatDelay: 445 });
+          this.time.delayedCall(5000 + Math.random() * 3000, () => {
+            shake?.remove();
+            tree?.setAngle(0);
+            fallen();
+            go(back, haul.key, () => {
+              this.loop(s, look.idle.key);
+              this.time.delayedCall(2000 + Math.random() * 2000, trip);
+            });
+          });
+        });
+      };
+      this.time.delayedCall(Math.random() * 3000, trip);
+      return;
+    }
+    const walk = (way: { x: number; y: number }[]): void =>
+      go(way, look.move?.key, () => {
+        this.loop(s, look.idle.key);
+        this.time.delayedCall(1500 + Math.random() * 3000, () => walk([...way].reverse()));
+      });
     this.time.delayedCall(Math.random() * 3000, () => walk(points));
   }
 

@@ -664,14 +664,19 @@ function crowd(t: Builder, rng: Rng, kind: string, at: Cell, n: number, spread: 
   }
 }
 
-/** A pawn at a tool as the pack draws it: facing the tree it fells, the gold it breaks or the sheep it butchers, a tile
- *  off on its right, or on its left with `left`. */
-function work(t: Builder, act: "axe" | "pickaxe" | "knife", col: number, row: number, more: { left?: boolean } & Pick<Dweller, "when" | "unless"> = {}): void {
+/** A pawn at its knife facing the sheep it butchers, a tile off on its right, or on its left with `left`. */
+function butcher(t: Builder, col: number, row: number, left = false): void {
+  t.who("sheep", col + (left ? -1 : 1), row);
+  t.who("pawn", col, row, { color: "blue", act: "knife", flip: left });
+}
+
+/** A woodcutter out from `home` to the tree beside `chop` on its right, or its left with `left`: it fells it, carries
+ *  the logs home, rests, and goes again. */
+function fell(t: Builder, home: Cell, chop: Cell, more: { left?: boolean } & Pick<Dweller, "when" | "unless"> = {}): void {
   const { left = false, ...shown } = more;
-  const at = col + (left ? -1 : 1);
-  if (act === "knife") t.who("sheep", at, row, shown);
-  else t.prop(act === "axe" ? "tree" : "goldStone", at, row, { fixed: true });
-  t.who("pawn", col, row, { color: "blue", act, flip: left, ...shown });
+  // A tree stands at its tile's top-left corner: this puts its trunk at the axe's reach, its foot just behind the feet.
+  t.prop("tree", chop.col + (left ? -0.1 : 1.1), chop.row + 0.45, { fixed: true });
+  t.who("pawn", home.col, home.row, { color: "blue", act: "fell", to: chop, flip: left, ...shown });
 }
 
 /** Gold heaps as the pack piles them, in tiles off the front stone: big rock behind it, nuggets about. The first is
@@ -1549,17 +1554,22 @@ function harbour(): AreaMap {
   who("turtle", 44, 60);
   who("rubberDuck", 52, 66);
 
-  // The Northwood: woodcutters' cabins in the trees, a lookout on the crag. The cabins nearest the goblins stand empty,
-  // a pen left open, and the woodcutters work the wood's south edge; once the Ember Gate is
-  // opened from the wood they go back up to them.
+  // The Northwood: woodcutters' cabins in the trees, a lookout on the crag, a pen left open.
   prop("house1", 22, 24, blue);
   prop("house1", 10, 22, blue);
   prop("house2", 25, 15, blue);
   prop("tower", 15, 13, blue);
   t.fences.push({ col: 26, row: 19, w: 3, h: 2 });
   const gateOpen = { ...blue, when: "emberGateOpen" } as const;
-  for (const [c, r] of [[24, 17], [21, 22], [11, 24]] as const) work(t, "axe", c, r, { when: "emberGateOpen" });
-  who("pawn", 23, 19, { ...gateOpen, act: "wood", to: { col: 26, row: 36 } });
+  // The woodcutters out from their cabins' doors into the plateau's trees, and back with the logs to the pile by each
+  // door. The ledge is narrow round the north cabin: one tree there clears the pen and the cabin's own roof.
+  for (const [c, r] of [[12, 23], [24, 26], [26, 16]] as const) prop("woodPile", c, r);
+  fell(t, { col: 10, row: 23 }, { col: 7, row: 13 });
+  fell(t, { col: 11, row: 23 }, { col: 8, row: 18 });
+  fell(t, { col: 22, row: 26 }, { col: 18, row: 19 });
+  fell(t, { col: 21, row: 26 }, { col: 17, row: 26 });
+  fell(t, { col: 23, row: 26 }, { col: 20, row: 29 });
+  fell(t, { col: 25, row: 16 }, { col: 25, row: 20 }, { left: true });
   who("bear", 8, 18, { to: { col: 14, row: 26 } });
   t.grove(18, 22, 13, 9, 0.5);
   // The cleft between the Northwood and the cabins' ledge let out at its foot, one walker wide, onto the track, and
@@ -1567,12 +1577,8 @@ function harbour(): AreaMap {
   t.block(1, 25, 22, 1, 1);
   for (let r = 10; r <= 24; r++) for (let c = 20; c <= 25; c++) if (t.grid[r]![c] === "T") t.grid[r]![c] = ".";
   for (const [c, r] of [[26, 25], [27, 25], [28, 25], [27, 26]] as const) t.grid[r]![c] = ".";
-  // The lumber camp at the wood's foot by the Ember Gate road, the axes going and the logs stacked for the carriers.
+  // The lumber camp at the wood's foot by the Ember Gate road, the cabins' logs stacked for the road.
   prop("woodPile", 24, 38);
-  work(t, "axe", 21, 36);
-  work(t, "axe", 28, 36, { left: true });
-  work(t, "axe", 17, 32, { unless: "emberGateOpen" });
-  who("pawn", 26, 39, { ...blue, act: "wood", to: { col: 40, row: 46 } });
 
   // The goblins' camp outside the Ember Gate: Emberwood's raiders dug in on the Harbour's side of the road, the first
   // fight a captain walking north meets.
@@ -1630,8 +1636,8 @@ function harbour(): AreaMap {
   t.fences.push({ col: 4, row: 68, w: 10, h: 6, gate: 4 }, { col: 16, row: 68, w: 8, h: 5, gate: 3 });
   t.fences.push({ col: 4, row: 61, w: 10, h: 5, gate: 4 }, { col: 16, row: 61, w: 10, h: 5, gate: 4 }, { col: 28, row: 61, w: 9, h: 5, gate: 3 });
   for (const [c, r] of [[8, 71], [10, 70], [7, 72]] as const) who("sheep", c, r);
-  work(t, "knife", 5, 70);
-  work(t, "knife", 12, 72, { left: true });
+  butcher(t, 5, 70);
+  butcher(t, 12, 72, true);
   for (const [c, r] of [[18, 70], [20, 71], [21, 70]] as const) who("pig", c, r);
   who("pawn", 26, 66, { ...blue, act: "meat", to: { col: 26, row: 60 } });
 
@@ -1911,8 +1917,8 @@ function emberwood(): AreaMap {
   who("gnoll", 80, 57, { to: { col: 75, row: 57 } });
   for (const [c, r] of [[78, 54], [79, 54]] as const) prop("goldStone", c, r);
 
-  // The Palisade: the Harbour's lumber camp at the gate, overrun. Goblins camp in it in threes until the gate opens;
-  // then the woodcutters come back to work (Garth and Dunn are in npcs.ts).
+  // The Palisade: the Harbour's lumber camp at the gate, overrun. Goblins camp in it in threes until the gate opens
+  // (Garth and Dunn are in npcs.ts).
   t.campfires.push({ col: 43, row: 61 });
   t.fences.push({ col: 32, row: 60, w: 6, h: 2 }, { col: 45, row: 60, w: 6, h: 2 });
   prop("tower", 36, 64, blue);
@@ -1921,7 +1927,6 @@ function emberwood(): AreaMap {
   for (const [c, r] of [[33, 63], [50, 58]] as const) prop("woodPile", c, r);
   for (const [c, r] of [[42, 59], [44, 59], [43, 58]] as const) who("torch", c, r, { unless: "emberGateOpen" });
   for (const [c, r] of [[37, 57], [38, 58], [36, 58]] as const) who("spear", c, r, { unless: "emberGateOpen" });
-  for (const [c, r] of [[35, 56], [48, 56], [50, 61]] as const) who("pawn", c, r, { ...blue, act: "axe", when: "emberGateOpen" });
 
   // Old Pines: the one stand the goblins have not burnt. The hermit's hut by the pool, beasts, gold behind the bears.
   prop("house3", 18, 60, { color: "purple" });
@@ -3341,7 +3346,8 @@ function saltreach(): AreaMap {
   t.fences.push({ col: 63, row: 24, w: 4, h: 3 }, { col: 69, row: 24, w: 4, h: 3 });
   for (const c of [64, 70]) t.pond(c, 25, 2, 1);
   for (const [c, r] of [[64, 28], [72, 28]] as const) prop("woodPile", c, r);
-  crowd(t, rng, "pawn", { col: 68, row: 28 }, 2, 2, { ...yellow, act: "axe" });
+  // The draws of the axemen who stood here once, so the woods grown after keep their places.
+  for (let i = 0; i < 10; i++) rng.next();
   who("pawn", 68, 23, { ...yellow, act: "gold", to: { col: 79, row: 16 } });
 
   // The Net Lofts: the boatwrights' platform, where every walk crosses: a hull on the slip, timber, tools.
