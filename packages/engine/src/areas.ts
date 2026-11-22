@@ -6,7 +6,7 @@
  * land is wild, authored blocks where it is built, like a fortress.
  */
 
-import { AREAS, footprint, noise, tierBuilder, type AreaId, type AtlasTier, type GateKind, type LiftKind } from "./atlas.ts";
+import { AREAS, footprint, noise, tierBuilder, type AreaId, type AtlasTier, type Dweller, type GateKind, type LiftKind } from "./atlas.ts";
 import type { Cell } from "./island.ts";
 import { makeRng, type Rng } from "./rng.ts";
 
@@ -644,6 +644,16 @@ function crowd(t: Builder, rng: Rng, kind: string, at: Cell, n: number, spread: 
     const to = more.walk === false ? undefined : { col: col + rng.int(7) - 3, row: row + rng.int(5) - 2 };
     t.who(kind, col, row, { ...(more.color && { color: more.color }), ...(more.act && { act: more.act }), ...(to && { to }), flip: rng.next() < 0.5 });
   }
+}
+
+/** A pawn at a tool as the pack draws it: facing the tree it fells, the gold it breaks or the sheep it butchers, a tile
+ *  off on its right, or on its left with `left`. */
+function work(t: Builder, act: "axe" | "pickaxe" | "knife", col: number, row: number, more: { left?: boolean } & Pick<Dweller, "when" | "unless"> = {}): void {
+  const { left = false, ...shown } = more;
+  const at = col + (left ? -1 : 1);
+  if (act === "knife") t.who("sheep", at, row, shown);
+  else t.prop(act === "axe" ? "tree" : "goldStone", at, row, { fixed: true });
+  t.who("pawn", col, row, { color: "blue", act, flip: left, ...shown });
 }
 
 /**
@@ -1353,7 +1363,6 @@ function harbour(): AreaMap {
   // The gate square under the Wind Ward's stairs: lanterns, folk crossing to every ward.
   for (const [c, r] of [[53, 25], [58, 25]] as const) prop("sconce", c, r);
   who("pawn", 57, 27, { ...blue, act: "wood", to: { col: 64, row: 22 } });
-  who("pawn", 53, 27, { ...blue, act: "meat", to: { col: 47, row: 22 } });
   // The west wedge, between the rim and the Wind Ward, is the Chapel Close, run out west into the Chapel Spur: the
   // almshouse at the spur's root, the pilgrims' walk along its ridge between churchyard trees on the valley side and
   // candles on the drop, the chapel alone at its tip, and the brothers walking it.
@@ -1417,7 +1426,6 @@ function harbour(): AreaMap {
   prop("meat", 56, 20);
   who("warrior", 52, 20, { ...blue, to: { col: 54, row: 20 } });
   who("pawn", 55, 20, { ...blue, act: "meat" });
-  who("pawn", 62, 15, { ...blue, act: "wood", to: { col: 56, row: 15 } });
   for (const [c, r, art] of [[44, 7, "house2"], [66, 7, "house3"]] as const) prop(art, c, r, blue);
   for (const [c, r] of [[44, 14], [59, 18], [61, 15]] as const) who("lancer", c, r, blue);
   who("lancer", 63, 14, { ...blue, to: { col: 66, row: 14 } });
@@ -1455,9 +1463,7 @@ function harbour(): AreaMap {
   prop("goldStone", 76, 21);
   // The ring's east lip pushed out under the right-hand row, stepping as it goes.
   for (const [r, c] of [[14, 78], [15, 77], [17, 78]] as const) t.block(2, c, r, 1, 1);
-  for (const [c, r] of [[72, 22], [73, 20]] as const) who("pawn", c, r, { ...blue, act: "gold" });
   who("pawn", 74, 22, { color: "yellow", act: "meat", to: { col: 71, row: 22 } });
-  who("pawn", 73, 13, { ...blue, act: "wood", to: { col: 73, row: 19 } });
   // Off the market a cross street down a stair off the ring to a back street along the lowland under it, a row of houses
   // down each side, the west row broken where the stair comes down.
   for (const [c, r, art] of [[80, 14, "house1"], [80, 17, "house3"], [80, 23, "house2"], [80, 26, "house1"], [80, 29, "house3"]] as const) prop(art, c, r, blue);
@@ -1471,15 +1477,14 @@ function harbour(): AreaMap {
   t.stair(2, 79, 20, "R");
   t.road([82, 13], [82, 21], [82, 29]);
   t.road([80, 20], [82, 20]);
-  who("pawn", 82, 16, { ...blue, act: "wood", to: { col: 82, row: 26 } });
-  who("pawn", 81, 21, { ...blue, act: "meat" });
 
   // The Lower Town, as clusters each with its own life (after the Witcher's Oxenfurt): the paved market round the fire,
   // the Old Well in the hill's cave west of the square (up is the castle and the sky, down is the drowned), the west quarter's houses thinning out toward the archery butts, the east quarter's smithy,
   // garden and garrison, and the docks on the shore; a watchtower at each gate. Folk walk between them at their work.
   prop("goldStone", 61, 48);
-  // A few at the market, not a crowd: a town this size reads busy with a handful.
-  crowd(t, rng, "pawn", { col: 56, row: 46 }, 2, 4, { ...blue, act: "gold" });
+  // The work is done out where its stuff is, the woods, the hills, the farm and the village's houses; the market
+  // keeps a trader. The crowd that stood here once drew from rng, drawn still so the woods grown after keep their places.
+  for (let i = 0; i < 10; i++) rng.next();
   who("pawn", 58, 47, { color: "yellow", act: "meat", to: { col: 54, row: 47 } });
   // The west quarter: close round the square, sparser toward the fields.
   for (const [c, r, art] of [[47, 44, "house2"], [44, 44, "house1"], [40, 44, "house3"], [36, 44, "house2"], [48, 50, "house3"], [45, 50, "house2"], [35, 50, "house1"], [48, 53, "house1"], [45, 53, "house3"], [51, 53, "house2"], [36, 54, "house3"]] as const) prop(art, c, r, blue);
@@ -1494,9 +1499,7 @@ function harbour(): AreaMap {
   prop("barracks", 77, 52, blue);
   who("warrior", 75, 50, { ...blue, to: { col: 80, row: 50 } });
   prop("watchtower", 89, 43);
-  // The rounds: wood from the farm to the smithy, fish up the lane to the market, the watch along the main way.
-  who("pawn", 30, 56, { ...blue, act: "wood", to: { col: 68, row: 51 } });
-  who("pawn", 57, 55, { ...blue, act: "meat", to: { col: 57, row: 49 } });
+  // The watch along the main way.
   who("warrior", 30, 48, { ...blue, to: { col: 82, row: 48 } });
 
   // The Docks: fish huts along both shores of the bay, boats out on the water.
@@ -1507,7 +1510,7 @@ function harbour(): AreaMap {
   // The merchant berth below Maren's post, empty three winters: the first ship ties up once the Warlord falls, and
   // sails with her.
   prop("boat", 66, 66, { when: "warlordDead", unless: "marenSails" });
-  for (const [c, r] of [[45, 61], [67, 61]] as const) who("pawn", c, r, { ...blue, act: "knife" });
+  who("pawn", 45, 61, { ...blue, act: "meat" });
   who("turtle", 44, 60);
   who("rubberDuck", 52, 66);
 
@@ -1520,7 +1523,7 @@ function harbour(): AreaMap {
   prop("tower", 15, 13, blue);
   t.fences.push({ col: 26, row: 19, w: 3, h: 2 });
   const gateOpen = { ...blue, when: "emberGateOpen" } as const;
-  for (const [c, r] of [[24, 17], [21, 22], [11, 24]] as const) who("pawn", c, r, { ...gateOpen, act: "axe" });
+  for (const [c, r] of [[24, 17], [21, 22], [11, 24]] as const) work(t, "axe", c, r, { when: "emberGateOpen" });
   who("pawn", 23, 19, { ...gateOpen, act: "wood", to: { col: 26, row: 36 } });
   who("bear", 8, 18, { to: { col: 14, row: 26 } });
   t.grove(18, 22, 13, 9, 0.5);
@@ -1529,9 +1532,11 @@ function harbour(): AreaMap {
   t.block(1, 25, 22, 1, 1);
   for (let r = 10; r <= 24; r++) for (let c = 20; c <= 25; c++) if (t.grid[r]![c] === "T") t.grid[r]![c] = ".";
   for (const [c, r] of [[26, 25], [27, 25], [28, 25], [27, 26]] as const) t.grid[r]![c] = ".";
-  // The lumber camp at the wood's foot by the Ember Gate road, the axes going.
-  for (const [c, r] of [[21, 36], [28, 36]] as const) who("pawn", c, r, { ...blue, act: "axe" });
-  who("pawn", 17, 32, { ...blue, act: "axe", unless: "emberGateOpen" });
+  // The lumber camp at the wood's foot by the Ember Gate road, the axes going and the logs stacked for the carriers.
+  prop("woodPile", 24, 38);
+  work(t, "axe", 21, 36);
+  work(t, "axe", 28, 36, { left: true });
+  work(t, "axe", 17, 32, { unless: "emberGateOpen" });
   who("pawn", 26, 39, { ...blue, act: "wood", to: { col: 40, row: 46 } });
 
   // The goblins' camp outside the Ember Gate: Emberwood's raiders dug in on the Harbour's side of the road, the first
@@ -1546,29 +1551,29 @@ function harbour(): AreaMap {
   // The Mine Hills: the mine in the old face, ore in the rock, and the deep face's cave under the crest boarded up
   // since its ore came up grey, the tools left where they were dropped.
   prop("goldMine", 90, 22);
-  for (const [c, r] of [[86, 16], [104, 21], [100, 26], [88, 28], [94, 21], [97, 29]] as const) prop("goldStone", c, r);
+  for (const [c, r] of [[86, 16], [104, 21], [100, 26], [94, 21], [97, 29]] as const) prop("goldStone", c, r);
   prop("cave", 100, 20);
   t.fences.push({ col: 98, row: 22, w: 4, h: 2 });
   prop("tools", 96, 21);
-  crowd(t, rng, "pawn", { col: 90, row: 25 }, 4, 3, { ...blue, act: "pickaxe", walk: false });
+  work(t, "pickaxe", 89, 28, { left: true });
+  work(t, "pickaxe", 92, 19);
+  work(t, "pickaxe", 97, 23, { left: true });
+  // The draws of the crowd that stood here once, so the woods grown after keep their places.
+  for (let i = 0; i < 12; i++) rng.next();
   // A lookout on the crest, over the sea the ships stopped coming in on.
   prop("watchtower", 97, 13);
   who("archer", 99, 14, blue);
   prop("goldStone", 87, 19);
-  // The middle bench: the hill's last trees felled for pit props, a shed for the tools, and the timber and ore going
-  // down past it.
+  // The middle bench: the hill's last trees felled for pit props, a shed for the tools, and the ore going down past
+  // it.
   prop("house3", 99, 29, blue);
   for (const [c, r, art] of [[92, 27, "stump"], [103, 30, "stump"], [95, 30, "woodPile"]] as const) prop(art, c, r);
-  who("pawn", 93, 28, { ...blue, act: "axe" });
-  who("pawn", 96, 28, { ...blue, act: "wood", to: { col: 88, row: 36 } });
   // The miners' camp at the hill's foot where the mine road ends, and the ore carried down it and up the castle road
   // to the forge.
   for (const [c, r] of [[88, 35], [85, 39]] as const) prop("goldStone", c, r);
   for (const [c, r, art] of [[92, 39, "house1"], [96, 38, "house2"]] as const) prop(art, c, r, blue);
   for (const [c, r, art] of [[89, 38, "woodPile"], [84, 36, "tools"], [94, 36, "meat"]] as const) prop(art, c, r);
-  who("pawn", 90, 39, { ...blue, act: "hammer" });
-  who("pawn", 95, 36, { ...blue, act: "knife" });
-  for (const [c, r] of [[90, 33], [93, 31]] as const) who("pawn", c, r, { ...blue, act: "pickaxe" });
+  for (const [c, r] of [[90, 33], [93, 31]] as const) work(t, "pickaxe", c, r);
   who("pawn", 90, 26, { ...blue, act: "gold", to: { col: 87, row: 35 } });
   who("pawn", 87, 38, { ...blue, act: "gold", to: { col: 56, row: 30 } });
 
@@ -1577,8 +1582,7 @@ function harbour(): AreaMap {
   prop("fishHut", 14, 39);
   prop("goldStone", 16, 37);
   who("lancer", 10, 43, { color: "yellow", to: { col: 10, row: 41 } });
-  who("pawn", 13, 41, { color: "yellow", act: "knife" });
-  who("pawn", 13, 44, { ...blue, act: "wood" });
+  who("pawn", 13, 41, { color: "yellow", act: "meat" });
   who("pawn", 15, 43, { ...blue, act: "gold", flip: true });
 
   // West Fields: a farm on the farm road. The farmstead on its knoll with a copse beside it, paddocks of sheep and
@@ -1592,11 +1596,10 @@ function harbour(): AreaMap {
   // The pastures, fenced to the fields' own edges, the flocks grazing in them. Every pen on the farm is gated at its foot.
   t.fences.push({ col: 4, row: 68, w: 10, h: 6, gate: 4 }, { col: 16, row: 68, w: 8, h: 5, gate: 3 });
   t.fences.push({ col: 4, row: 61, w: 10, h: 5, gate: 4 }, { col: 16, row: 61, w: 10, h: 5, gate: 4 }, { col: 28, row: 61, w: 9, h: 5, gate: 3 });
-  for (const [c, r] of [[6, 70], [8, 71], [10, 70], [11, 72], [7, 72]] as const) who("sheep", c, r);
+  for (const [c, r] of [[8, 71], [10, 70], [7, 72]] as const) who("sheep", c, r);
+  work(t, "knife", 5, 70);
+  work(t, "knife", 12, 72, { left: true });
   for (const [c, r] of [[18, 70], [20, 71], [21, 70]] as const) who("pig", c, r);
-  for (const [c, r] of [[6, 63], [11, 64], [18, 63], [23, 64], [31, 63]] as const) who("pawn", c, r, { ...blue, act: "knife" });
-  who("pawn", 34, 64, { ...blue, act: "axe" });
-  who("pawn", 13, 67, { ...blue, act: "wood", to: { col: 16, row: 58 } });
   who("pawn", 26, 66, { ...blue, act: "meat", to: { col: 26, row: 60 } });
 
   // The Graves, after Firelink's graveyard on the slope behind the shrine: the path up from the point crosses the town's
@@ -1693,7 +1696,7 @@ function harbour(): AreaMap {
   who("monk", sx(11), 53, blue);
   who("pawn", sx(14), 53, { ...blue, flip: true });
   who("warrior", sx(15), 54, { ...blue, flip: true });
-  who("pawn", sx(17), 45, { ...blue, act: "pickaxe" });
+  who("pawn", sx(17), 45, { ...blue, act: "pickaxe", flip: false });
   who("pawn", sx(18), 48, { ...blue, act: "gold", to: { col: sx(16), row: 48 } });
   who("pawn", sx(21), 56, { ...blue, act: "hammer", flip: true });
   who("archer", sx(8), 50, blue);
@@ -1703,7 +1706,6 @@ function harbour(): AreaMap {
   // The hill's west foot: a hamlet on the shelf, and a watchtower on the shore spur looking over the bay to the farm.
   for (const [c, r, art] of [[34, 49, "house1"], [38, 49, "house3"], [36, 52, "house2"]] as const) prop(art, c, r, blue);
   prop("watchtower", 31, 55, pinned);
-  who("pawn", 33, 51, { ...blue, act: "hammer" });
   who("archer", 30, 54, blue);
   // The island's terraces carried round the bay's upper curve, the shore left as it lies: the west terrace down to the
   // north-west corner, its stair moved to the beach, and the east plateau out to the square.
@@ -1721,7 +1723,6 @@ function harbour(): AreaMap {
   for (const r of [46, 48, 50]) t.road([66, r], [75, r]);
   t.fences.push({ col: 79, row: 47, w: 4, h: 3 });
   t.grove(80.5, 48, 0.8, 0.6, 1);
-  crowd(t, rng, "pawn", { col: 71, row: 49 }, 2, 3, { ...blue, act: "gold" });
   who("lancer", 69, 45, blue);
 
   // The village down the bay's east coast, on the one shore street from the fire to the lighthouse, lit by lanterns:
@@ -1739,9 +1740,12 @@ function harbour(): AreaMap {
   // troll is dead.
   who("pawn", 68, 58, { color: "yellow", act: "meat", when: "bullWon", to: { col: 70, row: 58 } });
   who("monk", 70, 61, { ...blue, when: "monkFreed" });
-  who("pawn", 69, 63, { ...blue, act: "pickaxe", when: "trollKey" });
-  who("pawn", 73, 60, { ...blue, act: "gold", to: { col: 73, row: 55 } });
-  who("pawn", 71, 62, { ...blue, act: "meat", to: { col: 71, row: 50 } });
+  who("pawn", 69, 63, { ...blue, act: "gold", when: "trollKey" });
+  // The village builds: hammers at the houses down the street, timber carried down to them.
+  who("pawn", 71, 56, { ...blue, act: "hammer", flip: true });
+  who("pawn", 73, 58, { ...blue, act: "hammer", flip: false });
+  who("pawn", 75, 66, { ...blue, act: "hammer", flip: true });
+  who("pawn", 73, 60, { ...blue, act: "wood", to: { col: 73, row: 55 } });
 
   // The east lane, the village's last houses before the point, taken in the first nights: the taken carried its folk
   // off to the Gallows Yard and burned what they left. Its doors stay shut and no one walks it; the Warlord dead, they
