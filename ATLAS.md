@@ -33,7 +33,7 @@ inside the area map.
 | Shift or right click (hold) | Guard: walk at your pace behind the shield, turned to the nearest monster, stamina coming back at a third the speed; a blow from the front lets a fifth through and costs stamina. Space rolls straight out of it |
 | Space (tap) | Roll the way you walk, or backstep standing still: nothing lands during it, costs stamina |
 | Space (hold, moving) | Sprint, draining stamina |
-| E | Interact: talk and turn the page, rest at a bonfire, traverse the clouds at a way out (or ride the lift, or drop) |
+| E | Interact: talk and turn the page, light or rest at a bonfire, traverse the clouds at a way out (or ride the lift, or drop) |
 | R | Burn an ember |
 | 1 | Band: Follow (stay close, defend the hero) |
 | 2 | Band: Attack the monster you last struck |
@@ -104,7 +104,8 @@ come ashore alone.
 
 - **Bonfires.** Resting fully heals the hero and the band, refills embers, saves,
   and respawns every enemy in the area. Bosses and opened shortcuts stay as
-  they are. Each area has 1 to 3 bonfires, already standing on the maps.
+  they are. Each area has 1 to 3 bonfires, standing cold on the maps until
+  the hero lights one with E, which only kindles it: the next E rests.
   After a rest you sit by the fire, as in Dark Souls 3: Travel opens the
   map to any lit bonfire, and Leave stands you up.
 - **Death.** You wake at the last bonfire you rested at. The exception is a

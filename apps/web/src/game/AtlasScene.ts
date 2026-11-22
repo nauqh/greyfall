@@ -890,6 +890,8 @@ export class AtlasScene extends Phaser.Scene {
   /** The selected land's outline on the atlas. */
   private outline: Phaser.GameObjects.Graphics | null = null;
   private live: Tracked[] = [];
+  /** The unlit bonfires of this area, by `area:col,row`, each with what lights it. */
+  private unlit = new Map<string, () => void>();
   private drag: { x: number; y: number; sx: number; sy: number; moved: boolean } | null = null;
   /** In an area's own map: that map. */
   private local: AreaMap | null = null;
@@ -993,6 +995,7 @@ export class AtlasScene extends Phaser.Scene {
     this.view = "surface";
     this.names = [];
     this.live = [];
+    this.unlit.clear();
     this.drag = null;
     this.local = null;
     this.built = new Set();
@@ -1138,6 +1141,8 @@ export class AtlasScene extends Phaser.Scene {
     for (const k of ["deadTree", "stump", "bones", "skullSpike", "goldStone"]) sheet(`prop_${k}`, PROP[k]!);
     BIG_TREE.forEach((t, i) => sheet(`bigTree${i}`, t));
     sheet("fire", FIRE);
+    sheet("kindle", { file: "Particle FX/Fire_03.png", frame: 64, anchor: 0.9 });
+    if (!this.textures.exists("log")) this.load.image("log", packUrl("Terrain/Resources/Wood/Wood Resource/Wood Resource.png"));
     this.load.spritesheet("fence", packUrl(FENCE), { frameWidth: 64, frameHeight: 64 });
     // The pack's dust puffs: the fog gates are banked from their first frame, and wisps off them play the rest.
     this.load.spritesheet("fogPuff", packUrl("Particle FX/Dust_02.png"), { frameWidth: 64, frameHeight: 64 });
@@ -2984,7 +2989,8 @@ export class AtlasScene extends Phaser.Scene {
     for (const p of tier.props) this.addProp(p, tier.base);
     for (const f of tier.fences) this.fence(f.col, f.row, f.w, f.h, f.gate);
     for (const g of tier.gates) this.gatehouse(g.kind, g.cells);
-    for (const f of [...tier.fires, ...tier.campfires]) this.bonfire(f);
+    for (const f of tier.campfires) this.bonfire(f);
+    for (const f of tier.fires) this.bonfire(f, !!this.local && !remembered(KINDLED).has(this.fireKey(f)));
     const posts = solidCells({ props: [], fences: tier.fences });
     for (const d of tier.dwellers) this.addDweller(d, posts);
     for (const e of this.local?.exits ?? []) this.exitMark(e);
@@ -3265,15 +3271,15 @@ export class AtlasScene extends Phaser.Scene {
     }
   }
 
-  /** A bonfire: flames, a warm light that breathes, and stones round it. */
-  private bonfire(f: Cell): void {
+  /** A bonfire: flames, a warm light that breathes, and stones round it. Unlit, cold logs in the ring until E lights it. */
+  private bonfire(f: Cell, unlit = false): void {
     const x = (f.col + 0.5) * CELL;
     const y = (f.row + 0.8) * CELL;
     // In the Deeps the fires burn ghost-green: corpse-candles, not hearths.
     const ghost = this.local?.area === "deeps";
     const glow = this.add.image(x, y - 24, "glow").setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.55).setScale(1.3).setDepth(DEPTH.clouds - 2);
     if (ghost) glow.setTint(0x7cf0b0);
-    this.tweens.add({ targets: glow, scale: 1.5, alpha: 0.75, duration: 900 + Math.random() * 400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    const breathe = (): void => void this.tweens.add({ targets: glow, scale: 1.5, alpha: 0.75, duration: 900 + Math.random() * 400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
     for (let i = 0; i < 5; i++) {
       const a = (i / 5) * Math.PI * 2;
       this.add.ellipse(x + Math.cos(a) * 26, y + Math.sin(a) * 12, 16, 10, 0x8b8f99).setStrokeStyle(2, 0x3a3f4a).setDepth(standing(y) - 1);
@@ -3281,7 +3287,36 @@ export class AtlasScene extends Phaser.Scene {
     const fire = this.add.sprite(x, y, "fire").setOrigin(0.5, FIRE.anchor).setScale(0.7).setDepth(standing(y));
     if (ghost) fire.setTint(0x8cffc0);
     this.loop(fire, "fire");
+    // Tracked at full size, so the culling bounds hold once it is lit.
     this.track(fire);
+    if (!unlit) return breathe();
+    // Hidden by alpha, not visibility: the culling sets visibility every frame.
+    fire.setAlpha(0).setScale(0.1);
+    glow.setAlpha(0);
+    const logs = [-0.45, 0.45].map((a) => this.add.image(x, y - 2, "log").setRotation(a).setScale(0.55).setTint(0x6a5444).setDepth(standing(y) - 1));
+    this.unlit.set(this.fireKey(f), () => {
+      if (!this.anims.exists("kindle_once")) this.anims.create({ key: "kindle_once", frames: this.anims.generateFrameNumbers("kindle"), frameRate: 14, repeat: 0 });
+      const burst = this.add.sprite(x, y + 4, "kindle").setOrigin(0.5, 0.9).setScale(2.2).setDepth(standing(y) + 1);
+      if (ghost) burst.setTint(0x8cffc0);
+      burst.play("kindle_once").once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => burst.destroy());
+      this.tweens.add({ targets: logs, alpha: 0, duration: 500, delay: 200, onComplete: () => logs.forEach((l) => l.destroy()) });
+      this.tweens.add({ targets: fire, alpha: 1, scale: 0.7, duration: 700, delay: 150, ease: "Back.easeOut" });
+      this.tweens.add({ targets: glow, alpha: 0.55, scale: { from: 0.4, to: 1.3 }, duration: 700, delay: 150, ease: "Sine.easeOut", onComplete: breathe });
+      this.float(x, y - 90, "Bonfire lit", ghost ? "#8cffc0" : "#ffd65a", 1800);
+    });
+  }
+
+  /** A bonfire's key in KINDLED: `area:col,row`. */
+  private fireKey(f: Cell): string {
+    return `${this.local?.area}:${f.col},${f.row}`;
+  }
+
+  /** E at an unlit bonfire: it catches, and the map can travel to it. Resting there is the next E. */
+  private kindle(fire: Cell): void {
+    const key = this.fireKey(fire);
+    remember(KINDLED, remembered(KINDLED).add(key));
+    this.unlit.get(key)?.();
+    this.unlit.delete(key);
   }
 
   /**
@@ -3760,7 +3795,7 @@ export class AtlasScene extends Phaser.Scene {
     if (!this.playing) return;
     const t = this.eTarget();
     if (!t || repeat) return;
-    if ("fire" in t) return this.rest(t.fire);
+    if ("fire" in t) return this.unlit.has(this.fireKey(t.fire)) ? this.kindle(t.fire) : this.rest(t.fire);
     if ("note" in t) return this.read(t.note);
     if ("exit" in t) return this.traverse(t.exit);
     if ("fog" in t) return this.enterFog();
@@ -3907,7 +3942,7 @@ export class AtlasScene extends Phaser.Scene {
     }
     if (this.reading && tileDistance(this.reading.at, hero.at) > 1) this.read(null);
     const t = this.talk || this.menu || this.reading || hero.dead || this.gone ? undefined : this.eTarget();
-    const action = !t ? null : "folk" in t ? "Talk" : "fire" in t ? "Rest" : "note" in t ? "Read" : "fog" in t ? "Traverse the fog" : "lock" in t ? t.lock : "unbar" in t ? `Unbar the ${t.unbar.name}` : this.exitWord(t.exit);
+    const action = !t ? null : "folk" in t ? "Talk" : "fire" in t ? (this.unlit.has(this.fireKey(t.fire)) ? "Light the bonfire" : "Rest") : "note" in t ? "Read" : "fog" in t ? "Traverse the fog" : "lock" in t ? t.lock : "unbar" in t ? `Unbar the ${t.unbar.name}` : this.exitWord(t.exit);
     if (action !== this.nearName) this.hooks.onNear?.((this.nearName = action));
   }
 

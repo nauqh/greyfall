@@ -141,6 +141,17 @@ export function DevPanel({
         <button type="button" className="devBtn" onClick={onCreate}>
           New hero
         </button>
+        <button
+          type="button"
+          className="devBtn"
+          onClick={() => {
+            // AtlasScene's KINDLED; the scene draws its fires once, so a reload shows them cold.
+            localStorage.removeItem("greyfall.kindled");
+            location.reload();
+          }}
+        >
+          Unlight fires
+        </button>
       </div>
       <dl className="devStats">
         <dt>Hero</dt>
