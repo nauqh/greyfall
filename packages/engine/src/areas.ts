@@ -656,6 +656,23 @@ function work(t: Builder, act: "axe" | "pickaxe" | "knife", col: number, row: nu
   t.who("pawn", col, row, { color: "blue", act, flip: left, ...shown });
 }
 
+/** Gold heaps as the pack piles them, in tiles off the front stone: big rock behind it, nuggets about. The first is
+ *  measured off the pack's own Pawn and Resources sheet. */
+const HEAPS = [
+  [[0, 0, 3], [1.2, -0.4, 5], [1.6, 0.3, 4], [2.2, 0.15, 4], [2.85, -0.55, 6], [3.1, 0.05, 2], [0.8, 0.7, 1], [1.75, -0.4, 2]],
+  [[0, 0, 4], [0.9, -0.35, 6], [1.5, 0.25, 3], [0.6, 0.6, 1], [2, -0.1, 2]],
+  [[0, 0, 4], [0.8, -0.3, 6], [1.7, -0.35, 6], [1.3, 0.3, 5], [2.4, 0.1, 3], [0.5, 0.55, 2], [2.1, 0.65, 1]],
+  [[0, 0, 3], [0.7, 0.35, 2], [1.1, -0.2, 4], [1.8, 0.3, 3], [2.3, -0.15, 1], [1.5, 0.7, 1]],
+] as const;
+
+/** A miner at the front stone of a heap running off to its right, or to its left with `left`. The heap sits a quarter
+ *  tile back, as a prop draws lower than a dweller on its row and would hide the pickaxe. */
+function mine(t: Builder, col: number, row: number, shape: 0 | 1 | 2 | 3, left = false): void {
+  const dir = left ? -1 : 1;
+  for (const [dc, dr, n] of HEAPS[shape]) t.prop(`ore${n}`, col + dir * (0.8 + dc), row + dr - 0.25, { fixed: true, flip: left });
+  t.who("pawn", col, row, { color: "blue", act: "pickaxe", flip: left });
+}
+
 /**
  * The Keep, the castle's crown: the castle between the Harbour and the Burg, its
  * gate off the Burg's west ward shut until the Ember Key is carried. In through
@@ -1548,33 +1565,31 @@ function harbour(): AreaMap {
   // The gate open, the town keeps a watch on it.
   who("warrior", 27, 4, gateOpen);
 
-  // The Mine Hills: the mine in the old face, ore in the rock, and the deep face's cave under the crest boarded up
-  // since its ore came up grey, the tools left where they were dropped.
-  prop("goldMine", 90, 22);
-  for (const [c, r] of [[86, 16], [104, 21], [100, 26], [94, 21], [97, 29]] as const) prop("goldStone", c, r);
+  // The Mine Hills, worked bench by bench: a mine cut into each face with its ore heaped beside the mouth and a miner
+  // breaking it, an outcrop broken where it stands, and the gold carried down the stairs to the camp at the foot. The
+  // deep face's cave under the crest is boarded up since its ore came up grey.
+  for (const [c, r] of [[86, 16], [104, 21], [99, 26], [93, 21], [97, 29]] as const) prop("goldStone", c, r);
   prop("cave", 100, 20);
-  t.fences.push({ col: 98, row: 22, w: 4, h: 2 });
-  prop("tools", 96, 21);
-  work(t, "pickaxe", 89, 28, { left: true });
-  work(t, "pickaxe", 92, 19);
-  work(t, "pickaxe", 97, 23, { left: true });
+  // The upper bench: the old mine in the crest's face, and the outcrop over the gully.
+  prop("goldMine", 91, 21, { fixed: true });
+  mine(t, 93, 19, 0);
+  mine(t, 96, 22, 2);
+  who("pawn", 98, 18, { ...blue, act: "gold", to: { col: 97, row: 28 } });
   // The draws of the crowd that stood here once, so the woods grown after keep their places.
   for (let i = 0; i < 12; i++) rng.next();
   // A lookout on the crest, over the sea the ships stopped coming in on.
   prop("watchtower", 97, 13);
   who("archer", 99, 14, blue);
   prop("goldStone", 87, 19);
-  // The middle bench: the hill's last trees felled for pit props, a shed for the tools, and the ore going down past
-  // it.
+  // The lower bench: the new mine in the upper bench's face, a shed for the tools, and the ore going down past it.
+  prop("goldMine", 90, 26, { fixed: true });
+  mine(t, 93, 27, 3);
   prop("house3", 99, 29, blue);
-  for (const [c, r, art] of [[92, 27, "stump"], [103, 30, "stump"], [95, 30, "woodPile"]] as const) prop(art, c, r);
   // The miners' camp at the hill's foot where the mine road ends, and the ore carried down it and up the castle road
   // to the forge.
   for (const [c, r] of [[88, 35], [85, 39]] as const) prop("goldStone", c, r);
   for (const [c, r, art] of [[92, 39, "house1"], [96, 38, "house2"]] as const) prop(art, c, r, blue);
-  for (const [c, r, art] of [[89, 38, "woodPile"], [84, 36, "tools"], [94, 36, "meat"]] as const) prop(art, c, r);
-  for (const [c, r] of [[90, 33], [93, 31]] as const) work(t, "pickaxe", c, r);
-  who("pawn", 90, 26, { ...blue, act: "gold", to: { col: 87, row: 35 } });
+  who("pawn", 97, 28, { ...blue, act: "gold", to: { col: 87, row: 35 } });
   who("pawn", 87, 38, { ...blue, act: "gold", to: { col: 56, row: 30 } });
 
   // The Old Bridge: Saltreach's toll and trade post, its yellow militia looking over every load that crosses, the

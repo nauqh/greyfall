@@ -359,7 +359,14 @@ const PROP: Record<string, Sheet> = {
   deadTree: { file: "Enemy Pack/Extra/Dead Tree/Dead Tree.png", frame: 384, frameH: 320, anchor: 314 / 320, scale: 0.6 },
   trollDead: { file: "Enemy Pack/Extra/Troll Dead/Troll_Dead.png", frame: 384, anchor: 0.77 },
   goldMine: { file: "Resources/Gold Mine/GoldMine_Active.png", frame: 192, frameH: 128, anchor: 0.9, scale: 0.9 },
-  goldStone: { file: "Terrain/Resources/Gold/Gold Stones/Gold Stone 4.png", frame: 128, anchor: 0.75, scale: 0.6 },
+  goldStone: { file: "Terrain/Resources/Gold/Gold Stones/Gold Stone 4_Highlight.png", frame: 128, anchor: 0.75, scale: 0.6 },
+  // A heap's pieces, smallest first: scenery, not gold to pick up.
+  ore1: { file: "Terrain/Resources/Gold/Gold Stones/Gold Stone 1_Highlight.png", frame: 128, anchor: 0.75 },
+  ore2: { file: "Terrain/Resources/Gold/Gold Stones/Gold Stone 2_Highlight.png", frame: 128, anchor: 0.75 },
+  ore3: { file: "Terrain/Resources/Gold/Gold Stones/Gold Stone 3_Highlight.png", frame: 128, anchor: 0.75 },
+  ore4: { file: "Terrain/Resources/Gold/Gold Stones/Gold Stone 4_Highlight.png", frame: 128, anchor: 0.75 },
+  ore5: { file: "Terrain/Resources/Gold/Gold Stones/Gold Stone 5_Highlight.png", frame: 128, anchor: 0.75 },
+  ore6: { file: "Terrain/Resources/Gold/Gold Stones/Gold Stone 6_Highlight.png", frame: 128, anchor: 0.75 },
   cannon: { file: "Enemy Pack/Extra/Cannon/Cannon_Down.png", frame: 128, anchor: 93 / 128, scale: 1.5 },
   cannonSide: { file: "Enemy Pack/Extra/Cannon/Cannon_Right.png", frame: 128, anchor: 85 / 128, scale: 1.5 },
   watchtower: { file: "Enemy Pack/Extra/Pirate Tower/Pirate Tower_Ground.png", frame: 128, frameH: 192, anchor: 179 / 192, scale: 0.9 },
@@ -3210,6 +3217,11 @@ export class AtlasScene extends Phaser.Scene {
     // A dead troll lies as his last frame; a hut keeps its variant; the rest move.
     if (p.art === "trollDead") s.setFrame(this.textures.get(key).frameTotal - 2);
     else if (p.frame === undefined && ["cave", "fishHut", "pirateTowerWater", "boat", "goldMine"].includes(p.art)) this.loop(s, key);
+    // Gold glints now and then, as the pack's highlight sheets play it, each stone at its own moment.
+    else if (p.art === "goldStone" || p.art.startsWith("ore")) {
+      if (!this.anims.exists(`${key}_glint`)) this.anims.create({ key: `${key}_glint`, frames: this.anims.generateFrameNumbers(key), frameRate: 10, repeat: -1, repeatDelay: 3000 });
+      s.playAfterDelay(`${key}_glint`, Math.random() * 3600);
+    }
     // Gold in the rock of the Underneath glows.
     const shine = p.art === "goldStone" && base === "rock" ? this.add.image(x, y - 20, "glow").setBlendMode(Phaser.BlendModes.ADD).setTint(0xffe27a).setAlpha(0.5).setScale(0.9).setDepth(DEPTH.clouds - 2) : null;
     this.track(s);
