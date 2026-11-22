@@ -3763,7 +3763,7 @@ export class AtlasScene extends Phaser.Scene {
     this.folk.push({ npc: n, at: w.at, s, near: false, bubble: null, tag });
   }
 
-  /** One of the folk walks the captain to this area's cold bonfire, waiting whenever they fall behind, lights it and walks back. */
+  /** One of the folk walks the captain to this area's cold bonfire, keeping beside them, has them light it and walks back. */
   private guide(f: Folk): void {
     const fire = this.local!.fires.find((c) => this.unlit.has(this.fireKey(c)));
     const taken = (c: Cell): boolean => this.shut(c) || this.folk.some((o) => o !== f && o.at.col === c.col && o.at.row === c.row);
@@ -3779,8 +3779,8 @@ export class AtlasScene extends Phaser.Scene {
         pose(look.idle.key);
         return done();
       }
-      // Too far behind, the guide stops and lets the captain catch up.
-      if (wait && tileDistance(f.at, this.hero!.at) > 4) {
+      // Walking with the captain: a step ahead at most, waiting whenever they fall behind.
+      if (wait && tileDistance(f.at, this.hero!.at) > 2) {
         pose(look.idle.key);
         this.time.delayedCall(300, () => walk(way, done, wait));
         return;
@@ -3807,10 +3807,23 @@ export class AtlasScene extends Phaser.Scene {
     this.callOut(f, "This way.");
     walk(there, () => {
       f.s.setFlipX(fire.col < f.at.col);
-      this.time.delayedCall(500, () => {
-        this.kindle(fire);
-        this.callOut(f, "There. Warm yourself.");
-        this.time.delayedCall(2500, () => walk(findRoute(f.at, (c) => c.col === home.col && c.row === home.row, taken) ?? [], () => (f.leading = false), false));
+      // The captain lights it, not the guide: told to, and told again while it stays cold.
+      let told = -Infinity;
+      const ask = this.time.addEvent({
+        delay: 300,
+        loop: true,
+        callback: () => {
+          if (this.unlit.has(this.fireKey(fire))) {
+            if (this.time.now - told > 7000 && tileDistance(this.hero!.at, fire) <= 3) {
+              this.callOut(f, "Put your hand to it. It'll catch.");
+              told = this.time.now;
+            }
+            return;
+          }
+          ask.remove();
+          this.callOut(f, "There. Now it's yours.");
+          this.time.delayedCall(2500, () => walk(findRoute(f.at, (c) => c.col === home.col && c.row === home.row, taken) ?? [], () => (f.leading = false), false));
+        },
       });
     }, true);
   }

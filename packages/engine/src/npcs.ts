@@ -50,7 +50,7 @@ export interface Talk {
   gives?: ItemName;
   /** Heard to the end the first time, this is thrown down near the wanderer, to be picked up. */
   throws?: ItemName;
-  /** Heard to the end the first time, they walk the wanderer to the area's cold bonfire and light it. */
+  /** Heard to the end the first time, they walk the wanderer to the area's cold bonfire and have them light it. */
   lights?: boolean;
   /** One page each. */
   lines: readonly string[];
@@ -865,7 +865,7 @@ export const NPCS: readonly Npc[] = [
           "No ships in three winters.",
           "Stiltwater still trades down the coast, if you can stomach its prices. And its pirates.",
           "Mostly the pirates. Ha.",
-          "Square fire's gone cold again. Ferrow dozes. ...Come on, I'll light it for you.",
+          "Square fire's gone cold again. Ferrow dozes. ...Come on, I'll show you.",
         ],
         lights: true,
       },

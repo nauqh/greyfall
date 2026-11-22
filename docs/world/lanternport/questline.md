@@ -275,12 +275,12 @@ Greets you: *"Tide's out."* Walked away from: *"Fair winds. Ha."*
 
 ### Home: Lanternport, the Docks, at the boat's pier (67, 63)
 
-- **first** (heard to the end, she walks you to the square's fire and lights it, if it is cold)
+- **first** (heard to the end, she walks you to the square's fire and has you light it, if it is cold)
   1. Tide's out. ...Maren. I keep the harbour, for all the good it does.
   2. No ships in three winters.
   3. Stiltwater still trades down the coast, if you can stomach its prices. And its pirates.
   4. Mostly the pirates. Ha.
-  5. Square fire's gone cold again. Ferrow dozes. ...Come on, I'll light it for you.
+  5. Square fire's gone cold again. Ferrow dozes. ...Come on, I'll show you.
 - **finfolk**
   1. Finfolk off the Stiltwater shore. Sharks, the pirates call them. Don't swim there.
   2. They pull things out of the warm water by the caves. Breathing things, the pirates say. ...I don't ask.

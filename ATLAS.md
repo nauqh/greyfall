@@ -195,7 +195,7 @@ then walks back. The engine already has a guard leash.
    Lanternport's one bonfire stands cold on the Lower Town's shore, under the
    Old Well in the hill's cave (going down; bats below, only bows reach them),
    with Old Ferrow beside it saying where to go. The boat's pier lies east, on
-   the docks; Maren meets you there and walks you to the fire to light it. The
+   the docks; Maren meets you there, walks you to the fire and has you light it. The
    climb runs straight up from the fire through Old Town and the Upper Town
    to the Burg Gate, Highward's gatehouse on the hill's crown, its door
    facing the climb and opening into the Lower Burg. Behind the town is
