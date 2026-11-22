@@ -200,7 +200,7 @@ function passage(t: Builder, rng: Rng, a: AreaId, points: readonly (readonly [nu
     for (let d = 4; d < len - 3; d += 6 + Math.floor(rng.next() * 3)) {
       const [c, r] = [Math.round(x0 + ((x1 - x0) * d) / len + nx * side * 3), Math.round(y0 + ((y1 - y0) * d) / len + ny * side * 3)];
       t.blob(a, c, r, 2, 2);
-      if (!lit && len > 12 && d > len / 3) (t.fires.push({ col: c, row: r }), (lit = true));
+      if (!lit && len > 12 && d > len / 3) (t.campfires.push({ col: c, row: r }), (lit = true));
       else if (rng.next() < 0.6) t.prop(rng.next() < 0.75 ? "bones" : "skullSpike", c, r);
       side = -side;
     }
@@ -903,6 +903,8 @@ function ramparts(): AreaMap {
   // The wall walk: the goblins who took it, and kept off its far end.
   for (const [c, r] of [[24, 8], [32, 8], [60, 8]] as const) who("spear", c, r);
   for (const [c, r] of [[45, 7], [57, 9], [76, 8]] as const) prop("bones", c, r);
+  // The rest before the Bull's Gate, on the end of the walk the goblins kept off.
+  t.fires.push({ col: 74, row: 7 });
   // The drill yard: the dead still drilling in ranks at the butts; the stores, a thrower over the lanes.
   prop("archery", 31, 31, blue);
   for (const [c, r] of [[26, 31], [35, 31]] as const) prop("house1", c, r, blue);
@@ -2223,8 +2225,9 @@ function greyfall(): AreaMap {
   t.shape(3, 79, 28, 20, 15, 0.4, "The High City");
   t.shape(4, 79, 21, 11, 8, 0.35, "The Warlord's Hall");
   t.shape(5, 79, 15, 6, 3.5, 0.25, "The Grey Keep");
-  // The Sky Bridge: the gnomes' high road from the west, landing on the spur.
+  // The Sky Bridge: the gnomes' high road from the west, landing on the spur, a fire where it lands.
   const decks = t.span(2, 1, 8, 36, 2);
+  t.fires.push({ col: 39, row: 6 });
 
   // Crags of the old rock, standing out of the rot.
   t.shape(2, 44, 28, 6, 4, 0.4, "Rotfield");
@@ -2973,8 +2976,8 @@ function barrowmoor(): AreaMap {
   t.fences.push({ col: 14, row: 36, w: 4, h: 2 });
   who("lancer", 13, 38, { color: "blue", to: { col: 16, row: 42 } });
 
-  // The Wayshrine: the first fire past the gate, at the crossroads, bones round it.
-  t.fires.push({ col: 31, row: 46 });
+  // The Wayshrine: a shrine fire at the crossroads, bones round it; too near the gate's to rest at.
+  t.campfires.push({ col: 31, row: 46 });
   for (const [c, r] of [[26, 42], [34, 42], [27, 47]] as const) prop("bones", c, r);
   prop("deadTree", 34, 46, { scale: 0.9 });
 
@@ -2998,9 +3001,9 @@ function barrowmoor(): AreaMap {
   for (const [c, r] of [[59, 64], [54, 56]] as const) prop("stump", c, r);
   for (const [c, r] of [[56, 60], [51, 62]] as const) who("skull", c, r, { to: { col: c + 2, row: r } });
 
-  // The Mourners' Way: an avenue of skulls up to the King's Barrow, a fire where the mourners stopped.
+  // The Mourners' Way: an avenue of skulls up to the King's Barrow, a fire where the mourners stopped; the rest is at the barrow.
   for (const r of [38, 46]) for (const c of [55, 61]) prop("skullSpike", c, r);
-  t.fires.push({ col: 62, row: 43 });
+  t.campfires.push({ col: 62, row: 43 });
   who("bat", 54, 41);
 
   // The King's Barrow: the dead kings' guard round its steps, the cave at its foot down into it, where the Barrow King lies.

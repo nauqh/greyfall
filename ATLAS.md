@@ -104,7 +104,7 @@ come ashore alone.
 
 - **Bonfires.** Resting fully heals the hero and the band, refills embers, saves,
   and respawns every enemy in the area. Bosses and opened shortcuts stay as
-  they are. Each area has 1 to 3 bonfires, standing cold on the maps until
+  they are. Each area has 1 to 4 bonfires, standing cold on the maps until
   the hero lights one with E, which only kindles it: the next E rests.
   After a rest you sit by the fire, as in Dark Souls 3: Travel opens the
   map to any lit bonfire, and Leave stands you up.
