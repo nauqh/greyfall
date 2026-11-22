@@ -12,47 +12,47 @@ import "./prologue.css";
 import "./rest.css";
 import "./creation.css";
 
-/** Each class: its idle sheet (`frames` square frames of `frame` px, the feet `feet` px down), its kit and its telling. */
-export const CLASS_ROWS: { cls: HeroClass; name: string; kit: string; idle: string; frames: number; frame: number; feet: number; about: string }[] = [
+/** Each class: its idle sheet (`frames` square frames of `frame` px, the feet `feet` px down, `face` the top left of an 88 px square round its head and shoulders), and its telling. */
+export const CLASS_ROWS: { cls: HeroClass; name: string; idle: string; frames: number; frame: number; feet: number; face: [number, number]; about: string }[] = [
   {
     cls: "warrior",
     name: "Warrior",
-    kit: "Sword and shield",
     idle: "Units/Blue Units/Warrior/Warrior_Idle.png",
     frames: 8,
     frame: 192,
     feet: 136,
-    about: "The levy's oldest trade: a blade, a board of oak, and the nerve to stand inside the reach of something bigger. Two quick cuts, then a finisher that knocks the foe back.",
+    face: [58, 46],
+    about: "The levy's oldest trade: a blade, a board of oak, and the nerve to stand close. Two quick cuts, then a third that throws the foe back. It can raise the shield.",
   },
   {
     cls: "eggwarden",
     name: "Eggwarden",
-    kit: "Frill, no shield",
     idle: "Enemy Pack/Lizard/Lizard_Idle.png",
     frames: 7,
     frame: 192,
     feet: 130,
-    about: "A fenfolk who went down the sinkhole after the eggs the Stilled took, and followed the water to the bottom of the world. Its frill flares round it and cuts every foe beside it at once, and it is the quickest on its feet, on less health. No shield.",
+    face: [62, 22],
+    about: "A fenfolk. It went down the sinkhole after the eggs the Stilled took, and followed the water to the bottom of the world. Its frill cuts every foe beside it at once. Quick, thin of hide, and no shield.",
   },
   {
     cls: "champion",
     name: "Champion",
-    kit: "Hammer, no shield",
     idle: "Enemy Pack/Minotaur/Minotaur_Idle.png",
     frames: 16,
     frame: 320,
     feet: 213,
-    about: "One of the horned, sworn to the Citadel, who rode out with the last gold ship the night the Grey came and went down with it. Every blow throws the foe back, not only the last, but it is slow between them. No shield.",
+    face: [142, 78],
+    about: "One of the horned, sworn to the Citadel. It rode out with the last gold ship the night the Grey came, and went down with her. Every blow throws the foe back. Slow between blows, and no shield.",
   },
   {
     cls: "grovekeeper",
     name: "Grovekeeper",
-    kit: "Nunchaku",
     idle: "Enemy Pack/Panda/Panda_Idle.png",
     frames: 10,
     frame: 256,
     feet: 174,
-    about: "A bamboo-folk who took ship for the old country when the Grey took Old Bamboo, to bring back help, and went down with the ship. The most health, slow on its feet; with the man, the only one that can guard.",
+    face: [82, 76],
+    about: "A bamboo-folk. When the Grey took Old Bamboo it took ship for the old country to bring back help. The ship never got there. Hard to kill, slow to move, and it guards behind its nunchaku.",
   },
 ];
 
@@ -79,21 +79,20 @@ const STATS: { label: string; icon: string; frame?: number; of: (k: ReturnType<t
   { label: "Walk", icon: "Particle FX/Dust_02.png", frame: 1, of: (_, cls) => CLASSES[cls].speed },
 ];
 
-/** A class's face for its row: a 100 px square of its first idle frame round the body, drawn 48 px. */
+/** A class's face for its row: its head and shoulders in its first idle frame, drawn at half. */
 function Thumb({ row }: { row: (typeof CLASS_ROWS)[number] }) {
-  const k = 48 / 100;
   const style = {
     backgroundImage: `url("${packUrl(row.idle)}")`,
-    backgroundSize: `${row.frames * row.frame * k}px ${row.frame * k}px`,
-    backgroundPosition: `${-(row.frame / 2 - 50) * k}px ${-(row.feet - 95) * k}px`,
+    backgroundSize: `${(row.frames * row.frame) / 2}px ${row.frame / 2}px`,
+    backgroundPosition: `${-row.face[0] / 2}px ${-row.face[1] / 2}px`,
   };
   return <span className="crThumb" aria-hidden="true" style={style} />;
 }
 
 /**
- * Before the prologue: the class, a gift and a name, kept for the run. Laid out after Dark Souls III's Create Character on
- * the title screen's paper and sea: the step named over its choices, the numbers laid over the class on show,
- * either one showing whatever row has focus, and the keys along the foot. Keyboard only, on the play keys, so it is practice.
+ * Before the prologue: the class, a gift and a name, kept for the run. Laid out as Elden Ring's Create Character on one
+ * sheet of the pack's paper: the steps with what each holds, the step's choices under what the cursor is on, and the
+ * numbers beside the class on show, who stands on its isle to the right. Keyboard only, on the play keys, so it is practice.
  */
 export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => SackItem[]; onBegin: (cls: HeroClass, gift: ItemName, name: string) => void; onDone: () => void }) {
   const [step, setStep] = useState(0);
@@ -110,7 +109,6 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
   const showGift = (step === 1 && at !== null && gifts[at]?.label) || gift;
   const row = CLASS_ROWS.find((c) => c.cls === showCls)!;
   const now = kit(new Set(showGift ? [showGift] : []), undefined, showCls);
-  const was = kit(new Set(gift ? [gift] : []), undefined, cls);
   const giftShown = gifts.find((g) => g.label === showGift);
   const ready = step !== 1 || !!gift;
 
@@ -118,7 +116,7 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
   const list = useRef<HTMLElement>(null);
   useEffect(() => {
     const rows = list.current;
-    (rows?.querySelector<HTMLButtonElement>(".panelOption.chosen") ?? rows?.querySelector<HTMLButtonElement>(".panelOption"))?.focus({ preventScroll: true });
+    (rows?.querySelector<HTMLButtonElement>(".crOption.chosen") ?? rows?.querySelector<HTMLButtonElement>(".crOption"))?.focus({ preventScroll: true });
   }, [step]);
 
   const go = (to: number): void => {
@@ -161,7 +159,7 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
     e.preventDefault();
     if (e.repeat) return;
     if (k === "w" || k === "s") {
-      const items = [...e.currentTarget.querySelectorAll<HTMLButtonElement>(".crList .panelOption")];
+      const items = [...e.currentTarget.querySelectorAll<HTMLButtonElement>(".crList .crOption")];
       const i = items.indexOf(document.activeElement as HTMLButtonElement);
       items[(i + (k === "w" ? -1 : 1) + items.length) % items.length]?.focus();
     } else if (k === "Escape") go(step - 1);
@@ -172,7 +170,7 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
     step === 0
       ? row.about
       : step === 1
-        ? (giftShown?.about ?? "One thing came ashore with you. The rest the sea kept.")
+        ? (giftShown?.about ?? "One thing came ashore with you. The sea kept the rest.")
         : "No one in Aurum will know it. Say it anyway.";
 
   return (
@@ -185,112 +183,108 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
       onMouseDown={(e) => e.preventDefault()}
       onAnimationEnd={(e) => e.target === e.currentTarget && begun && onDone()}
     >
-      <div className="crScreen">
-        <h1 className="crHead">
-          <Thumb row={row} />
-          Create Character
+      <CreationScene row={row} gift={giftShown} />
+
+      <div className="crSheet">
+        <h1 key={step} className="crHead">
+          {STEPS[step]!.label}
         </h1>
 
-        <div className="crStage">
-          <section ref={list} className="crList" aria-label={STEPS[step]!.label}>
-            <span className="crTitle">{STEPS[step]!.label}</span>
-            <p key={`${step}:${showCls}:${showGift}`} className="crAbout">
-              {told}
-            </p>
-            {step === 0 && (
-              <div className="panelOptions">
-                {CLASS_ROWS.map((c, i) => (
-                  <button key={c.cls} type="button" className={`panelOption${c.cls === cls ? " chosen" : ""}`} aria-pressed={c.cls === cls} onFocus={() => setAt(i)}>
-                    <span className="panelOptionText">
-                      <span className="panelOptionName">{c.name}</span>
-                      <span className="panelOptionNote">{c.kit}</span>
-                    </span>
-                    <kbd className="crCap">E</kbd>
-                  </button>
-                ))}
-              </div>
-            )}
-            {step === 1 && (
-              <div className="panelOptions">
-                {gifts.map((g, i) => (
-                  <button key={g.label} type="button" className={`panelOption${g.label === gift ? " chosen" : ""}`} aria-pressed={g.label === gift} onFocus={() => setAt(i)}>
-                    <ItemIcon icon={g.icon} size={36} />
-                    <span className="panelOptionText">
-                      <span className="panelOptionName">{g.label}</span>
-                      <span className="panelOptionNote">{g.gives}</span>
-                    </span>
-                    <kbd className="crCap">E</kbd>
-                  </button>
-                ))}
-              </div>
-            )}
-            {step === 2 && (
-              <form className="crName" onSubmit={(e) => e.preventDefault()}>
-                <input autoFocus aria-label="Name" value={name} maxLength={16} placeholder={NAMELESS} spellCheck={false} autoComplete="off" onChange={(e) => setName(e.target.value)} />
-                <span className="panelOptionNote">Up to 16 letters. Left blank, you are {NAMELESS}.</span>
-              </form>
-            )}
-          </section>
+        <ol className="crFields" aria-label="Steps">
+          {STEPS.map((s, i) => (
+            <li key={s.label} className={i === step ? "on" : undefined} aria-current={i === step ? "step" : undefined}>
+              <span>{s.label}</span>
+              <b>{i === 0 ? CLASS_ROWS.find((c) => c.cls === cls)!.name : i === 1 ? (gift ?? "-") : name.trim() || NAMELESS}</b>
+            </li>
+          ))}
+        </ol>
 
-          <div className="crSheet">
-            <aside className="crStats" aria-label="Your character">
-              <span className="crTitle">
-                {name.trim() || NAMELESS}
-                <small>{row.name}</small>
+        <section ref={list} className="crList" aria-label={STEPS[step]!.title}>
+          <p key={`${step}:${showCls}:${showGift}`} className="crAbout">
+            {told}
+          </p>
+          {step === 0 && (
+            <div className="crOptions">
+              {CLASS_ROWS.map((c, i) => (
+                <button key={c.cls} type="button" className={`crOption${c.cls === cls ? " chosen" : ""}`} aria-pressed={c.cls === cls} onFocus={() => setAt(i)}>
+                  <Thumb row={c} />
+                  <span className="panelOptionText">
+                    <span className="panelOptionName">{c.name}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          {step === 1 && (
+            <div className="crOptions">
+              {gifts.map((g, i) => (
+                <button key={g.label} type="button" className={`crOption${g.label === gift ? " chosen" : ""}`} aria-pressed={g.label === gift} onFocus={() => setAt(i)}>
+                  <ItemIcon icon={g.icon} size={32} />
+                  <span className="panelOptionText">
+                    <span className="panelOptionName">{g.label}</span>
+                    <span className="panelOptionNote">{g.gives}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          {step === 2 && (
+            <form className="crName" onSubmit={(e) => e.preventDefault()}>
+              <input autoFocus aria-label="Name" value={name} maxLength={16} placeholder={NAMELESS} spellCheck={false} autoComplete="off" onChange={(e) => setName(e.target.value)} />
+              <span className="panelOptionNote">Up to 16 letters. Left blank, you are {NAMELESS}.</span>
+            </form>
+          )}
+        </section>
+
+        <aside className="crStats" aria-label="Your character">
+          <span className="crTitle">{row.name}</span>
+          <ul className="crRows">
+            {STATS.map((s) => (
+              <li key={s.label}>
+                <i className="crIcon" style={{ backgroundImage: `url("${packUrl(s.icon)}")`, "--frame": s.frame ?? 0 } as React.CSSProperties} />
+                <span>{s.label}</span>
+                <b>{s.of(now, showCls)}</b>
+              </li>
+            ))}
+          </ul>
+          {giftShown && (
+            <div className="crSlot">
+              <ItemIcon icon={giftShown.icon} size={32} />
+              <span className="panelOptionText">
+                <span className="panelOptionName">{giftShown.label}</span>
+                <span className="panelOptionNote">{giftShown.gives}</span>
               </span>
-              <ul className="crRows">
-                {STATS.map((s) => {
-                  const v = s.of(now, showCls);
-                  const d = v - s.of(was, cls);
-                  return (
-                    <li key={s.label}>
-                      <i className="crIcon" style={{ backgroundImage: `url("${packUrl(s.icon)}")`, "--frame": s.frame ?? 0 } as React.CSSProperties} />
-                      <span>{s.label}</span>
-                      <b className={d > 0 ? "up" : d < 0 ? "down" : undefined}>{v}</b>
-                    </li>
-                  );
-                })}
-              </ul>
-              <div className="crSlot">
-                <span className="crSlotIcon">{giftShown && <ItemIcon icon={giftShown.icon} size={34} />}</span>
-                <span className="panelOptionText">
-                  <span className="panelOptionName">{giftShown ? giftShown.label : "No gift yet"}</span>
-                  <span className="panelOptionNote">{giftShown ? giftShown.gives : "Chosen in the next step"}</span>
-                </span>
-              </div>
-            </aside>
+            </div>
+          )}
+        </aside>
+      </div>
 
-            <CreationScene row={row} gift={giftShown} />
-          </div>
-        </div>
-
-        <div className="crFoot">
-          <span className="crKeys">
-            {step < 2 ? (
-              <>
-                <span className="crKey">
-                  <Key k="W" />
-                  <Key k="S" /> Move
-                </span>
-                <span className="crKey">
-                  <Key k="E" /> Choose
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="crKey">Type a name</span>
-                <span className="crKey">
-                  <Key k="Enter" /> Come ashore
-                </span>
-              </>
-            )}
-            {step > 0 && (
+      <div className="crFoot">
+        <span className="crKeys">
+          {step < 2 ? (
+            <>
               <span className="crKey">
-                <Key k="Esc" /> Back
+                <Key k="W" />
+                <Key k="S" /> Move
               </span>
-            )}
-          </span>
-        </div>
+              <span className="crKey">
+                <Key k="E" /> Choose
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="crKey">Type a name</span>
+              <span className="crKey">
+                <Key k="Enter" /> Come ashore
+              </span>
+            </>
+          )}
+          {step > 0 && (
+            <span className="crKey">
+              <Key k="Esc" /> Back
+            </span>
+          )}
+        </span>
       </div>
     </div>
   );

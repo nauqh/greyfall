@@ -1,93 +1,75 @@
-/* The class on show: on a rock in the Reach's sea, in daylight, clouds drifting over, everything in art pixels times `--k`. */
-.crScene {
-	display: flex;
-	width: 100%;
-	height: 100%;
-	min-height: 0;
-	overflow: hidden;
-}
-
+/* The world behind the menu, filling the screen; everything in art pixels times `--k`. */
+.crScene,
 .crView {
-	position: relative;
-	flex: 1;
-	min-height: 0;
-	margin: 0 0 0 18px;
+	position: absolute;
+	inset: 0;
 	overflow: hidden;
-	border: 1px solid var(--goldDim);
-	background: var(--sea);
-	box-shadow: inset 0 0 40px rgb(0 0 0 / 0.35);
 }
 
-/* Two small clouds at the art's own scale, drifting either way behind the rock. */
+/* The isle, drawn tile by tile at the art's size and shown at the scene's scale, placed so the class's tile is
+   under its feet. */
+.crLand {
+	position: absolute;
+	left: calc(var(--mid) - var(--landCol) * 64px * var(--k));
+	top: calc(var(--stand) - var(--landRow) * 64px * var(--k));
+	width: calc(var(--cols) * 64px * var(--k));
+	height: calc(var(--rows) * 64px * var(--k));
+	image-rendering: pixelated;
+}
+
+/* Two clouds drifting over it all, either way. */
 .crView::before,
 .crView::after {
 	content: "";
 	position: absolute;
+	z-index: 100;
 	width: calc(576px * var(--k));
 	height: calc(256px * var(--k));
 	background: var(--cloud) no-repeat 0 0 / 100% 100%;
 	image-rendering: pixelated;
-	opacity: 0.55;
+	opacity: 0.5;
 	pointer-events: none;
-	animation: crDrift 70s linear infinite alternate;
+	animation: crDrift 80s linear infinite alternate;
 }
 
 .crView::before {
-	left: calc(-230px * var(--k));
-	top: calc(-120px * var(--k));
+	left: 30%;
+	top: calc(-150px * var(--k));
 }
 
 .crView::after {
-	right: calc(-230px * var(--k));
-	bottom: calc(-40px * var(--k));
+	right: calc(-260px * var(--k));
+	bottom: calc(-120px * var(--k));
 	background-image: var(--cloud2);
-	animation-duration: 90s;
+	animation-duration: 100s;
 	animation-direction: alternate-reverse;
 }
 
 @keyframes crDrift {
-	to { translate: calc(40px * var(--k)) 0; }
+	to { translate: calc(60px * var(--k)) 0; }
 }
 
-/* The stage, 250 by 220 art pixels, the feet at 104, 150 on it. */
+/* A thing on the isle or in the sea, its foot on its spot, `--dx`, `--dy` tiles from the class's feet. */
+.crDecor {
+	position: absolute;
+	left: calc(var(--mid) + var(--dx) * 64px * var(--k));
+	top: calc(var(--stand) + var(--dy) * 64px * var(--k));
+	width: calc(var(--frame) * var(--k));
+	height: calc(var(--frame) * var(--k));
+	translate: -50% calc(var(--foot) * var(--k) * -1);
+	background: var(--sheet) no-repeat 0 0 / calc(var(--frames) * var(--frame) * var(--k)) calc(var(--frame) * var(--k));
+	image-rendering: pixelated;
+	animation: crFrames calc(var(--frames) * 110ms) steps(var(--frames)) infinite;
+}
+
+/* The class's feet, the spot everything about it is placed from. */
 .crStand {
-	--fx: 104px;
-	--fy: 150px;
+	--fx: 0px;
+	--fy: 0px;
 	position: absolute;
-	left: 50%;
-	top: 50%;
-	width: calc(250px * var(--k));
-	height: calc(220px * var(--k));
-	z-index: 1;
-	translate: -50% -50%;
-}
-
-/* The grass and the top of the cliff from the tileset's raised strip, standing in the water. */
-.crIsle {
-	position: absolute;
-	left: calc((var(--fx) - 96px) * var(--k));
-	top: calc((var(--fy) - 32px) * var(--k));
-	width: calc(192px * var(--k));
-	height: calc(96px * var(--k));
-	background: var(--isle) no-repeat calc(-320px * var(--k)) calc(-192px * var(--k)) / calc(576px * var(--k)) calc(384px * var(--k));
-	image-rendering: pixelated;
-}
-
-/* The foam round the rock's foot, a sheet frame centred on each of its three cells, as the coast is drawn in play. */
-.crFoam {
-	position: absolute;
-	left: calc((var(--fx) - 160px + var(--i) * 64px) * var(--k));
-	top: calc((var(--fy) - 64px) * var(--k));
-	width: calc(192px * var(--k));
-	height: calc(192px * var(--k));
-	background: var(--foam) no-repeat 0 0 / calc(3072px * var(--k)) calc(192px * var(--k));
-	image-rendering: pixelated;
-	animation: crFoam 1600ms steps(16) infinite;
-	animation-delay: calc(var(--i) * -530ms);
-}
-
-@keyframes crFoam {
-	to { background-position-x: calc(-3072px * var(--k)); }
+	z-index: 50;
+	left: var(--mid);
+	top: var(--stand);
 }
 
 /* One frame of the sheet, its feet on the grass; idle loops, a move plays once. */
@@ -146,7 +128,7 @@
 @media (prefers-reduced-motion: reduce) {
 	.crView::before,
 	.crView::after,
-	.crFoam,
+	.crDecor,
 	.crFigure,
 	.crFigure.enter,
 	.crGift {

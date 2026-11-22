@@ -28,21 +28,113 @@ const MOVES: Record<HeroClass, { sheet: string; frames: number }[]> = {
   ],
 };
 
-/** The stage in art pixels: wide and tall enough for the horned, the biggest of them. */
-const STAGE = { w: 250, h: 220 };
 const IDLE_MS = 2600;
+const TILE = 64;
 
-/** The class on show: on a rock in the Reach's sea, in daylight, idling and now and then showing its moves; the gift at its feet. */
+/** The isle in 64px tiles: `.` sea, `g` grass, `h` a raised shelf of grass; under a shelf's foot its cliff is drawn. */
+const MAP = [
+  "..............",
+  "...gggggg.....",
+  "..gghhhhhgg...",
+  ".gghhhhhhhggg.",
+  ".ggggggggggggg",
+  ".ggggggggggggg",
+  "..gggggggggggg",
+  "..gggggggggggg",
+  "...ggggggggggg",
+  "..............",
+];
+/** The tile the class stands on. */
+const HERO = { c: 5, r: 6 };
+/** How far down the scene the class's feet are, in percent. */
+const FEET = 72;
+
+/** The things on the isle and in the sea: each one's sheet, its square frame and count, the row its foot is on, and
+ *  where that foot stands in tiles from the class's feet. Drawn back to front by it. */
+const SHORE: { sheet: string; frame: number; frames: number; foot: number; dx: number; dy: number }[] = [
+  { sheet: "Terrain/Decorations/Rocks in the Water/Water Rocks_02.png", frame: 64, frames: 16, foot: 47, dx: -4.5, dy: -6 },
+  { sheet: "Terrain/Decorations/Rocks in the Water/Water Rocks_03.png", frame: 64, frames: 16, foot: 47, dx: 5.5, dy: -5.1 },
+  { sheet: "Terrain/Decorations/Bushes/Bushe1.png", frame: 128, frames: 8, foot: 78, dx: -2, dy: -4.9 },
+  { sheet: "Terrain/Resources/Wood/Trees/Tree3.png", frame: 192, frames: 8, foot: 169, dx: -1.3, dy: -3.8 },
+  { sheet: "Terrain/Resources/Wood/Trees/Tree4.png", frame: 192, frames: 8, foot: 169, dx: 0.7, dy: -3.8 },
+  { sheet: "Terrain/Resources/Wood/Trees/Tree3.png", frame: 192, frames: 8, foot: 169, dx: -1.6, dy: -2.9 },
+  { sheet: "Terrain/Resources/Wood/Trees/Tree4.png", frame: 192, frames: 8, foot: 169, dx: 3, dy: -2.9 },
+  { sheet: "Terrain/Decorations/Bushes/Bushe3.png", frame: 128, frames: 8, foot: 78, dx: 5.5, dy: -1.9 },
+  { sheet: "Terrain/Decorations/Rocks/Rock2.png", frame: 64, frames: 1, foot: 50, dx: -3.2, dy: -1.6 },
+  { sheet: "Resources/Sheep/HappySheep_Idle.png", frame: 128, frames: 8, foot: 86, dx: 4.5, dy: -1.2 },
+  { sheet: "Resources/Sheep/HappySheep_Idle.png", frame: 128, frames: 8, foot: 86, dx: -2, dy: 0.6 },
+  { sheet: "Terrain/Decorations/Rocks/Rock4.png", frame: 64, frames: 1, foot: 50, dx: 2.5, dy: 0.9 },
+];
+
+const at = (r: number, c: number) => MAP[r]?.[c] ?? ".";
+const isLand = (r: number, c: number) => at(r, c) !== ".";
+const isShelf = (r: number, c: number) => at(r, c) === "h";
+const isCliff = (r: number, c: number) => isShelf(r - 1, c) && !isShelf(r, c);
+
+/** The tileset's autotile cell for a piece of a shape: its 3 by 3 block, the one-wide column right of it, the one-tall
+ *  row under it and the lone tile, chosen by which sides the shape goes on. */
+function piece(has: (r: number, c: number) => boolean, r: number, c: number): [number, number] {
+  const w = has(r, c - 1);
+  const e = has(r, c + 1);
+  const n = has(r - 1, c);
+  const s = has(r + 1, c);
+  return [w && e ? 1 : e ? 0 : w ? 2 : 3, n && s ? 1 : s ? 0 : n ? 2 : 3];
+}
+
+/** The isle at the art's own size, foam frame `tick`: the foam ringing the coast, the grass, the shelf over it, its cliff. */
+function drawIsle(g: CanvasRenderingContext2D, tiles: HTMLImageElement, foam: HTMLImageElement, tick: number): void {
+  g.clearRect(0, 0, g.canvas.width, g.canvas.height);
+  const cells = MAP.flatMap((row, r) => [...row].map((_, c) => [r, c] as const));
+  for (const [r, c] of cells) {
+    if (!isLand(r, c) || (isLand(r - 1, c) && isLand(r + 1, c) && isLand(r, c - 1) && isLand(r, c + 1))) continue;
+    const f = (tick + r * 7 + c * 3) % 16;
+    g.drawImage(foam, f * 192, 0, 192, 192, (c - 1) * TILE, (r - 1) * TILE, 192, 192);
+  }
+  const tile = (x: number, y: number, r: number, c: number) => g.drawImage(tiles, x * TILE, y * TILE, TILE, TILE, c * TILE, r * TILE, TILE, TILE);
+  for (const [r, c] of cells) {
+    if (isLand(r, c)) tile(...piece(isLand, r, c), r, c);
+  }
+  for (const [r, c] of cells) {
+    if (isShelf(r, c)) {
+      const [x, y] = piece(isShelf, r, c);
+      tile(5 + x, y, r, c);
+    }
+    if (isCliff(r, c)) tile(5 + piece(isCliff, r, c)[0], 4, r, c);
+  }
+}
+
+/** The world behind creation, as Skyrim keeps its world behind its menu: an isle of the Reach, a shelf of it raised behind,
+ *  and on it the class on show, idling and now and then showing its moves, the gift at its feet. Everything at one whole scale. */
 export function CreationScene({ row, gift }: { row: (typeof CLASS_ROWS)[number]; gift?: SackItem }) {
   const view = useRef<HTMLDivElement>(null);
   const [k, setK] = useState(2);
   useEffect(() => {
     const el = view.current!;
-    const fit = () => setK(zoom(Math.min(el.clientWidth / STAGE.w, el.clientHeight / STAGE.h)));
+    const fit = () => setK(zoom(el.clientHeight >= 880 && el.clientWidth >= 1500 ? 3 : el.clientHeight >= 560 ? 2 : 1));
     fit();
     const ro = new ResizeObserver(fit);
     ro.observe(el);
     return () => ro.disconnect();
+  }, []);
+
+  const land = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const g = land.current!.getContext("2d")!;
+    const tiles = new Image();
+    const foam = new Image();
+    tiles.src = packUrl("Terrain/Tileset/Tilemap_color1.png");
+    foam.src = packUrl("Terrain/Tileset/Water Foam.png");
+    let tick = 0;
+    let timer: ReturnType<typeof setInterval> | undefined;
+    Promise.all([tiles.decode(), foam.decode()]).then(
+      () => {
+        drawIsle(g, tiles, foam, 0);
+        if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        timer = setInterval(() => drawIsle(g, tiles, foam, ++tick), 100);
+      },
+      () => {},
+    );
+    return () => clearInterval(timer);
   }, []);
 
   // Even beats idle; odd beats play the next move once.
@@ -57,12 +149,22 @@ export function CreationScene({ row, gift }: { row: (typeof CLASS_ROWS)[number];
 
   return (
     <div className="crScene" aria-hidden="true">
-      <div ref={view} className="crView" style={{ "--k": k, "--cloud": `url("${packUrl("Terrain/Decorations/Clouds/Clouds_03.png")}")`, "--cloud2": `url("${packUrl("Terrain/Decorations/Clouds/Clouds_04.png")}")`, "--sea": `url("${packUrl("Terrain/Tileset/Water Background color.png")}")` } as React.CSSProperties}>
-        <div className="crStand" style={{ "--isle": `url("${packUrl("Terrain/Tileset/Tilemap_color1.png")}")`, "--foam": `url("${packUrl("Terrain/Tileset/Water Foam.png")}")` } as React.CSSProperties}>
-          {[0, 1, 2].map((i) => (
-            <span key={i} className="crFoam" style={{ "--i": i } as React.CSSProperties} />
-          ))}
-          <span className="crIsle" />
+      <div ref={view} className="crView" style={{ "--k": k, "--stand": `${FEET}%`, "--cloud": `url("${packUrl("Terrain/Decorations/Clouds/Clouds_03.png")}")`, "--cloud2": `url("${packUrl("Terrain/Decorations/Clouds/Clouds_05.png")}")` } as React.CSSProperties}>
+        <canvas
+          ref={land}
+          className="crLand"
+          width={MAP[0]!.length * TILE}
+          height={MAP.length * TILE}
+          style={{ "--landCol": HERO.c + 0.5, "--landRow": HERO.r + 0.6, "--cols": MAP[0]!.length, "--rows": MAP.length } as React.CSSProperties}
+        />
+        {SHORE.map((d, i) => (
+          <span
+            key={i}
+            className="crDecor"
+            style={{ "--dx": d.dx, "--dy": d.dy, zIndex: Math.round(50 + d.dy * 10), "--sheet": `url("${packUrl(d.sheet)}")`, "--frames": d.frames, "--frame": `${d.frame}px`, "--foot": `${d.foot}px` } as React.CSSProperties}
+          />
+        ))}
+        <div className="crStand">
           <span
             key={`${row.cls}:${beat}`}
             className={`crFigure${beat % 2 ? " once" : ""}${beat === 0 ? " enter" : ""}`}
