@@ -1,59 +1,31 @@
-/* The world behind the menu, filling the screen; everything in art pixels times `--k`. */
-.crScene,
+/* The islet in the sheet's window; everything in art pixels times `--k`. */
 .crView {
 	position: absolute;
 	inset: 0;
 	overflow: hidden;
 }
 
-/* The shore, drawn tile by tile at the art's size and shown at the scene's scale, placed so the class's tile is
-   under its feet. */
+/* The islet's map, its top left placed so the box the window must show is centred in it. */
+.crIsle {
+	position: absolute;
+	left: calc(50% - var(--cx) * 1px * var(--k));
+	top: calc(50% - var(--cy) * 1px * var(--k));
+}
+
 .crLand {
 	position: absolute;
-	left: calc(var(--mid) - var(--landCol) * 64px * var(--k));
-	top: calc(var(--stand) - var(--landRow) * 64px * var(--k));
-	width: calc(var(--cols) * 64px * var(--k));
-	height: calc(var(--rows) * 64px * var(--k));
+	left: 0;
+	top: 0;
+	width: calc(var(--w) * 1px * var(--k));
+	height: calc(var(--h) * 1px * var(--k));
 	image-rendering: pixelated;
 }
 
-/* Two clouds drifting over it all, either way. */
-.crView::before,
-.crView::after {
-	content: "";
-	position: absolute;
-	z-index: 100;
-	width: calc(576px * var(--k));
-	height: calc(256px * var(--k));
-	background: var(--cloud) no-repeat 0 0 / 100% 100%;
-	image-rendering: pixelated;
-	opacity: 0.5;
-	pointer-events: none;
-	animation: crDrift 80s linear infinite alternate;
-}
-
-.crView::before {
-	left: 30%;
-	top: calc(-150px * var(--k));
-}
-
-.crView::after {
-	right: calc(-260px * var(--k));
-	bottom: calc(-120px * var(--k));
-	background-image: var(--cloud2);
-	animation-duration: 100s;
-	animation-direction: alternate-reverse;
-}
-
-@keyframes crDrift {
-	to { translate: calc(60px * var(--k)) 0; }
-}
-
-/* A thing on the shore or in the sea, its foot on its spot, `--dx`, `--dy` tiles from the class's feet. */
+/* A thing on the islet or in the sea, its foot on its spot. */
 .crDecor {
 	position: absolute;
-	left: calc(var(--mid) + var(--dx) * 64px * var(--k));
-	top: calc(var(--stand) + var(--dy) * 64px * var(--k));
+	left: calc(var(--x) * 1px * var(--k));
+	top: calc(var(--y) * 1px * var(--k));
 	width: calc(var(--frame) * var(--k));
 	height: calc(var(--frame) * var(--k));
 	translate: -50% calc(var(--foot) * var(--k) * -1);
@@ -64,19 +36,16 @@
 
 /* The class's feet, the spot everything about it is placed from. */
 .crStand {
-	--fx: 0px;
-	--fy: 0px;
 	position: absolute;
-	z-index: 50;
-	left: var(--mid);
-	top: var(--stand);
+	left: calc(var(--x) * 1px * var(--k));
+	top: calc(var(--y) * 1px * var(--k));
 }
 
 /* One frame of the sheet, its feet on the grass; idle loops, a move plays once. */
 .crFigure {
 	position: absolute;
-	left: calc((var(--fx) - var(--frame) / 2) * var(--k));
-	top: calc((var(--fy) - var(--feet)) * var(--k));
+	left: calc(var(--frame) * var(--k) / -2);
+	top: calc(var(--feet) * var(--k) * -1);
 	width: calc(var(--frame) * var(--k));
 	height: calc(var(--frame) * var(--k));
 	background: var(--sheet) no-repeat 0 0 / calc(var(--frames) * var(--frame) * var(--k)) calc(var(--frame) * var(--k));
@@ -108,14 +77,25 @@
 	}
 }
 
-/* The gift on the grass at the feet. */
+/* The gift on the grass in front of the feet, 32 art px so a 64 px icon draws at its own size at 2x. */
 .crGift {
 	position: absolute;
-	left: calc((var(--fx) + 26px) * var(--k));
-	top: calc((var(--fy) - 14px) * var(--k));
+	left: calc(28px * var(--k));
+	top: calc(-22px * var(--k));
 	line-height: 0;
-	filter: drop-shadow(0 calc(2px * var(--k)) calc(2px * var(--k)) rgb(0 0 0 / 0.45));
 	animation: crGiftIn 450ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Its shadow on the grass. */
+.crGift::before {
+	content: "";
+	position: absolute;
+	left: 15%;
+	right: 15%;
+	bottom: calc(-3px * var(--k));
+	height: calc(6px * var(--k));
+	border-radius: 50%;
+	background: rgb(0 0 0 / 0.25);
 }
 
 @keyframes crGiftIn {
@@ -126,8 +106,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.crView::before,
-	.crView::after,
 	.crDecor,
 	.crFigure,
 	.crFigure.enter,

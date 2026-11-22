@@ -10,7 +10,6 @@ import "./creationScene.css";
 /** About `want` times the art's size, snapped so each of its pixels covers whole screen pixels, as pixel art stays sharp. */
 function zoom(want: number): number {
   const d = typeof window === "undefined" ? 1 : window.devicePixelRatio || 1;
-  // A few percent short still takes the step: only the foam's outer ring would be cut.
   return Math.max(1, Math.floor(want * d + 0.04)) / d;
 }
 
@@ -32,74 +31,60 @@ const MOVES: Record<HeroClass, { sheet: string; frames: number }[]> = {
 const IDLE_MS = 2600;
 const TILE = 64;
 
-/** The shore in 64px tiles, `.` sea and `g` grass: the land runs off the top and both sides, down to the waterline. */
-const MAP = [
-  "ggggggggggggg",
-  "ggggggggggggg",
-  "ggggggggggggg",
-  "gggggggggggg.",
-  ".ggggggggg...",
-  "...gggg......",
-  ".............",
-  ".............",
-  ".............",
-];
-/** The tile the class stands on, a step up from the water. */
-const HERO = { c: 5, r: 4 };
-/** How far down the scene the class's feet are, in percent. */
-const FEET = 56;
+/** The islet in 64px tiles, `.` sea and `g` grass, with a ring of sea for its foam. */
+const MAP = ["......", ".gggg.", ".gggg.", ".gggg.", "......"];
+/** Where the class's feet are on the islet, in art px from its map's top left: midway across, toward the front. */
+const HERO = { x: 192, y: 214 };
+/** The art px box the window must show whole: the islet, its foam, the boat, and the champion's swing over its head. */
+const VIEW = { x: 192, y: 178, w: 312, h: 244 };
 
-/** What is on the shore and in the shallows: each one's sheet, its square frame and count, the row its foot is on, and
- *  where that foot stands in tiles from the class's feet. The boat it came in drifts empty off the beach. */
-const SHORE: { sheet: string; frame: number; frames: number; foot: number; dx: number; dy: number }[] = [
-  { sheet: "Terrain/Resources/Wood/Trees/Tree4.png", frame: 192, frames: 8, foot: 169, dx: 1.4, dy: -2.3 },
-  { sheet: "Terrain/Resources/Wood/Trees/Tree3.png", frame: 192, frames: 8, foot: 169, dx: -1.6, dy: -2 },
-  { sheet: "Terrain/Decorations/Bushes/Bushe3.png", frame: 128, frames: 8, foot: 78, dx: -0.3, dy: -1.4 },
-  { sheet: "Terrain/Decorations/Bushes/Bushe1.png", frame: 128, frames: 8, foot: 78, dx: -2.3, dy: -0.9 },
-  { sheet: "Resources/Sheep/HappySheep_Idle.png", frame: 128, frames: 8, foot: 86, dx: 1.3, dy: -0.4 },
-  { sheet: "Terrain/Resources/Wood/Wood Resource/Wood Resource.png", frame: 64, frames: 1, foot: 46, dx: 1.1, dy: 0.6 },
-  { sheet: "Terrain/Resources/Wood/Wood Resource/Wood Resource.png", frame: 64, frames: 1, foot: 46, dx: -1.2, dy: 0.8 },
-  { sheet: "Terrain/Decorations/Rocks in the Water/Water Rocks_02.png", frame: 64, frames: 16, foot: 47, dx: 2.3, dy: 1.5 },
-  { sheet: "Enemy Pack/Extra/Boat/Boat_Idle.png", frame: 256, frames: 8, foot: 170, dx: 0.6, dy: 2 },
-  { sheet: "Terrain/Decorations/Rocks in the Water/Water Rocks_01.png", frame: 64, frames: 16, foot: 47, dx: -1.8, dy: 2.3 },
+/** What is on the islet and in the shallows: each one's sheet, its square frame and count, the row its foot is on, and
+ *  where that foot stands in art px on the map, `half` drawn at half size. The boat it came in lies beached on the front
+ *  corner, small beside the class. */
+const PROPS: { sheet: string; frame: number; frames: number; foot: number; x: number; y: number; half?: boolean }[] = [
+  { sheet: "Terrain/Decorations/Bushes/Bushe3.png", frame: 128, frames: 8, foot: 84, x: 108, y: 108 },
+  { sheet: "Terrain/Decorations/Bushes/Bushe1.png", frame: 128, frames: 8, foot: 79, x: 282, y: 100 },
+  { sheet: "Resources/Sheep/HappySheep_Idle.png", frame: 128, frames: 8, foot: 86, x: 284, y: 170 },
+  { sheet: "Terrain/Decorations/Rocks in the Water/Water Rocks_01.png", frame: 64, frames: 16, foot: 48, x: 318, y: 292 },
+  { sheet: "Enemy Pack/Extra/Boat/Boat_Idle.png", frame: 256, frames: 8, foot: 170, x: 84, y: 288, half: true },
 ];
 
-const at = (r: number, c: number) => MAP[r]?.[c] ?? ".";
-const isLand = (r: number, c: number) => at(r, c) !== ".";
+const isLand = (r: number, c: number) => (MAP[r]?.[c] ?? ".") !== ".";
 
 /** The tileset's autotile cell for a piece of the land: its 3 by 3 block, the one-wide column right of it, the one-tall
  *  row under it and the lone tile, chosen by which sides the land goes on. */
-function piece(has: (r: number, c: number) => boolean, r: number, c: number): [number, number] {
-  const w = has(r, c - 1);
-  const e = has(r, c + 1);
-  const n = has(r - 1, c);
-  const s = has(r + 1, c);
+function piece(r: number, c: number): [number, number] {
+  const w = isLand(r, c - 1);
+  const e = isLand(r, c + 1);
+  const n = isLand(r - 1, c);
+  const s = isLand(r + 1, c);
   return [w && e ? 1 : e ? 0 : w ? 2 : 3, n && s ? 1 : s ? 0 : n ? 2 : 3];
 }
 
-/** The shore at the art's own size, foam frame `tick`: the foam along the coast, then the grass. */
+/** The islet at the art's own size, foam frame `tick`: the foam along its edge, then the grass. */
 function drawIsle(g: CanvasRenderingContext2D, tiles: HTMLImageElement, foam: HTMLImageElement, tick: number): void {
   g.clearRect(0, 0, g.canvas.width, g.canvas.height);
-  const cells = MAP.flatMap((row, r) => [...row].map((_, c) => [r, c] as const));
-  for (const [r, c] of cells) {
-    if (!isLand(r, c) || (isLand(r - 1, c) && isLand(r + 1, c) && isLand(r, c - 1) && isLand(r, c + 1))) continue;
-    const f = (tick + r * 7 + c * 3) % 16;
-    g.drawImage(foam, f * 192, 0, 192, 192, (c - 1) * TILE, (r - 1) * TILE, 192, 192);
+  const land = MAP.flatMap((row, r) => [...row].map((_, c) => [r, c] as const)).filter(([r, c]) => isLand(r, c));
+  for (const [r, c] of land) {
+    if (isLand(r - 1, c) && isLand(r + 1, c) && isLand(r, c - 1) && isLand(r, c + 1)) continue;
+    g.drawImage(foam, ((tick + r * 7 + c * 3) % 16) * 192, 0, 192, 192, (c - 1) * TILE, (r - 1) * TILE, 192, 192);
   }
-  const tile = (x: number, y: number, r: number, c: number) => g.drawImage(tiles, x * TILE, y * TILE, TILE, TILE, c * TILE, r * TILE, TILE, TILE);
-  for (const [r, c] of cells) {
-    if (isLand(r, c)) tile(...piece(isLand, r, c), r, c);
+  for (const [r, c] of land) {
+    const [x, y] = piece(r, c);
+    g.drawImage(tiles, x * TILE, y * TILE, TILE, TILE, c * TILE, r * TILE, TILE, TILE);
   }
 }
 
-/** The world behind creation: the shore the class washed up on, the boat empty in the shallows, and the class on show at
- *  the waterline, idling and now and then showing its moves, the gift at its feet. Everything at one whole scale. */
+/** The window on the creation sheet: a small islet in the sea, the boat beached on its corner, and the class on show in
+ *  its middle, idling and now and then showing its moves, the gift at its feet. Everything at one whole scale, as large
+ *  as the window lets the islet stand whole. */
 export function CreationScene({ row, gift }: { row: (typeof CLASS_ROWS)[number]; gift?: SackItem }) {
   const view = useRef<HTMLDivElement>(null);
-  const [k, setK] = useState(2);
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  const k = zoom(Math.min(size.w / VIEW.w, size.h / VIEW.h));
   useEffect(() => {
     const el = view.current!;
-    const fit = () => setK(zoom(el.clientHeight >= 880 && el.clientWidth >= 1500 ? 3 : el.clientHeight >= 560 ? 2 : 1));
+    const fit = () => setSize({ w: el.clientWidth, h: el.clientHeight });
     fit();
     const ro = new ResizeObserver(fit);
     ro.observe(el);
@@ -138,33 +123,29 @@ export function CreationScene({ row, gift }: { row: (typeof CLASS_ROWS)[number];
 
   return (
     <div className="crScene" aria-hidden="true">
-      <div ref={view} className="crView" style={{ "--k": k, "--stand": `${FEET}%`, "--cloud": `url("${packUrl("Terrain/Decorations/Clouds/Clouds_03.png")}")`, "--cloud2": `url("${packUrl("Terrain/Decorations/Clouds/Clouds_05.png")}")` } as React.CSSProperties}>
-        <canvas
-          ref={land}
-          className="crLand"
-          width={MAP[0]!.length * TILE}
-          height={MAP.length * TILE}
-          style={{ "--landCol": HERO.c + 0.5, "--landRow": HERO.r + 0.6, "--cols": MAP[0]!.length, "--rows": MAP.length } as React.CSSProperties}
-        />
-        {SHORE.map((d, i) => (
-          <span
-            key={i}
-            className="crDecor"
-            style={{ "--dx": d.dx, "--dy": d.dy, zIndex: Math.round(50 + d.dy * 10), "--sheet": `url("${packUrl(d.sheet)}")`, "--frames": d.frames, "--frame": `${d.frame}px`, "--foot": `${d.foot}px` } as React.CSSProperties}
-          />
-        ))}
-        <div className="crStand">
-          <span
-            key={`${row.cls}:${beat}`}
-            className={`crFigure${beat % 2 ? " once" : ""}${beat === 0 ? " enter" : ""}`}
-            style={{ "--sheet": `url("${packUrl(move.sheet)}")`, "--frames": move.frames, "--frame": `${row.frame}px`, "--feet": `${row.feet}px` } as React.CSSProperties}
-            onAnimationEnd={(e) => e.animationName === "crFrames" && beat % 2 && setBeat((b) => b + 1)}
-          />
-          {gift && (
-            <span key={gift.label} className="crGift">
-              <ItemIcon icon={gift.icon} size={Math.round(16 * k)} />
-            </span>
-          )}
+      <div ref={view} className="crView" style={{ "--k": k } as React.CSSProperties}>
+        <div className="crIsle" style={{ "--cx": VIEW.x, "--cy": VIEW.y } as React.CSSProperties}>
+          <canvas ref={land} className="crLand" width={MAP[0]!.length * TILE} height={MAP.length * TILE} style={{ "--w": MAP[0]!.length * TILE, "--h": MAP.length * TILE } as React.CSSProperties} />
+          {PROPS.map((d, i) => (
+            <span
+              key={i}
+              className="crDecor"
+              style={{ "--x": d.x, "--y": d.y, zIndex: d.y, "--sheet": `url("${packUrl(d.sheet)}")`, "--frames": d.frames, "--frame": `${d.half ? d.frame / 2 : d.frame}px`, "--foot": `${d.half ? d.foot / 2 : d.foot}px` } as React.CSSProperties}
+            />
+          ))}
+          <div className="crStand" style={{ "--x": HERO.x, "--y": HERO.y, zIndex: HERO.y } as React.CSSProperties}>
+            <span
+              key={`${row.cls}:${beat}`}
+              className={`crFigure${beat % 2 ? " once" : ""}${beat === 0 ? " enter" : ""}`}
+              style={{ "--sheet": `url("${packUrl(move.sheet)}")`, "--frames": move.frames, "--frame": `${row.frame}px`, "--feet": `${row.feet}px` } as React.CSSProperties}
+              onAnimationEnd={(e) => e.animationName === "crFrames" && beat % 2 && setBeat((b) => b + 1)}
+            />
+            {gift && (
+              <span key={gift.label} className="crGift">
+                <ItemIcon icon={gift.icon} size={Math.round(32 * k)} />
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>

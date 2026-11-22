@@ -101,8 +101,8 @@ function Thumb({ row }: { row: (typeof CLASS_ROWS)[number] }) {
 
 /**
  * Before the prologue: the class, a gift and a name, kept for the run. Laid out as Elden Ring's Create Character on one
- * sheet of the pack's paper: the steps with what each holds, the step's choices under what the cursor is on, and the
- * numbers beside the class on show, who stands on its isle to the right. Keyboard only, on the play keys, so it is practice.
+ * sheet of the pack's paper across the screen: the steps with what each holds, the step's choices under what the cursor is
+ * on, the numbers, and the class on show in a window onto its shore at the right. Keyboard only, on the play keys, so it is practice.
  */
 export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => SackItem[]; onBegin: (cls: HeroClass, gift: ItemName, name: string) => void; onDone: () => void }) {
   const [step, setStep] = useState(0);
@@ -112,8 +112,9 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
   const [begun, setBegun] = useState(false);
   // The focused row of this step's list, shown on the rock and in the numbers; the chosen one until a row has focus.
   const [at, setAt] = useState<number | null>(null);
-  // Read at each render, so a scene still loading when this opened has its gifts by the time they are looked at.
-  const gifts = giftsNow();
+  // Read at each render, so a scene still loading when this opened has its gifts by the time they are looked at. Shown in
+  // the pack's own colours: the tints that tell goods apart in the game only muddy them here.
+  const gifts = giftsNow().map((g) => ({ ...g, icon: { ...g.icon, tint: undefined } }));
 
   const showCls = (step === 0 && at !== null && CLASS_ROWS[at]?.cls) || cls;
   const showGift = (step === 1 && at !== null && gifts[at]?.label) || gift;
@@ -193,8 +194,6 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
       onMouseDown={(e) => e.preventDefault()}
       onAnimationEnd={(e) => e.target === e.currentTarget && begun && onDone()}
     >
-      <CreationScene row={row} gift={giftShown} />
-
       <div className="crSheet">
         <h1 key={step} className="crHead">
           {STEPS[step]!.label}
@@ -267,6 +266,8 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
             </div>
           )}
         </aside>
+
+        <CreationScene row={row} gift={giftShown} />
       </div>
 
       <div className="crFoot">

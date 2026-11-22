@@ -1,5 +1,5 @@
-/* A new game's creation laid out as Elden Ring's Create Character, on one sheet of the pack's paper over the left of the
-   screen: the steps, the choices, the numbers; the class on show on its isle to the right. Fixed to the screen, never
+/* A new game's creation laid out as Elden Ring's Create Character, on one sheet of the pack's paper across the screen:
+   the steps, the choices, the numbers, and the class on show in a window onto its shore at the right. Fixed to the screen, never
    scrolled. Every piece at 1x or exactly half, as nearest-neighbour at any other scale breaks the art's lines. */
 .creation {
 	--ink: #2e1a0e;
@@ -8,9 +8,6 @@
 	--cream: #f2ead4;
 	--stroke: #2e1a0e;
 	--band: linear-gradient(90deg, rgb(110 76 36 / 0.3), rgb(110 76 36 / 0.06));
-	/* The sheet's paper ends at 62% across; the class stands midway across the rest. */
-	--sheet: 62%;
-	--mid: calc(var(--sheet) + (100% - var(--sheet)) / 2);
 	display: block;
 	overflow: hidden;
 	cursor: none;
@@ -26,16 +23,13 @@
 
 /* The scroll at 1x, its 128px corners drawn over the padding: the paper starts 28px in and 60px down, ends 44px short
    of the right, and its curls run along the foot 17px up. Placed so the paper stands 48px off the left and 80px off the
-   top, room for the ribbon above it, and ends at `--sheet`; as tall as what is on it. */
+   top, room for the ribbon above it, and runs to the right edge and down to the keys. */
 .crSheet {
 	position: absolute;
 	z-index: 200;
-	left: 20px;
-	top: 20px;
-	max-height: calc(100% - 84px);
-	width: calc(var(--sheet) + 24px);
+	inset: 20px 20px 60px;
 	display: grid;
-	grid-template-columns: 150px minmax(0, 1fr) 220px;
+	grid-template: "fields list stats scene" minmax(0, 1fr) / 150px minmax(0, 1fr) 220px minmax(0, 2fr);
 	align-items: start;
 	gap: 0 32px;
 	padding: 132px 72px 96px 76px;
@@ -70,6 +64,7 @@
 
 /* The steps, each with what it holds; the one being chosen on the band. */
 .crFields {
+	grid-area: fields;
 	display: grid;
 	gap: 4px;
 	margin: 0;
@@ -102,11 +97,15 @@
 	color: var(--ink);
 }
 
+/* Kept inside the paper on a short screen; the focused row scrolls itself into view. */
 .crList {
+	grid-area: list;
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
-	min-height: 0;
+	max-height: 100%;
+	overflow-y: auto;
+	scrollbar-width: none;
 }
 
 /* What the cursor is on, in a fixed four lines so the rows under it never move. */
@@ -175,6 +174,20 @@
 	mask-composite: intersect;
 }
 
+/* The window onto the shore, set into the paper like the numbers' cell, as tall as the sheet's inside. */
+.crScene {
+	grid-area: scene;
+	align-self: stretch;
+	position: relative;
+	overflow: hidden;
+	border: 4px solid var(--ink);
+	border-radius: 6px;
+	box-shadow:
+		0 0 0 3px rgb(110 76 36 / 0.35),
+		inset 0 0 24px rgb(0 0 0 / 0.35);
+	background: #47aba9;
+}
+
 /* The name on a nameplate of the wood table's dark slot. */
 .crName {
 	display: grid;
@@ -202,8 +215,9 @@
 	-webkit-text-stroke: 0;
 }
 
-/* The numbers in a cell pressed into the sheet's right edge, beside the class on show. */
+/* The numbers in a cell pressed into the paper, beside the class on show. */
 .crStats {
+	grid-area: stats;
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
@@ -310,28 +324,26 @@
 	}
 }
 
-@media (max-width: 1100px) {
-	.creation {
-		--sheet: 70%;
-	}
-
+/* Too narrow for the islet at 2x: the list takes the room back. */
+@media (max-width: 1400px) {
 	.crSheet {
-		grid-template-columns: 130px minmax(0, 1fr) 180px;
+		grid-template-columns: 150px minmax(0, 1fr) 220px minmax(0, 1.2fr);
+	}
+}
+
+@media (max-width: 1100px) {
+	.crSheet {
+		grid-template-columns: 130px minmax(0, 1fr) 180px minmax(0, 1.2fr);
 		gap: 0 20px;
 	}
 }
 
-/* A phone: the class up top, the sheet under it with only the choices. */
+/* A phone: the window up top, only the choices under it. */
 @media (max-width: 760px) {
-	.creation {
-		--mid: 50%;
-	}
-
 	.crSheet {
-		top: 36%;
-		left: -20px;
-		width: calc(100% + 64px);
-		grid-template-columns: minmax(0, 1fr);
+		inset: 8px -20px 48px;
+		grid-template: "scene" 30vh "list" minmax(0, 1fr) / minmax(0, 1fr);
+		gap: 16px;
 	}
 
 	.crFields,
