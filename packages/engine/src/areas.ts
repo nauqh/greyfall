@@ -1401,10 +1401,9 @@ function harbour(): AreaMap {
   // The Northwood's plateau bridged over the Ember Gate track onto the spur's landing; the track climbs over it, up the
   // plateau's stair and down the landing's.
   const sistersBridge = t.span(2, 29, 21, 4, 2);
-  // The east ward: the garrison, its barracks and butts, a drill ground and its fire, the guard down at the gate.
+  // The east ward: the garrison, its barracks and butts, a drill ground, the guard down at the gate.
   prop("barracks", 64, 21, blue);
   prop("archery", 65, 24, blue);
-  t.campfires.push({ col: 61, row: 21 });
   // The drill stops the day the Warlord falls.
   who("warrior", 59, 23, { ...blue, unless: "warlordDead", to: { col: 63, row: 23 } });
   for (const [c, r] of [[62, 26], [64, 27]] as const) who("archer", c, r, blue);
@@ -1414,7 +1413,6 @@ function harbour(): AreaMap {
   prop("tree", 57.5, 17.4, { scale: 1.6, fixed: true });
   for (const [c, r] of [[56, 16], [60, 17]] as const) prop("sconce", c, r);
   prop("barracks", 52, 18, { ...blue, scale: 1.3 });
-  t.campfires.push({ col: 56, row: 19 });
   prop("woodPile", 58, 19);
   prop("meat", 56, 20);
   who("warrior", 52, 20, { ...blue, to: { col: 54, row: 20 } });
@@ -1432,7 +1430,6 @@ function harbour(): AreaMap {
   who("archer", 52, 13, blue);
   who("lancer", 62, 12, blue);
   // The Burg Gate stands open: a lancer either side of its door, the guard camped in the forecourt.
-  t.campfires.push({ col: 56, row: 11 });
   prop("meat", 53, 11);
   for (const [c, r] of [[54, 10], [58, 11]] as const) who("lancer", c, r, blue);
   for (const c of [54, 57]) who("lancer", c, 9, blue);
@@ -1532,8 +1529,7 @@ function harbour(): AreaMap {
   t.block(1, 25, 22, 1, 1);
   for (let r = 10; r <= 24; r++) for (let c = 20; c <= 25; c++) if (t.grid[r]![c] === "T") t.grid[r]![c] = ".";
   for (const [c, r] of [[26, 25], [27, 25], [28, 25], [27, 26]] as const) t.grid[r]![c] = ".";
-  // The lumber camp at the wood's foot by the Ember Gate road: a fire, the axes going.
-  t.campfires.push({ col: 25, row: 40 });
+  // The lumber camp at the wood's foot by the Ember Gate road, the axes going.
   for (const [c, r] of [[21, 36], [28, 36]] as const) who("pawn", c, r, { ...blue, act: "axe" });
   who("pawn", 17, 32, { ...blue, act: "axe", unless: "emberGateOpen" });
   who("pawn", 26, 39, { ...blue, act: "wood", to: { col: 40, row: 46 } });
@@ -1541,8 +1537,6 @@ function harbour(): AreaMap {
   // The goblins' camp outside the Ember Gate: Emberwood's raiders dug in on the Harbour's side of the road, the first
   // fight a captain walking north meets.
   prop("goblinHut", 35, 6);
-  // The camp's fire: a campfire, the gate it guards shut from this side until it is opened from the wood.
-  t.campfires.push({ col: 33, row: 9 });
   // Two torches and a spear: winnable at the start, with nothing but the sword (three met at once killed in five seconds).
   for (const [c, r] of [[35, 10], [36, 12]] as const) who("torch", c, r, { unless: "emberGateOpen" });
   who("spear", 34, 13, { unless: "emberGateOpen" });
@@ -1560,7 +1554,6 @@ function harbour(): AreaMap {
   // A lookout on the crest, over the sea the ships stopped coming in on.
   prop("watchtower", 97, 13);
   who("archer", 99, 14, blue);
-  t.campfires.push({ col: 93, row: 16 });
   prop("goldStone", 87, 19);
   // The middle bench: the hill's last trees felled for pit props, a shed for the tools, and the timber and ore going
   // down past it.
@@ -1571,7 +1564,6 @@ function harbour(): AreaMap {
   // The miners' camp at the hill's foot where the mine road ends, and the ore carried down it and up the castle road
   // to the forge.
   for (const [c, r] of [[88, 35], [85, 39]] as const) prop("goldStone", c, r);
-  t.campfires.push({ col: 86, row: 37 });
   for (const [c, r, art] of [[92, 39, "house1"], [96, 38, "house2"]] as const) prop(art, c, r, blue);
   for (const [c, r, art] of [[89, 38, "woodPile"], [84, 36, "tools"], [94, 36, "meat"]] as const) prop(art, c, r);
   who("pawn", 90, 39, { ...blue, act: "hammer" });
@@ -1634,9 +1626,8 @@ function harbour(): AreaMap {
   who("skull", 94, 61, { ...held, to: { col: 92, row: 60 } });
   who("gnoll", 100, 55, { ...held, to: { col: 102, row: 53 } });
   prop("goldStone", 99, 61);
-  // The crest: the dogs' den round their fire, graves dug up for the rings, bones and meat flung about, skulls staked at
-  // the stair heads, a gibbet tree on the west lip. Their spoil heaped by the fire, where it glints from the road.
-  t.campfires.push({ col: 97, row: 47 });
+  // The crest: the dogs' den, graves dug up for the rings, bones and meat flung about, skulls staked at
+  // the stair heads, a gibbet tree on the west lip. Their spoil heaped in the den, where it glints from the road.
   prop("deadTree", 98, 44, { scale: 1.2 });
   for (const [c, r] of [[97, 49], [104, 49]] as const) prop("skullSpike", c, r);
   for (const [c, r] of [[97, 45], [99, 49], [102, 49], [105, 47]] as const) prop("bones", c, r);
@@ -1682,7 +1673,6 @@ function harbour(): AreaMap {
   t.props = t.props.filter((p) => !old(p.col, p.row));
   t.dwellers = t.dwellers.filter((d) => !old(d.col, d.row));
   t.fences = t.fences.filter((f) => !old(f.col, f.row));
-  t.campfires = t.campfires.filter((f) => !old(f.col, f.row));
   const pinned = { fixed: true } as const;
   prop("tower", sx(6.9), 43.9, { ...blue, ...pinned });
   prop("cave", sx(9.5), 48.9, { ...pinned, scale: 0.85 });
@@ -1710,11 +1700,9 @@ function harbour(): AreaMap {
   who("lancer", sx(5), 54, { ...blue, to: { col: sx(8), row: 54 } });
   who("warrior", sx(18), 49, { ...blue, to: { col: sx(16), row: 49 } });
   for (const [c, r] of [[4, 52], [5, 53], [22, 51], [21, 50]] as const) who("sheep", sx(c), r);
-  t.campfires.push({ col: Math.round(sx(12)), row: 53 });
   // The hill's west foot: a hamlet on the shelf, and a watchtower on the shore spur looking over the bay to the farm.
   for (const [c, r, art] of [[34, 49, "house1"], [38, 49, "house3"], [36, 52, "house2"]] as const) prop(art, c, r, blue);
   prop("watchtower", 31, 55, pinned);
-  t.campfires.push({ col: 36, row: 50 });
   who("pawn", 33, 51, { ...blue, act: "hammer" });
   who("archer", 30, 54, blue);
   // The island's terraces carried round the bay's upper curve, the shore left as it lies: the west terrace down to the
