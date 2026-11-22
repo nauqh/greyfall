@@ -169,6 +169,24 @@ function stone(tier: AtlasTier): AtlasTier {
   return { ...tier, island: { ...tier.island, rows } };
 }
 
+/** A one-row notch under a cliff with its own height again below it is all cliff face and no ground, which the tileset
+ *  cannot draw: it fills with the ground below, which the cliff then stands on, as in the Tiny Swords tilemap guide. */
+function unnotch(tier: AtlasTier): AtlasTier {
+  const rows = tier.island.rows.map((l) => [...l]);
+  const areaAt = tier.areaAt.map((l) => [...l]);
+  const lv = (c: number, r: number) => heightOf(rows[r]?.[c] ?? "~");
+  const ramp = (c: number, r: number) => "<>[]{}()".includes(rows[r]?.[c] ?? "~");
+  for (let r = 1; r < rows.length - 1; r++) {
+    for (let c = 0; c < rows[r]!.length; c++) {
+      const up = lv(c, r - 1);
+      if (up < 2 || lv(c, r) >= up || lv(c, r + 1) < up || ramp(c, r - 1) || ramp(c, r) || ramp(c, r + 1)) continue;
+      rows[r]![c] = rows[r + 1]![c]!;
+      areaAt[r]![c] = areaAt[r + 1]![c]!;
+    }
+  }
+  return { ...tier, island: { ...tier.island, rows: rows.map((l) => l.join("")) }, areaAt: areaAt.map((l) => l.join("")) };
+}
+
 /** A passage through rock along a bending line of points; three wide, as the top row under rock is a cliff face. */
 function tunnel(t: Builder, points: readonly (readonly [number, number])[], width = 3): void {
   for (let i = 1; i < points.length; i++) t.bridge({ col: points[i - 1]![0], row: points[i - 1]![1] }, { col: points[i]![0], row: points[i]![1] }, width);
@@ -1282,7 +1300,7 @@ function harbour(): AreaMap {
   // own length; the climb in plain sight from the fire is a notch in the south face, a stair up its side.
   const graves = [
     [2, 41, 99, 102], [2, 42, 96, 104], [2, 43, 96, 104], [2, 44, 93, 107], [2, 45, 93, 107], [2, 46, 93, 108],
-    [2, 47, 91, 108], [2, 48, 91, 109], [2, 49, 91, 109], [2, 50, 89, 109], [2, 51, 90, 109], [2, 52, 90, 107],
+    [2, 47, 91, 108], [2, 48, 91, 109], [2, 49, 91, 109], [2, 50, 90, 109], [2, 51, 90, 109], [2, 52, 90, 107],
     [2, 53, 91, 102], [2, 53, 105, 107], [2, 54, 91, 102], [2, 55, 88, 104], [2, 56, 88, 103], [2, 57, 88, 105],
     [2, 58, 90, 106], [2, 59, 90, 106], [2, 60, 92, 106], [2, 61, 93, 95], [2, 61, 98, 104], [2, 62, 93, 95],
     [2, 62, 98, 104], [2, 63, 98, 101], [2, 64, 98, 101],
@@ -1666,8 +1684,8 @@ function harbour(): AreaMap {
   who("monk", 96, 58, { ...blue, when: "moorGateOpen" });
   // The Coffin Stair, the town's old way up with its dead: off the plateau's south-west corner toward the fire square,
   // barred at its head until someone who has cleared the crest lifts the bar.
-  t.stair(2, 90, 52, "L");
-  const locks = [{ name: "The Coffin Stair", cells: [{ col: 90, row: 52 }], flag: "coffinStairOpen", from: { col: 90, row: 50 } }];
+  t.stair(2, 89, 52, "L");
+  const locks = [{ name: "The Coffin Stair", cells: [{ col: 89, row: 52 }], flag: "coffinStairOpen", from: { col: 90, row: 50 } }];
 
   // Lantern Point, the lighthouse on the south-east headland at the Graves road's foot, the cove's gold behind it. Dark
   // three winters, with no ship to light in; lit again the day the Warlord falls.
@@ -1811,7 +1829,7 @@ function harbour(): AreaMap {
     { at: { col: 101, row: 47 }, text: "Three winters on this rock. The beacon stays lit. Someone has to see it." },
     { at: { col: 98, row: 21 }, text: "SHUT. The rock is grey past here. Do not dig it. - D." },
   ];
-  const tier = t.finish({}, [{ col: 71, row: 49 }]);
+  const tier = unnotch(t.finish({}, [{ col: 71, row: 49 }]));
   // The bridge is the island's own ground run out to the landing, not half Old Town's.
   const districtAt = districtGrid(tier, districts, t);
   const rim = districtAt[45]![59]!;
