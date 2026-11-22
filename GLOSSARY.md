@@ -161,6 +161,10 @@ _Avoid_: the wanderer, the chosen, the player character
 **Nameless**:
 The hero's name when none was given. A save from before the class pick is named the Wanderer.
 
+**Class**:
+Who the hero came ashore as, picked at a new game's start: Warrior (a man, with a shield), Eggwarden (a fenfolk, whose frill cuts every foe beside it), Champion (one of the horned, whose every blow knocks back) or Grovekeeper (a bamboo-folk, who guards).
+_Avoid_: job, role, archetype
+
 **The band**:
 The hero's companions, up to three at once.
 _Avoid_: party, squad

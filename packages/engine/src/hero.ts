@@ -11,12 +11,16 @@ import type { WorldFlag } from "./npcs.ts";
 export const HERO = { hp: 100, attack: 12, chain: 0.65, every: 1.1, hit: 0.2, speed: 2.8, sprint: 1.6, guard: 0.2, combo: 1.4, flasks: 3, flask: 40 } as const;
 
 /** The class picked at a new game's start. */
-export type HeroClass = "warrior" | "lancer";
-/** What a class changes of `HERO`: the Lancer's thrust reaches two tiles and bites deeper, but it recovers and walks
- *  slower, on more health; about the Warrior's damage a second, traded for reach. */
-export const CLASSES: Record<HeroClass, { hp: number; attack: number; chain: number; every: number; speed: number; reach: number }> = {
-  warrior: { hp: HERO.hp, attack: HERO.attack, chain: HERO.chain, every: HERO.every, speed: HERO.speed, reach: 1 },
-  lancer: { hp: 120, attack: 15, chain: 0.85, every: 1.4, speed: 2.5, reach: 2 },
+export type HeroClass = "warrior" | "eggwarden" | "champion" | "grovekeeper";
+/** What a class changes of `HERO`. Only the man and the bamboo-folk carry something to guard with. */
+export const CLASSES: Record<HeroClass, { hp: number; attack: number; chain: number; every: number; speed: number; reach: number; shield: boolean; knockAll?: boolean; sweep?: boolean }> = {
+  warrior: { hp: HERO.hp, attack: HERO.attack, chain: HERO.chain, every: HERO.every, speed: HERO.speed, reach: 1, shield: true },
+  // The fenfolk: its frill flares round it and cuts every foe beside it, not one; quickest on its feet, on less health.
+  eggwarden: { hp: 90, attack: 10, chain: 0.7, every: 1.2, speed: 3, reach: 1, shield: false, sweep: true },
+  // The horned: every blow throws the foe back, not only the finisher; slow between them.
+  champion: { hp: 125, attack: 18, chain: 0.9, every: 1.5, speed: 2.6, reach: 1, shield: false, knockAll: true },
+  // The bamboo-folk: the most health, and the only one but the man that can guard.
+  grovekeeper: { hp: 150, attack: 14, chain: 0.8, every: 1.3, speed: 2.4, reach: 1, shield: true },
 };
 
 /**

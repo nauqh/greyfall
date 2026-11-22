@@ -14,19 +14,21 @@ function zoom(want: number): number {
   return Math.max(1, Math.floor(want * d + 0.04)) / d;
 }
 
-/** Each class's own moves, played in turn between spells of idling: the warrior's cut and guard, the lancer's thrust and brace. */
+/** Each class's own moves, played in turn between spells of idling: the warrior's cut and guard, the bamboo-folk's blow and brace. */
 const MOVES: Record<HeroClass, { sheet: string; frames: number }[]> = {
   warrior: [
     { sheet: "Units/Blue Units/Warrior/Warrior_Attack1.png", frames: 4 },
     { sheet: "Units/Blue Units/Warrior/Warrior_Guard.png", frames: 6 },
   ],
-  lancer: [
-    { sheet: "Units/Blue Units/Lancer/Lancer_Right_Attack.png", frames: 3 },
-    { sheet: "Units/Blue Units/Lancer/Lancer_Right_Defence.png", frames: 6 },
+  eggwarden: [{ sheet: "Enemy Pack/Lizard/Lizard_Attack.png", frames: 9 }],
+  champion: [{ sheet: "Enemy Pack/Minotaur/Minotaur_Attack.png", frames: 12 }],
+  grovekeeper: [
+    { sheet: "Enemy Pack/Panda/Panda_Attack.png", frames: 13 },
+    { sheet: "Enemy Pack/Extra/Panda Guard/Panda_Guard.png", frames: 8 },
   ],
 };
 
-/** The stage in art pixels: wide enough for the lancer's thrust, tall enough for its lance held up. */
+/** The stage in art pixels: wide and tall enough for the horned, the biggest of them. */
 const STAGE = { w: 250, h: 220 };
 const IDLE_MS = 2600;
 

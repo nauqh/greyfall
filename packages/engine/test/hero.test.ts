@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { BOSS_KITS, bossAim, FOES, GIFTS, HERO, LENT, ITEMS, LEVEL_UP, kit, levelCost, onOffer, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
+import { BOSS_KITS, bossAim, CLASSES, FOES, GIFTS, HERO, LENT, ITEMS, LEVEL_UP, kit, levelCost, onOffer, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
 
 const goblin = FOES.torch!;
 const home = { col: 10, row: 10 };
@@ -215,5 +215,17 @@ describe("a boss's moves", () => {
     expect(BOSS_KITS.barrowKing!.moves.raise!.summon).toEqual({ kind: "skull", n: 2, cap: 3 });
     expect(boar.pick(5, "charge", false)).toBe("cannons");
     expect(boar.pick(5, "charge", true)).toBe("rally");
+  });
+});
+
+describe("the other folk's classes", () => {
+  it("leaves a guard only to the man and the bamboo-folk", () => {
+    expect(Object.entries(CLASSES).filter(([, c]) => c.shield).map(([k]) => k)).toEqual(["warrior", "grovekeeper"]);
+  });
+
+  it("gives each of the other folk one thing of its own", () => {
+    expect(CLASSES.eggwarden.sweep).toBe(true);
+    expect(CLASSES.champion.knockAll).toBe(true);
+    expect(CLASSES.grovekeeper.shield).toBe(true);
   });
 });

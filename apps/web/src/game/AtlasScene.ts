@@ -545,19 +545,32 @@ const ROCK_PAD = 128;
 /** An area map's view in play: this many rows tall, held on the hero. */
 const AREA_ROWS = 15;
 /** The captain, drawn from the knights' sheets, by class. */
-const HERO_ART: Record<HeroClass, { look: Dweller; attack: { key: string; file: string }; attack2: { key: string; file: string }; guard: { key: string; file: string } }> = {
+const HERO_ART: Record<HeroClass, { look: Dweller; attack: { key: string; file: string }; attack2: { key: string; file: string }; guard?: { key: string; file: string }; tint?: number }> = {
   warrior: {
     look: { kind: "warrior", col: 0, row: 0, color: "blue" },
     attack: { key: "blue_Warrior/Warrior_Attack1.png", file: "Units/Blue Units/Warrior/Warrior_Attack1.png" },
     attack2: { key: "blue_Warrior/Warrior_Attack2.png", file: "Units/Blue Units/Warrior/Warrior_Attack2.png" },
     guard: { key: "blue_Warrior/Warrior_Guard.png", file: "Units/Blue Units/Warrior/Warrior_Guard.png" },
   },
-  // One thrust, drawn facing right, for every swing of the combo.
-  lancer: {
-    look: { kind: "lancer", col: 0, row: 0, color: "blue" },
-    attack: { key: "blue_Lancer/Lancer_Right_Attack.png", file: "Units/Blue Units/Lancer/Lancer_Right_Attack.png" },
-    attack2: { key: "blue_Lancer/Lancer_Right_Attack.png", file: "Units/Blue Units/Lancer/Lancer_Right_Attack.png" },
-    guard: { key: "blue_Lancer/Lancer_Right_Defence.png", file: "Units/Blue Units/Lancer/Lancer_Right_Defence.png" },
+  // The other folk from the monsters' sheets, washed blue so the captain is never taken for one of the foes beside it.
+  eggwarden: {
+    look: { kind: "lizard", col: 0, row: 0 },
+    attack: { key: "beast_lizard_attack", file: BEAST.lizard!.attack! },
+    attack2: { key: "beast_lizard_attack", file: BEAST.lizard!.attack! },
+    tint: 0xb4c8ff,
+  },
+  champion: {
+    look: { kind: "minotaur", col: 0, row: 0 },
+    attack: { key: "beast_minotaur_attack", file: BEAST.minotaur!.attack! },
+    attack2: { key: "beast_minotaur_attack", file: BEAST.minotaur!.attack! },
+    tint: 0xb4c8ff,
+  },
+  grovekeeper: {
+    look: { kind: "panda", col: 0, row: 0 },
+    attack: { key: "beast_pandaCub_attack", file: BEAST.pandaCub!.attack! },
+    attack2: { key: "beast_pandaCub_attack", file: BEAST.pandaCub!.attack! },
+    guard: { key: "beast_pandaGuard_idle", file: BEAST.pandaGuard!.idle },
+    tint: 0xb4c8ff,
   },
 };
 /** A flask drunk: the Monk's healing swirl round the feet, and the green drop over the head (the pack has no flask). */
@@ -751,7 +764,9 @@ const CLASS = "greyfall.class";
 /** What the captain was called at the start. Not `greyfall.name`, the duel's name, which a new game keeps. */
 const NAME = "greyfall.hero";
 function heroClass(): HeroClass {
-  return stored<HeroClass>(CLASS, "warrior");
+  // A class since taken out of the pick comes back as a Warrior.
+  const cls = stored<HeroClass>(CLASS, "warrior");
+  return cls in CLASSES ? cls : "warrior";
 }
 /** The captain's numbers from the class, the goods owned and the levels bought. */
 function gearNow(): Kit {
@@ -1068,7 +1083,7 @@ export class AtlasScene extends Phaser.Scene {
         const { idle, move, frame } = this.look(art.look);
         sheet(idle.key, { file: idle.file, frame, anchor: 0 });
         if (move) sheet(move.key, { file: move.file, frame, anchor: 0 });
-        for (const a of [art.attack, art.attack2, art.guard]) sheet(a.key, { file: a.file, frame, anchor: 0 });
+        for (const a of [art.attack, art.attack2, art.guard]) if (a) sheet(a.key, { file: a.file, frame, anchor: 0 });
       }
       sheet(HEAL_FX.key, { file: HEAL_FX.file, frame: 192, anchor: 0 });
       if (!this.textures.exists(FLASK_ICON.key)) this.load.image(FLASK_ICON.key, packUrl(FLASK_ICON.file));
@@ -1707,7 +1722,8 @@ export class AtlasScene extends Phaser.Scene {
     const art = HERO_ART[this.cls];
     const look = this.look(art.look);
     const y = (at.row + 0.75) * CELL;
-    const s = this.add.sprite((at.col + 0.5) * CELL, y, look.idle.key).setOrigin(0.5, look.anchor).setDepth(standing(y));
+    const s = this.add.sprite((at.col + 0.5) * CELL, y, look.idle.key).setOrigin(0.5, look.anchor).setDepth(standing(y)).setData("tint", art.tint);
+    untint(s);
     this.play(s, look.idle.key);
     this.hero = { ...this.body(s, at, this.gear.hp, CLASSES[this.cls].speed, { idle: look.idle.key, move: look.move?.key, attack: art.attack.key }) };
     const k = this.input.keyboard;
@@ -2311,6 +2327,8 @@ export class AtlasScene extends Phaser.Scene {
     const look = this.look(HERO_ART[cls].look);
     Object.assign(hero, { idle: look.idle.key, move: look.move?.key, attack: HERO_ART[cls].attack.key, speed: CLASSES[cls].speed });
     hero.s.anims.stop();
+    hero.s.setData("tint", HERO_ART[cls].tint);
+    untint(hero.s);
     hero.s.setOrigin(0.5, look.anchor);
     this.play(hero.s, hero.idle);
     hero.lift = hero.s.displayHeight * hero.s.originY * 0.78;
@@ -2556,7 +2574,7 @@ export class AtlasScene extends Phaser.Scene {
     const hero = this.hero!;
     const rolling = time < this.roll.until;
     if (!hero.dead) hero.s.setAngle(0);
-    this.guarding = !rolling && !hero.dead && !this.gone && this.playing && this.shieldUp && time >= this.guardBroken;
+    this.guarding = !rolling && !hero.dead && !this.gone && this.playing && this.shieldUp && CLASSES[this.cls].shield && time >= this.guardBroken;
     if (rolling) {
       this.slide(this.roll.dx, this.roll.dy, (this.roll.speed * dt) / 1000, !this.roll.back);
       if (time - this.roll.trail > 45) {
@@ -2570,7 +2588,7 @@ export class AtlasScene extends Phaser.Scene {
       if (time >= hero.busy) {
         const foe = this.foes.filter((f) => !f.dead && tileDistance(f.at, hero.at) <= 3).sort((a, b) => tileDistance(a.at, hero.at) - tileDistance(b.at, hero.at))[0];
         if (foe && Math.abs(foe.s.x - hero.s.x) > 4) hero.s.setFlipX(foe.s.x < hero.s.x);
-        this.play(hero.s, HERO_ART[this.cls].guard.key);
+        this.play(hero.s, HERO_ART[this.cls].guard!.key);
       }
     } else if (!hero.dead && !this.gone) {
       // Space held past a tap, while moving: a sprint, for as long as the stamina lasts.
@@ -3761,9 +3779,12 @@ export class AtlasScene extends Phaser.Scene {
     // The blow lands partway through the swing, if the mark is still in reach.
     this.time.delayedCall(HERO.hit * 1000, () => {
       const { reach } = CLASSES[this.cls];
-      if (foe.dead || hero.dead || tileDistance(foe.at, hero.at) > reach || Math.hypot(foe.s.x - hero.s.x, foe.s.y - hero.s.y) > (reach + 0.6) * CELL) return;
-      this.hurt(hero, foe, this.gear.attack);
-      if (step === 3 && !foe.dead && !BOSSES.has(foe.kind)) this.knockBack(foe, this.time.now);
+      const near = (f: Foe) => !f.dead && tileDistance(f.at, hero.at) <= reach && Math.hypot(f.s.x - hero.s.x, f.s.y - hero.s.y) <= (reach + 0.6) * CELL;
+      if (hero.dead || !near(foe)) return;
+      for (const f of CLASSES[this.cls].sweep ? this.foes.filter(near) : [foe]) {
+        this.hurt(hero, f, this.gear.attack);
+        if ((step === 3 || CLASSES[this.cls].knockAll) && !f.dead && !BOSSES.has(f.kind)) this.knockBack(f, this.time.now);
+      }
     });
   }
 

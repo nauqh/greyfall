@@ -122,7 +122,8 @@ One did not stay. The horned watched over the Citadel's pits while goblins
 dug them, and when the cold came up the Cut one bullman left his post and
 walked west for the warm. He lies in the Ember Hollow, the hot ash grown into
 his hide, and the goblins, who obeyed the horn for a hundred years, call him
-lord: the Ember Bull. He is the one horned the Grey never had.
+lord: the Ember Bull. He is the one horned the Grey never had, unless the
+hero came ashore as one.
 
 Folk do not say "the horned" kindly. Highward's lords used to hire
 them.
@@ -164,6 +165,25 @@ Cloudstair, the Throne Isle, the edges of Sunhold. Sunhold's guard spends half
 its days burning them out. The other half, folk say, it spends wondering why
 there are more every year.
 
+## As the hero
+
+The Hearth gives back the drowned of any people, not only men. Three of the
+other folk can come ashore as the hero, drawn from their own sheets washed
+blue, the band's colour:
+
+- **The Eggwarden**, a fenfolk: it went down the Stillmere sinkhole after the
+  eggs and followed the water to the Hearth. Its frill cuts every foe beside
+  it at once.
+- **The Champion**, one of the horned: sworn to the Citadel, it rode out with
+  the last gold ship the night the Grey came, and went down with it. The
+  Ember Bull is not alone, then, in being horned and never the Grey's. Every
+  blow it lands throws the foe back.
+- **The Grovekeeper**, a bamboo-folk: when the Grey took Old Bamboo it took
+  ship for the old country to bring back help, and went down with the ship.
+  The most health, and it guards behind its nunchaku.
+
+The folk's lines do not yet change for a hero who is not a man.
+
 ## Not peoples
 
 Men do not count these as folk, and neither should player text.
@@ -197,8 +217,8 @@ The other folk's names are in [GLOSSARY.md](../../GLOSSARY.md).
 ## Open questions
 
 1. **Can any of them join the band?** The band is Lancer, Archer, Monk, all
-   men in blue. A goblin, a gnome or a finfolk companion would need an art
-   colour rule of its own.
+   men in blue. A fenfolk, one of the horned or a bamboo-folk can now be the hero, washed blue (see
+   As the hero); the same wash would serve a companion.
 2. **Do any of them talk to the wanderer?** Today no folk who is not a man
    speaks. One gnome trader in Brasscrag, or a fenfolk at the chapel stair,
    would carry most of this file in two talks.
