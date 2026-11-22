@@ -194,9 +194,9 @@ then walks back. The engine already has a guard leash.
    saying where to go and the Old Well in the hill's cave west of it going down (bats below;
    only bows reach them). The boat's pier lies just south, on the docks. The
    climb runs straight up from the fire through Old Town and the Upper Town
-   to the Castle Gate on the hill's crown. The main path to the Burg leaves
-   the climb on Old Town and runs round the hill's east side to its back,
-   leaving on Old Town's height straight behind the crown.
+   to the Burg Gate, Highward's gatehouse on the hill's crown, its door
+   facing the climb and opening into the Lower Burg. Behind the town is
+   only woods.
 
    The Lower Burg is a town of walled yards and lanes, with the square's
    fire. The Ramparts lead to the Rampart Boar on the Bull's Wall. The Chapel
@@ -792,10 +792,14 @@ crossing are gone.
   beside it. You come from the Bull's Ring by boat (`The Boat`,
   a `lift` crossing drawn as a moored boat, E says "Take the boat to"), not a lift
   up through the rock, landing on the docks' pier below the bowl. The
-  climb runs straight up from the fire to the Castle Gate on the hill's
-  crown, towers and Highward's keep beside it. The road to the Burg leaves
-  from Old Town's height straight behind the crown, off the map's north edge; the sea is gone, the
-  Lanternport's north border woods (`wooded(m, top)`), since a gate to an
+  climb runs straight up from the fire to the Burg Gate, Highward's
+  gatehouse on the hill's crown, towers beside it. The way to the Burg is
+  the gatehouse's door, on its front facing the bridge, so the climb ends at
+  the gate and not round the back. The woods run right up to the citadel's
+  back wall (`wooded(m, top)`), with no way along there. The Upper Town is
+  three heights in one line and every stair goes on: the Great Gate's
+  stairs onto the Lower Circle, the gate square's two and a west one
+  onto the Wind Ward, its bridge over the moat to the crown. The sea is gone, since a gate to an
   inland area must not lead into the sea. The Old Lift from the Chapel
   lands at Old Town's east foot, near the hub. The castle areas are no
   longer rooms in the void or terrace pyramids: each is a hillside of its

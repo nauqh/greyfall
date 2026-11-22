@@ -150,7 +150,7 @@ export const NPCS: readonly Npc[] = [
       {
         id: "shore",
         lines: [
-          "You'll want the lanterns. They run up through Old Town and round the back of the hill, to the Burg Gate.",
+          "You'll want the lanterns. They run straight up from the fire, to the Burg Gate on the crown.",
           "Someone lit them before you came. ...Someone always does.",
           "There's a path up through the graves to the Moor Gate, too. Barred from this side.",
           "Not that the dogs on that hill care much for bars.",

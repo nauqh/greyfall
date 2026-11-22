@@ -20,7 +20,7 @@ Greets you: *"Ah. Another one."* Walked away from: *"Mind the dark, then."*
   3. The last one sat right where you're standing. Warmed his hands, then went east.
   4. He didn't come back. They never do. Hah...
 - **shore**
-  1. You'll want the lanterns. They run up through Old Town and round the back of the hill, to the Burg Gate.
+  1. You'll want the lanterns. They run straight up from the fire, to the Burg Gate on the crown.
   2. Someone lit them before you came. ...Someone always does.
   3. There's a path up through the graves to the Moor Gate, too. Barred from this side.
   4. Not that the dogs on that hill care much for bars.

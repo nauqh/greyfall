@@ -533,18 +533,18 @@ const LOWER_TOWN = [
 ];
 
 const UPPER_TOWN = [
-  "#####44#####55555####^^##44###",
-  "#####444^^^555555555^^^^^444##",
-  "###4444^^^55555555555^^^^4444#",
-  "##^44444^^555555555555^^^4444#",
-  "#^^4444^^^^55555555555^^^4444#",
-  "#^^^4444}^^55555555555^^{4444#",
-  "##^444^^^^5555555555544^^^444#",
-  "#^^44444^^^5555555555)4^^444^#",
-  "#^^444^^^^5555^^^^^^^44^^4444#",
-  "#^^^444^^^^555^^^^^^^^^^4444^#",
-  "#^{444^^^^^^^^^^^^^^^^^4444^^#",
-  ".^^^444^^^^^^^^44444444444^^^#",
+  "...4444.....55555....ww..44...",
+  "..444444www555555555wwwww444..",
+  ".4444444ww55555555555wwww4444.",
+  ".4444444ww555555555555www4444.",
+  ".4444444www55555555555www4444#",
+  ".4444444www55555555555www4444#",
+  ".444444www5555555555544www444#",
+  "..44444wwww5555555555)4ww4444#",
+  "..44444www5555wwwwwww44ww4444#",
+  ".^^4444wwww555wwwwwwwwww44444#",
+  ".^{444wwwwwwwwwwwwwwwww4444^^#",
+  ".^^^444wwwwwwww44444444444^^^#",
   "..^^44444444444444444444^^^^^#",
   ".^^^^^^^444444444444444^^^^^^#",
   "^^^^^^^^^^4444444444^^^^^^^^^#",
@@ -1180,18 +1180,17 @@ function harbour(): AreaMap {
   t.pond(83, 56, 4, 10);
 
   // One climb from the bonfire, after Firelink's stair: the bowl's north stairs onto Old Town, the Upper Town above
-  // it, and the Castle Gate on the hill's crown. The Burg Gate is on Old Town's height at the hill's back.
+  // it, and the Burg Gate, Highward's gatehouse, on the hill's crown, its door facing the climb.
   t.shape(2, 57, 23, 21, 18, 0.3, "Old Town");
   t.shape(2, 70, 11, 8, 5, 0.3, "Old Town");
   t.shape(2, 56, 6, 16, 5, 0.2, "Old Town");
   stamp(t, UPPER_TOWN, 40, 4);
-  // The keep's one bridge, over the ravine from the Wind Ward onto the ledge under its stair.
+  // The gatehouse's one bridge, over the moat from the Wind Ward onto the ledge under its stair.
   const keepBridge = t.span(4, 61, 13, 2, 2);
-  // The drawn citadel's west side and the hill's top broken up, so neither runs on as one straight cliff.
-  for (const [r, c] of [[5, 39], [6, 38], [7, 38], [8, 37], [9, 38], [10, 39], [11, 38], [12, 37], [13, 38], [14, 39]] as const) t.block(2, c, r, 40 - c, 1);
-  t.block(1, 45, 2, 2, 1);
-  t.block(1, 63, 2, 3, 1);
-  t.block(1, 50, 2, 2, 1);
+  // Behind the citadel, and north of the east lane's head, is only woods: nothing to find round there.
+  t.block(1, 30, 0, 57, 4);
+  t.block(1, 70, 4, 17, 4);
+  for (let r = 0; r < 8; r++) for (let c = 30; c < 87; c++) if (t.at(c, r) === "." && (r < 4 || c >= 70 || t.drawn.has(`${c},${r}`))) t.put(c, r, "T");
   // The Northwood: a wooded upland west of the castle, the lookout crag on its crown, the empty cabins on a ledge
   // of their own by the Ember Gate road.
   stamp(t, [
@@ -1294,11 +1293,9 @@ function harbour(): AreaMap {
   t.track([26, 42], [27, 54], [27, 66], [3, 66]);
   t.track([15, 66], [15, 61]);
   // The citadel's terraces go unpaved: only the east ring's town keeps its streets, the alley two tiles wide between its
-  // two rows of houses. The way on round the Upper Town's east side to the hill's back is a track.
+  // two rows of houses.
   t.road([73, 10], [73, 29]);
   t.road([74, 10], [74, 29]);
-  t.track([73, 10], [66, 3], [56, 3]);
-  edgeWay(t, { col: 56, row: 3 }, { col: 56, row: 1 }, 2, true);
   // The village's shore street, two wide and straight from the fire square down between its houses, round the inlet's
   // head and along the burned east lane to the Shore Road off Lantern Point's tip. The track out to the mine, and the
   // climb up the Graves to the Moor Gate, stay grass.
@@ -1334,8 +1331,8 @@ function harbour(): AreaMap {
   t.fires.push({ col: 71, row: 48 });
 
   // The Upper Town, after Whiterun, drawn tile by tile (UPPER_TOWN), three districts each a height up: the wide lower
-  // circle with the gate, the chapel and the garrison; the Wind Ward's horseshoe round a ravine; and on its own crag in
-  // the ravine the keep's crown, reached only by its bridge and the stair off the ledge under it.
+  // circle with the gate, the chapel and the garrison; the Wind Ward's horseshoe round a moat; and on its own crag in
+  // the moat the crown, Highward's gatehouse, reached only by its bridge and the stair off the ledge under it.
   // The Great Gate, a bastion jutting off the lower circle: a tower either side of the road through it, a stair up
   // each of its outer corners, a lantern at each stair's foot and the watch at its head.
   // Watchtowers round the outer wall and the town, and one at each front corner of the crown.
@@ -1374,7 +1371,7 @@ function harbour(): AreaMap {
   prop("bones", 44, 30);
   prop("sconce", 36, 28);
   for (const r of [28, 30]) prop("skullSpike", 35, r, { unless: "sistersStair" });
-  who("warrior", 42, 9, { ...blue, to: { col: 42, row: 13 } });
+  who("warrior", 42, 9, { ...blue, to: { col: 42, row: 12 } });
   // The Chapel Spur: a blade of rock run west off the Close over the valley, the pilgrims' walk along its ridge to the
   // chapel alone at its tip. The Sisters' Stair folds back under it: off the tip onto a ledge of the sisters' graves
   // along its south flank, down at the ledge's east end, and west along its foot past their pool to the door cut in the
@@ -1424,15 +1421,6 @@ function harbour(): AreaMap {
   for (const [c, r, art] of [[44, 7, "house2"], [66, 7, "house3"]] as const) prop(art, c, r, blue);
   for (const [c, r] of [[44, 14], [59, 18], [61, 15]] as const) who("lancer", c, r, blue);
   who("lancer", 63, 14, { ...blue, to: { col: 66, row: 14 } });
-  // The ravine's floor, a stair down into each side of the bridge: stones and brush on the west, the bones of a lancer
-  // who went in after something and his kit on the east, and gold for whoever follows.
-  for (const [c, r] of [[48, 6], [47, 13]] as const) prop("rock", c, r);
-  for (const [c, r] of [[49, 14], [58, 13]] as const) prop("bush", c, r);
-  prop("bones", 48, 13);
-  prop("goldStone", 54, 14);
-  prop("bones", 63, 12);
-  prop("tools", 64, 11);
-  prop("goldStone", 62, 6);
   // The crown, after Dragonsreach: the keep behind a forecourt, a tower at each front corner, a garden either side, and
   // off the south-west corner a porch over the drop where the watch looks down the whole climb to the bay.
   prop("castle", 55, 7, blue);
@@ -1441,22 +1429,20 @@ function harbour(): AreaMap {
   for (const [c, r] of [[51, 13], [53, 13]] as const) prop("sconce", c, r);
   who("archer", 52, 13, blue);
   who("lancer", 62, 12, blue);
-  // The steward barred the door behind him and took the key: the guard camps in the forecourt with the door boarded,
-  // until the troll's key opens the Keep from the Burg and Corwin sends lancers down to hold the door.
+  // The Burg Gate stands open: a lancer either side of its door, the guard camped in the forecourt.
   t.campfires.push({ col: 56, row: 11 });
-  for (const c of [55, 56]) prop("woodPile", c, 9, { unless: "trollKey" });
-  prop("meat", 53, 11, { unless: "trollKey" });
-  for (const [c, r] of [[54, 10], [58, 11]] as const) who("lancer", c, r, { ...blue, unless: "trollKey" });
-  for (const c of [55, 56]) who("lancer", c, 9, { ...blue, when: "trollKey" });
+  prop("meat", 53, 11);
+  for (const [c, r] of [[54, 10], [58, 11]] as const) who("lancer", c, r, blue);
+  for (const c of [54, 57]) who("lancer", c, 9, blue);
 
   // Old Town: the busiest ground in the Reach. The market under the terraces, a smithy corner, cottages on every
   // spare ledge, folk at their trades, and the watch walking the stairs between the tiers.
   // Houses either side of the market row at the stairs' head.
   for (const [c, r, art] of [[44, 34, "house1"], [48, 35, "house3"], [64, 36, "house2"], [67, 35, "house1"]] as const) prop(art, c, r, blue);
-  // The east ring's town: the Burg road as its alley, a terrace of six houses down each side, and the ring's market
+  // The east ring's town: the east lane as its alley, a terrace of six houses down each side, and the ring's market
   // halfway along, a paved square with a street out of each side: the alley north and south, a stair east down to the
   // back street, a stair west up into the garrison's ward.
-  // The terrace's head house is a hall under the Burg road's tower: the Lane House, where the east lane's last folk
+  // The terrace's head house is a hall under the east lane's tower: the Lane House, where the east lane's last folk
   // sleep. Pinned, as the strip between the rock and the road is its own width and no wider.
   // The east row is pinned a tile off the road, along the ring's lip.
   for (const c of [70, 76])
@@ -1782,7 +1768,7 @@ function harbour(): AreaMap {
     { to: "emberwood", name: "Ember Gate", kind: "gate", at: { col: 26, row: 1 }, shut: "emberGateOpen" },
     { to: "chapel", name: "The Old Lift", kind: "shortcut", at: { col: 63, row: 41 }, shut: "oldLiftDown" },
     { to: "chapel", name: "The Sisters' Stair", kind: "gate", at: { col: 35, row: 29 }, shut: "sistersStair" },
-    { to: "burg", name: "Burg Gate", kind: "open", at: { col: 56, row: 1 }, unpaved: true },
+    { to: "burg", name: "Burg Gate", kind: "open", at: { col: 55, row: 8 } },
     { to: "undercroft", name: "The Old Well", kind: "drop", at: { col: Math.round(sx(10)), row: 50 } },
     { to: "ring", name: "The Boat", kind: "lift", at: { col: 62, row: 61 } },
   ];
@@ -1803,7 +1789,7 @@ function harbour(): AreaMap {
     { name: "The Northwood", at: { col: 18, row: 30 }, levels: [1, 2, 3], palette: ramp, dress: "emberwood", decor: 1.5, trees: 0.4 },
     { name: "Mine Hills", at: { col: 95, row: 26 }, levels: [1, 2, 3, 4], palette: ramp, dress: "crags", decor: 2.5, trees: 0.06 },
     { name: "Lantern Point", at: { col: 97, row: 71 }, levels: [1], palette: ramp, dress: "saltreach", decor: 1.5 },
-    { name: "The Castle Gate", at: { col: 55, row: 11 }, levels: [2, 3, 4, 5], palette: ramp, dress: "harbour", decor: 1 },
+    { name: "The Burg Gate", at: { col: 55, row: 11 }, levels: [2, 3, 4, 5], palette: ramp, dress: "harbour", decor: 1 },
     // The Graves read dead against the point's salt grass: its slope and crest go olive.
     { name: "The Graves", at: { col: 100, row: 48 }, levels: [1, 2, 3, 4], palette: [5, 4, 4, 3], dress: "barrowmoor", decor: 1.5, gloom: true },
   ];
@@ -3922,7 +3908,7 @@ export function areaMap(id: AreaId): AreaMap {
   // A map on the sea or in the sky floats in it; underground, the rock round the caverns already does.
   if (!made.has(id)) {
     const m = clearNotes(build());
-    // The Harbour's north edge is the hill on up to the Burg, not the sea.
+    // The Harbour's north edge is woods behind the castle hill, not the sea.
     made.set(id, m.base === "rock" ? m : HILL.has(id) ? wooded(pad(m, 3)) : id === "harbour" ? wooded(pad(m, 3), 6) : pad(m, 3));
   }
   return made.get(id)!;

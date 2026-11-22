@@ -33,7 +33,7 @@ ships. It is still lit. Nobody says why.
   load off the Mine Hills is weighed and paid out at the Weighhouse, on the
   back street at the hill's foot, before it goes up the Highward road to the
   forge; since the deep face was shut, half its scales stand idle. The Lane
-  House, at the head of the ring's terrace under the Burg road's tower, was
+  House, at the head of the ring's terrace under the east lane's tower, was
   the east lane's guild hall. The lane went in the first nights, its people carried
   off to the Gallows Yard; the few who got out sleep in the hall now, and
   the town keeps a lamp in its window for the rest.

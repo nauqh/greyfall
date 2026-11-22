@@ -125,6 +125,10 @@ _Avoid_: Last Harbour, the Harbour (old names)
 The castle over Lanternport. Its wards are the Burg, the Ramparts, the Chapel Ward and the Keep.
 _Avoid_: the Citadel
 
+**The Burg Gate**:
+Highward's front gate on the crown of Lanternport's hill, where the climb from the fire ends, and the way into the Burg.
+_Avoid_: the Castle Gate
+
 **Greyfall**:
 The land of the crag and its rot marsh, where the Grey falls like ash.
 
