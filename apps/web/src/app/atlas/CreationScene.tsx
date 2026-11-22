@@ -31,48 +31,43 @@ const MOVES: Record<HeroClass, { sheet: string; frames: number }[]> = {
 const IDLE_MS = 2600;
 const TILE = 64;
 
-/** The isle in 64px tiles: `.` sea, `g` grass, `h` a raised shelf of grass; under a shelf's foot its cliff is drawn. */
+/** The shore in 64px tiles, `.` sea and `g` grass: the land runs off the top and both sides, down to the waterline. */
 const MAP = [
-  "..............",
-  "...gggggg.....",
-  "..gghhhhhgg...",
-  ".gghhhhhhhggg.",
-  ".ggggggggggggg",
-  ".ggggggggggggg",
-  "..gggggggggggg",
-  "..gggggggggggg",
-  "...ggggggggggg",
-  "..............",
+  "ggggggggggggg",
+  "ggggggggggggg",
+  "ggggggggggggg",
+  "gggggggggggg.",
+  ".ggggggggg...",
+  "...gggg......",
+  ".............",
+  ".............",
+  ".............",
 ];
-/** The tile the class stands on. */
-const HERO = { c: 5, r: 6 };
+/** The tile the class stands on, a step up from the water. */
+const HERO = { c: 5, r: 4 };
 /** How far down the scene the class's feet are, in percent. */
-const FEET = 72;
+const FEET = 56;
 
-/** The things on the isle and in the sea: each one's sheet, its square frame and count, the row its foot is on, and
- *  where that foot stands in tiles from the class's feet. Drawn back to front by it. */
+/** What is on the shore and in the shallows: each one's sheet, its square frame and count, the row its foot is on, and
+ *  where that foot stands in tiles from the class's feet. The boat it came in drifts empty off the beach. */
 const SHORE: { sheet: string; frame: number; frames: number; foot: number; dx: number; dy: number }[] = [
-  { sheet: "Terrain/Decorations/Rocks in the Water/Water Rocks_02.png", frame: 64, frames: 16, foot: 47, dx: -4.5, dy: -6 },
-  { sheet: "Terrain/Decorations/Rocks in the Water/Water Rocks_03.png", frame: 64, frames: 16, foot: 47, dx: 5.5, dy: -5.1 },
-  { sheet: "Terrain/Decorations/Bushes/Bushe1.png", frame: 128, frames: 8, foot: 78, dx: -2, dy: -4.9 },
-  { sheet: "Terrain/Resources/Wood/Trees/Tree3.png", frame: 192, frames: 8, foot: 169, dx: -1.3, dy: -3.8 },
-  { sheet: "Terrain/Resources/Wood/Trees/Tree4.png", frame: 192, frames: 8, foot: 169, dx: 0.7, dy: -3.8 },
-  { sheet: "Terrain/Resources/Wood/Trees/Tree3.png", frame: 192, frames: 8, foot: 169, dx: -1.6, dy: -2.9 },
-  { sheet: "Terrain/Resources/Wood/Trees/Tree4.png", frame: 192, frames: 8, foot: 169, dx: 3, dy: -2.9 },
-  { sheet: "Terrain/Decorations/Bushes/Bushe3.png", frame: 128, frames: 8, foot: 78, dx: 5.5, dy: -1.9 },
-  { sheet: "Terrain/Decorations/Rocks/Rock2.png", frame: 64, frames: 1, foot: 50, dx: -3.2, dy: -1.6 },
-  { sheet: "Resources/Sheep/HappySheep_Idle.png", frame: 128, frames: 8, foot: 86, dx: 4.5, dy: -1.2 },
-  { sheet: "Resources/Sheep/HappySheep_Idle.png", frame: 128, frames: 8, foot: 86, dx: -2, dy: 0.6 },
-  { sheet: "Terrain/Decorations/Rocks/Rock4.png", frame: 64, frames: 1, foot: 50, dx: 2.5, dy: 0.9 },
+  { sheet: "Terrain/Resources/Wood/Trees/Tree4.png", frame: 192, frames: 8, foot: 169, dx: 1.4, dy: -2.3 },
+  { sheet: "Terrain/Resources/Wood/Trees/Tree3.png", frame: 192, frames: 8, foot: 169, dx: -1.6, dy: -2 },
+  { sheet: "Terrain/Decorations/Bushes/Bushe3.png", frame: 128, frames: 8, foot: 78, dx: -0.3, dy: -1.4 },
+  { sheet: "Terrain/Decorations/Bushes/Bushe1.png", frame: 128, frames: 8, foot: 78, dx: -2.3, dy: -0.9 },
+  { sheet: "Resources/Sheep/HappySheep_Idle.png", frame: 128, frames: 8, foot: 86, dx: 1.3, dy: -0.4 },
+  { sheet: "Terrain/Resources/Wood/Wood Resource/Wood Resource.png", frame: 64, frames: 1, foot: 46, dx: 1.1, dy: 0.6 },
+  { sheet: "Terrain/Resources/Wood/Wood Resource/Wood Resource.png", frame: 64, frames: 1, foot: 46, dx: -1.2, dy: 0.8 },
+  { sheet: "Terrain/Decorations/Rocks in the Water/Water Rocks_02.png", frame: 64, frames: 16, foot: 47, dx: 2.3, dy: 1.5 },
+  { sheet: "Enemy Pack/Extra/Boat/Boat_Idle.png", frame: 256, frames: 8, foot: 170, dx: 0.6, dy: 2 },
+  { sheet: "Terrain/Decorations/Rocks in the Water/Water Rocks_01.png", frame: 64, frames: 16, foot: 47, dx: -1.8, dy: 2.3 },
 ];
 
 const at = (r: number, c: number) => MAP[r]?.[c] ?? ".";
 const isLand = (r: number, c: number) => at(r, c) !== ".";
-const isShelf = (r: number, c: number) => at(r, c) === "h";
-const isCliff = (r: number, c: number) => isShelf(r - 1, c) && !isShelf(r, c);
 
-/** The tileset's autotile cell for a piece of a shape: its 3 by 3 block, the one-wide column right of it, the one-tall
- *  row under it and the lone tile, chosen by which sides the shape goes on. */
+/** The tileset's autotile cell for a piece of the land: its 3 by 3 block, the one-wide column right of it, the one-tall
+ *  row under it and the lone tile, chosen by which sides the land goes on. */
 function piece(has: (r: number, c: number) => boolean, r: number, c: number): [number, number] {
   const w = has(r, c - 1);
   const e = has(r, c + 1);
@@ -81,7 +76,7 @@ function piece(has: (r: number, c: number) => boolean, r: number, c: number): [n
   return [w && e ? 1 : e ? 0 : w ? 2 : 3, n && s ? 1 : s ? 0 : n ? 2 : 3];
 }
 
-/** The isle at the art's own size, foam frame `tick`: the foam ringing the coast, the grass, the shelf over it, its cliff. */
+/** The shore at the art's own size, foam frame `tick`: the foam along the coast, then the grass. */
 function drawIsle(g: CanvasRenderingContext2D, tiles: HTMLImageElement, foam: HTMLImageElement, tick: number): void {
   g.clearRect(0, 0, g.canvas.width, g.canvas.height);
   const cells = MAP.flatMap((row, r) => [...row].map((_, c) => [r, c] as const));
@@ -94,17 +89,10 @@ function drawIsle(g: CanvasRenderingContext2D, tiles: HTMLImageElement, foam: HT
   for (const [r, c] of cells) {
     if (isLand(r, c)) tile(...piece(isLand, r, c), r, c);
   }
-  for (const [r, c] of cells) {
-    if (isShelf(r, c)) {
-      const [x, y] = piece(isShelf, r, c);
-      tile(5 + x, y, r, c);
-    }
-    if (isCliff(r, c)) tile(5 + piece(isCliff, r, c)[0], 4, r, c);
-  }
 }
 
-/** The world behind creation, as Skyrim keeps its world behind its menu: an isle of the Reach, a shelf of it raised behind,
- *  and on it the class on show, idling and now and then showing its moves, the gift at its feet. Everything at one whole scale. */
+/** The world behind creation: the shore the class washed up on, the boat empty in the shallows, and the class on show at
+ *  the waterline, idling and now and then showing its moves, the gift at its feet. Everything at one whole scale. */
 export function CreationScene({ row, gift }: { row: (typeof CLASS_ROWS)[number]; gift?: SackItem }) {
   const view = useRef<HTMLDivElement>(null);
   const [k, setK] = useState(2);

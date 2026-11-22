@@ -22,7 +22,7 @@ export const CLASS_ROWS: { cls: HeroClass; name: string; idle: string; frames: n
     frame: 192,
     feet: 136,
     face: [58, 46],
-    about: "The levy's oldest trade: a blade, a board of oak, and the nerve to stand close. Two quick cuts, then a third that throws the foe back. It can raise the shield.",
+    about: "A man of the levy, called up to hold the coast when the Grey came. The muster took ship south, and the sea kept all but one.",
   },
   {
     cls: "eggwarden",
@@ -32,7 +32,7 @@ export const CLASS_ROWS: { cls: HeroClass; name: string; idle: string; frames: n
     frame: 192,
     feet: 130,
     face: [62, 22],
-    about: "A fenfolk. It went down the sinkhole after the eggs the Stilled took, and followed the water to the bottom of the world. Its frill cuts every foe beside it at once. Quick, thin of hide, and no shield.",
+    about: "A fenfolk of the Stillmere. It went down the sinkhole after the eggs the Stilled took, and followed the water to the bottom of the world.",
   },
   {
     cls: "champion",
@@ -42,7 +42,7 @@ export const CLASS_ROWS: { cls: HeroClass; name: string; idle: string; frames: n
     frame: 320,
     feet: 213,
     face: [142, 78],
-    about: "One of the horned, sworn to the Citadel. It rode out with the last gold ship the night the Grey came, and went down with her. Every blow throws the foe back. Slow between blows, and no shield.",
+    about: "One of the horned, sworn to the Citadel. It rode out with the last gold ship the night the Grey came, and went down with her.",
   },
   {
     cls: "grovekeeper",
@@ -52,7 +52,7 @@ export const CLASS_ROWS: { cls: HeroClass; name: string; idle: string; frames: n
     frame: 256,
     feet: 174,
     face: [82, 76],
-    about: "A bamboo-folk. When the Grey took Old Bamboo it took ship for the old country to bring back help. The ship never got there. Hard to kill, slow to move, and it guards behind its nunchaku.",
+    about: "A bamboo-folk of Old Bamboo. When the Grey took the grove it sailed for the old country to bring back help. The ship never got there.",
   },
 ];
 

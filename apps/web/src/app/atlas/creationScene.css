@@ -6,7 +6,7 @@
 	overflow: hidden;
 }
 
-/* The isle, drawn tile by tile at the art's size and shown at the scene's scale, placed so the class's tile is
+/* The shore, drawn tile by tile at the art's size and shown at the scene's scale, placed so the class's tile is
    under its feet. */
 .crLand {
 	position: absolute;
@@ -49,7 +49,7 @@
 	to { translate: calc(60px * var(--k)) 0; }
 }
 
-/* A thing on the isle or in the sea, its foot on its spot, `--dx`, `--dy` tiles from the class's feet. */
+/* A thing on the shore or in the sea, its foot on its spot, `--dx`, `--dy` tiles from the class's feet. */
 .crDecor {
 	position: absolute;
 	left: calc(var(--mid) + var(--dx) * 64px * var(--k));
