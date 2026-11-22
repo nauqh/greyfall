@@ -572,7 +572,15 @@ const HERO_ART: Record<HeroClass, { look: Dweller; attack: { key: string; file: 
     guard: { key: "beast_pandaGuard_idle", file: BEAST.pandaGuard!.idle },
     tint: 0xb4c8ff,
   },
+  barrowWarden: {
+    look: { kind: "shaman", col: 0, row: 0 },
+    attack: { key: "beast_shaman_attack", file: BEAST.shaman!.attack! },
+    attack2: { key: "beast_shaman_attack", file: BEAST.shaman!.attack! },
+    tint: 0xb4c8ff,
+  },
 };
+/** How long a hex holds its mark, in ms: the Skirmish Hex Shaman's 1.5 s. */
+const HEX_HOLD = 1500;
 /** A flask drunk: the Monk's healing swirl round the feet, and the green drop over the head (the pack has no flask). */
 const HEAL_FX = { key: "healFx", file: "Units/Blue Units/Monk/Heal_Effect.png" };
 const FLASK_ICON = { key: "flaskIcon", file: "ui/icon_heal.png" };
@@ -1862,7 +1870,7 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** A missile let fly at `to`: it lands if they still stand and the line is still clear. */
-  private loose(from: Body, to: Body, attack: number, missile: (typeof MISSILE)[string]): void {
+  private loose(from: Body, to: Body, attack: number, missile: (typeof MISSILE)[string], landed?: () => void): void {
     const launch = { ...from.at };
     const [x, y] = [from.s.x, from.s.y - 40];
     const [tx, ty] = [to.s.x, to.s.y - to.lift * 0.5];
@@ -1884,7 +1892,9 @@ export class AtlasScene extends Phaser.Scene {
         // Dodged: no longer where it was aimed.
         if (hostile && Math.hypot(to.s.x - tx, to.s.y - to.lift * 0.5 - ty) > 0.65 * CELL) return;
         // Stepped behind cover while it flew: it strikes the wall, not them.
-        if (clearShot(launch, to.at, this.blocks)) this.hurt(from, to, attack);
+        if (!clearShot(launch, to.at, this.blocks)) return;
+        this.hurt(from, to, attack);
+        landed?.();
       },
     });
   }
@@ -3759,7 +3769,7 @@ export class AtlasScene extends Phaser.Scene {
     const at = this.aim ?? { x: hero.s.x + (hero.s.flipX ? -1 : 1), y: hero.s.y };
     if (Math.abs(at.x - hero.s.x) > 4) hero.s.setFlipX(at.x < hero.s.x);
     const { reach: r } = CLASSES[this.cls];
-    const reach = this.foes.filter((f) => !f.dead && canReach(1, f.stats) && tileDistance(f.at, hero.at) <= r && Math.hypot(f.s.x - hero.s.x, f.s.y - hero.s.y) < (r + 0.5) * CELL);
+    const reach = this.foes.filter((f) => !f.dead && canReach(r, f.stats) && tileDistance(f.at, hero.at) <= r && Math.hypot(f.s.x - hero.s.x, f.s.y - hero.s.y) < (r + 0.5) * CELL && (r === 1 || clearShot(hero.at, f.at, this.blocks)));
     const foe = reach.sort((a, b) => Math.hypot(a.s.x - at.x, a.s.y - at.y) - Math.hypot(b.s.x - at.x, b.s.y - at.y))[0];
     this.heroSwing(foe ?? null, time);
   }
@@ -3781,11 +3791,22 @@ export class AtlasScene extends Phaser.Scene {
       const { reach } = CLASSES[this.cls];
       const near = (f: Foe) => !f.dead && tileDistance(f.at, hero.at) <= reach && Math.hypot(f.s.x - hero.s.x, f.s.y - hero.s.y) <= (reach + 0.6) * CELL;
       if (hero.dead || !near(foe)) return;
+      if (CLASSES[this.cls].hex) return this.loose(hero, foe, this.gear.attack, MISSILE.shaman!, step === 3 ? () => this.hex(foe) : undefined);
       for (const f of CLASSES[this.cls].sweep ? this.foes.filter(near) : [foe]) {
         this.hurt(hero, f, this.gear.attack);
         if ((step === 3 || CLASSES[this.cls].knockAll) && !f.dead && !BOSSES.has(f.kind)) this.knockBack(f, this.time.now);
       }
     });
+  }
+
+  /** The third bolt bursts on its mark and holds it: a wind-up broken, and no move for a moment. A boss shrugs off the hold. */
+  private hex(f: Foe): void {
+    this.blast(f.at, 0xb48cff);
+    if (f.dead || BOSSES.has(f.kind)) return;
+    if (f.windup) this.play(f.s, f.idle);
+    f.windup = null;
+    f.busy = Math.max(f.busy, this.time.now + HEX_HOLD);
+    f.way = [];
   }
 
   /** Thrown a tile straight back from the hero, if the ground allows, and staggered a moment either way. */

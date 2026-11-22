@@ -26,6 +26,7 @@ const MOVES: Record<HeroClass, { sheet: string; frames: number }[]> = {
     { sheet: "Enemy Pack/Panda/Panda_Attack.png", frames: 13 },
     { sheet: "Enemy Pack/Extra/Panda Guard/Panda_Guard.png", frames: 8 },
   ],
+  barrowWarden: [{ sheet: "Enemy Pack/Hex Shaman/Hex Shaman_Attack.png", frames: 10 }],
 };
 
 const IDLE_MS = 2600;

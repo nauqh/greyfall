@@ -54,6 +54,16 @@ export const CLASS_ROWS: { cls: HeroClass; name: string; idle: string; frames: n
     face: [82, 76],
     about: "A bamboo-folk of Old Bamboo. When the Grey took the grove it sailed for the old country to bring back help. The ship never got there.",
   },
+  {
+    cls: "barrowWarden",
+    name: "Barrow-warden",
+    idle: "Enemy Pack/Hex Shaman/Hex Shaman_Idle.png",
+    frames: 8,
+    frame: 192,
+    feet: 136,
+    face: [48, 50],
+    about: "A barrow-warden of Kingsrest, sent after the gold the Citadel dug from the old kings' graves. It took ship behind the last gold ship, and the sea took both.",
+  },
 ];
 
 const STEPS = [

@@ -95,6 +95,10 @@ _Avoid_: demons
 The hex shamans of Kingsrest.
 _Avoid_: shamans, witch doctors
 
+**Hex**:
+The masks' craft, kept for the Old Law: a bolt cast at a foe, which slows what it bursts on.
+_Avoid_: magic, spell, curse
+
 ## Places
 
 **Tier**:
@@ -162,7 +166,7 @@ _Avoid_: the wanderer, the chosen, the player character
 The hero's name when none was given. A save from before the class pick is named the Wanderer.
 
 **Class**:
-Who the hero came ashore as, picked at a new game's start: Warrior (a man, with a shield), Eggwarden (a fenfolk, whose frill cuts every foe beside it), Champion (one of the horned, whose every blow knocks back) or Grovekeeper (a bamboo-folk, who guards).
+Who the hero came ashore as, picked at a new game's start: Warrior (a man, with a shield), Eggwarden (a fenfolk, whose frill cuts every foe beside it), Champion (one of the horned, whose every blow knocks back), Grovekeeper (a bamboo-folk, who guards) or Barrow-warden (a mask, who hexes from afar instead of striking).
 _Avoid_: job, role, archetype
 
 **The band**:

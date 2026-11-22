@@ -227,5 +227,11 @@ describe("the other folk's classes", () => {
     expect(CLASSES.eggwarden.sweep).toBe(true);
     expect(CLASSES.champion.knockAll).toBe(true);
     expect(CLASSES.grovekeeper.shield).toBe(true);
+    expect(CLASSES.barrowWarden.hex).toBe(true);
+  });
+
+  it("lets only the hex reach a flier", () => {
+    const bat = FOES.bat!;
+    expect(Object.entries(CLASSES).filter(([, c]) => canReach(c.reach, bat)).map(([k]) => k)).toEqual(["barrowWarden"]);
   });
 });
