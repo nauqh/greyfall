@@ -25,14 +25,14 @@
 }
 
 /* The scroll at 1x, its 128px corners drawn over the padding: the paper starts 28px in and 60px down, ends 44px short
-   of the right, and its curls run along the foot 17px up. Placed so the paper stands 48px off the left and 40px off the
-   top, and ends at `--sheet`; as tall as what is on it. */
+   of the right, and its curls run along the foot 17px up. Placed so the paper stands 48px off the left and 80px off the
+   top, room for the ribbon above it, and ends at `--sheet`; as tall as what is on it. */
 .crSheet {
 	position: absolute;
 	z-index: 200;
 	left: 20px;
-	top: -20px;
-	max-height: calc(100% - 44px);
+	top: 20px;
+	max-height: calc(100% - 84px);
 	width: calc(var(--sheet) + 24px);
 	display: grid;
 	grid-template-columns: 150px minmax(0, 1fr) 190px;
