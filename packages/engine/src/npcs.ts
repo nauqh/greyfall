@@ -50,6 +50,8 @@ export interface Talk {
   gives?: ItemName;
   /** Heard to the end the first time, this is thrown down near the wanderer, to be picked up. */
   throws?: ItemName;
+  /** Heard to the end the first time, they walk the wanderer to the area's cold bonfire and light it. */
+  lights?: boolean;
   /** One page each. */
   lines: readonly string[];
 }
@@ -133,7 +135,7 @@ export const NPCS: readonly Npc[] = [
     id: "ferrow",
     name: "Old Ferrow",
     area: "harbour",
-    at: { col: 75, row: 52 },
+    at: { col: 51, row: 56 },
     kind: "pawn",
     greet: "Ah. Another one.",
     part: "Mind the dark, then.",
@@ -863,7 +865,9 @@ export const NPCS: readonly Npc[] = [
           "No ships in three winters.",
           "Stiltwater still trades down the coast, if you can stomach its prices. And its pirates.",
           "Mostly the pirates. Ha.",
+          "Square fire's gone cold again. Ferrow dozes. ...Come on, I'll light it for you.",
         ],
+        lights: true,
       },
       {
         id: "finfolk",

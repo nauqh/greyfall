@@ -185,15 +185,17 @@ then walks back. The engine already has a guard leash.
    Ring is a round cavern, walked straight into from the cave's tunnel, with
    no fog. It is the arena, and the troll guards the boat on. A boss bar with
    his name shows low and centred once you stand in the Ring with him in
-   view. Kill him and the road opens. Fall to him and you wash up at the
-   Lanternport's fire, as after Elden Ring's Grafted Scion: lost, not over. The
+   view. Kill him and the road opens. Fall to him and you wash up on the
+   Lanternport's pier by Maren, as after Elden Ring's Grafted Scion: lost, not
+   over, and wake at Lanternport's fire after the next death. The
    troll keeps the Ring, the boat goes back to him whenever you like, and
    his fall is worth a fourth ember for good. Either way the training is
    over.
 2. **Lanternport:** the hub is the village's bowl, after Firelink. The
-   Lanternport's one bonfire stands at its centre, with Old Ferrow beside it
-   saying where to go and the Old Well in the hill's cave west of it going down (bats below;
-   only bows reach them). The boat's pier lies just south, on the docks. The
+   Lanternport's one bonfire stands cold on the Lower Town's shore, under the
+   Old Well in the hill's cave (going down; bats below, only bows reach them),
+   with Old Ferrow beside it saying where to go. The boat's pier lies east, on
+   the docks; Maren meets you there and walks you to the fire to light it. The
    climb runs straight up from the fire through Old Town and the Upper Town
    to the Burg Gate, Highward's gatehouse on the hill's crown, its door
    facing the climb and opening into the Lower Burg. Behind the town is
@@ -787,10 +789,10 @@ crossing are gone.
   well's lip, on the Keep looking east, and at the lighthouse. The castle's stairs are an
   area `lock`: shut until the Ember Key is carried, or opened from inside
   by coming down the Watch Lift.
-  Reworked since, and what holds now: the hub is the bowl's fire in the
-  village, Lanternport's one bonfire (a corner hub with the way on in the
-  far corner was a cross-map trek), Ferrow and Tobin at it, the Old Well
-  beside it. You come from the Bull's Ring by boat (`The Boat`,
+  Reworked since, and what holds now: the hub is Lanternport's one
+  bonfire on the Lower Town's shore (a corner hub with the way on in the
+  far corner was a cross-map trek; the bowl's fire was moved down here),
+  Ferrow and Tobin at it, the Old Well above it. You come from the Bull's Ring by boat (`The Boat`,
   a `lift` crossing drawn as a moored boat, E says "Take the boat to"), not a lift
   up through the rock, landing on the docks' pier below the bowl. The
   climb runs straight up from the fire to the Burg Gate, Highward's

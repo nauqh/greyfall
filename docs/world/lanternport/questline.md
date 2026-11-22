@@ -12,7 +12,7 @@ Folk from elsewhere who turn up here; their lines are in their own land.
 
 Greets you: *"Ah. Another one."* Walked away from: *"Mind the dark, then."*
 
-### Home: Lanternport, the Lower Town, by the bonfire (75, 52)
+### Home: Lanternport, the Lower Town, by the bonfire (51, 56)
 
 - **first**
   1. ...Hm. Another one the tide spat out.
@@ -275,11 +275,12 @@ Greets you: *"Tide's out."* Walked away from: *"Fair winds. Ha."*
 
 ### Home: Lanternport, the Docks, at the boat's pier (67, 63)
 
-- **first**
+- **first** (heard to the end, she walks you to the square's fire and lights it, if it is cold)
   1. Tide's out. ...Maren. I keep the harbour, for all the good it does.
   2. No ships in three winters.
   3. Stiltwater still trades down the coast, if you can stomach its prices. And its pirates.
   4. Mostly the pirates. Ha.
+  5. Square fire's gone cold again. Ferrow dozes. ...Come on, I'll light it for you.
 - **finfolk**
   1. Finfolk off the Stiltwater shore. Sharks, the pirates call them. Don't swim there.
   2. They pull things out of the warm water by the caves. Breathing things, the pirates say. ...I don't ask.

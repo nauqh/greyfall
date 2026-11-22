@@ -722,6 +722,8 @@ interface Folk {
   near: boolean;
   bubble: Phaser.GameObjects.Text | null;
   tag: Phaser.GameObjects.Text;
+  /** Walking the captain somewhere: not to be talked to, nor turned to face them. */
+  leading?: boolean;
 }
 
 /** What the captain has heard and done, kept on this browser; a blocked store only means folk repeat themselves. */
@@ -944,7 +946,7 @@ export class AtlasScene extends Phaser.Scene {
   private notes: Note[] = [];
   private reading: Note | null = null;
   private folk: Folk[] = [];
-  private talk: { folk: Folk; lines: readonly string[]; key: string; sets?: WorldFlag; gives?: ItemName; throws?: ItemName; page: number } | null = null;
+  private talk: { folk: Folk; lines: readonly string[]; key: string; sets?: WorldFlag; gives?: ItemName; throws?: ItemName; lights?: boolean; page: number } | null = null;
   /** The flags as the area was entered: who stands where, and what they say, holds until the captain leaves and comes back. */
   private seen = new Set<WorldFlag>();
   private nearName: string | null = null;
@@ -1209,8 +1211,8 @@ export class AtlasScene extends Phaser.Scene {
       this.show(local.id);
       for (const c of Object.values(this.cams)) c.setBounds(0, 0, STRAT_COLS * CELL, STRAT_ROWS * CELL);
       // A traveller arrives at the exit back the way they came, not the area's front door, on the nearest open tile.
-      // Woken from a rest or a death, beside the bonfire rested at, not on the fire itself.
-      const rest = this.hooks.arrive === "rest" ? restPoint() : null;
+      // Woken from a rest or a death, beside the bonfire rested at, not on the fire itself; washed up off the troll, at the pier.
+      const rest = this.hooks.arrive === "rest" && this.hooks.from !== "ring" ? restPoint() : null;
       const fire = rest?.area === local.area ? { col: rest.col, row: rest.row } : null;
       const via = stored<string>(VIA, "");
       const at = fire ?? (local.exits.find((e) => e.to === this.hooks.from && e.name === via) ?? local.exits.find((e) => e.to === this.hooks.from))?.at ?? local.entry;
@@ -1950,9 +1952,8 @@ export class AtlasScene extends Phaser.Scene {
     if (past) {
       // Lost, not over, after Elden Ring's Grafted Scion: the troll keeps the Ring and waits to be come back for.
       this.flag("bullWon");
-      const fire = areaMap(past.to).fires[0]!;
-      store(REST, { area: past.to, ...fire });
-      remember(KINDLED, remembered(KINDLED).add(`${past.to}:${fire.col},${fire.row}`));
+      // Woken there, but washed up at the boat's pier, the fire still cold for Maren to light.
+      store(REST, { area: past.to, ...areaMap(past.to).fires[0]! });
     }
     // The page says so, darkens, and wakes the captain at the bonfire last rested at, the monsters back at their posts.
     this.time.delayedCall(900, () => this.hooks.onDeath?.(restPoint().area));
@@ -3762,6 +3763,58 @@ export class AtlasScene extends Phaser.Scene {
     this.folk.push({ npc: n, at: w.at, s, near: false, bubble: null, tag });
   }
 
+  /** One of the folk walks the captain to this area's cold bonfire, waiting whenever they fall behind, lights it and walks back. */
+  private guide(f: Folk): void {
+    const fire = this.local!.fires.find((c) => this.unlit.has(this.fireKey(c)));
+    const taken = (c: Cell): boolean => this.shut(c) || this.folk.some((o) => o !== f && o.at.col === c.col && o.at.row === c.row);
+    const there = fire && findRoute(f.at, (c) => tileDistance(c, fire) === 1, taken);
+    if (!fire || !there) return;
+    const look = this.look(npcLook(f.npc));
+    const home = f.at;
+    f.leading = true;
+    const pose = (key: string): void => void (f.s.anims.currentAnim?.key !== `${key}_loop` && this.loop(f.s, key));
+    const walk = (way: Cell[], done: () => void, wait: boolean): void => {
+      const to = way[0];
+      if (!to) {
+        pose(look.idle.key);
+        return done();
+      }
+      // Too far behind, the guide stops and lets the captain catch up.
+      if (wait && tileDistance(f.at, this.hero!.at) > 4) {
+        pose(look.idle.key);
+        this.time.delayedCall(300, () => walk(way, done, wait));
+        return;
+      }
+      way.shift();
+      if (look.move) pose(look.move.key);
+      if (to.col !== f.at.col) f.s.setFlipX(to.col < f.at.col);
+      f.at = to;
+      const x = (to.col + 0.5) * CELL;
+      const y = (to.row + 0.75) * CELL;
+      this.tweens.add({
+        targets: f.s,
+        x,
+        y,
+        duration: 330,
+        onUpdate: () => {
+          f.s.setDepth(standing(f.s.y));
+          f.tag.setPosition(f.s.x, f.s.y - 1.05 * CELL);
+          f.bubble?.setPosition(f.s.x, f.s.y - 1.45 * CELL);
+        },
+        onComplete: () => walk(way, done, wait),
+      });
+    };
+    this.callOut(f, "This way.");
+    walk(there, () => {
+      f.s.setFlipX(fire.col < f.at.col);
+      this.time.delayedCall(500, () => {
+        this.kindle(fire);
+        this.callOut(f, "There. Warm yourself.");
+        this.time.delayedCall(2500, () => walk(findRoute(f.at, (c) => c.col === home.col && c.row === home.row, taken) ?? [], () => (f.leading = false), false));
+      });
+    }, true);
+  }
+
   /** A line called out over a dweller's head: up, held, gone. */
   private callOut(f: Folk, text: string): void {
     if (!text) return;
@@ -3877,7 +3930,7 @@ export class AtlasScene extends Phaser.Scene {
     f.s.setFlipX(hero.s.x < f.s.x);
     hero.s.setFlipX(f.s.x < hero.s.x);
     const t = nextTalk(f.npc, this.heard, this.seen);
-    this.talk = { folk: f, lines: t.lines, key: talkKey(f.npc, t), sets: t.sets, gives: t.gives, throws: t.throws, page: 0 };
+    this.talk = { folk: f, lines: t.lines, key: talkKey(f.npc, t), sets: t.sets, gives: t.gives, throws: t.throws, lights: t.lights, page: 0 };
     this.say();
   }
 
@@ -3915,6 +3968,7 @@ export class AtlasScene extends Phaser.Scene {
       if (thrown) this.throwDown(t.folk, thrown);
       this.talk = null;
       this.say();
+      if (first && t.lights) return this.guide(t.folk);
       // Talked out, a merchant's menu comes back, as in the Souls games; not over a good just thrown, to be gone for.
       if (!thrown && (RECRUITER[t.folk.npc.id] || t.folk.npc.shop)) this.openMenu(t.folk);
       return;
@@ -3926,6 +3980,7 @@ export class AtlasScene extends Phaser.Scene {
   private mind(): void {
     const hero = this.hero!;
     for (const f of this.folk) {
+      if (f.leading) continue;
       const d = tileDistance(f.at, hero.at);
       if (d <= TALK_RANGE && !hero.dead) {
         if (!f.near && this.talk?.folk !== f) this.callOut(f, f.npc.greet);

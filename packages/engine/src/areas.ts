@@ -1329,8 +1329,8 @@ function harbour(): AreaMap {
   // Copses on the rim and in the bowl's corners, so the hollow is green round the fire.
   for (const [x, y, rx, ry, d] of [[44, 39.5, 2, 1.5, 0.6], [65.5, 39.5, 1.5, 1, 0.7]] as const) t.grove(x, y, rx, ry, d);
 
-  // The bowl's fire is the hub, after Firelink: the Harbour's one bonfire, first, so a fall at the Ring wakes here.
-  t.fires.push({ col: 71, row: 48 });
+  // The Harbour's one bonfire, first, so a fall at the Ring wakes here: on the Lower Town's shore under the Old Well, by the monk.
+  t.fires.push({ col: 47, row: 53 });
 
   // The Upper Town, after Whiterun, drawn tile by tile (UPPER_TOWN), three districts each a height up: the wide lower
   // circle with the gate, the chapel and the garrison; the Wind Ward's horseshoe round a moat; and on its own crag in
