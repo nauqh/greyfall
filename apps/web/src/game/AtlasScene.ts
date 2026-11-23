@@ -19,6 +19,7 @@ import {
   areaMap,
   districtOf,
   FOES,
+  REST_CLEAR,
   BOSS_KITS,
   bossAim,
   type Note,
@@ -892,8 +893,6 @@ interface Pile {
   /** A stone's glow in the dark of the Underneath. */
   shine?: Phaser.GameObjects.Image;
 }
-/** No rest with a monster this near the fire. */
-const REST_CLEAR = 8;
 const FLAGS = "greyfall.flags";
 const npcLook = (n: Npc): Dweller => ({ kind: n.kind, col: n.at.col, row: n.at.row, color: n.kind === "gnome" || n.kind === "torch" ? undefined : (n.color ?? "blue"), act: n.act });
 /**

@@ -57,6 +57,9 @@ export interface FoeStats {
 /** What a gold stone on the map is worth, picked up once. */
 export const GOLD_STONE = 25;
 
+/** No rest with a live foe this many tiles (Chebyshev) from the fire. */
+export const REST_CLEAR = 8;
+
 /** The monsters that fight, by dweller kind; everything else on a map is scenery or a bystander. Most are a little
  *  slower than the hero, so it can walk away from a fight; spiders and thieves are quicker. */
 export const FOES: Partial<Record<string, FoeStats>> = {

@@ -9,7 +9,8 @@
     "battle": "pnpm --filter @greyfall/engine battle",
     "war": "pnpm --filter @greyfall/engine war",
     "assets": "pnpm --filter @greyfall/web run assets",
-    "dev": "pnpm --filter @greyfall/web dev"
+    "dev": "pnpm --filter @greyfall/web dev",
+    "area": "pnpm --filter @greyfall/engine area"
   },
   "devDependencies": {
     "typescript": "^5.9.2"
