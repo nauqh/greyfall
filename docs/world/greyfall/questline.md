@@ -6,7 +6,7 @@ Who lives here, and every line they say. How talks, flags and moving on work is 
 
 Greets you: *"Not one step down. Not one."* Walked away from: *"Count's not done!"*
 
-### Home: Greyfall, the Pits, at the Crater's lip
+### Home: Greyfall, the Pits, at the Crater's lip (49, 54)
 
 - **first**
   1. Not one step down. Not for you, not for nobody.
@@ -23,7 +23,7 @@ Greets you: *"Not one step down. Not one."* Walked away from: *"Count's not done
 
 He goes home with nothing; Brenna sells his torch.
 
-### At Greyfall, the Pits, at the Crater's lip, once **ledgerSaved**
+### At Greyfall, the Pits, at the Crater's lip (49, 54), once **ledgerSaved**
 
 - **ledger** (heard to the end the first time, gives *Digger's Torch*)
   1. That's my mark. Three hundred and twelve. Hah! I'm not mad.
@@ -36,7 +36,7 @@ He goes home with nothing; Brenna sells his torch.
 
 Greets you: *"Close the door. The draught."* Walked away from: *"The door, please."*
 
-### Home: Greyfall, the High City, the Counting House
+### Home: Greyfall, the Counting House (64, 26)
 
 - **first**
   1. Close the door. Every draught costs me a page.
@@ -53,7 +53,7 @@ Greets you: *"Close the door. The draught."* Walked away from: *"The door, pleas
   2. It is the season of the Deep Cut. I could not bring myself to burn that one. Nor to read it.
   3. Take it to him. He was owed. They were all owed.
 
-### At Greyfall, the High City, the Counting House, once **warlordDead**
+### At Greyfall, the Counting House (64, 26), once **warlordDead**
 
 - **thaw**
   1. The stove's out. I'm warm without it. First time in years.
@@ -64,7 +64,7 @@ Greets you: *"Close the door. The draught."* Walked away from: *"The door, pleas
 
 Greets you: *"Hush."* Walked away from: *"Go warm somewhere else."*
 
-### Home: Greyfall, the Ruined Chapel
+### Home: Greyfall, the Ruined Chapel (42, 21)
 
 - **first**
   1. Hush. You're so loud. All that warmth, shouting.
@@ -78,14 +78,14 @@ Greets you: *"Hush."* Walked away from: *"Go warm somewhere else."*
   2. I'm going down to the Pits. It's coldest there. I'll kneel with the others.
   3. Hush now. ...Hush.
 
-### At Greyfall, the Ruined Chapel, once **warlordDead**
+### At Greyfall, the Ruined Chapel (42, 21), once **warlordDead**
 
 - **fever** (heard to the end the first time, gives *Stilled Bell*)
   1. You killed him, and the fever's coming back. I can feel my hands again.
   2. I was nearly still. Nearly.
   3. Take the bell. I can't ring it for a world that wants to be warm.
 
-### Kneeling in Greyfall, the Pits, once **hushStilled**
+### Kneeling in Greyfall, the Pits (38, 65), once **hushStilled**
 
 Says nothing.
 

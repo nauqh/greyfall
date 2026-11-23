@@ -38,7 +38,10 @@ export type WorldFlag =
   | "watchmanOut"
   | "marenSails"
   | "pennyFollows"
-  | "drankClear";
+  | "drankClear"
+  | "wageOwed"
+  | "ledgerSaved"
+  | "hushStilled";
 
 export interface Talk {
   id: string;
@@ -84,9 +87,10 @@ export interface Npc {
   area: AreaId;
   /** On the map as areaMap() gives it: a surface map is padded with sea, so not the builder's own grid. */
   at: Cell;
-  kind: "pawn" | "lancer" | "archer" | "monk" | "warrior" | "gnome";
+  /** A gnome or a goblin (`torch`) is drawn as itself, in no colour. */
+  kind: "pawn" | "lancer" | "archer" | "monk" | "warrior" | "gnome" | "torch";
   act?: string;
-  /** Blue, Highward's, unless they are from elsewhere; a gnome is drawn as itself, in no colour. */
+  /** Blue, Highward's, unless they are from elsewhere. */
   color?: "blue" | "red" | "yellow" | "purple" | "black";
   flip?: boolean;
   /** A merchant's goods, and what they say turning a sale down: short of gold, or already sold. */
@@ -229,7 +233,7 @@ export const NPCS: readonly Npc[] = [
     act: "hammer",
     // Each edge a little later, as Andre's titanite and Elden Ring's bell bearings: the better one once a boss falls.
     shop: {
-      stock: [{ item: "Brenna's Edge" }, { item: "Keener Edge", after: "stoneWarden" }, { item: "Grey-Iron Edge", after: "minotaur" }, { item: "Banded Shield" }, { item: "Ansel's Edge", flag: "anselAhead" }],
+      stock: [{ item: "Brenna's Edge" }, { item: "Keener Edge", after: "stoneWarden" }, { item: "Grey-Iron Edge", after: "minotaur" }, { item: "Banded Shield" }, { item: "Ansel's Edge", flag: "anselAhead" }, { item: "Digger's Torch", flag: "warlordDead" }],
       poor: "Gold first. Then sparks.",
       sold: "That's done. I don't make the same thing twice.",
     },
@@ -1036,6 +1040,164 @@ export const NPCS: readonly Npc[] = [
           { id: "home", gives: "Mum's Bread", lines: ["We're walking home. Mum says slowly.", "She's had enough of being hurried by ropes."] },
         ],
       },
+    ],
+  },
+  {
+    id: "tally",
+    name: "Tally",
+    area: "greyfall",
+    at: { col: 49, row: 54 },
+    kind: "torch",
+    greet: "Not one step down. Not one.",
+    part: "Count's not done!",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "Not one step down. Not for you, not for nobody.",
+          "Tally. I dug here. Forty seasons, coal and fire for pay.",
+          "The last season they never paid. I came back for it.",
+        ],
+      },
+      {
+        id: "wage",
+        sets: "wageOwed",
+        lines: [
+          "Three hundred and twelve loads. Coal for each. Fire for the long shifts.",
+          "It's written. The paymaster wrote everything. Upstairs, in the Counting House.",
+          "Get me the page and I'll know I'm not mad. ...Then I'll go.",
+        ],
+      },
+      { id: "lip", lines: ["Men say we dug it. We did. Men say why? Ask who paid."] },
+    ],
+    // Paid only if Quill gives up the ledger before the Warlord falls; after, it is ash, and Brenna sells his torch.
+    later: [
+      { when: ["warlordDead"] },
+      {
+        when: ["ledgerSaved"],
+        area: "greyfall",
+        at: { col: 49, row: 54 },
+        talks: [
+          {
+            id: "ledger",
+            gives: "Digger's Torch",
+            lines: [
+              "That's my mark. Three hundred and twelve. Hah! I'm not mad.",
+              "And look how deep. They wrote it down. They wrote down how deep.",
+              "Here, take the torch. I'm paid. I don't need to see down there any more.",
+            ],
+          },
+          { id: "paid", lines: ["Paid. Late. Paid."] },
+        ],
+      },
+    ],
+  },
+  {
+    id: "quill",
+    name: "Master Quill",
+    short: "Quill",
+    area: "greyfall",
+    at: { col: 64, row: 26 },
+    kind: "pawn",
+    color: "black",
+    greet: "Close the door. The draught.",
+    part: "The door, please.",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "Close the door. Every draught costs me a page.",
+          "Quill. Paymaster to the Citadel. I kept the accounts, and the accounts keep me.",
+          "Coal and fire, the goblins were paid in. I pay myself the same way now.",
+        ],
+      },
+      { id: "stove", lines: ["Forty years of ledgers, and a small stove.", "I started with the oldest. Fair's fair."] },
+      {
+        id: "cold",
+        lines: ["They come to the window sometimes. The taken. Drawn to the light.", "They don't knock. They used to queue for their pay just like that."],
+      },
+      {
+        id: "ledger",
+        when: "wageOwed",
+        sets: "ledgerSaved",
+        lines: [
+          "A goblin wants his page? After all this? ...The last season. I kept it back.",
+          "It is the season of the Deep Cut. I could not bring myself to burn that one. Nor to read it.",
+          "Take it to him. He was owed. They were all owed.",
+        ],
+      },
+    ],
+    later: [
+      {
+        when: ["warlordDead"],
+        area: "greyfall",
+        at: { col: 64, row: 26 },
+        talks: [
+          {
+            id: "thaw",
+            lines: [
+              "The stove's out. I'm warm without it. First time in years.",
+              "The last ledger went in on the coldest night. I'm sorry for that one.",
+              "All that's left of the Cut is what the goblins remember. And the hole.",
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "hush",
+    name: "Sister Hush",
+    short: "Hush",
+    area: "greyfall",
+    at: { col: 42, row: 21 },
+    kind: "monk",
+    color: "purple",
+    greet: "Hush.",
+    part: "Go warm somewhere else.",
+    talks: [
+      {
+        id: "first",
+        lines: [
+          "Hush. You're so loud. All that warmth, shouting.",
+          "I am Sister... Sister Hush. Of the Stilled. We pray the fever down.",
+          "The Hearth burned too long. The cold is the world getting well.",
+        ],
+      },
+      {
+        id: "name",
+        lines: ["You asked my name, before. I gave you one. I can't think which.", "That's the second thing to go. The colour went first. It doesn't hurt."],
+      },
+      {
+        id: "bell",
+        sets: "hushStilled",
+        gives: "Stilled Bell",
+        lines: [
+          "Take the bell. It's for ringing the warm ones quiet. I won't need it.",
+          "I'm going down to the Pits. It's coldest there. I'll kneel with the others.",
+          "Hush now. ...Hush.",
+        ],
+      },
+    ],
+    // Taken once she goes down, and the Warlord's fall does not bring her back; fallen first, he leaves her in the thaw.
+    later: [
+      {
+        when: ["warlordDead"],
+        area: "greyfall",
+        at: { col: 42, row: 21 },
+        talks: [
+          {
+            id: "fever",
+            gives: "Stilled Bell",
+            lines: [
+              "You killed him, and the fever's coming back. I can feel my hands again.",
+              "I was nearly still. Nearly.",
+              "Take the bell. I can't ring it for a world that wants to be warm.",
+            ],
+          },
+        ],
+      },
+      { when: ["hushStilled"], area: "greyfall", at: { col: 38, row: 65 }, talks: [] },
     ],
   },
   {

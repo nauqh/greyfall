@@ -6,7 +6,7 @@ Who lives here, and every line they say. How talks, flags and moving on work is 
 
 Greets you: *"Mind the sparks."* Walked away from: *"Come back with gold."*
 
-Sells: Brenna's Edge; Keener Edge (once the Stone Warden falls); Grey-Iron Edge (once the Ember Bull falls); Banded Shield; Ansel's Edge (once **anselAhead**).
+Sells: Brenna's Edge; Keener Edge (once the Stone Warden falls); Grey-Iron Edge (once the Ember Bull falls); Banded Shield; Ansel's Edge (once **anselAhead**); Digger's Torch (once **warlordDead**).
 
 ### Home: The Chapel Ward, the Forge Yard (73, 29)
 

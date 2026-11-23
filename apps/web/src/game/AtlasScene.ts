@@ -711,6 +711,8 @@ const ITEM_ICON: Record<ItemName, ShopIcon> = {
   "Sister's Candle": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#fff0c0" },
   "Hollow Water": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#8fd8f0" },
   "Mum's Bread": { url: packUrl("UI Elements/UI Elements/Icons/Icon_04.png"), tint: "#c8a070" },
+  "Digger's Torch": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#ff9a3c" },
+  "Stilled Bell": { url: packUrl("UI Elements/UI Elements/Icons/Icon_05.png"), tint: "#b8a8d8" },
   "Salt-Glass Lantern": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#d8f0f0" },
   "Hollis's Gaff": { url: SWORDS, crop: { x: 0, y: 0, w: 128, h: 128, sheetW: 448, sheetH: 640 } },
   "Drowned Locket": { url: packUrl("UI Elements/UI Elements/Icons/Icon_06.png"), tint: "#9fc8d8" },
@@ -888,7 +890,7 @@ interface Pile {
 /** No rest with a monster this near the fire. */
 const REST_CLEAR = 8;
 const FLAGS = "greyfall.flags";
-const npcLook = (n: Npc): Dweller => ({ kind: n.kind, col: n.at.col, row: n.at.row, color: n.kind === "gnome" ? undefined : (n.color ?? "blue"), act: n.act });
+const npcLook = (n: Npc): Dweller => ({ kind: n.kind, col: n.at.col, row: n.at.row, color: n.kind === "gnome" || n.kind === "torch" ? undefined : (n.color ?? "blue"), act: n.act });
 /**
  * Each underground map lit its own way: the rock's own dark, how much the open floor shows unlit, the colour its
  * lights cast. The Undercroft is torchlit masonry, the Deeps the darkest and lit ghost-green, the Hollow the

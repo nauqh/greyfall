@@ -464,6 +464,8 @@ export const ITEMS = {
   "Smuggler's Coat": { cost: 400, adds: { hp: 25 }, about: "Swapped, its last wearer said, deeper in. Nobody down there ever swapped a thing." },
   "Sister's Candle": { cost: 600, adds: { flask: 15 }, about: "A sister's candle, burned down a winter of nights. Its light closes wounds, or seems to." },
   "Hollow Water": { cost: 0, adds: { flasks: 1 }, about: "Water from the lake at the bottom of the world, warm as a hand. An ember dipped in it will not go out. The Pilgrims drink nothing else. Ferrow would not." },
+  "Digger's Torch": { cost: 500, adds: { greed: 0.25 }, about: "A goblin's pit torch, lit forty seasons and never let out. Paid at last, and gold still follows the light." },
+  "Stilled Bell": { cost: 0, adds: { flask: 15 }, about: "Rung by the Stilled to quiet the warm ones. Rung over an ember, it quiets a wound instead." },
   "Mum's Bread": { cost: 0, adds: { hp: 20 }, about: "Baked in an east lane oven that sat cold a long while. Mostly ash. Eaten anyway." },
   "Salt-Glass Lantern": { cost: 600, adds: { flasks: 1 }, about: "Blown on the salt coast, thick as a thumb, and room in it for one more ember. It came in on the first ship in three winters." },
   "Hollis's Gaff": { cost: 0, adds: { attack: 3 }, about: "A fishing gaff, its hook filed to an edge. Lent, not given: the sea wants it back past the Ring." },

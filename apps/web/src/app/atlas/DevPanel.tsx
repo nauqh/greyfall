@@ -36,6 +36,9 @@ const FLAGS = Object.keys({
   marenSails: 1,
   pennyFollows: 1,
   drankClear: 1,
+  wageOwed: 1,
+  ledgerSaved: 1,
+  hushStilled: 1,
 } satisfies Record<WorldFlag, 1>) as WorldFlag[];
 const KINDS = Object.keys(FOES);
 const GROUPS = LANDS.map((land) => AREAS.filter((a) => a.land === land && MAPPED_AREAS.includes(a.id))).filter((g) => g.length > 0);

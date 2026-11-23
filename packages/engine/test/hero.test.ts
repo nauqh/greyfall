@@ -105,7 +105,7 @@ describe("the merchants' goods", () => {
 
   it("add up: the edges on each other, both shards an ember each, an old save's Ember Shard by its name", () => {
     const all = kit(new Set(Object.keys(ITEMS).filter((k) => ![...GIFTS, ...LENT].includes(k as keyof typeof ITEMS))));
-    expect(all).toEqual({ hp: 210, attack: 26, flasks: HERO.flasks + 4, flask: 70, block: 1.25, greed: 1.5, stamina: STAMINA.max + 20 });
+    expect(all).toEqual({ hp: 210, attack: 26, flasks: HERO.flasks + 4, flask: 85, block: 1.25, greed: 1.75, stamina: STAMINA.max + 20 });
     expect(kit(new Set(["Ember Shard"])).flasks).toBe(HERO.flasks + 1);
   });
 

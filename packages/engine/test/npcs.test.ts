@@ -172,6 +172,9 @@ describe("the questline", () => {
       monkFreed: "sister.warm",
       drankClear: "pilgrim.water",
       pennyFollows: "penny.crows",
+      wageOwed: "tally.wage",
+      ledgerSaved: "quill.ledger",
+      hushStilled: "hush.bell",
     });
   });
 });
