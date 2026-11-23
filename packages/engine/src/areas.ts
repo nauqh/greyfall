@@ -1304,8 +1304,8 @@ function harbour(): AreaMap {
   const graves = [
     ".......#######.......~~~",
     ".....###############....",
-    ".....####^^^^##########.",
-    ".....###^^^^^##########.",
+    ".....###^^^^^^^########.",
+    ".....###^^^^^^^########.",
     "....####^^^444444444####",
     "...#####^^444444444444##",
     "..#####^^444444444^^4444",
@@ -1688,10 +1688,11 @@ function harbour(): AreaMap {
   prop("bones", 99, 67);
   who("pawn", 101, 68, { ...blue, act: "pickaxe", unless: "moorGateOpen" });
   who("monk", 93, 66, { ...blue, flip: true, unless: "moorGateOpen" });
-  // The town's dead on the slope, a plot either side of the road up, headstones in rows; the dead house between them,
-  // black with the smoke of what it burned the first winter of the Grey, a lantern on up to the shoulder.
-  for (const y of [58.5, 59.4]) for (const x of [91, 92.2, 93.4, 103, 104.2, 105.4]) prop("rock", x, y, { scale: 0.55, fixed: true });
-  prop("monastery", 98, 58, { color: "black" });
+  // The town's dead on the slope, a plot either side of the road up: a stake at each grave's head in rows, as every
+  // graveyard in the pack's art is marked, a gap between to walk them, bones the dead left climbing out, and a lantern
+  // on up to the shoulder. No trees on the hill: a dead tree's art spans a tile each side, over the stakes and the cliffs.
+  for (const [c, r] of [[90, 58], [92, 58], [94, 58], [92, 60], [94, 60], [99, 58], [101, 58], [103, 58], [105, 58], [99, 60], [101, 60], [103, 60], [105, 60]] as const) prop("skullSpike", c, r, { fixed: true });
+  for (const [c, r] of [[93, 59], [100, 59], [104, 59]] as const) prop("bones", c, r);
   for (const [c, r] of [[100, 61], [91, 56]] as const) prop("sconce", c, r);
   // The dead walk the plots.
   who("skull", 95, 61, { ...held, to: { col: 100, row: 62 } });
@@ -1699,19 +1700,39 @@ function harbour(): AreaMap {
   who("gnoll", 100, 55, { ...held, to: { col: 103, row: 55 } });
   prop("goldStone", 97, 62);
   // The crest: the old watch still held, its tower and beacon the highest thing east of the castle, so the fire square
-  // sees it, the last of the Moor Watch's bows on its roof; a gibbet tree on the west lip, skulls staked at the head of
-  // the stair down.
+  // sees it, the last of the Moor Watch's bows on its roof, skulls staked at the head of the stair down.
   prop("tower", 100, 44, blue);
   who("archer", 100, 44.25, { ...blue, perch: 1.85 });
   prop("sconce", 103, 44);
-  prop("deadTree", 96, 48, { scale: 1.2 });
   for (const [c, r] of [[107, 45], [108, 46]] as const) prop("skullSpike", c, r);
   who("bat", 97, 45, held);
+  // The back shelf, under the crest's west wall: the hill's oldest dead along it, bones the walking dead dropped, and at
+  // its dead end the crypt of the house that kept the Watch, its plot before it, one grave robbed and its gold left lying,
+  // and one of the Watch's dead still crouched behind his shield over it.
+  prop("house1", 99, 42, { color: "black", fixed: true });
+  for (const [c, r] of [[92, 49], [92, 50], [93, 52], [95, 41], [97, 41]] as const) prop("skullSpike", c, r, { fixed: true });
+  for (const [c, r] of [[95, 43], [93, 46], [94, 51]] as const) prop("bones", c, r);
+  who("skullGuard", 94, 41);
+  prop("goldStone", 96, 41);
+  who("skull", 94, 49, { ...held, to: { col: 94, row: 43 } });
+  // Below the shelf on the west, the last two graves dug before the Grey by the stair down, and up the strip the dead
+  // who keep them, crouched at their shields with a lane either side.
+  for (const r of [44, 48]) who("skullGuard", 90, r);
+  for (const [c, r] of [[89, 53], [91, 53]] as const) prop("skullSpike", c, r, { fixed: true });
+  for (const [c, r] of [[91, 43], [89, 54]] as const) prop("bones", c, r);
+  // Behind the crest, the paupers' field: one row of graves with no names, dug up by robbers come over the moor with
+  // the dogs, their hide hut pitched at the far end; gone with the dogs when the gate is opened.
+  for (const c of [101, 103, 105]) prop("skullSpike", c, 41, { fixed: true });
+  for (const c of [102, 104]) prop("bones", c, 42);
+  prop("goblinHut", 107, 42, { ...held, fixed: true });
+  who("thief", 101, 42, { ...held, to: { col: 105, row: 42 } });
   // The Charnel: the dogs' den on its floor, graves dug up for the rings, bones and meat flung about, their spoil heaped
   // where it glints up at the crest. The Moor Gate's barricade at its seaward end: timber stacked by it, a lantern by it.
   for (const [c, r] of [[101, 50], [104, 49], [106, 51], [104, 52]] as const) prop("bones", c, r);
   prop("meat", 103, 50);
   for (const [c, r] of [[102, 49], [105, 50]] as const) prop("goldStone", c, r);
+  // Their den a hide hut in the floor's west corner, gone with them when the gate is opened.
+  prop("goblinHut", 99, 50, { ...held, fixed: true });
   for (const [c, r] of [[103, 51], [106, 50]] as const) who("gnoll", c, r, held);
   who("shaman", 104, 50, held);
   prop("woodPile", 108, 49);
@@ -1852,9 +1873,10 @@ function harbour(): AreaMap {
     { name: "The Burg Gate", at: { col: 55, row: 11 }, levels: [2, 3, 4, 5], palette: ramp, dress: "harbour", decor: 0 },
     // Down into the Charnel the ground darkens a shade a height: the crest as the hill has it, the ledge teal, the
     // floor the web's dimmed teal (6), darker than any ground outside.
-    { name: "The Charnel", at: { col: 104, row: 49 }, palette: [6, 6, 5, 1], dress: "barrowmoor", decor: 1, gloom: true, box: { x: 98, y: 45, w: 12, h: 9 } },
-    // The Graves climb in the Harbour's own greens, as every hill does; only the Charnel sunk in the crest goes dark.
-    { name: "The Graves", at: { col: 100, row: 56 }, levels: [1, 2, 3, 4], palette: ramp, dress: "barrowmoor", decor: 1.5 },
+    { name: "The Charnel", at: { col: 104, row: 49 }, palette: [6, 6, 5, 4], dress: "barrowmoor", decor: 1, trees: 0, gloom: true, box: { x: 98, y: 45, w: 12, h: 9 } },
+    // The Graves alone of the Harbour's hills keep no green: dead grass from the lychgate to the crest, the town's own
+    // greens stopping at its foot.
+    { name: "The Graves", at: { col: 100, row: 56 }, levels: [1, 2, 3, 4], palette: [4], dress: "barrowmoor", decor: 1.5, trees: 0, gloom: true },
   ];
   // Messages on the ground, after the Souls games: at the Old Well's cave, on the pier, at the Graves road's foot and on
   // the Watch's rock, and on the boards over the Mine Hills' deep face.
