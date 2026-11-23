@@ -1463,13 +1463,13 @@ function harbour(): AreaMap {
   who("warrior", 52, 20, { ...blue, to: { col: 54, row: 20 } });
   who("pawn", 55, 20, { ...blue, act: "meat" });
   prop("house2", 66, 7, blue);
-  // The west arm is the town's woodyard: the Northwood's logs in one stack in a fenced pen at its north end, and south
-  // of it the yard's office, where the carrier waits and reports each full pile it brings up from the cabins. The arm
-  // is too narrow for the two abreast.
-  t.fences.push({ col: 42, row: 5, w: 4, h: 4, gate: 1 });
-  prop("logStack", 43.5, 7.1);
-  prop("house1", 44, 11, blue);
-  who("pawn", 44, 13, { ...blue, act: "carry" });
+  // The west arm is the town's woodyard: the Northwood's logs in one stack in a fenced pen, and on its right the yard's
+  // office, where the carrier waits and reports each full pile it brings up from the cabins. The office is pinned: on the
+  // arm's east edge its clear ground would run off the plateau, and anywhere it fits it crowds the pen's posts.
+  t.fences.push({ col: 41, row: 6, w: 4, h: 4, gate: 1 });
+  prop("logStack", 42.5, 8.1);
+  prop("house1", 46, 7, { ...blue, fixed: true });
+  who("pawn", 46, 9, { ...blue, act: "carry" });
   for (const [c, r] of [[44, 14], [59, 18], [61, 15]] as const) who("lancer", c, r, blue);
   who("lancer", 63, 14, { ...blue, to: { col: 66, row: 14 } });
   // The crown, after Dragonsreach: the keep behind a forecourt, a tower at each front corner, a garden either side, and
