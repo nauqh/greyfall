@@ -8,5 +8,5 @@ export const PROLOGUE = {
     "Only Lanternport held, one fire still burning. Now the tide has carried a stranger into the caves beneath it. Nameless, half-drowned, and warm.",
   ],
   title: "GREYFALL",
-  subtitle: "Aurum",
+  subtitle: "Ashen Crown",
 };

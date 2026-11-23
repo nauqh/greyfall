@@ -35,7 +35,7 @@ export function Settings({ back, leaving }: { back: () => void; leaving: boolean
     <div className={`titleMenu setPanel${leaving ? " leaving" : ""}`}>
       <h1 className="logo">
         Settings
-        <span className="logoSub">Aurum</span>
+        <span className="logoSub">Ashen Crown</span>
       </h1>
       <div className="menuScroll setScroll">
         <nav className="menu setCats" aria-label="Settings">

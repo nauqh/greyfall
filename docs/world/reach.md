@@ -307,7 +307,7 @@ Every term, with what to avoid, is in [GLOSSARY.md](../../GLOSSARY.md).
    on the warmth; the Pilgrims think it the Hearth's keeper. Whether it ever
    wakes for them is still open.
 3. **The prologue.** Settled 2026-11-21: rewritten to the text below, now
-   in `prologue.ts`, with the subtitle "Aurum" on the prologue, title screen
+   in `prologue.ts`, with the subtitle "Ashen Crown" on the prologue, title screen
    and settings.
 4. **The Warlord's and the Sentinel's look.** Settled 2026-11-21: the
    Warlord is a Black Warrior scaled up and tinted warm gold, the one colour

@@ -1123,7 +1123,7 @@ Ansel's plain claim: Sunhold sent no aid.
 | 5 | Only Lanternport held: a town at the edge of the sea, its gates barred, one fire still burning. | The last hold, and the fire the player will rest at |
 | 6 | Now the tide has carried a stranger into the caves beneath the town. Nameless, half-drowned, and alive. | The player, below the last hold, not yet in it; "Now" marks the turn from history to the present |
 
-Then the title card, **GREYFALL**, *Aurum*, and the black fades
+Then the title card, **GREYFALL**, *Ashen Crown*, and the black fades
 out on Tidewake: the sea cave behind the overlay is the arrival.
 
 ### Playing it

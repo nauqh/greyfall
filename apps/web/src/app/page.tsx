@@ -84,7 +84,7 @@ export default function Page() {
             <div className={`titleMenu${swapped ? " swapIn" : ""}${leaving ? " leaving" : ""}`}>
               <h1 className="logo">
                 Greyfall
-                <span className="logoSub">Aurum</span>
+                <span className="logoSub">Ashen Crown</span>
               </h1>
               <div className="menuScroll">
                 <nav className="menu" aria-label="Main menu">
