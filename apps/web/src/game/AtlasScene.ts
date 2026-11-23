@@ -4290,13 +4290,14 @@ export class AtlasScene extends Phaser.Scene {
     this.names = this.names.filter((n) => !gone.has(n.text));
     for (const t of this.devText) t.destroy();
     this.devText = [];
+    for (const f of this.folk) f.tag.setVisible(!this.free);
     if (!this.free || !this.local) return;
     const label = (x: number, y: number, s: string, color: string): void => {
       const t = this.add.text(x, y, s, { fontFamily: FONT, fontSize: "24px", fontStyle: "bold", color, stroke: "#1c2634", strokeThickness: 5 }).setOrigin(0.5, 1).setDepth(DEPTH.fx + 3);
       this.names.push({ text: t, px: 12, tier: this.view });
       this.devText.push(t);
     };
-    for (const f of this.folk) label(f.s.x, f.s.y - 1.4 * CELL, f.npc.name, "#f2d48a");
+    for (const f of this.folk) label(f.s.x, f.s.y - 1.05 * CELL, f.npc.short ?? f.npc.name, "#f2d48a");
     for (const e of this.local.exits) label((e.at.col + 0.5) * CELL, e.at.row * CELL, barred(e) ? `${e.name} (barred)` : e.name, "#9cdcff");
   }
 
