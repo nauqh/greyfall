@@ -505,6 +505,11 @@ const KNIGHT: Record<string, { idle: string; move: string; frame: number; anchor
   lancer: { idle: "Lancer/Lancer_Idle.png", move: "Lancer/Lancer_Run.png", frame: 320, anchor: 197 / 320 },
   pawn: { idle: "Pawn/Pawn_Idle.png", move: "Pawn/Pawn_Run.png", frame: 192, anchor: 134 / 192 },
 };
+/** A knight at drill (`act: "drill"`) idles at its post and, at each muster, walks to its spot to practise this blow. */
+const DRILL: Partial<Record<string, string>> = { warrior: "Warrior/Warrior_Attack1.png", lancer: "Lancer/Lancer_Right_Attack.png", archer: "Archer/Archer_Shoot.png" };
+/** How often the drill is called, and how long it runs, in ms. */
+const DRILL_EVERY = 30000;
+const DRILL_FOR = 10000;
 /** A block of logs `wide` across and `high` rows up, all lying one way, each row laid square on the one below: px off its
  *  foot, in the order they go on, so it fills a row at a time from the ground up. */
 const logBlock = (wide: number, high: number, across: number, up: number): readonly [number, number][] =>
@@ -1195,11 +1200,12 @@ export class AtlasScene extends Phaser.Scene {
       const k = KNIGHT[d.kind]!;
       const dir = `Units/${COLOR_DIR[d.color]} Units/`;
       const act = d.kind === "pawn" && d.act ? PAWN_ACT[d.act] : undefined;
+      const drill = d.act === "drill" ? DRILL[d.kind] : undefined;
       const art = (file: string): Art => ({ key: `${d.color}_${file}`, file: dir + file });
       return {
         idle: art(act?.idle ?? k.idle),
         move: art(act?.move ?? k.move),
-        ...(act?.work && { work: art(act.work) }),
+        ...((act?.work ?? drill) && { work: art((act?.work ?? drill)!) }),
         ...(act?.haul && { haul: art(act.haul) }),
         frame: k.frame,
         anchor: k.anchor,
@@ -3672,6 +3678,23 @@ export class AtlasScene extends Phaser.Scene {
     };
     const { work, haul } = look;
     const toPoint = (c: Cell): { x: number; y: number } => ({ x: (c.col + 0.5) * CELL, y: (c.row + 0.75) * CELL });
+    if (d.act === "drill" && work) {
+      // Mustered all at once on the same clock: out to the drill spot, the blow practised at half pace, back to idle.
+      const muster = (): void =>
+        void this.time.delayedCall(DRILL_EVERY - (this.time.now % DRILL_EVERY) + Math.random() * 600, () =>
+          go(points, look.move?.key, () => {
+            s.setFlipX(d.flip ?? false);
+            this.loop(s, work.key);
+            s.anims.timeScale = 0.5;
+            this.time.delayedCall(DRILL_FOR, () => {
+              s.anims.timeScale = 1;
+              go([...points].reverse(), look.move?.key, () => (this.loop(s, look.idle.key), muster()));
+            });
+          }),
+        );
+      muster();
+      return;
+    }
     if (carrier && work && haul) {
       // The woodyard's carrier: waits at the yard's office till a pile somewhere is full, walks to it, loads all but a
       // couple of logs, carries them to the pen's gate onto the stack, and goes back to the office to report.
