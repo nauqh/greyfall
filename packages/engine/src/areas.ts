@@ -2404,7 +2404,7 @@ function greyfall(): AreaMap {
   // The Pits: the Cut's works round the Crater. The headframe on its lip, the shafts boarded in the spoil, timber and
   // tools left where they fell; the overseers and a horned still at their posts over pits nobody digs. A goblin's fire
   // at the lip, where the one who came back for his wage sits: a fire to rest by.
-  prop("watchtower", 44, 53, black);
+  prop("watchtower", 44, 53);
   for (const [c, r] of [[27, 52], [47, 61], [30, 61]] as const) prop("cave", c, r, { fixed: true });
   for (const [c, r] of [[42, 59], [32, 53], [45, 57]] as const) prop("woodPile", c, r);
   for (const [c, r] of [[40, 52], [34, 60]] as const) prop("tools", c, r);

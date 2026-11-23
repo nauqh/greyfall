@@ -19,6 +19,8 @@ function reach(from: Cell, shut: ReadonlySet<number> = new Set()): Set<number> {
 it.each(MAPPED_AREAS)("gives every building on %s a colour", (id) => {
   const buildings = new Set(["archery", "barracks", "castle", "house1", "house2", "house3", "monastery", "tower"]);
   expect(areaMap(id).props.filter((p) => buildings.has(p.art) && !p.color).map((p) => `${p.art} ${p.col},${p.row}`)).toEqual([]);
+  // And only a building: a coloured prop is drawn from a building sheet, which nothing else has.
+  expect(areaMap(id).props.filter((p) => !buildings.has(p.art) && p.color).map((p) => `${p.art} ${p.col},${p.row}`)).toEqual([]);
 });
 
 it.each(MAPPED_AREAS)("leaves every way out, fire, note and dweller of %s in reach round the solid props", (id) => {
