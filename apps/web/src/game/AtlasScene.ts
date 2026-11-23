@@ -3027,7 +3027,7 @@ export class AtlasScene extends Phaser.Scene {
     }
     this.dress(tier, roads);
     for (const p of tier.props) this.addProp(p, tier.base);
-    for (const f of tier.fences) this.fence(f.col, f.row, f.w, f.h, f.gate);
+    for (const f of tier.fences) this.fence(f.col, f.row, f.w, f.h, f.gate, f.gateW);
     for (const g of tier.gates) this.gatehouse(g.kind, g.cells);
     for (const f of tier.campfires) this.bonfire(f);
     for (const f of tier.fires) this.bonfire(f, !!this.local && !remembered(KINDLED).has(this.fireKey(f)));
@@ -3312,7 +3312,7 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** A fence pen: corners, rails and posts from the kit's 4x3 tile sheet. */
-  private fence(col: number, row: number, w: number, h: number, gate?: number): Phaser.GameObjects.Image[] {
+  private fence(col: number, row: number, w: number, h: number, gate?: number, gateW?: number): Phaser.GameObjects.Image[] {
     const made: Phaser.GameObjects.Image[] = [];
     /** One tile of the sheet; `crop` keeps only part of the frame, so an end piece shows no rail running off into nothing. */
     const piece = (c: number, r: number, frame: number, crop?: [number, number, number, number]): void => {
@@ -3340,7 +3340,7 @@ export class AtlasScene extends Phaser.Scene {
       const last = c === col + w - 1;
       piece(c, row, first ? 0 : last ? 3 : 1 + (c % 2));
       // The sheet's bottom row is a gate, each middle piece stopping at its post: a closed run takes the top's rails.
-      const shut = (k: number) => !inGate({ col, gate }, k);
+      const shut = (k: number) => !inGate({ col, gate, gateW }, k);
       // A corner beside the gate keeps its post but not the rail that would run on across the opening.
       if (shut(c)) piece(c, row + h - 1, first ? 8 : last ? 11 : !shut(c + 1) ? 9 : !shut(c - 1) ? 10 : 1 + (c % 2), first && !shut(c + 1) ? [0, 0, 50, 64] : last && !shut(c - 1) ? [16, 0, 48, 64] : undefined);
     }

@@ -166,8 +166,9 @@ export interface AtlasTier {
   /** Campfires: lit like a bonfire, but no rest. */
   campfires: Cell[];
   bosses: { name: string; area: AreaId; col: number; row: number }[];
-  /** Fence pens and barricades, as rectangles of tiles; `gate` opens two tiles of the south side, that many in from `col`. */
-  fences: { col: number; row: number; w: number; h: number; gate?: number }[];
+  /** Fence pens and barricades, as rectangles of tiles; `gate` opens `gateW` tiles (two when unset) of the south side,
+   *  that many in from `col`. */
+  fences: { col: number; row: number; w: number; h: number; gate?: number; gateW?: number }[];
   /** Each area laid from its own map by `real()`: its own map's cell (`col`, `row`) is atlas cell
    *  (`x0 + (col - c0) / scale`, `y0 + (row - r0) / scale`). */
   real?: Partial<Record<AreaId, RealPlace>>;
@@ -601,8 +602,8 @@ export function solidCells(t: Pick<AtlasTier, "props" | "fences">): Set<string> 
 }
 
 /** Whether column `c` of a fence's south side is its gate. */
-export function inGate(f: { col: number; gate?: number }, c: number): boolean {
-  return f.gate !== undefined && c - f.col >= f.gate && c - f.col < f.gate + 2;
+export function inGate(f: { col: number; gate?: number; gateW?: number }, c: number): boolean {
+  return f.gate !== undefined && c - f.col >= f.gate && c - f.col < f.gate + (f.gateW ?? 2);
 }
 
 /** Props that stand in the sea, creatures that swim in it, and those that fly over anything. */

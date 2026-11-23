@@ -1398,7 +1398,6 @@ function harbour(): AreaMap {
   for (const [c, r] of [[52, 32], [58, 32]] as const) who("lancer", c, r, blue);
   // The gate square under the Wind Ward's stairs: lanterns, folk crossing to every ward.
   for (const [c, r] of [[53, 25], [58, 25]] as const) prop("sconce", c, r);
-  who("pawn", 57, 27, { ...blue, act: "wood", to: { col: 64, row: 22 } });
   // The west wedge, between the rim and the Wind Ward, is the Chapel Close, run out west into the Chapel Spur: the
   // almshouse at the spur's root, the pilgrims' walk along its ridge between churchyard trees on the valley side and
   // candles on the drop, the chapel alone at its tip, and the brothers walking it.
@@ -1418,7 +1417,7 @@ function harbour(): AreaMap {
   prop("bones", 44, 30);
   prop("sconce", 36, 28);
   for (const r of [28, 30]) prop("skullSpike", 35, r, { unless: "sistersStair" });
-  who("warrior", 42, 9, { ...blue, to: { col: 42, row: 12 } });
+  who("warrior", 41, 10, { ...blue, to: { col: 45, row: 12 } });
   // The Chapel Spur: a blade of rock run west off the Close over the valley, the pilgrims' walk along its ridge to the
   // chapel alone at its tip. The Sisters' Stair folds back under it: off the tip onto a ledge of the sisters' graves
   // along its south flank, down at the ledge's east end, and west along its foot past their pool to the door cut in the
@@ -1453,23 +1452,21 @@ function harbour(): AreaMap {
   who("warrior", 59, 23, { ...blue, unless: "warlordDead", to: { col: 63, row: 23 } });
   for (const [c, r] of [[62, 26], [64, 27]] as const) who("archer", c, r, blue);
   // The Wind Ward, after Whiterun's: the town's great tree on a plaza facing the keep's bridge, the band's mead hall
-  // across it, after Jorrvaskr, its fire and its drinkers; the captains' houses out on the horseshoe's two arms, and a
-  // lancer at each stair head.
+  // across it, after Jorrvaskr, and its drinkers; the captains' houses out on the horseshoe's two arms, and a lancer at
+  // each stair head.
   prop("tree", 57.5, 17.4, { scale: 1.6, fixed: true });
-  for (const [c, r] of [[56, 16], [60, 17]] as const) prop("sconce", c, r);
   prop("barracks", 52, 18, { ...blue, scale: 1.3 });
-  prop("woodPile", 58, 19);
-  prop("meat", 56, 20);
   who("warrior", 52, 20, { ...blue, to: { col: 54, row: 20 } });
-  who("pawn", 55, 20, { ...blue, act: "meat" });
   prop("house2", 66, 7, blue);
-  // The west arm is the town's woodyard: the Northwood's logs in one stack in a fenced pen, and on its right the yard's
-  // office, where the carrier waits and reports each full pile it brings up from the cabins. The office is pinned: on the
-  // arm's east edge its clear ground would run off the plateau, and anywhere it fits it crowds the pen's posts.
-  t.fences.push({ col: 41, row: 6, w: 4, h: 4, gate: 1 });
-  prop("logStack", 42.5, 8.1);
-  prop("house1", 46, 7, { ...blue, fixed: true });
-  who("pawn", 46, 9, { ...blue, act: "carry" });
+  // The west arm is the town's woodyard: the Northwood's logs in one stack in a pen fenced close round it, and in the
+  // arm's north-east corner behind it the yard's office, where the carrier waits and reports each full pile it brings
+  // up from the cabins. A one-tile gate in the middle leaves a rail and a post either side of it, as the farm's pens
+  // have. The office stands wholly on the plateau, the wood at its back, so it is pinned, the corner being too tight
+  // for the clear ground a house keeps; the pen keeps a row off it, as that ground may not take a post.
+  t.fences.push({ col: 41, row: 7, w: 5, h: 3, gate: 2, gateW: 1 });
+  prop("logStack", 43, 8.1);
+  prop("house1", 46, 5, { ...blue, fixed: true });
+  who("pawn", 46, 6, { ...blue, act: "carry" });
   for (const [c, r] of [[44, 14], [59, 18], [61, 15]] as const) who("lancer", c, r, blue);
   who("lancer", 63, 14, { ...blue, to: { col: 66, row: 14 } });
   // The crown, after Dragonsreach: the keep behind a forecourt, a tower at each front corner, a garden either side, and
@@ -1477,11 +1474,9 @@ function harbour(): AreaMap {
   prop("castle", 55, 7, blue);
   for (const [c, r] of [[51.4, 5.6], [52.2, 6.8], [59.6, 6.6]] as const) prop("tree", c, r, { fixed: true });
   for (const [c, r] of [[50, 6], [61, 8]] as const) prop("bush", c, r);
-  for (const [c, r] of [[51, 13], [53, 13]] as const) prop("sconce", c, r);
   who("archer", 52, 13, blue);
   who("lancer", 62, 12, blue);
-  // The Burg Gate stands open: a lancer either side of its door, the guard camped in the forecourt.
-  prop("meat", 53, 11);
+  // The Burg Gate stands open: a lancer either side of its door, the guard in the forecourt.
   for (const [c, r] of [[54, 10], [58, 11]] as const) who("lancer", c, r, blue);
   for (const c of [54, 57]) who("lancer", c, 9, blue);
 
@@ -1506,7 +1501,6 @@ function harbour(): AreaMap {
   prop("goldStone", 76, 21);
   // The ring's east lip pushed out under the right-hand row, stepping as it goes.
   for (const [r, c] of [[14, 78], [15, 77], [17, 78]] as const) t.block(2, c, r, 1, 1);
-  who("pawn", 74, 22, { color: "yellow", act: "meat", to: { col: 71, row: 22 } });
   // Off the market a cross street down a stair off the ring to a back street along the lowland under it, a row of houses
   // down each side, the west row broken where the stair comes down.
   for (const [c, r, art] of [[80, 14, "house1"], [80, 17, "house3"], [80, 23, "house2"], [80, 26, "house1"], [80, 29, "house3"]] as const) prop(art, c, r, blue);
