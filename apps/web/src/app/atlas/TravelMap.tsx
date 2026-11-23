@@ -55,7 +55,6 @@ export function TravelMap({ from, travel: atFire, dev = false, onTravel, onBack 
   const [tier, setTier] = useState<TierId>(areaOf(selected ?? from).tier);
   const api = useRef<AtlasApi | null>(null);
   const marks = fires.map((f) => ({ ...f, here: isHere(f) }));
-  const litAreas = useMemo(() => new Set(fires.filter((f) => f.lit).map((f) => f.area)), [fires]);
   const land = selected ? areaOf(selected) : null;
   const landFires = fires.filter((f) => f.area === selected);
   // W/S walk the open land's bonfires, or every lit one with no land open.
@@ -119,17 +118,14 @@ export function TravelMap({ from, travel: atFire, dev = false, onTravel, onBack 
     <div className="travelMap">
       <GameCanvas start={(el) => import("../../game/AtlasScene").then(({ startAtlas }) => startAtlas(el, hooks))}>
         <div className="worldHud">
-          <header className="atlasTop">
-            {/* The tiers, after Elden Ring's underground toggle; a dot where a bonfire is lit. */}
-            <nav className="worldLinks">
-              {TIERS.map((t) => (
-                <button key={t} className="linkBtn tierTab" type="button" aria-pressed={t === tier} onClick={() => api.current?.tier(t)}>
-                  {TIER_INFO[t].name}
-                  {AREAS.some((a) => a.tier === t && litAreas.has(a.id)) && " •"}
-                </button>
-              ))}
-            </nav>
-          </header>
+          {/* The tiers, after Elden Ring's underground toggle. */}
+          <nav className="tierBar">
+            {TIERS.map((t) => (
+              <button key={t} className={`btn small${t === tier ? "" : " light"}`} type="button" aria-pressed={t === tier} onClick={() => api.current?.tier(t)}>
+                {TIER_INFO[t].name}
+              </button>
+            ))}
+          </nav>
 
           {land && (
             <section className="paper landPanel" aria-label={land.name}>

@@ -1372,7 +1372,7 @@ textarea {
 		top: auto;
 		left: 8px;
 		right: 8px;
-		bottom: 56px;
+		bottom: 68px;
 		width: auto;
 		max-height: 42vh;
 	}
@@ -1385,11 +1385,17 @@ textarea {
 	z-index: 5;
 }
 
-/* The tier in view, among the map's tabs. */
-.tierTab[aria-pressed="true"] {
-	color: #f2d48a;
-	text-decoration: none;
-	opacity: 1;
+/* The map's tiers, in the close button's pills, bottom right; the tier in view is inked dark. */
+.tierBar {
+	position: absolute;
+	right: 14px;
+	bottom: 14px;
+	display: flex;
+	gap: 10px;
+}
+
+.tierBar .btn.small {
+	min-width: 0;
 }
 
 /* A talk, after the Souls games: no box, the words at the foot of the screen in the map labels' outline, the name above. */
