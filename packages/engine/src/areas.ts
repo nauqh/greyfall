@@ -43,6 +43,8 @@ export interface District {
   levels?: readonly number[];
   /** In an area map, how thick its high ground is with trees, 0 to 1; the area's own when unset. */
   trees?: number;
+  /** Its trees grow in clumps of pine and birch with stumps among them, as the pack draws a worked wood. */
+  groves?: boolean;
   /** How thick its ground is with bushes and rocks, against the area's own; 1 when unset. */
   decor?: number;
   /** Radius of the open clearing round its seed in a maze; 6 when unset. */
@@ -674,8 +676,9 @@ function butcher(t: Builder, col: number, row: number, left = false): void {
  *  the logs home, rests, and goes again. */
 function fell(t: Builder, home: Cell, chop: Cell, more: { left?: boolean } & Pick<Dweller, "when" | "unless"> = {}): void {
   const { left = false, ...shown } = more;
-  // A tree stands at its tile's top-left corner: this puts its trunk at the axe's reach, its foot just behind the feet.
-  t.prop("tree", chop.col + (left ? -0.1 : 1.1), chop.row + 0.45, { fixed: true });
+  // A tree stands at its tile's top-left corner. The axe's blade lands 52px out and 22px up from the pawn's feet, so
+  // the trunk goes 0.875 tile off the pawn's middle and a sixth of a tile behind its feet: the blade bites the bark.
+  t.prop("tree", chop.col + (left ? -0.375 : 1.375), chop.row + 0.6, { fixed: true });
   t.who("pawn", home.col, home.row, { color: "blue", act: "fell", to: chop, flip: left, ...shown });
 }
 
@@ -1559,21 +1562,21 @@ function harbour(): AreaMap {
   who("turtle", 44, 60);
   who("rubberDuck", 52, 66);
 
-  // The Northwood: woodcutters' cabins in the trees, a lookout on the crag, a pen left open.
+  // The Northwood: woodcutters' cabins in the trees, a lookout on the crag.
   prop("house1", 22, 24, blue);
   prop("house1", 10, 22, blue);
   prop("house2", 25, 15, blue);
   prop("tower", 15, 13, blue);
-  t.fences.push({ col: 26, row: 19, w: 3, h: 2 });
   const gateOpen = { ...blue, when: "emberGateOpen" } as const;
   // The woodcutters out from their cabins' doors into the plateau's trees, and back with the logs to the pile by each
-  // door. The ledge is narrow round the north cabin: one tree there clears the pen and the cabin's own roof.
-  for (const [c, r] of [[12, 23], [24, 26], [26, 16]] as const) prop("woodPile", c, r);
-  fell(t, { col: 10, row: 23 }, { col: 7, row: 13 });
+  // door. The ledge is narrow round the north cabin: one tree there clears the cabin's own roof.
+  for (const [c, r] of [[12, 23], [24, 26], [26, 16]] as const) prop("logPile", c, r);
+  // Each at its own spot round the door and the pile, never in a row.
+  fell(t, { col: 9, row: 24 }, { col: 7, row: 13 });
   fell(t, { col: 11, row: 23 }, { col: 8, row: 18 });
-  fell(t, { col: 22, row: 26 }, { col: 18, row: 19 });
-  fell(t, { col: 21, row: 26 }, { col: 17, row: 26 });
-  fell(t, { col: 23, row: 26 }, { col: 20, row: 29 });
+  fell(t, { col: 21, row: 26 }, { col: 18, row: 19 });
+  fell(t, { col: 23, row: 27 }, { col: 17, row: 26 });
+  fell(t, { col: 24, row: 25 }, { col: 20, row: 29 });
   fell(t, { col: 25, row: 16 }, { col: 25, row: 20 }, { left: true });
   who("bear", 8, 18, { to: { col: 14, row: 26 } });
   t.grove(18, 22, 13, 9, 0.5);
@@ -1583,7 +1586,7 @@ function harbour(): AreaMap {
   for (let r = 10; r <= 24; r++) for (let c = 20; c <= 25; c++) if (t.grid[r]![c] === "T") t.grid[r]![c] = ".";
   for (const [c, r] of [[26, 25], [27, 25], [28, 25], [27, 26]] as const) t.grid[r]![c] = ".";
   // The lumber camp at the wood's foot by the Ember Gate road, the cabins' logs stacked for the road.
-  prop("woodPile", 24, 38);
+  prop("logPile", 24, 38);
 
   // The goblins' camp outside the Ember Gate: Emberwood's raiders dug in on the Harbour's side of the road, the first
   // fight a captain walking north meets.
@@ -1826,7 +1829,7 @@ function harbour(): AreaMap {
     // The fields and pastures, on the farm's own green (painted patches read as flat colour): the fields drawn in crop
     // rows, each fenced, a track between; unnamed, so no label sits on them.
     ...([[4, 61, 10, 5, true], [16, 61, 10, 5, true], [28, 61, 9, 5, true], [4, 68, 10, 6, false], [16, 68, 8, 5, false]] as const).map(([x, y, w, h, crops]): District => ({ name: "", at: { col: x + (w >> 1), row: y + (h >> 1) }, palette: [3], dress: "harbour", decor: 0.4, crops, box: { x, y, w, h } })),
-    { name: "The Northwood", at: { col: 18, row: 30 }, levels: [1, 2, 3], palette: ramp, dress: "emberwood", decor: 1.5, trees: 0.4 },
+    { name: "The Northwood", at: { col: 18, row: 30 }, levels: [1, 2, 3], palette: ramp, dress: "emberwood", decor: 1.5, groves: true },
     { name: "Mine Hills", at: { col: 95, row: 26 }, levels: [1, 2, 3, 4], palette: ramp, dress: "crags", decor: 2.5, trees: 0.06 },
     { name: "Lantern Point", at: { col: 97, row: 71 }, levels: [1], palette: ramp, dress: "saltreach", decor: 1.5 },
     { name: "The Burg Gate", at: { col: 55, row: 11 }, levels: [2, 3, 4, 5], palette: ramp, dress: "harbour", decor: 1 },

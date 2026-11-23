@@ -409,6 +409,7 @@ const BASE: Record<string, { w: number; dx: number }> = {
   cannonSide: { w: 44, dx: 4 },
   watchtower: { w: 42, dx: -2 },
   woodPile: { w: 47, dx: 0.5 },
+  logPile: { w: 80, dx: 0 },
   tools: { w: 28, dx: 2 },
   meat: { w: 46, dx: 0 },
   rock1: { w: 32, dx: -1 },
@@ -502,13 +503,16 @@ const KNIGHT: Record<string, { idle: string; move: string; frame: number; anchor
   lancer: { idle: "Lancer/Lancer_Idle.png", move: "Lancer/Lancer_Run.png", frame: 320, anchor: 197 / 320 },
   pawn: { idle: "Pawn/Pawn_Idle.png", move: "Pawn/Pawn_Run.png", frame: 192, anchor: 134 / 192 },
 };
+/** A log pile's logs, bottom row first, in px off its foot: whether each lies flipped. */
+const LOG_PILE: readonly [number, number, boolean][] = [[-22, 0, false], [1, 1, true], [23, -1, false], [-11, -10, true], [12, -10, false], [0, -20, true]];
+
 /** A unit sheet: its texture key and its file under the pack. */
 type Art = { key: string; file: string };
 
 /** A pawn at work: what it plays standing, and walking; a woodcutter also chops at the far end and hauls back. */
 const PAWN_ACT: Record<string, { idle: string; move?: string; work?: string; haul?: string }> = {
   axe: { idle: "Pawn/Pawn_Idle Axe.png", move: "Pawn/Pawn_Run Axe.png" },
-  fell: { idle: "Pawn/Pawn_Idle Axe.png", move: "Pawn/Pawn_Run Axe.png", work: "Pawn/Pawn_Interact Axe.png", haul: "Pawn/Pawn_Run Wood.png" },
+  fell: { idle: "Pawn/Pawn_Idle.png", move: "Pawn/Pawn_Run Axe.png", work: "Pawn/Pawn_Interact Axe.png", haul: "Pawn/Pawn_Run Wood.png" },
   pickaxe: { idle: "Pawn/Pawn_Interact Pickaxe.png" },
   // A digger out to a heap and back with its gold; a carrier out to the stockpile, loading, and back with it.
   dig: { idle: "Pawn/Pawn_Idle Pickaxe.png", move: "Pawn/Pawn_Run Pickaxe.png", work: "Pawn/Pawn_Interact Pickaxe.png", haul: "Pawn/Pawn_Run Gold.png" },
@@ -1153,7 +1157,7 @@ export class AtlasScene extends Phaser.Scene {
       }
       sheet("blast", { file: "Particle FX/Explosion_01.png", frame: 192, anchor: 0 });
     }
-    for (const k of ["deadTree", "stump", "bones", "skullSpike", "goldStone"]) sheet(`prop_${k}`, PROP[k]!);
+    for (const k of ["deadTree", "stump", "bones", "skullSpike", "goldStone", "woodPile"]) sheet(`prop_${k}`, PROP[k]!);
     for (const n of [3, 4]) sheet(`stump${n}`, { file: `Terrain/Resources/Wood/Trees/Stump ${n}.png`, frame: 192, frameH: 256, anchor: 0 });
     BIG_TREE.forEach((t, i) => sheet(`bigTree${i}`, t));
     sheet("fire", FIRE);
@@ -1708,7 +1712,9 @@ export class AtlasScene extends Phaser.Scene {
     const cx = (p.col + 0.5) * CELL + (b?.dx ?? 0) * (p.flip ? -1 : 1) * scale;
     const half = b ? (b.w * scale) / 2 : ((Math.max(...cells.map(([c]) => c)) - Math.min(...cells.map(([c]) => c)) + 1) * CELL) / 2;
     const y1 = (p.row + 0.95) * CELL;
-    this.bases.push({ x0: cx - half, x1: cx + half, y0: y1 - (new Set(cells.map(([, r]) => r)).size - 0.5) * CELL, y1 });
+    // A house's walls stand a full row deep, not half: the feet stop at them, not under the eaves behind.
+    const deep = new Set(cells.map(([, r]) => r)).size - (p.art.startsWith("house") ? 0 : 0.5);
+    this.bases.push({ x0: cx - half, x1: cx + half, y0: y1 - deep * CELL, y1 });
   }
 
   /** In play: an area map with the hero on it and the free camera off. */
@@ -3007,7 +3013,14 @@ export class AtlasScene extends Phaser.Scene {
     for (const g of tier.gates) this.gatehouse(g.kind, g.cells);
     for (const f of tier.campfires) this.bonfire(f);
     for (const f of tier.fires) this.bonfire(f, !!this.local && !remembered(KINDLED).has(this.fireKey(f)));
-    const posts = solidCells({ props: [], fences: tier.fences });
+    // A walker goes round a building as round a fence: never through its walls, though into a mine or a cave. A house's
+    // art spans half of each tile beside its own and the row behind, wider than its footprint: a walker keeps off it all.
+    const posts = solidCells({ props: tier.props.filter((p) => COVER_ART.has(p.art) && p.art !== "goldMine" && p.art !== "cave"), fences: tier.fences });
+    for (const p of tier.props) {
+      if (!p.art.startsWith("house")) continue;
+      const [col, row] = [Math.round(p.col), Math.round(p.row)];
+      for (let r = row - 1; r <= row; r++) for (let c = col - 1; c <= col + 1; c++) posts.add(`${c},${r}`);
+    }
     for (const d of tier.dwellers) this.addDweller(d, posts);
     for (const e of this.local?.exits ?? []) this.exitMark(e);
     this.mood(tier);
@@ -3075,6 +3088,20 @@ export class AtlasScene extends Phaser.Scene {
     for (const w of ways) for (let r = w.row - 1; r <= w.row + 1; r++) for (let c = w.col - 1; c <= w.col + 1; c++) if (!isForest(c, r)) built.add(r * STRAT_COLS + c);
     // What a rock may not crowd: every solid prop and post, and each rock already set in the way.
     const shut = solidCells(tier);
+    // Nor on a woodcutter's way to its tree, or the row below it, whose trees would stand over the walker.
+    for (const d of tier.dwellers) {
+      if (d.act !== "fell" || !d.to) continue;
+      for (const w of findPath({ col: d.col, row: d.row }, d.to) ?? []) for (const r of [w.row, w.row + 1]) built.add(r * STRAT_COLS + w.col);
+    }
+    // A worked wood, as the pack draws one: pine and birch in clumps where this field runs high, stumps round them.
+    const groves = (c: number, r: number): boolean => !!this.local && !!districtOf(this.local, c, r)?.groves;
+    const clump = (c: number, r: number): number => (Math.sin(c * 0.8 + Math.sin(r * 0.5) * 2) + Math.sin(r * 0.85 + Math.sin(c * 0.45) * 2) + 2) / 4;
+    const woodTree = (c: number, r: number): void => {
+      if (r01() < 0.55) {
+        const pick = r01() < 0.5 ? 0 : 1;
+        spot(c, r, `bigTree${pick}`, BIG_TREE[pick]!);
+      } else decor("tree", (c + 0.3 + r01() * 0.4) * CELL, (r + 0.75 + r01() * 0.2) * CELL);
+    };
     for (let r = 0; r < STRAT_ROWS; r++) {
       for (let c = 0; c < STRAT_COLS; c++) {
         // A thin line of woods is a hedgerow; a mass of them is a wood, whose trees take their kind from a spot a few
@@ -3099,6 +3126,9 @@ export class AtlasScene extends Phaser.Scene {
             // Bushes along the line, a tree every few tiles: full trees on every tile piled into a wall.
             decor("bush", (c + 0.5) * CELL, (r + 0.85) * CELL, 1.1);
             if (r01() < 0.3) decor("tree", (c + 0.4 + r01() * 0.2) * CELL, (r + 0.8) * CELL);
+          } else if (groves(c, r)) {
+            woodTree(c, r);
+            if (r01() < 0.35) decor("tree", (c + r01()) * CELL, (r + 0.45) * CELL);
           } else if (id === "emberwood") {
             const pick = r01() < 0.55 ? 0 : 1;
             // Still, not swaying: the first frame of the sheet.
@@ -3126,11 +3156,24 @@ export class AtlasScene extends Phaser.Scene {
         // a strip too narrow for that is a way across, kept clear.
         const byLift = this.map.lifts.some((l) => [l.up, l.down].some((e) => e.tier === tier.id && Math.abs(e.at.col - c) <= 1 && Math.abs(e.at.row - r) <= 2));
         if (level(c, r) >= 2 && isWalkable(c, r) && !isSlope(c, r) && tier.base !== "rock" && !byLift) {
+          // A worked wood's groves come to a tile off the rim, or its ledges would stand bare.
+          const back = groves(c, r) ? 1 : 2;
           let rim = false;
-          for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) rim ||= level(c + dc, r + dr) !== level(c, r) || isSlope(c + dc, r + dr);
+          for (let dr = -back; dr <= back; dr++) for (let dc = -back; dc <= back; dc++) rim ||= level(c + dc, r + dr) !== level(c, r) || isSlope(c + dc, r + dr);
           const own = (this.local && districtOf(this.local, c, r)?.trees);
           const odds = own ?? (id === "emberwood" ? 0.3 : id === "crags" && this.local ? 0.16 : id === "crags" || id === "saltreach" ? 0.08 : 0.03);
-          if (!rim && r01() < odds) {
+          const grove = !rim && groves(c, r);
+          if (grove) {
+            const g = clump(c, r);
+            if (r01() < (g > 0.6 ? 0.75 : 0.03)) {
+              woodTree(c, r);
+              continue;
+            }
+            if (g > 0.45 && r01() < 0.12) {
+              spot(c, r, "prop_stump", PROP.stump!, 0);
+              continue;
+            }
+          } else if (!rim && r01() < odds) {
             if (id === "emberwood") {
               const pick = r01() < 0.55 ? 0 : 1;
               spot(c, r, `bigTree${pick}`, BIG_TREE[pick]!, 0);
@@ -3200,6 +3243,11 @@ export class AtlasScene extends Phaser.Scene {
     if (p.color) {
       const spec = BUILDINGS[p.art as keyof typeof BUILDINGS];
       this.add.image(x, y, this.buildingKey(p)).setOrigin(0.5, spec.anchorY / spec.h).setScale(p.scale ?? 1).setFlipX(p.flip ?? false).setDepth(standing(y));
+      return;
+    }
+    if (p.art === "logPile") {
+      // The pack's one log stacked three, two, one, each row up drawn over the row below.
+      LOG_PILE.forEach(([dx, dy, flip], i) => this.add.image(x + dx, y + dy, "prop_woodPile").setOrigin(0.5, PROP.woodPile!.anchor).setScale(0.85).setFlipX(flip).setDepth(standing(y) + i * 0.1));
       return;
     }
     if (p.art === "sconce") {
@@ -3557,7 +3605,8 @@ export class AtlasScene extends Phaser.Scene {
     }
     if (!look.swim && !d.perch) this.walkers.push(s);
     // A walker keeps to the ground it can walk: round the cliffs, up and down only by the stairs, in and out of a pen by its gate.
-    const found = d.to && !look.swim ? findPath({ col: d.col, row: d.row }, d.to, (c) => posts.has(`${c.col},${c.row}`)) : null;
+    // A beat may end against a wall, as it was laid.
+    const found = d.to && !look.swim ? findPath({ col: d.col, row: d.row }, d.to, (c) => posts.has(`${c.col},${c.row}`) && !(c.col === d.to!.col && c.row === d.to!.row)) : null;
     // A beat that only goes the long way round, down one stair and up another, is not walked: it stays at its post.
     const route = found && d.to && found.length <= 2 * (Math.abs(d.to.col - d.col) + Math.abs(d.to.row - d.row)) + 8 ? found : null;
     const cells = route ? [{ col: d.col, row: d.row }, ...route] : d.to && look.swim ? [{ col: d.col, row: d.row }, d.to] : [];
@@ -3583,12 +3632,11 @@ export class AtlasScene extends Phaser.Scene {
     const { work, haul } = look;
     if (work && haul && d.to) {
       // A woodcutter: out to its tree, chop while it shakes, the logs carried home, a rest, and out again.
-      const [tx, ty] = [(d.to.col + (d.flip ? -0.1 : 1.1)) * CELL, (d.to.row + 0.45) * CELL];
+      const [tx, ty] = [(d.to.col + (d.flip ? -0.375 : 1.375)) * CELL, (d.to.row + 0.6) * CELL];
       const tree = this.children.list.find((o): o is Phaser.GameObjects.Sprite => o instanceof Phaser.GameObjects.Sprite && Math.abs(o.x - tx) < 1 && Math.abs(o.y - ty) < 1);
       const grown = tree && { key: tree.texture.key, origin: tree.originY };
       // Felled, a tree is left its own stump (Stump 3 is Tree3's), its foot 64px lower in a frame 64px taller.
       const fallen = (): void => void (tree && grown && tree.stop().setTexture(`stump${grown.key.slice(-1)}`).setOrigin(0.5, (grown.origin * 192 + 64) / 256));
-      const back = [...points].reverse();
       const trip = (): void => {
         if (tree && grown && tree.texture.key !== grown.key) {
           // A new tree grows only where no one is looking; till then the woodcutter rests.
@@ -3605,7 +3653,12 @@ export class AtlasScene extends Phaser.Scene {
             shake?.remove();
             tree?.setAngle(0);
             fallen();
+            // Home to a spot a little off the last, so those at one door never stand on a grid.
+            const back = [...points].reverse();
+            const home = back.at(-1)!;
+            back[back.length - 1] = { x: home.x + (Math.random() - 0.5) * 0.6 * CELL, y: home.y + (Math.random() - 0.5) * 0.4 * CELL };
             go(back, haul.key, () => {
+              s.setFlipX(Math.random() < 0.5);
               this.loop(s, look.idle.key);
               this.time.delayedCall(2000 + Math.random() * 2000, trip);
             });
