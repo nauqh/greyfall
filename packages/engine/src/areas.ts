@@ -2279,11 +2279,68 @@ function crags(): AreaMap {
   return { ...tier, area: "crags", entry: { col: 6, row: 46 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks, notes, locks };
 }
 
+/** The Citadel's crag from builder (42, 5): the Lower City (#), the High City (^), the Warlord's Hall (4), the Grey Keep (5). */
+const CITADEL = [
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "####################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "######################################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "#####################^^^^^^^^^^^^^^^^^^^^^^^^^^^^^######~~~~~~~~~~~~",
+  "~####################^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^######~~~~~~~~~~",
+  "~~################^^^^^^^^^^44455555555544444^^^^^^^^^^####~~~~~~~~~",
+  "~~##############^^^^^^^^^^^444455555555554444^^^^^^^^^^####~~~~~~~~~",
+  "~~~############^^^^^^^^^^^^44444555555555)4444^^^^^^^^^#####~~~~~~~~",
+  "~~~~~~#########^^^^^^^^^^^444445555555555444444^^^^^^^^^#####~~~~~~~",
+  "~~~~~~########^^^^^^^^^^^^4444455555555555554444^^^^^^^^#####~~~~~~~",
+  "~~~~~~~~~######^^^^^^^^^444444555555555555554444^^^^^^^^######~~~~~~",
+  "~~~~~~~~~######^^^^^^^^^4444444444444444444444444^^^^^^^^#####~~~~~~",
+  "~~~~~~~~~######^^^^^^^^^444444444444444444444444}^^^^^^^^^^###~~~~~~",
+  "~~~~~~~~######^^^^^^^^^^^44444444444444444444444^^^^^^^^^^^###~~~~~~",
+  "~~~~~~~~~####[^^^^^^^^^^{44444444444444444444444^^^^^^^^^^^^###~~~~~",
+  "~~~~~~~~~#####^^^^^^^^^^^444444444444444444444444^^^^^^^^^^####~~~~~",
+  "~~~~~~~~~~###^^^^^^^^^^^4444444444444444444444444^^^^^^^^^^####~~~~~",
+  "~~~~~~~~~~###^^^^^^^^^^^4444444444444444444444444^^^^^^^^^^####~~~~~",
+  "~~~~~~~~~~###^^^^^^^^^^^^44444444444444444444444^^^^^^^^^^#####~~~~~",
+  "~~~~~~~~~~####^^^^^^^^^^^^444444444444444444444^^^^^^^^^^^#####~~~~~",
+  "~~~~~~~~~#####^^^^^^^^^^^^44444444444444444444^^^^^^^^^^^]#####~~~~~",
+  "~~~~~~~~~#####^^^^^^^^^^^^^4444444444444444444^^^^^^^^^^^########~~~",
+  "~~~~~~~######^^^^^^^^^^^^^^444444444444444444^^^^^^^^^^^^########~~~",
+  "~~~~~~~######^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^########~~~",
+  "~~~~~~~######^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^######~~~~~",
+  "~~~~~~~~~#####^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^######>~~~~",
+  "~~~~~~~~~#####[^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^######~~~~~",
+  "~~~~~~~~#######^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#########~~~~",
+  "~~~~~~~~########^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^]#########~~~~",
+  "~~~~~~~##########^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#########~~~~~",
+  "~~~~~~~###########^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#########~~~~~~",
+  "~~~~~~~#############^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^##########~~~~~~",
+  "~~~~~~##############^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^############~~~~~~",
+  "~~~~~~###############^^^^^^^^^^^^^^^^^^^^^^^^^^^^###############~~~~",
+  "~~~~~~##############^^^^^^^^^^^^^^^^^^^^^^^^^^^^################~~~~",
+  "~~~~~~################^^^^^^^^^^^^^^^^^^^^^^^^#################~~~~~",
+  "~~~~~###################^^^^^^^^^^^^^^^^^^^^^##################~~~~~",
+  "~~~~<##########################################################~~~~~",
+  "~~~~~#########################################################~~~~~~",
+  "~~~~~#########################################################~~~~~~",
+  "~~~~#########################################################~~~~~~~",
+  "~~~~#########################################################~~~~~~~",
+  "~~~~######################################################~~~~~~~~~~",
+  "~~~~<####################################################~~~~~~~~~~~",
+  "~~~~~####################################################>~~~~~~~~~~",
+  "~~~~~####################################################~~~~~~~~~~~",
+  "~~~~~#################################################~~~~~~~~~~~~~~",
+  "~~~~~~~#############################################~~~~~~~~~~~~~~~~",
+  "~~~~~~~~##########################################~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+];
+
 function greyfall(): AreaMap {
   const rng = makeRng("area:greyfall");
   const t = tierBuilder("surface", rng, { cols: 124, rows: 72 });
   const { prop, who } = t;
   const black = { color: "black" } as const;
+  // The taken at the last work they were doing, harmless: only the garrison still fights.
+  const grey = (c: number, r: number, more: Pick<Dweller, "act" | "to" | "flip"> = {}): void => who("pawn", c, r, { ...black, ...more });
 
   // The rot-marsh round the Citadel's rock, and the ashen ground before its gate.
   t.blob("greyfall", 62, 36, 58, 34);
@@ -2293,35 +2350,34 @@ function greyfall(): AreaMap {
   lake(t, 114, 34, 6, 10);
   for (const [x, y, rx, ry] of [[118, 18, 4, 6], [118, 56, 4, 5], [112, 66, 4, 3]] as const) t.blob("greyfall", x, y, rx, ry);
 
-  // Rotfield: a river of rot winding down the bailey into the Crater, a lake with a shrine on its isle.
+  // Rotfield: the rot the Cut spilled, winding down the old fields into the Crater.
   river(t, [[27, 14], [33, 24], [29, 34], [34, 44], [36, 50]], 3);
-  lake(t, 37, 55, 9, 5);
-  t.ground("greyfall", 35, 54, 5, 3);
+  // The Crater: the Cut's mouth fallen in, black water in it, spoil heaped round its lip.
+  lake(t, 37, 56, 7, 4);
+  for (const [x, y, rx, ry] of [[27, 52, 3, 2], [47, 61, 3, 2], [30, 61, 3, 2]] as const) t.shape(2, x, y, rx, ry, 0.4, "The Pits");
 
-  // The Citadel's crag, after Stormveil and Sellia: one great rock rising out of the rot in four ragged tiers,
-  // the Lower City on its skirts, the High City, the Warlord's Hall, the Grey Keep on its crown. A spur runs west
-  // from it as a ridge for the gnomes' Sky Bridge to land on.
-  t.shape(2, 78, 33, 30, 24, 0.45, "The Lower City");
-  t.shape(2, 42, 9, 18, 4, 0.35, "The Lower City");
-  t.shape(3, 79, 28, 20, 15, 0.4, "The High City");
-  t.shape(4, 79, 21, 11, 8, 0.35, "The Warlord's Hall");
-  t.shape(5, 79, 15, 6, 3.5, 0.25, "The Grey Keep");
+  // The Citadel's crag, after Stormveil and Windhelm, drawn tile by tile (CITADEL): the Lower City on its skirts, run
+  // down south-west to the Pits; the High City; the Warlord's Hall; the Grey Keep on its crown. A spur runs west from it
+  // as a ridge for the gnomes' Sky Bridge to land on.
+  t.shape(2, 38, 9, 12, 4, 0.35, "The Lower City");
+  stamp(t, CITADEL, 42, 5);
   // The Sky Bridge: the gnomes' high road from the west, landing on the spur, a fire where it lands.
   const decks = t.span(2, 1, 8, 36, 2);
   t.fires.push({ col: 39, row: 6 });
 
   // Crags of the old rock, standing out of the rot.
-  t.shape(2, 44, 28, 6, 4, 0.4, "Rotfield");
+  t.shape(2, 44, 28, 4, 3, 0.4, "Rotfield");
   t.shape(2, 15, 34, 5, 4, 0.4, "The Ashen Approach");
 
-  // Roads: in at the Grey Gate over the rot, to the city's stairs and round to the Gallows; the causeway to the shrine.
-  t.road([1, 44], [24, 44], [40, 44], [48, 41], [51, 41]);
-  t.road([40, 44], [44, 50], [66, 52], [90, 52]);
+  // Roads: in at the Grey Gate over the rot, up onto the Lower City and along it; round the Crater's lip to the Gallows;
+  // the old farm road north to the chapel; the High City's one street.
+  t.road([1, 44], [24, 44], [40, 44], [44, 43]);
+  t.road([48, 42], [60, 44], [96, 44]);
+  t.road([40, 44], [44, 50], [50, 56], [66, 58], [96, 58]);
   t.road([30, 44], [30, 20], [36, 16]);
+  t.road([57, 30], [97, 30]);
   t.bridge({ col: 6, row: 44 }, { col: 1, row: 44 }, 3);
   t.bridge({ col: 31, row: 44 }, { col: 38, row: 44 }, 3);
-  t.bridge({ col: 37, row: 49 }, { col: 37, row: 54 }, 2);
-
 
   // The Ashen Approach: the war dead before the gate, and the dogs that eat them.
   prop("trollDead", 12, 38);
@@ -2333,98 +2389,120 @@ function greyfall(): AreaMap {
   who("bat", 10, 50);
   who("bat", 16, 36);
 
-  // Rotfield: the bailey gone to rot, ruins in the dead wood, the dead and the dogs.
-  for (const [c, r, art] of [[27, 28, "house1"], [42, 20, "house2"], [27, 52, "house3"], [44, 38, "house1"], [47, 58, "house2"]] as const) prop(art, c, r, black);
-  for (const [c, r] of [[36, 30], [40, 34], [46, 46], [26, 38], [44, 24]] as const) prop("deadTree", c, r, { scale: 0.7 });
-  for (const [c, r] of [[38, 42], [27, 46], [46, 44], [35, 36], [41, 28]] as const) prop("bones", c, r);
-  crowd(t, rng, "skull", { col: 38, row: 38 }, 5, 6);
-  crowd(t, rng, "gnoll", { col: 42, row: 32 }, 3, 3);
-  who("skullGuard", 44, 48);
+  // Rotfield: the Citadel's fields gone to rot, fenced plots of dead rows, the taken hoeing them, the farms in ruin.
+  for (const [c, r, w, h] of [[35, 19, 6, 4], [36, 33, 6, 4], [21, 24, 6, 4]] as const) t.fences.push({ col: c, row: r, w, h, gate: 2 });
+  for (const [c, r] of [[37, 21], [39, 20], [38, 35], [40, 34], [23, 26]] as const) grey(c, r, { act: "pickaxe", flip: c % 2 === 0 });
+  grey(25, 20, { act: "wood", to: { col: 25, row: 30 } });
+  for (const [c, r, art] of [[27, 28, "house1"], [42, 20, "house2"], [44, 38, "house3"]] as const) prop(art, c, r, black);
+  for (const [c, r] of [[36, 30], [26, 38], [44, 24]] as const) prop("deadTree", c, r, { scale: 0.7 });
+  for (const [c, r] of [[38, 42], [27, 46], [35, 38]] as const) prop("bones", c, r);
+  crowd(t, rng, "skull", { col: 33, row: 40 }, 3, 4);
+  crowd(t, rng, "gnoll", { col: 42, row: 30 }, 3, 3);
   who("troll", 45, 27, { to: { col: 47, row: 30 } });
   for (const [c, r] of [[32, 40], [28, 22]] as const) who("snake", c, r);
 
-  // The Crater: the rot lake, and on its isle the shrine where the Grey is prayed to, a fire to rest by.
-  t.fires.push({ col: 37, row: 55 });
-  for (const [c, r] of [[35, 54], [39, 54], [35, 56], [39, 56]] as const) prop("skullSpike", c, r);
-  who("skullGuard", 38, 55);
-  who("bombFish", 31, 56);
-  who("bombFish", 43, 54);
+  // The Pits: the Cut's works round the Crater. The headframe on its lip, the shafts boarded in the spoil, timber and
+  // tools left where they fell; the overseers and a horned still at their posts over pits nobody digs. A goblin's fire
+  // at the lip, where the one who came back for his wage sits: a fire to rest by.
+  prop("watchtower", 44, 53, black);
+  for (const [c, r] of [[27, 52], [47, 61], [30, 61]] as const) prop("cave", c, r, { fixed: true });
+  for (const [c, r] of [[42, 59], [32, 53], [45, 57]] as const) prop("woodPile", c, r);
+  for (const [c, r] of [[40, 52], [34, 60]] as const) prop("tools", c, r);
+  for (const [c, r] of [[29, 56], [44, 60], [36, 51]] as const) prop("rock", c, r);
+  for (const [c, r] of [[30, 54], [43, 55]] as const) prop("skullSpike", c, r);
+  t.fires.push({ col: 46, row: 51 });
+  prop("goblinHut", 49, 52);
+  for (const [c, r] of [[33, 58], [41, 61]] as const) who("taken", c, r);
+  who("minotaurGuard", 38, 61, { to: { col: 43, row: 62 } });
+  for (const [c, r] of [[31, 50], [42, 51]] as const) grey(c, r, { act: "pickaxe" });
+  who("bombFish", 35, 56);
+  who("bombFish", 40, 56);
 
-  // The Ruined Chapel: a purple monastery praying to the Grey, and its graves.
+  // The Ruined Chapel: the Stilled's now, kneeling to the Grey, and their graves.
   prop("monastery", 38, 13, { color: "purple" });
   for (const [c, r] of [[33, 17], [36, 19], [42, 18], [45, 15], [32, 12]] as const) prop("skullSpike", c, r);
   who("monk", 40, 17, { color: "purple", to: { col: 44, row: 18 } });
   who("shaman", 44, 12);
 
-  // The Gallows Yard: gibbets in rows, the Warlord's barracks, and the Harbour's folk penned.
-  for (let c = 56; c <= 76; c += 4) prop("skullSpike", c, 59);
-  prop("barracks", 62, 48, black);
-  prop("archery", 76, 48, black);
-  t.fences.push({ col: 84, row: 52, w: 7, h: 5 });
-  for (const [c, r] of [[86, 54], [88, 53], [89, 55]] as const) who("pawn", c, r, { color: "blue" });
-  who("lancer", 58, 55, { ...black, to: { col: 80, row: 55 } });
-  crowd(t, rng, "warrior", { col: 70, row: 55 }, 3, 4, black);
-  for (const c of [34, 50, 66, 82, 94]) prop("cannon", c, 64);
+  // The Gallows Yard under the crag's south face: gibbets in a row, the Warlord's barracks, the Harbour's folk penned.
+  for (let c = 56; c <= 76; c += 4) prop("skullSpike", c, 62);
+  prop("barracks", 62, 56, black);
+  t.fences.push({ col: 82, row: 58, w: 7, h: 5 });
+  for (const [c, r] of [[84, 60], [86, 59], [87, 61]] as const) who("pawn", c, r, { color: "blue" });
+  who("lancer", 58, 60, { ...black, to: { col: 80, row: 60 } });
+  crowd(t, rng, "warrior", { col: 70, row: 60 }, 3, 4, black);
+  for (const c of [34, 50, 66, 94]) prop("cannon", c, 66);
 
   // The ramparts: a black tower on every bastion, archers on the walk.
-  for (const [c, r] of [[25, 9], [101, 9], [25, 61], [101, 61]] as const) prop("tower", c, r, black);
+  for (const [c, r] of [[25, 9], [101, 7], [25, 63], [101, 61]] as const) prop("tower", c, r, black);
   who("archer", 40, 7, { ...black, to: { col: 50, row: 7 } });
   who("archer", 103, 30, { ...black, to: { col: 103, row: 50 } });
   who("lancer", 23, 30, { ...black, to: { col: 23, row: 16 } });
 
-  // The High City's blocks, each its own quarter.
-  // The Garrison: barracks, stores, the watch drilling, guns over the street.
-  prop("barracks", 58, 14, black);
-  prop("house1", 63, 14, black);
-  prop("house3", 55, 19, black);
-  for (const [c, r] of [[60, 19], [62, 19]] as const) prop("woodPile", c, r);
-  prop("tools", 57, 17);
-  crowd(t, rng, "warrior", { col: 59, row: 17 }, 3, 2, black);
-  for (const c of [54, 63]) prop("cannon", c, 21);
-  prop("tower", 54, 14, black);
-  prop("meat", 64, 17);
-  who("archer", 54, 16, { ...black, to: { col: 54, row: 19 } });
-  // The Archers' Yard: the tower, the butts, guns at its foot.
-  prop("tower", 95, 13, black);
-  prop("archery", 95, 19, black);
-  who("archer", 93, 16, { ...black, to: { col: 98, row: 16 } });
-  for (const c of [92, 98]) prop("cannon", c, 21);
-  prop("house1", 98, 15, black);
-  prop("tools", 92, 16);
-  // The Champions' Pit: the minotaur in its pen, the champions' houses round it.
-  t.fences.push({ col: 62, row: 30, w: 8, h: 5 });
-  who("minotaurGuard", 64, 32, { to: { col: 67, row: 32 } });
-  for (const [c, r] of [[56, 37], [62, 37]] as const) prop("house2", c, r, black);
-  prop("meat", 64, 36);
-  for (const [c, r] of [[55, 35], [60, 35]] as const) prop("bones", c, r);
-  for (const [c, r] of [[61, 29], [70, 29], [61, 35], [70, 35]] as const) prop("skullSpike", c, r);
-  crowd(t, rng, "warrior", { col: 58, row: 36 }, 3, 2, black);
-  // The Warlord's Hall on its tier, its guard, guns on the block's rim.
-  prop("monastery", 78, 33, black);
-  for (const [c, r] of [[74, 30], [82, 30], [73, 36], [83, 36]] as const) prop("skullSpike", c, r);
-  prop("house3", 76, 36, black);
-  prop("house3", 81, 36, black);
-  who("skullGuard", 78, 35);
-  crowd(t, rng, "monk", { col: 78, row: 30 }, 2, 2, { color: "purple" });
-  for (const c of [71, 85]) prop("cannon", c, 39);
-  // The Drill Yard: barracks, the fire, the line, guns over the Gallows.
-  prop("barracks", 95, 30, black);
-  t.fires.push({ col: 95, row: 35 });
-  for (let i = 0; i < 3; i++) who("warrior", 92 + i * 3, 37, black);
-  for (const c of [92, 98]) prop("cannon", c, 39);
-  prop("house2", 98, 34, black);
-  prop("woodPile", 92, 33);
-  prop("tools", 92, 35);
-  // The streets: the taken patrol them, a lancer rides the long one.
-  who("taken", 68, 14, { to: { col: 68, row: 38 } });
-  who("taken", 88, 24, { to: { col: 88, row: 38 } });
-  who("lancer", 55, 24, { ...black, to: { col: 85, row: 24 } });
+  // The Lower City, after Iron Keep: the smelters where the Cut's ore was melted, furnaces still banked, taken smiths
+  // hammering cold iron and carriers walking up empty from the Pits; east of them the goblins' barracks, empty since
+  // the night they ran.
+  for (const [c, r] of [[52, 46], [58, 49]] as const) prop("house1", c, r, black);
+  prop("barracks", 64, 47, black);
+  for (const [c, r] of [[55, 49], [61, 46]] as const) t.campfires.push({ col: c, row: r });
+  for (const [c, r] of [[54, 47], [60, 47], [56, 50]] as const) grey(c, r, { act: "hammer", flip: c > 57 });
+  for (const [c, r] of [[51, 49], [62, 50]] as const) prop("woodPile", c, r);
+  prop("tools", 57, 46);
+  grey(48, 44, { to: { col: 58, row: 44 } });
+  grey(50, 45, { to: { col: 47, row: 48 } });
+  for (const [c, r] of [[70, 47], [74, 49], [78, 47], [82, 49]] as const) prop("goblinHut", c, r);
+  for (const [c, r] of [[72, 50], [80, 50]] as const) prop("bones", c, r);
+  crowd(t, rng, "warrior", { col: 88, row: 47 }, 3, 3, black);
+  // The east end, the diggers' row: the men's houses over the Gallows, a cart nobody pushes.
+  for (const [c, r] of [[92, 51], [98, 47]] as const) prop("house1", c, r, black);
+  prop("woodPile", 95, 49);
+  grey(90, 46, { to: { col: 100, row: 46 } });
+  prop("tower", 96, 42, black);
+  who("archer", 94, 48, { ...black, to: { col: 94, row: 40 } });
 
-  // The Grey Keep: the black castle on the fourth height, the Warlord on the tier before it, his guard, guns on the tier.
-  prop("castle", 78, 13, black);
-  for (const [c, r] of [[75, 18], [81, 18]] as const) who("skullGuard", c, r);
-  for (const [c, r] of [[72, 17], [84, 17], [73, 12], [84, 12]] as const) prop("skullSpike", c, r);
-  for (const c of [70, 86]) prop("cannon", c, 21);
+  // The High City. West, the Counting House, where the Citadel paid for the Cut: its clerks at their desks outside,
+  // its paymaster inside with the stove.
+  prop("house3", 61, 21, black);
+  prop("house2", 66, 30, black);
+  for (const [c, r] of [[59, 22], [63, 22]] as const) prop("sconce", c, r);
+  for (const [c, r] of [[59, 25], [62, 26], [65, 25]] as const) grey(c, r, { flip: c > 61 });
+  who("taken", 60, 34, { to: { col: 60, row: 24 } });
+  // East, the Garrison: barracks, butts and the drill yard, the watch drilling on, guns over the street; the fire
+  // in its yard, the nearest to the Keep.
+  t.fires.push({ col: 93, row: 30 });
+  prop("barracks", 95, 13, black);
+  prop("archery", 96, 27, black);
+  prop("tower", 98, 20, black);
+  for (let i = 0; i < 3; i++) who("warrior", 92 + i * 2, 18, black);
+  crowd(t, rng, "warrior", { col: 94, row: 24 }, 2, 2, black);
+  who("archer", 93, 28, { ...black, to: { col: 98, row: 31 } });
+  for (const c of [91, 98]) prop("cannon", c, 33);
+  prop("woodPile", 92, 15);
+  prop("meat", 97, 16);
+  // South, the Champions' Pit: the horned in its pen, fighting for guests who are not coming.
+  t.fences.push({ col: 72, row: 34, w: 8, h: 5 });
+  who("minotaurGuard", 75, 36, { to: { col: 77, row: 36 } });
+  for (const [c, r] of [[71, 33], [80, 33], [71, 39], [80, 39]] as const) prop("skullSpike", c, r);
+  for (const [c, r] of [[67, 37], [84, 37]] as const) prop("bones", c, r);
+  // The lords' houses along the street, their servants sweeping steps nobody climbs.
+  for (const [c, r, art] of [[62, 37, "house1"], [67, 40, "house2"], [86, 36, "house3"], [91, 39, "house1"], [84, 27, "house2"]] as const) prop(art, c, r, black);
+  for (const [c, r] of [[63, 39], [88, 38]] as const) grey(c, r, { act: "wood", to: { col: c + 4, row: r } });
+  // The streets: the taken patrol them, a lancer rides the long one.
+  who("taken", 86, 31, { to: { col: 86, row: 39 } });
+  who("lancer", 60, 30, { ...black, to: { col: 90, row: 30 } });
+
+  // The Warlord's Hall: the court under the Keep, its courtiers in their rows bowing to an empty seat, his guard.
+  prop("monastery", 78, 22, black);
+  for (const r of [25, 27]) for (const c of [72, 75, 81, 84]) grey(c, r, { flip: c > 78 });
+  for (const [c, r] of [[69, 20], [87, 20]] as const) prop("sconce", c, r);
+  for (const [c, r] of [[70, 24], [86, 24]] as const) who("skullGuard", c, r);
+  crowd(t, rng, "monk", { col: 78, row: 18 }, 2, 2, { color: "purple" });
+
+  // The Grey Keep: the black castle on the crown, the Warlord inside, his guard at the door.
+  prop("castle", 78, 12, black);
+  for (const [c, r] of [[75, 15], [81, 15]] as const) who("skullGuard", c, r);
+  for (const [c, r] of [[73, 11], [84, 11]] as const) prop("skullSpike", c, r);
+  for (const c of [70, 86]) prop("cannon", c, 17);
 
   const exits: AreaExit[] = [
     { to: "barrowmoor", name: "Grey Gate", kind: "locked", at: { col: 1, row: 44 } },
@@ -2433,20 +2511,26 @@ function greyfall(): AreaMap {
   ];
   // The rock's tiers alternate stone colours so each step reads; the marsh below in its own.
   const districts: District[] = [
-    { name: "The Grey Keep", at: { col: 79, row: 8 }, levels: [5], palette: [1], dress: "greyfall", decor: 1.5 },
-    { name: "The Warlord's Hall", at: { col: 92, row: 22 }, levels: [4], palette: [2], dress: "greyfall", decor: 1.5 },
-    { name: "The High City", at: { col: 64, row: 34 }, levels: [3], palette: [3], dress: "greyfall", decor: 2 },
-    { name: "The Lower City", at: { col: 96, row: 48 }, levels: [2], palette: [5, 4], dress: "greyfall", decor: 2 },
-    { name: "Rotfield", at: { col: 34, row: 30 }, levels: [1, 2], palette: [4, 3], dress: "greyfall", decor: 2.5 },
-    { name: "The Crater", at: { col: 37, row: 62 }, levels: [1], palette: [5], dress: "barrowmoor", decor: 2 },
-    { name: "Ruined Chapel", at: { col: 38, row: 18 }, levels: [1], palette: [5], dress: "barrowmoor", decor: 2 },
-    { name: "Gallows Yard", at: { col: 70, row: 64 }, levels: [1], palette: [5], dress: "greyfall", decor: 2 },
+    { name: "The Grey Keep", at: { col: 78, row: 11 }, levels: [5], palette: [1], dress: "greyfall", decor: 1.5 },
+    { name: "The Warlord's Hall", at: { col: 78, row: 24 }, levels: [4], palette: [2], dress: "greyfall", decor: 1.5 },
+    { name: "The Counting House", at: { col: 60, row: 22 }, levels: [3], palette: [3], dress: "greyfall", decor: 2 },
+    { name: "The Garrison", at: { col: 95, row: 22 }, levels: [3], palette: [3], dress: "greyfall", decor: 2 },
+    { name: "The High City", at: { col: 76, row: 34 }, levels: [3], palette: [3], dress: "greyfall", decor: 2 },
+    { name: "The Lower City", at: { col: 70, row: 48 }, levels: [2], palette: [5, 4], dress: "greyfall", decor: 2 },
+    { name: "Rotfield", at: { col: 34, row: 28 }, levels: [1, 2], palette: [4, 3], dress: "greyfall", decor: 2.5 },
+    { name: "The Pits", at: { col: 38, row: 57 }, levels: [1, 2], palette: [5], dress: "barrowmoor", decor: 2 },
+    { name: "Ruined Chapel", at: { col: 38, row: 15 }, levels: [1], palette: [5], dress: "barrowmoor", decor: 2 },
+    { name: "Gallows Yard", at: { col: 74, row: 62 }, levels: [1], palette: [5], dress: "greyfall", decor: 2 },
     { name: "The Ashen Approach", at: { col: 12, row: 52 }, levels: [1, 2], palette: [5, 4], dress: "barrowmoor", decor: 2.5 },
   ];
-  // A castle, not a maze: open courts and streets, only clumps of dead wood in the bailey and before the gate.
-  for (const [x, y, rx, ry, d] of [[40, 30, 5, 7, 0.35], [10, 52, 6, 6, 0.3], [44, 18, 4, 3, 0.3], [92, 56, 7, 4, 0.3], [26, 46, 3, 4, 0.4]] as const) t.grove(x, y, rx, ry, d);
+  // A castle, not a maze: open courts and streets, only clumps of dead wood in the fields and before the gate.
+  for (const [x, y, rx, ry, d] of [[30, 30, 4, 5, 0.3], [10, 52, 6, 6, 0.3], [44, 16, 3, 2, 0.3], [100, 56, 5, 4, 0.3], [26, 46, 3, 4, 0.4]] as const) t.grove(x, y, rx, ry, d);
   const tier = t.finish({}, [{ col: 6, row: 44 }]);
-  return { ...tier, area: "greyfall", entry: { col: 6, row: 44 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks, notes: [{ at: { col: 96, row: 48 }, text: "The lamps in the Cut went out from the bottom up. Then the cold came up the ladders after us." }, { at: { col: 64, row: 34 }, text: "Paid the diggers in coal and fire for the Deep Cut. Deeper next year. By his order." }] };
+  const notes = [
+    { at: { col: 60, row: 51 }, text: "The lamps in the Cut went out from the bottom up. Then the cold came up the ladders after us." },
+    { at: { col: 64, row: 24 }, text: "Paid the diggers in coal and fire for the Deep Cut. Deeper next year. By his order." },
+  ];
+  return { ...tier, area: "greyfall", entry: { col: 6, row: 44 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks, notes };
 }
 
 function gilded(): AreaMap {

@@ -601,6 +601,14 @@ crossing are gone.
   tiers alternating stone colours, with a spur west for the gnomes' Sky
   Bridge to land on. Rotfield, the Crater shrine, the Ruined Chapel, the
   Gallows Yard and the Ashen Approach lie in the marsh round its foot.
+- **Greyfall's crag is drawn** (`CITADEL`), not four ellipses, and each
+  district has a job after its lore: Rotfield's fenced fields, the Pits
+  round a fallen-in Crater (no shrine), the Lower City's smelters and the
+  goblins' empty huts, the High City as the Counting House, the Garrison
+  and the Champions' Pit, the Warlord's Hall as a court. The taken at work
+  are black pawns, harmless; only the garrison fights. The Drill Yard's
+  fire moved into the Garrison: the Keep door is 23 tiles from a fire, the
+  farthest tile 47.
 - **Emberwood** keeps its maze, but its hills and Troll's Hollow (once a
   rectangular ring of blocks, now a raised arena of ash) are landforms.
   The whole wood has one floor colour: per-district colours met in
