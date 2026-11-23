@@ -1688,9 +1688,10 @@ function harbour(): AreaMap {
   prop("bones", 99, 67);
   who("pawn", 101, 68, { ...blue, act: "pickaxe", unless: "moorGateOpen" });
   who("monk", 93, 66, { ...blue, flip: true, unless: "moorGateOpen" });
-  // The town's dead on the slope, a walled plot either side of the road up, headstones in rows; the dead house between
-  // them, black with the smoke of what it burned the first winter of the Grey, a lantern on up to the shoulder.
-  t.fences.push({ col: 90, row: 57, w: 5, h: 4 }, { col: 102, row: 57, w: 5, h: 4 });
+  // The town's dead on the slope, a plot either side of the road up, headstones in rows, the east one walled; the dead
+  // house between them, black with the smoke of what it burned the first winter of the Grey, a lantern on up to the
+  // shoulder.
+  t.fences.push({ col: 102, row: 57, w: 5, h: 4 });
   for (const y of [58.5, 59.4]) for (const x of [91, 92.2, 93.4, 103, 104.2, 105.4]) prop("rock", x, y, { scale: 0.55, fixed: true });
   prop("monastery", 98, 58, { color: "black" });
   for (const [c, r] of [[100, 61], [91, 56]] as const) prop("sconce", c, r);
@@ -1951,7 +1952,7 @@ function emberwood(): AreaMap {
   // The Palisade: the Harbour's lumber camp at the gate, overrun. Goblins camp in it in threes until the gate opens
   // (Garth and Dunn are in npcs.ts).
   t.campfires.push({ col: 43, row: 61 });
-  t.fences.push({ col: 32, row: 60, w: 6, h: 2 }, { col: 45, row: 60, w: 6, h: 2 });
+  t.fences.push({ col: 45, row: 60, w: 6, h: 2 });
   prop("tower", 36, 64, blue);
   prop("house1", 47, 65, blue);
   for (const [c, r] of [[34, 56], [37, 53], [48, 57], [51, 62]] as const) prop("stump", c, r);
@@ -2144,7 +2145,6 @@ function crags(): AreaMap {
   for (const [c, r] of [[28, 60], [34, 66], [44, 62], [52, 66], [60, 62], [66, 66]] as const) prop("gnomeHut", c, r);
   for (const [c, r] of [[40, 66], [58, 66]] as const) prop("gnomeTower", c, r);
   t.fires.push({ col: 48, row: 63 });
-  t.fences.push({ col: 30, row: 63, w: 5, h: 2 });
   crowd(t, rng, "gnome", { col: 48, row: 62 }, 7, 9);
   who("slingshot", 42, 58, { to: { col: 54, row: 58 } });
   // The mine cut into the Works' face at the town's back.
@@ -3431,8 +3431,7 @@ function saltreach(): AreaMap {
   who("lancer", 56, 48, { ...yellow, to: { col: 62, row: 48 } });
   who("lizard", 62, 52, { to: { col: 58, row: 55 } });
 
-  // The Eel Pens: a fenced eel-hole off the east walk, its keeper's hut.
-  t.fences.push({ col: 76, row: 39, w: 4, h: 3 });
+  // The Eel Pens: an eel-hole off the east walk, its keeper's hut.
   prop("fishHut", 83, 41);
   who("pawn", 78, 42, { ...yellow, act: "knife" });
 
