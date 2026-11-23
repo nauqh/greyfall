@@ -27,4 +27,4 @@ Each land is a folder with its `lore.md` (the canon for that land, and its folk)
 | [Graveroad](graveroad/) | `deeps`, `web` | the Weaver |
 | [Hearthdeep](hearthdeep/) | `hollow`, `shellisle` | the Shell Below |
 
-When a line of dialogue changes in `packages/engine/src/npcs.ts`, change it in the speaker's land `questline.md` too; a new flag goes in [questline.md](questline.md).
+Before writing any player text (dialogue, the prologue, blurbs, notes), read [reach.md](reach.md)'s How we tell it, its Voices, and Who knows what. When a line of dialogue changes in `packages/engine/src/npcs.ts`, change it in the speaker's land `questline.md` too (`packages/engine/test/questline-docs.test.ts` fails otherwise); a new flag goes in [questline.md](questline.md).
