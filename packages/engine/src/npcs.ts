@@ -361,7 +361,7 @@ export const NPCS: readonly Npc[] = [
       },
       {
         id: "goblins",
-        lines: ["Goblins at the Ember Gate camp in threes.", "Shoot the torch first. Spears are slow. Torches are rude."],
+        lines: ["Goblins camp behind the Northwood, in threes.", "Shoot the torch first. Spears are slow. Torches are rude."],
       },
       { id: "back", lines: ["Five paces back, always.", "If you can smell it, you're too close."] },
       { id: "wings", when: "died", lines: ["Tobin sent you for a bow, didn't he? Wings?", "Steel goes up, and steel comes down. Only arrows keep going."] },
