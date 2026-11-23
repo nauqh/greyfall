@@ -209,13 +209,14 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     const a = api.current;
     a?.freeCamera(!a.devState().free);
   };
-  // Every save of a run, so the captain comes ashore at the Landing again, alone; settings and the duel name stay.
-  const newGame = (): void => {
+  // Every save of a run, so the captain comes ashore at the Landing again, alone; settings and the duel name stay. The
+  // dev panel's new hero asks for creation after, which the dev route otherwise skips.
+  const newGame = (create = false): void => {
     if (!window.confirm("Start a new game? Your gold, band, bonfires and slain bosses are lost.")) return;
     try {
-      for (const k of ["band", "bought", "class", "flags", "gold", "heard", "hero", "keys", "kindled", "levels", "lost", "prologue", "rest", "slain", "taken", "thrown"]) localStorage.removeItem(`greyfall.${k}`);
+      for (const k of ["band", "bought", "class", "flags", "gold", "heard", "hero", "keys", "kindled", "levels", "lost", "prologue", "rest", "sackOpened", "slain", "taken", "thrown"]) localStorage.removeItem(`greyfall.${k}`);
     } catch {}
-    window.location.assign(`${base}/landing?rest`);
+    window.location.assign(`${base}/landing?rest${create ? "&create" : ""}`);
   };
   // The title gone, the black lifts close on the captain and the camera eases back; the name comes up as it settles.
   const revealLanding = (): void => {
@@ -268,7 +269,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   const pauseMenu = [
     { label: "Resume", go: resume },
     { label: "Leave to the title", go: () => router.push("/") },
-    { label: "New game", go: newGame },
+    { label: "New game", go: () => newGame() },
   ];
   const busy = !!(atlas || mapCover || fire || say || menu || died || warn || travel || picking || prologue || intro);
   useEffect(() => {
@@ -311,7 +312,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
           try {
             now.current.prologue = !devRoute && first === "landing" && localStorage.getItem("greyfall.prologue") !== "1";
           } catch {}
-          setPicking(now.current.prologue);
+          setPicking(now.current.prologue || q.has("create"));
           return import("../../game/AtlasScene").then(({ startAtlas }) => startAtlas(el, hooks));
         }}
       >
@@ -399,7 +400,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
               api.current?.pause(true);
               setAtlas("travel");
             }}
-            onCreate={() => setPicking(true)}
+            onCreate={() => newGame(true)}
           />
         )}
         {menu && <Shop menu={menu} api={api} />}
