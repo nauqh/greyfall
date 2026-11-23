@@ -74,6 +74,9 @@ const STEPS = [
 
 const NAMELESS = "Nameless";
 
+/** The classes a new run can take; the rest are shown to look at. */
+const OPEN = new Set<HeroClass>(["warrior"]);
+
 /** A keycap; the word keys (Esc, Enter) are drawn wide. */
 function Key({ k }: { k: string }) {
   return <kbd className={k.length > 1 ? "wide" : undefined}>{k}</kbd>;
@@ -106,7 +109,7 @@ function Thumb({ row }: { row: (typeof CLASS_ROWS)[number] }) {
  */
 export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => SackItem[]; onBegin: (cls: HeroClass, gift: ItemName, name: string) => void; onDone: () => void }) {
   const [step, setStep] = useState(0);
-  const [cls, setCls] = useState<HeroClass>("warrior");
+  const [cls, setCls] = useState<HeroClass | null>(null);
   const [gift, setGift] = useState<ItemName | null>(null);
   const [name, setName] = useState("");
   const [begun, setBegun] = useState(false);
@@ -116,7 +119,7 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
   // the pack's own colours: the tints that tell goods apart in the game only muddy them here.
   const gifts = giftsNow().map((g) => ({ ...g, icon: { ...g.icon, tint: undefined } }));
 
-  const showCls = (step === 0 && at !== null && CLASS_ROWS[at]?.cls) || cls;
+  const showCls = (step === 0 && at !== null && CLASS_ROWS[at]?.cls) || cls || "warrior";
   const showGift = (step === 1 && at !== null && gifts[at]?.label) || gift;
   const row = CLASS_ROWS.find((c) => c.cls === showCls)!;
   const now = kit(new Set(showGift ? [showGift] : []), undefined, showCls);
@@ -139,11 +142,12 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
     if (!ready || begun) return;
     if (step < 2) return go(step + 1);
     setBegun(true);
-    onBegin(cls, gift!, name.trim() || NAMELESS);
+    onBegin(cls!, gift!, name.trim() || NAMELESS);
   };
 
   const choose = (): void => {
     if (step === 0) {
+      if (!OPEN.has(showCls)) return;
       setCls(showCls);
       go(1);
     } else if (showGift) {
@@ -203,7 +207,7 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
           {STEPS.map((s, i) => (
             <li key={s.label} className={i === step ? "on" : undefined} aria-current={i === step ? "step" : undefined}>
               <span>{s.label}</span>
-              <b>{i === 0 ? CLASS_ROWS.find((c) => c.cls === cls)!.name : i === 1 ? (gift ?? "-") : name.trim() || NAMELESS}</b>
+              <b>{i === 0 ? (CLASS_ROWS.find((c) => c.cls === cls)?.name ?? "-") : i === 1 ? (gift ?? "-") : name.trim() || NAMELESS}</b>
             </li>
           ))}
         </ol>
@@ -215,10 +219,11 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
           {step === 0 && (
             <div className="crOptions">
               {CLASS_ROWS.map((c, i) => (
-                <button key={c.cls} type="button" className={`crOption${c.cls === cls ? " chosen" : ""}`} aria-pressed={c.cls === cls} onFocus={() => setAt(i)}>
+                <button key={c.cls} type="button" className={`crOption${c.cls === cls ? " chosen" : ""}`} aria-pressed={c.cls === cls} aria-disabled={!OPEN.has(c.cls)} onFocus={() => setAt(i)}>
                   <Thumb row={c} />
                   <span className="panelOptionText">
                     <span className="panelOptionName">{c.name}</span>
+                    {!OPEN.has(c.cls) && <span className="panelOptionNote">Locked</span>}
                   </span>
                 </button>
               ))}
