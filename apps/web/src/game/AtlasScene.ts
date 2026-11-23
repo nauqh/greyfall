@@ -15,6 +15,7 @@ import {
   hire,
   mendTarget,
   TIERS,
+  MAPPED_AREAS,
   areaMap,
   districtOf,
   FOES,
@@ -3905,10 +3906,10 @@ export class AtlasScene extends Phaser.Scene {
       return t;
     };
     if (this.local) return;
-    // The castle wards get short, smaller names, only when close enough to read them apart; the Keep goes unnamed.
+    // The castle wards get short, smaller names, only when close enough to read them apart; the Keep and the boss lands go unnamed.
     const castle: Partial<Record<AreaId, string>> = { burg: "THE BURG", ramparts: "RAMPARTS", chapel: "CHAPEL" };
     for (const a of AREAS) {
-      if (a.tier !== tier.id || a.id === "keep") continue;
+      if (a.tier !== tier.id || a.id === "keep" || (MAPPED_AREAS.includes(a.id) && areaMap(a.id).arena)) continue;
       const mid = this.centre(a.id);
       const ward = castle[a.id];
       if (ward) text(mid.col * CELL, mid.row * CELL, ward, 36, "#e6dcc4", 12, 40).setLetterSpacing(6);
