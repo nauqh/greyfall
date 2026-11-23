@@ -410,6 +410,7 @@ const BASE: Record<string, { w: number; dx: number }> = {
   watchtower: { w: 42, dx: -2 },
   woodPile: { w: 47, dx: 0.5 },
   logPile: { w: 80, dx: 0 },
+  logStack: { w: 186, dx: 0 },
   tools: { w: 28, dx: 2 },
   meat: { w: 46, dx: 0 },
   rock1: { w: 32, dx: -1 },
@@ -503,8 +504,22 @@ const KNIGHT: Record<string, { idle: string; move: string; frame: number; anchor
   lancer: { idle: "Lancer/Lancer_Idle.png", move: "Lancer/Lancer_Run.png", frame: 320, anchor: 197 / 320 },
   pawn: { idle: "Pawn/Pawn_Idle.png", move: "Pawn/Pawn_Run.png", frame: 192, anchor: 134 / 192 },
 };
-/** A log pile's logs, bottom row first, in px off its foot: whether each lies flipped. */
-const LOG_PILE: readonly [number, number, boolean][] = [[-22, 0, false], [1, 1, true], [23, -1, false], [-11, -10, true], [12, -10, false], [0, -20, true]];
+/** A pyramid of logs `base` wide, all lying one way, each row up sitting in the grooves of the row below, as a woodpile
+ *  is stacked: px off its foot, in the order they go on, so it grows from the ground up. */
+const pyramid = (base: number, across: number, up: number): readonly [number, number][] =>
+  Array.from({ length: base }, (_, row) => Array.from({ length: base - row }, (_, i) => [(i - (base - row - 1) / 2) * across, -row * up] as [number, number])).flat();
+/** The cabins' piles, three, two, one, and the woodyard's stack, five rows high. */
+const LOGS: Record<string, readonly [number, number][]> = { logPile: pyramid(3, 29, 16), logStack: pyramid(5, 34, 19) };
+/** How large each pile's logs are drawn. */
+const LOG_SCALE: Record<string, number> = { logPile: 0.85, logStack: 1 };
+
+/** A pile of logs as it stands: its tile, its logs, and how many of them are stacked. */
+interface LogPile {
+  at: Cell;
+  logs: Phaser.GameObjects.Image[];
+  n: number;
+  stack: boolean;
+}
 
 /** A unit sheet: its texture key and its file under the pack. */
 type Art = { key: string; file: string };
@@ -512,6 +527,7 @@ type Art = { key: string; file: string };
 /** A pawn at work: what it plays standing, and walking; a woodcutter also chops at the far end and hauls back. */
 const PAWN_ACT: Record<string, { idle: string; move?: string; work?: string; haul?: string; inside?: boolean }> = {
   axe: { idle: "Pawn/Pawn_Idle Axe.png", move: "Pawn/Pawn_Run Axe.png" },
+  carry: { idle: "Pawn/Pawn_Idle.png", move: "Pawn/Pawn_Run.png", work: "Pawn/Pawn_Idle Wood.png", haul: "Pawn/Pawn_Run Wood.png" },
   fell: { idle: "Pawn/Pawn_Idle.png", move: "Pawn/Pawn_Run Axe.png", work: "Pawn/Pawn_Interact Axe.png", haul: "Pawn/Pawn_Run Wood.png" },
   pickaxe: { idle: "Pawn/Pawn_Interact Pickaxe.png" },
   // A digger into its mine and out with the gold; a carrier out to the stockpile, loading, and back with it.
@@ -948,6 +964,7 @@ export class AtlasScene extends Phaser.Scene {
   private bases: Box[] = [];
   /** The townsfolk and creatures afoot, who block the hero where they stand. */
   private walkers: Phaser.GameObjects.Sprite[] = [];
+  private logPiles: LogPile[] = [];
   private fog: Phaser.GameObjects.Sprite[] = [];
   /** Mist over the boss room, hiding it until the captain is inside. */
   private mist: Phaser.GameObjects.Image[] = [];
@@ -1027,6 +1044,7 @@ export class AtlasScene extends Phaser.Scene {
     this.boxed = new Set();
     this.bases = [];
     this.walkers = [];
+    this.logPiles = [];
     this.fog = [];
     this.mist = [];
     // The page keeps the last area's bar through a crossing; clear it, or a key of "" never sends the null.
@@ -3230,6 +3248,12 @@ export class AtlasScene extends Phaser.Scene {
     }
   }
 
+  /** Stacks a pile to `n` logs, as many as it holds at most. */
+  private heap(pile: LogPile, n: number): void {
+    pile.n = Math.min(n, pile.logs.length);
+    pile.logs.forEach((l, i) => l.setVisible(i < pile.n));
+  }
+
   private addProp(p: Placed, base: AtlasTier["base"]): void {
     if (p.art === "tree" || p.art === "bush" || p.art === "rock" || p.art === "waterRock") {
       // Scenery set by hand, at its feet as the title scene places it.
@@ -3245,9 +3269,12 @@ export class AtlasScene extends Phaser.Scene {
       this.add.image(x, y, this.buildingKey(p)).setOrigin(0.5, spec.anchorY / spec.h).setScale(p.scale ?? 1).setFlipX(p.flip ?? false).setDepth(standing(y));
       return;
     }
-    if (p.art === "logPile") {
-      // The pack's one log stacked three, two, one, each row up drawn over the row below.
-      LOG_PILE.forEach(([dx, dy, flip], i) => this.add.image(x + dx, y + dy, "prop_woodPile").setOrigin(0.5, PROP.woodPile!.anchor).setScale(0.85).setFlipX(flip).setDepth(standing(y) + i * 0.1));
+    if (LOGS[p.art]) {
+      // The pack's one log stacked, each row up drawn over the row below; a pile starts half full, a store's stack nearly.
+      const logs = LOGS[p.art]!.map(([dx, dy], i) => this.add.image(x + dx, y + dy, "prop_woodPile").setOrigin(0.5, PROP.woodPile!.anchor).setScale(LOG_SCALE[p.art]!).setDepth(standing(y) + i * 0.1));
+      const pile: LogPile = { at: { col: Math.round(p.col), row: Math.round(p.row) }, logs, n: 0, stack: p.art === "logStack" };
+      this.logPiles.push(pile);
+      this.heap(pile, pile.stack ? 9 + Math.floor(Math.random() * 4) : 3 + Math.floor(Math.random() * 3));
       return;
     }
     if (p.art === "sconce") {
@@ -3314,7 +3341,8 @@ export class AtlasScene extends Phaser.Scene {
       piece(c, row, first ? 0 : last ? 3 : 1 + (c % 2));
       // The sheet's bottom row is a gate, each middle piece stopping at its post: a closed run takes the top's rails.
       const shut = (k: number) => !inGate({ col, gate }, k);
-      if (shut(c)) piece(c, row + h - 1, first ? 8 : last ? 11 : !shut(c + 1) ? 9 : !shut(c - 1) ? 10 : 1 + (c % 2));
+      // A corner beside the gate keeps its post but not the rail that would run on across the opening.
+      if (shut(c)) piece(c, row + h - 1, first ? 8 : last ? 11 : !shut(c + 1) ? 9 : !shut(c - 1) ? 10 : 1 + (c % 2), first && !shut(c + 1) ? [0, 0, 50, 64] : last && !shut(c - 1) ? [16, 0, 48, 64] : undefined);
     }
     for (let r = row + 1; r < row + h - 1; r++) {
       piece(col, r, 4);
@@ -3612,8 +3640,10 @@ export class AtlasScene extends Phaser.Scene {
     const cells = route ? [{ col: d.col, row: d.row }, ...route] : d.to && look.swim ? [{ col: d.col, row: d.row }, d.to] : [];
     const points = cells.map((c) => ({ x: (c.col + 0.5) * CELL, y: (c.row + 0.75) * CELL }));
     const reach = points.reduce((m, p) => Math.max(m, Math.abs(p.x - x), Math.abs(p.y - y)), 0);
-    this.track(s, points.length > 1 ? reach + 64 : 0);
-    if (points.length < 2) return;
+    // The woodyard's carrier goes anywhere in the area.
+    const carrier = d.act === "carry";
+    this.track(s, carrier ? 200 * CELL : points.length > 1 ? reach + 64 : 0);
+    if (points.length < 2 && !carrier) return;
     const speed = look.swim ? 45 : 80;
     const go = (way: { x: number; y: number }[], move: string | undefined, done: () => void): void => {
       if (move) this.loop(s, move);
@@ -3630,6 +3660,48 @@ export class AtlasScene extends Phaser.Scene {
       });
     };
     const { work, haul } = look;
+    const toPoint = (c: Cell): { x: number; y: number } => ({ x: (c.col + 0.5) * CELL, y: (c.row + 0.75) * CELL });
+    if (carrier && work && haul) {
+      // The woodyard's carrier: waits at the yard's office till a pile somewhere is full, walks to it, loads all but a
+      // couple of logs, carries them to the pen's gate onto the stack, and goes back to the office to report.
+      const home = { col: d.col, row: d.row };
+      const yard = this.logPiles.filter((p) => p.stack && tileDistance(p.at, home) <= 7);
+      let here: Cell = home;
+      const route = (to: Cell): { x: number; y: number }[] | null => {
+        const path = findPath(here, to, (c) => posts.has(`${c.col},${c.row}`) && !(c.col === to.col && c.row === to.row));
+        return path && [toPoint(here), ...path.map(toPoint)];
+      };
+      const walkTo = (to: Cell, move: string | undefined, done: () => void): boolean => {
+        const way = route(to);
+        if (!way) return false;
+        go(way, move, () => {
+          here = to;
+          done();
+        });
+        return true;
+      };
+      const wait = (): void => void this.time.delayedCall(2000, check);
+      const check = (): void => {
+        const full = this.logPiles.find((p) => !p.stack && p.n >= p.logs.length);
+        const at = full && { col: full.at.col, row: full.at.row + 1 };
+        const ok = full && at && walkTo(at, look.move?.key, () => {
+          this.loop(s, work.key);
+          this.time.delayedCall(1200, () => {
+            const load = full.n - 2;
+            this.heap(full, 2);
+            if (!walkTo(yard[0] ? { col: yard[0].at.col, row: yard[0].at.row + 1 } : home, haul.key, () => {
+              const lowest = [...yard].sort((a, b) => a.n - b.n)[0];
+              if (lowest) this.heap(lowest, lowest.n + load);
+              this.loop(s, work.key);
+              this.time.delayedCall(800, () => walkTo(home, look.move?.key, () => (this.loop(s, look.idle.key), wait())) || wait());
+            })) wait();
+          });
+        });
+        if (!ok) wait();
+      };
+      wait();
+      return;
+    }
     if (work && haul && d.to) {
       const inside = d.act ? PAWN_ACT[d.act]?.inside : false;
       // A woodcutter: out to its tree, chop while it shakes, the logs carried home, a rest, and out again.
@@ -3662,6 +3734,9 @@ export class AtlasScene extends Phaser.Scene {
             const home = back.at(-1)!;
             back[back.length - 1] = { x: home.x + (Math.random() - 0.5) * 0.6 * CELL, y: home.y + (Math.random() - 0.5) * 0.4 * CELL };
             go(back, haul.key, () => {
+              // The logs onto the nearest pile by the door.
+              const pile = this.logPiles.filter((p) => !p.stack && tileDistance(p.at, d) <= 4).sort((a, b) => tileDistance(a.at, d) - tileDistance(b.at, d))[0];
+              if (pile) this.heap(pile, pile.n + 1);
               s.setFlipX(Math.random() < 0.5);
               this.loop(s, look.idle.key);
               this.time.delayedCall(2000 + Math.random() * 2000, trip);
