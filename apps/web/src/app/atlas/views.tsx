@@ -94,7 +94,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   const [intro, setIntro] = useState(false);
   // Esc in the field: the world paused under a menu, the way out to the title in it. Its value is the row picked.
   const [paused, setPaused] = useState<number | null>(null);
-  const sackOpen = useRef(false);
+  const [sackOpen, setSackOpen] = useState(false);
   const [devState, setDevState] = useState<DevState | null>(null);
   const api = useRef<AtlasApi | null>(null);
   const now = useRef({ area: first, cameFrom: undefined as AreaId | undefined, quiet: false, travelling: false, prologue: false });
@@ -276,7 +276,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     const key = (e: KeyboardEvent): void => {
       const k = e.key.toLowerCase();
       if (paused === null) {
-        if (k !== "escape" || e.repeat || sackOpen.current) return;
+        if (k !== "escape" || e.repeat || sackOpen) return;
         api.current?.pause(true);
         setPaused(0);
       } else if (k === "escape") resume();
@@ -288,7 +288,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [busy, paused]);
+  }, [busy, paused, sackOpen]);
   useEffect(() => {
     if (!devRoute) return;
     const key = (e: KeyboardEvent): void => {
@@ -456,7 +456,11 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
         ) : (
           near &&
           !menu &&
-          !fire && (
+          !fire &&
+          !atlas &&
+          !mapCover &&
+          !sackOpen &&
+          paused === null && (
             <div className="talkPrompt" role="status">
               <kbd>E</kbd> {near}
             </div>
@@ -570,7 +574,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
             sack={sack}
             gold={gold ?? 0}
             onCover={(c) => {
-              sackOpen.current = c > 0;
+              setSackOpen(c > 0);
               api.current?.look(c);
             }}
           />
