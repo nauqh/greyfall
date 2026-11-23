@@ -3007,9 +3007,17 @@ export class AtlasScene extends Phaser.Scene {
     const local = this.local;
     // An area map's ground reads a shade lighter each height up; the engine works each tile's colour out.
     const shade = local ? groundColours(local) : null;
+    // High ground's layers under its own top show only where that top's edge is cut round: there they are the ground
+    // beside it at that height, so a corner shows the floor's colour, not the plateau's own.
+    const beside = (c: number, r: number, lv: number): number | null | undefined => {
+      for (const [dc, dr] of [[0, 1], [0, -1], [-1, 0], [1, 0], [-1, 1], [1, 1], [-1, -1], [1, -1]] as const) {
+        if (level(c + dc, r + dr) === lv && !isSlope(c + dc, r + dr) && shade?.[r + dr]?.[c + dc] != null) return shade[r + dr]![c + dc];
+      }
+      return shade?.[r]?.[c];
+    };
     buildMap(this, roads, (c, r, lv) => {
       // A stair stands on the lower ground at its foot: the art is see-through round the ramp, so that ground shows there.
-      if (shade) return `tilesetC${(isSlope(c, r) && lv < level(c, r) ? shade[r + 1]?.[c] : shade[r]?.[c]) ?? 4}`;
+      if (shade) return `tilesetC${(isSlope(c, r) && lv < level(c, r) ? shade[r + 1]?.[c] : lv < level(c, r) ? beside(c, r, lv) : shade[r]?.[c]) ?? 4}`;
       const ch = tier.areaAt[r]?.[c];
       // The rock of the Underneath, and anything outside an area, in the dustiest green.
       const p = ch && ch !== "-" ? AREAS[AREA_CODE.indexOf(ch)]!.palette : [4, 4, 4];
