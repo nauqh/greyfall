@@ -99,9 +99,21 @@ export function prepareTerrain(scene: Phaser.Scene): void {
     }
   }
 
+  // Below the darkest colour the pack has, sunk ground: the teal sheet dimmed, C6.
+  if (scene.textures.exists("tilesetC5") && !scene.textures.exists("tilesetC6")) {
+    const src = scene.textures.get("tilesetC5").getSourceImage() as HTMLImageElement;
+    const tex = scene.textures.createCanvas("tilesetC6", src.width, src.height)!;
+    const ctx = tex.getContext();
+    ctx.drawImage(src, 0, 0);
+    ctx.globalCompositeOperation = "source-atop";
+    ctx.fillStyle = "rgba(8, 20, 24, 0.28)";
+    ctx.fillRect(0, 0, src.width, src.height);
+    tex.refresh();
+  }
+
   // Every cell of the 9x6 sheet, for the strategic map's autotiler, on
   // each colour of the sheet a scene has loaded.
-  for (const key of ["tileset", "tilesetLow", "tilesetMid", "tilesetRoad", "tilesetC1", "tilesetC2", "tilesetC3", "tilesetC4", "tilesetC5"]) {
+  for (const key of ["tileset", "tilesetLow", "tilesetMid", "tilesetRoad", "tilesetC1", "tilesetC2", "tilesetC3", "tilesetC4", "tilesetC5", "tilesetC6"]) {
     if (!scene.textures.exists(key)) continue;
     const sheet = scene.textures.get(key);
     for (let c = 0; c < 9; c++) {
