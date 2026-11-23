@@ -58,14 +58,15 @@ garrison still fights. The rest do not look up.
   was melted, and the goblins' barracks, empty since the night they ran.
   Its taken smiths hammer cold iron and push empty carts up from the Pits.
 
-- **The High City.** The lords' city on the second step. The Counting House,
-  where the Citadel paid for the Cut, keeps its ledgers, and its paymaster
-  burns them. The Garrison drills on with the taken watch. In the Champions'
+- **The High City.** The lords' city on the second step, walled. Lords' Row
+  runs down its west ward from the Counting House, where the Citadel paid for
+  the Cut, keeps its ledgers, and its paymaster burns them. The Garrison drills on with the taken watch. In the Champions'
   Pit the horned still fight for the lord's guests, who are not coming.
 
-- **The Warlord's Hall.** The court under the Keep. Its taken courtiers stand
-  in their rows and bow to an empty seat, because the Warlord sits in the
-  Grey Keep above them now, nearer his crown's warmth than theirs.
+- **The Warlord's Hall.** The court round the chasm the Keep stands in. Its
+  taken courtiers stand in their rows and bow to the bridge and the empty
+  seat past it, because the Warlord sits in the Grey Keep across the chasm
+  now, nearer his crown's warmth than theirs.
 
 - **The Gallows Yard.** At the crag's south foot, the pens where the taken
   keep Lanternport's east lane, and the gibbets for the ones who would not

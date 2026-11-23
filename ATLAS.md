@@ -601,14 +601,24 @@ crossing are gone.
   tiers alternating stone colours, with a spur west for the gnomes' Sky
   Bridge to land on. Rotfield, the Crater shrine, the Ruined Chapel, the
   Gallows Yard and the Ashen Approach lie in the marsh round its foot.
-- **Greyfall's crag is drawn** (`CITADEL`), not four ellipses, and each
-  district has a job after its lore: Rotfield's fenced fields, the Pits
-  round a fallen-in Crater (no shrine), the Lower City's smelters and the
-  goblins' empty huts, the High City as the Counting House, the Garrison
-  and the Champions' Pit, the Warlord's Hall as a court. The taken at work
-  are black pawns, harmless; only the garrison fights. The Drill Yard's
-  fire moved into the Garrison: the Keep door is 23 tiles from a fire, the
-  farthest tile 47.
+- **Greyfall is drawn after Lanternport** (`CITADEL`, `PITS`): each
+  place its own landform, packed narrow, not tiers of open flat. The Grey
+  Keep on its own crag in a chasm of rot, reached by one bridge off the
+  Warlord's Hall, a horseshoe round the chasm (Lanternport's crown in its
+  moat); the High City walled, towers and perched archers at its corners,
+  Lords' Row as a two-wide alley of houses under the Counting House, the
+  Champions' Pit sunk a height into it, the Garrison in one line on the
+  east rim, a gate bastion off its south face; the Lower City's smelter
+  row along the wall's foot and the goblins' alley of huts; the Pits a
+  spoil rim round a bench round the Crater's floor, the rot falling
+  through a gorge in the rim, diggers hauling to an ore heap nothing
+  takes; Rotfield's fenced crop boxes; the Gallows' gibbet avenue and
+  pens. The taken at work are black pawns, harmless, and stand still once
+  the Warlord falls; the pens empty and the drill stops.
+  Fires by runback: the road in (Grey Gate 21), the Sky Bridge's head
+  (40), the Gallows, and the Hall's forecourt (Keep door 34); farthest
+  tile 48. Tally's fire on the Pits' rim is a campfire. No foe stands
+  within REST_CLEAR of a fire.
 - **Emberwood** keeps its maze, but its hills and Troll's Hollow (once a
   rectangular ring of blocks, now a raised arena of ash) are landforms.
   The whole wood has one floor colour: per-district colours met in

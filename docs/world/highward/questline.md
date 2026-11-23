@@ -137,7 +137,7 @@ Greets you: *"Look up."* Walked away from: *"Go on. I'll keep watch. It's all I'
   2. Brenna was holding an edge I paid for. Here, it's yours.
   3. If she asks, tell her I sent you. She'll want it in writing. Hah...
 
-### Dead at Greyfall, The High City (95, 25), once **anselAhead**
+### Dead at Greyfall, The High City (95, 27), once **anselAhead**
 
 Says nothing.
 

@@ -1046,7 +1046,7 @@ export const NPCS: readonly Npc[] = [
     id: "tally",
     name: "Tally",
     area: "greyfall",
-    at: { col: 49, row: 54 },
+    at: { col: 39, row: 52 },
     kind: "torch",
     greet: "Not one step down. Not one.",
     part: "Count's not done!",
@@ -1076,7 +1076,7 @@ export const NPCS: readonly Npc[] = [
       {
         when: ["ledgerSaved"],
         area: "greyfall",
-        at: { col: 49, row: 54 },
+        at: { col: 39, row: 52 },
         talks: [
           {
             id: "ledger",
@@ -1097,7 +1097,7 @@ export const NPCS: readonly Npc[] = [
     name: "Master Quill",
     short: "Quill",
     area: "greyfall",
-    at: { col: 64, row: 26 },
+    at: { col: 65, row: 18 },
     kind: "pawn",
     color: "black",
     greet: "Close the door. The draught.",
@@ -1131,7 +1131,7 @@ export const NPCS: readonly Npc[] = [
       {
         when: ["warlordDead"],
         area: "greyfall",
-        at: { col: 64, row: 26 },
+        at: { col: 65, row: 18 },
         talks: [
           {
             id: "thaw",
@@ -1150,7 +1150,7 @@ export const NPCS: readonly Npc[] = [
     name: "Sister Hush",
     short: "Hush",
     area: "greyfall",
-    at: { col: 42, row: 21 },
+    at: { col: 45, row: 22 },
     kind: "monk",
     color: "purple",
     greet: "Hush.",
@@ -1184,7 +1184,7 @@ export const NPCS: readonly Npc[] = [
       {
         when: ["warlordDead"],
         area: "greyfall",
-        at: { col: 42, row: 21 },
+        at: { col: 45, row: 22 },
         talks: [
           {
             id: "fever",
@@ -1285,7 +1285,7 @@ export const NPCS: readonly Npc[] = [
           },
         ],
       },
-      { when: ["anselAhead"], area: "greyfall", at: { col: 95, row: 25 }, dead: true },
+      { when: ["anselAhead"], area: "greyfall", at: { col: 95, row: 27 }, dead: true },
     ],
   },
   {
