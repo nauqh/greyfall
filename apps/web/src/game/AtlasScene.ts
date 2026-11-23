@@ -410,7 +410,7 @@ const BASE: Record<string, { w: number; dx: number }> = {
   watchtower: { w: 42, dx: -2 },
   woodPile: { w: 47, dx: 0.5 },
   logPile: { w: 80, dx: 0 },
-  logStack: { w: 186, dx: 0 },
+  logStack: { w: 200, dx: 0 },
   tools: { w: 28, dx: 2 },
   meat: { w: 46, dx: 0 },
   rock1: { w: 32, dx: -1 },
@@ -504,12 +504,12 @@ const KNIGHT: Record<string, { idle: string; move: string; frame: number; anchor
   lancer: { idle: "Lancer/Lancer_Idle.png", move: "Lancer/Lancer_Run.png", frame: 320, anchor: 197 / 320 },
   pawn: { idle: "Pawn/Pawn_Idle.png", move: "Pawn/Pawn_Run.png", frame: 192, anchor: 134 / 192 },
 };
-/** A pyramid of logs `base` wide, all lying one way, each row up sitting in the grooves of the row below, as a woodpile
- *  is stacked: px off its foot, in the order they go on, so it grows from the ground up. */
-const pyramid = (base: number, across: number, up: number): readonly [number, number][] =>
-  Array.from({ length: base }, (_, row) => Array.from({ length: base - row }, (_, i) => [(i - (base - row - 1) / 2) * across, -row * up] as [number, number])).flat();
-/** The cabins' piles, three, two, one, and the woodyard's stack, five rows high. */
-const LOGS: Record<string, readonly [number, number][]> = { logPile: pyramid(3, 29, 16), logStack: pyramid(5, 34, 19) };
+/** A block of logs `wide` across and `high` rows up, all lying one way, each row laid square on the one below: px off its
+ *  foot, in the order they go on, so it fills a row at a time from the ground up. */
+const logBlock = (wide: number, high: number, across: number, up: number): readonly [number, number][] =>
+  Array.from({ length: wide * high }, (_, n) => [((n % wide) - (wide - 1) / 2) * across, -Math.floor(n / wide) * up]);
+/** The cabins' piles, three by two, and the woodyard's stack, five by three. */
+const LOGS: Record<string, readonly [number, number][]> = { logPile: logBlock(3, 2, 29, 17), logStack: logBlock(5, 3, 34, 20) };
 /** How large each pile's logs are drawn. */
 const LOG_SCALE: Record<string, number> = { logPile: 0.85, logStack: 1 };
 
@@ -3270,11 +3270,11 @@ export class AtlasScene extends Phaser.Scene {
       return;
     }
     if (LOGS[p.art]) {
-      // The pack's one log stacked, each row up drawn over the row below; a pile starts half full, a store's stack nearly.
+      // The pack's one log stacked, each row up drawn over the row below; a pile starts half full, a store's stack more.
       const logs = LOGS[p.art]!.map(([dx, dy], i) => this.add.image(x + dx, y + dy, "prop_woodPile").setOrigin(0.5, PROP.woodPile!.anchor).setScale(LOG_SCALE[p.art]!).setDepth(standing(y) + i * 0.1));
       const pile: LogPile = { at: { col: Math.round(p.col), row: Math.round(p.row) }, logs, n: 0, stack: p.art === "logStack" };
       this.logPiles.push(pile);
-      this.heap(pile, pile.stack ? 9 + Math.floor(Math.random() * 4) : 3 + Math.floor(Math.random() * 3));
+      this.heap(pile, pile.stack ? 8 + Math.floor(Math.random() * 5) : 2 + Math.floor(Math.random() * 3));
       return;
     }
     if (p.art === "sconce") {

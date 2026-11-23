@@ -1464,7 +1464,7 @@ function harbour(): AreaMap {
   // have. The office stands wholly on the plateau, the wood at its back, so it is pinned, the corner being too tight
   // for the clear ground a house keeps; the pen keeps a row off it, as that ground may not take a post.
   t.fences.push({ col: 41, row: 7, w: 5, h: 3, gate: 2, gateW: 1 });
-  prop("logStack", 43, 8.1);
+  prop("logStack", 43, 8.3);
   prop("house1", 46, 5, { ...blue, fixed: true });
   who("pawn", 46, 6, { ...blue, act: "carry" });
   for (const [c, r] of [[44, 14], [59, 18], [61, 15]] as const) who("lancer", c, r, blue);
