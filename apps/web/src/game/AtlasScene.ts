@@ -510,12 +510,12 @@ const LOG_PILE: readonly [number, number, boolean][] = [[-22, 0, false], [1, 1, 
 type Art = { key: string; file: string };
 
 /** A pawn at work: what it plays standing, and walking; a woodcutter also chops at the far end and hauls back. */
-const PAWN_ACT: Record<string, { idle: string; move?: string; work?: string; haul?: string }> = {
+const PAWN_ACT: Record<string, { idle: string; move?: string; work?: string; haul?: string; inside?: boolean }> = {
   axe: { idle: "Pawn/Pawn_Idle Axe.png", move: "Pawn/Pawn_Run Axe.png" },
   fell: { idle: "Pawn/Pawn_Idle.png", move: "Pawn/Pawn_Run Axe.png", work: "Pawn/Pawn_Interact Axe.png", haul: "Pawn/Pawn_Run Wood.png" },
   pickaxe: { idle: "Pawn/Pawn_Interact Pickaxe.png" },
-  // A digger out to a heap and back with its gold; a carrier out to the stockpile, loading, and back with it.
-  dig: { idle: "Pawn/Pawn_Idle Pickaxe.png", move: "Pawn/Pawn_Run Pickaxe.png", work: "Pawn/Pawn_Interact Pickaxe.png", haul: "Pawn/Pawn_Run Gold.png" },
+  // A digger into its mine and out with the gold; a carrier out to the stockpile, loading, and back with it.
+  dig: { idle: "Pawn/Pawn_Idle Pickaxe.png", move: "Pawn/Pawn_Run Pickaxe.png", work: "Pawn/Pawn_Interact Pickaxe.png", haul: "Pawn/Pawn_Run Gold.png", inside: true },
   fetch: { idle: "Pawn/Pawn_Idle.png", move: "Pawn/Pawn_Run.png", work: "Pawn/Pawn_Idle Gold.png", haul: "Pawn/Pawn_Run Gold.png" },
   hammer: { idle: "Pawn/Pawn_Interact Hammer.png" },
   knife: { idle: "Pawn/Pawn_Interact Knife.png" },
@@ -1712,8 +1712,8 @@ export class AtlasScene extends Phaser.Scene {
     const cx = (p.col + 0.5) * CELL + (b?.dx ?? 0) * (p.flip ? -1 : 1) * scale;
     const half = b ? (b.w * scale) / 2 : ((Math.max(...cells.map(([c]) => c)) - Math.min(...cells.map(([c]) => c)) + 1) * CELL) / 2;
     const y1 = (p.row + 0.95) * CELL;
-    // A house's walls stand a full row deep, not half: the feet stop at them, not under the eaves behind.
-    const deep = new Set(cells.map(([, r]) => r)).size - (p.art.startsWith("house") ? 0 : 0.5);
+    // A house's or a mine's walls stand a full row deep, not half: the feet stop at them, not under the eaves behind.
+    const deep = new Set(cells.map(([, r]) => r)).size - (p.art.startsWith("house") || p.art === "goldMine" ? 0 : 0.5);
     this.bases.push({ x0: cx - half, x1: cx + half, y0: y1 - deep * CELL, y1 });
   }
 
@@ -3013,11 +3013,11 @@ export class AtlasScene extends Phaser.Scene {
     for (const g of tier.gates) this.gatehouse(g.kind, g.cells);
     for (const f of tier.campfires) this.bonfire(f);
     for (const f of tier.fires) this.bonfire(f, !!this.local && !remembered(KINDLED).has(this.fireKey(f)));
-    // A walker goes round a building as round a fence: never through its walls, though into a mine or a cave. A house's
+    // A walker goes round a building as round a fence: never through its walls, though into a cave. A house's or a mine's
     // art spans half of each tile beside its own and the row behind, wider than its footprint: a walker keeps off it all.
-    const posts = solidCells({ props: tier.props.filter((p) => COVER_ART.has(p.art) && p.art !== "goldMine" && p.art !== "cave"), fences: tier.fences });
+    const posts = solidCells({ props: tier.props.filter((p) => COVER_ART.has(p.art) && p.art !== "cave"), fences: tier.fences });
     for (const p of tier.props) {
-      if (!p.art.startsWith("house")) continue;
+      if (!p.art.startsWith("house") && p.art !== "goldMine") continue;
       const [col, row] = [Math.round(p.col), Math.round(p.row)];
       for (let r = row - 1; r <= row; r++) for (let c = col - 1; c <= col + 1; c++) posts.add(`${c},${r}`);
     }
@@ -3631,6 +3631,7 @@ export class AtlasScene extends Phaser.Scene {
     };
     const { work, haul } = look;
     if (work && haul && d.to) {
+      const inside = d.act ? PAWN_ACT[d.act]?.inside : false;
       // A woodcutter: out to its tree, chop while it shakes, the logs carried home, a rest, and out again.
       const [tx, ty] = [(d.to.col + (d.flip ? -0.375 : 1.375)) * CELL, (d.to.row + 0.6) * CELL];
       const tree = this.children.list.find((o): o is Phaser.GameObjects.Sprite => o instanceof Phaser.GameObjects.Sprite && Math.abs(o.x - tx) < 1 && Math.abs(o.y - ty) < 1);
@@ -3649,10 +3650,13 @@ export class AtlasScene extends Phaser.Scene {
           s.anims.setProgress(0);
           // The axe lands on the third of six frames at 9 a second: the tree shakes on each blow.
           const shake = tree && this.tweens.add({ targets: tree, angle: 2, delay: 222, duration: 110, yoyo: true, repeat: -1, repeatDelay: 445 });
+          // A digger works out of sight, in through its mine's door.
+          if (inside) this.tweens.add({ targets: s, alpha: 0, duration: 300 });
           this.time.delayedCall(5000 + Math.random() * 3000, () => {
             shake?.remove();
             tree?.setAngle(0);
             fallen();
+            if (inside) this.tweens.add({ targets: s, alpha: 1, duration: 300 });
             // Home to a spot a little off the last, so those at one door never stand on a grid.
             const back = [...points].reverse();
             const home = back.at(-1)!;

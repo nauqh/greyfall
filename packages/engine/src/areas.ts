@@ -682,26 +682,13 @@ function fell(t: Builder, home: Cell, chop: Cell, more: { left?: boolean } & Pic
   t.who("pawn", home.col, home.row, { color: "blue", act: "fell", to: chop, flip: left, ...shown });
 }
 
-/** Gold heaps as the pack piles them, in tiles off the front stone: big rock behind it, nuggets about. The first is
- *  measured off the pack's own Pawn and Resources sheet. */
-const HEAPS = [
-  [[0, 0, 3], [1.2, -0.4, 5], [1.6, 0.3, 4], [2.2, 0.15, 4], [2.85, -0.55, 6], [3.1, 0.05, 2], [0.8, 0.7, 1], [1.75, -0.4, 2]],
-  [[0, 0, 4], [0.9, -0.35, 6], [1.5, 0.25, 3], [0.6, 0.6, 1], [2, -0.1, 2]],
-  [[0, 0, 4], [0.8, -0.3, 6], [1.7, -0.35, 6], [1.3, 0.3, 5], [2.4, 0.1, 3], [0.5, 0.55, 2], [2.1, 0.65, 1]],
-  [[0, 0, 3], [0.7, 0.35, 2], [1.1, -0.2, 4], [1.8, 0.3, 3], [2.3, -0.15, 1], [1.5, 0.7, 1]],
-] as const;
+/** A gold heap as the pack piles it, in tiles off its front stone: big rock behind it, nuggets about. Measured off the
+ *  pack's own Pawn and Resources sheet. */
+const HEAP = [[0, 0, 3], [1.2, -0.4, 5], [1.6, 0.3, 4], [2.2, 0.15, 4], [2.85, -0.55, 6], [3.1, 0.05, 2], [0.8, 0.7, 1], [1.75, -0.4, 2]] as const;
 
-/** A heap running off to the right of the tile at `col`, `row`, or to its left with `left`. It sits a quarter tile
- *  back, as a prop draws lower than a dweller on its row and would hide a pickaxe swung at it from that tile. */
-function heap(t: Builder, col: number, row: number, shape: 0 | 1 | 2 | 3, left = false): void {
-  const dir = left ? -1 : 1;
-  for (const [dc, dr, n] of HEAPS[shape]) t.prop(`ore${n}`, col + dir * (0.8 + dc), row + dr - 0.25, { fixed: true, flip: left });
-}
-
-/** A miner breaking a heap at its front stone. */
-function mine(t: Builder, col: number, row: number, shape: 0 | 1 | 2 | 3, left = false): void {
-  heap(t, col, row, shape, left);
-  t.who("pawn", col, row, { color: "blue", act: "pickaxe", flip: left });
+/** A heap running off to the right of the tile at `col`, `row`. */
+function heap(t: Builder, col: number, row: number): void {
+  for (const [dc, dr, n] of HEAP) t.prop(`ore${n}`, col + 0.8 + dc, row + dr - 0.25, { fixed: true });
 }
 
 /**
@@ -1279,23 +1266,24 @@ function harbour(): AreaMap {
     "............<#####........",
     ".............####.........",
   ], 5, 8);
-  // The Mine Hills east: a worked hill, its quarried face stepping up in benches to a crest pushed north-east, the
-  // mine cut into the bench under the crest's west spur, the cave under the crest, the sea biting its east foot.
+  // The Mine Hills east: a worked hill, its quarried face stepping up in benches to a crest pushed north-east and a crag
+  // on the crest, the lookout's, mines cut into the benches' corners and the crag's face, the cave under the crest, the
+  // sea biting its east foot.
   stamp(t, [
-    "~~~~~~~~~~~~~~44~~~~~~~~~~~~",
-    "~~~~~~~~~~~~^4444^~~~~~~~~~~",
-    "~~~~~~~~~~^^^4444^^^^~~~~~~~",
-    "~~~~~~~~^^^444444444^^^~~~~~",
-    "~~~~~~^^^4444444444444^^~~~~",
-    "~~~~~^^4444444^444^4444^^~~~",
-    "~~~~^^444444^^^^^^^^^^4}^~~~",
-    "~~~~^{44444^^^^^^^^^^^^^^^~~",
+    "~~~~~~~~~~~~~~55~~~~~~~~~~~~",
+    "~~~~~~~~~~~^^55555^~~~~~~~~~",
+    "~~~~~~~~~~^^555555^^^~~~~~~~",
+    "~~~~~~~^^^^55555555^^^~~~~~~",
+    "~~~~~^^^4(55545455544^^~~~~~",
+    "~~~~~^444444^^4444444^^^^~~~",
+    "~~~~^^4444444^^44444444}^~~~",
+    "~~~~^{444444^^^^4444^^^^^^~~",
     "~~~~^^^4444^^^^^^^^^^^^^^^~~",
     "~~~~^^^^^^^^^^^^^^^^^^^##~~~",
     "~~~~#^^^^^^^^#^^^^^^^^^]#~~~",
     "~~~#[^^^^^^^##^^^^^^^^###~~~",
     "~~~###^^^^^^##^^^^^^^#####~~",
-    "~~~####^^^#####^^^^######~~~",
+    "~~~####^^^#####^^^#######~~~",
     "~~~~###################~~~~~",
     "~~~~###############~~~~~~~~~",
     "~~~~~#############~~~~~~~~~~",
@@ -1597,33 +1585,45 @@ function harbour(): AreaMap {
   // The gate open, the town keeps a watch on it.
   who("warrior", 27, 4, gateOpen);
 
-  // The Mine Hills, worked bench by bench: a mine cut into each face with its ore heaped beside the mouth and a miner
-  // breaking it, an outcrop broken where it stands, and diggers out from the camp's stockpile at the foot, back down the
-  // stairs with the gold. The deep face's cave under the crest is boarded up since its ore came up grey. Loose gold lies
-  // only where the work spills it: by the mouths, the heaps and the stockpile.
-  prop("cave", 100, 20);
-  // The upper bench: the old mine in the crest's face, and the outcrop over the gully.
+  // The Mine Hills, the outside of a working mine: a mine cut into each bench's corner and the crag's face, the gold dug
+  // out of sight inside, and diggers in and out of the doors with it, down the stairs to the stockpile at the camp. The
+  // workings' grey spoil lies by each door. The deep face's cave under the crest is boarded up since its ore came up grey.
+  prop("cave", 100, 20, { fixed: true });
+  // The upper bench: the old mine in the crest's face, in its west corner.
   prop("goldMine", 91, 21, { fixed: true });
-  mine(t, 93, 19, 0);
-  mine(t, 96, 22, 2);
-  for (const [c, r] of [[88, 20], [94, 20], [97, 20], [100, 23]] as const) prop("goldStone", c, r);
+  for (const [c, r] of [[88.4, 21.3], [93.3, 21.3]] as const) prop("rock", c, r, { fixed: true });
   // The draws of the crowd that stood here once, so the woods grown after keep their places.
   for (let i = 0; i < 12; i++) rng.next();
-  // A lookout on the crest, over the sea the ships stopped coming in on.
-  prop("watchtower", 97, 13);
-  who("archer", 99, 14, blue);
-  // The lower bench: the new mine in the upper bench's face, and a shed for the tools.
-  prop("goldMine", 90, 26, { fixed: true });
-  mine(t, 93, 27, 3);
-  for (const [c, r] of [[92, 28], [97, 28]] as const) prop("goldStone", c, r);
+  // The crest, split by a gully under the crag: its west half up the west stair, its east half only by the long way round
+  // to the east stair, a mine cut into the crag's face on each, and the lookout on the crag's peak, up its stair off the
+  // west half, over the sea the ships stopped coming in on.
+  prop("watchtower", 97, 13, { fixed: true });
+  who("archer", 97, 13.25, { ...blue, perch: 1.85 });
+  for (const c of [93, 99]) prop("goldMine", c, 17, { fixed: true });
+  for (const [c, r] of [[90.6, 17.4], [101.4, 17.4]] as const) prop("rock", c, r, { fixed: true });
+  // The lower bench: the new mine in the corner between the upper bench's face and the sea, and a shed for the tools.
+  prop("goldMine", 98, 26, { fixed: true });
+  for (const [c, r] of [[95.6, 26.4], [96.3, 27.3]] as const) prop("rock", c, r, { fixed: true });
   prop("house3", 99, 29, blue);
+  // The far shelf down the east stair, a step off the lower bench's corner: a mine over the sea.
+  prop("goldMine", 104, 24, { fixed: true });
+  prop("rock", 106.4, 23.4, { fixed: true });
+  // Trees in clumps where the work leaves room: on the crag and its north slope, the east crest's end, the upper bench
+  // below the cave, and the lower bench's corners.
+  for (const [c, r] of [[95, 12], [99.2, 12.3], [93, 12], [101.6, 13.3], [101, 15], [102.2, 15.3], [101, 22], [102.3, 22.4], [99.2, 23.1],
+    [89, 26], [90.2, 26.4], [89.4, 27.2], [101, 28], [102.4, 28.3], [102, 29.2], [93, 32], [94.3, 32.3], [93.6, 33.1]] as const)
+    prop("tree", c, r, { fixed: true });
   // The miners' camp at the foot of the bench stair: their houses, the stockpile the diggers bring the gold down to,
-  // and a carrier taking it on up the castle road to the forge.
+  // and a carrier taking it on up the castle road to the forge. The one heap of gold on the hill is here.
   for (const [c, r, art] of [[92, 39, "house1"], [96, 38, "house2"]] as const) prop(art, c, r, blue);
-  heap(t, 88, 37, 1);
-  for (const [c, r] of [[91, 36], [88, 38]] as const) prop("goldStone", c, r);
-  who("pawn", 88, 36, { ...blue, act: "dig", to: { col: 98, row: 19 }, flip: true });
-  who("pawn", 87, 37, { ...blue, act: "dig", to: { col: 97, row: 27 }, flip: true });
+  heap(t, 87, 37);
+  for (const [c, r] of [[87, 38], [89, 38], [88, 35], [85, 38]] as const) prop("goldStone", c, r);
+  // Each digger rests somewhere of its own about the camp between trips, not in a row.
+  who("pawn", 86, 36, { ...blue, act: "dig", to: { col: 91, row: 22 } });
+  who("pawn", 90, 35, { ...blue, act: "dig", to: { col: 98, row: 27 }, flip: true });
+  who("pawn", 84, 38, { ...blue, act: "dig", to: { col: 104, row: 25 } });
+  who("pawn", 89, 40, { ...blue, act: "dig", to: { col: 93, row: 18 }, flip: true });
+  who("pawn", 94, 37, { ...blue, act: "dig", to: { col: 99, row: 18 }, flip: true });
   who("pawn", 56, 30, { ...blue, act: "fetch", to: { col: 92, row: 37 }, flip: true });
 
   // The Old Bridge: Saltreach's toll and trade post, its yellow militia looking over every load that crosses, the
