@@ -555,12 +555,12 @@ const LOWER_TOWN = [
 const UPPER_TOWN = [
   "...4444.....55555....ww..44...",
   "..444444www555555555wwwww444..",
-  ".4444444ww55555555555wwww4444.",
+  ".4444444www5555555555wwww4444.",
   ".4444444ww555555555555www4444.",
-  ".4444444www55555555555www4444#",
-  ".4444444www55555555555www4444#",
-  ".444444www5555555555544www444#",
-  "..44444wwww5555555555)4ww4444#",
+  ".4444444ww555555555555www4444#",
+  ".4444444w5555555555555www4444#",
+  ".444444ww55555555555544www444#",
+  "..44444ww555555555555)4ww4444#",
   "..44444www5555wwwwwww44ww4444#",
   ".^^4444wwww555wwwwwwwwww44444#",
   ".^{444wwwwwwwwwwwwwwwww4444^^#",
@@ -1383,11 +1383,11 @@ function harbour(): AreaMap {
   // the moat the crown, Highward's gatehouse, reached only by its bridge and the stair off the ledge under it.
   // The Great Gate, a bastion jutting off the lower circle: a tower either side of the road through it, a stair up
   // each of its outer corners, a lantern at each stair's foot and the watch at its head.
-  // Watchtowers round the outer wall and the town, and one at each front corner of the crown.
+  // Watchtowers round the outer wall and the town, and one at the crown's east front corner.
   // Each with its archer: on the platform of the crown's and of the outer towers, walking the foot of the rest. A
   // perched archer stands a quarter tile in front of its tower's base, so it draws over the tower.
-  const watch = [[72, 8], [67, 29], [60, 39], [42, 32], [66, 11], [65, 18], [63, 27], [59, 24], [49, 29], [52, 9], [58, 9]] as const;
-  const atop = new Set(["72,8", "60,39", "52,9", "58,9"]);
+  const watch = [[72, 8], [67, 29], [60, 39], [42, 32], [66, 11], [65, 18], [63, 27], [59, 24], [49, 29], [58, 9]] as const;
+  const atop = new Set(["72,8", "60,39", "58,9"]);
   // The landing's pinned against its stair's head, the first thing seen coming up it.
   for (const [c, r] of watch) prop("tower", c, r, c === 60 && r === 39 ? { ...blue, fixed: true } : blue);
   for (const [c, r] of watch) {
@@ -1451,11 +1451,9 @@ function harbour(): AreaMap {
   // The drill stops the day the Warlord falls.
   who("warrior", 59, 23, { ...blue, unless: "warlordDead", to: { col: 63, row: 23 } });
   for (const [c, r] of [[62, 26], [64, 27]] as const) who("archer", c, r, blue);
-  // The Wind Ward, after Whiterun's: the town's great tree on a plaza facing the keep's bridge, the band's mead hall
-  // across it, after Jorrvaskr, and its drinkers; the captains' houses out on the horseshoe's two arms, and a lancer at
-  // each stair head.
+  // The Wind Ward, after Whiterun's: the town's great tree on a plaza facing the keep's bridge, and its drinkers; the
+  // captains' houses out on the horseshoe's two arms, and a lancer at each stair head.
   prop("tree", 57.5, 17.4, { scale: 1.6, fixed: true });
-  prop("barracks", 52, 18, { ...blue, scale: 1.3 });
   who("warrior", 52, 20, { ...blue, to: { col: 54, row: 20 } });
   prop("house2", 66, 7, blue);
   // The west arm is the town's woodyard: the Northwood's logs in one stack in a pen fenced close round it, and in the
@@ -1469,11 +1467,14 @@ function harbour(): AreaMap {
   who("pawn", 46, 6, { ...blue, act: "carry" });
   for (const [c, r] of [[44, 14], [59, 18], [61, 15]] as const) who("lancer", c, r, blue);
   who("lancer", 63, 14, { ...blue, to: { col: 66, row: 14 } });
-  // The crown, after Dragonsreach: the keep behind a forecourt, a tower at each front corner, a garden either side, and
-  // off the south-west corner a porch over the drop where the watch looks down the whole climb to the bay.
+  // The crown, after Dragonsreach: the keep behind a forecourt, the guardhouse on its west side and a tower at its east
+  // corner, a garden either side, and off the south-west corner a porch over the drop where the watch looks down the
+  // whole climb to the bay. The guardhouse is pinned against the crown's west edge, a row clear of the keep and the
+  // gate's lancers: the crown is too narrow there for the ground a barracks keeps round it.
   prop("castle", 55, 7, blue);
+  prop("barracks", 50, 10, { ...blue, fixed: true });
   for (const [c, r] of [[51.4, 5.6], [52.2, 6.8], [59.6, 6.6]] as const) prop("tree", c, r, { fixed: true });
-  for (const [c, r] of [[50, 6], [61, 8]] as const) prop("bush", c, r);
+  for (const [c, r] of [[50, 7], [61, 8]] as const) prop("bush", c, r);
   who("archer", 52, 13, blue);
   who("lancer", 62, 12, blue);
   // The Burg Gate stands open: a lancer either side of its door, the guard in the forecourt.
@@ -1833,7 +1834,7 @@ function harbour(): AreaMap {
     { name: "The Northwood", at: { col: 18, row: 30 }, levels: [1, 2, 3], palette: ramp, dress: "emberwood", decor: 1.5, groves: true },
     { name: "Mine Hills", at: { col: 95, row: 26 }, levels: [1, 2, 3, 4], palette: ramp, dress: "crags", decor: 2.5, trees: 0.06 },
     { name: "Lantern Point", at: { col: 97, row: 71 }, levels: [1], palette: ramp, dress: "saltreach", decor: 1.5 },
-    { name: "The Burg Gate", at: { col: 55, row: 11 }, levels: [2, 3, 4, 5], palette: ramp, dress: "harbour", decor: 1 },
+    { name: "The Burg Gate", at: { col: 55, row: 11 }, levels: [2, 3, 4, 5], palette: ramp, dress: "harbour", decor: 0 },
     // The Graves read dead against the point's salt grass: its slope and crest go olive.
     { name: "The Graves", at: { col: 100, row: 48 }, levels: [1, 2, 3, 4], palette: [5, 4, 4, 3], dress: "barrowmoor", decor: 1.5, gloom: true },
   ];
