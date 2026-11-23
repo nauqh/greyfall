@@ -1,3 +1,4 @@
+import { GIFTS } from "@greyfall/engine";
 import { useEffect, useRef, useState } from "react";
 
 import type { SackView } from "../../game/AtlasScene";
@@ -12,10 +13,15 @@ const typing = (t: EventTarget | null): boolean =>
 /** The numbers drawn big with an icon, as at a rest; the rest told small below them. */
 const MAIN: Partial<Record<SackView["stats"][number]["key"], string>> = { hp: STAT_ICON.hp, attack: STAT_ICON.attack, stamina: STAT_ICON.stamina, flasks: "ui/icon_heal.png" };
 const ROW = 4;
+/** With the sack open, the movement keys walk its goods instead of the captain. */
+const STEP: Record<string, number> = { w: -ROW, arrowup: -ROW, s: ROW, arrowdown: ROW, a: -1, arrowleft: -1, d: 1, arrowright: 1 };
+/** Set once the sack has been opened; until then, from the first good past the gift (Hollis's gaff), the field keeps telling the player Tab opens it. */
+const OPENED = "greyfall.sackOpened";
 
 /**
  * The captain's sack, after a Souls inventory: a panel over the right of the screen, the camera in close on the captain
- * in the rest, without stopping the world, since it is opened in the field. Tab opens and closes it.
+ * in the rest, without stopping the world, since it is opened in the field, though the captain stands while it is. Tab
+ * opens and closes it; WASD or the arrows pick a good.
  */
 export function Sack({ sack, gold, onCover }: { sack: SackView; gold: number; onCover: (cover: number) => void }) {
   const [open, setOpen] = useState(false);
@@ -24,6 +30,22 @@ export function Sack({ sack, gold, onCover }: { sack: SackView; gold: number; on
   const [shown, setShown] = useState(false);
   const wasShown = useRef(false);
   const [pick, setPick] = useState(0);
+  const [opened, setOpened] = useState(() => {
+    try {
+      return localStorage.getItem(OPENED) === "1";
+    } catch {
+      return false;
+    }
+  });
+  // Opened before there is anything past the gift to see does not count: the nudge still comes with the gaff.
+  const worth = sack.items.some((i) => !GIFTS.includes(i.label));
+  useEffect(() => {
+    if (!open || !worth) return;
+    setOpened(true);
+    try {
+      localStorage.setItem(OPENED, "1");
+    } catch {}
+  }, [open, worth]);
   useEffect(() => {
     if (open) {
       setMounted(true);
@@ -46,6 +68,21 @@ export function Sack({ sack, gold, onCover }: { sack: SackView; gold: number; on
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
   }, []);
+  useEffect(() => {
+    const n = sack.items.length;
+    if (!open || !n) return;
+    const key = (e: KeyboardEvent): void => {
+      const d = STEP[e.key.toLowerCase()];
+      if (d === undefined || typing(e.target) || e.ctrlKey || e.altKey || e.metaKey) return;
+      e.preventDefault();
+      setPick((p) => {
+        const at = Math.min(p, n - 1);
+        return at + d >= 0 && at + d < n ? at + d : at;
+      });
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [open, sack.items.length]);
   const panelRef = useRef<HTMLDivElement>(null);
   const cover = useRef(onCover);
   cover.current = onCover;
@@ -77,6 +114,11 @@ export function Sack({ sack, gold, onCover }: { sack: SackView; gold: number; on
       <button type="button" className="sackButton" aria-expanded={open} onMouseDown={(e) => e.preventDefault()} onClick={() => setOpen((o) => !o)}>
         Sack <kbd>Tab</kbd>
       </button>
+      {!opened && worth && (
+        <p className="sackNudge" role="status">
+          <kbd>Tab</kbd> to open your sack.
+        </p>
+      )}
       {mounted && (
         <div
           ref={panelRef}
@@ -93,18 +135,6 @@ export function Sack({ sack, gold, onCover }: { sack: SackView; gold: number; on
             <span className="sackWho">
               {name} <b>Level {sack.level}</b>
             </span>
-            <button
-              type="button"
-              className="btn small light sackClose"
-              aria-label="Close"
-              title="Close (Tab or Esc)"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => setOpen(false)}
-            >
-              <svg viewBox="0 0 16 16" width={16} height={16} aria-hidden>
-                <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth={3} strokeLinecap="round" />
-              </svg>
-            </button>
           </header>
           <div className="sackBody">
             <section className="sackLeft">

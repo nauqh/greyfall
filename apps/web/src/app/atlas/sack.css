@@ -26,6 +26,51 @@
 	border-radius: 4px;
 }
 
+/* Until the sack is first opened: up for a few seconds, gone a while, and back, for as long as it takes. */
+.sackNudge {
+	position: absolute;
+	right: 20px;
+	bottom: 120px;
+	margin: 0;
+	padding: 0 6px;
+	color: #4a3a28;
+	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-weight: 800;
+	font-size: 15px;
+	border: 12px solid transparent;
+	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 12px stretch;
+	pointer-events: none;
+	animation: sackNudge 12s 2s infinite both;
+}
+
+.sackNudge kbd {
+	padding: 0 5px;
+	font: inherit;
+	color: #8a5a10;
+	border: 2px solid rgb(107 87 64 / 0.35);
+	border-radius: 4px;
+}
+
+@keyframes sackNudge {
+	0%,
+	55%,
+	100% {
+		opacity: 0;
+		translate: 0 8px;
+	}
+	5%,
+	45% {
+		opacity: 1;
+		translate: 0 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.sackNudge {
+		animation: none;
+	}
+}
+
 /* With a keyboard, Tab opens the sack and the corner stays clear; a touch screen keeps the button. */
 @media (hover: hover) and (pointer: fine) {
 	.sackButton {
@@ -300,17 +345,6 @@
 .sackMore dd {
 	margin: 0;
 	font-weight: 800;
-}
-
-/* A square X; the shortcut is in its tooltip. */
-.btn.small.sackClose {
-	flex: none;
-	display: grid;
-	place-items: center;
-	width: 40px;
-	height: 40px;
-	min-width: 0;
-	padding: 0;
 }
 
 /* A phone: the sack fills the screen inside a margin and rises from below, the camera left where it was. */

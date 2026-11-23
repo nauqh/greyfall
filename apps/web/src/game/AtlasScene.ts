@@ -2380,13 +2380,10 @@ export class AtlasScene extends Phaser.Scene {
   private gain(item: ItemName): void {
     const bought = remembered(BOUGHT);
     if (bought.has(item)) return;
-    const first = [...bought].every((i) => GIFTS.includes(i as ItemName));
     remember(BOUGHT, bought.add(item));
     this.regear();
     const hero = this.hero!;
     this.float(hero.s.x, hero.s.y - hero.lift - 30, `${item} gained`, "#f4cf6b");
-    // The sack has no button on a keyboard: its key is told once, with the first good got past the gift come ashore.
-    if (first) this.time.delayedCall(900, () => this.float(hero.s.x, hero.s.y - hero.lift - 30, "Press Tab to open your sack", "#fdfaf0", 3200));
   }
 
   /** The captain as `cls`, with `gift` in the sack and called `name`, kept for the run: its sheets, feet and numbers. */
@@ -2564,10 +2561,10 @@ export class AtlasScene extends Phaser.Scene {
     return true;
   }
 
-  /** The way the movement keys point, each axis -1, 0 or 1. */
+  /** The way the movement keys point, each axis -1, 0 or 1; none while the sack is open, where they walk its goods. */
   private keyDir(): [number, number] {
     const k = this.keys;
-    if (!k || this.menu) return [0, 0];
+    if (!k || this.menu || this.sackCover) return [0, 0];
     return [(k.right.isDown || k.d.isDown ? 1 : 0) - (k.left.isDown || k.a.isDown ? 1 : 0), (k.down.isDown || k.s.isDown ? 1 : 0) - (k.up.isDown || k.w.isDown ? 1 : 0)];
   }
 
