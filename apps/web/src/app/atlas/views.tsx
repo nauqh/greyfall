@@ -11,6 +11,9 @@ import { GameCanvas } from "../../game/GameCanvas";
 import { DevPanel } from "./DevPanel";
 import { LevelUp } from "./LevelUp";
 import { RestPanel } from "./RestPanel";
+import { SidePanel } from "./SidePanel";
+import { CONTROLS } from "../settings/controls";
+import "../settings/settings.css";
 import { Creation } from "./Creation";
 import { Prologue } from "./ProloguePlayer";
 import { Sack } from "./Sack";
@@ -89,6 +92,9 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   const [prologue, setPrologue] = useState(false);
   // The camera's flight in after the prologue, the HUD away until it lands.
   const [intro, setIntro] = useState(false);
+  // Esc in the field: the world paused under a menu, the way out to the title in it. Its value is the row picked.
+  const [paused, setPaused] = useState<number | null>(null);
+  const sackOpen = useRef(false);
   const [devState, setDevState] = useState<DevState | null>(null);
   const api = useRef<AtlasApi | null>(null);
   const now = useRef({ area: first, cameFrom: undefined as AreaId | undefined, quiet: false, travelling: false, prologue: false });
@@ -232,7 +238,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     setAtlas(null);
   };
   useEffect(() => {
-    if (atlas || mapCover || fire || say || menu || died || warn) return;
+    if (atlas || mapCover || fire || say || menu || died || warn || paused !== null) return;
     const key = (e: KeyboardEvent): void => {
       if (e.key.toLowerCase() !== "m" || e.repeat || now.current.travelling) return;
       api.current?.pause(true);
@@ -240,7 +246,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [atlas, mapCover, fire, say, menu, died, warn]);
+  }, [atlas, mapCover, fire, say, menu, died, warn, paused]);
   useEffect(() => {
     if (!fire || atlas || mapCover) return;
     const key = (e: KeyboardEvent): void => {
@@ -255,6 +261,34 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     return () => window.removeEventListener("keydown", key);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fire, atlas, mapCover]);
+  const resume = (): void => {
+    api.current?.pause(false);
+    setPaused(null);
+  };
+  const pauseMenu = [
+    { label: "Resume", go: resume },
+    { label: "Leave to the title", go: () => router.push("/") },
+    { label: "New game", go: newGame },
+  ];
+  const busy = !!(atlas || mapCover || fire || say || menu || died || warn || travel || picking || prologue || intro);
+  useEffect(() => {
+    if (busy) return;
+    const key = (e: KeyboardEvent): void => {
+      const k = e.key.toLowerCase();
+      if (paused === null) {
+        if (k !== "escape" || e.repeat || sackOpen.current) return;
+        api.current?.pause(true);
+        setPaused(0);
+      } else if (k === "escape") resume();
+      else if (k === "w" || k === "arrowup" || k === "s" || k === "arrowdown") {
+        const d = k === "w" || k === "arrowup" ? -1 : 1;
+        setPaused((p) => (p === null ? p : (p + d + pauseMenu.length) % pauseMenu.length));
+      } else if ((k === "e" || k === "enter") && !e.repeat) pauseMenu[paused]!.go();
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busy, paused]);
   useEffect(() => {
     if (!devRoute) return;
     const key = (e: KeyboardEvent): void => {
@@ -265,7 +299,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
-    <main className="stage">
+    <main className={devRoute ? "stage" : "stage noMouse"}>
       <GameCanvas
         start={(el) => {
           // Arrived by a link with ?from=: the map opens at the exit back there; travelled to with ?rest=, at the bonfire.
@@ -369,6 +403,44 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
           />
         )}
         {menu && <Shop menu={menu} api={api} />}
+        {paused !== null && (
+          <div className="sideDock pauseDock">
+            <div className="sidePanel compact pauseControls" aria-label="Controls">
+              <span className="panelKicker">Controls</span>
+              <div className="pauseBinds">
+                {CONTROLS[0]!.groups.map((g) => (
+                  <section key={g.title} className="setGroup">
+                    <h2>{g.title}</h2>
+                    <dl>
+                      {g.binds.map((b) => (
+                        <div key={b.action} className="setRow">
+                          <dt>{b.action}</dt>
+                          <dd>
+                            {b.keys.map((k) => (
+                              <kbd key={k} className="setCap">
+                                {k}
+                              </kbd>
+                            ))}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </section>
+                ))}
+              </div>
+            </div>
+            <SidePanel
+              kicker="Paused"
+              name="Settings"
+              options={pauseMenu.map(({ label }) => ({ label }))}
+              pick={paused}
+              onPick={setPaused}
+              onChoose={(i) => pauseMenu[i]!.go()}
+              keys="W/S pick   E choose   Esc resume"
+              compact
+            />
+          </div>
+        )}
         {say?.note ? (
           // A note on the ground: its words on the same paper it lies on.
           <button key={say.text} type="button" className="noteRead" onClick={() => api.current?.next()} aria-live="polite">
@@ -482,24 +554,27 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
               ))}
             </div>
           )}
-          <header className="atlasTop">
-            <div className="worldLinks">
-              <button className="linkBtn" type="button" onClick={() => router.push("/")}>
-                Leave to the title
-              </button>
-              <button className="linkBtn" type="button" onClick={newGame}>
-                New game
-              </button>
-              {devRoute && (
+          {devRoute && (
+            <header className="atlasTop">
+              <div className="worldLinks">
                 <button className="linkBtn" type="button" onClick={toggleFree} aria-pressed={free} title="See the whole map (`)">
                   Free camera
                 </button>
-              )}
-            </div>
-          </header>
+              </div>
+            </header>
+          )}
         </div>
         {/* Outside the HUD, so Tab opens the sack with the HUD hidden too, from the first step, goods or none. */}
-        {sack && !fire && !menu && !intro && !prologue && !picking && <Sack sack={sack} gold={gold ?? 0} onCover={(c) => api.current?.look(c)} />}
+        {sack && !fire && !menu && !intro && !prologue && !picking && paused === null && (
+          <Sack
+            sack={sack}
+            gold={gold ?? 0}
+            onCover={(c) => {
+              sackOpen.current = c > 0;
+              api.current?.look(c);
+            }}
+          />
+        )}
       </GameCanvas>
       {prologue && <Prologue onReveal={revealLanding} onDone={() => setPrologue(false)} />}
       {picking && (

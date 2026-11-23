@@ -320,3 +320,54 @@
 		animation: none;
 	}
 }
+
+/* Played on the keys alone: Phaser sets the canvas cursor inline, so only !important hides it. */
+.noMouse,
+.noMouse * {
+	cursor: none !important;
+}
+
+/* The pause menu at the right, the journey's controls beside it in the settings' rows and keycaps. */
+.pauseDock {
+	flex-direction: row;
+	justify-content: flex-end;
+	align-items: center;
+	gap: 16px;
+	background: rgb(7 10 16 / 0.45);
+}
+
+.pauseControls {
+	--accent: #7a4a22;
+	--stroke: #2e1a0e;
+	--text: #4a3322;
+	width: min(680px, calc(100vw - 32px));
+}
+
+.pauseBinds {
+	columns: 2;
+	column-gap: 24px;
+}
+
+.pauseBinds .setGroup {
+	break-inside: avoid;
+}
+
+.pauseBinds .setRow {
+	min-height: 26px;
+}
+
+.pauseBinds .setRow dt {
+	font-size: 14px;
+}
+
+@media (max-width: 1100px) {
+	.pauseDock {
+		flex-direction: column;
+		justify-content: center;
+	}
+
+	/* ponytail: overflow here has no key to scroll it; add PageUp/PageDown if small screens matter */
+	.pauseControls {
+		max-height: 55vh;
+	}
+}

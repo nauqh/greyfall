@@ -33,6 +33,7 @@ export const CONTROLS: Mode[] = [
           { action: "Open the map", keys: ["M"] },
           { action: "Open the sack", keys: ["Tab"] },
           { action: "Show or hide the HUD", keys: ["H"] },
+          { action: "Pause and settings", keys: ["Esc"] },
         ],
       },
       {
