@@ -3405,14 +3405,15 @@ export class AtlasScene extends Phaser.Scene {
     glow.setAlpha(0);
     const logs = [-0.45, 0.45].map((a) => this.add.image(x, y - 2, "log").setRotation(a).setScale(0.55).setTint(0x6a5444).setDepth(standing(y) - 1));
     this.unlit.set(this.fireKey(f), () => {
-      if (!this.anims.exists("kindle_once")) this.anims.create({ key: "kindle_once", frames: this.anims.generateFrameNumbers("kindle"), frameRate: 14, repeat: 0 });
+      if (!this.anims.exists("kindle_once")) this.anims.create({ key: "kindle_once", frames: this.anims.generateFrameNumbers("kindle"), frameRate: 9, repeat: 0 });
       const burst = this.add.sprite(x, y + 4, "kindle").setOrigin(0.5, 0.9).setScale(2.2).setDepth(standing(y) + 1);
       if (ghost) burst.setTint(0x8cffc0);
       burst.play("kindle_once").once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => burst.destroy());
-      this.tweens.add({ targets: logs, alpha: 0, duration: 500, delay: 200, onComplete: () => logs.forEach((l) => l.destroy()) });
-      this.tweens.add({ targets: fire, alpha: 1, scale: 0.7, duration: 700, delay: 150, ease: "Back.easeOut" });
-      this.tweens.add({ targets: glow, alpha: 0.55, scale: { from: 0.4, to: 1.3 }, duration: 700, delay: 150, ease: "Sine.easeOut", onComplete: breathe });
-      this.float(x, y - 90, "Bonfire lit", ghost ? "#8cffc0" : "#ffd65a", 1800);
+      this.tweens.add({ targets: logs, alpha: 0, duration: 900, delay: 400, onComplete: () => logs.forEach((l) => l.destroy()) });
+      this.tweens.add({ targets: fire, alpha: 1, scale: 0.7, duration: 1300, delay: 300, ease: "Back.easeOut" });
+      this.tweens.add({ targets: glow, alpha: 0.55, scale: { from: 0.4, to: 1.3 }, duration: 1300, delay: 300, ease: "Sine.easeOut", onComplete: breathe });
+      // Told as a new area is, in the big banner over the screen.
+      this.time.delayedCall(500, () => this.hooks.onDistrict?.("Bonfire Lit"));
     });
   }
 

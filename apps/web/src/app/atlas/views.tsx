@@ -318,7 +318,8 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
       >
         {reveal && (
           // After the Souls games: up out of the dark, held, gone.
-          <div key={reveal} className="areaReveal" role="status" onAnimationEnd={(e) => e.target === e.currentTarget && setReveal(null)}>
+          // The scene's banner on lighting a bonfire: held longer, in gold.
+          <div key={reveal} className={`areaReveal${reveal === "Bonfire Lit" ? " lit" : ""}`} role="status" onAnimationEnd={(e) => e.target === e.currentTarget && setReveal(null)}>
             <span className="areaRevealName">{reveal}</span>
           </div>
         )}
