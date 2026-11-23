@@ -1688,10 +1688,8 @@ function harbour(): AreaMap {
   prop("bones", 99, 67);
   who("pawn", 101, 68, { ...blue, act: "pickaxe", unless: "moorGateOpen" });
   who("monk", 93, 66, { ...blue, flip: true, unless: "moorGateOpen" });
-  // The town's dead on the slope, a plot either side of the road up, headstones in rows, the east one walled; the dead
-  // house between them, black with the smoke of what it burned the first winter of the Grey, a lantern on up to the
-  // shoulder.
-  t.fences.push({ col: 102, row: 57, w: 5, h: 4 });
+  // The town's dead on the slope, a plot either side of the road up, headstones in rows; the dead house between them,
+  // black with the smoke of what it burned the first winter of the Grey, a lantern on up to the shoulder.
   for (const y of [58.5, 59.4]) for (const x of [91, 92.2, 93.4, 103, 104.2, 105.4]) prop("rock", x, y, { scale: 0.55, fixed: true });
   prop("monastery", 98, 58, { color: "black" });
   for (const [c, r] of [[100, 61], [91, 56]] as const) prop("sconce", c, r);
