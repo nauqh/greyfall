@@ -172,6 +172,10 @@ Tobin's brother's camp in Graveroad.
 The player's character in docs and code; a survivor in narration. The folk never say its name.
 _Avoid_: the wanderer, the chosen, the player character
 
+**Tidewashed**:
+What folk call the hero to its face, for the tide that brought it: one more washed up at Lanternport. Never more than that.
+_Avoid_: the drowned, the chosen, the Unkindled
+
 **Nameless**:
 The hero's name when none was given. A save from before the class pick is named the Wanderer.
 

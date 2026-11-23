@@ -306,27 +306,15 @@ Every term, with what to avoid, is in [GLOSSARY.md](../../GLOSSARY.md).
 2. **Does the Shell Below wake?** Settled 2026-11-21: it is a beast grown
    on the warmth; the Pilgrims think it the Hearth's keeper. Whether it ever
    wakes for them is still open.
-3. **The prologue.** Settled 2026-11-21: rewritten to the text below, now
-   in `prologue.ts`, with the subtitle "Ashen Crown" on the prologue, title screen
-   and settings.
+3. **The prologue.** Settled 2026-11-24: four screens after Dark Souls 1's
+   opening (an age before, what came, the disparity, the fall, "even now,
+   there are only embers"), in Lanternport's voice and kept to its column of
+   Who knows what. The text lives only in `apps/web/src/app/atlas/prologue.ts`;
+   the subtitle "Ashen Crown" shows on the prologue, title screen and settings.
 4. **The Warlord's and the Sentinel's look.** Settled 2026-11-21: the
    Warlord is a Black Warrior scaled up and tinted warm gold, the one colour
    left in Greyfall; the Sentinel a Yellow Lancer scaled up behind its
    shield.
-
-The prologue, in Lanternport's voice:
-
-> Aurum was a land of lords, and warm, until the Grey rose in the east.
-> It was no army. It was a cold that took colour, then names, and the men it
-> took went on walking after.
->
-> It took the first of the lords in his Citadel. He wears a crown still, and
-> it keeps him warm. He is called the Grey Warlord.
->
-> The others rode against him. / Their banners did not return.
->
-> Only Lanternport held, one fire still burning. Now the tide has carried a
-> stranger into the caves beneath it. Nameless, half-drowned, and warm.
 
 ## Changed from the old canon
 
@@ -432,8 +420,9 @@ Taken from Dark Souls (1) and Skyrim.
 10. **One people, one look.** One art colour is one people (see "What the
     art can carry"), and a building or unit never wears another's colour.
 11. **Grounded nouns, northern register.** Salt, nets, ore, coal, a stool, a
-    candle, a cold hearth. Never destiny or prophecy. Short sentences, dry
-    humour under the weight.
+    candle, a cold hearth. Never destiny, fate or prophecy. Short sentences,
+    dry humour under the weight. The one exception is the old speech of the
+    faithful, under Voices.
 12. **No outside words in player text.** No "feudal", "tutorial", "boss",
     "quest", "NPC", "zombie", "undead", "hollow" (as a state), "magic".
 13. **Claim only what we can draw.** Every people, beast and building put on
@@ -443,3 +432,46 @@ Taken from Dark Souls (1) and Skyrim.
     cold is their loss. Gold is warm, fire is warm, salt holds, stone is the
     end. Every text that touches the Grey keeps to this, so the player learns
     the physics without being told it.
+
+### Voices
+
+Folk talk after Dark Souls 3, each with a counterpart there, read in its
+NPC script before writing a line; the prologue is shaped on Dark Souls 1's
+opening ([Dark Souls transcript](https://game-scripts-wiki.blogspot.com/2021/10/dark-souls-transcript.html)).
+The scripts are not kept in git.
+
+- **Two registers.** The faithful speak the old way, as the Fire Keeper and
+  Yuria do: "thee", "thou'rt", "'tis", "-eth". That is Mother Ysolde, Sister
+  Hush and the Pilgrim; Brother Fenn, who left the Order, keeps only its
+  formality, and Mags keeps a "thee" or two for selling. Everyone else talks
+  plain and northern.
+- **Introductions.** First talks give a name and where or what from: "I am
+  Hale, of the Watch", "Tam, prospector". Gnomes and goblins clip it.
+- **Openers and tails.** "Ahh,", "Oh,", "Hm," and "Well, well" open; "..."
+  trails off; a question tag closes ("isn't it?", "is it not?", "eh?").
+- **A sign-off each.** The `part` line is the speaker's blessing or habit,
+  and it may close their talks too, as "May the flames guide your way" closes
+  every Anri talk: "May the Hearth keep thee" (Ysolde), "Mind the dark, then"
+  (Ferrow), "Go softly" (Fenn), "Road, mind!" (Pell).
+- **A motif each.** One phrase that comes back across their talks: Ferrow's
+  "They always go east", Corwin's "Forty", Fennick's "Wheel first, cage
+  second", Tally's "Not one step down".
+- **The hero is Tidewashed.** Folk who name the hero at all say
+  "Tidewashed", or their own word: "child" for the faithful, "dearie" for
+  Mags, "friend" for Jory, "love" for Brenna.
+
+| Speaker | After (Dark Souls 3) |
+| --- | --- |
+| Old Ferrow | Hawkwood, weary at the Firelink fire |
+| Brenna the Smith | Andre: gruff, "y'", softer than she sounds |
+| Sergeant Corwin, Ansel, Odo | Hawkwood and Siegward: deserters, "what a bloody joke" |
+| Mother Ysolde, Sister Hush | the Fire Keeper, before and after the eyes |
+| The Pilgrim | Yuria of Londor: courtly, coaxing |
+| A Drowned Sister | Irina of Carim: "hold out your hand" |
+| Jory | Patches: smiling, "no hard feelings" |
+| Mags the Peddler | the Shrine Handmaid: "kee hee", "as is thy wont" |
+| Master Quill | Orbeck: dry, fussy, precise |
+| Tobin | Greirat: a stammer, a brother instead of a ring |
+| Moss | Anri searching for Horace |
+| Hollis the Castaway | Oscar of Astora, dying at the Asylum's start |
+| Master Fennick | Ludleth: small, and proud of it |

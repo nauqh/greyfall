@@ -10,7 +10,7 @@ Greets you: *"Road! Keep to the road!"* Walked away from: *"Road, mind!"*
 
 - **first**
   1. Road! You're on it. Good. Stay on it.
-  2. Pell. I keep the gate. Gnomes come down, I let them in. Nothing goes up.
+  2. Pell, of the gate. I keep it. Gnomes come down, I let them in. Nothing goes up.
   3. The slingers on the rock shoot first. They used to ask.
   4. ...They stopped asking.
 - **guns**
@@ -28,6 +28,7 @@ Greets you: *"Road! Keep to the road!"* Walked away from: *"Road, mind!"*
 - **bamboo** (once, after meeting, when **bambooDead**)
   1. The old one's dead? Up at his wheel?
   2. ...Hm. I'll tell the cubs. Someone has to tell the cubs.
+  3. Road, mind. Road.
 
 ## Nim the Tinker
 
@@ -39,11 +40,11 @@ Sells: Gnome Powder; Tinker's Buckler.
 
 - **first**
   1. Mind the fuses. No, that one. ...Fine. All of them.
-  2. Nim. I tinker. Powder, springs, brass. Gnome work.
+  2. Nim, tinker. Powder, springs, brass. Gnome work. Finest in Aurum, and the only.
   3. Gold for gnome work. The old rate. The kings set it, before they went up.
 - **kings**
   1. The kings? Up. In Sunhold, that we built them.
-  2. They floated off with the gold and left us the rock. Kind of them. Ha.
+  2. They floated off with the gold and left us the rock. Kind of them, wasn't it? Ha.
 - **owed**
   1. Sunhold owes this rock a hundred years of pay. Not a coin since the Cut.
   2. I've the sum, if you want it. To the coin. ...Nobody wants it.
@@ -64,13 +65,14 @@ Greets you: *"Wick? ...No."* Walked away from: *"If you see him..."*
   1. Wick? ...No. You're too tall.
   2. Moss. My Wick kept the lift, up on the wheel step. Old Bamboo walked the wheel for him.
   3. Then the wheel stopped. The old one never came down.
-  4. Nor did Wick.
+  4. Nor did Wick. ...Have you seen him? Small fellow. Brass buttons.
 - **hoist**
   1. The Hoist was our way home. Straight down the rock.
-  2. Barred from up top, since the gnolls. If you get up there, lift the bar.
-  3. ...So I'll know someone can.
+  2. Barred from up top, since the gnolls. If you happen up there, lift the bar.
+  3. ...So I'll know someone can. Please. I beg of you.
 - **wait**
   1. I sit by the Hoist. It's where he'd come down.
+  2. Wick is a careful gnome. He wouldn't leave me up here. ...No. What a horrible thought.
 - **hoisted** (once, after meeting, when **hoistOpen**)
   1. You lifted the bar. I heard it go, all the way down here.
   2. ...Only you came down it, though.
@@ -79,7 +81,7 @@ Greets you: *"Wick? ...No."* Walked away from: *"If you see him..."*
 
 - **coat**
   1. Wick's coat was on the wheel. Just the coat. He'd never have let the old one walk alone.
-  2. Someone has to keep the lift. I watched him do it twenty winters.
+  2. Someone has to keep the lift. I watched him do it twenty winters. ...This only bolsters my resolve.
 - **up**
   1. Step in, if you're going up.
   2. The kings won't thank you. They never thanked him.
@@ -133,7 +135,7 @@ Greets you: *"Wheel first."* Walked away from: *"Cage second..."*
 - **first**
   1. Wheel first, cage second, gnome last. Say it.
   2. ...No? Nobody says it. That's why it all fell.
-  3. Fennick. I built the lift. Built it for the kings. They rode it up, and never sent it down.
+  3. Master Fennick, builder of the lift. I may be but small, but I built the kings a road to the sky. They rode it up, and never sent it down.
 - **cage**
   1. That cage? A new one. For when the wheel turns.
   2. The wheel won't turn. The old one stands in it, grey to the eyes.
@@ -143,7 +145,7 @@ Greets you: *"Wheel first."* Walked away from: *"Cage second..."*
 - **cog** (once, after meeting, when **bambooDead**; heard to the end the first time, gives *Wheel Cog*)
   1. You put the old one down. ...Good. He'd have hated what he was.
   2. This came off the wheel when it stopped. His feet wore it bright.
-  3. Take it. The new cage can have a new cog.
+  3. Take it. The new cage can have a new cog. Wheel first, cage second.
 
 ## Quill the Fisher
 
@@ -153,7 +155,7 @@ Greets you: *"Fog's coming."* Walked away from: *"Watch the bridge."*
 
 - **first**
   1. Fog's coming. Fog always comes off Greyfall.
-  2. Quill. I fish under the bridge. The fish don't care what crosses over.
+  2. Quill, fisher. I fish under the bridge. The fish don't care what crosses over.
   3. ...I do, though.
 - **fog**
   1. They came over in the fog. Dogs, on two legs, running with the grey ones. Laughing.
