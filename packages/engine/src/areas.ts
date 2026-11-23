@@ -2344,25 +2344,25 @@ const PITS = [
   "~~~~~~~~~~~~~~~www~~~~~~~~~~~~~",
   "~~~~~~~~~~~~~~~www~~~~~~~~~~~~~",
   "~~~~~~~~~~~~~~~www~~~~~~~~~~~~~",
-  "~~~~~~^^^^^^^^^www^^^^~~~~~~~~~",
-  "~~~~~~^^^^^^^^^www^^^^~~~~~~~~~",
-  "~~~~~~^^^^^^^^^www^^^^^^^^~~~~~",
-  "~~~~~~^^^^^^^^^www^^^^^^^^~~~~~",
-  "~~~~~~^^^######www######^^~~##~",
-  "~~~~~~^^^######www######^^~~##~",
-  "~~###~^^^######www######^^~~##~",
-  "~~###^^^^###~~~www~~~###^^^^]#~",
-  "~~###^^^####~~wwwww~~####^^^##>",
-  "~<###^^^]##~~~wwwww~~~##[^^^##~",
+  "~~~~~~~~~^^^^^^www^^^~~~~~~~~~~",
+  "~~~~~~~~~^^^^^^www^^^^^^^^^^~~~",
+  "~~~~~~~^^^^^^^^www^^^^^^^^^^^~~",
+  "~~~~~~^^^^^####www####^^^^^^~~~",
+  "~~~~~^^^^######www####^^^^~~##~",
+  "~~~~~^^^#######www#####^^^~~##~",
+  "~~###^^#####~~~www~~~###^^^~##~",
+  "~~###^^^###~~~~www~~~~###^^^]#~",
+  "~~###^^^###~~~wwwww~~~###^^^##>",
+  "~<###^^^]#~~~~wwwww~~~~#[^^^##~",
   "~~##[^^^###>~~wwwww~~<###^^^##~",
   "~~###^^^###~~~wwwww~~~###^^^~~~",
-  "~~###~^^^###~~~~~~~~####^^~~~~~",
-  "~~~~~~^^^###############^^~~~~~",
-  "~~~~~~^^^###############^^~~~~~",
-  "~~~~~~^^^###############^^~~~~~",
-  "~~~~~~^^^^^^^^^^^^^^^^^^^^~~~~~",
-  "~~~~~~^^^^^^^^^^^^^^^^^^^^~~~~~",
-  "~~~~~~^^^^^^^^^^^^^^^^^^^^~~~~~",
+  "~~###~^^^#####~~~~~~#####^^^~~~",
+  "~~~~~~~^^^##############^^^~~~~",
+  "~~~~~~~^^^^############^^^^~~~~",
+  "~~~~~~~^^^^^^########^^^^^^~~~~",
+  "~~~~~~^^^^^^^^^^^^^^^^^^^^^~~~~",
+  "~~~~~~^^^^^^^^^^^^^^^^^~~~~~~~~",
+  "~~~~~~~~~~~~^^^^^^^^^~~~~~~~~~~",
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
@@ -2470,19 +2470,19 @@ function greyfall(): AreaMap {
   // tools on the bench. The diggers go in and out of the shafts and up the east ramp to the ore pile at its foot, where
   // nothing comes to take it; the overseers and a horned stand over them. On the rim by the gorge a goblin's fire.
   for (const [c, r] of [[23, 53], [40, 51]] as const) prop("watchtower", c, r, pinned);
-  for (const [c, r] of [[26, 52], [38, 52], [28, 55], [36, 55]] as const) prop("cave", c, r, pinned);
+  for (const [c, r] of [[26, 52], [36, 51], [28, 55], [36, 55]] as const) prop("cave", c, r, pinned);
   for (const [c, r] of [[25, 49], [41, 50], [23, 61], [42, 63]] as const) prop("rock", c, r);
   for (const [c, r] of [[29, 62], [39, 52]] as const) prop("woodPile", c, r);
   for (const [c, r] of [[34, 62], [25, 56]] as const) prop("tools", c, r);
   for (const [c, r] of [[27, 63], [37, 62], [31, 63]] as const) prop("rock", c, r);
   for (const [c, r] of [[22, 59], [42, 58]] as const) prop("skullSpike", c, r);
   heap(t, 47, 51);
-  for (const [door, home] of [[[26, 53], [47, 53]], [[38, 53], [48, 54]], [[28, 56], [46, 54]], [[36, 56], [49, 53]]] as const) grey(home[0], home[1], { act: "dig", to: { col: door[0], row: door[1] } });
+  for (const [door, home] of [[[26, 53], [47, 53]], [[36, 52], [48, 54]], [[28, 56], [46, 54]], [[36, 56], [49, 53]]] as const) grey(home[0], home[1], { act: "dig", to: { col: door[0], row: door[1] } });
   for (const [c, r] of [[25, 60], [39, 60]] as const) who("taken", c, r);
-  who("minotaurGuard", 29, 60, { to: { col: 36, row: 60 } });
+  who("minotaurGuard", 30, 60, { to: { col: 35, row: 60 } });
   for (const [c, r] of [[31, 57], [33, 58]] as const) who("bombFish", c, r);
   t.campfires.push({ col: 35, row: 49 });
-  prop("goblinHut", 38, 50);
+  prop("goblinHut", 39, 50, pinned);
 
   // The Lower City, Iron Keep's smelters along the foot of the High City's wall: a furnace house a bay, its furnace
   // banked in front, a smith at each hammering cold iron; carriers bringing the ore up the Pits' road to furnaces that
