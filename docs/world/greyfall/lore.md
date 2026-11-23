@@ -28,8 +28,63 @@ his house's seat at Sunhold's court.
   City, the High City, the Warlord's Hall and the Grey Keep on its crown. The
   Grey Gate is its front door; the gnomes' Sky Bridge its back.
 
+The Grey took the Citadel mid-shift. Its people kept their posts and lost
+the reason for them, so the taken here still do the last work they were
+doing: they hoe, hammer, haul and bow, slowly, and never finish. Only the
+garrison still fights. The rest do not look up.
+
+- **The Ashen Approach.** The road from the Grey Gate over the marsh, where
+  Highward's last sortie died before the walls. The dogs came for the dead
+  and stayed for the rest.
+
+- **Rotfield.** The Citadel's fields, under the crag's west face. They fed
+  the city once; the rot came down the Cut's spill and soured them. The
+  taken farmers still hoe the dead rows and carry nothing in.
+
+- **The Pits.** The Cut's works round the Crater: the headframe, the
+  ladders, the spoil heaps, the ore tracks up to the Lower City. Goblins
+  dug here, the horned stood over them, and the overseers counted the
+  loads. The goblins ran up the ladders when the cold came; the overseers
+  and the horned are at their posts still, over empty pits.
+
+- **The Crater.** The Deep Cut's mouth, fallen in on itself after the cold
+  came up. Nothing goes down it now, and nothing comes up but the Grey,
+  falling back as ash.
+
+- **The Ruined Chapel.** The Order's chapel on the north marsh, the
+  Stilled's now. They kneel to the Grey and ring for it.
+
+- **The Lower City.** The crag's skirts: the smelters where the Cut's ore
+  was melted, and the goblins' barracks, empty since the night they ran.
+  Its taken smiths hammer cold iron and push empty carts up from the Pits.
+
+- **The High City.** The lords' city on the second step. The Counting House,
+  where the Citadel paid for the Cut, keeps its ledgers, and its paymaster
+  burns them. The Garrison drills on with the taken watch. In the Champions'
+  Pit the horned still fight for the lord's guests, who are not coming.
+
+- **The Warlord's Hall.** The court under the Keep. Its taken courtiers stand
+  in their rows and bow to an empty seat, because the Warlord sits in the
+  Grey Keep above them now, nearer his crown's warmth than theirs.
+
+- **The Gallows Yard.** At the crag's south foot, the pens where the taken
+  keep Lanternport's east lane, and the gibbets for the ones who would not
+  walk.
+
+## Folk
+
+| Who | Where | Their place in it |
+| --- | --- | --- |
+| Tally | Greyfall, the Pits, at the Crater's lip | A goblin digger who came back for the last season's wage the Citadel never paid. Will not go one step down. Wants the ledger that proves it. |
+| Master Quill | Greyfall, the High City, the Counting House | The Citadel's paymaster, kept alive by burning its pay ledgers page by page. Gives up the last one to the goblin it owes, if asked in time. |
+| Sister Hush | Greyfall, the Ruined Chapel | One of the Stilled, walking into the Grey on purpose. Each time she is found she is greyer. Taken in the Pits, unless the Warlord falls first. |
+
+Their lines are in [questline.md](questline.md).
+
 ## For writers only
 
 - The Citadel's pay ledgers are in the High City: who paid the goblins, and
-  how deep. Miners' notes in the Lower City say what came up.
+  how deep. Miners' notes in the Lower City say what came up. The Last Ledger,
+  the one Quill keeps back, is the season of the Deep Cut itself; Tally
+  reads the depth in it and laughs.
 - Folk think the Warlord is the Grey. He is not; he is where it drains.

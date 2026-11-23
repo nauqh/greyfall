@@ -139,6 +139,16 @@ The land of the crag and its rot marsh, where the Grey falls like ash.
 **The Citadel**, **the Grey Keep**:
 The fortress on Greyfall's crag, and the keep on its crown. Never Highward.
 
+**The Pits**:
+The Cut's works round the Crater, where goblins dug and the horned stood over them.
+_Avoid_: the mines, the Diggings (Kingsrest's robbers)
+
+**The Crater**:
+The Deep Cut's mouth on Greyfall's Rotfield, fallen in on itself.
+
+**The Counting House**:
+The Citadel's pay office in the High City, where its ledgers are kept, and burned.
+
 **The Throne Isle**, **the Throne Stair**:
 The Citadel's seat at court in the sky, and its stair up.
 

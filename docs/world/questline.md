@@ -35,7 +35,7 @@ After Dark Souls: no quest log, no choices, the wanderer never speaks.
 | warlordDead | the Grey Warlord (kind `warlord`) slain, raised on entering any area |
 | shellDead | the Shell Below (kind `shellBelow`) slain, raised on entering any area |
 | monkFreed | hearing the Drowned Sister's second talk to its end; the Monk joins the band at once |
-| tobinDown, tobinDeeper, ysoldeDeeper, sistersStair, anselRoused, anselAhead, watchmanOut, marenSails, pennyFollows, drankClear | hearing a talk to its end (marked below) |
+| tobinDown, tobinDeeper, ysoldeDeeper, sistersStair, anselRoused, anselAhead, watchmanOut, marenSails, pennyFollows, drankClear, wageOwed, ledgerSaved, hushStilled | hearing a talk to its end (marked below) |
 
 ## At a glance
 
@@ -48,6 +48,9 @@ After Dark Souls: no quest log, no choices, the wanderer never speaks.
 | The Pilgrim | | Hearthdeep, Pilgrims' Rest | Gives Hollow Water; lies dead once the Shell Below is killed |
 | Ansel of the Wall | his remark on the Ember Key | Greyfall, the Ashen Approach | Hear him out twice and he goes ahead and dies in Greyfall's High City, and Brenna sells his edge; kill the Warlord first and he is back on the wall and gives Ansel's Edge |
 | Penny | her crows talk, then reaching Greyfall | Greyfall, Gallows Yard, penned with her mum | Talked to: freed in the Yard when the Warlord falls. Never talked to: stays hidden, her mum walks home. Mum's Bread either way |
+| Tally | his wage talk, then the Last Ledger | Greyfall, the Pits, at the Crater's lip | Ledger saved: reads it, laughs, gives the Digger's Torch. Warlord dead first: goes home unpaid, and Brenna sells the torch |
+| Master Quill | Tally's wage talk | Greyfall, the High City, the Counting House | Asked after Tally's talk: gives up the Last Ledger. Warlord dead first: the last page already burned |
+| Sister Hush | her bell talk | Greyfall, the Ruined Chapel | Bell talk heard: kneels taken in the Pits. Warlord dead first: left in the thaw. The Stilled Bell either way |
 | Sergeant Corwin | the Barrow King dead | Kingsrest, Barrow Field, digging out his forty | Watchman heard out: finds the fortieth and gives the Forty's Banner. Otherwise: stops at thirty-nine |
 | The Moor Watchman | his remark on the open Moor Gate | Kingsrest, Gibbet Hill, watching the lights | Lies dead in Barrow Field once the King is dead, the fortieth of Corwin's spears |
 | Maren | her remark on the Warlord dead | | Sails on the first ship in three winters, and Mags stocks the Salt-Glass Lantern; missed only by never hearing her sail talk |
