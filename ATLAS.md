@@ -613,7 +613,13 @@ crossing are gone.
   spoil rim round a bench round the Crater's floor, the rot falling
   through a gorge in the rim, diggers hauling to an ore heap nothing
   takes; Rotfield's fenced crop boxes; the Gallows' gibbet avenue and
-  pens. The taken at work are black pawns, harmless, and stand still once
+  pens. No side runs straight: `jrect` steps each tier's edges in by a
+  tile or two in runs of two to four, on an underlay of the tier below
+  so a notch drops one height, holding the rows and columns a stair or
+  bridge needs. The High City breaks its grid with the Ash Square's dead
+  great tree on Lords' Row, the Gilt Market at the crossroads, the
+  Treasury Rock raised a height, and a gallery bridged over the
+  Champions' Pit. The taken at work are black pawns, harmless, and stand still once
   the Warlord falls; the pens empty and the drill stops.
   Fires by runback: the road in (Grey Gate 21), the Sky Bridge's head
   (40), the Gallows, and the Hall's forecourt (Keep door 34); farthest

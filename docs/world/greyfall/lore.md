@@ -60,8 +60,14 @@ garrison still fights. The rest do not look up.
 
 - **The High City.** The lords' city on the second step, walled. Lords' Row
   runs down its west ward from the Counting House, where the Citadel paid for
-  the Cut, keeps its ledgers, and its paymaster burns them. The Garrison drills on with the taken watch. In the Champions'
-  Pit the horned still fight for the lord's guests, who are not coming.
+  the Cut, keeps its ledgers, and its paymaster burns them. Halfway down the
+  row the city's great tree stands dead on the Ash Square. Where the gate
+  avenue meets the street under the Hall, the Gilt Market's traders still
+  hold out gold gone cold, and east of it the Treasury Rock keeps what gold
+  the Citadel had left, guarded yet. The Garrison drills on with the taken
+  watch. In the Champions' Pit, sunk into the city with its gallery bridged
+  across it, the horned still fight for the lord's guests, who are not
+  coming.
 
 - **The Warlord's Hall.** The court round the chasm the Keep stands in. Its
   taken courtiers stand in their rows and bow to the bridge and the empty

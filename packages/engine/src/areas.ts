@@ -2282,59 +2282,59 @@ function crags(): AreaMap {
 /** The Citadel's crag from builder (44, 2): the Lower City (#), the High City (^) and its sunk Champions' Pit, the Warlord's Hall (4)
  *  round its chasm (w), the Grey Keep (5) on its crag in the chasm. */
 const CITADEL = [
-  "~~~~~~~~~~~~~~~~~~~~~~~~~~~wwwwwwwwwwwwwwwww~~~~~~~~~~~~~~~~~~~~~~",
-  "~~~~~~~~~~~~~~~~~~~~~~44444wwwwwwwwwwwwwwwww44444~~~~~~~~~~~~~~~~~",
-  "~~~~~~~~~~~~~~~~~~~~~~44444wwww55555555wwwww44444~~~~~~~~~~~~~~~~~",
-  "~~~~~~~~~~~~~~~~~~~~~~44444wwww55555555wwwww44444~~~~~~~~~~~~~~~~~",
-  "##############~~~~~~~~44444wwww55555555wwwww44444~~~~~~~~~~~~~~~~~",
-  "##############~~~~~~~~44444wwww55555555wwwww44444~~~~~~~~~~~~~~~~~",
-  "##############~~~~~~~~44444wwww5555555544www44444~~~~~~~~~~~~~~~~~",
-  "##############~~~~~~~~44444wwww55555555)4www44444~~~~~~~~~~~~~~~~~",
-  "##############~~~~~~~~44444wwww5555555544www44444~~~~~~~~~~~~~~~~~",
-  "##############^^^^^^^^44444wwww4444444444www44444^^^^^^^~~~~~~~~~~",
-  "#############^^^^^^^^^44444wwww4444444444www44444^^^^^^^~~~~~~~~~~",
-  "############^^^^^^^^^^44444wwwwwwwwwwwwwwwww44444^^^^^^^~~~~~~~~~~",
-  "~~~~~~######^^^^^^^^^^44444wwwwwwwwwwwwwwwww44444^^^^^^^#####~~~~~",
-  "~~~~~~######^^^^^^^^^^444444444444444444444444444^^^^^^^#####~~~~~",
-  "~~~~~~######^^^^^^^^^^444444444444444444444444444^^^^^^^#####~~~~~",
-  "~~~~~~######^^^^^^^^^{444444444444444444444444444}^^^^^^#####~~~~~",
-  "~~~~~~#####[^^^^^^^^^^444444444444444444444444444^^^^^^^#####~~~~~",
-  "~~~~~~######^^^^^^^^^^444444444444444444444444444^^^^^^^#####~~~~~",
-  "~~~~~~######^^^^^^^^^^444444444444444444444444444^^^^^^^#####~~~~~",
-  "~~~~~~######^^^^^^^^^^444444444444444444444444444^^^^^^^#####~~~~~",
-  "~~~~~~######^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^]####~~~~~",
-  "~~~~~~######^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#####~~~~~",
-  "~~~~~~######^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#####~~~~~",
-  "~~~~~~######^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#####~~~~~",
-  "~~~~~~######^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#####~~~~~",
-  "~~~~~~######^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#####~~~~~",
-  "~~~~~~######^^^^^^^^^^^###########^^^^^^^^^^^^^^^^^^^^^^#####~~~~~",
-  "~~~~~~######^^^^^^^^^^^###########^^^^^^^^^^^^^^^^^^^^^^#####~~~~~",
-  "~~~~~~######^^^^^^^^^^^]#########[^^^^^^^^^^^^^^^^^^^^^^#####>~~~~",
-  "~~~~~~######^^^^^^^^^^^###########^^^^^^^^^^^^^^^^^^^^^^#####~~~~~",
-  "~~~~~~######^^^^^^^^^^^###########^^^^^^^^^^^^^^^^^^^^^^#####~~~~~",
-  "~~~~~~#####[^^^^^^^^^^^###########^^^^^^^^^^^^^^^^^^^^^^#####~~~~~",
-  "~~~~~~######^^^^^^^^^^^###########^^^^^^^^^^^^^^^^^^^^^^#####~~~~~",
-  "~~~~~~######^^^^^^^^^^^###########^^^^^^^^^^^^^^^^^^^^^^#####~~~~~",
-  "~~~~~~######^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#####~~~~~",
-  "~~~~~~######^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#####~~~~~",
-  "~~~~~~######^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#####~~~~~",
-  "~~~~~~#######^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^######~~~~~",
-  "~~~~~~#############################^^^^^^^^##################~~~~~",
-  "~~~~~~#############################^^^^^^^^##################~~~~~",
-  "~~~~~~############################[^^^^^^^^]#################~~~~~",
-  "~~~~~~#############################^^^^^^^^#################~~~~~~",
-  "~~~~~~######################################################~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~wwww~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~wwwwwwwwwwwwwwww~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~4444wwww55555555wwww44444~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~4444wwww55555555wwww44444~~~~~~~~~~~~~~~~~~",
+  "~~~~~~~~~~~~##~~~~~~~~~4444wwww55555555wwww44444~~~~~~~~~~~~~~~~~~",
+  "##############~~~~~~~~~4444wwww55555555wwww44444~~~~~~~~~~~~~~~~~~",
+  "##############~~~~~~~~~4444wwww5555555544ww44444~~~~~~~~~~~~~~~~~~",
+  "##############~~~~~~~~44444wwww55555555)4ww44444~~~~~~~~~~~~~~~~~~",
+  "##############~~~~~~~~44444wwww5555555544ww44444~~~~~~~~~~~~~~~~~~",
+  "##############~~~~~~~~44444wwww4444444444www4444~~~~~~~~~~~~~~~~~~",
+  "##############~~~~~~~~44444wwww4444444444www4444^^^^^^^~~~~~~~~~~~",
+  "~~~~~~~######^^^^^^^^^44444wwwwwwwwwwwwwwwww4444^^^^^^^#~~~~~~~~~~",
+  "~~~~~~~######^^^^^^^^^444444444444wwww4444444444^^^^^^^#####~~~~~~",
+  "~~~~~~~######^^^^^^^^^444444444444444444444444444^^^^^^#####~~~~~~",
+  "~~~~~~~#####^^^^^^^^^^444444444444444444444444444^^^^^^^####~~~~~~",
+  "~~~~~~######^^^^^^^^^{444444444444444444444444444}^^^^^^####~~~~~~",
+  "~~~~~~#####[^^^^^^^^^^444444444444444444444444444^^^^^^^####~~~~~~",
+  "~~~~~~######^^^^^^^^^^444444444444444444444444444^^^^^^^####~~~~~~",
+  "~~~~~~######^^^^^^^^^^44444444444444444444444444^^^^^^^^####~~~~~~",
+  "~~~~~~~#####^^^^^^^^^^^^^^^^^^^^^^4444^^^^^^^^^^^^^^^^^^#####~~~~~",
+  "~~~~~~~#####^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^]####~~~~~",
+  "~~~~~~~#####^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#####~~~~~",
+  "~~~~~~~#####^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#####~~~~~",
+  "~~~~~~~###^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#####~~~~~~",
+  "~~~~~~~###^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#####~~~~~~",
+  "~~~~~~~###^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^44444^^^^^^^#####~~~~~~",
+  "~~~~~~~###^^^^^^^^^^^^^###########^^^^^^^^^444444^^^^^^#####~~~~~~",
+  "~~~~~~~######^^^^^^^^^^###########^^^^^^^^{444444^^^^^^######~~~~~",
+  "~~~~~~~######^^^^^^^^^^]#########[^^^^^^^^^444444^^^^^^######>~~~~",
+  "~~~~~~~#####^^^^^^^^^^^###########^^^^^^^^^^4444^^^^^^^^^^###~~~~~",
+  "~~~~~~######^^^^^^^^^^^###########^^^^^^^^^^^^^^^^^^^^^^^^###~~~~~",
+  "~~~~~~#####[^^^^^^^^^^^###########^^^^^^^^^^^^^^^^^^^^^^^^##~~~~~~",
+  "~~~~~~######^^^^^^^^^^^###########^^^^^^^^^^^^^^^^^^^^^^^^##~~~~~~",
+  "~~~~~~######^^^^^^^^^^^###########^^^^^^^^^^^^^^^^^^^^^^^^##~~~~~~",
+  "~~~~~~~#####^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#####~~~~~~",
+  "~~~~~~~#####^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#####~~~~~~",
+  "~~~~~~~#####^^^^^^^^^^^^^^^^^^###^^^^^^^^^^^^###^^^^^#######~~~~~~",
+  "~~~~~~~#####^^^^^^^^^^^^^^^^^^###^^^^^^^^^^^^###^^^^^#######~~~~~~",
+  "~~~~~~~########^^^^^###############^^^^^^^^#####^^^^^#######~~~~~~",
+  "~~~~~~~########^^^^^###############^^^^^^^^#####^^^^^#######~~~~~~",
+  "~~~~~~~###########################[^^^^^^^^]################~~~~~~",
+  "~~~~~~~~###########################^^^^^^^^###############~~~~~~~~",
+  "~~~~~~~~##################################################~~~~~~~~",
   "~~~~~~######################################################~~~~~~",
   "~~~~~<######################################################~~~~~~",
   "~~~~~~######################################################>~~~~~",
   "~~~~~~######################################################~~~~~~",
-  "~~~~~~######################################################~~~~~~",
-  "~~~~~~######################################################~~~~~~",
-  "~~~~~~######################################################~~~~~~",
-  "~~~~~~######################################################~~~~~~",
-  "~~~~~~~~##################################################~~~~~~~~",
-  "~~~~~~~~#########~~~~~#############~~~~~~~#############~~~~~~~~~~~",
+  "~~~~~~~###################################################~~~~~~~~",
+  "~~~~~~~###################################################~~~~~~~~",
+  "~~~~~~~###################################################~~~~~~~~",
+  "~~~~~~~###################################################~~~~~~~~",
+  "~~~~~~~~~~################################################~~~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
 ];
 
@@ -2344,25 +2344,25 @@ const PITS = [
   "~~~~~~~~~~~~~~~www~~~~~~~~~~~~~",
   "~~~~~~~~~~~~~~~www~~~~~~~~~~~~~",
   "~~~~~~~~~~~~~~~www~~~~~~~~~~~~~",
-  "~~~~~~~^^^^^^^^www^^^^^^^^~~~~~",
-  "~~~~~~^^^^^^^^^www^^^^^^^^^~~~~",
-  "~~~~~^^^^^^^^^^www^^^^^^^^^^~~~",
-  "~~~~~^^^#######www#######^^^~~~",
-  "~~~~~^^^#######www#######^^^##~",
-  "~~~~~^^^#######www#######^^^##~",
-  "~~###^^^###~~~~www~~~~###^^^##~",
-  "~~###^^^###~~~~www~~~~###^^^]#~",
-  "~~###^^^###~~~wwwww~~~###^^^##>",
+  "~~~~~~^^^^^^^^^www^^^^~~~~~~~~~",
+  "~~~~~~^^^^^^^^^www^^^^~~~~~~~~~",
+  "~~~~~~^^^^^^^^^www^^^^^^^^~~~~~",
+  "~~~~~~^^^^^^^^^www^^^^^^^^~~~~~",
+  "~~~~~~^^^######www######^^~~##~",
+  "~~~~~~^^^######www######^^~~##~",
+  "~~###~^^^######www######^^~~##~",
+  "~~###^^^^###~~~www~~~###^^^^]#~",
+  "~~###^^^####~~wwwww~~####^^^##>",
   "~<###^^^]##~~~wwwww~~~##[^^^##~",
   "~~##[^^^###>~~wwwww~~<###^^^##~",
   "~~###^^^###~~~wwwww~~~###^^^~~~",
-  "~~###^^^###~~~~~~~~~~~###^^^~~~",
-  "~~~~~^^^#################^^^~~~",
-  "~~~~~^^^#################^^^~~~",
-  "~~~~~^^^#################^^^~~~",
-  "~~~~~^^^^^^^^^^^^^^^^^^^^^^^~~~",
-  "~~~~~~^^^^^^^^^^^^^^^^^^^^^~~~~",
-  "~~~~~~~^^^^^^^^^^^^^^^^^^^~~~~~",
+  "~~###~^^^###~~~~~~~~####^^~~~~~",
+  "~~~~~~^^^###############^^~~~~~",
+  "~~~~~~^^^###############^^~~~~~",
+  "~~~~~~^^^###############^^~~~~~",
+  "~~~~~~^^^^^^^^^^^^^^^^^^^^~~~~~",
+  "~~~~~~^^^^^^^^^^^^^^^^^^^^~~~~~",
+  "~~~~~~^^^^^^^^^^^^^^^^^^^^~~~~~",
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
@@ -2469,20 +2469,20 @@ function greyfall(): AreaMap {
   // The Pits: headframes over the gorge on the rim, a shaft cut into the cliff under each ledge, spoil and timber and
   // tools on the bench. The diggers go in and out of the shafts and up the east ramp to the ore pile at its foot, where
   // nothing comes to take it; the overseers and a horned stand over them. On the rim by the gorge a goblin's fire.
-  for (const [c, r] of [[22, 53], [42, 53]] as const) prop("watchtower", c, r, pinned);
-  for (const [c, r] of [[26, 51], [38, 51], [28, 54], [36, 54]] as const) prop("cave", c, r, pinned);
+  for (const [c, r] of [[23, 53], [40, 51]] as const) prop("watchtower", c, r, pinned);
+  for (const [c, r] of [[26, 52], [38, 52], [28, 55], [36, 55]] as const) prop("cave", c, r, pinned);
   for (const [c, r] of [[25, 49], [41, 50], [23, 61], [42, 63]] as const) prop("rock", c, r);
   for (const [c, r] of [[29, 62], [39, 52]] as const) prop("woodPile", c, r);
   for (const [c, r] of [[34, 62], [25, 56]] as const) prop("tools", c, r);
   for (const [c, r] of [[27, 63], [37, 62], [31, 63]] as const) prop("rock", c, r);
   for (const [c, r] of [[22, 59], [42, 58]] as const) prop("skullSpike", c, r);
   heap(t, 47, 51);
-  for (const [door, home] of [[[26, 52], [47, 53]], [[38, 52], [48, 54]], [[28, 55], [46, 54]], [[36, 55], [49, 53]]] as const) grey(home[0], home[1], { act: "dig", to: { col: door[0], row: door[1] } });
+  for (const [door, home] of [[[26, 53], [47, 53]], [[38, 53], [48, 54]], [[28, 56], [46, 54]], [[36, 56], [49, 53]]] as const) grey(home[0], home[1], { act: "dig", to: { col: door[0], row: door[1] } });
   for (const [c, r] of [[25, 60], [39, 60]] as const) who("taken", c, r);
   who("minotaurGuard", 29, 60, { to: { col: 36, row: 60 } });
   for (const [c, r] of [[31, 57], [33, 58]] as const) who("bombFish", c, r);
   t.campfires.push({ col: 35, row: 49 });
-  prop("goblinHut", 39, 48);
+  prop("goblinHut", 38, 50);
 
   // The Lower City, Iron Keep's smelters along the foot of the High City's wall: a furnace house a bay, its furnace
   // banked in front, a smith at each hammering cold iron; carriers bringing the ore up the Pits' road to furnaces that
@@ -2521,45 +2521,59 @@ function greyfall(): AreaMap {
   prop("gnomeHut", 45, 8);
   for (const c of [42, 48]) prop("skullSpike", c, 11);
   prop("woodPile", 47, 11);
-  // The High City, after Windhelm: a wall of towers at its corners, an archer on each.
-  for (const [c, r] of [[59, 13], [97, 13], [58, 38], [97, 38]] as const) {
+  // The High City, after Windhelm: towers with an archer on each at its north-east corner, on the bastions off either
+  // end of its south face, and on its west buttress, a gun beside it out over Rotfield.
+  for (const [c, r] of [[97, 14], [61, 39], [94, 39], [56, 27]] as const) {
     prop("tower", c, r, dark);
     who("archer", c, r + 0.25, { ...black, perch: 1.85 });
   }
-  // Lords' Row: the Counting House at its head, where the Citadel paid for the Cut, its clerks still at the door; down
-  // the row the lords' houses each side, their servants on the steps.
-  prop("house3", 61, 13, dark);
-  for (const c of [59, 64]) prop("sconce", c, 14);
-  for (const [c, r] of [[60, 15], [64, 16]] as const) grey(c, r, { flip: c > 61 });
-  for (const r of [18, 21, 27, 30, 33, 36]) prop(["house1", "house2", "house3"][r % 3]!, 58, r, dark);
-  for (const r of [21, 27, 30, 33, 36]) prop(["house2", "house1", "house3"][r % 3]!, 64, r, dark);
-  for (const [c, r] of [[60, 28], [63, 34], [60, 37]] as const) grey(c, r, { flip: c > 61 });
+  prop("cannonSide", 55, 25);
+  // Lords' Row: the Counting House at its head, where the Citadel paid for the Cut, a clerk still at its door; down the
+  // row the lords' houses either side, broken halfway by the Ash Square, where the city's great tree stands dead and
+  // the lords' taken still stand drinking under it.
+  prop("house3", 60, 15, dark);
+  for (const c of [58, 63]) prop("sconce", c, 16);
+  grey(59, 17);
+  for (const r of [20, 23, 32, 35]) prop(["house1", "house2", "house3"][r % 3]!, 58, r, dark);
+  for (const r of [21, 32, 35, 38]) prop(["house2", "house1", "house3"][r % 3]!, 65, r, dark);
+  prop("deadTree", 59.5, 27.4, { scale: 1.6, fixed: true });
+  for (const [c, r] of [[57, 26], [57, 29]] as const) prop("sconce", c, r);
+  for (const [c, r] of [[60, 29], [63, 28], [63, 26]] as const) grey(c, r, { flip: c > 61 });
+  for (const [c, r] of [[60, 33], [63, 36]] as const) grey(c, r, { flip: c > 61 });
   who("taken", 61, 31, { to: { col: 62, row: 19 } });
-  // The Champions' Pit, sunk a height into the city: the horned fighting on its floor for lords who come to watch it
-  // still, along its rim.
-  who("minotaurGuard", 72, 31, { to: { col: 73, row: 33 } });
+  // The Champions' Pit, sunk a height into the city, its gallery bridged across it: the horned fighting on its floor
+  // for the lords still watching from the gallery and the rim.
+  const gallery = t.span(3, 72, 28, 2, 8);
+  who("minotaurGuard", 69, 32, { to: { col: 70, row: 34 } });
   for (const [c, r] of [[66, 27], [78, 27], [66, 36], [78, 36]] as const) prop("skullSpike", c, r, pinned);
-  for (const [c, r] of [[70, 33], [75, 29]] as const) prop("bones", c, r);
-  for (const [c, r] of [[69, 27], [72, 27], [75, 27], [70, 36], [74, 36]] as const) grey(c, r, { flip: r === 36 });
+  for (const [c, r] of [[69, 30], [76, 34]] as const) prop("bones", c, r);
+  for (const [c, r] of [[72, 30], [73, 33], [69, 27], [76, 27], [70, 36]] as const) grey(c, r, { flip: c > 72 });
   // The gate avenue, lanterns paired up it from the bastion to the Hall; the bastion's towers either side of its head.
-  for (const r of [27, 31, 35]) for (const c of [80, 85]) prop("sconce", c, r, pinned);
+  for (const r of [31, 35]) for (const c of [80, 85]) prop("sconce", c, r, pinned);
   for (const c of [80, 85]) prop("tower", c, 41, dark);
   for (const c of [81, 84]) who("lancer", c, 39, black);
   who("taken", 82, 33, { to: { col: 82, row: 39 } });
-  // The Garrison in one line along the east rim: barracks, stores, the butts, the guns; the drill on the yard in front,
-  // stopped the day the Warlord falls.
-  prop("barracks", 96, 17, dark);
-  prop("woodPile", 97, 20);
-  prop("house1", 96, 27, dark);
-  prop("archery", 96, 31, dark);
-  prop("meat", 98, 34);
-  for (const r of [19, 35]) prop("cannon", 99, r);
+  // The Gilt Market where the avenue meets the cross street under the Hall: the gold on its stalls cold to the touch,
+  // its traders holding it out still to nobody.
+  for (const [c, r] of [[77, 23], [80, 24], [85, 23], [78, 27]] as const) prop("goldStone", c, r);
+  for (const [c, r] of [[76, 24], [86, 24]] as const) grey(c, r, { act: "gold", flip: c > 80 });
+  for (const [c, art] of [[70, "house2"], [74, "house1"]] as const) prop(art, c, 24, black);
+  // The Treasury Rock, raised a height out of the city east of the avenue: the Citadel's gold still heaped on it,
+  // the warmest thing left after the crown, and the guard who never left it.
+  for (const [c, r] of [[88, 28], [90, 28], [91, 30], [89, 30]] as const) prop("goldStone", c, r);
+  who("skullGuard", 90, 29);
+  for (const c of [88, 91]) prop("sconce", c, 27, pinned);
+  // The Garrison in one line along the east rim: barracks, stores, the butts on the east bastion, the guns; the drill on
+  // the yard in front, stopped the day the Warlord falls.
+  prop("barracks", 96, 18, dark);
+  prop("woodPile", 97, 21);
+  prop("house1", 96, 26, dark);
+  prop("archery", 98, 32, dark);
+  prop("meat", 95, 30);
+  for (const r of [16, 35]) prop("cannon", 99, r);
   for (let i = 0; i < 4; i++) who("warrior", 87 + i * 2, 34, { ...black, unless: "warlordDead", to: { col: 87 + i * 2, row: 36 } });
-  for (const r of [32, 34]) who("archer", 94, r, black);
-  who("lancer", 66, 25, { ...black, to: { col: 96, row: 25 } });
-  // The forecourt under the Hall: the great houses either side of the avenue's head, their stewards at the doors.
-  for (const [c, art] of [[70, "house2"], [75, "house1"], [88, "house3"]] as const) prop(art, c, 24, black);
-  for (const c of [71, 89]) grey(c, 26);
+  for (const r of [33, 35]) who("archer", 95, r, black);
+  who("lancer", 57, 24, { ...black, to: { col: 78, row: 24 } });
   prop("woodPile", 86, 38);
   // The fire in the forecourt by the Hall's east stair, the nearest to the Keep.
   t.fires.push({ col: 90, row: 23 });
@@ -2626,6 +2640,7 @@ function greyfall(): AreaMap {
     { name: "The Garrison", at: { col: 94, row: 30 }, levels: [3], palette: [3], dress: "greyfall", decor: 1.5 },
     { name: "The High City", at: { col: 82, row: 32 }, levels: [3], palette: [3], dress: "greyfall", decor: 1.5 },
     { name: "The Champions' Pit", at: { col: 72, row: 31 }, levels: [2], palette: [4], dress: "greyfall", decor: 1 },
+    { name: "The Treasury Rock", at: { col: 89, row: 29 }, levels: [4], palette: [1], dress: "greyfall", decor: 0.5 },
     { name: "The Lower City", at: { col: 70, row: 48 }, levels: [2], palette: [5, 4], dress: "greyfall", decor: 2 },
     { name: "Rotfield", at: { col: 30, row: 30 }, levels: [1, 2], palette: [4, 3], dress: "greyfall", decor: 2.5 },
     ...fields.map(([x, y, w, h]): District => ({ name: "", at: { col: x + (w >> 1), row: y + (h >> 1) }, palette: [4], dress: "greyfall", decor: 0.4, crops: true, box: { x, y, w, h } })),
@@ -2645,7 +2660,7 @@ function greyfall(): AreaMap {
     { at: { col: 37, row: 19 }, text: "Ring once for the warm ones. Hush them. Ring twice for yourself." },
     { at: { col: 80, row: 22 }, text: "Bow. He sees from up there. He does not look." },
   ];
-  return { ...tier, area: "greyfall", entry: { col: 6, row: 44 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [...decks, ...keepBridge], notes };
+  return { ...tier, area: "greyfall", entry: { col: 6, row: 44 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [...decks, ...keepBridge, ...gallery], notes };
 }
 
 function gilded(): AreaMap {
