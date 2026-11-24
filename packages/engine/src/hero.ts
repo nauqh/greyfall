@@ -164,15 +164,17 @@ export interface BossKit {
 /** The bosses with moves of their own, after `ATLAS.md`. Tiles, seconds and points. */
 export const BOSS_KITS: Partial<Record<string, BossKit>> = {
   // The Cinder Troll, Tidewake's lesson: a club slam on a ground circle, a charge down a line, the outflow's hot
-  // water flung to scald, each warned long; a charge a rock in the Ring stops dead leaves him dazed and open.
+  // water flung to scald, each warned long; a charge a rock in the Ring stops dead leaves him dazed and open. Up
+  // close he slams, then sweeps the club round him, then scalds the ground: step aside, back off, get clear.
   troll: {
     moves: {
       slam: { shape: "mark", windup: 1.0, radius: 1, damage: 16 },
+      sweep: { shape: "self", windup: 1.1, radius: 2, damage: 14 },
       charge: { shape: "line", windup: 0.9, tiles: 6, width: 1, speed: 10, damage: 14, stun: 2.5 },
       toss: { shape: "scatter", windup: 0.95, patches: 3, radius: 2, damage: 4, burn: 3, tick: 0.6, colour: 0xd8f0ff },
     },
     recover: 1.1,
-    pick: (d, last) => (d <= 2 ? "slam" : d > 6 ? null : last === "charge" ? "toss" : "charge"),
+    pick: (d, last) => (d <= 2 ? (last === "slam" ? "sweep" : last === "sweep" ? "toss" : "slam") : d > 6 ? null : last === "charge" ? "toss" : "charge"),
   },
   // The Ember Bull: a horn swipe up close and a stomp round him after it, so beside him is no safe place; from four
   // tiles off a rush that ends a tile past the mark and leaves him open, never two rushes running; a rush the trees
