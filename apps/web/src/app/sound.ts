@@ -38,6 +38,7 @@ export const TROLL_ROCK = sfx("troll/rock");
 export const TROLL_DAZED = sfx("troll/dazed");
 export const TROLL_STEP = sfx("troll/step");
 export const BOSS_MUSIC = sfx("music/boss");
+export const LANDING_MUSIC = sfx("music/landing");
 
 const sounds = new Map<string, HTMLAudioElement>();
 let pressed = -Infinity;
@@ -57,8 +58,17 @@ export function loop(src: string, volume = 1, fadeMs = 500): () => void {
   const a = new Audio(src);
   a.loop = true;
   a.volume = volume;
-  void a.play().catch(() => {});
+  // A browser holds sound back until the page is touched: failing that, the first key or click starts it.
+  const start = (): void => void a.play().then(unhook, () => {});
+  const unhook = (): void => {
+    window.removeEventListener("keydown", start, true);
+    window.removeEventListener("pointerdown", start, true);
+  };
+  window.addEventListener("keydown", start, true);
+  window.addEventListener("pointerdown", start, true);
+  start();
   return () => {
+    unhook();
     const fade = setInterval(() => {
       a.volume = Math.max(0, a.volume - volume / 10);
       if (a.volume === 0) (clearInterval(fade), a.pause());
