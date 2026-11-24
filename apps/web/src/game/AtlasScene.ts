@@ -2968,7 +2968,6 @@ export class AtlasScene extends Phaser.Scene {
     if (move.shape === "line") {
       const end = aim.at(-1);
       if (!end) return;
-      struck(move.damage);
       if (f.kind === "troll") play(TROLL_CHARGE, 0.8);
       const ms = (aim.length / (move.speed ?? 12)) * 1000;
       f.busy += ms;
@@ -2984,7 +2983,20 @@ export class AtlasScene extends Phaser.Scene {
       }
       f.open = f.busy;
       f.at = end;
-      this.tweens.add({ targets: f.s, x: (end.col + 0.5) * CELL, y: (end.row + 0.75) * CELL, duration: ms, onUpdate: () => f.s.setDepth(standing(f.s.y)) });
+      // It hits whoever it runs into, once each, as it passes: not whoever stood on its line when it set off.
+      const touch = ((move.width ?? 1) / 2 + 0.3) * CELL;
+      const hit = new Set<Body>();
+      this.tweens.add({
+        targets: f.s,
+        x: (end.col + 0.5) * CELL,
+        y: (end.row + 0.75) * CELL,
+        duration: ms,
+        onUpdate: () => {
+          f.s.setDepth(standing(f.s.y));
+          for (const b of [this.hero!, ...this.band])
+            if (!f.dead && !b.dead && !hit.has(b) && Math.hypot(b.s.x - f.s.x, b.s.y - f.s.y) < touch) (hit.add(b), this.hurt(f, b, move.damage));
+        },
+      });
       return;
     }
     if (move.burn) {
