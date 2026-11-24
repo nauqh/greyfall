@@ -389,6 +389,13 @@ textarea {
 	opacity: 0;
 }
 
+/* Shown and picked, but not open yet: faded ink, and a click does nothing. */
+.menuItem[aria-disabled="true"],
+.menuItem[aria-disabled="true"].on {
+	color: rgb(46 26 14 / 0.4);
+	cursor: not-allowed;
+}
+
 /* Hilt to point under the text, hidden until picked. */
 .menuItem::after {
 	content: "";

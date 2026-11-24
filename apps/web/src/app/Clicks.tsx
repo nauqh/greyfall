@@ -8,7 +8,8 @@ import { CLICK, play, press } from "./sound";
 export function Clicks() {
   useEffect(() => {
     const onClick = (e: MouseEvent): void => {
-      if (e.target instanceof Element && e.target.closest("button, a[href], summary, label, select, [role=menuitem], [role=tab], [role=option]")) play(CLICK);
+      const on = e.target instanceof Element && e.target.closest("button, a[href], summary, label, select, [role=menuitem], [role=tab], [role=option]");
+      if (on && on.getAttribute("aria-disabled") !== "true") play(CLICK);
     };
     document.addEventListener("pointerdown", press, true);
     document.addEventListener("click", onClick, true);

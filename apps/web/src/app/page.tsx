@@ -13,12 +13,12 @@ import { GameCanvas } from "../game/GameCanvas";
 import { Settings } from "./settings/Settings";
 import { useTick } from "./sound";
 
-// An entry without an href opens the settings in place of the menu.
-const MENU: readonly { href?: string; label: string; hint: string }[] = [
+// An entry without an href opens the settings in place of the menu. An `off` entry is shown and picked, but goes nowhere.
+const MENU: readonly { href?: string; label: string; hint: string; off?: boolean }[] = [
   { href: "/atlas", label: "Journey", hint: "The story. Wash ashore nameless and hunt the Grey Warlord." },
-  { href: "/map", label: "War", hint: "Real-time war on one island: dig gold, raise an army, bring down the red hall." },
-  { href: "/versus", label: "Versus", hint: "Auto chess. Buy, merge and place your band, then outlast AI clans or friends." },
-  { label: "Settings", hint: "Keys and mouse for every mode." },
+  { href: "/map", off: true, label: "War", hint: "Real-time war on one island: dig gold, raise an army, bring down the red hall." },
+  { href: "/versus", off: true, label: "Versus", hint: "Auto chess. Buy, merge and place your band, then outlast AI clans or friends." },
+  { label: "Settings", off: true, hint: "Keys and mouse for every mode." },
 ];
 
 export default function Page() {
@@ -102,7 +102,11 @@ export default function Page() {
                       onFocus: () => setPick(i),
                     };
                     const href = m.href;
-                    return href ? (
+                    return m.off ? (
+                      <button key={m.label} type="button" {...item} aria-disabled="true">
+                        {m.label}
+                      </button>
+                    ) : href ? (
                       <Link
                         key={m.label}
                         {...item}
