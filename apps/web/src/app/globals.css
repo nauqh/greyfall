@@ -373,7 +373,7 @@ textarea {
 	inset: 3px calc(var(--h) * -1) 5px;
 	z-index: -1;
 	border: 3px solid #2e1a0e;
-	border-radius: 999px;
+	border-radius: 10px;
 	background: #f2e3c2;
 	box-shadow: 3px 4px 0 #2e1a0e;
 	transition: opacity 200ms ease-out;
