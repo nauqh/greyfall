@@ -93,7 +93,7 @@ import { CELL, buildMap, loadGroundColours, trailTiles } from "./islandMap";
 import { STRAT_COLS, STRAT_ROWS, at, climbsStair, findPath, isForest, isLand, isSlope, isWalkable, level, stairLean } from "./stratMap";
 import { DEPTH, addDecor, cloudCover, loadTerrain, prepareTerrain, standing } from "./terrain";
 import { HAND } from "./ui";
-import { BLOCK, BONES, BONG, CLASH, CLICK, COINS, CONFIRM, CRACKLE, DASH, ERROR, FALL, GLASS, GUARD_BREAK, HIT, HURT, LATCH, LEATHER, LIT, loop, ONWARD, PAGE, play, STEP, SWING } from "../app/sound";
+import { BLOCK, BONES, BOSS_MUSIC, CLASH, CLICK, COINS, CONFIRM, CRACKLE, DASH, ERROR, FALL, GLASS, GUARD_BREAK, HERALD, HIT, HURT, LATCH, LEATHER, LIT, loop, ONWARD, PAGE, play, STEP, SWING, TROLL_CHARGE, TROLL_DAZED, TROLL_FALL, TROLL_GROWL, TROLL_LAND, TROLL_ROAR, TROLL_ROCK, TROLL_SLAM, TROLL_STEP, TROLL_TELL } from "../app/sound";
 
 export interface AtlasApi {
   /** Fly to an area, on its own tier. */
@@ -249,6 +249,8 @@ export interface AtlasHooks {
   onDeath?: (area: AreaId) => void;
   /** The captain has walked into a named quarter of the area. */
   onDistrict?: (name: string) => void;
+  /** A word across the screen in gold, on the area name's banner: a bonfire lit, a boss fallen, a thing gained. */
+  onHerald?: (text: string) => void;
   /** Dev mode toggled, or the dev state changed. */
   onDev?: (s: DevState) => void;
 }
@@ -996,6 +998,10 @@ export class AtlasScene extends Phaser.Scene {
   private drillUntil = 0;
   /** Stops the bonfire's crackle, while the captain sits by one. */
   private crackle: (() => void) | null = null;
+  /** Ground the Ring's troll has walked since his last footfall sounded. */
+  private trollStepped = 0;
+  /** Stops the boss music, while a boss's bar is up. */
+  private bossTune: (() => void) | null = null;
   private talk: { folk: Folk; lines: readonly string[]; key: string; sets?: WorldFlag; gives?: ItemName; throws?: ItemName; lights?: boolean; page: number } | null = null;
   /** The flags as the area was entered: who stands where, and what they say, holds until the captain leaves and comes back. */
   private seen = new Set<WorldFlag>();
@@ -1084,6 +1090,8 @@ export class AtlasScene extends Phaser.Scene {
     this.talk = null;
     this.crackle?.();
     this.crackle = null;
+    this.bossTune?.();
+    this.bossTune = null;
     this.nearName = null;
     this.menu = null;
     this.close = null;
@@ -1847,8 +1855,9 @@ export class AtlasScene extends Phaser.Scene {
   private drop(): void {
     const d = this.aloft!;
     this.aloft = null;
-    // Dust sifts down first, so the fall comes as no blind blow.
+    // Dust sifts down first, and he is heard above, so the fall comes as no blind blow.
     const rumble = 800;
+    play(TROLL_GROWL, 0.7);
     if (!this.anims.exists("fogPuff_fade")) this.anims.create({ key: "fogPuff_fade", frames: this.anims.generateFrameNumbers("fogPuff"), frameRate: 9, repeat: 0 });
     const from = this.hero!.at;
     for (let i = 0; i < 8; i++) {
@@ -1872,6 +1881,7 @@ export class AtlasScene extends Phaser.Scene {
     const y = (at.row + 0.75) * CELL;
     const shadow = this.add.ellipse((at.col + 0.5) * CELL, y, 2.4 * CELL, 1.1 * CELL, 0x000000, 0.45).setScale(0.2).setDepth(DEPTH.unit - 1);
     this.tweens.add({ targets: shadow, scale: 1, duration: ms, ease: "Quad.easeIn", onComplete: () => shadow.destroy() });
+    play(TROLL_FALL, 0.8);
     const look = this.look(d);
     const s = this.add.sprite((at.col + 0.5) * CELL, y - 12 * CELL, look.idle.key).setOrigin(0.5, look.anchor).setScale(look.scale).setDepth(DEPTH.fx);
     const tint = BEAST[d.kind]?.tint;
@@ -1888,6 +1898,8 @@ export class AtlasScene extends Phaser.Scene {
         f.home = { col: d.col, row: d.row };
         f.busy = this.time.now + 1100;
         this.active.shake(360, 0.016);
+        play(TROLL_LAND);
+        this.time.delayedCall(350, () => play(TROLL_ROAR));
         for (const c of aim) this.blast(c, 0xc8b898);
         this.quake(at);
         const on = new Set(aim.map((c) => `${c.col},${c.row}`));
@@ -1933,7 +1945,8 @@ export class AtlasScene extends Phaser.Scene {
 
   /** Walks a body along its way for one frame at its speed; true while it moves. */
   private advance(b: Body, dt: number): boolean {
-    let left = (b.speed * CELL * dt) / 1000;
+    const full = (b.speed * CELL * dt) / 1000;
+    let left = full;
     while (left > 0 && b.way.length > 0) {
       const to = b.way[0]!;
       const [dx, dy] = [to.x - b.s.x, to.y - b.s.y];
@@ -1950,6 +1963,7 @@ export class AtlasScene extends Phaser.Scene {
     }
     b.at = { col: Math.floor(b.s.x / CELL), row: Math.round(b.s.y / CELL - 0.75) };
     b.s.setDepth(standing(b.s.y));
+    if ((b as Foe).kind === "troll" && (this.trollStepped += full - left) >= 0.9 * CELL) (this.trollStepped = 0, play(TROLL_STEP, 0.7));
     const moving = b.way.length > 0;
     this.play(b.s, moving && b.move ? b.move : b.idle);
     return moving;
@@ -2909,6 +2923,8 @@ export class AtlasScene extends Phaser.Scene {
     const reach = Math.min(move.tiles ?? 0, tileDistance(f.at, mark.at) + (move.past ?? Infinity));
     const dazed = !!move.stun && bossAim({ ...move, width: 1 }, f.at, mark.at, (c) => isWalkable(c.col, c.row) && !this.shut(c)).length < reach;
     Object.assign(f, { last: name, way: [], windup: { at: time + ms, mark, move: name, aim, dazed }, next: time + f.stats.every * 1000, busy: time + ms });
+    const tell = f.kind === "troll" && TROLL_TELL[name];
+    if (tell) play(tell, 0.8);
     if (Math.abs(mark.s.x - f.s.x) > 4) f.s.setFlipX(mark.s.x < f.s.x);
     f.s.setTintFill(0xffffff);
     this.time.delayedCall(70, () => untint(f.s));
@@ -2953,12 +2969,18 @@ export class AtlasScene extends Phaser.Scene {
       const end = aim.at(-1);
       if (!end) return;
       struck(move.damage);
+      if (f.kind === "troll") play(TROLL_CHARGE, 0.8);
       const ms = (aim.length / (move.speed ?? 12)) * 1000;
       f.busy += ms;
       // Cut short by a wall: dazed where it stopped.
       if (move.stun && dazed) {
         f.busy += move.stun * 1000;
-        this.time.delayedCall(ms, () => !f.dead && (this.active.shake(200, 0.008), this.float(f.s.x, f.s.y - f.lift - 40, "Dazed", "#fdfaf0")));
+        this.time.delayedCall(ms, () => {
+          if (f.dead) return;
+          this.active.shake(200, 0.008);
+          this.float(f.s.x, f.s.y - f.lift - 40, "Dazed", "#fdfaf0");
+          if (f.kind === "troll") (play(TROLL_ROCK), this.time.delayedCall(250, () => !f.dead && play(TROLL_DAZED, 0.7)));
+        });
       }
       f.open = f.busy;
       f.at = end;
@@ -2977,6 +2999,7 @@ export class AtlasScene extends Phaser.Scene {
       }
       return;
     }
+    if (f.kind === "troll" && (name === "slam" || name === "sweep")) play(TROLL_SLAM, name === "slam" ? 1 : 0.7);
     this.active.shake(160, 0.006);
     if (move.shape === "scatter" || move.shape === "mark" || move.shape === "ring") for (const at of move.shape === "ring" ? aim.filter((_, i) => i % 3 === 0) : aim) this.blast(at, move.colour ?? 0xffffff);
     struck(move.damage);
@@ -3016,7 +3039,6 @@ export class AtlasScene extends Phaser.Scene {
   /** A boss down: it stays down for good, and its key, if it has one, is the captain's. */
   private felled(boss: Foe): void {
     const kind = boss.kind;
-    const name = this.local?.bosses.slice().sort((a, b) => tileDistance(a, boss.home) - tileDistance(b, boss.home))[0]?.name ?? "Enemy";
     remember(SLAIN, remembered(SLAIN).add(kind));
     if (this.local?.arena?.boss === kind) this.liftFog();
     const flask = BOSS_FLASK.has(kind);
@@ -3024,22 +3046,16 @@ export class AtlasScene extends Phaser.Scene {
       this.flasks += 1;
       this.hooks.onFlasks?.(this.flasks);
     }
-    this.herald(`${name} fell`);
+    // A beat for the body to go down before the word comes up.
+    this.herald("Enemy fell", 1500);
     if (flask) this.herald("Ember gained");
   }
 
-  /** A line across the screen, after any still showing. */
-  private herald(text: string): void {
-    const wait = Math.max(0, this.heraldUntil - this.time.now);
-    this.heraldUntil = this.time.now + wait + 3600;
-    const cam = this.cameras.main;
-    const t = this.add
-      .text(cam.width / 2, cam.height * 0.4, text, { fontFamily: FONT, fontSize: "40px", fontStyle: "bold", color: "#f4cf6b", stroke: "#1c2634", strokeThickness: 8, align: "center" })
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(DEPTH.clouds + 10);
-    t.setAlpha(0);
-    this.tweens.add({ targets: t, alpha: { from: 0, to: 1 }, delay: wait, duration: 600, hold: 2400, yoyo: true, onStart: () => play(BONG), onComplete: () => t.destroy() });
+  /** A word on the banner, `after` ms on at the soonest, and after any still showing: the banner holds 4.2 s. */
+  private herald(text: string, after = 0): void {
+    const wait = Math.max(after, this.heraldUntil - this.time.now);
+    this.heraldUntil = this.time.now + wait + 4400;
+    this.time.delayedCall(wait, () => (play(HERALD), this.hooks.onHerald?.(text)));
   }
 
   /** A hit breaks a monster's wind-up, unless it is one that does not flinch. */
@@ -3533,7 +3549,7 @@ export class AtlasScene extends Phaser.Scene {
       this.tweens.add({ targets: fire, alpha: 1, scale: 0.7, duration: 1300, delay: 300, ease: "Back.easeOut" });
       this.tweens.add({ targets: glow, alpha: 0.55, scale: { from: 0.4, to: 1.3 }, duration: 1300, delay: 300, ease: "Sine.easeOut", onComplete: breathe });
       // Told as a new area is, in the big banner over the screen.
-      this.time.delayedCall(500, () => (play(LIT), this.hooks.onDistrict?.("Bonfire Lit")));
+      this.time.delayedCall(500, () => (play(LIT), this.hooks.onHerald?.("Bonfire Lit")));
     });
   }
 
@@ -4506,6 +4522,10 @@ export class AtlasScene extends Phaser.Scene {
           ? undefined
           : this.foes.find((f) => this.isBoss(f) && !f.dead && (f.kind === arena?.boss ? inRoom && seen(f) : tileDistance(f.at, hero.at) <= f.stats.leash));
         const name = boss && this.local?.bosses.slice().sort((a, b) => tileDistance(a, boss.home) - tileDistance(b, boss.home))[0]?.name;
+        if (!boss !== !this.bossTune) {
+          this.bossTune?.();
+          this.bossTune = boss ? loop(BOSS_MUSIC, 0.8, 2500) : null;
+        }
         const bossKey = boss ? `${name},${boss.hp}` : "";
         if (bossKey !== this.bossKey) {
           this.bossKey = bossKey;

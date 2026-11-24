@@ -68,9 +68,10 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   const base = devRoute ? "/atlas/dev" : "/atlas";
   const [area, setArea] = useState(first);
   // The name up out of the dark: the area's as you arrive, a quarter's as you walk into it.
-  const [reveal, setReveal] = useState<string | null>(null);
+  // `gold`: the scene's own word (a bonfire lit, a boss fallen, a thing gained), not a place.
+  const [reveal, setReveal] = useState<{ text: string; gold?: boolean } | null>(null);
   useEffect(() => {
-    if (reveal && reveal !== "Bonfire Lit") play(ARRIVE, 0.7);
+    if (reveal && !reveal.gold) play(ARRIVE, 0.7);
   }, [reveal]);
   const [travel, setTravel] = useState<(Departure & { phase: "cover" | "hold" | "uncover" }) | null>(null);
   const [warn, setWarn] = useState<Departure | null>(null);
@@ -108,7 +109,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   useEffect(() => {
     // Not till the creation screen is gone: then up out of silence, as the first words come.
     if (!prologue || picking || theme.current) return;
-    const a = new Audio("/audio/theme.mp3");
+    const a = new Audio("/audio/music/theme.mp3");
     a.loop = true;
     a.volume = 0;
     theme.current = a;
@@ -196,7 +197,8 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
       ];
   // The name mounts two painted frames after the map is in view, so its clock never runs while the first frames are still drawing.
   const announce = (): void => {
-    if (!now.current.quiet) requestAnimationFrame(() => requestAnimationFrame(() => setReveal(AREAS.find((a) => a.id === now.current.area)?.name ?? null)));
+    const name = AREAS.find((a) => a.id === now.current.area)?.name;
+    if (!now.current.quiet && name) requestAnimationFrame(() => requestAnimationFrame(() => setReveal({ text: name })));
   };
   const hooks = useRef<AtlasHooks>({
     area: first,
@@ -232,7 +234,8 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
       setReveal(null);
       setDied(to);
     },
-    onDistrict: (d) => !now.current.travelling && setReveal(d),
+    onDistrict: (d) => !now.current.travelling && setReveal({ text: d }),
+    onHerald: (text) => !now.current.travelling && setReveal({ text, gold: true }),
     opened: () => {
       if (now.current.travelling) setTravel((t) => (t ? { ...t, phase: "uncover" } : t));
       else if (!now.current.prologue) announce();
@@ -356,8 +359,8 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
         {reveal && (
           // After the Souls games: up out of the dark, held, gone.
           // The scene's banner on lighting a bonfire: held longer, in gold.
-          <div key={reveal} className={`areaReveal${reveal === "Bonfire Lit" ? " lit" : ""}`} role="status" onAnimationEnd={(e) => e.target === e.currentTarget && setReveal(null)}>
-            <span className="areaRevealName">{reveal}</span>
+          <div key={reveal.text} className={`areaReveal${reveal.gold ? " lit" : ""}`} role="status" onAnimationEnd={(e) => e.target === e.currentTarget && setReveal(null)}>
+            <span className="areaRevealName">{reveal.text}</span>
           </div>
         )}
         {travel && (travel.kind === "walk" || travel.name === "The Boat") && (
