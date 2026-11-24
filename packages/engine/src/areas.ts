@@ -1678,8 +1678,8 @@ function harbour(): AreaMap {
   who("pawn", 26, 66, { ...blue, act: "meat", to: { col: 26, row: 60 } });
 
   // The Graves, after Firelink's graveyard on the slope behind the shrine: the path up from the point crosses the town's
-  // own dead and goes down into the Charnel, the Moor Gate at its seaward end, shut from this side. Gold in plain view
-  // and the Grey's dogs, come over the moor and not through the gate, in the Charnel, far past a new captain (three
+  // own dead and goes down into the Charnel, the Moor Gate at its seaward end, shut from this side. The Grey's dogs,
+  // come over the moor and not through the gate, in the Charnel, far past a new captain (three
   // gnolls and a shaman, 45 hp and 9 a blow apiece, two of them throwing). Foes rise again at every rest, so the gate
   // opened from Barrowmoor is what clears the hill for good: the dogs and the walking dead go, and a gravedigger comes up
   // to put it right.
@@ -1730,17 +1730,15 @@ function harbour(): AreaMap {
   for (const c of [102, 104]) prop("bones", c, 42);
   prop("goblinHut", 107, 42, { ...held, fixed: true });
   who("thief", 101, 42, { ...held, to: { col: 105, row: 42 } });
-  // The Charnel: the dogs' den on its floor, graves dug up for the rings, bones and meat flung about, their spoil heaped
-  // where it glints up at the crest. The Moor Gate's barricade at its seaward end: timber stacked by it, a lantern by it.
+  // The Charnel: the dogs' den on its floor, graves dug up for the rings and bones flung about. The Moor Gate's
+  // barricade at its seaward end, timber stacked by it and a skull staked either side for its posts.
   for (const [c, r] of [[101, 50], [104, 49], [106, 51], [104, 52]] as const) prop("bones", c, r);
-  prop("meat", 103, 50);
-  for (const [c, r] of [[102, 49], [105, 50]] as const) prop("goldStone", c, r);
   // Their den a hide hut in the floor's west corner, gone with them when the gate is opened.
   prop("goblinHut", 99, 50, { ...held, fixed: true });
   for (const [c, r] of [[103, 51], [106, 50]] as const) who("gnoll", c, r, held);
   who("shaman", 104, 50, held);
   prop("woodPile", 108, 49);
-  prop("sconce", 108, 51);
+  for (const r of [49, 51]) prop("skullSpike", 109, r, { fixed: true });
   // The gate open, the dead put back and the gravedigger at the plots.
   who("pawn", 96, 60, { ...blue, act: "pickaxe", when: "moorGateOpen", to: { col: 97, row: 62 } });
 
