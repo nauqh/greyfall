@@ -944,8 +944,6 @@ export class AtlasScene extends Phaser.Scene {
   private hero: Body | null = null;
   /** The right button held in play: the shield up, as F. */
   private shieldUp = false;
-  /** Where the last attack was aimed, for a press kept until the hero is ready. */
-  private aim: { x: number; y: number } | null = null;
   private keys: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d", Phaser.Input.Keyboard.Key> | null = null;
   private stamina: number = STAMINA.max;
   /** When stamina was last spent: it comes back only after a pause. */
@@ -1059,7 +1057,6 @@ export class AtlasScene extends Phaser.Scene {
     this.bossKey = "";
     this.hooks.onBoss?.(null);
     this.shieldUp = false;
-    this.aim = null;
     this.keys = null;
     this.foes = [];
     this.embers = [];
@@ -1344,7 +1341,10 @@ export class AtlasScene extends Phaser.Scene {
       intro: (hold, fly, done) => this.intro(hold, fly, done),
       pause: (on) => {
         // The whole loop, not the scene: a paused scene still draws every frame under the other game.
+        // Phaser still hands keys to a sleeping loop's scene, so E would rest or talk under a menu.
+        this.game.input.keyboard!.enabled = !on;
         if (on) return this.game.loop.sleep();
+        this.input.keyboard?.resetKeys();
         useIsland(this.map.tiers[this.view].island);
         this.game.loop.wake();
       },
@@ -1606,11 +1606,12 @@ export class AtlasScene extends Phaser.Scene {
       cam.zoomTo(Phaser.Math.Clamp(cam.zoom * (dy > 0 ? 0.85 : 1.18), widest, this.zoomFor(9)), 160, "Sine.easeOut", true);
     });
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
+      if (!this.game.loop.running) return;
       const cam = this.active;
       if (this.playing) {
-        // Dark Souls on a mouse: the left button strikes toward the cursor, the right held raises the shield.
+        // Dark Souls on a mouse: the left button strikes the way the hero faces, the right held raises the shield.
         if (p.rightButtonDown()) this.shieldUp = true;
-        else if (p.leftButtonDown()) this.attack(this.time.now, cam.getWorldPoint(p.x, p.y));
+        else if (p.leftButtonDown()) this.attack(this.time.now);
         return;
       }
       this.drag = { x: p.x, y: p.y, sx: cam.scrollX, sy: cam.scrollY, moved: false };
@@ -4092,15 +4093,13 @@ export class AtlasScene extends Phaser.Scene {
     return RECRUITER[t.folk.npc.id] || t.folk.npc.shop ? this.openMenu(t.folk) : this.talkTo(t.folk);
   }
 
-  /** A swing, turned toward the cursor: at the monster in reach nearest where it points, else the air. */
-  private attack(time: number, aim?: { x: number; y: number }): void {
+  /** A swing the way the hero faces: at the monster in reach nearest ahead, else the air. */
+  private attack(time: number): void {
     const hero = this.hero!;
     if (hero.dead || this.gone || this.menu || this.talk || this.guarding || !canAct(this.stamina)) return;
-    if (aim) this.aim = { x: aim.x, y: aim.y };
     if (time < hero.busy || time < hero.next) return void (this.queued = true);
     this.queued = false;
-    const at = this.aim ?? { x: hero.s.x + (hero.s.flipX ? -1 : 1), y: hero.s.y };
-    if (Math.abs(at.x - hero.s.x) > 4) hero.s.setFlipX(at.x < hero.s.x);
+    const at = { x: hero.s.x + (hero.s.flipX ? -1 : 1), y: hero.s.y };
     const { reach: r } = CLASSES[this.cls];
     const reach = this.foes.filter((f) => !f.dead && canReach(r, f.stats) && tileDistance(f.at, hero.at) <= r && Math.hypot(f.s.x - hero.s.x, f.s.y - hero.s.y) < (r + 0.5) * CELL && (r === 1 || clearShot(hero.at, f.at, this.blocks)));
     const foe = reach.sort((a, b) => Math.hypot(a.s.x - at.x, a.s.y - at.y) - Math.hypot(b.s.x - at.x, b.s.y - at.y))[0];

@@ -21,7 +21,7 @@ import { Shop } from "./Shop";
 import { TravelMap } from "./TravelMap";
 
 /** The HUD shown or hidden with the H key, remembered on this browser. */
-export function useHud(): [boolean, () => void] {
+export function useHud(off = false): [boolean, () => void] {
   const [shown, setShown] = useState(true);
   useEffect(() => {
     try {
@@ -36,12 +36,13 @@ export function useHud(): [boolean, () => void] {
       return !s;
     });
   useEffect(() => {
+    if (off) return;
     const key = (e: KeyboardEvent): void => {
       if (e.key.toLowerCase() === "h" && !(e.target instanceof HTMLInputElement)) toggle();
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, []);
+  }, [off]);
   return [shown, toggle];
 }
 
@@ -202,7 +203,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     },
   }).current;
   // The HUD hides with H; there is no button for it on an area map.
-  const [hud] = useHud();
+  const [hud] = useHud(paused !== null);
   // Dev mode, on the dev route only: the backquote key toggles its free camera over the whole map.
   const free = devState?.free ?? devRoute;
   const toggleFree = (): void => {

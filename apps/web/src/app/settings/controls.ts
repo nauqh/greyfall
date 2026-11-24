@@ -21,7 +21,7 @@ export const CONTROLS: Mode[] = [
       {
         title: "Combat",
         binds: [
-          { action: "Attack toward cursor", keys: ["Mouse Left"] },
+          { action: "Attack", keys: ["Mouse Left"] },
           { action: "Raise shield (hold)", keys: ["Mouse Right"] },
           { action: "Burn an ember", keys: ["R"] },
         ],
