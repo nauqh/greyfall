@@ -41,7 +41,10 @@ const FLAGS = Object.keys({
   hushStilled: 1,
 } satisfies Record<WorldFlag, 1>) as WorldFlag[];
 const KINDS = Object.keys(FOES);
-const GROUPS = LANDS.map((land) => AREAS.filter((a) => a.land === land && MAPPED_AREAS.includes(a.id))).filter((g) => g.length > 0);
+const TIERS = (["sky", "surface", "below"] as const).map((tier) => ({
+  tier,
+  lands: LANDS.map((land) => ({ land, areas: AREAS.filter((a) => a.land === land && a.tier === tier && MAPPED_AREAS.includes(a.id)) })).filter((l) => l.areas.length > 0),
+})).filter((t) => t.lands.length > 0);
 const TIER = { sky: "Sky", surface: "Surface", below: "Below" };
 
 const flip = <T,>(list: readonly T[], v: T): T[] => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
@@ -49,7 +52,7 @@ const flip = <T,>(list: readonly T[], v: T): T[] => (list.includes(v) ? list.fil
 /** Typing in a field stays in the field: the page's and the scene's keys listen on the window. */
 const keep = (e: KeyboardEvent): void => {
   const t = e.target;
-  if (t instanceof HTMLSelectElement || (t instanceof HTMLInputElement && t.type !== "checkbox")) e.stopPropagation();
+  if (t instanceof HTMLInputElement && t.type !== "checkbox") e.stopPropagation();
 };
 
 function Checks<T extends string>({ title, all, on, set }: { title: string; all: readonly T[]; on: readonly T[]; set: (next: T[]) => void }) {
@@ -118,25 +121,28 @@ export function DevPanel({
         <h2>Dev</h2>
         <kbd>H hides</kbd>
       </header>
-      <select
-        className="devArea"
-        value={s.area}
-        aria-label="Area"
-        onChange={(e) => {
-          e.currentTarget.blur();
-          onArea(e.target.value as AreaId);
-        }}
-      >
-        {GROUPS.map((g) => (
-          <optgroup key={g[0]!.land} label={`${TIER[g[0]!.tier]} · ${g[0]!.land}`}>
-            {g.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
+      <details open>
+        <summary>
+          Area <b>{AREAS.find((a) => a.id === s.area)?.name ?? s.area}</b>
+        </summary>
+        {TIERS.map(({ tier, lands }) => (
+          <section key={tier} className="devTier">
+            <h3>{TIER[tier]}</h3>
+            {lands.map(({ land, areas }) => (
+              <div key={land} className="devLand">
+                <span>{land}</span>
+                <div>
+                  {areas.map((a) => (
+                    <button key={a.id} type="button" className="devChip" aria-current={a.id === s.area || undefined} onClick={() => onArea(a.id)}>
+                      {a.name.replace(/^The /, "")}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
-          </optgroup>
+          </section>
         ))}
-      </select>
+      </details>
       <div className="devActions">
         <button type="button" className="devBtn" onClick={onMap}>
           Open map

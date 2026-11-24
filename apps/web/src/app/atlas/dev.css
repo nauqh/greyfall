@@ -24,10 +24,10 @@
 	backdrop-filter: blur(6px);
 	color: var(--ink);
 	font: 700 13px "Nunito", "Segoe UI", sans-serif;
-	/* Native controls, the select's list and the scrollbar drawn dark, ticked in gold. */
+	/* Native controls drawn dark, ticked in gold; it still scrolls, with no bar. */
 	color-scheme: dark;
 	accent-color: var(--gold);
-	scrollbar-color: #9c8150 transparent;
+	scrollbar-width: none;
 }
 
 .devPanel :focus-visible {
@@ -68,8 +68,55 @@
 	font: inherit;
 }
 
-.devArea {
-	width: 100%;
+.devTier h3 {
+	margin: 4px 0 2px;
+	color: var(--dim);
+	font-size: 10px;
+	font-weight: 800;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+}
+
+.devLand {
+	display: grid;
+	grid-template-columns: 76px 1fr;
+	align-items: baseline;
+	gap: 6px;
+	padding: 1px 0;
+}
+
+.devLand > span {
+	color: var(--dim);
+	font-size: 11px;
+	font-weight: 400;
+	overflow-wrap: anywhere;
+}
+
+.devLand > div {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 3px;
+}
+
+.devChip {
+	padding: 0 6px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: none;
+	color: inherit;
+	font: inherit;
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.devChip:hover {
+	border-color: var(--gold);
+}
+
+.devChip[aria-current] {
+	border-color: var(--gold);
+	background: var(--gold);
+	color: #0b0f16;
 }
 
 .devActions {
