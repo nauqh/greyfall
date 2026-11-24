@@ -983,6 +983,8 @@ export class AtlasScene extends Phaser.Scene {
   private combo = 0;
   private spawn: Cell = { col: 0, row: 0 };
   private foes: Foe[] = [];
+  /** The Ring's troll, overhead until the hero reaches the middle. */
+  private aloft: Dweller | null = null;
   private embers: Ember[] = [];
   /** Notes on the ground here, and the one being read. */
   private notes: Note[] = [];
@@ -1066,6 +1068,7 @@ export class AtlasScene extends Phaser.Scene {
     this.shieldUp = false;
     this.keys = null;
     this.foes = [];
+    this.aloft = null;
     this.embers = [];
     this.notes = [];
     this.reading = null;
@@ -1818,7 +1821,11 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** A monster at its post: it waits there until it notices the hero. */
-  private addFoe(d: Dweller): void {
+  private addFoe(d: Dweller, landed = false): void {
+    if (!landed && this.local?.area === "ring" && d.kind === this.local.arena?.boss) {
+      this.aloft = d;
+      return;
+    }
     const look = this.look(d);
     const stats = FOES[d.kind]!;
     const y = (d.row + 0.75) * CELL;
@@ -1834,6 +1841,82 @@ export class AtlasScene extends Phaser.Scene {
     const at = { col: d.col, row: d.row };
     const attack = BEAST[d.kind]?.attack ? `beast_${d.kind}_attack` : undefined;
     this.foes.push({ ...this.body(s, at, stats.hp, stats.speed, { idle: look.idle.key, move: look.move?.key, attack }), kind: d.kind, home: at, stats, windup: null });
+  }
+
+  /** The Ring's troll comes down where the hero stands, the ground red under it: off it in time, or take a slam's blow. */
+  private drop(): void {
+    const d = this.aloft!;
+    this.aloft = null;
+    // Dust sifts down first, so the fall comes as no blind blow.
+    const rumble = 800;
+    if (!this.anims.exists("fogPuff_fade")) this.anims.create({ key: "fogPuff_fade", frames: this.anims.generateFrameNumbers("fogPuff"), frameRate: 9, repeat: 0 });
+    const from = this.hero!.at;
+    for (let i = 0; i < 8; i++) {
+      const x = (from.col + 0.5 + Phaser.Math.FloatBetween(-6, 6)) * CELL;
+      const y = (from.row + Phaser.Math.FloatBetween(-5, 5)) * CELL;
+      const dust = this.add.sprite(x, y - 2 * CELL, "fogPuff", 0).setScale(0.4).setTint(0xb8ab94).setAlpha(0).setDepth(DEPTH.fx);
+      this.tweens.add({ targets: dust, y, alpha: { from: 0.7, to: 0 }, duration: 700, delay: Phaser.Math.Between(0, rumble - 300), onStart: () => dust.play("fogPuff_fade"), onComplete: () => dust.destroy() });
+    }
+    this.time.delayedCall(rumble, () => this.hero && !this.hero.dead && this.fallOn(d));
+  }
+
+  /** The troll's fall itself, onto where the hero stands now. */
+  private fallOn(d: Dweller): void {
+    const at = { ...this.hero!.at };
+    const aim = [-1, 0, 1].flatMap((dr) => [-1, 0, 1].map((dc) => ({ col: at.col + dc, row: at.row + dr }))).filter((c) => isWalkable(c.col, c.row));
+    const ms = 1000;
+    const g = this.add.graphics().setDepth(DEPTH.unit - 1);
+    for (const c of aim) g.fillStyle(0xe03a2a, 0.45).fillRect(c.col * CELL + 2, c.row * CELL + 2, CELL - 4, CELL - 4);
+    this.tweens.add({ targets: g, alpha: { from: 0.3, to: 1 }, duration: ms, onComplete: () => g.destroy() });
+    // Its shadow grows as it comes down.
+    const y = (at.row + 0.75) * CELL;
+    const shadow = this.add.ellipse((at.col + 0.5) * CELL, y, 2.4 * CELL, 1.1 * CELL, 0x000000, 0.45).setScale(0.2).setDepth(DEPTH.unit - 1);
+    this.tweens.add({ targets: shadow, scale: 1, duration: ms, ease: "Quad.easeIn", onComplete: () => shadow.destroy() });
+    const look = this.look(d);
+    const s = this.add.sprite((at.col + 0.5) * CELL, y - 12 * CELL, look.idle.key).setOrigin(0.5, look.anchor).setScale(look.scale).setDepth(DEPTH.fx);
+    const tint = BEAST[d.kind]?.tint;
+    if (tint) s.setTint(tint);
+    this.tweens.add({
+      targets: s,
+      y,
+      duration: ms,
+      ease: "Quad.easeIn",
+      onComplete: () => {
+        s.destroy();
+        this.addFoe({ ...d, col: at.col, row: at.row }, true);
+        const f = this.foes.at(-1)!;
+        f.home = { col: d.col, row: d.row };
+        f.busy = this.time.now + 1100;
+        this.active.shake(360, 0.016);
+        for (const c of aim) this.blast(c, 0xc8b898);
+        this.quake(at);
+        const on = new Set(aim.map((c) => `${c.col},${c.row}`));
+        for (const b of [this.hero!, ...this.band]) if (!b.dead && on.has(`${b.at.col},${b.at.row}`)) this.hurt(f, b, BOSS_KITS.troll!.moves.slam!.damage, true);
+      },
+    });
+  }
+
+  /** A heavy landing felt round the room: a shockwave, a wall of dust rolling out, rubble shaken off the roof. */
+  private quake(at: Cell): void {
+    const x = (at.col + 0.5) * CELL;
+    const y = (at.row + 0.75) * CELL;
+    const wave = this.add.ellipse(x, y, 2 * CELL, CELL).setStrokeStyle(6, 0xe8dcc0, 0.8).setDepth(DEPTH.unit - 1);
+    this.tweens.add({ targets: wave, scale: 7, alpha: 0, duration: 700, ease: "Quad.easeOut", onComplete: () => wave.destroy() });
+    if (!this.anims.exists("fogPuff_fade")) this.anims.create({ key: "fogPuff_fade", frames: this.anims.generateFrameNumbers("fogPuff"), frameRate: 9, repeat: 0 });
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2;
+      const puff = this.add.sprite(x + Math.cos(a) * CELL, y + Math.sin(a) * 0.5 * CELL, "fogPuff", 0).setScale(0.8).setTint(0xb8ab94).setAlpha(0.8).setDepth(DEPTH.fx - 1);
+      puff.play("fogPuff_fade");
+      this.tweens.add({ targets: puff, x: x + Math.cos(a) * 6 * CELL, y: y + Math.sin(a) * 3 * CELL, scale: 1.6, alpha: 0, duration: 900, ease: "Quad.easeOut", onComplete: () => puff.destroy() });
+    }
+    for (let i = 0; i < 10; i++) {
+      const c = { col: at.col + Phaser.Math.Between(-9, 9), row: at.row + Phaser.Math.Between(-7, 7) };
+      if (!isWalkable(c.col, c.row) || tileDistance(c, at) < 3) continue;
+      const ty = (c.row + 0.6) * CELL;
+      const rock = this.add.rectangle((c.col + 0.5) * CELL, ty - 8 * CELL, 10, 10, 0x6e665c).setAngle(Phaser.Math.Between(0, 90)).setDepth(DEPTH.fx);
+      const ms = Phaser.Math.Between(400, 900);
+      this.tweens.add({ targets: rock, y: ty, angle: rock.angle + 180, duration: ms, delay: Phaser.Math.Between(0, 500), ease: "Quad.easeIn", onComplete: () => (rock.destroy(), this.blast(c, 0x8a8070)) });
+    }
   }
 
   /** Plays a sheet's loop, unless it is already playing: a body stepping cell to cell keeps its stride. */
@@ -2718,6 +2801,7 @@ export class AtlasScene extends Phaser.Scene {
     this.stamina = recover(this.stamina, dt / 1000, (time - this.spentAt) / 1000, this.guarding, this.gear.stamina);
     this.lead(time, dt);
     this.burn(time);
+    if (this.aloft && !hero.dead && tileDistance(hero.at, this.aloft) <= 2) this.drop();
     this.foes.forEach((f, i) => {
       if (f.dead) return;
       if (f.windup && time >= f.windup.at) this.land(f, time);
@@ -2874,7 +2958,7 @@ export class AtlasScene extends Phaser.Scene {
       // Cut short by a wall: dazed where it stopped.
       if (move.stun && dazed) {
         f.busy += move.stun * 1000;
-        this.time.delayedCall(ms, () => !f.dead && (this.cameras.main.shake(200, 0.008), this.float(f.s.x, f.s.y - f.lift - 40, "Dazed", "#fdfaf0")));
+        this.time.delayedCall(ms, () => !f.dead && (this.active.shake(200, 0.008), this.float(f.s.x, f.s.y - f.lift - 40, "Dazed", "#fdfaf0")));
       }
       f.open = f.busy;
       f.at = end;
@@ -2893,7 +2977,7 @@ export class AtlasScene extends Phaser.Scene {
       }
       return;
     }
-    this.cameras.main.shake(160, 0.006);
+    this.active.shake(160, 0.006);
     if (move.shape === "scatter" || move.shape === "mark" || move.shape === "ring") for (const at of move.shape === "ring" ? aim.filter((_, i) => i % 3 === 0) : aim) this.blast(at, move.colour ?? 0xffffff);
     struck(move.damage);
   }

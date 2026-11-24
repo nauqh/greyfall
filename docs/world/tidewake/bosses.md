@@ -4,7 +4,7 @@ Each boss fights in an arena area of its own and holds the way on until it falls
 
 ## The Cinder Troll
 
-- **Where:** the Bull's Ring, a cavern past Tidewake's tunnels, walked straight into with no fog (area `ring`).
+- **Where:** the Bull's Ring, a cavern past Tidewake's tunnels, walked straight into with no fog (area `ring`). The Ring stands empty until the wanderer nears its middle; then he drops from the dark above onto where the wanderer stands, the ground red under him, a slam's blow to whoever is still on it.
 - **Who:** The Ring's keeper, and the first fight that is a lesson. The folk call him the troll in the Ring. A troll sits where water runs warm, and the Hearth's water comes up through the Ring's floor; he is not guarding the boat, it is only in his way. In game, why he is there is not told.
 - **Guards:** The Boat to Lanternport.
 - **Its fall:** Falling to him washes the wanderer up at Lanternport's fire (`bullWon`), and Ferrow remarks on it. Killing him is worth an ember more, for good.
