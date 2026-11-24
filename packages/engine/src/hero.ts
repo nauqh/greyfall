@@ -91,7 +91,7 @@ export const FOES: Partial<Record<string, FoeStats>> = {
   // The Belfry's boss, after the Bell Gargoyles: a stone gargoyle on the bell loft.
   stoneWarden: { hp: 380, attack: 26, every: 2.6, windup: 1.0, poise: true, aggro: 9, leash: 14, speed: 2.0, gold: 160 },
   // The Landing's end, the Cinder Troll in the Bull's Ring: its moves are BOSS_KITS', warned long, to teach the roll.
-  troll: { hp: 220, attack: 18, every: 2.8, windup: 1.1, poise: true, aggro: 7, leash: 9, speed: 1.5, gold: 80 },
+  troll: { hp: 220, attack: 18, every: 2.0, windup: 0.8, poise: true, aggro: 7, leash: 9, speed: 1.5, gold: 80 },
   // The King's Barrow's hex-priest king, after Gaping Dragon's slowness: the Horned Key.
   barrowKing: { hp: 480, attack: 28, every: 2.6, windup: 1.0, poise: true, aggro: 9, leash: 14, speed: 1.6, gold: 220 },
   // The bosses past the Ember Key, each in an arena of its own; their moves are BOSS_KITS'. The Weaver: the Silk Key.
@@ -167,11 +167,11 @@ export const BOSS_KITS: Partial<Record<string, BossKit>> = {
   // water flung to scald, each warned long; a charge a rock in the Ring stops dead leaves him dazed and open.
   troll: {
     moves: {
-      slam: { shape: "mark", windup: 1.4, radius: 1, damage: 16 },
-      charge: { shape: "line", windup: 1.2, tiles: 6, width: 1, speed: 10, damage: 14, stun: 2.5 },
-      toss: { shape: "scatter", windup: 1.3, patches: 3, radius: 2, damage: 4, burn: 3, tick: 0.6, colour: 0xd8f0ff },
+      slam: { shape: "mark", windup: 1.0, radius: 1, damage: 16 },
+      charge: { shape: "line", windup: 0.9, tiles: 6, width: 1, speed: 10, damage: 14, stun: 2.5 },
+      toss: { shape: "scatter", windup: 0.95, patches: 3, radius: 2, damage: 4, burn: 3, tick: 0.6, colour: 0xd8f0ff },
     },
-    recover: 1.6,
+    recover: 1.1,
     pick: (d, last) => (d <= 2 ? "slam" : d > 6 ? null : last === "charge" ? "toss" : "charge"),
   },
   // The Ember Bull: a horn swipe up close and a stomp round him after it, so beside him is no safe place; from four
