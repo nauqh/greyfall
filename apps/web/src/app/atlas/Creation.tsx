@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import type { SackItem } from "../../game/AtlasScene";
 import { packUrl } from "../../game/art";
+import { CLICK, play, useTick } from "../sound";
 import { CreationScene } from "./CreationScene";
 import { ItemIcon } from "./ItemIcon";
 import "./panel.css";
@@ -115,6 +116,7 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
   const [begun, setBegun] = useState(false);
   // The focused row of this step's list, shown on the rock and in the numbers; the chosen one until a row has focus.
   const [at, setAt] = useState<number | null>(null);
+  useTick(at);
   // Read at each render, so a scene still loading when this opened has its gifts by the time they are looked at. Shown in
   // the pack's own colours: the tints that tell goods apart in the game only muddy them here.
   const gifts = giftsNow().map((g) => ({ ...g, icon: { ...g.icon, tint: undefined } }));
@@ -178,7 +180,7 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
       const i = items.indexOf(document.activeElement as HTMLButtonElement);
       items[(i + (k === "w" ? -1 : 1) + items.length) % items.length]?.focus();
     } else if (k === "Escape") go(step - 1);
-    else if (k === "e" || k === "Enter") choose();
+    else if (k === "e" || k === "Enter") (play(CLICK), choose());
   };
 
   const told =

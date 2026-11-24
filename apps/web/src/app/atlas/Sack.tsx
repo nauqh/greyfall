@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 
 import type { SackView } from "../../game/AtlasScene";
 import { packUrl } from "../../game/art";
+import { useTick } from "../sound";
 import { ItemIcon } from "./ItemIcon";
 import { STAT_ICON } from "./RestPanel";
 import "./sack.css";
@@ -30,6 +31,7 @@ export function Sack({ sack, gold, onCover }: { sack: SackView; gold: number; on
   const [shown, setShown] = useState(false);
   const wasShown = useRef(false);
   const [pick, setPick] = useState(0);
+  useTick(open ? pick : null);
   const [opened, setOpened] = useState(() => {
     try {
       return localStorage.getItem(OPENED) === "1";

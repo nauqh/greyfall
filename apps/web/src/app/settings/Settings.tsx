@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from "react";
 
+import { useTick } from "../sound";
 import { CONTROLS } from "./controls";
 import "./settings.css";
 
@@ -15,6 +16,7 @@ const CATEGORIES = ["Controls", "Display", "Sound", "Gameplay"];
 
 export function Settings({ back, leaving }: { back: () => void; leaving: boolean }) {
   const [tab, setTab] = useState(0);
+  useTick(tab);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {

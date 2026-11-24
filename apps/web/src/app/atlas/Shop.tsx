@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode, type RefObject } from "rea
 
 import type { AtlasApi, MenuView } from "../../game/AtlasScene";
 import { packUrl } from "../../game/art";
+import { useTick } from "../sound";
 import { ItemIcon } from "./ItemIcon";
 import "./panel.css";
 import "./shop.css";
@@ -23,6 +24,7 @@ const SLOTS = 10;
  */
 export function Shop({ menu, api }: { menu: MenuView; api: RefObject<AtlasApi | null> }) {
   const bought = useBought(menu);
+  useTick(menu.pick);
   const rows = menu.options.map((o, i) => ({ ...o, i }));
   const goods = rows.filter((o) => o.icon);
   const choices = rows.filter((o) => !o.icon);

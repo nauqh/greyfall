@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { useCloudExit } from "../game/Clouds";
 import { GameCanvas } from "../game/GameCanvas";
 import { Settings } from "./settings/Settings";
+import { useTick } from "./sound";
 
 // An entry without an href opens the settings in place of the menu.
 const MENU: readonly { href?: string; label: string; hint: string }[] = [
@@ -29,6 +30,7 @@ export default function Page() {
   const [leaving, setLeaving] = useState(false);
   const [swapped, setSwapped] = useState(false);
   const items = useRef<(HTMLElement | null)[]>([]);
+  useTick(pick);
 
   // The open scroll plays its 140ms exit (settings.css), then the other mounts.
   const swap = (to: boolean): void => {

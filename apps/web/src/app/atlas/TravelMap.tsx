@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { AtlasApi, AtlasHooks } from "../../game/AtlasScene";
 import { GameCanvas } from "../../game/GameCanvas";
+import { useTick } from "../sound";
 
 export type Fire = { area: AreaId; col: number; row: number; name: string; lit: boolean };
 
@@ -51,6 +52,7 @@ export function TravelMap({ from, travel: atFire, dev = false, onTravel, onBack 
     const sat = fires.findIndex(isHere);
     return sat >= 0 ? sat : Math.max(0, fires.findIndex((f) => f.area === from && f.lit));
   });
+  useTick(pick);
   const [selected, setSelected] = useState<AreaId | null>(fires[pick]?.area ?? from);
   const [tier, setTier] = useState<TierId>(areaOf(selected ?? from).tier);
   const api = useRef<AtlasApi | null>(null);

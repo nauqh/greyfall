@@ -3,6 +3,7 @@ import { Cinzel, IM_Fell_English, IM_Fell_English_SC } from "next/font/google";
 import "@fontsource/nunito/400.css";
 import "@fontsource/nunito/600.css";
 import "@fontsource/nunito/700.css";
+import { Clicks } from "./Clicks";
 import "./globals.css";
 
 // The display face, for the title logo and menu only.
@@ -19,7 +20,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={[cinzel, fell, fellSc].map((f) => f.variable).join(" ")}>
-      <body>{children}</body>
+      <body>
+        <Clicks />
+        {children}
+      </body>
     </html>
   );
 }

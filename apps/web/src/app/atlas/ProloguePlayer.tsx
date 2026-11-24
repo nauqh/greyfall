@@ -18,7 +18,8 @@ const PARA_MS = 900;
 const readMs = (p: string): number => p.split(/\s+/).length * WORD_MS;
 
 /** The opening cutscene, after Dark Souls 1: narration on black, then the title, then the game. */
-export function Prologue({ onReveal, onDone }: { onReveal: () => void; onDone: () => void }) {
+/** `wait`: held on black, deaf to keys, while the creation screen still fades out over it. */
+export function Prologue({ wait = false, onReveal, onDone }: { wait?: boolean; onReveal: () => void; onDone: () => void }) {
   const { screens, title, subtitle } = PROLOGUE;
   const [b, setB] = useState(0);
   const [end, setEnd] = useState(false);
@@ -45,7 +46,7 @@ export function Prologue({ onReveal, onDone }: { onReveal: () => void; onDone: (
 
   // Each paragraph comes up once the one before it has been read, counted from when that one came up.
   useEffect(() => {
-    if (!screen || end) return;
+    if (!screen || end || wait) return;
     const t = leaving
       ? setTimeout(nextScreen, TAIL_MS)
       : shown < screen.length
@@ -53,7 +54,7 @@ export function Prologue({ onReveal, onDone }: { onReveal: () => void; onDone: (
         : setTimeout(() => setLeaving(true), FADE_MS + readMs(screen[shown - 1]!));
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [b, shown, leaving, end]);
+  }, [b, shown, leaving, end, wait]);
 
   // The black starts to lift: the game behind it begins its opening shot.
   useEffect(() => {
@@ -63,7 +64,7 @@ export function Prologue({ onReveal, onDone }: { onReveal: () => void; onDone: (
 
   useEffect(() => {
     // Captured on the window ahead of the game's own keys, so nothing behind the cutscene hears them.
-    if (end) return;
+    if (end || wait) return;
     const down = (e: KeyboardEvent): void => {
       e.stopPropagation();
       if (HOLD_KEYS.includes(e.key)) {
@@ -87,7 +88,7 @@ export function Prologue({ onReveal, onDone }: { onReveal: () => void; onDone: (
       window.removeEventListener("keyup", up, true);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [b, shown, end]);
+  }, [b, shown, end, wait]);
 
   return (
     <div

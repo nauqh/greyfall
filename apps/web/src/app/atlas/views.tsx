@@ -19,6 +19,7 @@ import { Prologue } from "./ProloguePlayer";
 import { Sack } from "./Sack";
 import { Shop } from "./Shop";
 import { TravelMap } from "./TravelMap";
+import { ARRIVE, CLICK, play, SACK } from "../sound";
 
 /** The HUD shown or hidden with the H key, remembered on this browser. */
 export function useHud(off = false): [boolean, () => void] {
@@ -68,6 +69,9 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   const [area, setArea] = useState(first);
   // The name up out of the dark: the area's as you arrive, a quarter's as you walk into it.
   const [reveal, setReveal] = useState<string | null>(null);
+  useEffect(() => {
+    if (reveal && reveal !== "Bonfire Lit") play(ARRIVE, 0.7);
+  }, [reveal]);
   const [travel, setTravel] = useState<(Departure & { phase: "cover" | "hold" | "uncover" }) | null>(null);
   const [warn, setWarn] = useState<Departure | null>(null);
   const [say, setSay] = useState<Say | null>(null);
@@ -99,6 +103,38 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   const [devState, setDevState] = useState<DevState | null>(null);
   const api = useRef<AtlasApi | null>(null);
   const now = useRef({ area: first, cameFrom: undefined as AreaId | undefined, quiet: false, travelling: false, prologue: false });
+  // The theme, under the prologue only: it fades out with the cutscene's black, as the Landing comes up.
+  const theme = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => {
+    // Not till the creation screen is gone: then up out of silence, as the first words come.
+    if (!prologue || picking || theme.current) return;
+    const a = new Audio("/audio/theme.mp3");
+    a.loop = true;
+    a.volume = 0;
+    theme.current = a;
+    // A browser holds sound back until the page is touched: failing that, the first key or click starts it.
+    const start = (): void =>
+      void (theme.current === a && a.play().then(() => {
+        window.removeEventListener("keydown", start, true);
+        window.removeEventListener("pointerdown", start, true);
+        const rise = setInterval(() => {
+          if (theme.current !== a || a.volume >= 0.6) return clearInterval(rise);
+          a.volume = Math.min(0.6, a.volume + 0.02);
+        }, 130);
+      }, () => {}));
+    window.addEventListener("keydown", start, true);
+    window.addEventListener("pointerdown", start, true);
+    start();
+  }, [prologue, picking]);
+  const fadeTheme = (): void => {
+    const a = theme.current;
+    if (!a) return;
+    theme.current = null;
+    const fade = setInterval(() => {
+      a.volume = Math.max(0, a.volume - 0.02);
+      if (a.volume === 0) (clearInterval(fade), a.pause());
+    }, 60);
+  };
 
   const depart = (d: Departure): void => {
     now.current.travelling = true;
@@ -256,7 +292,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
       if (k === "w" || k === "arrowup" || k === "s" || k === "arrowdown") {
         const d = k === "w" || k === "arrowup" ? -1 : 1;
         setFire((f) => f && { ...f, pick: (f.pick + d + bonfire.length) % bonfire.length });
-      } else if ((k === "e" || k === "enter") && !e.repeat) bonfire[fire.pick]!.go();
+      } else if ((k === "e" || k === "enter") && !e.repeat) (play(CLICK), bonfire[fire.pick]!.go());
       else if (k === "escape") fire.levelling ? setFire({ ...fire, pick: 1, levelling: false }) : leaveFire();
     };
     window.addEventListener("keydown", key);
@@ -285,7 +321,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
       else if (k === "w" || k === "arrowup" || k === "s" || k === "arrowdown") {
         const d = k === "w" || k === "arrowup" ? -1 : 1;
         setPaused((p) => (p === null ? p : (p + d + pauseMenu.length) % pauseMenu.length));
-      } else if ((k === "e" || k === "enter") && !e.repeat) pauseMenu[paused]!.go();
+      } else if ((k === "e" || k === "enter") && !e.repeat) (play(CLICK), pauseMenu[paused]!.go());
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
@@ -577,13 +613,23 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
             sack={sack}
             gold={gold ?? 0}
             onCover={(c) => {
+              if (c > 0 && !sackOpen) play(SACK);
               setSackOpen(c > 0);
               api.current?.look(c);
             }}
           />
         )}
       </GameCanvas>
-      {prologue && <Prologue onReveal={revealLanding} onDone={() => setPrologue(false)} />}
+      {prologue && (
+        <Prologue
+          wait={picking}
+          onReveal={() => {
+            fadeTheme();
+            revealLanding();
+          }}
+          onDone={() => setPrologue(false)}
+        />
+      )}
       {picking && (
         // Over the prologue: its black is under the creation screen as that fades, so the cutscene comes up out of it.
         <Creation

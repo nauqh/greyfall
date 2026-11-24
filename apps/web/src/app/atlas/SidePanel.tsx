@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { useTick } from "../sound";
+
 import "./panel.css";
 
 export interface PanelOption {
@@ -47,6 +49,7 @@ export function SidePanel({
   compact?: boolean;
   role?: "menu" | "dialog";
 }) {
+  useTick(pick);
   return (
     <div className={`sidePanel${wide ? " wide" : ""}${compact ? " compact" : ""}`} role={role} aria-label={name}>
       <div className="panelHead">

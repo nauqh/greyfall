@@ -14,6 +14,11 @@
 	animation: prologueOut 1600ms ease-in both;
 }
 
+/* Character creation eases away slower, into the prologue's black. */
+.creation.prologueEnd {
+	animation: prologueOut 2200ms ease-in-out both;
+}
+
 .prologueText {
 	position: absolute;
 	inset: 0;
