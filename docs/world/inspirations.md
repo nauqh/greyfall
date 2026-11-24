@@ -5,7 +5,7 @@ The nearest land in Dark Souls, Elden Ring and Skyrim to each of Aurum's, matche
 The spine is Dark Souls 1: the Hearth is its First Flame, and the Stilled are its "let the fire go out" ending held as a faith.
 
 | Land | Dark Souls | Elden Ring | Skyrim | Why |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | [Tidewake](tidewake/) | Undead Asylum (DS1) | Stranded Graveyard | Helgen escape tunnel | Tutorial cave: you wake with no name, read notes left by those before you, and fight the first boss (the Cinder Troll ≈ the Asylum Demon) |
 | [Lanternport](lanternport/) | Majula (DS2), Firelink Shrine | Roundtable Hold | Riverwood | Seaside hub around the one fire that never went out |
 | [Highward](highward/) | Undead Burg + Undead Parish (DS1) | Stormveil Castle | Whiterun, Dragonsreach | Castle falling ward by ward. The stone warden on the bell roof ≈ the Bell Gargoyles, the boar on the ramparts ≈ the Parish boar |
