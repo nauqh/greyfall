@@ -904,9 +904,10 @@ const UNDER: Partial<Record<AreaId, { rock: number; ambient: number; glow: numbe
   undercroft: { rock: 0x221a16, ambient: 0.16, glow: 0xffc890, gold: 4 },
   deeps: { rock: 0x0e1214, ambient: 0.1, glow: 0x9cdcb4, gold: 4 },
   hollow: { rock: 0x16202e, ambient: 0.42, glow: 0xb4e0ff, gold: 8 },
-  // The tutorial's sea cave and the Ring at its end: dark, in plain cool light, no warm cast; the torches show the way.
+  // The tutorial's sea cave: dark, in plain cool light, no warm cast; the torches show the way.
   landing: { rock: 0x1e2226, ambient: 0.32, glow: 0xe6ecf0, gold: 4 },
-  ring: { rock: 0x1e2226, ambient: 0.3, glow: 0xe6ecf0, gold: 4 },
+  // The Ring at its end is a fight, so its floor is lit through: a dark centre hid the troll's warnings.
+  ring: { rock: 0x1e2226, ambient: 0.75, glow: 0xe6ecf0, gold: 4 },
 };
 
 type Exit = AreaMap["exits"][number];
