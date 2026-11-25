@@ -306,11 +306,12 @@ Every term, with what to avoid, is in [GLOSSARY.md](../../GLOSSARY.md).
 2. **Does the Shell Below wake?** Settled 2026-11-21: it is a beast grown
    on the warmth; the Pilgrims think it the Hearth's keeper. Whether it ever
    wakes for them is still open.
-3. **The prologue.** Settled 2026-11-24: four screens after Dark Souls 1's
-   opening (an age before, what came, the disparity, the fall, "even now,
-   there are only embers"), in Lanternport's voice and kept to its column of
-   Who knows what. The text lives only in `apps/web/src/app/atlas/prologue.ts`;
-   the subtitle "Ashen Crown" shows on the prologue, title screen and settings.
+3. **The prologue.** Settled 2026-11-24, rewritten 2026-11-25: five screens
+   after Dark Souls 1's opening (an age before, the broken crown and the
+   disparity, the Grey, the fall, "even now, there are only embers"), in
+   Lanternport's voice and kept to its column of Who knows what. The text
+   lives only in `apps/web/src/app/atlas/prologue.ts`; the subtitle
+   "Ashen Crown" shows on the prologue, title screen and settings.
 4. **The Warlord's and the Sentinel's look.** Settled 2026-11-21: the
    Warlord is a Black Warrior scaled up and tinted warm gold, the one colour
    left in Greyfall; the Sentinel a Yellow Lancer scaled up behind its
@@ -421,8 +422,9 @@ Taken from Dark Souls (1) and Skyrim.
     art can carry"), and a building or unit never wears another's colour.
 11. **Grounded nouns, northern register.** Salt, nets, ore, coal, a stool, a
     candle, a cold hearth. Never destiny, fate or prophecy. Short sentences,
-    dry humour under the weight. The one exception is the old speech of the
-    faithful, under Voices.
+    dry humour under the weight. The exceptions are the old speech of the
+    faithful, under Voices, and the prologue, which runs long and rolls its
+    names out the way Dark Souls 1's opening does.
 12. **No outside words in player text.** No "feudal", "tutorial", "boss",
     "quest", "NPC", "zombie", "undead", "hollow" (as a state), "magic".
 13. **Claim only what we can draw.** Every people, beast and building put on
