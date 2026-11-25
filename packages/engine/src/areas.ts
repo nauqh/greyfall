@@ -3796,8 +3796,12 @@ function ring(): AreaMap {
   prop("boat", 48, 20);
   t.bosses.push({ name: "Cinder Troll", area: "ring", col: 26, row: 20 });
   who("troll", 26, 20, { to: { col: 27, row: 20 } });
-  // A note at the Ring's mouth: the lesson in its rocks.
-  const notes: Note[] = [{ at: { col: 9, row: 21 }, text: "Red ground: step out. Lure charge into rock" }];
+  // A note by the first rock in from the cave, (19,22) of the rubble: the lesson in the Ring's rocks.
+  // And one a step short of where he comes down, 2 tiles round (26,20).
+  const notes: Note[] = [
+    { at: { col: 18, row: 21 }, text: "Lure charge into rock" },
+    { at: { col: 23, row: 20 }, text: "RUNN!" },
+  ];
 
   const exits: AreaExit[] = [
     { to: "landing", name: "Ring Gate", kind: "open", at: { col: 1, row: 20 } },
