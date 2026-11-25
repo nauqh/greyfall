@@ -472,6 +472,10 @@ const BEAST: Record<string, Beast> = {
   // Old Bamboo, the pandas' grandsire, and the cubs he calls.
   oldBamboo: { idle: `${EP}Panda/Panda_Idle.png`, move: `${EP}Panda/Panda_Run.png`, attack: `${EP}Panda/Panda_Attack.png`, frame: 256, anchor: 0.68, scale: 1.9, tint: 0xe8e0d0 },
   pandaCub: { idle: `${EP}Panda/Panda_Idle.png`, move: `${EP}Panda/Panda_Run.png`, attack: `${EP}Panda/Panda_Attack.png`, frame: 256, anchor: 0.68, scale: 0.6 },
+  // The Warden's mate, smaller, the same stone.
+  gargoyle: { idle: `${EP}Giant Bat/Giant Bat_Idle.png`, move: `${EP}Giant Bat/Giant Bat_Move.png`, attack: `${EP}Giant Bat/Giant Bat_Attack.png`, frame: 192, anchor: 0.7, scale: 1.3, tint: 0x989ca4 },
+  // The Rampart Boar's chief, thrown: a spear goblin, big, in the boar's iron-dark.
+  boarChief: { idle: `${EP}Spear Goblin/Spear Goblin_Idle.png`, move: `${EP}Spear Goblin/Spear Goblin_Run.png`, attack: `${EP}Spear Goblin/Spear Goblin_Attack Fast.png`, hit: 5, frame: 256, anchor: 174 / 256, scale: 1.3, tint: 0xc8b0a0 },
   // The Sun Sentinel: the yellow guard's lancer grown huge, standing behind its shield.
   sunSentinel: { idle: "Units/Yellow Units/Lancer/Lancer_Right_Defence.png", move: "Units/Yellow Units/Lancer/Lancer_Run.png", attack: "Units/Yellow Units/Lancer/Lancer_Right_Attack.png", frame: 320, anchor: 0.62, scale: 1.7, tint: 0xfff0b0 },
   // The Warlord keeps his colour, warm gold, where his taken have gone grey.
@@ -653,6 +657,13 @@ interface Foe extends Body {
   open?: number;
   /** The boss that raised it, which raises no more while its cap of them stands. */
   raisedBy?: Foe;
+  /** A boss past its rage line has turned to its second phase; until `turning`, it takes no harm. */
+  turned?: boolean;
+  turning?: number;
+  /** Asleep at its post, until struck. */
+  asleep?: Phaser.Time.TimerEvent;
+  /** Sitting to eat: until when, and health a second. */
+  feeding?: { until: number; rate: number };
 }
 /** Ground left burning by a boss's blow (the troll's embers, the king's grave fire): it hurts whoever stands in it
  *  every `every` ms until it dies down. */
@@ -796,6 +807,20 @@ const BOSS_FLAG: Partial<Record<string, WorldFlag>> = { minotaur: "trollKey", ba
 const BOSSES = new Set(["troll", "minotaur", "rampartBull", "stoneWarden", "barrowKing", "weaver", "shellBelow", "warlord", "oldBamboo", "sunSentinel"]);
 /** The exit last gone through, so a crossing lands at the way of the same name when two ways join the same areas. */
 const VIA = "greyfall.via";
+/** A boss's turn to its second phase: the colour the room flashes, and the words across the screen. */
+const TURN: Partial<Record<string, { colour: number; herald: string }>> = {
+  minotaur: { colour: 0xff6a2a, herald: "The Ash Takes Fire" },
+  rampartBull: { colour: 0xc8b0a0, herald: "The Chief Is Thrown" },
+  stoneWarden: { colour: 0xa8acb4, herald: "Its Mate Wakes" },
+  barrowKing: { colour: 0x8cf0b4, herald: "The Dirge Begins" },
+  weaver: { colour: 0xf0ece0, herald: "The Web Closes" },
+  shellBelow: { colour: 0x6ab0c8, herald: "The Isle Shakes" },
+  warlord: { colour: 0x9c9fa8, herald: "The Crown Drinks Deep" },
+  oldBamboo: { colour: 0x8cd080, herald: "The Cubs Come Back" },
+  sunSentinel: { colour: 0xffe080, herald: "The Shield Is Cast Down" },
+};
+/** Stone the Belfry's bell dazes when struck. */
+const STONE: ReadonlySet<string> = new Set(["stoneWarden", "gargoyle"]);
 /** A boss whose fall is worth an ember more, for good: the Landing's troll, the reward for going back to him. */
 const BOSS_FLASK: ReadonlySet<string> = new Set(["troll"]);
 /** A hit flash over: back to the sprite's own colour, its base tint if it has one. */
@@ -970,6 +995,11 @@ export class AtlasScene extends Phaser.Scene {
   private foes: Foe[] = [];
   /** The Ring's troll, overhead until the hero reaches the middle. */
   private aloft: Dweller | null = null;
+  /** The ring a warmth-drinking crown draws round its boss, and when the next wisp leaves the hero for it. */
+  private aura?: Phaser.GameObjects.Ellipse;
+  private wisped = 0;
+  /** When the Belfry's bell may ring again. */
+  private tolled = 0;
   private embers: Ember[] = [];
   /** Notes on the ground here, and the one being read. */
   private notes: Note[] = [];
@@ -1172,6 +1202,12 @@ export class AtlasScene extends Phaser.Scene {
         const b = BEAST[d.kind];
         if (FOES[d.kind] && b?.attack) sheet(`beast_${d.kind}_attack`, { file: b.attack, frame: b.frame, anchor: 0 });
         for (const k of ["windup", "recovery"] as const) if (b?.[k]) sheet(`beast_${d.kind}_${k}`, { file: b[k]!, frame: b.frame, anchor: 0 });
+        const turned = BOSS_KITS[d.kind]?.rage?.look;
+        if (turned) {
+          const { idle, move, frame } = this.look({ kind: turned, col: 0, row: 0 });
+          sheet(idle.key, { file: idle.file, frame, anchor: 0 });
+          if (move) sheet(move.key, { file: move.file, frame, anchor: 0 });
+        }
         for (const m of Object.values(BOSS_KITS[d.kind]?.moves ?? {})) {
           if (!m.summon) continue;
           const { idle, move, frame } = this.look({ kind: m.summon.kind, col: 0, row: 0 });
@@ -1732,7 +1768,8 @@ export class AtlasScene extends Phaser.Scene {
 
   /** A monster at its post: it waits there until it notices the hero. */
   private addFoe(d: Dweller, landed = false): void {
-    if (!landed && this.local?.area === "ring" && d.kind === this.local.arena?.boss) {
+    const kit = d.kind === this.local?.arena?.boss ? BOSS_KITS[d.kind] : undefined;
+    if (!landed && kit?.drops) {
       this.aloft = d;
       return;
     }
@@ -1751,15 +1788,22 @@ export class AtlasScene extends Phaser.Scene {
     const at = { col: d.col, row: d.row };
     const attack = BEAST[d.kind]?.attack ? `beast_${d.kind}_attack` : undefined;
     this.foes.push({ ...this.body(s, at, stats.hp, stats.speed, { idle: look.idle.key, move: look.move?.key, attack }), kind: d.kind, home: at, stats, windup: null });
+    if (kit?.sleeps) {
+      const f = this.foes.at(-1)!;
+      s.anims.timeScale = 0.4;
+      // Asleep: slow breath, and its snores rising off it.
+      f.asleep = this.time.addEvent({ delay: 1600, loop: true, callback: () => this.float(s.x + 30, s.y - f.lift - 60, "z", "#cfe0ea") });
+    }
   }
 
-  /** The Ring's troll comes down where the hero stands, the ground red under it: off it in time, or take a slam's blow. */
+  /** A boss that drops (the Ring's troll, the Belfry's warden) comes down where the hero stands, the ground red under
+   *  it: off it in time, or take its landing's blow. */
   private drop(): void {
     const d = this.aloft!;
     this.aloft = null;
     // Dust sifts down first, and he is heard above, so the fall comes as no blind blow.
     const rumble = 800;
-    play(TROLL_GROWL, 0.7);
+    if (d.kind === "troll") play(TROLL_GROWL, 0.7);
     if (!this.anims.exists("fogPuff_fade")) this.anims.create({ key: "fogPuff_fade", frames: this.anims.generateFrameNumbers("fogPuff"), frameRate: 9, repeat: 0 });
     const from = this.hero!.at;
     for (let i = 0; i < 8; i++) {
@@ -1771,7 +1815,7 @@ export class AtlasScene extends Phaser.Scene {
     this.time.delayedCall(rumble, () => this.hero && !this.hero.dead && this.fallOn(d));
   }
 
-  /** The troll's fall itself, onto where the hero stands now. */
+  /** The fall itself, onto where the hero stands now. */
   private fallOn(d: Dweller): void {
     const at = { ...this.hero!.at };
     const aim = [-1, 0, 1].flatMap((dr) => [-1, 0, 1].map((dc) => ({ col: at.col + dc, row: at.row + dr }))).filter((c) => isWalkable(c.col, c.row));
@@ -1783,7 +1827,7 @@ export class AtlasScene extends Phaser.Scene {
     const y = (at.row + 0.75) * CELL;
     const shadow = this.add.ellipse((at.col + 0.5) * CELL, y, 2.4 * CELL, 1.1 * CELL, 0x000000, 0.45).setScale(0.2).setDepth(DEPTH.unit - 1);
     this.tweens.add({ targets: shadow, scale: 1, duration: ms, ease: "Quad.easeIn", onComplete: () => shadow.destroy() });
-    play(TROLL_FALL, 0.8);
+    if (d.kind === "troll") play(TROLL_FALL, 0.8);
     const look = this.look(d);
     const s = this.add.sprite((at.col + 0.5) * CELL, y - 12 * CELL, look.idle.key).setOrigin(0.5, look.anchor).setScale(look.scale).setDepth(DEPTH.fx);
     const tint = BEAST[d.kind]?.tint;
@@ -1801,11 +1845,11 @@ export class AtlasScene extends Phaser.Scene {
         f.busy = this.time.now + 1100;
         this.active.shake(360, 0.016);
         play(TROLL_LAND);
-        this.time.delayedCall(350, () => play(TROLL_ROAR));
+        if (d.kind === "troll") this.time.delayedCall(350, () => play(TROLL_ROAR));
         for (const c of aim) this.blast(c, 0xc8b898);
         this.quake(at);
         const on = new Set(aim.map((c) => `${c.col},${c.row}`));
-        for (const b of [this.hero!, ...this.band]) if (!b.dead && on.has(`${b.at.col},${b.at.row}`)) this.hurt(f, b, BOSS_KITS.troll!.moves.slam!.damage, true);
+        for (const b of [this.hero!, ...this.band]) if (!b.dead && on.has(`${b.at.col},${b.at.row}`)) this.hurt(f, b, BOSS_KITS[d.kind]!.drops!, true);
       },
     });
   }
@@ -1913,17 +1957,27 @@ export class AtlasScene extends Phaser.Scene {
         this.float(to.s.x, to.s.y - to.lift - 40, "Guard broken", "#fdfaf0");
       }
     }
-    const kit = this.foes.includes(to as Foe) ? BOSS_KITS[(to as Foe).kind] : undefined;
+    const foe = this.foes.includes(to as Foe) ? (to as Foe) : undefined;
+    const kit = foe && BOSS_KITS[foe.kind];
+    if (foe?.stats.flees) return this.flee(foe, from);
+    if (foe && now < (foe.turning ?? 0)) return;
     if (kit?.wards && this.foes.some((o) => o.kind === kit.wards && !o.dead)) {
       this.float(to.s.x, to.s.y - to.lift - 40, "Warded", "#8cf0b4");
       return;
     }
-    if (kit?.shield && this.facing(to, from)) {
+    if (kit?.shield && !(kit.rage?.bare && foe!.turned) && this.facing(to, from)) {
       play(BLOCK, 0.6);
       this.float(to.s.x, to.s.y - to.lift - 40, "Parried", "#ffe080");
       return;
     }
-    const stone = kit?.stone !== undefined && now >= ((to as Foe).open ?? 0) ? kit.stone : 1;
+    if (foe?.feeding) {
+      foe.feeding = undefined;
+      foe.busy = foe.open = now + 600;
+      this.float(to.s.x, to.s.y - to.lift - 70, "Startled", "#fdfaf0");
+    }
+    const asleep = !!foe?.asleep;
+    if (asleep) this.wake(foe!);
+    const stone = kit?.stone !== undefined && !asleep && now >= (foe!.open ?? 0) ? kit.stone : 1;
     if (stone === 0) {
       this.float(to.s.x, to.s.y - to.lift - 40, "Shelled", "#9cc0b0");
       return;
@@ -2718,10 +2772,18 @@ export class AtlasScene extends Phaser.Scene {
     this.stamina = recover(this.stamina, dt / 1000, (time - this.spentAt) / 1000, this.guarding, this.gear.stamina);
     this.lead(time, dt);
     this.burn(time);
+    this.drain(time, dt);
     if (this.aloft && !hero.dead && tileDistance(hero.at, this.aloft) <= 2) this.drop();
     this.foes.forEach((f, i) => {
       if (f.dead) return;
       if (f.windup && time >= f.windup.at) this.land(f, time);
+      if (f.feeding) {
+        if (time >= f.feeding.until) f.feeding = undefined;
+        else this.feed(f, f.feeding.rate * (dt / 1000), time);
+      }
+      if (f.asleep) return;
+      const kit = BOSS_KITS[f.kind];
+      if (kit?.rage && !f.turned && !f.windup && this.isBoss(f) && this.raging(f)) return this.turn(f, time);
       if (time < f.busy) return;
       // Far from the hero and at home, a monster rests.
       if (tileDistance(f.at, hero.at) > 14 && f.at.col === f.home.col && f.at.row === f.home.row && f.way.length === 0) return;
@@ -2732,10 +2794,13 @@ export class AtlasScene extends Phaser.Scene {
       const intent = foeIntent(f.at, f.home, m >= 0 ? mark.at : null, f.stats);
       // A foe that notices nothing (a grave totem) only stands.
       if (f.stats.aggro === 0) return;
-      const kit = BOSS_KITS[f.kind];
-      if (kit?.heals && this.foes.some((o) => o.raisedBy === f && !o.dead)) f.hp = Math.min(f.max, f.hp + (kit.heals * dt) / 1000);
       if (kit && m >= 0 && intent !== "return" && time >= f.next) {
-        let move = kit.pick(tileDistance(f.at, mark.at), f.last ?? null, this.raging(f));
+        const sees = {
+          snared: this.embers.some((e) => e.snare && e.at.col === mark.at.col && e.at.row === mark.at.row),
+          adds: this.foes.filter((o) => o.raisedBy === f && !o.dead).length,
+          fallen: kit.wards ? this.foes.filter((o) => o.kind === kit.wards && o.dead).length : 0,
+        };
+        let move = kit.pick(tileDistance(f.at, mark.at), f.last ?? null, this.raging(f), sees);
         const raise = move && kit.moves[move]!.summon;
         if (raise && this.foes.filter((o) => o.raisedBy === f && !o.dead).length >= raise.cap) move = Object.keys(kit.moves).find((k) => !kit.moves[k]!.summon && k !== f.last) ?? null;
         if (move) return this.bossWindUp(f, mark, move, time);
@@ -2810,6 +2875,162 @@ export class AtlasScene extends Phaser.Scene {
     if (tileDistance(f.at, mark.at) <= 1 && Math.hypot(mark.s.x - f.s.x, mark.s.y - f.s.y) < 1.6 * CELL) this.hurt(f, mark, f.stats.attack);
   }
 
+  /** A boss past its rage line turns: it stops and flares in its colour, takes no harm for the moment, the camera
+   *  closes on it and the room shakes, the words go up, and it opens its second phase. */
+  private turn(f: Foe, time: number): void {
+    const kit = BOSS_KITS[f.kind]!;
+    const fx = TURN[f.kind] ?? { colour: 0xffffff, herald: "" };
+    const ms = 1800;
+    Object.assign(f, { turned: true, turning: time + ms, busy: time + ms, way: [], feeding: undefined });
+    this.play(f.s, f.idle);
+    const cam = this.active;
+    const zoom = cam.zoom;
+    const [r, g, b] = [(fx.colour >> 16) & 255, (fx.colour >> 8) & 255, fx.colour & 255];
+    if (!this.free) cam.zoomTo(zoom * 1.18, 350, "Sine.easeOut", true);
+    cam.flash(300, r, g, b);
+    f.s.setTintFill(fx.colour);
+    this.tweens.add({ targets: f.s, scale: f.s.scale * 1.12, duration: 220, yoyo: true, repeat: 2, onComplete: () => !f.dead && untint(f.s) });
+    const [x, y] = [f.s.x, f.s.y];
+    for (const delay of [0, 450, 900]) {
+      this.time.delayedCall(delay, () => {
+        const wave = this.add.ellipse(x, y, 2 * CELL, CELL).setStrokeStyle(8, fx.colour, 0.9).setDepth(DEPTH.fx);
+        this.tweens.add({ targets: wave, scale: 9, alpha: 0, duration: 900, ease: "Quad.easeOut", onComplete: () => wave.destroy() });
+        cam.shake(260, 0.01);
+      });
+    }
+    // Sparks of its colour drawn in to it, as if the room gives it what it has left.
+    for (let i = 0; i < 18; i++) {
+      const a = (i / 18) * Math.PI * 2;
+      const p = this.add.circle(x + Math.cos(a) * 6 * CELL, y + Math.sin(a) * 3.5 * CELL, 5, fx.colour).setDepth(DEPTH.fx).setAlpha(0);
+      this.tweens.add({ targets: p, x, y: y - f.lift * 0.5, alpha: { from: 0.9, to: 0.2 }, duration: 900, delay: i * 25, ease: "Quad.easeIn", onComplete: () => p.destroy() });
+    }
+    if (fx.herald) this.herald(fx.herald, 300);
+    this.time.delayedCall(ms - 500, () => {
+      if (f.dead) return;
+      if (!this.free) cam.zoomTo(zoom, 500, "Sine.easeInOut", true);
+      cam.flash(180, r, g, b);
+      this.quake(f.at);
+      const look = kit.rage?.look && this.look({ kind: kit.rage.look, col: 0, row: 0 });
+      if (look) {
+        // Drawn as it is now: the boar with its rider gone.
+        Object.assign(f, { idle: look.idle.key, move: look.move?.key, attack: undefined });
+        f.s.setOrigin(0.5, look.anchor).setScale(look.scale * 2).setData("tint", 0x8a7a70).setTint(0x8a7a70);
+        this.play(f.s, f.idle);
+      }
+    });
+    this.time.delayedCall(ms, () => {
+      const hero = this.hero;
+      if (f.dead || !hero || hero.dead || !kit.rage?.opener) return;
+      this.bossWindUp(f, hero, kit.rage.opener, this.time.now);
+    });
+  }
+
+  /** Struck awake: it starts up with a shake of the ground and its name across the screen. */
+  private wake(f: Foe): void {
+    f.asleep?.remove();
+    f.asleep = undefined;
+    f.s.anims.timeScale = 1;
+    f.next = 0;
+    f.busy = this.time.now + 700;
+    this.active.shake(400, 0.014);
+    this.quake(f.at);
+    const name = this.local?.bosses.find((b) => tileDistance(b, f.home) <= 2)?.name;
+    if (name) this.herald(`${name} Wakes`);
+  }
+
+  /** Struck, it runs from whoever struck it and is gone, leaving nothing. */
+  private flee(f: Foe, from: Body): void {
+    Object.assign(f, { dead: true, windup: null, way: [] });
+    f.bar.clear();
+    if (this.lastHit === f) this.lastHit = null;
+    this.tweens.killTweensOf(f.s);
+    this.float(f.s.x, f.s.y - f.lift - 40, "Fled", "#fdfaf0");
+    const away = Math.sign(f.s.x - from.s.x) || 1;
+    f.s.setFlipX(away < 0);
+    if (f.move) this.play(f.s, f.move);
+    this.tweens.add({ targets: f.s, x: f.s.x + away * 10 * CELL, alpha: 0, duration: 1400, onComplete: () => f.s.destroy() });
+  }
+
+  /** Eating: health back, a green mark rising off it now and then. */
+  private feed(f: Foe, hp: number, time: number): void {
+    f.hp = Math.min(f.max, f.hp + hp);
+    if (time - ((f.s.getData("fed") as number | undefined) ?? 0) < 500) return;
+    f.s.setData("fed", time);
+    this.float(f.s.x + Phaser.Math.Between(-30, 30), f.s.y - f.lift - 40, "+", "#8cd080", 700);
+  }
+
+  /** A crown that drinks warmth: a hero inside its ring loses stamina and gets none back there, wisps of it drawn off. */
+  private drain(time: number, dt: number): void {
+    const f = this.foes.find((o) => !o.dead && BOSS_KITS[o.kind]?.drains && this.isBoss(o));
+    if (!f) return void this.aura?.setVisible(false);
+    const d = BOSS_KITS[f.kind]!.drains!;
+    const radius = f.turned ? (d.raging ?? d.radius) : d.radius;
+    if (!this.aura?.active) this.aura = this.add.ellipse(0, 0, 1, 1).setDepth(DEPTH.unit - 1);
+    const pulse = 0.35 + 0.15 * Math.sin(time / 250);
+    this.aura
+      .setVisible(true)
+      .setPosition(f.s.x, f.s.y)
+      .setSize((2 * radius + 1) * CELL, (2 * radius + 1) * CELL * 0.55)
+      .setStrokeStyle(4, 0x9c9fa8, pulse)
+      .setFillStyle(0x9c9fa8, pulse * 0.25);
+    this.aura.setDisplayOrigin(this.aura.width / 2, this.aura.height / 2);
+    const hero = this.hero!;
+    if (hero.dead || this.gone || tileDistance(hero.at, f.at) > radius) return;
+    this.stamina = spend(this.stamina, (d.rate * dt) / 1000);
+    this.spentAt = time;
+    if (time < this.wisped) return;
+    this.wisped = time + 180;
+    const w = this.add.circle(hero.s.x + Phaser.Math.Between(-12, 12), hero.s.y - 30, 4, 0xe8a060).setDepth(DEPTH.fx);
+    this.tweens.add({ targets: w, x: f.s.x, y: f.s.y - f.lift * 0.6, alpha: { from: 0.9, to: 0.3 }, duration: 500, ease: "Quad.easeIn", onComplete: () => w.destroy() });
+  }
+
+  /** One of the king's raised dead goes to a broken ward and stands it up again; if they are all cut down, nothing. */
+  private rouse(f: Foe, kind: string, at: Cell | undefined): void {
+    const dead = this.foes.find((o) => o.raisedBy === f && !o.dead);
+    const old = at && this.foes.find((o) => o.kind === kind && o.dead && o.home.col === at.col && o.home.row === at.row);
+    if (!dead || !old || !at) return;
+    const [tx, ty] = [(at.col + 0.5) * CELL, (at.row + 0.5) * CELL];
+    const g = this.add.graphics().setDepth(DEPTH.fx).lineStyle(5, 0x8cf0b4, 0.9).lineBetween(dead.s.x, dead.s.y - 30, tx, ty);
+    this.tweens.add({ targets: g, alpha: 0, duration: 700, onComplete: () => g.destroy() });
+    Object.assign(dead, { dead: true, windup: null, way: [] });
+    dead.bar.clear();
+    this.tweens.add({ targets: dead.s, alpha: 0, scale: 0.2, x: tx, y: ty, duration: 500, onComplete: () => dead.s.destroy() });
+    // The old ward's place is taken by the new: the one left broken counts no more.
+    this.time.delayedCall(0, () => this.foes.splice(this.foes.indexOf(old), 1));
+    this.addFoe({ kind, col: at.col, row: at.row });
+    const ward = this.foes.at(-1)!;
+    const y = ward.s.y;
+    ward.s.setAlpha(0).setY(y + 30);
+    this.tweens.add({ targets: ward.s, alpha: 1, y, duration: 700, ease: "Back.easeOut" });
+    this.blast(at, 0x8cf0b4);
+    this.active.shake(200, 0.008);
+    this.float(tx, ty - 80, "Warded", "#8cf0b4");
+  }
+
+  /** The Belfry's bell, struck: its toll dazes all the stone in the loft, the roof shaken; it rings again after a while. */
+  private toll(time: number): void {
+    const bell = this.local?.arena?.bell;
+    if (!bell || tileDistance(this.hero!.at, bell) > 3 || time < this.tolled) return;
+    this.tolled = time + 12000;
+    play(CLASH, 1);
+    const [x, y] = [(bell.col + 0.5) * CELL, (bell.row + 0.5) * CELL];
+    for (const delay of [0, 300, 600]) {
+      this.time.delayedCall(delay, () => {
+        const wave = this.add.ellipse(x, y, 2 * CELL, CELL).setStrokeStyle(6, 0xd8b060, 0.9).setDepth(DEPTH.fx);
+        this.tweens.add({ targets: wave, scale: 12, alpha: 0, duration: 1100, ease: "Quad.easeOut", onComplete: () => wave.destroy() });
+      });
+    }
+    this.active.shake(600, 0.012);
+    this.quake(bell);
+    for (const f of this.foes) {
+      if (f.dead || !STONE.has(f.kind)) continue;
+      f.windup = null;
+      f.busy = f.open = time + 3000;
+      this.play(f.s, f.idle);
+      this.float(f.s.x, f.s.y - f.lift - 40, "Dazed", "#fdfaf0");
+    }
+  }
+
   /** Whether a boss is down past its kit's rage line, and winds up the quicker for it. */
   private raging(f: Foe): boolean {
     const rage = BOSS_KITS[f.kind]?.rage;
@@ -2821,7 +3042,8 @@ export class AtlasScene extends Phaser.Scene {
     const kit = BOSS_KITS[f.kind]!;
     const move = kit.moves[name]!;
     const ms = move.windup * 1000 * (this.raging(f) ? kit.rage!.haste : 1);
-    const aim = bossAim(move, f.at, mark.at, (c) => isWalkable(c.col, c.row) && !this.shut(c));
+    const fallen = move.revive && this.foes.find((o) => o.kind === move.revive && o.dead);
+    const aim = fallen ? [fallen.home] : bossAim(move, f.at, mark.at, (c) => isWalkable(c.col, c.row) && !this.shut(c));
     // A charge that stops short of its full run has hit a wall.
     const reach = Math.min(move.tiles ?? 0, tileDistance(f.at, mark.at) + (move.past ?? Infinity));
     const dazed = !!move.stun && bossAim({ ...move, width: 1 }, f.at, mark.at, (c) => isWalkable(c.col, c.row) && !this.shut(c)).length < reach;
@@ -2848,7 +3070,7 @@ export class AtlasScene extends Phaser.Scene {
     const kit = BOSS_KITS[f.kind]!;
     const move = kit.moves[name]!;
     f.busy = time + (move.recover ?? kit.recover) * 1000;
-    f.open = f.busy;
+    f.open = kit.dazedOnly ? 0 : f.busy;
     if (this.anims.exists(`beast_${f.kind}_recovery_once`)) {
       f.s.play(`${f.attack}_once`);
       f.s.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => !f.dead && f.s.play(`beast_${f.kind}_recovery_once`).once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => !f.dead && this.play(f.s, f.idle)));
@@ -2858,10 +3080,26 @@ export class AtlasScene extends Phaser.Scene {
         this.addFoe({ kind: move.summon.kind, col: at.col, row: at.row });
         const raised = this.foes.at(-1)!;
         raised.raisedBy = f;
+        if (kit.rage?.look && f.turned) {
+          // Thrown: it comes off the boar's back in an arc and lands rolling.
+          const [x, y] = [raised.s.x, raised.s.y];
+          raised.s.setPosition(f.s.x, f.s.y - 40);
+          raised.busy = time + 1200;
+          this.tweens.add({ targets: raised.s, x, duration: 600, ease: "Sine.easeOut" });
+          this.tweens.add({ targets: raised.s, y: { from: f.s.y - 40, to: y - 2 * CELL }, duration: 300, ease: "Quad.easeOut", yoyo: false, onComplete: () => this.tweens.add({ targets: raised.s, y, angle: 360, duration: 300, ease: "Quad.easeIn", onComplete: () => (raised.s.setAngle(0), this.blast(at, 0xc8b898), this.active.shake(120, 0.006)) }) });
+          continue;
+        }
         raised.s.setAlpha(0);
         this.tweens.add({ targets: raised.s, alpha: 1, duration: 500 });
-        this.blast(at, 0x9a6ae0);
+        this.blast(at, move.colour ?? 0x9a6ae0);
       }
+      return;
+    }
+    if (move.revive) return this.rouse(f, move.revive, aim[0]);
+    if (move.feeds) {
+      f.feeding = { until: f.busy, rate: move.feeds };
+      f.open = f.busy;
+      this.float(f.s.x, f.s.y - f.lift - 70, "Eating", "#8cd080");
       return;
     }
     const on = new Set(aim.map((c) => `${c.col},${c.row}`));
@@ -2884,7 +3122,8 @@ export class AtlasScene extends Phaser.Scene {
           if (f.kind === "troll") (play(TROLL_ROCK), this.time.delayedCall(250, () => !f.dead && play(TROLL_DAZED, 0.7)));
         });
       }
-      f.open = f.busy;
+      f.open = kit.dazedOnly && !dazed ? 0 : f.busy;
+      if (move.wake) this.scorch(f, aim, ms, move.wake);
       f.at = end;
       // It hits whoever it runs into, once each, as it passes: not whoever stood on its line when it set off.
       const touch = ((move.width ?? 1) / 2 + 0.3) * CELL;
@@ -2918,6 +3157,19 @@ export class AtlasScene extends Phaser.Scene {
     this.active.shake(160, 0.006);
     if (move.shape === "scatter" || move.shape === "mark" || move.shape === "ring") for (const at of move.shape === "ring" ? aim.filter((_, i) => i % 3 === 0) : aim) this.blast(at, move.colour ?? 0xffffff);
     struck(move.damage);
+  }
+
+  /** A charge's wake: each cell of its line set alight as the boss passes over it. */
+  private scorch(f: Foe, aim: Cell[], ms: number, wake: { burn: number; damage: number }): void {
+    aim.forEach((at, i) =>
+      this.time.delayedCall(((i + 1) / aim.length) * ms, () => {
+        if (f.dead) return;
+        const now = this.time.now;
+        const s = this.add.sprite((at.col + 0.5) * CELL, (at.row + 0.75) * CELL, "fire").setOrigin(0.5, FIRE.anchor).setScale(0.5).setDepth(DEPTH.unit - 1);
+        this.loop(s, "fire");
+        this.embers.push({ at, until: now + wake.burn * 1000, tick: now + 400, every: 600, damage: wake.damage, from: f, s });
+      }),
+    );
   }
 
   /** A burst on a cell: the pack's explosion, played once. */
@@ -4172,7 +4424,7 @@ export class AtlasScene extends Phaser.Scene {
     play(SWING, 0.5);
     // Committed until the swing is through: no roll out of it.
     hero.busy = time + (HERO.hit + 0.25) * 1000;
-    if (!foe) return;
+    if (!foe) return this.toll(time);
     this.lastHit = foe;
     // The blow lands partway through the swing, if the mark is still in reach.
     this.time.delayedCall(HERO.hit * 1000, () => {

@@ -71,8 +71,9 @@ export interface AreaMap extends AtlasTier {
   streets?: boolean;
   /** Notes left on the ground, after the Souls games' messages: read with E. */
   notes?: Note[];
-  /** A boss room: fog across `gate`, crossed with E from outside to `inside`, shut behind until the `boss` kind falls. */
-  arena?: { boss: string; gate: Cell[]; inside: Cell };
+  /** A boss room: fog across `gate`, crossed with E from outside to `inside`, shut behind until the `boss` kind falls.
+   *  `bell`: a bell in it that a swing beside rings. */
+  arena?: { boss: string; gate: Cell[]; inside: Cell; bell?: Cell };
   /** Ways shut until a boss's key is carried: `key` is the boss kind that drops it; `flag`, a world flag that opens it too.
    *  With `from`, a shortcut: no key, unbarred for good with E from the side nearer `from`, setting `flag`. */
   locks?: { key?: string; name: string; cells: Cell[]; flag?: string; from?: Cell }[];
@@ -305,7 +306,7 @@ function pad(m: AreaMap, n: number): AreaMap {
     districts: m.districts.map((d) => ({ ...d, at: at(d.at), ...(d.box && { box: { ...d.box, x: d.box.x + n, y: d.box.y + n } }) })),
     decks: m.decks.map(at),
     ...(m.notes && { notes: m.notes.map((x) => ({ ...x, at: at(x.at) })) }),
-    ...(m.arena && { arena: { ...m.arena, gate: m.arena.gate.map(at), inside: at(m.arena.inside) } }),
+    ...(m.arena && { arena: { ...m.arena, gate: m.arena.gate.map(at), inside: at(m.arena.inside), ...(m.arena.bell && { bell: at(m.arena.bell) }) } }),
     ...(m.locks && { locks: m.locks.map((l) => ({ ...l, cells: l.cells.map(at), ...(l.from && { from: at(l.from) }) })) }),
   };
 }
@@ -3949,7 +3950,7 @@ function belfry(): AreaMap {
   who("stoneWarden", 14, 13);
   t.bosses.push({ name: "The Stone Warden", area: "belfry", col: 14, row: 13 });
 
-  const notes: Note[] = [{ at: { col: 27, row: 10 }, text: "No room to run on the bell roof." }];
+  const notes: Note[] = [{ at: { col: 27, row: 10 }, text: "Ring the bell. Stone cannot stand its toll." }];
   const exits: AreaExit[] = [
     { to: "chapel", name: "The Bell Stair", kind: "open", at: { col: 28, row: 11 } },
     { to: "emberwood", name: "The Postern", kind: "gate", at: { col: 1, row: 11 }, guard: "stoneWarden" },
@@ -3961,7 +3962,7 @@ function belfry(): AreaMap {
   ];
   const tier = t.finish({}, [{ col: 27, row: 11 }]);
   // No fog: the whole land is the arena, walked straight into; the warden's guard on the Postern holds the way on.
-  const arena = { boss: "stoneWarden", gate: [], inside: { col: 14, row: 11 } };
+  const arena = { boss: "stoneWarden", gate: [], inside: { col: 14, row: 11 }, bell: { col: 14, row: 8 } };
   return { ...tier, area: "belfry", entry: { col: 27, row: 11 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes, arena };
 }
 
@@ -3993,7 +3994,7 @@ function trollpit(): AreaMap {
   who("minotaur", 30, 21, { to: { col: 34, row: 23 } });
   t.bosses.push({ name: "The Ember Bull", area: "trollpit", col: 30, row: 21 });
 
-  const notes: Note[] = [{ at: { col: 31, row: 40 }, text: "Make him run. The trees stop him dead." }];
+  const notes: Note[] = [{ at: { col: 31, row: 40 }, text: "Every rush he makes, the ash burns behind him. Keep him near the gap." }];
   const exits: AreaExit[] = [
     { to: "emberwood", name: "The Ash Road", kind: "open", at: { col: 30, row: 44 } },
     { to: "crags", name: "Crag Stair", kind: "open", at: { col: 30, row: 1 }, guard: "minotaur" },
@@ -4035,7 +4036,7 @@ function barrow(): AreaMap {
   for (const [c, r] of [[25, 10], [16, 21], [34, 21]] as const) who("graveTotem", c, r);
   t.bosses.push({ name: "The Barrow King", area: "barrow", col: 25, row: 16 });
 
-  const notes: Note[] = [{ at: { col: 26, row: 32 }, text: "Break what he leans on, then the king." }];
+  const notes: Note[] = [{ at: { col: 26, row: 32 }, text: "Break what he leans on, and cut down the dead who stand it up again." }];
   const exits: AreaExit[] = [
     { to: "barrowmoor", name: "Barrow Cave", kind: "lift", at: { col: 25, row: 33 } },
     { to: "deeps", name: "The King's Stair", kind: "open", at: { col: 48, row: 17 }, guard: "barrowKing" },
@@ -4069,7 +4070,7 @@ function web(): AreaMap {
   who("weaver", 30, 21, { scale: 2.2 });
   t.bosses.push({ name: "The Weaver", area: "web", col: 30, row: 21 });
 
-  const notes: Note[] = [{ at: { col: 31, row: 6 }, text: "White ground holds. Cut the brood down first." }];
+  const notes: Note[] = [{ at: { col: 31, row: 6 }, text: "White ground holds you, and she comes for whoever it holds." }];
   const exits: AreaExit[] = [
     { to: "deeps", name: "The Web", kind: "open", at: { col: 30, row: 3 } },
     { to: "hollow", name: "Sinking Stair", kind: "open", at: { col: 30, row: 42 }, guard: "weaver" },
@@ -4106,7 +4107,7 @@ function shellisle(): AreaMap {
   who("shellBelow", 34, 24, { scale: 1.3 });
   t.bosses.push({ name: "The Shell Below", area: "shellisle", col: 34, row: 24 });
 
-  const notes: Note[] = [{ at: { col: 6, row: 23 }, text: "Its shell turns every blade. Make it spin into the lake." }];
+  const notes: Note[] = [{ at: { col: 6, row: 23 }, text: "Strike it while it sleeps. After that, only a spin into the lake opens its shell." }];
   const exits: AreaExit[] = [
     { to: "hollow", name: "The Shell", kind: "open", at: { col: 1, row: 24 } },
     { to: "fen", name: "The Shell Stair", kind: "lift", at: { col: 34, row: 5 }, guard: "shellBelow" },
@@ -4154,8 +4155,9 @@ function throne(): AreaMap {
     { name: "The Keep Door", at: { col: 32, row: 40 }, levels: [1], palette: [4], dress: "greyfall", decor: 0.5 },
   ];
   const tier = t.finish({}, [{ col: 32, row: 40 }]);
+  const notes: Note[] = [{ at: { col: 33, row: 39 }, text: "Near him the warmth leaves you. Strike once and step back." }];
   const arena = { boss: "warlord", gate: [], inside: { col: 32, row: 22 } };
-  return { ...tier, area: "throne", entry: { col: 32, row: 40 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], arena };
+  return { ...tier, area: "throne", entry: { col: 32, row: 40 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes, arena };
 }
 
 /**
@@ -4176,7 +4178,7 @@ function peak(): AreaMap {
   who("oldBamboo", 28, 22);
   t.bosses.push({ name: "Old Bamboo", area: "peak", col: 28, row: 22 });
 
-  const notes: Note[] = [{ at: { col: 29, row: 39 }, text: "He eats while his cubs stand." }];
+  const notes: Note[] = [{ at: { col: 29, row: 39 }, text: "He sits down to eat after he throws. Strike him while he eats." }];
   const exits: AreaExit[] = [
     { to: "crags", name: "The Tinker Peak", kind: "open", at: { col: 28, row: 42 } },
     { to: "gilded", name: "Gnome Lift", kind: "lift", at: { col: 28, row: 6 }, guard: "oldBamboo" },

@@ -52,6 +52,8 @@ export interface FoeStats {
   range?: number;
   /** On the wing: a blade cannot reach it, only a bow. */
   flies?: boolean;
+  /** Not taken, only frightened: struck once, it runs off and is gone. */
+  flees?: boolean;
 }
 
 /** What a gold stone on the map is worth, picked up once. */
@@ -101,9 +103,13 @@ export const FOES: Partial<Record<string, FoeStats>> = {
   // The last: the Citadel's lord, kept warm by his crown, quick for his weight.
   warlord: { hp: 700, attack: 30, every: 2.0, windup: 0.75, poise: true, aggro: 10, leash: 18, speed: 2.2, gold: 400 },
   oldBamboo: { hp: 440, attack: 22, every: 2.4, windup: 0.9, poise: true, aggro: 9, leash: 16, speed: 2.0, gold: 220 },
+  // The Belfry's other gargoyle, woken off the far turret when the Warden is half broken.
+  gargoyle: { hp: 120, attack: 14, every: 2.2, windup: 0.7, poise: true, aggro: 12, leash: 16, speed: 2.4, gold: 30 },
+  // The Rampart Boar's rider, thrown off it at half: a goblin chief afoot.
+  boarChief: { hp: 90, attack: 12, every: 2.0, windup: 0.6, poise: true, aggro: 12, leash: 40, speed: 2.4, gold: 40 },
   sunSentinel: { hp: 520, attack: 26, every: 2.4, windup: 0.9, poise: true, aggro: 9, leash: 16, speed: 2.0, gold: 280 },
-  // Old Bamboo's cubs, called down to fight beside him.
-  pandaCub: { hp: 30, attack: 6, every: 2.2, windup: 0.6, aggro: 7, leash: 14, speed: 2.4, gold: 4 },
+  // Old Bamboo's cubs, called down to fight beside him: not taken, they run at the first blow.
+  pandaCub: { flees: true, hp: 30, attack: 6, every: 2.2, windup: 0.6, aggro: 7, leash: 14, speed: 2.4, gold: 4 },
 };
 
 /**
@@ -143,22 +149,44 @@ export interface BossMove {
   past?: number;
   /** Seconds it stands open after this move, in place of its kit's. */
   recover?: number;
+  /** A charge that leaves its line burning behind it, this many seconds, hurting `damage` a tick. */
+  wake?: { burn: number; damage: number };
+  /** It sits through its recover regaining this much health a second, until struck out of it. */
+  feeds?: number;
+  /** One of its raised dead stands a fallen one of this kind back up where it stood; if none is left, nothing. */
+  revive?: string;
+}
+
+/** What a boss sees of the fight when it picks: its mark held in a web, how many it raised still stand, how many of
+ *  its wards lie broken. */
+export interface BossSight {
+  snared: boolean;
+  adds: number;
+  fallen: number;
 }
 
 /** A boss's moves, the seconds it stands open after each, and how it picks the next: by how far off its mark is, what
- *  it did last, and whether it rages, below `rage.at` of its health, winding up in `rage.haste` of the time.
+ *  it did last, whether it rages and what it sees. Below `rage.at` of its health it turns: it stops, roars, takes no
+ *  harm for a moment, then opens its second phase with `rage.opener`, winding up in `rage.haste` of the time after;
+ *  `rage.look` is the dweller kind it is drawn as from then; `rage.bare`, its shield cast aside.
  *  `stone`: the share of a blow it takes except while it stands open after a move. `wards`: a dweller kind that keeps
- *  it from all harm while any of them stands in its arena. `heals`: health a second it regains while any dweller it
- *  raised stands. `shield`: a blow from the side it faces is parried, so it is hurt only from behind. */
+ *  it from all harm while any of them stands in its arena. `shield`: a blow from the side it faces is parried, so it is hurt only from behind. */
 export interface BossKit {
   moves: Record<string, BossMove>;
   recover: number;
-  rage?: { at: number; haste: number };
+  rage?: { at: number; haste: number; opener?: string; look?: string; bare?: boolean };
   stone?: number;
   wards?: string;
-  heals?: number;
   shield?: boolean;
-  pick(distance: number, last: string | null, raging: boolean): string | null;
+  /** Its stone skin opens only when a charge leaves it dazed, not after every move. */
+  dazedOnly?: boolean;
+  /** Asleep at its post until struck: the first blow lands whole and wakes it. */
+  sleeps?: boolean;
+  /** It comes down from above onto the hero once they near its post, a blow this hard on whoever is still under it. */
+  drops?: number;
+  /** Stamina drawn a second from a hero within `radius` tiles, and none of it coming back there. */
+  drains?: { radius: number; rate: number; raging?: number };
+  pick(distance: number, last: string | null, raging: boolean, sees: BossSight): string | null;
 }
 
 /** The bosses with moves of their own, after `ATLAS.md`. Tiles, seconds and points. */
@@ -174,136 +202,169 @@ export const BOSS_KITS: Partial<Record<string, BossKit>> = {
       toss: { shape: "scatter", windup: 0.95, patches: 3, radius: 2, damage: 4, burn: 3, tick: 0.6, colour: 0xd8f0ff },
     },
     recover: 1.1,
+    drops: 16,
     pick: (d, last) => (d <= 2 ? (last === "slam" ? "sweep" : last === "sweep" ? "toss" : "slam") : d > 6 ? null : last === "charge" ? "toss" : "charge"),
   },
-  // The Ember Bull: a horn swipe up close and a stomp round him after it, so beside him is no safe place; from four
-  // tiles off a rush that ends a tile past the mark and leaves him open, never two rushes running; a rush the trees
-  // round the hollow stop dead leaves him dazed.
+  // The Ember Bull: a horn swipe up close and a stomp round him after it, so beside him is no safe place; from three
+  // tiles off a rush that sets the ash alight behind him, so every rush dodged leaves less floor. Past half he bellows
+  // and rushes twice running, the second turned on where the hero went.
   minotaur: {
     moves: {
       swipe: { shape: "front", windup: 0.8, radius: 1, damage: 18 },
       stomp: { shape: "self", windup: 0.9, radius: 2, damage: 20 },
-      rush: { shape: "line", windup: 1.0, tiles: 9, width: 1, speed: 11, damage: 22, past: 1, recover: 2, stun: 2.5 },
+      rush: { shape: "line", windup: 1.0, tiles: 9, width: 1, speed: 11, damage: 22, past: 1, recover: 2, wake: { burn: 6, damage: 5 } },
+      again: { shape: "line", windup: 0.7, tiles: 9, width: 1, speed: 13, damage: 22, past: 1, recover: 2, wake: { burn: 6, damage: 5 } },
+      bellow: { shape: "self", windup: 0.6, radius: 3, damage: 12 },
     },
     recover: 1.1,
-    rage: { at: 0.5, haste: 0.75 },
-    pick: (d, last) => (d <= 1 ? (last === "swipe" ? "stomp" : "swipe") : d >= 4 && d <= 9 && last !== "rush" ? "rush" : null),
+    rage: { at: 0.5, haste: 0.75, opener: "bellow" },
+    pick: (d, last, raging) =>
+      raging && last === "rush" ? "again" : d <= 1 ? (last === "swipe" ? "stomp" : "swipe") : d >= 3 && d <= 9 && last !== "rush" && last !== "again" ? "rush" : null,
   },
   // The Rampart Boar: a goblin chief on the garrison's war boar. On a wall three wide its charge takes the whole wall,
-  // rolled through or taken; up close it gores; at range it calls the goblins' cannons down on the wall; raging, it
-  // horns up its spearmen onto the wall after each charge.
+  // rolled through or taken; up close it gores; at range the chief calls the goblins' cannons down on the wall. Past
+  // half the boar throws him: the chief fights on afoot, and the boar, riderless, only gores and charges, quicker.
   rampartBull: {
     moves: {
       gore: { shape: "front", windup: 0.7, radius: 2, damage: 20 },
       charge: { shape: "line", windup: 1.0, tiles: 10, width: 3, speed: 14, damage: 26 },
       cannons: { shape: "scatter", windup: 1.4, patches: 6, radius: 3, damage: 18 },
-      rally: { shape: "summon", windup: 1.0, damage: 0, summon: { kind: "spear", n: 2, cap: 2 } },
+      throw: { shape: "summon", windup: 0.4, damage: 0, summon: { kind: "boarChief", n: 1, cap: 1 } },
     },
     recover: 1.1,
-    rage: { at: 0.5, haste: 0.7 },
+    rage: { at: 0.5, haste: 0.6, opener: "throw", look: "pig" },
     pick: (d, last, raging) =>
-      raging && last === "charge" ? "rally" : d <= 2 ? (last === "gore" ? "charge" : "gore") : last === "charge" || d > 10 ? "cannons" : "charge",
+      d <= 2 ? (last === "gore" ? "charge" : "gore") : raging ? "charge" : last === "charge" || d > 10 ? "cannons" : "charge",
   },
   // The Stone Warden: a gargoyle on the bell loft, its skin stone: a blow takes a fifth off it but while it stands open
-  // after a move. Up close its wings beat; a step off, the bell tolls round it, safe only hugging it or past the ring;
-  // further, it dives the length of the loft over the bell's frame; and it shakes the roof's stones down.
+  // after a move. It comes down off the bell's frame onto whoever walks in. Up close its wings beat; a step off, the
+  // bell tolls round it, safe only hugging it or past the ring; further, it dives the length of the loft; and it
+  // shakes the roof's stones down. Past half its mate wakes on the far turret. The bell itself, struck, dazes stone.
   stoneWarden: {
     moves: {
       buffet: { shape: "self", windup: 0.7, radius: 1, damage: 18 },
       toll: { shape: "ring", windup: 1.2, inner: 2, radius: 3, damage: 20 },
       dive: { shape: "line", windup: 0.9, tiles: 8, width: 1, speed: 16, flies: true, damage: 22 },
       rubble: { shape: "scatter", windup: 1.5, patches: 7, radius: 4, damage: 16 },
+      mate: { shape: "summon", windup: 0.6, damage: 0, summon: { kind: "gargoyle", n: 1, cap: 1 } },
     },
     recover: 1.6,
-    rage: { at: 0.5, haste: 0.75 },
+    rage: { at: 0.5, haste: 0.8, opener: "mate" },
     stone: 0.2,
+    drops: 20,
     pick: (d, last) =>
       d <= 1 ? (last === "buffet" ? "rubble" : "buffet") : d <= 3 ? (last === "toll" ? "dive" : "toll") : d <= 8 ? (last === "dive" ? "rubble" : "dive") : "rubble",
   },
   // The Barrow King: the eldest barrow-warden in an old king's bone face, and no blade bites him while the grave
-  // totems round his hall stand. A curse bursts under the mark, grave fire runs the ground from him to it and burns on, and he
-  // raises the barrow's dead; raging, he raises them more often.
+  // totems round his hall stand. A curse bursts under the mark, grave fire runs the ground from him to it and burns
+  // on, and he raises the barrow's dead; and while a totem lies broken and one of his dead stands, he sends it to
+  // stand the totem up again: cut the dead down before he does. Past half he sings a dirge and raises more.
   barrowKing: {
     moves: {
       hex: { shape: "mark", windup: 1.0, radius: 1, damage: 22, colour: 0x9a6ae0 },
       gravefire: { shape: "trail", windup: 1.1, damage: 6, burn: 5, tick: 0.6, colour: 0x7cf0b0 },
       raise: { shape: "summon", windup: 1.4, damage: 0, summon: { kind: "skull", n: 2, cap: 3 } },
+      rouse: { shape: "mark", windup: 2.2, radius: 0, damage: 0, revive: "graveTotem", colour: 0x8cf0b4 },
+      dirge: { shape: "summon", windup: 0.8, damage: 0, summon: { kind: "skull", n: 3, cap: 4 } },
     },
     recover: 1.2,
-    rage: { at: 0.5, haste: 0.75 },
+    rage: { at: 0.5, haste: 0.75, opener: "dirge" },
     wards: "graveTotem",
-    pick: (d, last, raging) => (d > 9 ? null : last === "hex" ? (raging ? "raise" : "gravefire") : last === "gravefire" || last === null ? "raise" : "hex"),
+    pick: (d, last, raging, sees) =>
+      sees.fallen > 0 && sees.adds > 0 && last !== "rouse"
+        ? "rouse"
+        : d > 9
+          ? null
+          : last === "hex"
+            ? raging ? "raise" : "gravefire"
+            : last === "gravefire" || last === null || (sees.fallen > 0 && sees.adds === 0)
+              ? "raise"
+              : "hex",
   },
-  // The Weaver, after Quelaag: quick and often. It strings webs that hold whoever stands in them, spits venom that
-  // burns on, leaps the length of its web over anything, bites up close, and lets its brood down on threads.
+  // The Weaver, after Quelaag: quick and often. It strings webs that hold whoever stands in them, and pounces on whoever
+  // they hold, over anything; it bites up close, leaps the length of its web, and lets its brood down on threads. Past
+  // half it hangs the whole cavern with silk at once.
   weaver: {
     moves: {
       bite: { shape: "front", windup: 0.6, radius: 1, damage: 16 },
       leap: { shape: "line", windup: 0.8, tiles: 7, width: 1, speed: 18, flies: true, damage: 18 },
-      venom: { shape: "scatter", windup: 0.9, patches: 4, radius: 2, damage: 5, burn: 4, tick: 0.5, colour: 0x9cf060 },
+      pounce: { shape: "line", windup: 0.5, tiles: 9, width: 1, speed: 22, flies: true, damage: 26 },
       web: { shape: "scatter", windup: 1.0, patches: 6, radius: 3, damage: 0, burn: 8, tick: 1, snare: 0.4, colour: 0xf0ece0 },
+      shroud: { shape: "scatter", windup: 1.0, patches: 14, radius: 5, damage: 0, burn: 10, tick: 1, snare: 0.4, colour: 0xf0ece0 },
       brood: { shape: "summon", windup: 1.2, damage: 0, summon: { kind: "spider", n: 3, cap: 4 } },
     },
     recover: 0.9,
-    rage: { at: 0.5, haste: 0.75 },
-    pick: (d, last, raging) =>
-      d <= 1 ? (last === "bite" ? "web" : "bite") : last === "leap" ? (raging ? "brood" : "venom") : last === "venom" ? "web" : last === "web" ? "brood" : d <= 7 ? "leap" : "venom",
+    rage: { at: 0.5, haste: 0.75, opener: "shroud" },
+    pick: (d, last, raging, sees) =>
+      sees.snared && last !== "pounce" && d <= 9
+        ? "pounce"
+        : d <= 1
+          ? last === "bite" ? "web" : "bite"
+          : last === "web" ? (raging || sees.adds === 0 ? "brood" : "leap") : last === "leap" || last === "brood" ? "web" : d <= 7 ? "leap" : "web",
   },
-  // The Shell Below, asleep on its isle: no blade gets through its shell but while it stands open after a move. It
-  // bites, it stamps the isle round it, and it draws in and spins down a line, flipped on its back if a stone tree or
-  // the lake stops it, belly up and open.
+  // The Shell Below, asleep on its isle: the first blow on it lands whole and wakes it, and after that no blade gets
+  // through its shell but while it lies flipped. It bites, it stamps the isle round it, and it draws in and spins
+  // down a line; a stone tree or the lake stops the spin and turns it on its back, belly up and open. Past a little
+  // under two thirds it spins twice running.
   shellBelow: {
     moves: {
       bite: { shape: "front", windup: 0.9, radius: 1, damage: 26 },
       stamp: { shape: "self", windup: 1.2, radius: 2, damage: 22 },
-      spin: { shape: "line", windup: 1.2, tiles: 10, width: 3, speed: 13, damage: 28, stun: 3 },
+      spin: { shape: "line", windup: 1.2, tiles: 10, width: 3, speed: 13, damage: 28, stun: 3.5 },
+      respin: { shape: "line", windup: 0.7, tiles: 10, width: 3, speed: 15, damage: 28, stun: 3.5 },
     },
-    recover: 1.6,
-    rage: { at: 0.4, haste: 0.8 },
+    recover: 1.2,
+    rage: { at: 0.6, haste: 0.8, opener: "stamp" },
     stone: 0,
-    pick: (d, last) => (d <= 1 ? (last === "bite" ? "stamp" : "bite") : d <= 2 ? "stamp" : d <= 10 ? "spin" : null),
+    dazedOnly: true,
+    sleeps: true,
+    pick: (d, last, raging) =>
+      raging && last === "spin" ? "respin" : d <= 1 ? (last === "bite" ? "stamp" : "bite") : d <= 2 ? "stamp" : d <= 10 ? "spin" : null,
   },
-  // The Grey Warlord, the last: a cleave up close, a lunge that ends at the mark, the Grey run along the ground to it
-  // and left lying; past half, his taken garrison comes to him after every lunge, and his crown drinks their warmth
-  // to mend him while any of them stands, so they go first.
+  // The Grey Warlord, the last: his crown drinks the warmth from whoever stands near him, so the hero's stamina bleeds
+  // away beside him and does not come back there: strike and get out. A cleave up close, a lunge that ends at the
+  // mark, and the Grey run along the ground to it, lying long, so the hall closes in. Past half he calls his taken
+  // garrison to him and the crown drinks from further off.
   warlord: {
     moves: {
       cleave: { shape: "front", windup: 0.7, radius: 2, damage: 28 },
       lunge: { shape: "line", windup: 0.8, tiles: 7, width: 1, speed: 16, damage: 26, past: 1 },
-      grey: { shape: "trail", windup: 1.0, damage: 7, burn: 6, tick: 0.6, colour: 0x9c9fa8 },
-      legion: { shape: "summon", windup: 1.2, damage: 0, summon: { kind: "taken", n: 2, cap: 4 } },
+      grey: { shape: "trail", windup: 1.0, damage: 7, burn: 16, tick: 0.6, colour: 0x9c9fa8 },
+      legion: { shape: "summon", windup: 1.0, damage: 0, summon: { kind: "taken", n: 3, cap: 4 } },
     },
     recover: 1.0,
-    rage: { at: 0.5, haste: 0.65 },
-    heals: 8,
+    rage: { at: 0.5, haste: 0.65, opener: "legion" },
+    drains: { radius: 2, rate: 18, raging: 3 },
     pick: (d, last, raging) =>
       raging && last === "lunge" ? "legion" : d <= 2 ? (last === "cleave" ? "grey" : "cleave") : last === "lunge" ? "grey" : d <= 8 ? "lunge" : "grey",
   },
-  // Old Bamboo, the pandas' grandsire on the Tinker Peak: he rolls, he belly-slams round him, he hurls bamboo, and he
-  // calls his cubs, eating while they stand: he heals while any of them lives, so the cubs go first.
+  // Old Bamboo, the pandas' grandsire on the Tinker Peak: he rolls, he belly-slams round him, he hurls bamboo, and
+  // after it he sits down to eat, mending as he chews until a blow startles him out of it. His cubs are not taken:
+  // struck once, they run. Past half he calls them all back.
   oldBamboo: {
     moves: {
       slam: { shape: "self", windup: 1.0, radius: 2, damage: 22 },
-      roll: { shape: "line", windup: 1.0, tiles: 8, width: 2, speed: 12, damage: 22, stun: 2 },
+      roll: { shape: "line", windup: 1.0, tiles: 8, width: 2, speed: 12, damage: 22 },
       toss: { shape: "scatter", windup: 1.1, patches: 4, radius: 2, damage: 14 },
-      cubs: { shape: "summon", windup: 1.2, damage: 0, summon: { kind: "pandaCub", n: 2, cap: 3 } },
+      eat: { shape: "self", windup: 0.6, radius: 0, damage: 0, recover: 4, feeds: 16, colour: 0x8cd080 },
+      cubs: { shape: "summon", windup: 1.2, damage: 0, summon: { kind: "pandaCub", n: 3, cap: 3 } },
     },
     recover: 1.2,
-    rage: { at: 0.5, haste: 0.75 },
-    heals: 6,
-    pick: (d, last) => (last === null || last === "toss" ? "cubs" : d <= 2 ? "slam" : last === "roll" ? "toss" : d <= 8 ? "roll" : "toss"),
+    rage: { at: 0.5, haste: 0.75, opener: "cubs" },
+    pick: (d, last) => (last === null ? "cubs" : last === "toss" ? "eat" : d <= 2 ? (last === "slam" ? "toss" : "slam") : last === "roll" ? "toss" : d <= 8 ? "roll" : "toss"),
   },
   // The Sun Sentinel, Sunhold's hall guard: its shield turns every blow from the side it faces, so it is beaten
   // from behind. A thrust that runs it past the mark (turn and strike), a sunburst in a ring round it, and sunfire
-  // falling to burn.
+  // falling to burn. Past half it throws the shield down: every blow lands now, but it comes twice as quick.
   sunSentinel: {
     moves: {
       thrust: { shape: "line", windup: 0.9, tiles: 6, width: 1, speed: 22, damage: 26, past: 2 },
       sunburst: { shape: "ring", windup: 1.2, inner: 2, radius: 4, damage: 22, colour: 0xffe080 },
       sunfire: { shape: "scatter", windup: 1.2, patches: 5, radius: 3, damage: 6, burn: 3, tick: 0.5, colour: 0xffd040 },
+      flare: { shape: "self", windup: 0.7, radius: 3, damage: 18, colour: 0xffe080 },
     },
     recover: 1.4,
-    rage: { at: 0.5, haste: 0.75 },
+    rage: { at: 0.5, haste: 0.5, opener: "flare", bare: true },
     shield: true,
     pick: (d, last) => (d <= 2 ? (last === "sunburst" ? "thrust" : "sunburst") : last === "thrust" ? "sunfire" : d <= 6 ? "thrust" : "sunfire"),
   },

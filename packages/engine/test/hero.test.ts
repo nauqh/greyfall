@@ -181,6 +181,7 @@ describe("levelling at a bonfire", () => {
 describe("a boss's moves", () => {
   const open = () => true;
   const boar = BOSS_KITS.rampartBull!;
+  const calm = { snared: false, adds: 0, fallen: 0 };
   it("charges the wall's whole width, and stops where it says", () => {
     useIsland({ rows: Array.from({ length: 12 }, () => ".".repeat(24)), start: { a: { castle: { col: 1, row: 1 }, barracks: { col: 1, row: 1 } }, b: { castle: { col: 1, row: 1 }, barracks: { col: 1, row: 1 } } }, mines: [], lair: { col: 1, row: 1 } });
     const line = bossAim(boar.moves.charge!, { col: 0, row: 5 }, { col: 20, row: 5 }, open);
@@ -193,28 +194,41 @@ describe("a boss's moves", () => {
     const rush = BOSS_KITS.minotaur!.moves.rush!;
     expect(bossAim(rush, { col: 0, row: 1 }, { col: 11, row: 1 }, () => true)).toHaveLength(4);
     expect(bossAim(rush, { col: 6, row: 1 }, { col: 9, row: 1 }, () => true).at(-1)).toEqual({ col: 10, row: 1 });
-    expect(BOSS_KITS.minotaur!.pick(5, "rush", false)).toBe(null);
+    expect(BOSS_KITS.minotaur!.pick(5, "rush", false, calm)).toBe(null);
+    expect(BOSS_KITS.minotaur!.pick(5, "rush", true, calm)).toBe("again");
   });
   it("picks only moves each boss has, at any range and after any move, raging or not", () => {
     for (const [kind, kit] of Object.entries(BOSS_KITS)) {
       for (const last of [null, ...Object.keys(kit!.moves)])
         for (let d = 0; d <= 14; d++)
-          for (const raging of [false, true]) {
-            const move = kit!.pick(d, last, raging);
-            if (move !== null) expect(kit!.moves[move], `${kind} picks ${move}`).toBeDefined();
-          }
+          for (const raging of [false, true])
+            for (const sees of [calm, { snared: true, adds: 2, fallen: 1 }]) {
+              const move = kit!.pick(d, last, raging, sees);
+              if (move !== null) expect(kit!.moves[move], `${kind} picks ${move}`).toBeDefined();
+            }
       expect(FOES[kind], kind).toBeDefined();
+      if (kit!.rage?.opener) expect(kit!.moves[kit!.rage.opener], `${kind} opens with ${kit!.rage.opener}`).toBeDefined();
+      for (const m of Object.values(kit!.moves)) if (m.summon) expect(FOES[m.summon.kind], m.summon.kind).toBeDefined();
     }
+  });
+  it("gives every boss but the troll a second phase", () => {
+    expect(Object.entries(BOSS_KITS).filter(([, k]) => !k!.rage?.opener).map(([k]) => k)).toEqual(["troll"]);
+  });
+  it("pounces on a mark the web holds, and stands a broken totem up only while one of the dead stands", () => {
+    expect(BOSS_KITS.weaver!.pick(5, "web", false, { ...calm, snared: true })).toBe("pounce");
+    expect(BOSS_KITS.barrowKing!.pick(5, "hex", false, { snared: false, adds: 1, fallen: 1 })).toBe("rouse");
+    expect(BOSS_KITS.barrowKing!.pick(5, "hex", false, { snared: false, adds: 0, fallen: 1 })).not.toBe("rouse");
+    expect(BOSS_KITS.oldBamboo!.pick(5, "toss", false, calm)).toBe("eat");
   });
   it("tolls a ring round the warden, safe up close", () => {
     const ring = bossAim(BOSS_KITS.stoneWarden!.moves.toll!, { col: 5, row: 5 }, { col: 7, row: 5 }, open);
     expect(ring.every((c) => Math.max(Math.abs(c.col - 5), Math.abs(c.row - 5)) >= 2)).toBe(true);
     expect(ring).toHaveLength(49 - 9);
   });
-  it("raises only while the king's raised dead are few, and rallies the boar's men only raging", () => {
+  it("raises only while the king's raised dead are few, and leaves the cannons to the boar's chief", () => {
     expect(BOSS_KITS.barrowKing!.moves.raise!.summon).toEqual({ kind: "skull", n: 2, cap: 3 });
-    expect(boar.pick(5, "charge", false)).toBe("cannons");
-    expect(boar.pick(5, "charge", true)).toBe("rally");
+    expect(boar.pick(5, "charge", false, calm)).toBe("cannons");
+    expect(boar.pick(5, "charge", true, calm)).toBe("charge");
   });
 });
 
