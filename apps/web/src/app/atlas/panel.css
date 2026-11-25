@@ -337,13 +337,17 @@
 	background: rgb(7 10 16 / 0.55);
 }
 
-/* Fixed, so the panel does not jump as the pages change. */
-.pausePanel {
+/* The pause menu's inks and sheet, shared with the map's bonfire list. */
+:is(.pausePanel, .landPanel) {
 	--accent: var(--rust);
 	--stroke: var(--brown);
 	--text: var(--bark);
 	/* Opaque (rust over the paper), so where a tab's line meets the sheet's the two do not darken each other. */
 	--frame: #ae8e6c;
+}
+
+/* Fixed, so the panel does not jump as the pages change. */
+.pausePanel {
 	/* Up a little off the middle, clear of the keys at the foot. */
 	translate: 0 -32px;
 	width: min(680px, calc(100vw - 32px));
@@ -405,7 +409,7 @@
 }
 
 /* No rule under the head: the one frame is round the page's own content, as Dark Souls frames its sheet. */
-.pausePanel {
+:is(.pausePanel, .landPanel) {
 	outline: 0;
 }
 
@@ -440,7 +444,7 @@
 	text-align: center;
 }
 
-/* Bare words over the world at the foot of the screen, the way a talk is set (.talk). */
+/* Bare words over the world at the foot of the screen, the way a talk is set (.talk); the map's keys too. */
 .pauseKeys {
 	position: absolute;
 	left: 50%;

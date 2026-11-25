@@ -130,9 +130,7 @@ export interface AtlasApi {
   back: () => void;
   /** Stop the scene while another game (the bonfire map) runs on the page, or go on; that game swaps the shared walk grid. */
   pause: (on: boolean) => void;
-  /** On the atlas: mark the bonfires, lit or not, ring `pick` and fly to it. */
-  fires: (fires: FireMark[], pick: number) => void;
-  /** On the atlas: outline a land on its own tier and fly to it; null clears the outline. */
+  /** On the atlas: fly to a land on its own tier. */
   select: (id: AreaId | null) => void;
   devState: () => DevState;
   /** Dev: their talk, or their menu if they have one, wherever the hero stands; the free camera flies to them. */
@@ -175,16 +173,6 @@ export interface DevState {
   free: boolean;
 }
 
-/** A bonfire as the atlas marks it: on its area's own map, named, whether the captain sits at it, and whether it is lit. */
-export interface FireMark {
-  area: AreaId;
-  col: number;
-  row: number;
-  name: string;
-  here?: boolean;
-  lit: boolean;
-}
-
 /** How a crossing feels: walking out over a gate, falling down a drop, riding a lift, or going down a stair into the deep. */
 export type Crossing = "walk" | "fall" | "ride" | "stair" | "rest";
 
@@ -220,8 +208,8 @@ export interface AtlasHooks {
   onArea: (id: AreaId | null) => void;
   /** Tells the page which tier is in view, after a lift or a tab. */
   onTier: (id: TierId) => void;
-  /** A bonfire mark clicked on the atlas, by its index in the last `fires` call. */
-  onFire?: (i: number) => void;
+  /** The share of the screen's width a panel covers at the left: the camera centres what it flies to in the rest. */
+  inset?: () => number;
   ready: (api: AtlasApi) => void;
   /** Once the clouds have parted and the map is in view. */
   opened?: () => void;
@@ -931,11 +919,6 @@ export class AtlasScene extends Phaser.Scene {
   private cams!: Record<TierId, Phaser.Cameras.Scene2D.Camera>;
   // `rows`: shown only while no more than that many rows are in view.
   private names: { text: Phaser.GameObjects.Text; px: number; tier: TierId; rows?: number }[] = [];
-  /** The atlas's bonfire marks, and where each stands for a click. */
-  private marks: Phaser.GameObjects.GameObject[] = [];
-  private markAt: { tier: TierId; cell: Cell }[] = [];
-  /** The selected land's outline on the atlas. */
-  private outline: Phaser.GameObjects.Graphics | null = null;
   private live: Tracked[] = [];
   /** The unlit bonfires of this area, by `area:col,row`, each with what lights it. */
   private unlit = new Map<string, () => void>();
@@ -1329,10 +1312,8 @@ export class AtlasScene extends Phaser.Scene {
         this.tweens.add({ targets: s, y, duration: 650, ease: "Bounce.easeOut", onComplete: () => cam.shake(140, 0.004) });
       }
     } else {
-      const hub = AREAS.find((a) => a.id === "harbour")!.label;
-      main.setZoom(this.zoomFor(22));
-      main.centerOn(hub.col * CELL, (hub.row - 4) * CELL);
       this.show("surface");
+      this.fitTier();
     }
     this.controls();
     this.hooks.ready({
@@ -1368,7 +1349,6 @@ export class AtlasScene extends Phaser.Scene {
         useIsland(this.map.tiers[this.view].island);
         this.game.loop.wake();
       },
-      fires: (fires, pick) => this.markFires(fires, pick),
       select: (id) => this.select(id),
       choose: (i) => {
         if (!this.menu) return;
@@ -1604,18 +1584,17 @@ export class AtlasScene extends Phaser.Scene {
     if (!this.local) {
       // Each tier's lands lie in their own part of the grid: the camera keeps to them, and a new tier opens on all of them.
       this.freeBox = this.landBox(this.map.tiers[id]);
-      if (id !== was) {
-        to.setZoom(this.freeFit());
-        to.centerOn(this.freeBox.centerX, this.freeBox.centerY);
-      }
+      if (id !== was) this.fitTier();
     }
     this.hooks.onTier(id);
   }
 
   private flyTo(c: Cell, rows: number): void {
     const cam = this.active;
-    cam.pan(c.col * CELL, c.row * CELL, 900, "Sine.easeInOut", true);
-    cam.zoomTo(this.zoomFor(rows), 900, "Sine.easeInOut", true);
+    const zoom = this.zoomFor(rows);
+    const shift = ((this.hooks.inset?.() ?? 0) * cam.width) / 2 / zoom;
+    cam.pan(c.col * CELL - shift, c.row * CELL, 900, "Sine.easeInOut", true);
+    cam.zoomTo(zoom, 900, "Sine.easeInOut", true);
   }
 
   private controls(): void {
@@ -1654,13 +1633,11 @@ export class AtlasScene extends Phaser.Scene {
       if (!d || d.moved) return;
       const w = this.active.getWorldPoint(p.x, p.y);
       const cell = { col: Math.floor(w.x / CELL), row: Math.floor(w.y / CELL) };
-      // A bonfire mark, an exit travels, else the area under the pointer.
+      // An exit travels, else the area under the pointer.
       const folk = this.free && this.hero ? this.folk.filter((f) => tileDistance(f.at, cell) <= 1).sort((a, b) => tileDistance(a.at, cell) - tileDistance(b.at, cell))[0] : undefined;
       if (folk) return this.devTalk(folk.npc.id);
       const note = this.free && this.hero ? this.notes.find((n) => tileDistance(n.at, cell) <= 1) : undefined;
       if (note) return this.devRead(note);
-      const fire = this.markAt.findIndex((m) => m.tier === this.view && Math.abs(m.cell.col - cell.col) <= 2 && Math.abs(m.cell.row - cell.row) <= 2);
-      if (fire >= 0) return this.hooks.onFire?.(fire);
       for (const e of this.local?.exits ?? []) {
         if (Math.abs(e.at.col - cell.col) <= 2 && Math.abs(e.at.row - cell.row) <= 2) return this.depart(e);
       }
@@ -1669,87 +1646,10 @@ export class AtlasScene extends Phaser.Scene {
     });
   }
 
-  /** Where a cell of an area's own map falls on the atlas: the same share of the way across the area's ground there. */
-  private onAtlas(area: AreaId, c: Cell): { tier: TierId; cell: Cell } {
-    const a = AREAS.find((x) => x.id === area)!;
-    const p = this.map.tiers[a.tier].real?.[area];
-    if (p) return { tier: a.tier, cell: { col: Math.floor(p.x0 + (c.col - p.c0) / p.scale), row: Math.floor(p.y0 + (c.row - p.r0) / p.scale) } };
-    const ch = AREA_CODE[AREAS.indexOf(a)];
-    const box = { c0: Infinity, c1: -Infinity, r0: Infinity, r1: -Infinity };
-    this.map.tiers[a.tier].areaAt.forEach((line, r) => {
-      for (let col = 0; col < line.length; col++) {
-        if (line[col] !== ch) continue;
-        Object.assign(box, { c0: Math.min(box.c0, col), c1: Math.max(box.c1, col), r0: Math.min(box.r0, r), r1: Math.max(box.r1, r) });
-      }
-    });
-    const rows = areaMap(area).island.rows;
-    // ponytail: a land not laid by real() falls back to a share of its bounding box, which can put a fire on water.
-    return {
-      tier: a.tier,
-      cell: { col: Math.round(box.c0 + ((c.col + 0.5) / rows[0]!.length) * (box.c1 - box.c0 + 1)), row: Math.round(box.r0 + ((c.row + 0.5) / rows.length) * (box.r1 - box.r0 + 1)) },
-    };
-  }
-
-  /** The lit bonfires on the atlas, after Elden Ring's graces: a glow each, the picked one ringed and named, the one sat at said so. */
-  private markFires(fires: FireMark[], pick: number): void {
-    const gone = new Set(this.marks);
-    this.names = this.names.filter((n) => !gone.has(n.text));
-    for (const o of this.marks) o.destroy();
-    this.marks = [];
-    this.markAt = fires.map((f) => this.onAtlas(f.area, f));
-    fires.forEach((f, i) => {
-      const { tier, cell } = this.markAt[i]!;
-      const [x, y] = [(cell.col + 0.5) * CELL, (cell.row + 0.5) * CELL];
-      const picked = i === pick;
-      const lit = f.lit;
-      // Unlit: a small grey ember, no glow, named only when picked.
-      const made: Phaser.GameObjects.GameObject[] = lit
-        ? [
-            this.add.image(x, y, "glow").setBlendMode(Phaser.BlendModes.ADD).setTint(0xffd65a).setScale(picked ? 1.4 : 0.9).setDepth(DEPTH.fx + 1),
-            this.add.circle(x, y, picked ? 26 : 18, 0xffb347).setStrokeStyle(6, picked ? 0xfdfaf0 : 0x1c2634).setDepth(DEPTH.fx + 2),
-          ]
-        : [this.add.circle(x, y, picked ? 16 : 11, 0x6b6e76, picked ? 0.95 : 0.7).setStrokeStyle(4, picked ? 0xfdfaf0 : 0x1c2634).setDepth(DEPTH.fx + 1)];
-      if (picked || f.here) {
-        const t = this.add
-          .text(x, y - 1.3 * CELL, f.here ? `${f.name} (you are here)` : lit ? f.name : `${f.name} (unlit)`, { fontFamily: FONT, fontSize: "28px", fontStyle: "bold", color: lit ? "#f2d48a" : "#b8bcc6", stroke: "#1c2634", strokeThickness: 6 })
-          .setOrigin(0.5)
-          .setDepth(DEPTH.fx + 3);
-        this.names.push({ text: t, px: 14, tier });
-        made.push(t);
-      }
-      if (picked) this.tweens.add({ targets: made[lit ? 1 : 0], scale: 1.25, duration: 700, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
-      for (const other of TIERS) if (other !== tier) this.cams[other].ignore(made);
-      this.marks.push(...made);
-    });
-    const at = this.markAt[pick];
-    if (!at) return;
-    if (at.tier !== this.view) this.show(at.tier);
-    this.flyTo(at.cell, 24);
-  }
-
-  /** Outlines a land on its own tier, every edge of its cells against another's, and flies to it. */
+  /** Flies to a land on its own tier. */
   private select(id: AreaId | null): void {
-    this.outline?.destroy();
-    this.outline = null;
     if (!id) return;
-    const a = AREAS.find((x) => x.id === id)!;
-    const ch = AREA_CODE[AREAS.indexOf(a)];
-    const rows = this.map.tiers[a.tier].areaAt;
-    const g = this.add.graphics().lineStyle(8, 0xfdfaf0, 0.85).setDepth(DEPTH.fx);
-    const at = (c: number, r: number): boolean => rows[r]?.[c] === ch;
-    rows.forEach((line, r) => {
-      for (let c = 0; c < line.length; c++) {
-        if (line[c] !== ch) continue;
-        const [x, y] = [c * CELL, r * CELL];
-        if (!at(c, r - 1)) g.lineBetween(x, y, x + CELL, y);
-        if (!at(c, r + 1)) g.lineBetween(x, y + CELL, x + CELL, y + CELL);
-        if (!at(c - 1, r)) g.lineBetween(x, y, x, y + CELL);
-        if (!at(c + 1, r)) g.lineBetween(x + CELL, y, x + CELL, y + CELL);
-      }
-    });
-    for (const other of TIERS) if (other !== a.tier) this.cams[other].ignore(g);
-    this.outline = g;
-    this.show(a.tier);
+    this.show(AREAS.find((x) => x.id === id)!.tier);
     this.flyTo(this.centre(id), 24);
   }
 
@@ -4420,7 +4320,15 @@ export class AtlasScene extends Phaser.Scene {
 
   private freeFit(): number {
     const cam = this.active;
-    return Math.min(cam.height / this.freeBox!.height, cam.width / this.freeBox!.width);
+    return Math.min(cam.height / this.freeBox!.height, (cam.width * (1 - (this.hooks.inset?.() ?? 0))) / this.freeBox!.width);
+  }
+
+  /** The whole tier in view, in the part of the screen the map's panel leaves clear. */
+  private fitTier(): void {
+    const cam = this.active;
+    const zoom = this.freeFit();
+    cam.setZoom(zoom);
+    cam.centerOn(this.freeBox!.centerX - ((this.hooks.inset?.() ?? 0) * cam.width) / 2 / zoom, this.freeBox!.centerY);
   }
 
   /** Off play, the view's edges held inside the free box, or the box centred on an axis the view is wider than. */
@@ -4431,7 +4339,8 @@ export class AtlasScene extends Phaser.Scene {
     const axis = (mid: number, view: number, lo: number, hi: number): number =>
       view >= hi - lo ? (lo + hi) / 2 : Phaser.Math.Clamp(mid, lo + view / 2, hi - view / 2);
     cam.centerOn(
-      axis(cam.scrollX + cam.width / 2, cam.width / cam.zoom, b.left, b.right),
+      // A panel over the left: the box reaches out under it, so a land at the edge can still come clear of it.
+      axis(cam.scrollX + cam.width / 2, cam.width / cam.zoom, b.left - ((this.hooks.inset?.() ?? 0) * cam.width) / cam.zoom, b.right),
       axis(cam.scrollY + cam.height / 2, cam.height / cam.zoom, b.top, b.bottom),
     );
   }

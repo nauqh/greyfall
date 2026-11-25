@@ -1326,37 +1326,54 @@ textarea {
 	margin-top: -2px;
 }
 
-/* The way out, back to the fire: the sack's round x, in the corner above the land panel. */
-.btn.small.mapClose {
-	position: absolute;
-	top: 14px;
-	right: 14px;
-	display: grid;
-	place-items: center;
-	width: 40px;
-	height: 40px;
-	min-width: 0;
-	padding: 0;
-}
-
-/* A land, on the map's parchment: its name, where it sits, its lore, its keeper and its bonfires. */
+/* The bonfires, after Elden Ring's sites of grace: a tall list at the left, the tiers as tabs over it, by land. */
 .landPanel {
 	position: absolute;
-	top: 96px;
-	right: 14px;
-	width: min(380px, calc(100vw - 28px));
-	max-height: calc(100% - 96px - 64px);
-	min-width: 0;
-	overflow-y: auto;
-	align-items: stretch;
-	gap: 8px;
-	font-size: 15px;
+	top: 14px;
+	left: 14px;
+	width: min(420px, calc(100vw - 28px));
+	min-height: 0;
+	/* Clear of the keys' strip at the foot. */
+	height: calc(100% - 14px - 84px);
+	max-height: none;
+	overflow: hidden;
 }
 
-.landPanel h2 {
-	margin: 0;
-	text-align: center;
-	font-size: 22px;
+/* The list scrolls under the tabs, on the bare paper: no frame round it, the tabs on a rule of their own. */
+.landPanel .pauseSheet {
+	overflow-y: auto;
+	gap: 18px;
+	padding: 16px 8px 8px;
+	border: 0;
+}
+
+/* The keys at the foot, left, under the list, as Elden Ring sets its prompts. */
+.pauseKeys.mapKeys {
+	left: 28px;
+	translate: none;
+}
+
+/* The tiers as Elden Ring sets its regions: one row on a hairline, the open one underlined; no rule under the head. */
+.landPanel .panelHead {
+	background: none;
+}
+
+.landPanel .setModes {
+	flex-wrap: nowrap;
+	justify-content: space-around;
+	margin: 4px 0 0;
+	padding: 0;
+	border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.landPanel .setMode {
+	flex: 1;
+	padding: 10px 4px 8px;
+	border-bottom-width: 3px;
+}
+
+.landPanel .setMode.on {
+	background: linear-gradient(0deg, color-mix(in srgb, var(--accent) 22%, transparent), transparent);
 }
 
 .landPanel p {
@@ -1364,7 +1381,20 @@ textarea {
 	line-height: 1.45;
 }
 
+/* A land's name over its bonfires, as Elden Ring heads each region's graces. */
+.landGroup h2 {
+	margin: 0 0 6px;
+	padding-bottom: 4px;
+	color: #8a5a10;
+	font-size: 14px;
+	font-weight: 800;
+	font-variant: small-caps;
+	letter-spacing: 0.08em;
+	background: linear-gradient(90deg, #c9a35c, rgb(201 163 92 / 0)) bottom / 100% 1px no-repeat;
+}
+
 .landWhere {
+	margin-block: auto;
 	text-align: center;
 	font-size: 13px;
 	letter-spacing: 0.06em;
@@ -1372,20 +1402,10 @@ textarea {
 	color: #8a6a3a;
 }
 
-.landLore {
-	font-style: italic;
-	color: #5a4630;
-}
-
 .landFires {
 	margin: 0;
 	padding: 0;
 	list-style: none;
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
-	border-top: 1px solid rgb(138 106 58 / 0.4);
-	padding-top: 6px;
 }
 
 .landFire {
@@ -1393,9 +1413,8 @@ textarea {
 	width: 100%;
 	justify-content: space-between;
 	gap: 12px;
-	padding: 6px 8px;
+	padding: 8px 12px;
 	border: 0;
-	border-radius: 4px;
 	background: none;
 	color: inherit;
 	font: inherit;
@@ -1403,9 +1422,10 @@ textarea {
 	cursor: pointer;
 }
 
-.landFire:hover:not(:disabled),
+/* The pause menu's ember glow on the picked row, never a box. */
 .landFire.picked {
-	background: rgb(138 106 58 / 0.18);
+	background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 40%, transparent), transparent 80%);
+	color: var(--stroke);
 }
 
 .landFire:disabled {
@@ -1422,12 +1442,9 @@ textarea {
 
 @media (max-width: 720px) {
 	.landPanel {
-		top: auto;
+		top: 8px;
 		left: 8px;
-		right: 8px;
-		bottom: 68px;
-		width: auto;
-		max-height: 42vh;
+		height: calc(55% - 8px);
 	}
 }
 
@@ -1436,19 +1453,6 @@ textarea {
 	position: absolute;
 	inset: 0;
 	z-index: 5;
-}
-
-/* The map's tiers, in the close button's pills, bottom right; the tier in view is inked dark. */
-.tierBar {
-	position: absolute;
-	right: 14px;
-	bottom: 14px;
-	display: flex;
-	gap: 10px;
-}
-
-.tierBar .btn.small {
-	min-width: 0;
 }
 
 /* A talk, after the Souls games: no box, the words at the foot of the screen in the map labels' outline, the name above. */
