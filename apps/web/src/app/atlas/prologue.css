@@ -1,11 +1,17 @@
-/* The opening cutscene, after Dark Souls 1: brief paragraphs of narration on black, then the title. */
+/* The opening cutscene, after Dark Souls 1: brief paragraphs of narration, then the title. Told on the pack's
+   paper in brown ink, as the menu and creation are, not on black. */
 .prologue {
+	--ink: #2e1a0e;
+	--paperInk: #4a3a28;
+	--mute: #6b5740;
+	--accent: #7a4a22;
 	position: fixed;
 	inset: 0;
 	z-index: 20;
 	display: grid;
 	place-items: center;
-	background: #000;
+	background: radial-gradient(ellipse at center, #f6efdc 35%, #e8d9b4 80%, #cdb488);
+	color: var(--paperInk);
 	cursor: default;
 	user-select: none;
 }
@@ -14,7 +20,7 @@
 	animation: prologueOut 1600ms ease-in both;
 }
 
-/* Character creation eases away slower, into the prologue's black. */
+/* Character creation eases away slower, into the prologue's paper. */
 .creation.prologueEnd {
 	animation: prologueOut 2200ms ease-in-out both;
 }
@@ -41,11 +47,11 @@
 .prologueText p {
 	width: min(46rem, 88vw);
 	margin: 0;
-	font: 400 clamp(17px, 2.1vw, 25px) Georgia, "Times New Roman", serif;
+	font: 400 clamp(18px, 2.2vw, 26px) var(--book), Georgia, serif;
 	line-height: 1.55;
 	text-align: left;
 	text-wrap: pretty;
-	color: #e9e1cc;
+	color: var(--paperInk);
 	animation: prologueIn 1800ms ease-out both;
 }
 
@@ -53,7 +59,7 @@
 	position: relative;
 	text-align: center;
 	padding: 16px;
-	color: #e9e1cc;
+	color: var(--ink);
 	animation: prologueTitle 5200ms linear both;
 }
 
@@ -68,7 +74,7 @@
 	font: 700 clamp(14px, 2vw, 22px) var(--display), serif;
 	letter-spacing: 0.3em;
 	text-transform: uppercase;
-	color: #a89c84;
+	color: var(--accent);
 }
 
 .prologueSkip {
@@ -77,14 +83,14 @@
 	bottom: 20px;
 	font: 700 13px var(--display), serif;
 	letter-spacing: 0.1em;
-	color: #a89c84;
+	color: var(--mute);
 }
 
 .prologueSkip i {
 	display: block;
 	height: 2px;
 	margin-top: 6px;
-	background: #e9e1cc;
+	background: var(--accent);
 	transform-origin: left;
 	animation: prologueSkip 1000ms linear both;
 }

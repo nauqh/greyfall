@@ -6,7 +6,7 @@ import { PROLOGUE } from "./prologue";
 import "./prologue.css";
 
 const HOLD_KEYS = [" ", "Enter", "Escape"];
-/** Black before a screen, a paragraph's fade on, time to read the last one, then the screen's fade out. */
+/** Bare paper before a screen, a paragraph's fade on, time to read the last one, then the screen's fade out. */
 const GAP_MS = 1500;
 const FADE_MS = 1800;
 const TAIL_MS = 1200;
@@ -17,8 +17,8 @@ const PARA_MS = 900;
 
 const readMs = (p: string): number => p.split(/\s+/).length * WORD_MS;
 
-/** The opening cutscene, after Dark Souls 1: narration on black, then the title, then the game. */
-/** `wait`: held on black, deaf to keys, while the creation screen still fades out over it. */
+/** The opening cutscene, after Dark Souls 1: narration on paper, then the title, then the game. */
+/** `wait`: held on bare paper, deaf to keys, while the creation screen still fades out over it. */
 export function Prologue({ wait = false, onReveal, onDone }: { wait?: boolean; onReveal: () => void; onDone: () => void }) {
   const { screens, title, subtitle } = PROLOGUE;
   const [b, setB] = useState(0);
@@ -56,7 +56,7 @@ export function Prologue({ wait = false, onReveal, onDone }: { wait?: boolean; o
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [b, shown, leaving, end, wait]);
 
-  // The black starts to lift: the game behind it begins its opening shot.
+  // The paper starts to lift: the game behind it begins its opening shot.
   useEffect(() => {
     if (end) onReveal();
     // eslint-disable-next-line react-hooks/exhaustive-deps
