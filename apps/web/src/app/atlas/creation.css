@@ -188,7 +188,7 @@
 	background: #47aba9;
 }
 
-/* The name on a nameplate of the wood table's dark slot. */
+/* The name straight on the paper, outlined so it stands off it. */
 .crName {
 	display: grid;
 	gap: 10px;
@@ -196,22 +196,21 @@
 
 .crName input {
 	width: 100%;
-	padding: 0 4px 4px;
-	border: 32px solid transparent;
-	border-image: url("/tiny-swords/UI Elements/UI Elements/Wood Table/WoodTable_Slots.png") 64 fill / 32px stretch;
+	padding: 8px 4px;
+	border: none;
 	background: none;
 	outline: none;
 	color: var(--cream);
 	font: 900 26px var(--display), serif;
 	letter-spacing: 0.06em;
-	text-align: center;
+	text-align: left;
 	-webkit-text-stroke: 5px var(--stroke);
 	paint-order: stroke fill;
-	caret-color: var(--cream);
+	caret-color: var(--ink);
 }
 
 .crName input::placeholder {
-	color: rgb(242 234 212 / 0.4);
+	color: rgb(107 87 64 / 0.6);
 	-webkit-text-stroke: 0;
 }
 
