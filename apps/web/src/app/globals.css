@@ -1740,18 +1740,10 @@ textarea {
 	text-shadow: 0 1px 2px #000;
 }
 
-/* The pack's heal drop is green; an ember is amber. */
-img[src$="ui/icon_heal.png"],
-[style*="ui/icon_heal.png"] {
-	filter: hue-rotate(-70deg) saturate(1.4);
-}
-
-.vitalBadge img {
+.vitalBadge .statIcon {
 	position: absolute;
 	right: -6px;
 	bottom: -6px;
-	width: 22px;
-	height: 22px;
 }
 
 .vitalBars {

@@ -8,6 +8,7 @@ import { packUrl } from "../../game/art";
 import { CLICK, play, useTick } from "../sound";
 import { CreationScene } from "./CreationScene";
 import { ItemIcon } from "./ItemIcon";
+import { StatIcon, type Stat } from "./statIcons";
 import "./panel.css";
 import "./prologue.css";
 import "./rest.css";
@@ -83,14 +84,14 @@ function Key({ k }: { k: string }) {
   return <kbd className={k.length > 1 ? "wide" : undefined}>{k}</kbd>;
 }
 
-/** The numbers on the right, as a rest shows them; Walk's icon is the second frame of a dust burst. */
-const STATS: { label: string; icon: string; frame?: number; of: (k: ReturnType<typeof kit>, cls: HeroClass) => number }[] = [
-  { label: "Health", icon: "ui/icon_hp.png", of: (k) => k.hp },
-  { label: "Stamina", icon: "UI Elements/UI Elements/Icons/Icon_08.png", of: (k) => k.stamina },
-  { label: "Attack", icon: "ui/icon_damage.png", of: (k) => k.attack },
-  { label: "Embers", icon: "ui/icon_heal.png", of: (k) => k.flasks },
-  { label: "Reach", icon: "ui/icon_range.png", of: (_, cls) => CLASSES[cls].reach },
-  { label: "Walk", icon: "Particle FX/Dust_02.png", frame: 1, of: (_, cls) => CLASSES[cls].speed },
+/** The numbers on the right, as a rest shows them. */
+const STATS: { label: string; icon: Stat; of: (k: ReturnType<typeof kit>, cls: HeroClass) => number }[] = [
+  { label: "Health", icon: "hp", of: (k) => k.hp },
+  { label: "Stamina", icon: "stamina", of: (k) => k.stamina },
+  { label: "Attack", icon: "attack", of: (k) => k.attack },
+  { label: "Embers", icon: "flasks", of: (k) => k.flasks },
+  { label: "Reach", icon: "reach", of: (_, cls) => CLASSES[cls].reach },
+  { label: "Walk", icon: "walk", of: (_, cls) => CLASSES[cls].speed },
 ];
 
 /** A class's face for its row: its head and shoulders in its first idle frame, drawn at half. */
@@ -257,7 +258,7 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
           <ul className="crRows">
             {STATS.map((s) => (
               <li key={s.label}>
-                <i className="crIcon" style={{ backgroundImage: `url("${packUrl(s.icon)}")`, "--frame": s.frame ?? 0 } as React.CSSProperties} />
+                <StatIcon stat={s.icon} size={22} />
                 <span>{s.label}</span>
                 <b>{s.of(now, showCls)}</b>
               </li>

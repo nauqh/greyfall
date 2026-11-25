@@ -2,7 +2,8 @@ import { LEVEL_UP, type Levels } from "@greyfall/engine";
 
 import type { LevelView } from "../../game/AtlasScene";
 import { packUrl } from "../../game/art";
-import { STAT_ICON, levelOf } from "./RestPanel";
+import { levelOf } from "./RestPanel";
+import { StatIcon } from "./statIcons";
 import { SidePanel } from "./SidePanel";
 import "./levelup.css";
 
@@ -86,7 +87,7 @@ export function LevelUp({
               onMouseEnter={() => onPick(i)}
               onClick={() => onChoose(i)}
             >
-              <img src={packUrl(STAT_ICON[s.stat])} alt="" width={22} height={22} />
+              <StatIcon stat={s.stat} size={22} />
               <span className="panelOptionName">{s.name}</span>
               <b key={pop} className={`panelAside${pop ? " pop" : ""}`}>
                 {view.levels[s.stat]}
@@ -104,7 +105,7 @@ export function LevelUp({
         {STATS.map((s) => (
           <div key={s.stat}>
             <dt>
-              <img src={packUrl(STAT_ICON[s.stat])} alt="" width={18} height={18} />
+              <StatIcon stat={s.stat} size={18} />
               {s.raises}
             </dt>
             <dd>

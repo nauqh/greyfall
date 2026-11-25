@@ -2,17 +2,16 @@ import { GIFTS } from "@greyfall/engine";
 import { useEffect, useRef, useState } from "react";
 
 import type { SackView } from "../../game/AtlasScene";
-import { packUrl } from "../../game/art";
 import { useTick } from "../sound";
 import { ItemIcon } from "./ItemIcon";
-import { STAT_ICON } from "./RestPanel";
+import { StatIcon, type Stat } from "./statIcons";
 import "./sack.css";
 
 const typing = (t: EventTarget | null): boolean =>
   t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement || (t instanceof HTMLElement && t.isContentEditable);
 
 /** The numbers drawn big with an icon, as at a rest; the rest told small below them. */
-const MAIN: Partial<Record<SackView["stats"][number]["key"], string>> = { hp: STAT_ICON.hp, attack: STAT_ICON.attack, stamina: STAT_ICON.stamina, flasks: "ui/icon_heal.png" };
+const MAIN = new Set<SackView["stats"][number]["key"]>(["hp", "attack", "stamina", "flasks"]);
 const ROW = 4;
 /** With the sack open, the movement keys walk its goods instead of the captain. */
 const STEP: Record<string, number> = { w: -ROW, arrowup: -ROW, s: ROW, arrowdown: ROW, a: -1, arrowleft: -1, d: 1, arrowright: 1 };
@@ -106,8 +105,8 @@ export function Sack({ sack, gold, onCover }: { sack: SackView; gold: number; on
   useEffect(() => {
     goodsRef.current?.children[sack.items.indexOf(good!)]?.scrollIntoView({ block: "nearest" });
   }, [good, sack.items]);
-  const main = sack.stats.filter((s) => MAIN[s.key]);
-  const more = sack.stats.filter((s) => !MAIN[s.key]);
+  const main = sack.stats.filter((s) => MAIN.has(s.key));
+  const more = sack.stats.filter((s) => !MAIN.has(s.key));
   const name = sack.name ?? "The Wanderer";
   const slots = Math.max(ROW * 4, Math.ceil(sack.items.length / ROW) * ROW);
   return (
@@ -131,7 +130,7 @@ export function Sack({ sack, gold, onCover }: { sack: SackView; gold: number; on
         >
           <header className="sackTop">
             <span className="sackGold">
-              <img src={packUrl("ui/icon_gold.png")} alt="" width={24} height={24} />
+              <StatIcon stat="gold" />
               Gold <b>{gold}</b>
             </span>
             <span className="sackWho">
@@ -168,7 +167,7 @@ export function Sack({ sack, gold, onCover }: { sack: SackView; gold: number; on
               <ul className="sackMain">
                 {main.map((s) => (
                   <li key={s.key}>
-                    <img src={packUrl(MAIN[s.key]!)} alt="" width={28} height={28} />
+                    <StatIcon stat={s.key as Stat} size={28} />
                     <b>{s.now}</b>
                     <span>{s.label}</span>
                   </li>

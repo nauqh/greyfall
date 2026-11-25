@@ -19,6 +19,7 @@ import { Creation } from "./Creation";
 import { Prologue } from "./ProloguePlayer";
 import { Sack } from "./Sack";
 import { Shop } from "./Shop";
+import { StatIcon } from "./statIcons";
 import { TravelMap } from "./TravelMap";
 import { ARRIVE, CLICK, loop, play, SACK, TIDEWAKE_MUSIC } from "../sound";
 
@@ -604,7 +605,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
             <div className="vitals" aria-label={`Health ${vitals.hp} of ${vitals.max}, stamina ${vitals.stamina}, ${flasks ?? 0} embers`}>
               <span className="vitalBadge" title="Embers">
                 <b>{String(flasks ?? 0).padStart(2, "0")}</b>
-                <img src={packUrl("ui/icon_heal.png")} alt="" />
+                <StatIcon stat="flasks" size={22} />
               </span>
               <span className="vitalBars">
                 <span className="vitalBar hp" style={{ width: `${vitals.max * 3}px` }}>

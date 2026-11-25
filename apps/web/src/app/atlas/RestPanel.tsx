@@ -1,10 +1,7 @@
 import type { LevelView } from "../../game/AtlasScene";
-import { packUrl } from "../../game/art";
 import { LevelBadge, SidePanel, type PanelOption } from "./SidePanel";
+import { StatIcon, type Stat } from "./statIcons";
 import "./rest.css";
-
-/** Health, attack and stamina with the icons the HUD and the level up use. */
-export const STAT_ICON = { hp: "ui/icon_hp.png", attack: "ui/icon_damage.png", stamina: "UI Elements/UI Elements/Icons/Icon_08.png" } as const;
 
 export function levelOf(view: LevelView): number {
   return 1 + view.levels.hp + view.levels.attack + view.levels.stamina;
@@ -30,12 +27,12 @@ export function RestPanel({
   onPick: (i: number) => void;
   onChoose: (i: number) => void;
 }) {
-  const stats = [
-    { label: "Health", icon: STAT_ICON.hp, value: view.now.hp },
-    { label: "Attack", icon: STAT_ICON.attack, value: view.now.attack },
-    { label: "Stamina", icon: STAT_ICON.stamina, value: view.now.stamina },
-    { label: "Embers", icon: "ui/icon_heal.png", value: flasks },
-    { label: "Gold", icon: "ui/icon_gold.png", value: view.gold, gold: true },
+  const stats: { label: string; icon: Stat; value: number; gold?: boolean }[] = [
+    { label: "Health", icon: "hp", value: view.now.hp },
+    { label: "Attack", icon: "attack", value: view.now.attack },
+    { label: "Stamina", icon: "stamina", value: view.now.stamina },
+    { label: "Embers", icon: "flasks", value: flasks },
+    { label: "Gold", icon: "gold", value: view.gold, gold: true },
   ];
   return (
     <SidePanel
@@ -53,7 +50,7 @@ export function RestPanel({
       <ul className="restStats panelRule">
         {stats.map((s) => (
           <li key={s.label} className={s.gold ? "restGold" : undefined}>
-            <img src={packUrl(s.icon)} alt="" width={24} height={24} />
+            <StatIcon stat={s.icon} />
             <span>{s.label}</span>
             <b>{s.value}</b>
           </li>

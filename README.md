@@ -199,13 +199,16 @@ view in agreement.
 ## Special thanks
 
 - Pixel Frog, for Tiny Swords.
-- Lorc, Delapouite and Caro Asercion, for the map's tier icons and the
-  lands' banner charges, from [game-icons.net](https://game-icons.net),
+- Lorc, Delapouite and Caro Asercion, for the map's tier icons, the
+  lands' banner charges and the stat icons, from [game-icons.net](https://game-icons.net),
   [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Delapouite:
   `floating-platforms`, `hill-fort`, `underground-cave`, `old-lantern`,
-  `watchtower`, `well`, `double-fish`, `fish-eggs`. Caro Asercion:
+  `watchtower`, `well`, `double-fish`, `fish-eggs`, `lungs`,
+  `two-coins`. Caro Asercion:
   `heraldic-sun`. Lorc: `wave-crest`, `ringing-bell`, `turtle-shell`,
-  `crown`, `bull-horns`, `cog`, `crowned-skull`, `spider-web`.
+  `crown`, `bull-horns`, `cog`, `crowned-skull`, `spider-web`,
+  `glass-heart`, `broadsword`, `small-fire`, `striking-arrows`,
+  `leather-boot`.
 - [1500 Archers on a 28.8](https://www.gamedeveloper.com/programming/1500-archers-on-a-28-8-network-programming-in-age-of-empires-and-beyond)
   and [Fix Your Timestep!](https://gafferongames.com/post/fix_your_timestep/),
   the models the engine is built on.

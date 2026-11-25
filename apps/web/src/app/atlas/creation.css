@@ -253,13 +253,6 @@
 }
 
 /* One 22 px frame of a 64 px tall icon or sheet, the `--frame`th. */
-.crIcon {
-	width: 22px;
-	height: 22px;
-	background: no-repeat calc(var(--frame) * -22px) 0 / auto 100%;
-	image-rendering: pixelated;
-}
-
 /* The gift, once there is one. */
 .crSlot {
 	display: flex;
