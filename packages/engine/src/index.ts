@@ -192,3 +192,4 @@ export { MAPPED_AREAS, areaMap, districtOf, groundColours, type AreaExit, type A
 export { FOES, GOLD_STONE, REST_CLEAR, HERO, CLASSES, type HeroClass, PACE, BOSS_KITS, bossAim, type BossKit, type BossMove, mayEngage, STAMINA, block, canAct, clearLine, canReach, clearShot, comboStep, recover, spend, drink, foeIntent, swingWait, routeToward, smoothPath, struck, throughGuard, type FoeStats, type Intent, ITEMS, GIFTS, LENT, kit, onOffer, type ItemName, type Kit, type Stock, LEVEL_UP, NO_LEVELS, levelCost, type Levels } from "./hero.ts";
 export { NPCS, TALK_RANGE, nextTalk, talkKey, whereabouts, type Npc, type Station, type Talk, type Whereabouts, type WorldFlag } from "./npcs.ts";
 export { BAND_SIZE, COMPANIONS, companionPlan, foeTarget, hire, mendTarget, type BandOrder, type CompanionKind, type CompanionStats, type Plan as BandPlan } from "./band.ts";
+export { PROLOGUE } from "./prologue.ts";

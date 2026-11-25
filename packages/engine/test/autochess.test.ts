@@ -20,9 +20,10 @@ function playOut(seed: number): Run {
 }
 
 describe("auto chess run", () => {
+  // Two whole runs: 0.8s alone, 4s in the full suite's contention, so the 5s default timed out now and then.
   it("is the same run for the same seed", () => {
     expect(playOut(5)).toEqual(playOut(5));
-  });
+  }, 20_000);
 
   it("ends with every clan placed once and the pool intact", () => {
     for (const seed of [1, 2, 3]) {

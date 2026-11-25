@@ -1,6 +1,6 @@
 // The opening cutscene's script: screens of narration before a new game's Tidewake, each a few paragraphs that come
 // up one after another. Lanternport's voice: it may say only what docs/world/reach.md "Who knows what" gives
-// Lanternport, and keeps to that file's "How we tell it".
+// Lanternport, and keeps to that file's "How we tell it". Played by apps/web/src/app/atlas/ProloguePlayer.tsx.
 
 export const PROLOGUE = {
   screens: [

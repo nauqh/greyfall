@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { PROLOGUE } from "./prologue";
+import { PROLOGUE } from "@greyfall/engine";
 import "./prologue.css";
 
 const HOLD_KEYS = [" ", "Enter", "Escape"];
