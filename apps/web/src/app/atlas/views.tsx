@@ -75,6 +75,8 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   }, [reveal]);
   const [travel, setTravel] = useState<(Departure & { phase: "cover" | "hold" | "uncover" }) | null>(null);
   const [warn, setWarn] = useState<Departure | null>(null);
+  // New game asked for, waiting on its yes; `create` is the dev panel's new hero.
+  const [wipe, setWipe] = useState<{ create: boolean } | null>(null);
   const [say, setSay] = useState<Say | null>(null);
   const [near, setNear] = useState<string | null>(null);
   const [flasks, setFlasks] = useState<number | null>(null);
@@ -90,8 +92,6 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   const [fire, setFire] = useState<{ name: string; pick: number; levelling?: boolean; bought?: { stat: keyof Levels; at: number } } | null>(null);
   // The map, open over the area while the scene waits paused behind it: from a bonfire to travel, or on M only to look.
   const [atlas, setAtlas] = useState<"travel" | "look" | null>(null);
-  // Opening the map, on M or from a bonfire: the cloud bank draws in first, then that map is under it.
-  const [mapCover, setMapCover] = useState<"travel" | "look" | null>(null);
   // The class, gift and name, once per game, first of all over a Landing paused behind it.
   const [picking, setPicking] = useState(false);
   // The opening cutscene, on the creation screen's black once the captain is made.
@@ -189,7 +189,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
           note: "To any bonfire you have lit",
           go: () => {
             api.current?.pause(true);
-            setMapCover("travel");
+            setAtlas("travel");
           },
         },
         { label: "Level up", note: sat ? `Next level ${sat.cost} gold` : "", go: () => setFire((f) => f && { ...f, pick: 0, levelling: true, bought: undefined }) },
@@ -251,8 +251,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   };
   // Every save of a run, so the captain comes ashore at the Landing again, alone; settings and the duel name stay. The
   // dev panel's new hero asks for creation after, which the dev route otherwise skips.
-  const newGame = (create = false): void => {
-    if (!window.confirm("Start a new game? Your gold, band, bonfires and slain bosses are lost.")) return;
+  const newGame = (create: boolean): void => {
     try {
       for (const k of ["band", "bought", "class", "flags", "gold", "heard", "hero", "keys", "kindled", "levels", "lost", "prologue", "rest", "sackOpened", "slain", "taken", "thrown"]) localStorage.removeItem(`greyfall.${k}`);
     } catch {}
@@ -279,17 +278,17 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     setAtlas(null);
   };
   useEffect(() => {
-    if (atlas || mapCover || fire || say || menu || died || warn || paused !== null) return;
+    if (atlas || fire || say || menu || died || warn || paused !== null) return;
     const key = (e: KeyboardEvent): void => {
       if (e.key.toLowerCase() !== "m" || e.repeat || now.current.travelling) return;
       api.current?.pause(true);
-      setMapCover("look");
+      setAtlas("look");
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [atlas, mapCover, fire, say, menu, died, warn, paused]);
+  }, [atlas, fire, say, menu, died, warn, paused]);
   useEffect(() => {
-    if (!fire || atlas || mapCover) return;
+    if (!fire || atlas) return;
     const key = (e: KeyboardEvent): void => {
       const k = e.key.toLowerCase();
       if (k === "w" || k === "arrowup" || k === "s" || k === "arrowdown") {
@@ -301,7 +300,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fire, atlas, mapCover]);
+  }, [fire, atlas]);
   const resume = (): void => {
     api.current?.pause(false);
     setPaused(null);
@@ -309,9 +308,27 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   const pauseMenu = [
     { label: "Resume", go: resume },
     { label: "Leave to the title", go: () => router.push("/") },
-    { label: "New game", go: () => newGame() },
+    { label: "New game", go: () => setWipe({ create: false }) },
   ];
-  const busy = !!(atlas || mapCover || fire || say || menu || died || warn || travel || picking || prologue || intro);
+  // A paper card's yes or no, by key, the mouse hidden: A/D picks, E chooses, Esc says no. Caught first, so the
+  // captain does not walk or act behind it.
+  useEffect(() => {
+    if (!warn && !wipe) return;
+    const key = (e: KeyboardEvent): void => {
+      const k = e.key.toLowerCase();
+      const buttons = [...document.querySelectorAll<HTMLButtonElement>(".dropWarnActions button")];
+      const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
+      if (k === "a" || k === "arrowleft" || k === "d" || k === "arrowright") buttons[(at + (k === "a" || k === "arrowleft" ? -1 : 1) + buttons.length) % buttons.length]?.focus();
+      else if (k === "e" && !e.repeat) buttons[at]?.click();
+      else if (k === "escape") buttons.at(-1)?.click();
+      else return;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    window.addEventListener("keydown", key, true);
+    return () => window.removeEventListener("keydown", key, true);
+  }, [warn, wipe]);
+  const busy = !!(atlas || fire || say || menu || died || warn || wipe || travel || picking || prologue || intro);
   useEffect(() => {
     if (busy) return;
     const key = (e: KeyboardEvent): void => {
@@ -388,16 +405,6 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
             }}
           />
         )}
-        {mapCover && (
-          // The map opens under the bank: the clouds draw in over the area, then the map is there.
-          <Clouds
-            mode="close"
-            onDone={() => {
-              setAtlas(mapCover);
-              setMapCover(null);
-            }}
-          />
-        )}
         {atlas && (
           <TravelMap
             from={now.current.area}
@@ -411,7 +418,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
             }}
           />
         )}
-        {fire && !atlas && !mapCover && (
+        {fire && !atlas && (
           // Sat at a bonfire, after Dark Souls 3 and Elden Ring: the camera in on the fire, a panel at the side, the world left lit.
           <div className="sideDock">
             {level ? (
@@ -441,7 +448,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
               api.current?.pause(true);
               setAtlas("travel");
             }}
-            onCreate={() => newGame(true)}
+            onCreate={() => setWipe({ create: true })}
           />
         )}
         {menu && <Shop menu={menu} api={api} />}
@@ -500,7 +507,6 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
           !menu &&
           !fire &&
           !atlas &&
-          !mapCover &&
           !sackOpen &&
           paused === null && (
             <div className="talkPrompt" role="status">
@@ -542,6 +548,21 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
                   Drop
                 </button>
                 <button className="btn small light" type="button" onClick={() => setWarn(null)}>
+                  Stay
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {wipe && (
+          <div className="dropWarn" role="alertdialog" aria-modal="true" aria-labelledby="wipeText">
+            <div className="paper dropWarnCard">
+              <p id="wipeText">Begin anew? Gold, band, bonfires and slain bosses are lost.</p>
+              <div className="dropWarnActions">
+                <button className="btn small" type="button" onClick={() => newGame(wipe.create)}>
+                  Begin anew
+                </button>
+                <button className="btn small light" type="button" autoFocus onClick={() => setWipe(null)}>
                   Stay
                 </button>
               </div>

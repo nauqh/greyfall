@@ -14,7 +14,7 @@ export const CONTROLS: Mode[] = [
           { action: "Move left", keys: ["A", "Left"] },
           { action: "Move down", keys: ["S", "Down"] },
           { action: "Move right", keys: ["D", "Right"] },
-          { action: "Roll (backstep standing still)", keys: ["Space"] },
+          { action: "Dash (backstep standing still)", keys: ["Space"] },
           { action: "Sprint (hold while moving)", keys: ["Space"] },
         ],
       },

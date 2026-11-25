@@ -1281,6 +1281,18 @@ textarea {
 	margin-top: 12px;
 }
 
+/* Picked by key with the mouse hidden: the focused button inked, the other pale. */
+.dropWarnActions .btn {
+	color: #2e1a0e;
+	background: #f2e3c2;
+}
+
+.dropWarnActions .btn:focus {
+	color: #fbf5e6;
+	background: #2e1a0e;
+	outline: none;
+}
+
 /* Outside the HUD, so it stays to bring the HUD back. */
 .worldLinks {
 	display: flex;

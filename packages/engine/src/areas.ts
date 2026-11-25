@@ -3743,15 +3743,14 @@ function landing(): AreaMap {
   for (const [c, r] of [[61, 25], [68, 25]] as const) prop("skullSpike", c, r);
 
   const notes: Note[] = [
-    { at: { col: 34, row: 42 }, text: "E at a fire to rest. Resting refills your embers." },
-    { at: { col: 32, row: 37 }, text: "Hold Space while walking to run." },
-    { at: { col: 27, row: 31 }, text: "Left click to attack." },
-    { at: { col: 18, row: 24 }, text: "Tap Space to roll." },
-    { at: { col: 18, row: 21 }, text: "Hold right click to guard." },
-    { at: { col: 33, row: 12 }, text: "R to burn an ember and mend." },
-    { at: { col: 45, row: 13 }, text: "M to open the map. Sat at a fire, travel to any fire you have rested at." },
-    { at: { col: 63, row: 28 }, text: "Die, and your gold stays where you fell." },
-    { at: { col: 36, row: 44 }, text: "Woke on this rock, warm, with the sea in my mouth. Could not say my own name. Went up anyway." },
+    { at: { col: 34, row: 42 }, text: "E: rest at fire" },
+    { at: { col: 32, row: 37 }, text: "Hold Space: run" },
+    { at: { col: 27, row: 31 }, text: "Left click: attack" },
+    { at: { col: 18, row: 24 }, text: "Tap Space: dash" },
+    { at: { col: 18, row: 21 }, text: "Hold right click: guard" },
+    { at: { col: 33, row: 12 }, text: "R: heal" },
+    { at: { col: 45, row: 13 }, text: "M: map. At a fire, travel" },
+    { at: { col: 63, row: 28 }, text: "Gold lost upon death. Reclaim it where you fell" },
   ];
   const exits: AreaExit[] = [{ to: "ring", name: "Ring Gate", kind: "open", at: { col: 78, row: 28 } }];
   // Unnamed: no room's name shows walking in, and both fires go by the Landing's own.
@@ -3798,7 +3797,7 @@ function ring(): AreaMap {
   t.bosses.push({ name: "Cinder Troll", area: "ring", col: 26, row: 20 });
   who("troll", 26, 20, { to: { col: 27, row: 20 } });
   // A note at the Ring's mouth: the lesson in its rocks.
-  const notes: Note[] = [{ at: { col: 9, row: 21 }, text: "Red ground is a blow coming. Step out of it, and lead him into the rocks." }];
+  const notes: Note[] = [{ at: { col: 9, row: 21 }, text: "Red ground: step out. Lure charge into rock" }];
 
   const exits: AreaExit[] = [
     { to: "landing", name: "Ring Gate", kind: "open", at: { col: 1, row: 20 } },

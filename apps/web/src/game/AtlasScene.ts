@@ -1657,6 +1657,8 @@ export class AtlasScene extends Phaser.Scene {
       // A bonfire mark, an exit travels, else the area under the pointer.
       const folk = this.free && this.hero ? this.folk.filter((f) => tileDistance(f.at, cell) <= 1).sort((a, b) => tileDistance(a.at, cell) - tileDistance(b.at, cell))[0] : undefined;
       if (folk) return this.devTalk(folk.npc.id);
+      const note = this.free && this.hero ? this.notes.find((n) => tileDistance(n.at, cell) <= 1) : undefined;
+      if (note) return this.devRead(note);
       const fire = this.markAt.findIndex((m) => m.tier === this.view && Math.abs(m.cell.col - cell.col) <= 2 && Math.abs(m.cell.row - cell.row) <= 2);
       if (fire >= 0) return this.hooks.onFire?.(fire);
       for (const e of this.local?.exits ?? []) {
@@ -4381,7 +4383,7 @@ export class AtlasScene extends Phaser.Scene {
       }
       if (this.menu?.folk === f && d > TALK_RANGE && !this.dev) this.closeMenu(true);
     }
-    if (this.reading && tileDistance(this.reading.at, hero.at) > 1) this.read(null);
+    if (this.reading && !this.dev && tileDistance(this.reading.at, hero.at) > 1) this.read(null);
     const t = this.talk || this.menu || this.reading || hero.dead || this.gone ? undefined : this.eTarget();
     const action = !t ? null : "folk" in t ? "Talk" : "fire" in t ? (this.unlit.has(this.fireKey(t.fire)) ? "Light the bonfire" : "Rest") : "note" in t ? "Read" : "fog" in t ? "Traverse the fog" : "lock" in t ? t.lock : "unbar" in t ? `Unbar the ${t.unbar.name}` : this.exitWord(t.exit);
     if (action !== this.nearName) this.hooks.onNear?.((this.nearName = action));
@@ -4485,6 +4487,12 @@ export class AtlasScene extends Phaser.Scene {
     this.read(null);
     if (RECRUITER[id] || f.npc.shop) this.openMenu(f);
     else this.talkTo(f);
+  }
+
+  private devRead(n: Note): void {
+    this.closeMenu(false);
+    this.talk = null;
+    this.read(n);
   }
 
   private devSet(patch: { gold?: number; flags?: WorldFlag[]; keys?: string[]; slain?: string[] }): void {
