@@ -1353,27 +1353,64 @@ textarea {
 	translate: none;
 }
 
-/* The tiers as Elden Ring sets its regions: one row on a hairline, the open one underlined; no rule under the head. */
+/* No rule under the head: the tabs carry their own. */
 .landPanel .panelHead {
+	justify-content: center;
 	background: none;
 }
 
+/* The open tier's name over its tabs, as Elden Ring names the region over its icons. */
+.landTier {
+	margin: 10px 0 6px;
+	font-family: var(--display), serif;
+	font-weight: 700;
+	font-size: 15px;
+	letter-spacing: 0.08em;
+	color: var(--stroke);
+}
+
+/* The tiers as icon tiles, the open one lit with a caret under it pointing at its list. */
 .landPanel .setModes {
 	flex-wrap: nowrap;
-	justify-content: space-around;
-	margin: 4px 0 0;
-	padding: 0;
-	border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+	gap: 6px;
+	margin: 0;
+	padding: 0 0 12px;
+	border-bottom: 1px solid var(--frame);
 }
 
 .landPanel .setMode {
-	flex: 1;
-	padding: 10px 4px 8px;
-	border-bottom-width: 3px;
+	position: relative;
+	display: grid;
+	place-items: center;
+	width: 56px;
+	height: 44px;
+	padding: 0;
+	border: 0;
+	border-radius: 3px;
+	color: color-mix(in srgb, var(--text) 45%, transparent);
+	transition: color 160ms ease-out, background-color 160ms ease-out;
+}
+
+.landPanel .setMode svg {
+	width: 30px;
+	height: 30px;
+	fill: currentColor;
 }
 
 .landPanel .setMode.on {
-	background: linear-gradient(0deg, color-mix(in srgb, var(--accent) 22%, transparent), transparent);
+	color: var(--stroke);
+	background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.landPanel .setMode.on::after {
+	content: "";
+	position: absolute;
+	bottom: -9px;
+	left: 50%;
+	translate: -50% 0;
+	border: 5px solid transparent;
+	border-top-color: var(--stroke);
+	border-bottom: 0;
 }
 
 .landPanel p {
@@ -1383,14 +1420,14 @@ textarea {
 
 /* A land's name over its bonfires, as Elden Ring heads each region's graces. */
 .landGroup h2 {
-	margin: 0 0 6px;
-	padding-bottom: 4px;
+	margin: 0 0 2px;
+	padding: 5px 12px;
 	color: #8a5a10;
 	font-size: 14px;
 	font-weight: 800;
 	font-variant: small-caps;
 	letter-spacing: 0.08em;
-	background: linear-gradient(90deg, #c9a35c, rgb(201 163 92 / 0)) bottom / 100% 1px no-repeat;
+	background: linear-gradient(90deg, rgb(201 163 92 / 0.35), rgb(201 163 92 / 0));
 }
 
 .landWhere {
@@ -1415,7 +1452,8 @@ textarea {
 	gap: 12px;
 	padding: 8px 12px;
 	border: 0;
-	background: none;
+	/* A faint rule under each bonfire, as Elden Ring rules its graces. */
+	background: linear-gradient(90deg, rgb(174 142 108 / 0.4), rgb(174 142 108 / 0) 85%) bottom / 100% 1px no-repeat;
 	color: inherit;
 	font: inherit;
 	text-align: left;
