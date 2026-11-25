@@ -310,7 +310,7 @@ Every term, with what to avoid, is in [GLOSSARY.md](../../GLOSSARY.md).
    after Dark Souls 1's opening (an age before, the broken crown and the
    disparity, the Grey, the fall, "even now, there are only embers"), in
    Lanternport's voice and kept to its column of Who knows what. The text
-   lives only in `apps/web/src/app/atlas/prologue.ts`; the subtitle
+   lives only in `packages/engine/src/prologue.ts`; the subtitle
    "Ashen Crown" shows on the prologue, title screen and settings.
 4. **The Warlord's and the Sentinel's look.** Settled 2026-11-21: the
    Warlord is a Black Warrior scaled up and tinted warm gold, the one colour
@@ -409,7 +409,9 @@ Taken from Dark Souls (1) and Skyrim.
    it off.
    [Environmental Storytelling, Rempton Games](https://remptongames.com/2018/11/24/what-you-give-is-what-you-get-environmental-storytelling-in-games/)
 6. **Every text leaves one question open.** Never answer the question a text
-   raises in the same text.
+   raises in the same text. Withhold the *cause*, never the *referent*: each
+   sentence says plainly who did what ("dig no deeper than a grave", not "no
+   deeper than a grave"); only the why stays open.
 7. **The wanderer never speaks and is never named.** Folk talk at them, judge
    them by what they have done, and never ask their name.
 8. **Places get plain English compounds.** Stiltwater, Kingsrest, Emberwood,
@@ -421,10 +423,12 @@ Taken from Dark Souls (1) and Skyrim.
 10. **One people, one look.** One art colour is one people (see "What the
     art can carry"), and a building or unit never wears another's colour.
 11. **Grounded nouns, northern register.** Salt, nets, ore, coal, a stool, a
-    candle, a cold hearth. Never destiny, fate or prophecy. Short sentences,
-    dry humour under the weight. The exceptions are the old speech of the
-    faithful, under Voices, and the prologue, which runs long and rolls its
-    names out the way Dark Souls 1's opening does.
+    candle, a cold hearth. Never destiny, fate or prophecy. Folk and the
+    prologue speak in whole sentences, each carrying one concrete picture (a
+    leg set wrong, a gaff left in the cave), with dry humour under the
+    weight; the prologue rolls its names out as Dark Souls 1's opening does.
+    Notes on the ground stay terse. The old speech of the faithful is under
+    Voices.
 12. **No outside words in player text.** No "feudal", "tutorial", "boss",
     "quest", "NPC", "zombie", "undead", "hollow" (as a state), "magic".
 13. **Claim only what we can draw.** Every people, beast and building put on
@@ -433,14 +437,19 @@ Taken from Dark Souls (1) and Skyrim.
 14. **Warm and cold carry the meaning.** Warmth is life, memory and name;
     cold is their loss. Gold is warm, fire is warm, salt holds, stone is the
     end. Every text that touches the Grey keeps to this, so the player learns
-    the physics without being told it.
+    the physics without being told it. Show warmth through things: a fire,
+    gold, the crown, the springs. On a person, show its loss instead: colour
+    gone, no one behind the eyes.
 
 ### Voices
 
 Folk talk after Dark Souls 3, each with a counterpart there, read in its
 NPC script before writing a line; the prologue is shaped on Dark Souls 1's
 opening ([Dark Souls transcript](https://game-scripts-wiki.blogspot.com/2021/10/dark-souls-transcript.html)).
-The scripts are not kept in git.
+The scripts are not kept in git; on the writer's machine they are
+`docs/research/dark-souls-openings.txt` (the three openings, and Oscar for
+Hollis) and `docs/research/dark-souls-3-npc-dialogue.txt` (the Dark Souls 3
+folk).
 
 - **Two registers.** The faithful speak the old way, as the Fire Keeper and
   Yuria do: "thee", "thou'rt", "'tis", "-eth". That is Mother Ysolde, Sister
