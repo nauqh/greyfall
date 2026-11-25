@@ -20,14 +20,16 @@ const REST = "greyfall.rest";
 
 const areaOf = (id: AreaId) => AREAS.find((a) => a.id === id)!;
 
-/** Every bonfire in the Reach, in the atlas's order of areas, lit if rested at in this browser (or all of them in dev
- *  mode); a blocked store lights none. */
+/** Every bonfire in the Reach, in the atlas's order of areas (Lanternport first), lit if rested at in this browser (or
+ *  all of them in dev mode); a blocked store lights none. */
 function checkpoints(dev: boolean): Fire[] {
   let lit = new Set<string>();
   try {
     lit = new Set(JSON.parse(localStorage.getItem(KINDLED) ?? "[]") as string[]);
   } catch {}
-  return AREAS.filter((a) => MAPPED_AREAS.includes(a.id)).flatMap((a) => {
+  // Lanternport, the town, heads the surface.
+  const lands = AREAS.filter((a) => MAPPED_AREAS.includes(a.id)).sort((a, b) => +(b.id === "harbour") - +(a.id === "harbour"));
+  return lands.flatMap((a) => {
     const m = areaMap(a.id);
     return m.fires.map((f) => ({ area: a.id, col: f.col, row: f.row, name: districtOf(m, f.col, f.row)?.name || a.name, lit: dev || lit.has(`${a.id}:${f.col},${f.row}`) }));
   });
@@ -97,7 +99,9 @@ export function TravelMap({ from, travel: atFire, dev = false, onTravel, onBack 
       const steps = onTier(tier);
       if ((k === "w" || k === "arrowup" || k === "s" || k === "arrowdown") && steps.length > 0) {
         const i = steps.indexOf(fires[pick]!);
-        const next = i < 0 ? 0 : (i + (k === "w" || k === "arrowup" ? -1 : 1) + steps.length) % steps.length;
+        const up = k === "w" || k === "arrowup";
+        // From nothing picked, W starts at the foot of the list and S at its head.
+        const next = i < 0 ? (up ? steps.length - 1 : 0) : (i + (up ? -1 : 1) + steps.length) % steps.length;
         pickFire(fires.indexOf(steps[next]!));
       } else if (k === "a" || k === "arrowleft" || k === "d" || k === "arrowright") {
         turnTier(TIERS[(TIERS.indexOf(tier) + (k === "a" || k === "arrowleft" ? -1 : 1) + TIERS.length) % TIERS.length]!);

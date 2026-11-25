@@ -1422,6 +1422,11 @@ textarea {
 	cursor: pointer;
 }
 
+/* Scrolled to, a land's first bonfire brings its land's name with it. */
+.landFires li:first-child .landFire {
+	scroll-margin-top: 48px;
+}
+
 /* The pause menu's ember glow on the picked row, never a box. */
 .landFire.picked {
 	background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 40%, transparent), transparent 80%);
