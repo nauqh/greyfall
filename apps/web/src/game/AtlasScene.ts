@@ -2174,7 +2174,8 @@ export class AtlasScene extends Phaser.Scene {
   /** A good on the ground, drawn as a blade: Hollis's gaff is the only one thrown so far. */
   private dropItem(at: Cell, item: ItemName): Phaser.GameObjects.Image {
     const [x, y] = [(at.col + 0.5) * CELL, (at.row + 0.75) * CELL];
-    const s = this.add.image(x, y, "swords", 0).setOrigin(0.5, 0.62).setScale(0.12).setDepth(standing(y) - 1);
+    // Only the hilt piece of the sheet's three-piece sword, as the gaff's own icon crops it.
+    const s = this.add.image(x, y, "swords", 0).setCrop(0, 0, 128, 128).setOrigin(64 / 448, 0.62).setScale(0.45).setDepth(standing(y) - 1);
     this.piles.push({ at: { ...at }, gold: 0, item, s });
     return s;
   }
@@ -3004,7 +3005,7 @@ export class AtlasScene extends Phaser.Scene {
     if (move.burn) {
       for (const at of aim) {
         const y = (at.row + 0.75) * CELL;
-        const s = this.add.sprite((at.col + 0.5) * CELL, y, "fire").setOrigin(0.5, FIRE.anchor).setScale(move.snare ? 0.4 : 0.55).setDepth(standing(y));
+        const s = this.add.sprite((at.col + 0.5) * CELL, y, "fire").setOrigin(0.5, FIRE.anchor).setScale(move.snare ? 0.4 : 0.55).setDepth(DEPTH.unit - 1);
         if (move.colour) s.setTint(move.colour);
         // A web is a thread strung on the ground, not a flame: drawn pale and still.
         if (move.snare) s.setAlpha(0.7);
@@ -3257,6 +3258,8 @@ export class AtlasScene extends Phaser.Scene {
     };
     // Nothing grows in a building's base or the ground round it.
     const built = new Set(tier.props.flatMap((p) => footprint(p, true).map((c) => c.row * STRAT_COLS + c.col)));
+    // No rock in the water under a moored boat.
+    const boats = tier.props.filter((p) => p.art === "boat");
     // Nor on a fence's line or the tile outside it, so no bush or rock tangles with the posts.
     for (const f of tier.fences) for (let r = f.row - 1; r <= f.row + f.h; r++) for (let c = f.col - 1; c <= f.col + f.w; c++) if (r <= f.row || r >= f.row + f.h - 1 || c <= f.col || c >= f.col + f.w - 1) built.add(r * STRAT_COLS + c);
     // Nor on a fire or the ring round it, where a rock would block the way to it.
@@ -3299,7 +3302,7 @@ export class AtlasScene extends Phaser.Scene {
           if (tier.base === "sky") continue;
           let coast = false;
           for (let d = -2; d <= 2; d++) coast ||= isLand(c + d, r) || isLand(c, r + d);
-          if (coast && r01() < (c < 30 && tier.base === "sea" ? 0.1 : 0.05)) decor("waterRock", (c + r01()) * CELL, (r + r01()) * CELL);
+          if (coast && r01() < (c < 30 && tier.base === "sea" ? 0.1 : 0.05) && !boats.some((p) => tileDistance(p, { col: c, row: r }) <= 2)) decor("waterRock", (c + r01()) * CELL, (r + r01()) * CELL);
           continue;
         }
         if (isForest(c, r)) {
@@ -3441,8 +3444,8 @@ export class AtlasScene extends Phaser.Scene {
       return;
     }
     if (p.art === "sconce") {
-      // A torch in its bracket on a crypt wall: a small flame and its pool of light.
-      const flame = this.add.sprite(x, y - 30, "fire").setOrigin(0.5, FIRE.anchor).setScale(0.32).setDepth(standing(y));
+      // A torch in its bracket on a crypt wall: a small flame and its pool of light, on the wall behind whoever passes.
+      const flame = this.add.sprite(x, y - 30, "fire").setOrigin(0.5, FIRE.anchor).setScale(0.32).setDepth(DEPTH.unit - 1);
       this.loop(flame, "fire");
       this.track(flame);
       const glow = this.add.image(x, y - 40, "glow").setBlendMode(Phaser.BlendModes.ADD).setTint(0xffb870).setAlpha(0.45).setScale(0.8).setDepth(DEPTH.clouds - 2);
