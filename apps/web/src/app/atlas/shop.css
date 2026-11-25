@@ -7,7 +7,7 @@
 	max-height: calc(100vh - 32px);
 	padding: 6px 8px 4px;
 	overflow: hidden;
-	color: #4a3a28;
+	color: var(--paperInk);
 	font-family: "Nunito", "Segoe UI", sans-serif;
 	font-weight: 700;
 	font-size: 15px;
@@ -95,10 +95,10 @@
 	align-items: center;
 	gap: 12px;
 	padding: 8px 14px;
-	border: 3px solid #2e1a0e;
+	border: 3px solid var(--brown);
 	border-radius: 14px;
 	background: #f2e3c2;
-	box-shadow: 3px 4px 0 #2e1a0e;
+	box-shadow: 3px 4px 0 var(--brown);
 	color: inherit;
 	font: inherit;
 	text-align: left;
@@ -112,13 +112,13 @@
 }
 
 .shopChoice.picked {
-	background: #2e1a0e;
+	background: var(--brown);
 	color: #fbf5e6;
 }
 
 .shopChoice:active {
 	transform: translate(3px, 4px);
-	box-shadow: 0 0 0 #2e1a0e;
+	box-shadow: 0 0 0 var(--brown);
 }
 
 .shopChoice.picked img {
@@ -141,7 +141,7 @@
 .shopChoiceText small {
 	font-size: 12px;
 	font-weight: 600;
-	color: #6b5740;
+	color: var(--mute);
 }
 
 .shopChoice.picked small {
@@ -229,7 +229,7 @@
 }
 
 .shopSlot.sold .shopPrice {
-	color: #6b5740;
+	color: var(--mute);
 	letter-spacing: 0.1em;
 	text-transform: uppercase;
 	font-size: 11px;
@@ -297,7 +297,7 @@
 	font-size: 13px;
 	font-style: italic;
 	line-height: 1.4;
-	color: #6b5740;
+	color: var(--mute);
 }
 
 .shopStats,
@@ -319,7 +319,7 @@
 .shopStats dt,
 .shopLedger dt {
 	font-weight: 600;
-	color: #6b5740;
+	color: var(--mute);
 }
 
 .shopStats dd,

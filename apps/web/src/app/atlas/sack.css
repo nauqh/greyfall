@@ -7,7 +7,7 @@
 	align-items: center;
 	gap: 6px;
 	padding: 0 6px;
-	color: #4a3a28;
+	color: var(--paperInk);
 	font-family: "Nunito", "Segoe UI", sans-serif;
 	font-weight: 800;
 	font-size: 14px;
@@ -33,7 +33,7 @@
 	bottom: 120px;
 	margin: 0;
 	padding: 0 6px;
-	color: #4a3a28;
+	color: var(--paperInk);
 	font-family: "Nunito", "Segoe UI", sans-serif;
 	font-weight: 800;
 	font-size: 15px;
@@ -84,8 +84,8 @@
 .sack {
 	--gold: #8a5a10;
 	--line: #c9a35c;
-	--ink: #2e1a0e;
-	--text: #4a3a28;
+	--ink: var(--brown);
+	--text: var(--paperInk);
 	--muted: #8a7458;
 	position: absolute;
 	inset: clamp(8px, 3vh, 32px) 16px clamp(8px, 3vh, 32px) auto;
@@ -316,7 +316,7 @@
 	font-weight: 600;
 	font-size: 15px;
 	line-height: 1.45;
-	color: #6b5740;
+	color: var(--mute);
 }
 
 .sackLabel:not(:first-child) {

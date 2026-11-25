@@ -1,10 +1,8 @@
 /* The opening cutscene, after Dark Souls 1: brief paragraphs of narration, then the title. Told on the pack's
    paper in brown ink, as the menu and creation are, not on black. */
 .prologue {
-	--ink: #2e1a0e;
-	--paperInk: #4a3a28;
-	--mute: #6b5740;
-	--accent: #7a4a22;
+	--ink: var(--brown);
+	--accent: var(--rust);
 	position: fixed;
 	inset: 0;
 	z-index: 20;

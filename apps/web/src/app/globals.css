@@ -4,6 +4,13 @@
 :root {
 	color-scheme: dark;
 	--ink: #fdfaf0;
+	/* The pack's paper and ink, shared by every screen drawn on it. */
+	--brown: #2e1a0e;
+	--bark: #4a3322;
+	--paperInk: #4a3a28;
+	--mute: #6b5740;
+	--cream: #f2ead4;
+	--rust: #7a4a22;
 }
 
 * {
@@ -217,10 +224,10 @@ textarea {
 
 .titleMenu {
 	--h: 54px;
-	--accent: #7a4a22;
-	--stroke: #2e1a0e;
-	--text: #4a3322;
-	--hint: #4a3322;
+	--accent: var(--rust);
+	--stroke: var(--brown);
+	--text: var(--bark);
+	--hint: var(--bark);
 	position: absolute;
 	z-index: 3;
 	left: clamp(56px, 5vw, 80px);
@@ -303,7 +310,7 @@ textarea {
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
 	white-space: nowrap;
-	color: #f2ead4;
+	color: var(--cream);
 	-webkit-text-stroke: 5px var(--stroke);
 	paint-order: stroke fill;
 	text-shadow: 0 3px 0 var(--stroke);
@@ -363,7 +370,7 @@ textarea {
 	--sh: calc(var(--h) + 16px);
 	position: relative;
 	isolation: isolate;
-	color: #2e1a0e;
+	color: var(--brown);
 }
 
 /* Out over the side borders, so the button spans the scroll. */
@@ -372,16 +379,16 @@ textarea {
 	position: absolute;
 	inset: 3px calc(var(--h) * -1) 5px;
 	z-index: -1;
-	border: 3px solid #2e1a0e;
+	border: 3px solid var(--brown);
 	border-radius: 10px;
 	background: #f2e3c2;
-	box-shadow: 3px 4px 0 #2e1a0e;
+	box-shadow: 3px 4px 0 var(--brown);
 	transition: opacity 200ms ease-out;
 }
 
 /* On the blade the ink goes dark. */
 .menuItem.on {
-	color: #2e1a0e;
+	color: var(--brown);
 	text-shadow: none;
 }
 
@@ -571,7 +578,7 @@ textarea {
    border-image can read. */
 
 .lobby {
-	--stroke: #2e1a0e;
+	--stroke: var(--brown);
 	min-height: 100vh;
 	display: flex;
 	flex-direction: column;
@@ -603,7 +610,7 @@ textarea {
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
 	white-space: nowrap;
-	color: #f2ead4;
+	color: var(--cream);
 	-webkit-text-stroke: 5px var(--stroke);
 	paint-order: stroke fill;
 	text-shadow: 0 3px 0 var(--stroke);
@@ -637,7 +644,7 @@ textarea {
 	gap: 14px;
 	min-width: 300px;
 	padding: 4px 14px 10px;
-	color: #4a3a28;
+	color: var(--paperInk);
 	border: 34px solid transparent;
 	/* The sheet is 135x127 with a clear margin; a 64 slice left no middle row to fill. */
 	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 34px stretch;
@@ -657,7 +664,7 @@ textarea {
 
 .fieldLabel {
 	font-size: 14px;
-	color: #6b5740;
+	color: var(--mute);
 }
 
 /* An inked pill on a hard shadow; the press sinks it onto the shadow. */
@@ -671,15 +678,15 @@ textarea {
 	line-height: 20px;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
-	background: #2e1a0e;
-	border: 3px solid #2e1a0e;
+	background: var(--brown);
+	border: 3px solid var(--brown);
 	border-radius: 999px;
-	box-shadow: 3px 4px 0 #2e1a0e;
+	box-shadow: 3px 4px 0 var(--brown);
 	transition: transform 90ms ease-out, box-shadow 90ms ease-out;
 }
 
 .btn.light {
-	color: #2e1a0e;
+	color: var(--brown);
 	background: #f2e3c2;
 }
 
@@ -689,12 +696,12 @@ textarea {
 
 .btn:where(:hover:not(:disabled)) {
 	transform: translate(1px, 2px);
-	box-shadow: 2px 2px 0 #2e1a0e;
+	box-shadow: 2px 2px 0 var(--brown);
 }
 
 .btn:where(:active:not(:disabled)) {
 	transform: translate(3px, 4px);
-	box-shadow: 0 0 0 #2e1a0e;
+	box-shadow: 0 0 0 var(--brown);
 }
 
 .btn:disabled {
@@ -731,7 +738,7 @@ textarea {
 	gap: 16px;
 	min-width: 300px;
 	padding: 4px 14px 10px;
-	color: #4a3322;
+	color: var(--bark);
 	border: 30px solid transparent;
 	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 30px stretch;
 	filter: drop-shadow(0 12px 22px rgb(8 10 16 / 0.5));
@@ -747,7 +754,7 @@ textarea {
 	font-family: var(--book), serif;
 	font-size: 17px;
 	font-style: italic;
-	color: #7a4a22;
+	color: var(--rust);
 }
 
 .lobby input {
@@ -759,7 +766,7 @@ textarea {
 	background: rgb(255 248 230 / 0.7);
 	border: 2px solid #b08a5a;
 	border-radius: 4px;
-	outline-color: #7a4a22;
+	outline-color: var(--rust);
 }
 
 .codeInput {
@@ -784,7 +791,7 @@ textarea {
 	margin: 0;
 	font-family: var(--book), serif;
 	font-style: italic;
-	color: #7a4a22;
+	color: var(--rust);
 }
 
 .or::before,
@@ -813,7 +820,7 @@ textarea {
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
 	color: #f6ecd6;
-	text-shadow: 0 2px 0 var(--stroke, #2e1a0e);
+	text-shadow: 0 2px 0 var(--stroke, var(--brown));
 	background: none;
 	border: 0;
 	border-radius: 0;
@@ -918,7 +925,7 @@ textarea {
 	max-width: 320px;
 	font-family: var(--book), serif;
 	font-style: italic;
-	color: #7a4a22;
+	color: var(--rust);
 }
 
 .seats {
@@ -946,7 +953,7 @@ textarea {
 }
 
 .seat.mine {
-	color: #4a3322;
+	color: var(--bark);
 	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 30px stretch;
 }
 
@@ -1041,7 +1048,7 @@ textarea {
 	padding: 0 10px 4px;
 	border: 18px solid transparent;
 	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 18px stretch;
-	color: #4a3a28;
+	color: var(--paperInk);
 	font-family: "Nunito", "Segoe UI", sans-serif;
 	font-size: 14px;
 	font-weight: 400;
@@ -1058,7 +1065,7 @@ textarea {
 
 .statTipTitle {
 	margin: 0;
-	color: #4a3322;
+	color: var(--bark);
 	font-size: 15px;
 	font-weight: 700;
 	line-height: 1.2;
@@ -1283,13 +1290,13 @@ textarea {
 
 /* Picked by key with the mouse hidden: the focused button inked, the other pale. */
 .dropWarnActions .btn {
-	color: #2e1a0e;
+	color: var(--brown);
 	background: #f2e3c2;
 }
 
 .dropWarnActions .btn:focus {
 	color: #fbf5e6;
-	background: #2e1a0e;
+	background: var(--brown);
 	outline: none;
 }
 
@@ -1542,7 +1549,7 @@ textarea {
 	border: 34px solid transparent;
 	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 34px stretch;
 	background: none;
-	color: #4a3a28;
+	color: var(--paperInk);
 	text-align: center;
 	cursor: pointer;
 	font: inherit;
@@ -1832,7 +1839,7 @@ img[src$="ui/icon_heal.png"],
 	inset: 0;
 	display: flex;
 	gap: 3px;
-	background: #2e1a0e;
+	background: var(--brown);
 }
 
 /* The pane is a window, not the scene's size: the scene behind it is laid

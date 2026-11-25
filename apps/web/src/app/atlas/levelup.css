@@ -20,7 +20,7 @@
 	display: flex;
 	align-items: center;
 	gap: 6px;
-	color: #6b5740;
+	color: var(--mute);
 }
 
 .luSheet dd {

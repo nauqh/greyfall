@@ -61,7 +61,7 @@
 .devPanel input[type="number"] {
 	min-width: 0;
 	padding: 3px 6px;
-	border: 1px solid #6b5740;
+	border: 1px solid var(--mute);
 	border-radius: 4px;
 	background: var(--field);
 	color: inherit;

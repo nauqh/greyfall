@@ -2,11 +2,8 @@
    the steps, the choices, the numbers, and the class on show in a window onto its shore at the right. Fixed to the screen, never
    scrolled. Every piece at 1x or exactly half, as nearest-neighbour at any other scale breaks the art's lines. */
 .creation {
-	--ink: #2e1a0e;
-	--paperInk: #4a3a28;
-	--mute: #6b5740;
-	--cream: #f2ead4;
-	--stroke: #2e1a0e;
+	--ink: var(--brown);
+	--stroke: var(--brown);
 	--band: linear-gradient(90deg, rgb(110 76 36 / 0.3), rgb(110 76 36 / 0.06));
 	display: block;
 	overflow: hidden;

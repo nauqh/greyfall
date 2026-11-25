@@ -15,7 +15,7 @@
 
 .restStats span {
 	flex: 1;
-	color: #6b5740;
+	color: var(--mute);
 }
 
 .restStats b {
