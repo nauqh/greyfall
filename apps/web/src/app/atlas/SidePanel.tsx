@@ -33,8 +33,9 @@ export function SidePanel({
   wide = false,
   compact = false,
   role = "menu",
+  className = "",
 }: {
-  kicker: string;
+  kicker?: string;
   name: string;
   sub?: ReactNode;
   badge?: ReactNode;
@@ -43,18 +44,19 @@ export function SidePanel({
   pick: number;
   onPick: (i: number) => void;
   onChoose: (i: number) => void;
-  keys: string;
+  keys?: string;
   wide?: boolean;
   /** As tall as its content, for a panel opened in the field rather than at a rest. */
   compact?: boolean;
   role?: "menu" | "dialog";
+  className?: string;
 }) {
   useTick(pick);
   return (
-    <div className={`sidePanel${wide ? " wide" : ""}${compact ? " compact" : ""}`} role={role} aria-label={name}>
+    <div className={`sidePanel${wide ? " wide" : ""}${compact ? " compact" : ""} ${className}`} role={role} aria-label={name}>
       <div className="panelHead">
         <div className="panelWhere">
-          <span className="panelKicker">{kicker}</span>
+          {kicker && <span className="panelKicker">{kicker}</span>}
           <span className="panelName">{name}</span>
           {sub && <span className="panelSub">{sub}</span>}
         </div>
@@ -88,10 +90,29 @@ export function SidePanel({
           })}
         </div>
       )}
-      <span className="panelKeys" aria-hidden="true">
-        {keys}
-      </span>
+      {keys && <KeyHints className="panelKeys" keys={keys} />}
     </div>
+  );
+}
+
+/** A strip of key hints, written "W/S pick   E choose", each key on the blue button of the field's E prompt. */
+export function KeyHints({ keys, className }: { keys: string; className: string }) {
+  return (
+    <span className={className} aria-hidden="true">
+      {keys.split(/\s{2,}/).map((part) => {
+        const [k = "", ...words] = part.split(" ");
+        return (
+          <span key={part} className="keyHint">
+            {k.split("/").map((c) => (
+              <kbd key={c} className={c.length > 1 ? "keyCap wide" : "keyCap"}>
+                {c}
+              </kbd>
+            ))}
+            {words.join(" ")}
+          </span>
+        );
+      })}
+    </span>
   );
 }
 

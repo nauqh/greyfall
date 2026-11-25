@@ -1521,16 +1521,40 @@ textarea {
 	animation: talkText 240ms ease-out both;
 }
 
-.talkPrompt kbd {
+/* Every key on screen, the field's E prompt first: the pack's tiny blue button, stretched at the sides for a named key. */
+.keyCap {
 	display: inline-grid;
 	place-items: center;
 	width: 34px;
 	height: 34px;
 	padding-bottom: 3px;
 	background: url("/tiny-swords/UI Elements/UI Elements/Buttons/TinySquareBlueButton.png") center / contain no-repeat;
+	color: #fdfaf0;
 	font: 800 16px "Nunito", sans-serif;
+	letter-spacing: 0;
+	text-transform: none;
 	-webkit-text-stroke: 4px #1c2634;
 	paint-order: stroke fill;
+}
+
+/* The frame drawn over the padding, not added to it, so a named key stands as tall as E. */
+.keyCap.wide {
+	box-sizing: border-box;
+	width: auto;
+	min-width: 34px;
+	padding: 0 8px 3px;
+	border-image: url("/tiny-swords/UI Elements/UI Elements/Buttons/TinySquareBlueButton.png") 18 fill / 10px / 0 stretch;
+	background: none;
+}
+
+.keyHint {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.keyHint .keyCap:last-of-type {
+	margin-right: 4px;
 }
 
 /* A note on the ground, read: its words in ink on the paper it lies on. */

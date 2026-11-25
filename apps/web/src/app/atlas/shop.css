@@ -373,11 +373,14 @@
 
 .shopKeys {
 	align-self: center;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 4px 18px;
 	font-size: 11px;
 	font-weight: 800;
 	letter-spacing: 0.14em;
 	text-transform: uppercase;
-	white-space: pre;
 	color: #8a7458;
 }
 

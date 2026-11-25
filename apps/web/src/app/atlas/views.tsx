@@ -11,8 +11,9 @@ import { GameCanvas } from "../../game/GameCanvas";
 import { DevPanel } from "./DevPanel";
 import { LevelUp } from "./LevelUp";
 import { RestPanel } from "./RestPanel";
-import { SidePanel } from "./SidePanel";
+import { KeyHints, SidePanel } from "./SidePanel";
 import { CONTROLS } from "../settings/controls";
+import { SoundPane } from "../settings/Settings";
 import "../settings/settings.css";
 import { Creation } from "./Creation";
 import { Prologue } from "./ProloguePlayer";
@@ -20,6 +21,8 @@ import { Sack } from "./Sack";
 import { Shop } from "./Shop";
 import { TravelMap } from "./TravelMap";
 import { ARRIVE, CLICK, loop, play, SACK, TIDEWAKE_MUSIC } from "../sound";
+
+const PAUSE_TABS = ["Controls", "Sound", "Game"] as const;
 
 /** The HUD shown or hidden with the H key, remembered on this browser. */
 export function useHud(off = false): [boolean, () => void] {
@@ -100,44 +103,25 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   const [intro, setIntro] = useState(false);
   // Esc in the field: the world paused under a menu, the way out to the title in it. Its value is the row picked.
   const [paused, setPaused] = useState<number | null>(null);
+  // The pause menu's page; `paused` is the row picked on it.
+  const [pauseTab, setPauseTab] = useState(0);
   const [sackOpen, setSackOpen] = useState(false);
   const [devState, setDevState] = useState<DevState | null>(null);
   const api = useRef<AtlasApi | null>(null);
   const now = useRef({ area: first, cameFrom: undefined as AreaId | undefined, quiet: false, travelling: false, prologue: false });
   // The theme, under the prologue only: it fades out with the cutscene's black, as the Landing comes up.
-  const theme = useRef<HTMLAudioElement | null>(null);
+  const theme = useRef<(() => void) | null>(null);
   useEffect(() => {
     // Not till the creation screen is gone: then up out of silence, as the first words come.
     if (!prologue || picking || theme.current) return;
-    const a = new Audio("/audio/music/theme.mp3");
-    a.loop = true;
-    a.volume = 0;
-    theme.current = a;
-    // A browser holds sound back until the page is touched: failing that, the first key or click starts it.
-    const start = (): void =>
-      void (theme.current === a && a.play().then(() => {
-        window.removeEventListener("keydown", start, true);
-        window.removeEventListener("pointerdown", start, true);
-        const rise = setInterval(() => {
-          if (theme.current !== a || a.volume >= 0.6) return clearInterval(rise);
-          a.volume = Math.min(0.6, a.volume + 0.02);
-        }, 130);
-      }, () => {}));
-    window.addEventListener("keydown", start, true);
-    window.addEventListener("pointerdown", start, true);
-    start();
+    theme.current = loop("/audio/music/theme.mp3", 0.6, 1800, 3900);
   }, [prologue, picking]);
   // Tidewake's ambient, kept low, once the prologue's theme is done.
   const land = AREAS.find((a) => a.id === area)?.land;
   useEffect(() => (land === "Tidewake" && !prologue && !picking ? loop(TIDEWAKE_MUSIC, 0.45, 1500) : undefined), [land, prologue, picking]);
   const fadeTheme = (): void => {
-    const a = theme.current;
-    if (!a) return;
+    theme.current?.();
     theme.current = null;
-    const fade = setInterval(() => {
-      a.volume = Math.max(0, a.volume - 0.02);
-      if (a.volume === 0) (clearInterval(fade), a.pause());
-    }, 60);
   };
 
   const depart = (d: Departure): void => {
@@ -308,8 +292,13 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     api.current?.pause(false);
     setPaused(null);
   };
+  // On the Sound page the pick starts on the tabs (-1), so A/D turn pages until S steps down onto a level.
+  const pauseTop = (i: number): number => (PAUSE_TABS[i] === "Sound" ? -1 : 0);
+  const turnPause = (i: number): void => {
+    setPauseTab(i);
+    setPaused(pauseTop(i));
+  };
   const pauseMenu = [
-    { label: "Resume", go: resume },
     { label: "Leave to the title", go: () => router.push("/") },
     { label: "New game", go: () => setWipe({ create: false }) },
   ];
@@ -339,17 +328,28 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
       if (paused === null) {
         if (k !== "escape" || e.repeat || sackOpen) return;
         api.current?.pause(true);
-        setPaused(0);
-      } else if (k === "escape") resume();
-      else if (k === "w" || k === "arrowup" || k === "s" || k === "arrowdown") {
+        setPaused(pauseTop(pauseTab));
+        return;
+      }
+      const sound = PAUSE_TABS[pauseTab] === "Sound";
+      // Arrows on a focused slider move the slider.
+      const arrow = !(e.target instanceof HTMLInputElement);
+      if (k === "escape") resume();
+      else if (k === "a" || k === "d" || (arrow && (k === "arrowleft" || k === "arrowright"))) {
+        // A level picked takes A/D itself (SoundPane).
+        if (sound && paused >= 0) return;
+        play(CLICK);
+        turnPause((pauseTab + (k === "a" || k === "arrowleft" ? -1 : 1) + PAUSE_TABS.length) % PAUSE_TABS.length);
+      } else if (PAUSE_TABS[pauseTab] === "Controls") return;
+      else if (k === "w" || k === "s" || (arrow && (k === "arrowup" || k === "arrowdown"))) {
         const d = k === "w" || k === "arrowup" ? -1 : 1;
-        setPaused((p) => (p === null ? p : (p + d + pauseMenu.length) % pauseMenu.length));
-      } else if ((k === "e" || k === "enter") && !e.repeat) (play(CLICK), pauseMenu[paused]!.go());
+        setPaused((p) => (p === null ? p : sound ? Math.min(2, Math.max(-1, p + d)) : (p + d + 2) % 2));
+      } else if ((k === "e" || k === "enter") && !e.repeat && PAUSE_TABS[pauseTab] === "Game") (play(CLICK), pauseMenu[paused]!.go());
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [busy, paused, sackOpen]);
+  }, [busy, paused, pauseTab, sackOpen]);
   useEffect(() => {
     if (!devRoute) return;
     const key = (e: KeyboardEvent): void => {
@@ -457,39 +457,64 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
         {menu && <Shop menu={menu} api={api} />}
         {paused !== null && (
           <div className="sideDock pauseDock">
-            <div className="sidePanel compact pauseControls" aria-label="Controls">
-              <span className="panelKicker">Controls</span>
-              <div className="pauseBinds">
-                {CONTROLS[0]!.groups.map((g) => (
-                  <section key={g.title} className="setGroup">
-                    <h2>{g.title}</h2>
-                    <dl>
-                      {g.binds.map((b) => (
-                        <div key={b.action} className="setRow">
-                          <dt>{b.action}</dt>
-                          <dd>
-                            {b.keys.map((k) => (
-                              <kbd key={k} className="setCap">
-                                {k}
-                              </kbd>
-                            ))}
-                          </dd>
-                        </div>
-                      ))}
-                    </dl>
-                  </section>
-                ))}
-              </div>
-            </div>
             <SidePanel
-              kicker="Paused"
+              className="pausePanel"
               name="Settings"
-              options={pauseMenu.map(({ label }) => ({ label }))}
+              options={[]}
               pick={paused}
               onPick={setPaused}
               onChoose={(i) => pauseMenu[i]!.go()}
-              keys="W/S pick   E choose   Esc resume"
-              compact
+            >
+              <div className="setModes" role="tablist" aria-label="Settings">
+                {PAUSE_TABS.map((t, i) => (
+                  <button key={t} type="button" role="tab" aria-selected={i === pauseTab} className={`setMode${i === pauseTab ? " on" : ""}`} onClick={() => turnPause(i)}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+              <div className="pauseSheet">
+                {PAUSE_TABS[pauseTab] === "Sound" && <SoundPane pick={paused} onPick={setPaused} />}
+                {PAUSE_TABS[pauseTab] === "Controls" && (
+                  <div className="pauseBinds">
+                    {CONTROLS[0]!.groups.map((g) => (
+                      <section key={g.title} className="setGroup">
+                        <h2>{g.title}</h2>
+                        <dl>
+                          {g.binds.map((b) => (
+                            <div key={b.action} className="setRow">
+                              <dt>{b.action}</dt>
+                              <dd>
+                                {b.keys.map((k) => (
+                                  <kbd key={k} className="setCap">
+                                    {k}
+                                  </kbd>
+                                ))}
+                              </dd>
+                            </div>
+                          ))}
+                        </dl>
+                      </section>
+                    ))}
+                  </div>
+                )}
+                {PAUSE_TABS[pauseTab] === "Game" && (
+                  <div className="panelOptions pauseGame">
+                    {pauseMenu.map((o, i) => (
+                      <button key={o.label} type="button" role="menuitem" className={`panelOption${i === paused ? " picked" : ""}`} onMouseEnter={() => setPaused(i)} onClick={o.go}>
+                        <span className="panelOptionText">
+                          <span className="panelOptionName">{o.label}</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </SidePanel>
+            {/* The keys on their own strip across the foot of the screen, as Dark Souls keeps them apart from the menu. */}
+            <KeyHints
+              className="pauseKeys"
+              // One strip for every page: A/D turn the page, or the level once one is picked.
+              keys="A/D change   W/S move   E choose   Esc resume"
             />
           </div>
         )}
@@ -513,7 +538,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
           !sackOpen &&
           paused === null && (
             <div className="talkPrompt" role="status">
-              <kbd>E</kbd> {near}
+              <kbd className="keyCap">E</kbd> {near}
             </div>
           )
         )}

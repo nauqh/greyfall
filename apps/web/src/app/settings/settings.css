@@ -247,3 +247,72 @@ button.menuItem {
 		animation: none;
 	}
 }
+
+/* In the panel's inks, not the browser's: rust filled to the level (--fill, set inline), faint rust past it. The bar
+   is drawn in by the knob's radius, the span the knob's centre travels, so at either end the knob covers it. */
+.setRange {
+	position: relative;
+	display: inline-block;
+	width: 200px;
+	height: 22px;
+}
+
+.setRange::before {
+	content: "";
+	position: absolute;
+	inset: 6px 9px;
+	border: 2px solid var(--stroke);
+	border-radius: 5px;
+	background: linear-gradient(90deg, var(--accent) var(--fill), color-mix(in srgb, var(--accent) 15%, transparent) var(--fill));
+}
+
+.setRange input {
+	appearance: none;
+	position: relative;
+	display: block;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	background: transparent;
+	cursor: pointer;
+}
+
+.setRange input::-webkit-slider-thumb {
+	appearance: none;
+	width: 18px;
+	height: 18px;
+	border: 2px solid var(--stroke);
+	border-radius: 50%;
+	background: #eee1c6;
+	box-shadow: 0 2px 0 var(--stroke);
+}
+
+.setRange input::-moz-range-thumb {
+	width: 14px;
+	height: 14px;
+	border: 2px solid var(--stroke);
+	border-radius: 50%;
+	background: #eee1c6;
+	box-shadow: 0 2px 0 var(--stroke);
+}
+
+.setRange input:focus-visible {
+	outline: 2px solid var(--stroke);
+	outline-offset: 3px;
+}
+
+.setPct {
+	min-width: 4ch;
+	font: 800 12px "Nunito", sans-serif;
+	text-align: right;
+}
+
+/* After Dark Souls: the picked row's name lit by a glow rising to its end. */
+.setRow.picked dt {
+	background: linear-gradient(90deg, transparent 20%, color-mix(in srgb, var(--accent) 40%, transparent)) bottom / 100% 70% no-repeat;
+	color: var(--stroke);
+}
+
+.setGroup .panelOptions.setDefaults {
+	margin: 16px auto 0;
+}

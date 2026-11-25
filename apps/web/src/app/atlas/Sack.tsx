@@ -114,11 +114,11 @@ export function Sack({ sack, gold, onCover }: { sack: SackView; gold: number; on
     <>
       {/* Keeps focus off the buttons, so Space rolls rather than pressing them. */}
       <button type="button" className="sackButton" aria-expanded={open} onMouseDown={(e) => e.preventDefault()} onClick={() => setOpen((o) => !o)}>
-        Sack <kbd>Tab</kbd>
+        Sack <kbd className="keyCap wide">Tab</kbd>
       </button>
       {!opened && worth && (
         <p className="sackNudge" role="status">
-          <kbd>Tab</kbd> to open your sack.
+          <kbd className="keyCap wide">Tab</kbd> to open your sack.
         </p>
       )}
       {mounted && (

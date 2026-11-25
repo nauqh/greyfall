@@ -41,6 +41,52 @@ export const BOSS_MUSIC = sfx("music/boss");
 export const LANDING_MUSIC = sfx("music/landing");
 export const TIDEWAKE_MUSIC = sfx("music/tidewake");
 
+export type Channel = "music" | "sfx";
+const channel = (src: string): Channel => (src.includes("/music/") ? "music" : "sfx");
+const LEVELS = "greyfall.sound";
+// The defaults play the mix as made, the music shown under the effects as it is heard (some 8 dB, measured in LUFS),
+// both with room to go up.
+export const DEFAULT_LEVELS: Readonly<Record<Channel, number>> = { music: 0.3, sfx: 0.5 };
+const level: Record<Channel, number> = { ...DEFAULT_LEVELS };
+try {
+  Object.assign(level, JSON.parse(localStorage.getItem(LEVELS) ?? "{}"));
+} catch {}
+
+// Each channel through its own Web Audio gain, which unlike an element's volume can go past full.
+let ctx: AudioContext | undefined;
+const buses: Partial<Record<Channel, GainNode>> = {};
+const busGain = (ch: Channel): number => level[ch] / DEFAULT_LEVELS[ch];
+function route(a: HTMLAudioElement, ch: Channel): void {
+  try {
+    if (!ctx) {
+      const c = (ctx = new AudioContext());
+      // Made before any touch it starts suspended, and everything routed through it is silent till it resumes.
+      const wake = (): void => void c.resume();
+      window.addEventListener("keydown", wake, true);
+      window.addEventListener("pointerdown", wake, true);
+    }
+    let bus = buses[ch];
+    if (!bus) {
+      bus = buses[ch] = ctx.createGain();
+      bus.gain.value = busGain(ch);
+      bus.connect(ctx.destination);
+    }
+    ctx.createMediaElementSource(a).connect(bus);
+  } catch {}
+}
+
+/** The music and sound effect levels, 0 to 1, as the player set them. */
+export const levels = (): Record<Channel, number> => ({ ...level });
+
+export function setLevel(ch: Channel, v: number): void {
+  level[ch] = v;
+  try {
+    localStorage.setItem(LEVELS, JSON.stringify(level));
+  } catch {}
+  const bus = buses[ch];
+  if (bus) bus.gain.value = busGain(ch);
+}
+
 const sounds = new Map<string, HTMLAudioElement>();
 let pressed = -Infinity;
 
@@ -48,19 +94,41 @@ let pressed = -Infinity;
 export function play(src: string | readonly string[], volume = 1): void {
   const one = typeof src === "string" ? src : src[Math.floor(Math.random() * src.length)]!;
   let a = sounds.get(one);
-  if (!a) sounds.set(one, (a = new Audio(one)));
+  if (!a) {
+    sounds.set(one, (a = new Audio(one)));
+    route(a, channel(one));
+  }
   a.volume = volume;
   a.currentTime = 0;
   void a.play().catch(() => {});
 }
 
-/** Plays `src` round and round; the returned stop fades it out over `fadeMs`. */
-export function loop(src: string, volume = 1, fadeMs = 500): () => void {
+/** Plays `src` round and round, rising from silence over `riseMs`; the returned stop fades it out over `fadeMs`. */
+export function loop(src: string, volume = 1, fadeMs = 500, riseMs = 0): () => void {
   const a = new Audio(src);
+  route(a, channel(src));
   a.loop = true;
-  a.volume = volume;
+  let base = riseMs ? 0 : volume;
+  let stopped = false;
+  let timer: ReturnType<typeof setInterval> | undefined;
+  const mix = (): void => void (a.volume = base);
+  const ramp = (to: number, ms: number, done?: () => void): void => {
+    clearInterval(timer);
+    const step = (to - base) / Math.max(1, ms / 50);
+    timer = setInterval(() => {
+      base = step > 0 ? Math.min(to, base + step) : Math.max(to, base + step);
+      mix();
+      if (base === to) (clearInterval(timer), done?.());
+    }, 50);
+  };
+  mix();
   // A browser holds sound back until the page is touched: failing that, the first key or click starts it.
-  const start = (): void => void a.play().then(unhook, () => {});
+  const start = (): void =>
+    void a.play().then(() => {
+      unhook();
+      if (stopped) a.pause();
+      else if (riseMs) ramp(volume, riseMs);
+    }, () => {});
   const unhook = (): void => {
     window.removeEventListener("keydown", start, true);
     window.removeEventListener("pointerdown", start, true);
@@ -69,11 +137,9 @@ export function loop(src: string, volume = 1, fadeMs = 500): () => void {
   window.addEventListener("pointerdown", start, true);
   start();
   return () => {
+    stopped = true;
     unhook();
-    const fade = setInterval(() => {
-      a.volume = Math.max(0, a.volume - volume / 10);
-      if (a.volume === 0) (clearInterval(fade), a.pause());
-    }, fadeMs / 10);
+    ramp(0, fadeMs, () => a.pause());
   };
 }
 

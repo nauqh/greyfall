@@ -205,9 +205,12 @@
 
 .panelKeys {
 	align-self: stretch;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 4px 18px;
 	padding-top: 5px;
 	border-top: 1px solid rgb(201 163 92 / 0.5);
-	text-align: center;
 	font-size: 11px;
 	font-weight: 800;
 	letter-spacing: 0.14em;
@@ -327,23 +330,139 @@
 	cursor: none !important;
 }
 
-/* The pause menu at the right, the journey's controls beside it in the settings' rows and keycaps. */
+/* The pause menu in the middle, after Dark Souls' system menu: the pages in a row between their keys, each setting's
+   name on the left and its value on the right. */
 .pauseDock {
-	flex-direction: row;
-	justify-content: flex-end;
 	align-items: center;
-	gap: 16px;
-	background: rgb(7 10 16 / 0.45);
+	background: rgb(7 10 16 / 0.55);
 }
 
-.pauseControls {
+/* Fixed, so the panel does not jump as the pages change. */
+.pausePanel {
 	--accent: var(--rust);
 	--stroke: var(--brown);
 	--text: var(--bark);
+	/* Opaque (rust over the paper), so where a tab's line meets the sheet's the two do not darken each other. */
+	--frame: #ae8e6c;
+	/* Up a little off the middle, clear of the keys at the foot. */
+	translate: 0 -32px;
 	width: min(680px, calc(100vw - 32px));
+	/* Clear of the keys' strip at the foot. */
+	height: min(640px, calc(100vh - 150px));
+}
+
+/* One rule under the head is enough: the tabs, rows and keys go without their own. */
+/* Folder tabs on the sheet's top edge: the open one in the paper's own colour, over the edge, so it runs on into it. */
+.pausePanel .setModes {
+	justify-content: flex-start;
+	align-items: flex-end;
+	gap: 4px;
+	/* Down over the panel's gap and the sheet's top edge. */
+	margin-bottom: -12px;
+	padding: 0;
+	border-bottom: 0;
+}
+
+.pausePanel .setMode {
+	position: relative;
+	padding: 6px 18px;
+	border: 2px solid var(--frame);
+	border-bottom: 0;
+	border-radius: 6px 6px 0 0;
+	background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.pausePanel .setMode.on {
+	z-index: 1;
+	background: #eee1c6;
+}
+
+.pausePanel .setRow {
+	border-bottom: 0;
+}
+
+.pausePanel .setGroup h2 {
+	text-align: center;
+}
+
+/* Name right, value left of centre, the way Dark Souls sets a setting against its value. */
+.pausePanel .setGroup:not(.pauseBinds .setGroup) .setRow {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 28px;
+	min-height: 40px;
+}
+
+.pausePanel .setGroup:not(.pauseBinds .setGroup) .setRow dt {
+	padding: 4px 8px;
+	text-align: right;
+}
+
+.pausePanel .setGroup:not(.pauseBinds .setGroup) .setRow dd {
+	justify-content: flex-start;
+	align-items: center;
+	flex-wrap: nowrap;
+}
+
+/* No rule under the head: the one frame is round the page's own content, as Dark Souls frames its sheet. */
+.pausePanel {
+	outline: 0;
+}
+
+.pausePanel .panelHead {
+	background: none;
+}
+
+.pauseSheet {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	padding: 14px 16px;
+	border: 2px solid var(--frame);
+	/* Square under the first tab, so its side runs straight down into the sheet's. */
+	border-radius: 0 6px 6px;
+}
+
+.pausePanel .panelOptions {
+	align-self: center;
+	width: min(220px, 100%);
+	margin-top: 0;
+}
+
+.pausePanel .pauseGame {
+	gap: 18px;
+	margin-block: auto;
+}
+
+.pausePanel .panelOption {
+	min-height: 56px;
+	text-align: center;
+}
+
+/* Bare words over the world at the foot of the screen, the way a talk is set (.talk). */
+.pauseKeys {
+	position: absolute;
+	left: 50%;
+	bottom: 36px;
+	translate: -50% 0;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 6px 28px;
+	width: max-content;
+	max-width: calc(100vw - 32px);
+	color: #fdfaf0;
+	font: 800 14px "Nunito", sans-serif;
+	letter-spacing: 0.06em;
+	-webkit-text-stroke: 4px #1c2634;
+	paint-order: stroke fill;
 }
 
 .pauseBinds {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
 	columns: 2;
 	column-gap: 24px;
 }
@@ -360,14 +479,9 @@
 	font-size: 14px;
 }
 
-@media (max-width: 1100px) {
-	.pauseDock {
-		flex-direction: column;
-		justify-content: center;
-	}
-
-	/* ponytail: overflow here has no key to scroll it; add PageUp/PageDown if small screens matter */
-	.pauseControls {
-		max-height: 55vh;
+/* ponytail: overflow in the controls page has no key to scroll it; add PageUp/PageDown if small screens matter */
+@media (max-width: 760px) {
+	.pauseBinds {
+		columns: 1;
 	}
 }

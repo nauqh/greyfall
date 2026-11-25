@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from "react";
 
-import { useTick } from "../sound";
+import { type Channel, CLICK, DEFAULT_LEVELS, levels, play, setLevel, useTick } from "../sound";
 import { CONTROLS } from "./controls";
 import "./settings.css";
 
@@ -103,14 +103,90 @@ export function Settings({ back, leaving }: { back: () => void; leaving: boolean
 
         <footer className="menuHint setFoot">
           <span>
-            <kbd className="setCap">Q</kbd>
-            <kbd className="setCap">E</kbd> Switch mode
+            <kbd className="keyCap">Q</kbd>
+            <kbd className="keyCap">E</kbd> Switch mode
           </span>
           <button type="button" onClick={back}>
-            <kbd className="setCap">Esc</kbd> Back
+            <kbd className="keyCap wide">Esc</kbd> Back
           </button>
         </footer>
       </div>
     </div>
+  );
+}
+
+const VOLUMES: { ch: Channel; label: string }[] = [
+  { ch: "music", label: "Music" },
+  { ch: "sfx", label: "Sound effects" },
+];
+
+/**
+ * A slider per channel; music is heard as it moves, effects click so the level can be judged. Given a `pick`, A/D or
+ * Left/Right move the picked one by key.
+ */
+export function SoundPane({ pick, onPick }: { pick?: number; onPick?: (i: number) => void }) {
+  const [v, setV] = useState(levels);
+  const change = (ch: Channel, n: number): void => {
+    setLevel(ch, Math.min(1, Math.max(0, Math.round(n * 20) / 20)));
+    setV(levels());
+    if (ch === "sfx") play(CLICK);
+  };
+  const reset = (): void => {
+    VOLUMES.forEach(({ ch }) => setLevel(ch, DEFAULT_LEVELS[ch]));
+    setV(levels());
+    play(CLICK);
+  };
+  useEffect(() => {
+    if (pick === undefined) return;
+    const onKey = (e: KeyboardEvent): void => {
+      // A focused slider takes its own arrows.
+      if (e.target instanceof HTMLInputElement) return;
+      const k = e.key.toLowerCase();
+      const d = k === "a" || k === "arrowleft" ? -0.05 : k === "d" || k === "arrowright" ? 0.05 : 0;
+      const ch = VOLUMES[pick]?.ch;
+      if (d && ch) change(ch, levels()[ch] + d);
+      else if ((k === "e" || k === "enter") && !e.repeat && pick === VOLUMES.length) reset();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pick]);
+  return (
+    <section className="setGroup">
+      <h2>Volume</h2>
+      <dl>
+        {VOLUMES.map(({ ch, label }, i) => (
+          <div key={ch} className={`setRow${i === pick ? " picked" : ""}`} onMouseEnter={() => onPick?.(i)}>
+            <dt>
+              <label htmlFor={`vol-${ch}`}>{label}</label>
+            </dt>
+            <dd>
+              <span className="setRange" style={{ "--fill": `${Math.round(v[ch] * 100)}%` } as React.CSSProperties}>
+                <input
+                  id={`vol-${ch}`}
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={Math.round(v[ch] * 100)}
+                  onChange={(e) => change(ch, Number(e.target.value) / 100)}
+                />
+              </span>
+              <output htmlFor={`vol-${ch}`} className="setPct">
+                {Math.round(v[ch] * 100)}%
+              </output>
+            </dd>
+          </div>
+        ))}
+      </dl>
+      {/* After Dark Souls' Defaults, under the settings it puts back. */}
+      <div className="panelOptions setDefaults">
+        <button type="button" className={`panelOption${pick === VOLUMES.length ? " picked" : ""}`} onMouseEnter={() => onPick?.(VOLUMES.length)} onClick={reset}>
+          <span className="panelOptionText">
+            <span className="panelOptionName">Defaults</span>
+          </span>
+        </button>
+      </div>
+    </section>
   );
 }

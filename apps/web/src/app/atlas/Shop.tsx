@@ -4,6 +4,7 @@ import type { AtlasApi, MenuView } from "../../game/AtlasScene";
 import { packUrl } from "../../game/art";
 import { useTick } from "../sound";
 import { ItemIcon } from "./ItemIcon";
+import { KeyHints } from "./SidePanel";
 import "./panel.css";
 import "./shop.css";
 
@@ -180,9 +181,7 @@ export function Shop({ menu, api }: { menu: MenuView; api: RefObject<AtlasApi | 
           </>
         )}
 
-        <span className="shopKeys" aria-hidden="true">
-          {menu.shop ? "W/S pick   E buy   Esc back" : "W/S pick   E choose   Esc leave"}
-        </span>
+        <KeyHints className="shopKeys" keys={menu.shop ? "W/S pick   E buy   Esc back" : "W/S pick   E choose   Esc leave"} />
       </div>
     </div>
   );

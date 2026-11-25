@@ -17,15 +17,6 @@
 	cursor: pointer;
 }
 
-.sackButton kbd {
-	padding: 0 5px;
-	font: inherit;
-	font-size: 11px;
-	color: #8a5a10;
-	border: 2px solid rgb(107 87 64 / 0.35);
-	border-radius: 4px;
-}
-
 /* Until the sack is first opened: up for a few seconds, gone a while, and back, for as long as it takes. */
 .sackNudge {
 	position: absolute;
@@ -43,12 +34,10 @@
 	animation: sackNudge 12s 2s infinite both;
 }
 
-.sackNudge kbd {
-	padding: 0 5px;
-	font: inherit;
-	color: #8a5a10;
-	border: 2px solid rgb(107 87 64 / 0.35);
-	border-radius: 4px;
+.sackNudge {
+	display: flex;
+	align-items: center;
+	gap: 6px;
 }
 
 @keyframes sackNudge {
