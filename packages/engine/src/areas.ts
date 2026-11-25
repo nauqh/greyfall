@@ -3730,8 +3730,6 @@ function landing(): AreaMap {
   prop("woodPile", 15, 9);
   // The castaway's camp: Hollis's fire, the second, for the map's travel to be tried between the two.
   t.fires.push({ col: 46, row: 10 });
-  prop("woodPile", 48, 14);
-  prop("tools", 40, 14);
   // The cleft off the camp: gold, for whoever looks.
   prop("goldStone", 58, 8);
   // The flooded gallery: three together round the pool, one slinging from across it.

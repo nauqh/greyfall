@@ -33,7 +33,7 @@ someone it took, warm and breathing, with no name to give.
 
 | Who | Where | Their place in it |
 | --- | --- | --- |
-| Hollis the Castaway | Tidewake, his camp | A Lanternport fisher, washed in before the wanderer on a broken leg. Keeps his fire, teaches the sack and the map, lends his gaff. Does not ask where he was before the tide brought him; does not ask the wanderer either. |
+| Hollis the Castaway | Tidewake, his camp | A knight of Lanternport's watch, washed in before the wanderer on a broken leg, his sword lost to the sea. Keeps his fire, teaches the sack and the map, lends the gaff the fishers left in the cave, his lance since. Does not ask where he was before the tide brought him; does not ask the wanderer either. |
 
 Their lines are in [questline.md](questline.md).
 

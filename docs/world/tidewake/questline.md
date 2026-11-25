@@ -7,26 +7,26 @@ Who lives here, and every line they say. How talks, flags and moving on work is 
 ### Home: Tidewake (43, 11)
 
 - **first** (heard to the end the first time, throws down *Hollis's Gaff*)
-  1. ...Hm? Oh, another one off the tide. And walking, no less.
-  2. Not gone Grey yet, are you? Thank goodness. There's few enough of those left.
-  3. I am Hollis, of the boats. Fished these waters, once. Now I just keep this fire.
-  4. The rocks took my leg when I washed in. I'll not be leaving this cave.
-  5. You, though... You'll be going on, Tidewashed. They always do.
-  6. Here, take this. My old gaff. Better in a living hand than rusting by mine.
-  7. Only a loan, mind. Keep it in your sack, and keep it sharp.
+  1. ...Oh. Another one off the tide, and up on your own two feet, which is more than the tide left me.
+  2. You've your colour yet, and there's still someone home behind your eyes. Thank goodness. I'd begun to think the Grey had all of us but me.
+  3. I am Hollis, a knight of Lanternport's watch, once. How I came into the water I don't ask. I'll not ask it of you, either.
+  4. The rocks broke my leg when I washed in, and it set wrong. It will not carry me past this fire, so I keep the fire, and it keeps me.
+  5. You, though, you'll be going on, Tidewashed. The ones who wake here always do, and I've stopped trying to talk them out of it.
+  6. Here, take my gaff. The fishers left it in the cave when they gave up their boat, and it's served me for a sword since mine went down.
+  7. Only a loan, mind. Keep it in your sack and its hook sharp, and don't grow fond of it. The sea takes back what it lends.
 - **sack**
-  1. Still here? Hm. You found my gaff, then.
-  2. Look through that sack of yours now and then. Every scrap in it tells you what it's good for.
-  3. Little enough, most of it. But out there, little enough can be the difference.
+  1. Still here? Then you've found my gaff in your sack, and the rest of what you carry with it.
+  2. Turn that sack out now and then and look at what's in it. Every scrap you pick up says plainly what it's good for, if you'll read it.
+  3. Most of it is little enough, a crust or a stone. But out past the Ring, a crust at the right hour has kept better men than me on their feet.
 - **map**
-  1. These fires... Rest by one, and it remembers you.
-  2. Sit by any of them, and you can go back to another you've lit. Don't ask me how. Nobody knows how.
-  3. Only the two in this cave, for now. Mine, and the one you woke by. Heh...
+  1. You'll have noticed the fires. Rest by one, and it knows you after, the way a dog knows the hand that fed it.
+  2. Sit by any fire you've lit and you can go to any other you've lit before. How, I couldn't tell you. The Order will have a word for it.
+  3. In this cave there are only the two, mine and the one you woke by. Try it, if you like. I'll not have gone anywhere.
 - **way**
-  1. If you mean to leave, it's south. Through the flooded cave.
-  2. Goblins in there. One slings stones from over the water. Don't give him a still mark.
-  3. Past that, a ring. A troll lives in it. And behind the troll, a boat.
-  4. ...The sea will want my gaff back, when you cross. It takes back what it lends. Always has.
+  1. If you mean to leave, the way is south, through the flooded cave where the sea comes in over the floor.
+  2. There are goblins in there, and one sits across the water slinging stones. Keep moving and he misses. Stand still and he won't.
+  3. Past them is a round cavern they call the Bull's Ring, and a troll sits in it where the water comes up warmest. Behind him is the boat.
+  4. When you cross, the sea will take my gaff back. It takes back what it lends, it always has. Don't mourn it.
 - **still**
-  1. You again? I've nothing left to tell you.
-  2. Go on, then. The troll won't come to you... Heh heh...
+  1. You again? I've told you all I know, and a good deal of what I only guess.
+  2. Go on, then. The troll won't come to you, and I'd not keep him waiting... Heh.
