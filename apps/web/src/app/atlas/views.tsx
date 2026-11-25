@@ -19,7 +19,7 @@ import { Prologue } from "./ProloguePlayer";
 import { Sack } from "./Sack";
 import { Shop } from "./Shop";
 import { TravelMap } from "./TravelMap";
-import { ARRIVE, CLICK, play, SACK } from "../sound";
+import { ARRIVE, CLICK, loop, play, SACK, TIDEWAKE_MUSIC } from "../sound";
 
 /** The HUD shown or hidden with the H key, remembered on this browser. */
 export function useHud(off = false): [boolean, () => void] {
@@ -127,6 +127,9 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     window.addEventListener("pointerdown", start, true);
     start();
   }, [prologue, picking]);
+  // Tidewake's ambient, kept low, once the prologue's theme is done.
+  const land = AREAS.find((a) => a.id === area)?.land;
+  useEffect(() => (land === "Tidewake" && !prologue && !picking ? loop(TIDEWAKE_MUSIC, 0.45, 1500) : undefined), [land, prologue, picking]);
   const fadeTheme = (): void => {
     const a = theme.current;
     if (!a) return;

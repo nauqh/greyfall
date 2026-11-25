@@ -25,6 +25,7 @@ Every sound the game plays, named for what it does in `apps/web/src/app/sound.ts
 | `music/boss.ogg` | sport-intense-metal's 24.1-86.4 s, a 24-bar stretch whose seam matches, levelled 18 dB down under the effects |
 | `ui/herald.ogg` | a noise swell rising to the banner's full light, into a low D chord (73-294 Hz) rung long, for a boss fallen or a thing gained |
 | `music/landing.ogg` | medieval-ambient's first 200 s, its last 3 s crossfaded into its start, raised 6 dB to -22 dB RMS |
+| `music/tidewake.ogg` | crawling-danger's 3-150 s, its 150-153 s crossfaded into its start, dropping the fade in and out, raised 4.5 dB to -22 dB RMS |
 | `ui/click.flac` | our own |
 | `music/theme.mp3` | our own |
 
@@ -96,3 +97,11 @@ Pixabay Content License, as above.
 | File | Source |
 |---|---|
 | `music/landing.ogg` | medieval-ambient (236809) |
+
+## samuelfjohanns on Pixabay
+
+Pixabay Content License, as above.
+
+| File | Source |
+|---|---|
+| `music/tidewake.ogg` | crawling-danger (303228) |

@@ -39,6 +39,7 @@ export const TROLL_DAZED = sfx("troll/dazed");
 export const TROLL_STEP = sfx("troll/step");
 export const BOSS_MUSIC = sfx("music/boss");
 export const LANDING_MUSIC = sfx("music/landing");
+export const TIDEWAKE_MUSIC = sfx("music/tidewake");
 
 const sounds = new Map<string, HTMLAudioElement>();
 let pressed = -Infinity;
