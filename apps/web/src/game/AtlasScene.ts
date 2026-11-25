@@ -2055,7 +2055,8 @@ export class AtlasScene extends Phaser.Scene {
     }
     if (this.lastHit === b) this.lastHit = null;
     if (b !== this.hero) {
-      this.tweens.add({ targets: b.s, alpha: 0, duration: 500, onComplete: () => b.s.destroy() });
+      if (this.isBoss(b as Foe)) this.perish(b as Foe);
+      else this.tweens.add({ targets: b.s, alpha: 0, duration: 500, onComplete: () => b.s.destroy() });
       const gold = (b as Foe).stats?.gold;
       if (gold) this.dropGold(b.at, Math.round(gold * this.gear.greed));
       if (this.isBoss(b as Foe)) this.felled(b as Foe);
@@ -2875,53 +2876,105 @@ export class AtlasScene extends Phaser.Scene {
     if (tileDistance(f.at, mark.at) <= 1 && Math.hypot(mark.s.x - f.s.x, mark.s.y - f.s.y) < 1.6 * CELL) this.hurt(f, mark, f.stats.attack);
   }
 
-  /** A boss past its rage line turns: it stops and flares in its colour, takes no harm for the moment, the camera
-   *  closes on it and the room shakes, the words go up, and it opens its second phase. */
+  /** A boss past its rage line turns. Its words go up and it stands spent a moment, breathing hard, then flares in its
+   *  colour: the camera closes on it, rings go out, the room shakes, and it opens its second phase. It takes no harm
+   *  from the first breath to the last ring. */
   private turn(f: Foe, time: number): void {
     const kit = BOSS_KITS[f.kind]!;
     const fx = TURN[f.kind] ?? { colour: 0xffffff, herald: "" };
-    const ms = 1800;
-    Object.assign(f, { turned: true, turning: time + ms, busy: time + ms, way: [], feeding: undefined });
+    const [rest, flare] = [1600, 1600];
+    Object.assign(f, { turned: true, turning: time + rest + flare, busy: time + rest + flare, way: [], feeding: undefined });
     this.play(f.s, f.idle);
-    const cam = this.active;
-    const zoom = cam.zoom;
-    const [r, g, b] = [(fx.colour >> 16) & 255, (fx.colour >> 8) & 255, fx.colour & 255];
-    if (!this.free) cam.zoomTo(zoom * 1.18, 350, "Sine.easeOut", true);
-    cam.flash(300, r, g, b);
-    f.s.setTintFill(fx.colour);
-    this.tweens.add({ targets: f.s, scale: f.s.scale * 1.12, duration: 220, yoyo: true, repeat: 2, onComplete: () => !f.dead && untint(f.s) });
-    const [x, y] = [f.s.x, f.s.y];
-    for (const delay of [0, 450, 900]) {
-      this.time.delayedCall(delay, () => {
-        const wave = this.add.ellipse(x, y, 2 * CELL, CELL).setStrokeStyle(8, fx.colour, 0.9).setDepth(DEPTH.fx);
-        this.tweens.add({ targets: wave, scale: 9, alpha: 0, duration: 900, ease: "Quad.easeOut", onComplete: () => wave.destroy() });
-        cam.shake(260, 0.01);
-      });
-    }
-    // Sparks of its colour drawn in to it, as if the room gives it what it has left.
-    for (let i = 0; i < 18; i++) {
-      const a = (i / 18) * Math.PI * 2;
-      const p = this.add.circle(x + Math.cos(a) * 6 * CELL, y + Math.sin(a) * 3.5 * CELL, 5, fx.colour).setDepth(DEPTH.fx).setAlpha(0);
-      this.tweens.add({ targets: p, x, y: y - f.lift * 0.5, alpha: { from: 0.9, to: 0.2 }, duration: 900, delay: i * 25, ease: "Quad.easeIn", onComplete: () => p.destroy() });
-    }
-    if (fx.herald) this.herald(fx.herald, 300);
-    this.time.delayedCall(ms - 500, () => {
-      if (f.dead) return;
-      if (!this.free) cam.zoomTo(zoom, 500, "Sine.easeInOut", true);
-      cam.flash(180, r, g, b);
-      this.quake(f.at);
-      const look = kit.rage?.look && this.look({ kind: kit.rage.look, col: 0, row: 0 });
-      if (look) {
-        // Drawn as it is now: the boar with its rider gone.
-        Object.assign(f, { idle: look.idle.key, move: look.move?.key, attack: undefined });
-        f.s.setOrigin(0.5, look.anchor).setScale(look.scale * 2).setData("tint", 0x8a7a70).setTint(0x8a7a70);
-        this.play(f.s, f.idle);
-      }
+    if (fx.herald) this.herald(fx.herald);
+    // Spent: slowed, bowed, its colour smouldering up off it.
+    const [sx, sy] = [f.s.scaleX, f.s.scaleY];
+    f.s.anims.timeScale = 0.4;
+    this.tweens.add({ targets: f.s, scaleY: sy * 0.94, duration: 400, yoyo: true, repeat: Math.floor(rest / 800) - 1, ease: "Sine.easeInOut" });
+    const smoulder = this.time.addEvent({
+      delay: 120,
+      repeat: Math.floor(rest / 120) - 1,
+      callback: () => {
+        if (f.dead) return;
+        const p = this.add.circle(f.s.x + Phaser.Math.Between(-40, 40), f.s.y - Phaser.Math.Between(0, f.lift), 3, fx.colour).setDepth(DEPTH.fx).setAlpha(0.8);
+        this.tweens.add({ targets: p, y: p.y - 60, alpha: 0, duration: 900, ease: "Sine.easeOut", onComplete: () => p.destroy() });
+      },
     });
-    this.time.delayedCall(ms, () => {
-      const hero = this.hero;
-      if (f.dead || !hero || hero.dead || !kit.rage?.opener) return;
-      this.bossWindUp(f, hero, kit.rage.opener, this.time.now);
+    this.time.delayedCall(rest, () => {
+      smoulder.remove();
+      if (f.dead) return;
+      f.s.anims.timeScale = 1;
+      f.s.setScale(sx, sy);
+      const cam = this.active;
+      const zoom = cam.zoom;
+      const [r, g, b] = [(fx.colour >> 16) & 255, (fx.colour >> 8) & 255, fx.colour & 255];
+      if (!this.free) cam.zoomTo(zoom * 1.18, 350, "Sine.easeOut", true);
+      cam.flash(300, r, g, b);
+      f.s.setTintFill(fx.colour);
+      this.tweens.add({ targets: f.s, scaleX: sx * 1.12, scaleY: sy * 1.12, duration: 220, yoyo: true, repeat: 2, onComplete: () => !f.dead && (f.s.setScale(sx, sy), untint(f.s)) });
+      const [x, y] = [f.s.x, f.s.y];
+      for (const delay of [0, 450, 900]) {
+        this.time.delayedCall(delay, () => {
+          const wave = this.add.ellipse(x, y, 2 * CELL, CELL).setStrokeStyle(8, fx.colour, 0.9).setDepth(DEPTH.fx);
+          this.tweens.add({ targets: wave, scale: 9, alpha: 0, duration: 900, ease: "Quad.easeOut", onComplete: () => wave.destroy() });
+          cam.shake(260, 0.01);
+        });
+      }
+      // Sparks of its colour drawn in to it, as if the room gives it what it has left.
+      for (let i = 0; i < 18; i++) {
+        const a = (i / 18) * Math.PI * 2;
+        const p = this.add.circle(x + Math.cos(a) * 6 * CELL, y + Math.sin(a) * 3.5 * CELL, 5, fx.colour).setDepth(DEPTH.fx).setAlpha(0);
+        this.tweens.add({ targets: p, x, y: y - f.lift * 0.5, alpha: { from: 0.9, to: 0.2 }, duration: 900, delay: i * 25, ease: "Quad.easeIn", onComplete: () => p.destroy() });
+      }
+      this.time.delayedCall(flare - 500, () => {
+        if (f.dead) return;
+        if (!this.free) cam.zoomTo(zoom, 500, "Sine.easeInOut", true);
+        cam.flash(180, r, g, b);
+        this.quake(f.at);
+        const look = kit.rage?.look && this.look({ kind: kit.rage.look, col: 0, row: 0 });
+        if (look) {
+          // Drawn as it is now: the boar with its rider gone.
+          Object.assign(f, { idle: look.idle.key, move: look.move?.key, attack: undefined });
+          f.s.setOrigin(0.5, look.anchor).setScale(look.scale * 2).setData("tint", 0x8a7a70).setTint(0x8a7a70);
+          this.play(f.s, f.idle);
+        }
+      });
+      this.time.delayedCall(flare, () => {
+        const hero = this.hero;
+        if (f.dead || !hero || hero.dead || !kit.rage?.opener) return;
+        this.bossWindUp(f, hero, kit.rage.opener, this.time.now);
+      });
+    });
+  }
+
+  /** A boss's end, slow: it stops where it stands, its colour drains to grey, it sinks, and it goes up in ash of its
+   *  own colour until nothing is left. */
+  private perish(f: Foe): void {
+    const ms = 3200;
+    const colour = TURN[f.kind]?.colour ?? 0xc8b898;
+    f.s.anims.timeScale = 0.25;
+    this.time.delayedCall(600, () => f.s.anims.stop());
+    this.active.shake(500, 0.006);
+    const grey = { t: 0 };
+    const from = Phaser.Display.Color.IntegerToColor((f.s.getData("tint") as number | undefined) ?? 0xffffff);
+    const to = Phaser.Display.Color.IntegerToColor(0x5a5a5e);
+    this.tweens.add({
+      targets: grey,
+      t: 100,
+      duration: ms * 0.6,
+      onUpdate: () => {
+        const c = Phaser.Display.Color.Interpolate.ColorWithColor(from, to, 100, grey.t);
+        f.s.setTint(Phaser.Display.Color.GetColor(c.r, c.g, c.b));
+      },
+    });
+    this.tweens.add({ targets: f.s, y: f.s.y + 12, alpha: 0, duration: ms, delay: ms * 0.3, ease: "Sine.easeIn", onComplete: () => f.s.destroy() });
+    const ash = this.time.addEvent({
+      delay: 70,
+      repeat: Math.floor(ms / 70) - 1,
+      callback: () => {
+        if (!f.s.active) return ash.remove();
+        const p = this.add.circle(f.s.x + Phaser.Math.Between(-50, 50), f.s.y - Phaser.Math.Between(0, f.lift), Phaser.Math.Between(2, 4), Math.random() < 0.5 ? colour : 0x8a8a8e).setDepth(DEPTH.fx).setAlpha(0.9);
+        this.tweens.add({ targets: p, x: p.x + Phaser.Math.Between(-20, 20), y: p.y - Phaser.Math.Between(60, 120), alpha: 0, duration: 1400, ease: "Sine.easeOut", onComplete: () => p.destroy() });
+      },
     });
   }
 
@@ -4188,7 +4241,10 @@ export class AtlasScene extends Phaser.Scene {
     tex.context.putImageData(img, 0, 0);
     tex.refresh();
     tex.setFilter(Phaser.Textures.FilterMode.LINEAR);
-    this.add.image(-pad * CELL, -pad * CELL, `atlasMood-${tier.id}`).setOrigin(0).setScale(CELL).setBlendMode(Phaser.BlendModes.MULTIPLY).setDepth(DEPTH.clouds - 3);
+    // Above ground the light colours the land, not who stands on it, so the hero keeps its colours in every area;
+    // underground it lies over everything, as the dark it is.
+    const over = tier.base === "rock" ? DEPTH.clouds - 3 : DEPTH.unit - 2;
+    this.add.image(-pad * CELL, -pad * CELL, `atlasMood-${tier.id}`).setOrigin(0).setScale(CELL).setBlendMode(Phaser.BlendModes.MULTIPLY).setDepth(over);
   }
 
   /** Weather by area: grey murk over the Greyfall, mist on the fen, the moor and in the deeps. */
