@@ -17,6 +17,11 @@ const PARA_MS = 900;
 
 const readMs = (p: string): number => p.split(/\s+/).length * WORD_MS;
 
+// A capture group, so split keeps the names at the odd indices.
+const LAND = new RegExp(`\\b(${Object.keys(PROLOGUE.lands).join("|")})\\b`);
+const inked = (p: string) =>
+  p.split(LAND).map((s, i) => (i % 2 ? <span key={i} style={{ color: PROLOGUE.lands[s] }}>{s}</span> : s));
+
 /** The opening cutscene, after Dark Souls 1: narration on paper, then the title, then the game. */
 /** `wait`: held on bare paper, deaf to keys, while the creation screen still fades out over it. */
 export function Prologue({ wait = false, onReveal, onDone }: { wait?: boolean; onReveal: () => void; onDone: () => void }) {
@@ -103,7 +108,7 @@ export function Prologue({ wait = false, onReveal, onDone }: { wait?: boolean; o
           {/* All laid out from the start, so the screen does not shift as each comes up. */}
           {screen.map((p, i) => (
             <p key={i} className={i < shown ? undefined : "prologueHidden"}>
-              {p}
+              {inked(p)}
             </p>
           ))}
         </div>

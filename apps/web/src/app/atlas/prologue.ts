@@ -24,6 +24,17 @@ export const PROLOGUE = {
       "Yes, indeed. And the tide, as it will, has carried a stranger into the caves beneath it: nameless, half-drowned, and warm, though the sea it came from was cold. No one at the fire has yet asked why.",
     ],
   ],
+  /** Each land's name in its colour: the art's blue for Lanternport and Highward, then gold, salt-sea, barrow
+   *  violet and Grey, each dark enough for 5:1 on the paper. */
+  lands: {
+    Aurum: "#94561a",
+    Lanternport: "#2f5f9a",
+    Highward: "#3c5a85",
+    Stiltwater: "#1f6b69",
+    Kingsrest: "#5c5a8a",
+    Citadel: "#55585f",
+    Sunhold: "#7a5e0a",
+  } as Record<string, string>,
   title: "GREYFALL",
   subtitle: "Ashen Crown",
 };
