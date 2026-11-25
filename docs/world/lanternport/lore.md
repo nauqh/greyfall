@@ -38,6 +38,10 @@ ships. It is still lit. Nobody says why.
   off to the Gallows Yard; the few who got out sleep in the hall now, and
   the town keeps a lamp in its window for the rest.
 
+## Banner
+
+Lantern amber, a lantern. Named for the lantern on its harbour wall, still lit every night. The rule is in [../banners.md](../banners.md).
+
 ## Folk
 
 | Who | Where | Their place in it |

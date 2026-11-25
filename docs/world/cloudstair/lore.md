@@ -21,6 +21,10 @@ nothing would climb it, and whoever rides it down unchains it for good.
   sky, from the Cloud Bridge down to the Watch Isle and its lift onto the
   Keep. Imps pick over the wrecked gold barge.
 
+## Banner
+
+Sky blue, a watchtower. Highward's watch posts in the sky, their watchmen never relieved. The rule is in [../banners.md](../banners.md).
+
 ## For writers only
 
 - An isle sinking a hand's width a year is the plainest proof that Sunhold

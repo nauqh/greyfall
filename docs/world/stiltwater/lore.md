@@ -28,6 +28,10 @@ and nobody says what that means.
   far cove, smugglers the steps under the village, and the Fen Causeway runs
   inland to Stillmere.
 
+## Banner
+
+Salt white, two fish. Salt and fish are its whole trade, and the Grey will not cross salt. The rule is in [../banners.md](../banners.md).
+
 ## For writers only
 
 - The cooling gold is Sunhold sinking, slowly. Stiltwater feels it in the

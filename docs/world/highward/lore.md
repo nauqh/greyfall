@@ -30,6 +30,10 @@ hangs chained from above.
   the Ramparts and the Rampart Boar, the Chapel Ward's cloister, forge yard
   and the Stone Warden on the bell roof, and the Keep behind the Keep Gate.
 
+## Banner
+
+Highward blue, a ringing bell. Its watch wore the blue; it fell ward by ward after the bell stopped. The rule is in [../banners.md](../banners.md).
+
 ## Folk
 
 | Who | Where | Their place in it |

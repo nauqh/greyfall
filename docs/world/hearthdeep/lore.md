@@ -25,6 +25,10 @@ Stillmere, the one way back up.
   the Hearth burning under it, stone trees, gold glowing in the rock, the
   Pilgrims at Pilgrims' Rest, and the Shell Below asleep on its isle.
 
+## Banner
+
+Hearth rose, a shell. The Hearth's glow under the water, and the Shell Below asleep on it. The rule is in [../banners.md](../banners.md).
+
 ## For writers only
 
 - Here the wanderer sees the same warm water they woke in. That is the

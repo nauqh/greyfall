@@ -29,6 +29,10 @@ someone it took, warm and breathing, with no name to give.
   him the sea channel and the fishers' boat. Nobody remembers why it is the
   Bull's Ring; it was named before the troll came.
 
+## Banner
+
+Sea teal, a breaking wave. The warm water that comes up the sea cave and gives back the drowned. The rule is in [../banners.md](../banners.md).
+
 ## Folk
 
 | Who | Where | Their place in it |

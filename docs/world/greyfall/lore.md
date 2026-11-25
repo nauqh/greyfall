@@ -78,6 +78,10 @@ garrison still fights. The rest do not look up.
   keep Lanternport's east lane, and the gibbets for the ones who would not
   walk.
 
+## Banner
+
+Ash grey, a crown. The Warlord forgot his name and kept his crown; no one remembers what the Citadel flew. The rule is in [../banners.md](../banners.md).
+
 ## Folk
 
 | Who | Where | Their place in it |

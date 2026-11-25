@@ -30,6 +30,10 @@ answer.
   the Sun Hall, and the Throne Isle hangs dark off its east end. Its gold
   has not made it safe, only quiet.
 
+## Banner
+
+Gold, a sun. The gnome-kings' city on warm gold, behind a shut gate. The rule is in [../banners.md](../banners.md).
+
 ## For writers only
 
 - The Sun Hall's hoard is the last warm gold in Aurum that is not the crown.

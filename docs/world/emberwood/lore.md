@@ -41,6 +41,10 @@ he thinks he is keeping is not said.
 
 How the wood is laid out, district by district, is in [design.md](design.md).
 
+## Banner
+
+Ember red, horns. Flowers red as coals, and the Ember Bull in the hottest ground. The rule is in [../banners.md](../banners.md).
+
 ## For writers only
 
 - Lanternport and the folk think the Ember Bull is a beast the goblins keep.

@@ -29,6 +29,10 @@ taken walked first.
   The Grey Gate is its east edge; the Barrow Cave goes down further than the
   moor has names for.
 
+## Banner
+
+Moor green, a crowned skull. The old kings under the moor, buried as deep as the Old Law allowed. The rule is in [../banners.md](../banners.md).
+
 ## For writers only
 
 - The dead here are not taken. Warmth keeps them; the Grey is cold. They

@@ -26,6 +26,10 @@ The Shell Stair goes down from the fen to Hearthdeep, shut from above.
   chapel over the sinkhole that drinks the pools. Fenfolk guard its stair,
   their warren in the reeds; the Drowned Village lies on the causeway.
 
+## Banner
+
+Stilled violet, a fish over eggs. The Stilled's chapel, and the fenfolk's eggs inside it. The rule is in [../banners.md](../banners.md).
+
 ## For writers only
 
 - The water the sinkhole drinks comes up warm at Tidewake. The Stilled do

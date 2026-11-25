@@ -27,6 +27,10 @@ down the Old Well, so nobody could open the gate. The well goes further down tha
   black water, spiders in the pillars, smugglers in their nook, the Drowned
   Chapel where Ysolde's sisters went down, and the Dig nobody admits to.
 
+## Banner
+
+Cistern umber, a well. The cisterns and catacombs under the Old Well, where the Silk Key went down. The rule is in [../banners.md](../banners.md).
+
 ## For writers only
 
 - Lanternport is guilty too. Ferrow knows who ordered the Dig. Nobody
