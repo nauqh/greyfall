@@ -1498,12 +1498,17 @@ function surface(rng: Rng): AtlasTier {
   // The wards' and boss rooms' maps are framed in woods; the Keep west of the Burg, the Ramparts over it, the Bull's
   // Wall east of them, the Chapel past it and the Belfry off the Chapel's west; Troll's Hollow between the wood and the rock.
   for (const [a, x, y, s] of LAY) t.real(a, x, y, s, s >= 8);
-  // Saltreach's isles are joined by causeways too thin to survive the shrink: a tile of each.
-  for (const [c, r] of [[6, 41], [16, 40], [20, 44], [13, 41], [14, 43], [10, 46], [4, 41], [4, 42], [13, 47], [14, 47]] as const) t.ground("saltreach", c, r, 1, 1);
+  // Saltreach's isles are joined by causeways too thin to survive the shrink: a tile of each, kept clear of woods.
+  for (const [c, r] of [[6, 41], [16, 40], [20, 44], [13, 41], [14, 43], [10, 46], [4, 41], [4, 42], [13, 47], [14, 47]] as const) {
+    t.ground("saltreach", c, r, 1, 1);
+    t.paths.add(`${c},${r}`);
+  }
   t.separate();
 
   // Tinker Crags: the rock climbs to the Tinker Peak, where the Gnome Lift stands.
   t.relief({ area: "crags", at: { col: 68, row: 8 }, rx: 11, ry: 6, levels: 3, core: { at: { col: 69, row: 5 }, r: 2.2 } });
+  // The Bridgehead's ledge out to the Sky Bridge, too thin after the shrink for the relief to raise.
+  t.block(2, 73, 5, 5, 1);
   // Barrowmoor: three barrows on the moor.
   t.relief({ area: "barrowmoor", at: { col: 68, row: 44 }, rx: 3.5, ry: 2.5, levels: 2 });
   t.relief({ area: "barrowmoor", at: { col: 87, row: 43 }, rx: 4, ry: 3, levels: 2 });

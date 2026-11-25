@@ -2068,52 +2068,52 @@ const MOUNTAIN = [4, 3, 2, 1, 1] as const;
  * the east stand apart on the fourth height, reached by gantries; the ridge steps down its south end to the Foothills.
  */
 const TINKER_ROCK = [
-  "...........................555..............................",
-  "...........................555..............................",
-  "...........................555..............................",
-  "....44444444...............555..............................",
-  "...444444444...............555..............................",
-  "...4444444444.......555555555555555555555...................",
-  "....444444444.......555555555555555555555...................",
-  "...4444444444......5555555555555555555555...................",
-  "...4444444444......5555555555555555555555...................",
-  "....444444444......5555555555555555555555...................",
-  "...4444444444......5555555555555555555555...................",
-  "...444444444.......55555555555555555555554444...............",
-  "...................55555555555555555555554444...............",
-  "...................55555555555555555555554444...............",
-  "..........44444444455555555555555555555554444...............",
-  "..........44444444445555555555555555555554444...............",
-  "..........4444444444444444444445555555555)444.....444444^^##",
-  "..........44444444444444444444444444444444444.....444444^^##",
-  "....^^^^^^44444444444444444444444444444444444.....444444^^##",
-  "....^^^^^^44444444444444444444444444444444444...#^444444^^##",
-  "....^^^^^^44444444444444444444444444444444444...#^444444^^##",
-  "....^^^^^^44444444444444444444444444444444444...#^444444^^##",
-  "....^^^^^^44444444444444444444444444444444444...#^444444^^##",
-  "....^^^^^^444444^^^^^^4444444444444^^^4444444...#^444444^^##",
-  "....^^^^^{4444^^^^^^^^^^^^^^^^^4444^^^4444444...#^444444^^##",
-  "....^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^...#^444444^^##",
-  "....^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^...#^444444^^##",
-  "....^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^##.#^444444^^##",
-  "..##^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^##.#^444444}^##",
-  "..##^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^]#.#^^^^^^^^^##",
-  "..##^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^###.#^^^^^^^^^##",
-  "..##^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^###.#^^^^^^^^^##",
-  "..##^^^^^^^^^^^^#####^^^^^^^^^^^^^^^^^^^^^^^#...#^^^^^^^^^##",
-  "..#[^^^^^^^^^^#######^^^^########^^^^^^^^^^^#...#^^^^^^^^^##",
-  "..###########################################...#^^^^^^^^^]#",
-  "..###########################################...############",
-  "..###########################################...############",
-  "..###########################################...############",
-  "..###########################################...############",
-  "..###########################################...############",
-  "..###########################################..<############",
+  "wwwwwwwwwwwwwwwwwwwwwwwwwww555wwwwwwwwwwwwwwwwwwwwwwwwwwwwww",
+  "wwwwwwwwwwwwwwwwwwwwwwwwwww555wwwwwwwwwwwwwwwwwwwwwwwwwwwwww",
+  "wwwwwwwwwwwwwwwwwwwwwwwwwww555wwwwwwwwwwwwwwwwwwwwwwwwwwwwww",
+  "wwww44444444wwwwwwwwwwwwwww555wwwwwwwwwwwwwwwwwwwwwwwwwwwwww",
+  "www444444444wwwwwwwwww5555w555wwwwwwwwwwwwwwwwwwwwwwwwwwwwww",
+  "www4444444444wwwwwww555555555555wwww55wwwwwwwwwwwwwwwwwwwwww",
+  "wwww444444444wwwwwww555555555555555555555wwwwwwwwwwwwwwwwwww",
+  "www4444444444wwwww55555555555555555555555wwwwwwwwwwwwwwwwwww",
+  "www4444444444wwwww55555555555555555555555wwwwwwwwwwwwwwwwwww",
+  "wwww444444444wwwwww5555555555555555555555wwwwwwwwwwwwwwwwwww",
+  "www4444444444wwwwww5555555555555555555555wwwwwwwwwwwwwwwwwww",
+  "www444444444wwwwwwww5555555555555555555554444wwwwwwwwwwwwwww",
+  "wwwwwwwwwwwwwwwwwwww5555555555555555555554444wwwwwwwwwwwwwww",
+  "wwwwwwwwwwwwww444ww55555555555555555555554444wwwwwwwwwwwwwww",
+  "wwwwwwwwww44444444455555555555555555555554444wwwwwwwwwwwwwww",
+  "wwwwwwwwwww4444444445544455544455555555554444wwwwwwwwwwwwwww",
+  "...........444444444444445554445555555555)444wwwww444444^^##",
+  "..........44444444444444444444444444444444444wwwww444444^^##",
+  "......^^^^44444444444444444444444444444444444wwwww444444^^##",
+  ".....^^^^^44444444444444444444444444444444444www#^444444^^##",
+  "....^^^^^^44444444444444444444444444444444444www#^444444^^##",
+  "...^^^^^^^44444444444444444444444444444444444www#^444444^^#>",
+  "...^^^^^^^44444444444444444444444444444444444www#^444444^^##",
+  "...^^^^^^^444444^^^^^^4444^^^444444^^^4444444www#^444444^^##",
+  "....^^^^^{4444^^^^^^^^^^^^^^^^^4444^^^4444444www#^444444^^##",
+  "....^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^www#^444444^^##",
+  ".....^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^www#^444444^^##",
+  ".....^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^##w#^444444^^##",
+  "...#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^##w#^444444}^##",
+  "...#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^]#w#^^^^^^^^^##",
+  "..##^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^###w#^^^^^^^^^##",
+  "..##^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^###w#^^^^^^^^^##",
+  "..##^^^^^^^^^^^^#####^^^^^^^^^^^^^^^^^^^^^^^#www#^^^^^^^^^##",
+  "..#[^^^^^^^^^^#######^^^^########^^^^###^^^^#www#^^^^^^^^^##",
+  "..#######^^^#################################www#^^^^^^^^^]#",
+  "..###########################################www############",
+  "...##########################################www############",
+  "...##########################################www############",
+  "..###########################################www############",
+  "#############################################...############",
+  "#############################################..<############",
   "..###########################################...............",
-  "..........###################################...............",
+  "....###...###################################...............",
   "..........############...####################...............",
-  ".........<############...####################...............",
-  "............................................................",
+  ".........<############...#####....####...####...............",
+  ".............####.........###...............................",
 ];
 
 function crags(): AreaMap {
@@ -2133,6 +2133,8 @@ function crags(): AreaMap {
   edgeWay(t, { col: 74, row: 6 }, { col: 74, row: 1 }, 5, true);
 
   stamp(t, TINKER_ROCK, 46, 0);
+  // Sea under the Sky Bridge: the shore ends at the ridge's stair, not in a dead end under the deck.
+  t.pond(92, 11, 18, 7);
   // The gantries: timber decks on the fourth height out to the Workshop and the East Ridge, and the Sky Bridge, the
   // same made long, off the Bridgehead on the fifth.
   const decks = [...t.span(4, 56, 12, 2, 2), ...t.span(4, 91, 19, 5, 2), ...t.span(5, 87, 9, 24, 2)];
@@ -2142,86 +2144,160 @@ function crags(): AreaMap {
   t.relief({ area: "crags", at: { col: 12, row: 30 }, rx: 6, ry: 5, levels: 2 });
   t.relief({ area: "crags", at: { col: 36, row: 26 }, rx: 7, ry: 5, levels: 3, core: { at: { col: 36, row: 25 }, r: 1.6 } });
 
-  // Roads: in from the Crag Stair to the foot of the climb, Tinker Town, the grove and round to the shore.
+  // Roads: in from the Crag Stair to the foot of the climb, Tinker Town, the grove and round to the shore; the town's
+  // alley north off its square to the first stair.
   t.road([2, 46], [20, 46], [36, 56], [45, 57]);
   t.road([36, 56], [36, 63], [70, 63], [98, 57]);
   t.road([20, 46], [20, 26]);
+  for (const c of [50, 51]) t.road([c, 61], [c, 47], [54, 45]);
   t.bridge({ col: 6, row: 46 }, { col: 1, row: 46 }, 3);
+  const pinned = { fixed: true } as const;
 
-  // Crag Gate: where the Crag Stair comes up out of the smoke, the first fire, a gnome on the watch.
+  // Crag Gate: the old toll on the goods going up, a watch now on what comes up. A tower either side of the road, the
+  // toll hut, lanterns at the stair head, the first fire.
   t.fires.push({ col: 10, row: 49 });
-  prop("gnomeTower", 8, 42);
+  for (const c of [8, 14]) prop("gnomeTower", c, 42, pinned);
+  for (const [c, r] of [[5, 40], [18, 52], [3, 51]] as const) prop("rock", c, r);
+  for (const [c, r] of [[12, 53], [17, 40]] as const) prop("bush", c, r);
+  prop("gnomeHut", 16, 49);
+  prop("woodPile", 17, 44);
+  for (const r of [44, 48]) prop("sconce", 4, r, pinned);
   who("gnome", 9, 44, { to: { col: 16, row: 46 } });
 
-  // The Bamboo Grove: pandas in the thicket, their old one's cubs, the bees' bones; two guns on the Shoulder's crown.
+  // The Bamboo Grove: pandas in the thicket, their old one's cubs, the bees' bones; the cane they cut for the gnomes'
+  // gantry poles stacked where it was never fetched; two guns on the Shoulder's crown.
   for (const [c, r] of [[16, 22], [24, 24], [19, 30]] as const) who("panda", c, r, { to: { col: c + 3, row: r + 2 } });
   for (const [c, r] of [[10, 36], [28, 34]] as const) who("bee", c, r, { to: { col: c + 3, row: r - 2 } });
-  for (const [c, r] of [[14, 26], [26, 28]] as const) prop("bones", c, r);
+  for (const [c, r] of [[14, 26], [26, 28], [22, 31], [9, 32]] as const) prop("bones", c, r);
+  for (const [c, r] of [[31, 31], [33, 31], [30, 20]] as const) prop("logPile", c, r);
   for (const c of [34, 38]) prop("cannon", c, 24);
-  prop("goldStone", 36, 27);
+  for (const [c, r] of [[36, 27], [11, 29]] as const) prop("goldStone", c, r);
+  for (const [c, r] of [[6, 30], [40, 22]] as const) prop("rock", c, r);
 
-  // Tinker Town at the rock's foot: gnome huts and towers, the tinkers at work.
-  for (const [c, r] of [[28, 60], [34, 66], [44, 62], [52, 66], [60, 62], [66, 66]] as const) prop("gnomeHut", c, r);
-  for (const [c, r] of [[40, 66], [58, 66]] as const) prop("gnomeTower", c, r);
+  // Tinker Town at the rock's foot, after Lanternport: the main street in two rows of huts, broken by the square with
+  // the fire and the town's great tree; an alley north off the square to the first stair, lanterns paired up it; a
+  // tinkers' yard either side of the alley's foot, full of gear for a lift that does not run.
   t.fires.push({ col: 48, row: 63 });
+  for (const c of [28, 32, 36, 40, 58, 62, 66, 70]) prop("gnomeHut", c, 60, pinned);
+  for (const c of [28, 32, 36, 40, 44, 54, 58, 62, 66]) prop("gnomeHut", c, 67, pinned);
+  for (const c of [42, 56]) prop("gnomeTower", c, 57, pinned);
+  prop("tree", 50.5, 65.6, { scale: 1.6, fixed: true });
+  for (const r of [49, 52, 55]) for (const c of [47, 54]) prop("gnomeHut", c, r, pinned);
+  for (const r of [48, 54]) for (const c of [49, 52]) prop("sconce", c, r, pinned);
+  for (const r of [62, 65]) for (const c of [30, 38, 60, 68]) prop("sconce", c, r, pinned);
+  t.fences.push({ col: 32, row: 49, w: 6, h: 3 }, { col: 62, row: 51, w: 6, h: 3 });
+  for (const [art, c, r] of [["tools", 33, 50], ["woodPile", 36, 50], ["logPile", 63, 52], ["tools", 66, 52], ["goldStone", 65, 52]] as const) prop(art, c, r, pinned);
   crowd(t, rng, "gnome", { col: 48, row: 62 }, 7, 9);
-  who("slingshot", 42, 58, { to: { col: 54, row: 58 } });
-  // The mine cut into the Works' face at the town's back.
-  prop("goldMine", 70, 48);
+  for (const [c, r, to] of [[33, 56, [44, 61]], [64, 55, [53, 62]], [50, 58, [52, 46]]] as const) who("gnome", c, r, { to: { col: to[0], row: to[1] } });
 
-  // The Works, the second step: ore, a battery on the rim, miners, the first slingers.
-  for (const [c, r] of [[62, 38], [80, 40], [88, 36]] as const) prop("goldStone", c, r);
+  // The mine cut into the Works' face at the town's back, its ore carried out to the heap and stacked for a lift that
+  // no longer takes it.
+  prop("goldMine", 69, 44, pinned);
+  heap(t, 72, 47);
+  for (const [c, r] of [[71, 46], [74, 48], [70, 48]] as const) who("gnome", c, r, { to: { col: 69, row: 45 } });
+  for (const [c, r] of [[66, 49], [78, 46]] as const) prop("rock", c, r);
+
+  // The Works, the second step: the miners' huts along its back, ore, a battery the length of the rim, the first
+  // slingers turned down the stair.
+  for (const c of [55, 59, 63, 80, 84]) prop("gnomeHut", c, 37, pinned);
+  for (const [c, r] of [[62, 39], [80, 40], [88, 36], [67, 38]] as const) prop("goldStone", c, r);
   prop("woodPile", 74, 37);
-  prop("tools", 77, 38);
-  for (const c of [60, 72, 84]) prop("cannon", c, 42);
+  for (const [c, r] of [[77, 38], [70, 37]] as const) prop("tools", c, r);
+  for (const c of [58, 62, 66, 72, 78, 82, 88]) prop("cannon", c, 42);
   crowd(t, rng, "gnome", { col: 70, row: 39 }, 3, 3, { walk: false });
-  who("slingshot", 82, 37, { to: { col: 88, row: 37 } });
+  who("slingshot", 82, 39, { to: { col: 88, row: 39 } });
+  who("slingshot", 58, 40, { to: { col: 64, row: 40 } });
   // The Hoist's foot on the Works' west strip, its tower, the stair up barred from the Batteries.
   prop("gnomeTower", 51, 38);
+  // The rock's west face over the grove, a wall walk: guns out over the bamboo, a lantern at the Hoist's foot. Under
+  // it the cane yard, where the bamboo-folk stacked gantry poles for the gnomes and still do; scree off the face, a
+  // stand of cane by the stream.
+  for (const [c, r] of [[50, 22], [51, 30], [47, 39]] as const) prop("cannonSide", c, r);
+  prop("sconce", 48, 35, pinned);
+  for (const [c, r] of [[42, 37], [44, 38], [42, 40], [44, 41]] as const) prop("logPile", c, r);
+  who("panda", 40, 39, { to: { col: 45, row: 40 } });
+  for (const [c, r] of [[49, 18], [48, 24], [49, 27], [47, 30], [46, 43]] as const) prop("rock", c, r);
+  for (const [c, r] of [[45, 21], [46, 27], [44, 31]] as const) prop("bush", c, r);
+  t.grove(43, 23, 3, 4, 0.55);
 
-  // The Batteries, the third step: the gun line along the rim, slingers walking it, a tower and huts at the turns.
-  for (const c of [58, 64, 70, 78, 86]) prop("cannon", c, 31);
+  // The Batteries, the third step, a garrison in one line: the slingers' huts and stores along the back, the gun line
+  // along the rim, a tower at each end.
+  for (const c of [52, 55, 58, 61, 64, 67, 70, 73, 76, 79, 82, 85, 88]) prop("cannon", c, 30);
+  for (const c of [60, 66, 72, 78]) prop("gnomeHut", c, 26, pinned);
   prop("gnomeTower", 52, 20);
-  prop("gnomeHut", 87, 27);
-  prop("woodPile", 54, 27);
+  prop("gnomeTower", 85, 26, pinned);
+  prop("gnomeHut", 88, 27);
+  for (const c of [54, 63]) prop("woodPile", c, 27);
+  for (const c of [57, 69, 75, 81, 87]) prop("rock", c, 28);
   who("slingshot", 60, 28, { to: { col: 72, row: 28 } });
   who("slingshot", 76, 29, { to: { col: 88, row: 29 } });
   who("slingshot", 52, 25, { to: { col: 52, row: 31 } });
 
-  // The Wheel Step: the lift's broken wheel timbers, guns on the rim, the slingers' last post at its east end.
-  for (const [c, r] of [[60, 20], [66, 19]] as const) prop("woodPile", c, r);
-  for (const [c, r] of [[70, 20], [78, 21]] as const) prop("bones", c, r);
-  for (const c of [62, 80]) prop("cannon", c, 22);
-  who("slingshot", 84, 19, { to: { col: 84, row: 22 } });
+  // The Wheel Step: the wheel-keepers' huts along the back, the wheel's timbers laid out where the gnomes cut them
+  // loose, guns on the rim, the slingers' last post at its east end.
+  for (const c of [60, 64, 68]) prop("gnomeHut", c, 18, pinned);
+  for (const [c, r] of [[60, 21], [66, 20]] as const) prop("woodPile", c, r);
+  for (const [c, r] of [[62, 20], [70, 21], [73, 20]] as const) prop("logPile", c, r);
+  for (const [c, r] of [[70, 19], [78, 21], [75, 22]] as const) prop("bones", c, r);
+  for (const c of [62, 66, 74, 80, 86]) prop("cannon", c, 22);
+  prop("gnomeTower", 85, 19, pinned);
+  for (const [c, r] of [[71, 19], [77, 20]] as const) prop("tools", c, r);
+  who("slingshot", 83, 20, { to: { col: 87, row: 22 } });
 
-  // The Workshop on its knob: the tinkers' yard, wood and tools.
+  // The Workshop on its knob: the master tinker's yard, the half-built cage in it, wood and tools.
   t.fences.push({ col: 50, row: 4, w: 5, h: 3 });
+  prop("gnomeHut", 51, 9, pinned);
   prop("woodPile", 56, 5);
   prop("tools", 56, 8);
+  prop("logPile", 52, 5);
+  prop("rock", 57, 10);
 
-  // The Bridgehead: the fire, the gnomes' towers, and the gatehouse over the Sky Bridge held by gnolls from the Greyfall.
+  // The Bridgehead: the fire, the gnomes' towers and toll huts either side of the summit path's foot, lanterns up the
+  // path; guns on the south rim; the gatehouse over the Sky Bridge held by gnolls come over from Greyfall, the toll
+  // gnomes' bones in its gate. The gnomes come back up once Old Bamboo falls.
   t.fires.push({ col: 74, row: 11 });
   for (const [c, r] of [[68, 7], [80, 6]] as const) prop("gnomeTower", c, r);
+  for (const c of [71, 77]) prop("gnomeHut", c, 7, pinned);
+  for (const c of [72, 76]) prop("sconce", c, 5, pinned);
+  for (const c of [67, 80, 84]) prop("cannon", c, 14);
   for (const r of [7, 12]) prop("tower", 85, r, { color: "black" });
-  prop("cannonSide", 84, 10);
-  who("gnoll", 82, 10, { to: { col: 82, row: 13 } });
-  who("gnoll", 78, 12, { to: { col: 84, row: 12 } });
+  for (const r of [9, 11]) prop("cannonSide", 84, r);
+  for (const [c, r] of [[83, 8], [86, 13], [82, 12]] as const) prop("bones", c, r);
+  who("gnoll", 84, 10, { to: { col: 84, row: 13 } });
+  who("gnoll", 86, 11, { to: { col: 83, row: 11 } });
+  for (const [c, r] of [[71, 12], [77, 10]] as const) who("gnome", c, r, { when: "bambooDead", to: { col: c, row: r + 2 } });
 
-  // The East Ridge: a watch the length of the ridge, guns over the shore, slingers on the wind.
+  // The East Ridge: a watch the length of the ridge, guns over the shore, the watch's hut, slingers on the wind.
   prop("watchtower", 98, 20);
-  for (const r of [24, 27]) prop("cannonSide", 100, r);
+  for (const r of [21, 24, 27]) prop("cannonSide", 100, r);
+  prop("gnomeHut", 97, 26, pinned);
+  prop("woodPile", 99, 27);
+  prop("bones", 98, 31);
   who("slingshot", 98, 22, { to: { col: 98, row: 27 } });
 
-  // The Southern Spur: the gnomes' far watch over the sea.
+  // The Southern Spur: the gnomes' farms and the far watch over the sea.
   prop("watchtower", 70, 83);
-  prop("goldStone", 64, 78);
+  prop("gnomeHut", 67, 84, pinned);
+  prop("sconce", 72, 82);
+  for (const [c, r] of [[61, 70], [66, 72]] as const) prop("gnomeHut", c, r);
+  prop("logPile", 62, 78);
+  for (const [c, r] of [[60, 81], [63, 84], [74, 85]] as const) prop("bush", c, r);
+  for (const [c, r] of [[57, 82], [76, 80]] as const) prop("rock", c, r);
+  prop("goldStone", 64, 79);
   who("gnome", 66, 80, { to: { col: 74, row: 82 } });
 
-  // The Foothills and the Windward Shore under the ridge.
+  // The Foothills and the Windward Shore under the ridge: rock and scrub on the road, the fishers' huts and boats.
   for (const [c, r] of [[78, 60], [86, 63]] as const) who("lizard", c, r, { to: { col: c - 6, row: r + 2 } });
   who("snake", 92, 64);
-  prop("fishHut", 101, 52);
+  for (const [c, r] of [[76, 58], [88, 60], [92, 52], [84, 50]] as const) prop("rock", c, r);
+  for (const [c, r] of [[80, 56], [90, 58], [74, 61]] as const) prop("bush", c, r);
+  prop("bones", 86, 57);
+  for (const [c, r] of [[101, 52], [106, 30]] as const) prop("fishHut", c, r, pinned);
   prop("boat", 106, 49, {});
+  prop("boat", 110, 36, {});
+  prop("logPile", 105, 47);
+  prop("rock", 108, 26);
+  prop("bones", 107, 22);
   who("turtle", 101, 46);
 
   const notes: Note[] = [
@@ -2261,10 +2337,10 @@ function crags(): AreaMap {
   lake(t, 14, 60, 3, 2);
   // The Terraces stand a step up off the spur, so their gold follows a cliff: as flat ground the colour met its neighbours in straight lines.
   t.shape(2, 57, 75, 9, 4, 0.4, "The Terraces");
-  t.fences.push({ col: 48, row: 70, w: 6, h: 3 }, { col: 56, row: 70, w: 6, h: 3 }, { col: 52, row: 75, w: 6, h: 3 });
-  for (const [c, r] of [[50, 71], [52, 72], [58, 71]] as const) who("sheep", c, r);
-  for (const [c, r] of [[54, 76], [56, 76]] as const) who("pig", c, r);
-  crowd(t, rng, "gnome", { col: 58, row: 74 }, 3, 3);
+  t.fences.push({ col: 50, row: 73, w: 5, h: 3 }, { col: 57, row: 73, w: 5, h: 3 });
+  for (const [c, r] of [[51, 74], [53, 74]] as const) who("sheep", c, r);
+  for (const [c, r] of [[58, 74], [60, 74]] as const) who("pig", c, r);
+  crowd(t, rng, "gnome", { col: 56, row: 77 }, 3, 2);
   // A mountain's foot, not a maze: rocky knolls with passes between, a bamboo thicket, scrub on the spur.
   for (const [c, r] of [[14, 34], [40, 48], [24, 56], [86, 70], [70, 76]] as const) {
     t.relief({ area: "crags", at: { col: c, row: r }, rx: 3.5, ry: 2.5, levels: 2, core: { at: { col: c, row: r }, r: 1.2 } });
@@ -2273,7 +2349,7 @@ function crags(): AreaMap {
   t.grove(60, 80, 8, 3, 0.3);
   // A rock outcrop standing up from the foot, a step higher than the knolls, and scrub copses in their lee.
   t.relief({ area: "crags", at: { col: 10, row: 54 }, rx: 4.5, ry: 3.5, levels: 3, core: { at: { col: 10, row: 54 }, r: 1.4 } });
-  for (const [x, y, rx, ry] of [[16, 46, 3, 3], [44, 56, 4, 2], [100, 56, 4, 3], [28, 62, 4, 2], [80, 74, 3, 2]] as const) t.grove(x, y, rx, ry, 0.75);
+  for (const [x, y, rx, ry] of [[16, 46, 3, 3], [100, 56, 4, 3], [28, 62, 4, 2], [80, 74, 3, 2]] as const) t.grove(x, y, rx, ry, 0.75);
   const tier = t.finish({}, [{ col: 6, row: 46 }]);
   return { ...tier, area: "crags", entry: { col: 6, row: 46 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks, notes, locks };
 }

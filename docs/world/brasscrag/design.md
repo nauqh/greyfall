@@ -109,10 +109,12 @@ Heights are 1 (lowland) to 5.
 - **Why go:** the bonfire (48, 63), the folk (merchant and quest hooks
   live here), the first stair of the climb at its north-east, and the foot
   of the Hoist, the shortcut down from step 4.
-- **Stands there:** huts and towers round a square with the fire, the
-  tinkers' fenced yard (tools, wood), the town's gnome crowd. One slinger at
-  the north edge where the climb starts, turned up the rock, not at the
-  town.
+- **Stands there:** the main street in two rows of huts, broken by the
+  square with the fire, a tower at each of its north corners and the town's
+  great tree; an alley north off the square to the first stair, huts either
+  side and lanterns paired up it; a tinkers' fenced yard either side of the
+  alley's foot (tools, wood, gear); the town's gnome crowd. No foe stands in
+  the town: the slingers start on the Works.
 - **Hooks:** a tinker selling gnome work (bombs, a crossbow); the
   lift-keeper's family, who say Old Bamboo stopped walking the wheel and
   never came down; the barred Hoist foot ("barred from up top since the
@@ -126,9 +128,10 @@ Heights are 1 (lowland) to 5.
   its end.
 - **Why go:** loot and lore, not the way on: gold stones on the spur, the
   watchtower's note, the farm's folk.
-- **Stands there:** the raised plot (height 2) with three fenced pens,
-  sheep and pigs, gnome farmers; scrub down the spur; the watchtower at
-  (70, 83) over the sea.
+- **Stands there:** the raised plot (height 2) with two fenced pens on it,
+  sheep in one and pigs in the other, the farmers' huts below it, gnome
+  farmers; scrub down the spur; the watchtower at (70, 83) over the sea, its
+  keeper's hut.
 - **Hooks:** note at the Sea Watch: "Ships? Not in three winters. Watch the
   bridge instead." A farmer NPC slot.
 - **Connects:** road south from town; dead end.
@@ -139,8 +142,9 @@ Heights are 1 (lowland) to 5.
   from the town and up at its east end.
 - **Why go:** it is the main route, and the mine's gold.
 - **Stands there:** the gold mine cut into its face at the town's back
-  (70, 48), gold stones and an ore yard,
-  miners (bystanders), a battery on the south rim, the first slingers.
+  (69, 44), its ore heap on the town ground in front and gnomes carrying
+  out to it; on the ledge the miners' huts along its back, gold stones,
+  tools, a battery the length of the south rim, the first slingers.
 - **Hooks:** note at the mine mouth, a miner who will not go higher.
 - **Connects:** stair on at the west end from Tinker Town, stair up at the
   east end to the Batteries.
@@ -149,8 +153,10 @@ Heights are 1 (lowland) to 5.
 
 - **Job:** the gun line. Walked east to west under fire.
 - **Why go:** main route; the slingers' stores at the turns.
-- **Stands there:** cannons the length of the south rim, slingshot gnomes
-  in twos, huts and a tower at each end, woodpiles and shot.
+- **Stands there:** a garrison in one line: the slingers' huts and stores
+  along the back, cannons the length of the south rim, a tower at each end,
+  woodpiles and shot, slingshot gnomes in twos; the Hoist's head at the west
+  end, barred from this side.
 - **Hooks:** none for NPCs; this is a fight.
 - **Connects:** on at the east end from the Works; up at the west end to
   the Wheel Step; the Hoist comes up at the west end from the Works.
@@ -158,25 +164,21 @@ Heights are 1 (lowland) to 5.
 ### The Wheel Step (step 4)
 
 - **Job:** the branch ledge. The climb arrives at its west end, and
-  everything else on the rock goes off from here: the Hoist down, both
-  gantries out, the stair up to the Bridgehead at its east end.
-- **Why go:** the main route crosses it west to east. The Hoist, barred at
-  its head, drops straight to Tinker Town: unbar it and a death above
-  walks back from the town's fire in a minute, not the whole climb.
-- **Stands there:** the Hoist head on the south face at the west end; the
-  Workshop gantry going off north-west; along the ledge the lift's ropes
-  running up the rock toward the summit, broken wheel timbers, bones and
-  the slingers' last post; at the east end the East Ridge gantry and the
-  open stair up to step 5.
-- **Hooks:** note at the Hoist head: "Lift the bar. Save the walk."
-- **Connects:** stair up from the Batteries (west); the Hoist down to town
-  (shortcut); gantry to the Workshop; gantry to the East Ridge; stair up to
-  the Bridgehead (east, open).
+  everything else on the rock goes off from here: both gantries out, the
+  stair up to the Bridgehead at its east end.
+- **Why go:** the main route crosses it west to east.
+- **Stands there:** the wheel-keepers' huts along the back; the Workshop
+  gantry going off north-west; along the ledge the wheel's timbers laid out
+  where the gnomes cut them loose, bones, guns on the rim and the slingers'
+  last post, a tower; at the east end the East Ridge gantry and the open
+  stair up to step 5.
+- **Connects:** stair up from the Batteries (west); gantry to the Workshop;
+  gantry to the East Ridge; stair up to the Bridgehead (east, open).
 
 ### The Workshop
 
 - **Job:** the tinkers' yard on the North Crag, a knob of its own at
-  height 4, reached only by its gantry.
+  height 4 standing in the sea, reached only by its gantry.
 - **Why go:** a reward off the main line: the master tinker, or what is
   left of the yard, and something only a tinker makes.
 - **Stands there:** fenced yard, woodpiles, tools, a half-built lift cage,
@@ -193,7 +195,9 @@ Heights are 1 (lowland) to 5.
 - **Why go:** the bonfire (74, 11), the rest before Old Bamboo; the Sky
   Bridge onto Greyfall; and The Tinker Peak exit, with Old Bamboo and
   the Gnome Lift beyond it.
-- **Stands there:** the gnomes' two towers and the fire; at the east end
+- **Stands there:** the gnomes' two towers and the fire, their toll huts
+  either side of the summit path's foot, lanterns up the path, guns on the
+  south rim; at the east end, nine tiles off the fire so it rests clear,
   the gatehouse over the Sky Bridge's deck, towers and guns turned east,
   held by gnolls come over the bridge from Greyfall (foes, the only
   gnolls on Brasscrag); the summit path climbing north from the fire to
@@ -212,12 +216,15 @@ Heights are 1 (lowland) to 5.
 - **Why go:** a route up that skips the Works and the Batteries, harder
   (slingers on the wind, the watchtower's gun) but open from the start; its
   watchtower over Greyfall.
-- **Stands there:** watchtower (93, 20), two side guns over the shore,
-  slingers walking the ridge. The Sky Bridge passes over its north end.
+- **Stands there:** watchtower (93, 20), side guns over the shore, the
+  watch's hut, slingers walking the ridge. A ravine stream parts it from the
+  rock, the gantry over it. The Sky Bridge passes over its north end, over
+  open sea.
 - **Hooks:** note at the watchtower: "You can see the Citadel from here.
   It can see you."
 - **Connects:** gantry to the Wheel Step; stairs down the south end to the
-  Foothills (loop with the main climb).
+  Foothills (loop with the main climb); a stair off its east lip down to
+  the Windward Shore.
 
 ### Foothills
 
@@ -231,9 +238,10 @@ Heights are 1 (lowland) to 5.
 
 - **Job:** the Crags' sea edge, a fishers' strand under the ridge.
 - **Why go:** loot along the strand, a fisher NPC slot.
-- **Stands there:** fish hut, boat, turtle.
+- **Stands there:** two fish huts, boats, a turtle.
 - **Hooks:** a gnome fisher who saw the gnolls cross the bridge.
-- **Connects:** road from the Foothills; dead end north under the bridge.
+- **Connects:** road from the Foothills; the East Ridge's east stair at its
+  north end, where the sea under the bridge stops it.
 
 ## How it connects
 
