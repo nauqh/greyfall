@@ -146,7 +146,7 @@ Greets you: *"Wheel first."* Walked away from: *"Cage second..."*
   2. This came off the wheel when it stopped. His feet wore it bright.
   3. Take it. The new cage can have a new cog. Wheel first, cage second.
 
-## Quill the Fisher
+## Gill the Fisher
 
 Greets you: *"Fog's coming."* Walked away from: *"Watch the bridge."*
 
@@ -154,7 +154,7 @@ Greets you: *"Fog's coming."* Walked away from: *"Watch the bridge."*
 
 - **first**
   1. Fog's coming. Fog always comes off Greyfall.
-  2. Quill, fisher. I fish under the bridge. The fish don't care what crosses over.
+  2. Gill, fisher. I fish under the bridge. The fish don't care what crosses over.
   3. I do, though. I've learned to look up between bites.
 - **fog**
   1. They came over the bridge in the fog, dogs on two legs running with the grey ones, and laughing as they ran.

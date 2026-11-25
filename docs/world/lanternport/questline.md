@@ -89,7 +89,7 @@ Greets you: *"Oh, you walk loud."* Walked away from: *"Keep your head down!"*
 
 - **bluff**
   1. Ha! Oh, it's you. The bull's dead! The goblins don't know which way to run.
-  2. They come down off the bluff one at a time now, with nobody to tell them where. Best shooting I've had in years.
+  2. And the dogs come down off Smoke Bluff one at a time to see what's changed. Best shooting I've had in years.
   3. Don't tell Lanternport, will you? They'll want me back being useful.
 - **torches**
   1. Torches first. Always torches first. Didn't I tell you?

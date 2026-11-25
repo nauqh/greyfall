@@ -486,3 +486,11 @@ folk).
 | Moss | Anri searching for Horace |
 | Hollis the Castaway | Oscar of Astora, dying at the Asylum's start |
 | Master Fennick | Ludleth: small, and proud of it |
+| Brother Fenn | Sirris of the Sunless Realms: grave, courteous, "is it not?" |
+| Tam the Prospector | Greirat: a thief's cheer, always one more haul |
+| Tally | Siegward: one stubborn errand, then rest |
+| Pell the Gatekeeper | Eygon of Carim: a gruff warden, orders and no thanks |
+| Nim the Tinker | Karla: scornful, "the truth remains the truth" |
+| Pip | Yoel of Londor: small, eager, half understands |
+| Hask the Miner | Cornyx: "a crow in his cage", and staying in it |
+| Gill the Fisher | Hawkwood: saw the worst, hid, keeps watch |

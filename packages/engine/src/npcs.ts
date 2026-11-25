@@ -381,7 +381,7 @@ export const NPCS: readonly Npc[] = [
             id: "bluff",
             lines: [
               "Ha! Oh, it's you. The bull's dead! The goblins don't know which way to run.",
-              "They come down off the bluff one at a time now, with nobody to tell them where. Best shooting I've had in years.",
+              "And the dogs come down off Smoke Bluff one at a time to see what's changed. Best shooting I've had in years.",
               "Don't tell Lanternport, will you? They'll want me back being useful.",
             ],
           },
@@ -1761,9 +1761,9 @@ export const NPCS: readonly Npc[] = [
     ],
   },
   {
-    id: "quill",
-    name: "Quill the Fisher",
-    short: "Quill",
+    id: "gill",
+    name: "Gill the Fisher",
+    short: "Gill",
     area: "crags",
     at: { col: 102, row: 53 },
     kind: "gnome",
@@ -1774,7 +1774,7 @@ export const NPCS: readonly Npc[] = [
         id: "first",
         lines: [
           "Fog's coming. Fog always comes off Greyfall.",
-          "Quill, fisher. I fish under the bridge. The fish don't care what crosses over.",
+          "Gill, fisher. I fish under the bridge. The fish don't care what crosses over.",
           "I do, though. I've learned to look up between bites.",
         ],
       },

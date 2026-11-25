@@ -280,7 +280,7 @@ to each). Phase 2 keeps every one on open ground the hero can reach.
 | Pip | (60, 56), then (76, 13) | Tinker Town by the Hoist, then the Bridgehead |
 | Hask | (66, 47) | the Works, by the mine |
 | Fennick | (54, 10) | the Workshop |
-| Quill | (99, 50) | Windward Shore; (102, 54) is the sea's edge |
+| Gill | (99, 50) | Windward Shore; (102, 54) is the sea's edge |
 
 ## Exits
 
