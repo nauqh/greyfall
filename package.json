@@ -10,9 +10,11 @@
     "war": "pnpm --filter @greyfall/engine war",
     "assets": "pnpm --filter @greyfall/web run assets",
     "dev": "pnpm --filter @greyfall/web dev",
-    "area": "pnpm --filter @greyfall/engine area"
+    "area": "pnpm --filter @greyfall/engine area",
+    "shot": "node scripts/shot.mjs"
   },
   "devDependencies": {
+    "playwright": "^1.65.1",
     "typescript": "^5.9.2"
   },
   "pnpm": {
