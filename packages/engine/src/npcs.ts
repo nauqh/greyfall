@@ -112,27 +112,27 @@ export const TALK_RANGE = 2;
 const corwinDig: readonly Talk[] = [
   {
     id: "barrows",
-    lines: ["Ahh, you. The Barrow King is dead... The barrows are only barrows now.", "My forty went in after his key. So I'm digging them out. One at a time. As is proper."],
+    lines: ["Ahh, you. The Barrow King is dead, and the barrows are only barrows now.", "My forty went in after his key and never came out, so I'm digging them out myself, one at a time. As is proper."],
   },
   { id: "count", lines: ["Twenty-two. Dace still had his pipe on him.", "Holm had nothing. ...Holm always had nothing. Good lad, Holm."] },
 ];
 const corwinDone: Talk = {
   id: "done",
   when: "warlordDead",
-  lines: ["So. The Warlord's down. My hands stopped aching this morning.", "The cold's let go a little. Tell them at the gate, would you? I've no hands left for carving.", "Forty... and one Tidewashed. I'll make room on the gate."],
+  lines: ["So the Warlord's down. My hands stopped aching this morning, and I knew before anyone told me.", "The cold's let go a little. Tell them at the Keep to leave the gate bare for me. I've forty names to carve, and slow hands.", "Forty, and one Tidewashed. I'll leave you a space at the bottom, name or no name."],
 };
 const wrenPenny: Talk = {
   id: "penny",
   when: "greyfallReached",
   lines: [
     "Penny's gone from behind the butts. She used to sit there and count crows.",
-    "If you happen upon her, tell her I kept her seat. ...Don't tell her I said kept.",
+    "If you happen upon her, tell her I've kept her barrel for her. Don't tell her I've been sitting on it.",
   ],
 };
 const ysoldeClean: Talk = {
   id: "clean",
   when: "drankClear",
-  lines: ["Thou'st drunk the warm water, child. I feel it on thee, like a hearth through a wall.", "...Nothing so warm should lie so far down. Pray, remember that."],
+  lines: ["Thou'st drunk the warm water, child. I see it in the frost, which will not settle where thou hast stood.", "Nothing so warm should lie so far down under us. Pray, remember that."],
 };
 
 export const NPCS: readonly Npc[] = [
@@ -150,16 +150,16 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "Ahh... Another one the tide spat out. Tidewashed, they call your sort.",
           "I am Ferrow, of Lanternport. I keep its fire. Someone has to, don't they?",
-          "The last one sat right where you stand now. Warmed his hands, then went east.",
-          "He never came back. They never do. Hah...",
+          "The last one sat on that stone where you're standing, warmed his hands at my fire, and went east in the morning.",
+          "He never came back, and nor did the one before him. They always go east. Hah...",
         ],
       },
       {
         id: "shore",
         lines: [
           "A road, is it? Follow the lanterns. They run straight up from the fire, to the Burg Gate on the crown.",
-          "Someone lit them before you came. ...Someone always does.",
-          "There's a path up through the graves to the Moor Gate, as well. Barred from this side.",
+          "Somebody lit them before you came up out of the cave. Somebody always does, and I've never once caught them at it.",
+          "There's a path up through the graves to the Moor Gate as well, but the watchman keeps it barred from this side.",
           "Not that the dogs on that hill have much respect for bars. Hah...",
         ],
       },
@@ -167,24 +167,24 @@ export const NPCS: readonly Npc[] = [
         id: "bull",
         when: "bullWon",
         lines: [
-          "Ahh, so the tide brought you back. The troll in the Ring, I'd wager.",
-          "No shame in it. He'll keep. Take the boat back when your arm is stronger.",
-          "Whatever he guards must be worth a fall or two. Hm.",
+          "Ahh, so the tide's brought you back to me. It was the troll in the Ring, I'd wager.",
+          "There's no shame in it. He's sat in that ring a long while and he'll sit a while longer. Take the boat back when your arm is stronger.",
+          "Whatever he's sitting on must be worth a fall or two. Hm.",
         ],
       },
       {
         id: "goal",
         lines: [
           "You'll be wanting the Grey Gate, east past the moor. Everyone does, in the end.",
-          "Two locks it has. Kingsrest buried one key with its king, under the barrows.",
-          "The other we threw down our own Old Well. Landed in the Weaver's web, they say... and further down still.",
+          "Two locks it has, and two keys. Kingsrest buried one under its barrows with its king, and he's not known for giving things back.",
+          "The other key we threw down our own Old Well, so nobody would fetch it. It caught in the Weaver's web, they say, further down than anyone knew the well went.",
         ],
       },
       {
         id: "castle",
         lines: [
-          "The Keep? Shut, since the Burg turned. Its steward fled for the wood with the Ember Key on his belt.",
-          "A bull had him for supper, or so they say. Still has the key, I'd wager. Bulls aren't ones for locks.",
+          "The Keep? It's been shut since the Burg went grey. Its steward barred it behind him and fled for the wood with the Ember Key on his belt.",
+          "A bull had him for supper, or so they say, and still has the key, I'd wager. Bulls were never much for locks.",
         ],
       },
       {
@@ -193,13 +193,13 @@ export const NPCS: readonly Npc[] = [
       },
       {
         id: "roads",
-        lines: ["Every road out of here comes back to this fire. The gates, the well, the lift. All of them.", "Some folk find that a comfort. ...I've never been sure."],
+        lines: ["Every road out of here comes back to this fire, the gates and the well and the lift alike.", "Some folk find that a comfort. I've kept this fire longer than you've been alive, and I've never been sure."],
       },
       { id: "rest", lines: ["Rest, if you must. The roads are patient. Patient as stones."] },
       {
         id: "died",
         when: "died",
-        lines: ["Back so soon? Oh, don't look at me like that.", "Everyone comes back. That's the curse of this place, isn't it? Hah..."],
+        lines: ["Back so soon? Oh, don't look at me like that.", "Whatever put you down, this fire had you back by morning. It's done it before, and I've stopped asking how. Hah..."],
       },
       {
         id: "key",
@@ -209,14 +209,14 @@ export const NPCS: readonly Npc[] = [
       {
         id: "warlord",
         when: "warlordDead",
-        lines: ["So the Warlord's dead, they're saying. Hm.", "Felt warmer this morning. Not warm, mind you. I'll keep the fire going all the same. Habit."],
+        lines: ["So the Warlord's dead, they're saying. Hm.", "The wind off the moor came in warmer this morning. Not warm, mind you, only less cold. I'll keep the fire going all the same, from habit."],
       },
       {
         id: "ansel",
         when: "anselRoused",
-        lines: ["Ansel's off his wall. I can see it from here. First time in years, that.", "They come back, or they don't. The wall will keep."],
+        lines: ["Ansel's come down off his wall. I can see the gap on the ramparts from here, the first in years.", "They come back from the east or they don't, and the wall will keep either way."],
       },
-      { id: "east", when: "greyfallReached", lines: ["You went east... and came back.", "That's one more than the last one managed. Hah..."] },
+      { id: "east", when: "greyfallReached", lines: ["You went east, and you came back on your own two feet.", "That's one more than the last one managed, and the one before him. Hah..."] },
       {
         id: "gone",
         when: "anselAhead",
@@ -253,7 +253,7 @@ export const NPCS: readonly Npc[] = [
       {
         id: "ore",
         lines: [
-          "Mine Hills ore is soft, but honest. Brasscrag has better, under the gnomes.",
+          "Mine Hills ore is soft, but honest. Brasscrag's is better, if you can get it off the tinkers.",
           "Go and be rude to them. They'll understand. It's how they talk to each other, bless 'em.",
         ],
       },
@@ -294,7 +294,7 @@ export const NPCS: readonly Npc[] = [
       {
         id: "first",
         lines: [
-          "You're not one of mine. ...No. Mine are all gone.",
+          "You're not one of mine. No, mine are all gone, and I'd know their walk anywhere.",
           "I am Corwin, Sergeant of the Keep. I took forty spears onto the moor once. Forty.",
           "Now I drill boys with broom handles and call it a garrison. A sorry business.",
           "Want a lance at your side? Pay, and I'll find you one who still stands.",
@@ -304,26 +304,26 @@ export const NPCS: readonly Npc[] = [
       {
         id: "died",
         when: "died",
-        lines: ["You fell. Don't tell me where.", "Bring me the ones still breathing. Not their names. I've names enough."],
+        lines: ["You fell. Don't tell me where.", "Bring back the lances I lend you still breathing. I've names enough to carve as it is."],
       },
       {
         id: "warlord",
         when: "warlordDead",
-        lines: ["Forty spears...", "I'll carve them into the gate, every one. Leave me to it, soldier."],
+        lines: ["The Warlord's down, then. Forty spears, and not one of them here to see it.", "I'll carve their names into the Keep gate, every one. Leave me to it, soldier."],
       },
       {
         id: "post",
         when: "watchmanOut",
         lines: ["The watchman on the Moor Gate's left his post. Good.", "He'll tell you he barred it on my orders. I never gave him any. ...Fear gave them."],
       },
-      { id: "ansel", when: "anselRoused", lines: ["Ansel's got his sword out. Took him long enough.", "Took me forty men. ...Don't tell him I said so."] },
+      { id: "ansel", when: "anselRoused", lines: ["Ansel's got his sword out. Took him long enough.", "I lost forty men and stopped telling anyone to go out there. Don't tell him I'm glad."] },
     ],
     later: [
       {
         when: ["hornedKey"],
         area: "barrowmoor",
         at: { col: 29, row: 22 },
-        talks: [...corwinDig, { id: "last", lines: ["Thirty-nine...", "The fortieth was me, I think. By rights I ought to be down there with them."] }, corwinDone],
+        talks: [...corwinDig, { id: "last", lines: ["Thirty-nine, and I've turned every barrow on the field for the fortieth.", "Maybe the fortieth was me. By rights I ought to be down there with them."] }, corwinDone],
       },
       {
         when: ["hornedKey", "watchmanOut"],
@@ -335,10 +335,10 @@ export const NPCS: readonly Npc[] = [
             id: "forty",
             gives: "The Forty's Banner",
             lines: [
-              "Forty. Found him this morning, lying among them as if he'd never left.",
+              "Forty. I found him this morning, lying among the others as if he'd never left them.",
               "He ran, the night the King came up. I let him go. I'd have run too, had I been quicker.",
               "This was rolled up beneath him. The Forty's banner. Take it.",
-              "It never did come home. ...Carry it further than we did.",
+              "It never did come home with us. Carry it further than we got.",
             ],
           },
           corwinDone,
@@ -365,9 +365,9 @@ export const NPCS: readonly Npc[] = [
       },
       {
         id: "goblins",
-        lines: ["Goblins camp behind the Northwood, in threes. Always threes. Joyous little bunch.", "Shoot the torch first. Spears are slow. Torches are rude."],
+        lines: ["The goblins camp behind the Northwood, and they always go about in threes. Joyous little bunch.", "Shoot the one with the torch first. Spears are slow, and torches are rude."],
       },
-      { id: "back", lines: ["Five paces back, always.", "If you can smell it, you're too close. If it can smell you, you're dead."] },
+      { id: "back", lines: ["Keep five paces back from whatever you're shooting, always.", "If you can smell it, you're too close. If it can smell you, you're dead."] },
       { id: "wings", when: "died", lines: ["Tobin sent you for a bow, didn't he? Wings, was it?", "Steel goes up, and steel comes down. Only arrows keep going."] },
       wrenPenny,
     ],
@@ -381,7 +381,7 @@ export const NPCS: readonly Npc[] = [
             id: "bluff",
             lines: [
               "Ha! Oh, it's you. The bull's dead! The goblins don't know which way to run.",
-              "They come down off the bluff one at a time. Best shooting in years.",
+              "They come down off the bluff one at a time now, with nobody to tell them where. Best shooting I've had in years.",
               "Don't tell Lanternport, will you? They'll want me back being useful.",
             ],
           },
@@ -406,18 +406,18 @@ export const NPCS: readonly Npc[] = [
         id: "first",
         lines: [
           "Hm? You're not from the wood. Nobody's from the wood any more.",
-          "Garth, woodcutter. I cut hardwood at the Palisade, past the Ember Gate. Before.",
-          "Now I cut what grows this side. Poor, soft stuff. Burns like wet bread. Hah...",
+          "Garth, woodcutter. I cut hardwood at the Palisade, past the Ember Gate, before the goblins came over the fence.",
+          "Now I cut what grows this side of the gate, poor soft stuff that burns like wet bread. Hah...",
         ],
       },
       {
         id: "gate",
         lines: [
-          "The goblins came over our fence one night. We ran for the gate.",
-          "Dunn had it barred before the last of us were through. ...Can't say I wouldn't have done the same.",
+          "The goblins came over our fence one night with their torches lit, and we ran for the gate.",
+          "Dunn had it barred before the last of us were through. I can't say I'd have done different, in his boots.",
         ],
       },
-      { id: "bar", lines: ["The bar only lifts from the wood's side now.", "Someone would have to go round, through Highward. ...Not me. I've the stones for trees, not goblins."] },
+      { id: "bar", lines: ["The bar only lifts from the wood's side now.", "Someone would have to go round through Highward and come at it from the wood. Not me. I've the stones for trees, not goblins."] },
     ],
     later: [
       {
@@ -432,9 +432,9 @@ export const NPCS: readonly Npc[] = [
           {
             id: "note",
             lines: [
-              "Found a note in the camp. \"They barred it with us still outside.\"",
-              "A fine hand. A Keep hand. ...It was the steward knocking, that night.",
-              "He went north, after. Nobody comes back from north. What a sham.",
+              "I found a note pinned up in the old camp. \"They barred it with us still outside.\"",
+              "Fine, careful letters, the kind they teach up at the Keep. It was the steward knocking at our gate, that night.",
+              "He went north up the Ash Road after, and nobody comes back down that road. What a sham.",
             ],
           },
           { id: "trunks", lines: ["The ground's warm under these trunks. The heat comes up into them.", "They burn slow, and they burn twice. Finest wood in Aurum, I'll have you know."] },
@@ -442,8 +442,8 @@ export const NPCS: readonly Npc[] = [
             id: "bull",
             when: "trollKey",
             lines: [
-              "That bull in the hollow. Came out of the east the winter the cold came, and lay down in the ash.",
-              "The goblins fed it like a lord. Bowed to it, some of them. I saw.",
+              "That bull in the hollow came out of the east the winter the cold came, and lay down in the hot ash like it was a feather bed.",
+              "The goblins fed it like a lord, and some of them bowed to it. I saw them at it myself.",
               "Hah. Don't tell me how it looked at the end. I'd sooner not know.",
             ],
           },
@@ -465,13 +465,13 @@ export const NPCS: readonly Npc[] = [
         id: "first",
         lines: [
           "Halt. ...You're no goblin. More's the pity. I'd know what to do with a goblin.",
-          "I am Dunn, of the Gate Watch. What's left of it. I keep the woodcutters alive. Mostly.",
+          "I am Dunn, of the Gate Watch, or what's left of it. I keep the woodcutters alive, mostly.",
           "The Ember Gate stays barred. Orders.",
         ],
       },
       {
         id: "orders",
-        lines: ["Whose orders? Mine. I barred it that night, with the goblins at the fence.", "There was knocking, after. A long while. ...I didn't open."],
+        lines: ["Whose orders? Mine. I barred it that night, with the goblins at the fence.", "There was knocking on it after, a long while, and I stood on this side and didn't open."],
       },
       { id: "barred", lines: ["Barred. Orders. Don't ask me again."] },
     ],
@@ -483,24 +483,24 @@ export const NPCS: readonly Npc[] = [
         talks: [
           {
             id: "watch",
-            lines: ["The gate's open, and I'm stood on the wrong side of it. Hah. Orders.", "Woodcutters cut. I watch. The goblins come in threes, same as ever."],
+            lines: ["The gate's open, and I'm stood on the wrong side of it. Hah. Orders.", "The woodcutters cut and I watch the trees for them. The goblins still come in threes, same as ever."],
           },
           {
             id: "steward",
             lines: [
-              "Garth showed me the note. The steward, knocking at my gate, with the Keep's key on him.",
-              "Had I opened, that key would be in the Keep. Not up the Ash Road.",
+              "Garth showed me the note. That was the steward knocking at my gate that night, with the Keep's key on his belt.",
+              "Had I opened, that key would be hanging in the Keep now, not lying somewhere up the Ash Road.",
               "...Go on, then. Say it.",
             ],
           },
-          { id: "trees", lines: ["Watch the trees. They watch you."] },
+          { id: "trees", lines: ["Watch the trees. The goblins sleep up in them, and they'll be watching you."] },
           {
             id: "bull",
             when: "trollKey",
             lines: [
               "The key was on the bull? The goblins' bull?",
               "So the steward got past my gate, and the goblins, and the heat. And their beast had him at the end of it.",
-              "...And I barred the gate on him. Hm. A fine watchman I make.",
+              "And I barred the gate on him. Hm. A fine watchman I make.",
             ],
           },
         ],
@@ -522,7 +522,7 @@ export const NPCS: readonly Npc[] = [
         id: "first",
         lines: [
           "Softly, softly. You'll wake the bears. ...Or they'll wake you.",
-          "I am Fenn. Of the Order, once. Of the pines, now. They ask less of me.",
+          "I am Fenn, of the Order once, and of these pines now. The pines ask less of me.",
           "The goblins burn everything but here. They will not come under these trees. I have never asked why.",
         ],
       },
@@ -571,8 +571,8 @@ export const NPCS: readonly Npc[] = [
       {
         id: "bridge",
         lines: [
-          "Listen, this might be of use. There's a bridge under the rock, east. Takes you round the goblins' camp, to the ford.",
-          "There's a fire at the ford. Last warm thing before the bull.",
+          "Listen, this might be of use. There's a bridge under the rock to the east, and it takes you round the goblins' camp to the ford.",
+          "There's a fire at the ford, the last warm thing you'll find before the bull.",
         ],
       },
       { id: "seams", lines: ["Gold shows in the rock up here, if you've the eye. Warm in the hand, when it's good.", "Take what you can carry. I can't carry much. Never could."] },
@@ -597,15 +597,15 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "Oh, d-don't lean on that rope. It's older than me.",
           "That's the Old Well, in the hill there. Not for drawing water, mind.",
-          "My brother went down it after a dropped coin. ...Never came up.",
-          "Says something about the coin, doesn't it?",
+          "My brother went down it after a coin he'd d-dropped, and he never came up.",
+          "It must have been a f-fine coin. He never went to that much trouble for anything else.",
         ],
       },
       { id: "rule", lines: ["No climbing back up. That's the rule of the well.", "Funny, a hole having rules. Funnier still that everyone keeps them."] },
       {
         id: "wings",
         lines: [
-          "Something else lives down there. Wings. You hear them before you see them.",
+          "Something else lives down there, something with wings. You hear them b-beating before you see them.",
           "A sword's no use on a thing that won't come down to meet it.",
           "Wren hires out bows, at the butts by the west road. Take one, if you go. Please.",
         ],
@@ -613,13 +613,13 @@ export const NPCS: readonly Npc[] = [
       {
         id: "chewed",
         when: "died",
-        lines: ["Oh... You look chewed on.", "If it had wings, your steel won't reach it. Wren's bows will."],
+        lines: ["Oh, you look ch-chewed on.", "If it had wings, your steel won't reach it. Wren's bows will."],
       },
       {
         id: "below",
         when: "wellDescended",
         sets: "tobinDown",
-        lines: ["You came back? From d-down there?", "...Did you see him? Thin fellow. Quick hands. Always smiling.", "No. Course not. ...Forget I asked."],
+        lines: ["You came back? From d-down there?", "Did you see him down there? A thin fellow with quick hands, always smiling.", "No, course you didn't. Forget I asked."],
       },
     ],
     later: [
@@ -632,14 +632,14 @@ export const NPCS: readonly Npc[] = [
             id: "nook",
             lines: [
               "Oh, it's you. Don't look so surprised. There's no rule against going down, is there?",
-              "Smugglers keep this corner. One of them is wearing his coat.",
-              "Says he swapped it, deeper in. Ha. My brother never swapped a thing in his life.",
+              "Smugglers keep this corner, and one of them is wearing my brother's coat.",
+              "He says he swapped for it, deeper in. Ha. My brother never swapped a thing in his life.",
             ],
           },
           {
             id: "deeper",
             sets: "tobinDeeper",
-            lines: ["I'm going on, through the cisterns.", "Don't wait for me. ...Nobody ever has."],
+            lines: ["I'm going on, through the cisterns.", "Don't wait for me. Nobody ever has, and I'd not know what to do with it."],
           },
         ],
       },
@@ -651,9 +651,9 @@ export const NPCS: readonly Npc[] = [
           {
             id: "camp",
             lines: [
-              "I found him. He runs this camp. Thin as ever. Smiling.",
+              "I found him. He runs this camp, thin as ever, and smiling like he'd been expecting me.",
               "He says the coin was never dropped. He threw it, to see who'd come after.",
-              "...And I came after.",
+              "And I came after it, d-didn't I?",
             ],
           },
           {
@@ -696,8 +696,8 @@ export const NPCS: readonly Npc[] = [
       {
         id: "coin",
         lines: [
-          "The coin? Oh, I threw it. Down the well, a long time ago.",
-          "To see who'd come after. Two did. Him, and you.",
+          "The coin Tobin went down after? Oh, I threw it down the well, a long time ago.",
+          "I wanted to see who'd come after it. Two did: my brother, and now you.",
           "Didn't expect you, I'll admit. Thought you could outwit old Jory, eh? Ha ha!",
         ],
       },
@@ -707,7 +707,7 @@ export const NPCS: readonly Npc[] = [
         when: ["tobinDeeper", "warlordDead"],
         area: "harbour",
         at: { col: 44, row: 53 },
-        talks: [{ id: "well", lines: ["Tobin? Still down there. Counting. Someone has to.", "Don't lean on that rope, friend. It's older than both of us. Ha ha!"] }],
+        talks: [{ id: "well", lines: ["Tobin? Still down there, counting what I steal. Someone has to.", "Don't lean on that rope, friend. It's older than both of us. Ha ha!"] }],
       },
     ],
   },
@@ -726,7 +726,7 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "Peace on thee, child. I am Ysolde, a Keeper of the Order, and mother to it here.",
           "My sisters went down to the Drowned Chapel. The warmth lay below us, they said, and they would kneel by it.",
-          "I tend the fire up here, and tend to them, in prayer. ...They did not return.",
+          "I tend the fire up here, and tend to them in my prayers. Not one of them hath come back up.",
         ],
       },
       {
@@ -750,19 +750,19 @@ export const NPCS: readonly Npc[] = [
           {
             id: "freed",
             lines: [
-              "Thou'st found one of us. Living. She walks with thee now, so I came down to see where.",
+              "Thou'st found one of us, and living. She walketh with thee now, so I came down to see where she had been.",
               "I told her her name. She thanked me.",
-              "She will have lost it again by the next fire. ...Tell it to her, some nights.",
-              "One is a mercy. I'll not ask the dark for more.",
+              "She will have lost it again by the next fire. Tell it to her, some nights, as thou sittest.",
+              "One is a mercy. I shall not ask the dark for more.",
             ],
           },
           {
             id: "lake",
             sets: "ysoldeDeeper",
             lines: [
-              "She speaketh in her sleep. Of water under all of this, warm as a hand, and gold shining in the rock.",
-              "The others went on to it. I must go too.",
-              "Follow me not. ...Or do. I am too old to forbid things.",
+              "She speaketh in her sleep, of water under all of this, warm as a banked hearth, and gold shining in the rock.",
+              "The others went on down to it, and I must go after them.",
+              "Follow me not. Or do, as thou wilt. I am too old to forbid things.",
             ],
           },
           ysoldeClean,
@@ -777,7 +777,7 @@ export const NPCS: readonly Npc[] = [
             id: "clear",
             lines: [
               "Look, child. The water is warm down here. Warm, at last.",
-              "I see them at the bottom. All my sisters, kneeling. Praying still.",
+              "I see them at the bottom, child, all my sisters on their knees, praying still.",
               "...No. Pull me not back. I have only just found them.",
             ],
           },
@@ -794,7 +794,7 @@ export const NPCS: readonly Npc[] = [
             id: "ash",
             gives: "Sister's Candle",
             lines: [
-              "It died, and nothing woke. My sisters were kneeling to a beast. Only bones, now.",
+              "The thing they knelt to is dead, child, and nothing woke. It was a beast, and my sisters are only bones now.",
               "I can leave bones, child. I could not leave them kneeling.",
               "Take this. I have stopped lighting it. Light it for the ones thou losest. May the Hearth keep thee.",
             ],
@@ -819,17 +819,17 @@ export const NPCS: readonly Npc[] = [
       {
         id: "first",
         lines: [
-          "Ahh... who's there? Is it night? It's always night, down here.",
-          "We came down to kneel by the warm... Then the cold came in, and nibbled at us. I don't remember the others' faces.",
+          "Ahh, who's there? Is it night up above? It's always night down here.",
+          "We sisters came down to kneel where the stones were warm. Then the cold came in under the door and nibbled at us, and now I can't remember the others' faces.",
         ],
       },
       {
         id: "warm",
         sets: "monkFreed",
         lines: [
-          "Please, hold out your hand... Ahh. You're warm. Nothing down here is warm.",
+          "Please, hold out your hand and let me touch it. Ahh. Your sleeve smells of woodsmoke. Someone up there still keeps a fire.",
           "Then I am not entirely alone, just yet.",
-          "I'll walk with you, if you'll have me... I've forgotten the way up. You haven't.",
+          "I'll walk with you, if you'll have me. I've forgotten the way up, but you came down it, so you must know.",
         ],
       },
     ],
@@ -844,14 +844,14 @@ export const NPCS: readonly Npc[] = [
     kind: "monk",
     color: "purple",
     greet: "Softly. It sleepeth.",
-    part: "Softly, going. The warm awaiteth thee.",
+    part: "Tread softly, good Tidewashed. The warm awaiteth thee.",
     talks: [
       {
         id: "first",
         lines: [
-          "Softly... It sleepeth on the isle, on the warm. Feel the water, good Tidewashed.",
-          "The Hearth's keeper. The Hearth lieth under it, and the sisters came down to kneel by it.",
-          "We wait for it to wake. ...It will wake. Think not on thy fears.",
+          "Softly, I prithee. The Shell Below sleepeth on the isle yonder, upon the warm stone. Put thy hand in the water, good Tidewashed, and feel it.",
+          "It keepeth the Hearth, which lieth under it, and the sisters came down from their chapel to kneel beside it.",
+          "We pilgrims wait for it to wake, and it will wake. Think not on thy fears.",
         ],
       },
       {
@@ -859,8 +859,8 @@ export const NPCS: readonly Npc[] = [
         sets: "drankClear",
         gives: "Hollow Water",
         lines: [
-          "Drink, I prithee. It is warm. Nothing warm is left up there.",
-          "The old one by the fire above saith not to. ...He hath never been down.",
+          "Drink, I prithee. 'Tis warm as a hearthstone, and naught so warm is left up there.",
+          "The old man who keepeth the fire above saith not to drink it. He hath never been down.",
         ],
       },
     ],
@@ -879,24 +879,24 @@ export const NPCS: readonly Npc[] = [
       {
         id: "first",
         lines: [
-          "Tide's out. ...Maren, Harbourmaster. I keep the harbour, for all the good it does.",
-          "No ships in three winters. Not one.",
+          "Tide's out. Maren, Harbourmaster. I keep the harbour, for all the good it does an empty sea.",
+          "No ship has put in here for three winters, not one.",
           "Stiltwater still trades down the coast, if you can stomach its prices. And its pirates.",
           "Mostly the pirates. Ha.",
-          "Square fire's gone cold again. Ferrow dozes. ...Come on, then, I'll show you.",
+          "The fire in the square's gone cold again while Ferrow dozed over it. Come on, then, I'll walk you there and you can light it.",
         ],
         lights: true,
       },
       {
         id: "finfolk",
         lines: [
-          "Finfolk off the Stiltwater shore. Sharks, the pirates call them. Don't swim there.",
-          "They pull things out of the warm water by the caves. Breathing things, the pirates say. ...I don't ask.",
+          "There are finfolk off the Stiltwater shore. Sharks, the pirates call them, and you'll not want to swim there.",
+          "They pull things out of the warm water by the caves, and the pirates swear some of it is still breathing. I don't ask.",
         ],
       },
       {
         id: "lantern",
-        lines: ["The lantern on the wall? I light it every night. For ships.", "Three winters, no ships. But you don't stop lighting it. That's how you lose it."],
+        lines: ["The lantern on the harbour wall? I light it every night, for ships.", "Three winters and no ships, but you don't stop lighting it. The night you stop is the night you've given the harbour up."],
       },
       { id: "tide", lines: ["Tide's out. It's always out, lately.", "As if the sea's leaving too. Can't say I blame it."] },
       {
@@ -904,7 +904,7 @@ export const NPCS: readonly Npc[] = [
         when: "warlordDead",
         sets: "marenSails",
         lines: [
-          "A sail. Off the point, this morning. First in three winters.",
+          "There was a sail off the point this morning, the first in three winters.",
           "Stiltwater, likely. Pirates, likelier. I don't care.",
           "Thirty years I've watched that water. I'd like to be on it once, before it leaves for good. Fair winds, Tidewashed. Ha.",
         ],
@@ -927,11 +927,11 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "Mind the carts. ...Dunstan, foreman. I run the Mine Hills, what's left to run.",
           "The good ore came off the deep face, under the crest. Forty loads a week.",
-          "Then one shift it came up grey. Cold in the hand. Cold in high summer.",
-          "The lads who worked it went slow. Slower every day. So I nailed it shut myself. Wouldn't you have?",
+          "Then one shift it came up grey, and cold in the hand, in the middle of high summer.",
+          "The lads who worked that face went slow, and slower every day, till they stood at it with their picks up and never swung. So I nailed it shut myself. Wouldn't you have?",
         ],
       },
-      { id: "face", lines: ["We work the old face now. Soft stuff. Brenna grumbles.", "Let her grumble. She's still got all her lads, hasn't she?"] },
+      { id: "face", lines: ["We work the old face now, soft stuff, and Brenna grumbles at every load.", "Let her grumble. She's still got all her lads, hasn't she?"] },
       { id: "boards", lines: ["Don't touch the boards.", "I count them every morning. Nineteen. ...Still nineteen."] },
       {
         id: "warm",
@@ -958,12 +958,12 @@ export const NPCS: readonly Npc[] = [
           "Want it open? Then go round, and lift the bar from the far side yourself. If you've the stones for it.",
         ],
       },
-      { id: "barrows", lines: ["Lights on the barrows, some nights.", "I don't look. Looking is how it starts."] },
+      { id: "barrows", lines: ["There are lights out on the barrows, some nights, moving about.", "I don't look. Looking is how it starts."] },
       {
         id: "open",
         when: "moorGateOpen",
         sets: "watchmanOut",
-        lines: ["...You came through the barrows. On foot.", "Well. I'll stop barring it, then. You've made my post pointless.", "Thank you. ...I think."],
+        lines: ["You came through the barrows, on foot, and lifted my bar from the far side.", "Well. I'll stop barring it, then. You've made my post pointless.", "Thank you. ...I think."],
       },
     ],
     later: [
@@ -975,7 +975,7 @@ export const NPCS: readonly Npc[] = [
         talks: [
           {
             id: "lights",
-            lines: ["Ahh, you. Thought I'd see the lights for myself, since the gate's open anyway.", "They're lanterns. Held by nobody. Swinging, all the same."],
+            lines: ["Ahh, you. Thought I'd see the lights for myself, since the gate's open anyway.", "They're lanterns, and nobody's holding them, and they swing all the same."],
           },
           { id: "look", lines: ["I'll just look a little longer.", "Looking is how it starts. I know. I said that."] },
           {
@@ -1000,8 +1000,8 @@ export const NPCS: readonly Npc[] = [
       {
         id: "first",
         lines: [
-          "Shh! Don't tell them I'm here. The grey men.",
-          "They took my mum. The whole east lane. Off to Greyfall, where the cold comes from.",
+          "Shh! Don't tell the grey men I'm here.",
+          "They took my mum, and the whole east lane with her, off to Greyfall where the cold comes from.",
           "They keep them in a yard, with ropes. I squeezed out under the gate. I'm small. It's useful.",
         ],
       },
@@ -1011,7 +1011,7 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "I count the crows. When there's more of them, they're bringing more people.",
           "Wren says you walk loud. You do.",
-          "...I could follow you anywhere.",
+          "I could follow you anywhere, you know. Nobody'd ever hear me.",
         ],
       },
     ],
@@ -1070,19 +1070,25 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "Not one step down. Not for you, not for nobody.",
           "Tally, me. I dug here. Forty seasons, coal and fire for pay.",
-          "The last season they never paid. I came back for it. Tally always comes back.",
+          "The last season, the Citadel never paid us. I came back up for it. Tally always comes back.",
         ],
       },
       {
         id: "wage",
         sets: "wageOwed",
         lines: [
-          "Three hundred and twelve loads. Coal for each. Fire for the long shifts.",
-          "It's written. The paymaster wrote everything. Upstairs, in the Counting House.",
-          "Get me the page and I'll know I'm not mad. ...Then I'll go. Tally promises.",
+          "Three hundred and twelve loads I hauled up that last season, a scuttle of coal owed for each, and fire for the long shifts.",
+          "It's all written down. The paymaster wrote everything in his books, up in the Counting House.",
+          "Get me that page and I'll know I'm not mad. Then I'll go home. Tally promises.",
         ],
       },
-      { id: "lip", lines: ["Men say we dug it. We did. Men say why? Ask who paid.", "Not one step down. Count's not done."] },
+      {
+        id: "lip",
+        lines: [
+          "Men say we goblins dug that hole. We did, every shovel of it. Men ask why. Go ask who paid.",
+          "Not one step down. Count's not done.",
+        ],
+      },
     ],
     // Paid only if Quill gives up the ledger before the Warlord falls; after, it is ash, and Brenna sells his torch.
     later: [
@@ -1125,19 +1131,28 @@ export const NPCS: readonly Npc[] = [
           "I kept the accounts, and now the accounts keep me. Coal and fire, the goblins were paid in. I pay myself the same way.",
         ],
       },
-      { id: "stove", lines: ["Forty years of ledgers, and a small stove.", "I started with the oldest. Fair's fair. One must keep some kind of order."] },
+      {
+        id: "stove",
+        lines: [
+          "I have forty years of ledgers and one small stove, and the arithmetic of that is not in my favour.",
+          "I started burning with the oldest year. Fair's fair. One must keep some kind of order.",
+        ],
+      },
       {
         id: "cold",
-        lines: ["They come to the window sometimes. The taken. Drawn to the light.", "They don't knock. They used to queue for their pay just like that. How very orderly."],
+        lines: [
+          "The taken come to my window some nights, drawn to the stove's light.",
+          "They don't knock. They used to queue for their pay just like that. How very orderly.",
+        ],
       },
       {
         id: "ledger",
         when: "wageOwed",
         sets: "ledgerSaved",
         lines: [
-          "A goblin wants his page? After all this? ...The last season. I kept it back.",
+          "A goblin wants his page, after all this? Then he wants the last season, and that one I kept back.",
           "It is the season of the Deep Cut. I could not bring myself to burn that one. Nor to read it.",
-          "Take it to him. He was owed. They were all owed. ...Every account has its consequence, it seems.",
+          "Take it to him. He was owed. They were all owed. Every account has its consequence, it seems.",
         ],
       },
     ],
@@ -1150,9 +1165,9 @@ export const NPCS: readonly Npc[] = [
           {
             id: "thaw",
             lines: [
-              "Oh, you're back, then. The stove's out. I'm warm without it. First time in years.",
+              "Oh, you're back, then. The stove's gone out, and my ink hasn't frozen in the pot. First time in years.",
               "The last ledger went in on the coldest night. I'm sorry for that one.",
-              "All that's left of the Cut is what the goblins remember. And the hole. Hmph. Some accountant I was.",
+              "All that's left of the Cut's accounts is what the goblins remember, and the hole itself. Hmph. Some paymaster I was.",
             ],
           },
         ],
@@ -1168,27 +1183,30 @@ export const NPCS: readonly Npc[] = [
     kind: "monk",
     color: "purple",
     greet: "Hush.",
-    part: "Go warm somewhere else. Mayst thou thy stillness find.",
+    part: "Take thy noise elsewhere, child. Mayst thou thy stillness find.",
     talks: [
       {
         id: "first",
         lines: [
-          "Hush. Thou'rt so loud. All that warmth, shouting.",
-          "I am Sister... Sister Hush. Of the Stilled. We pray the fever down.",
-          "The Hearth burned too long. The cold is the world getting well. Seest thou not?",
+          "Hush. Thou'rt so loud, child. All that colour on thee, shouting at me across the chapel.",
+          "I am Sister... Sister Hush, of the Stilled. We pray the world's fever down.",
+          "The Hearth hath burned too long, and the cold is the fever breaking. Seest thou not?",
         ],
       },
       {
         id: "name",
-        lines: ["Thou didst ask my name, before. I gave thee one. I cannot think which.", "'Tis the second thing to go. The colour went first. It doth not hurt."],
+        lines: [
+          "I told thee my name, when first we met. I cannot think now which name it was.",
+          "The name is the second thing to go. The colour went first. It doth not hurt.",
+        ],
       },
       {
         id: "bell",
         sets: "hushStilled",
         gives: "Stilled Bell",
         lines: [
-          "Take the bell. 'Tis for ringing the warm ones quiet. I'll not need it.",
-          "I go down to the Pits. 'Tis coldest there. I will kneel with the others.",
+          "Take this bell. 'Tis for ringing the loud ones quiet, and where I go I'll not need it.",
+          "I go down to the Pits, where 'tis coldest, to kneel with the others by the Crater.",
           "Hush now. ...Hush.",
         ],
       },
@@ -1205,7 +1223,7 @@ export const NPCS: readonly Npc[] = [
             gives: "Stilled Bell",
             lines: [
               "Thou'st killed him, and the fever cometh back. I can feel my hands again.",
-              "I was nearly still. Nearly. ...Was it all a lie, then?",
+              "I was nearly still. I had forgotten this chapel's name, and now it cometh back to me. Was it all a lie, then?",
               "Take the bell. I cannot ring it for a world that wisheth to be warm.",
             ],
           },
@@ -1228,32 +1246,32 @@ export const NPCS: readonly Npc[] = [
         id: "first",
         lines: [
           "Look up. See that glint, past the clouds?",
-          "Sunhold. Gold walls, gold roofs. A city that floats on its money, and never learned to bleed.",
-          "When the Grey came, it shut its gates. Not one spear. Not one prayer.",
-          "...Ansel. Of the wall, they call me now. I used to be of something else. Doesn't matter. Not now.",
+          "That's Sunhold. Gold walls and gold roofs, up where the Grey can't reach, and not a soul in it has ever bled for any of it.",
+          "When the Grey came it shut its gates, and it never sent down one spear, or so much as a prayer.",
+          "I'm Ansel. Ansel of the Wall, they call me now. I was Ansel of something else once, but it doesn't matter now.",
         ],
       },
       {
         id: "lift",
-        lines: ["The Watch Lift only comes down.", "Someone in Sunhold decided who gets to visit. Joyous bunch, really."],
+        lines: ["The Watch Lift only comes down. Sunhold built it so, and Sunhold decides who goes up.", "So far they've decided on nobody. Joyous bunch, really."],
       },
       {
         id: "blue",
-        lines: ["I wore that blue once. Had a band, a banner. The fire knew my name.", "Then I stopped going out. ...You'd be surprised how easy it is. One day, then the next."],
+        lines: ["I wore that blue once. Had a band, a banner. The fire knew my name.", "Then one morning I didn't go out, and the next morning it was easier. You'd be surprised how easy it gets."],
       },
-      { id: "watch", lines: ["Still here. Still watching. Someone ought to.", "Go on. I'll keep watch. It's all I'm good for."] },
+      { id: "watch", lines: ["Still here, still watching the sky city. Someone ought to.", "Go on. I'll keep watch. It's all I'm good for."] },
       {
         id: "lifted",
         when: "watchLiftOpen",
-        lines: ["So you went up. Were they kind?", "...No. The sky city never is."],
+        lines: ["So you went up. Were they kind?", "No, don't tell me. The sky city never is."],
       },
       {
         id: "roused",
         when: "trollKey",
         sets: "anselRoused",
         lines: [
-          "The bull. You killed it. With that.",
-          "...I had a sword once. It's under the bed, I think.",
+          "You killed the bull, with that? The Ember Key's on your belt, so you must have.",
+          "I had a sword once. It's under my bed, I think, if the rust hasn't had it.",
           "Maybe I've sat long enough. Don't say anything. You'll talk me out of it.",
         ],
       },
@@ -1277,7 +1295,7 @@ export const NPCS: readonly Npc[] = [
             sets: "anselAhead",
             lines: [
               "The Warlord's Hall is up past the High City. I'll go first, this time.",
-              "I've decided to stop running from it. Let me have that. You've had all the others.",
+              "I've decided to stop running from it. Let me have this one. You've had every other fight on the road here.",
             ],
           },
         ],
@@ -1295,7 +1313,7 @@ export const NPCS: readonly Npc[] = [
             id: "wall",
             gives: "Ansel's Edge",
             lines: [
-              "Back on the wall. It's a good wall.",
+              "Back on the wall, you see. It's a good wall, and it's never once asked me to be brave.",
               "Brenna was holding an edge I paid for. Here, it's yours. You can make better use of it.",
               "If she asks, tell her I sent you. She'll want it in writing. Hah...",
             ],
@@ -1347,8 +1365,8 @@ export const NPCS: readonly Npc[] = [
         when: "marenSails",
         lines: [
           "A ship in, and Maren off on it. Thirty years she waited. Hehe.",
-          "Some of us don't wait.",
-          "Stiltwater left me a crate. Glass, dearie. Salt-glass. One, mind.",
+          "Some of us don't wait for ships, dearie. We sell to whoever comes.",
+          "Stiltwater left me a crate off it. Salt-glass, dearie, a lantern of it, and only the one, mind.",
         ],
       },
     ],
@@ -1367,13 +1385,13 @@ export const NPCS: readonly Npc[] = [
       {
         id: "first",
         lines: [
-          "Living? Oh, thank the fire. Then sit a while. ...I am Hale, of the Watch. The last of it.",
+          "Living? Oh, thank the fire. Sit a while, then. I am Hale, of the Watch, and the last of it.",
           "You came over the creek? Then you've met the bridges' keepers.",
-          "I held this square with six men. The bell stopped, and they turned. One by one.",
+          "I held this square with six men. Then the bell stopped, and one by one the colour went out of them.",
           "The Rampart Gate's up the street. Or through the graves on the hill, if you'd sooner the dead than the dying.",
         ],
       },
-      { id: "ladder", lines: ["There was a ladder down to here from the Ramparts, by the fire.", "Someone pulled it up. From above. ...I'd like a word with them."] },
+      { id: "ladder", lines: ["There was a ladder down to here from the Ramparts, by the fire.", "Someone pulled it up from above, and I'd like a word with whoever it was."] },
       {
         id: "keep",
         when: "trollKey",
@@ -1396,12 +1414,12 @@ export const NPCS: readonly Npc[] = [
       {
         id: "first",
         lines: [
-          "Odo, gunner. Two guns on that tower, mine. The goblins found my powder, and turned them on the wall.",
+          "I'm Odo, the gunner. Those two guns on the tower were mine, till the diggers found my powder and turned them on the wall.",
           "The boar was the garrison's. The smiths shod him in iron for the parade. Proud beast, he was.",
-          "Then the cold got into him, and he forgot who fed him. A goblin climbed on. ...It's been riding him since.",
+          "Then the cold got into him and he forgot who fed him, and a digger climbed on his back. It's been riding him ever since.",
         ],
       },
-      { id: "ladder", lines: ["There's a ladder down the south face to the Burg's square.", "Kick it loose. Their fire is right under it, if you need one."] },
+      { id: "ladder", lines: ["There's a ladder down the south face to the Burg's square.", "Kick it loose and you'll come down by the square's fire, if you need one."] },
       { id: "died", when: "died", lines: ["You came back. They don't, usually.", "The wall remembers everyone who crossed it. It just doesn't care. What a bloody joke."] },
       { id: "kicked", when: "ladderDown", lines: ["You found it. The square's closer than it looks. Most things are."] },
     ],
@@ -1487,25 +1505,38 @@ export const NPCS: readonly Npc[] = [
         id: "first",
         lines: [
           "Road! You're on it. Good. Stay on it.",
-          "Pell, of the gate. I keep it. Gnomes come down, I let them in. Nothing goes up.",
-          "The slingers on the rock shoot first. They used to ask.",
-          "...They stopped asking.",
+          "Pell, of the Crag Gate. Any gnome who comes down off the rock, I let in. Nobody goes up past me.",
+          "The slingers up on the rock shoot first. They used to lean over the rim and ask your business, but they've stopped asking.",
         ],
       },
       {
         id: "guns",
-        lines: ["The last thing up the steps was grey. Walked up slow, smiling.", "So now they shoot anything slow. And anything smiling."],
+        lines: [
+          "The last thing to walk up those steps was grey from its cap to its boots. It came up slow and smiling, and the slingers waved it through.",
+          "So now they shoot anything that climbs slow, and anything that smiles. Climb quick, and keep a straight face.",
+        ],
       },
       {
         id: "grove",
-        lines: ["North, over the stream, is the old one's grove. His cubs still sit in it.", "Bees, too. Bees never sit."],
+        lines: [
+          "North, over the stream, is Old Bamboo's grove. His cubs still sit in it under the stalks, waiting for him to come down.",
+          "There are bees in there as well, and bees never sit for anybody.",
+        ],
       },
-      { id: "road", lines: ["Road. East. The town's at the end of it.", "...Still here? Road!"] },
-      { id: "died", when: "died", lines: ["The fire caught you, did it? Better than the guns.", "Road, this time."] },
+      { id: "road", lines: ["Keep to the road and go east. Tinker Town's at the end of it, and a fire with it.", "Still here? Road!"] },
+      {
+        id: "died",
+        when: "died",
+        lines: ["The fire caught you, did it? Better the fire than the guns. The guns don't hand you back.", "Road, this time."],
+      },
       {
         id: "bamboo",
         when: "bambooDead",
-        lines: ["The old one's dead? Up at his wheel?", "...Hm. I'll tell the cubs. Someone has to tell the cubs.", "Road, mind. Road."],
+        lines: [
+          "Old Bamboo's dead? Up at his wheel, where he always was?",
+          "Hm. I'll go up to the grove and tell the cubs. Someone has to tell the cubs, and it'll not be the slingers.",
+          "Road, mind. Road.",
+        ],
       },
     ],
   },
@@ -1529,25 +1560,37 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "Mind the fuses. No, that one. ...Fine. All of them.",
           "Nim, tinker. Powder, springs, brass. Gnome work. Finest in Aurum, and the only.",
-          "Gold for gnome work. The old rate. The kings set it, before they went up.",
+          "Gnome work costs gold, at the old rate. The gnome-kings set it themselves, before they went up the lift with all of it.",
         ],
       },
       {
         id: "kings",
-        lines: ["The kings? Up. In Sunhold, that we built them.", "They floated off with the gold and left us the rock. Kind of them, wasn't it? Ha."],
+        lines: [
+          "The kings? Up in Sunhold, that we built for them with our own winches.",
+          "They floated off with the gold and left us the rock. Kind of them, wasn't it? Ha.",
+        ],
       },
       {
         id: "owed",
-        lines: ["Sunhold owes this rock a hundred years of pay. Not a coin since the Cut.", "I've the sum, if you want it. To the coin. ...Nobody wants it."],
+        lines: [
+          "Sunhold owes this rock a hundred years of pay, and not a grain of gold has come down the lift since the Cut.",
+          "I've the sum worked out to the last grain, chalked on a slate by my bench, if you want it. Nobody wants it.",
+        ],
       },
       {
         id: "ore",
-        lines: ["The best ore in Aurum is under the second step.", "Nobody mines it now. Nobody goes up the steps."],
+        lines: [
+          "The best ore in Aurum lies under the second step, in Hask's mine.",
+          "Nobody mines it now but Hask, and Hask won't climb a foot past it.",
+        ],
       },
       {
         id: "wheel",
         when: "bambooDead",
-        lines: ["The wheel will turn again, then. Someone has to walk it.", "Not me. My knees are brass already."],
+        lines: [
+          "The wheel will turn again, then, with Old Bamboo off it. Someone will have to walk it.",
+          "Not me. My knees are brass already.",
+        ],
       },
     ],
   },
@@ -1566,19 +1609,25 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "Wick? ...No. You're too tall.",
           "Moss. My Wick kept the lift, up on the wheel step. Old Bamboo walked the wheel for him.",
-          "Then the wheel stopped. The old one never came down.",
-          "Nor did Wick. ...Have you seen him? Small fellow. Brass buttons.",
+          "Then one morning the wheel stopped turning, and Old Bamboo never came down off it.",
+          "Nor did Wick. Have you seen him up there? A small fellow, with brass buttons all down his coat.",
         ],
       },
       {
         id: "hoist",
         lines: [
-          "The Hoist was our way home. Straight down the rock.",
-          "Barred from up top, since the gnolls. If you happen up there, lift the bar.",
-          "...So I'll know someone can. Please. I beg of you.",
+          "The Hoist was how we came home of an evening, in a basket straight down the face of the rock.",
+          "It's been barred from the top since the gnolls came over the bridge. If you happen up there, lift the bar for me.",
+          "Then I'll know the way down is open, if Wick should want it. Please, I beg of you.",
         ],
       },
-      { id: "wait", lines: ["I sit by the Hoist. It's where he'd come down.", "Wick is a careful gnome. He wouldn't leave me up here. ...No. What a horrible thought."] },
+      {
+        id: "wait",
+        lines: [
+          "I sit here at the Hoist's foot, because it's where he'd come down.",
+          "Wick is a careful gnome. He checks every rope twice, and he'd not leave me sitting here without a word. No. What a horrible thought.",
+        ],
+      },
       {
         id: "hoisted",
         when: "hoistOpen",
@@ -1594,8 +1643,8 @@ export const NPCS: readonly Npc[] = [
           {
             id: "coat",
             lines: [
-              "Wick's coat was on the wheel. Just the coat. He'd never have let the old one walk alone.",
-              "Someone has to keep the lift. I watched him do it twenty winters. ...This only bolsters my resolve.",
+              "Wick's coat was on the wheel, brass buttons and all, and no Wick in it. He'd never have let Old Bamboo walk alone.",
+              "Someone has to keep the lift, and I watched him do it twenty winters. I'll keep it till he comes back for his coat.",
             ],
           },
           { id: "up", lines: ["Step in, if you're going up.", "The kings won't thank you. They never thanked him."] },
@@ -1617,7 +1666,7 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "Are you going up? Grown folk go up and don't come down.",
           "I'm Pip. My da keeps the lift. Kept. ...Keeps.",
-          "Bamboo let me ride on him. On the wheel. Round and round and round.",
+          "Bamboo used to let me ride on his back while he walked the wheel. Round and round and round.",
         ],
       },
       { id: "slingers", lines: ["The slingers shot at me once. On purpose, I think.", "I wasn't slow. I wasn't smiling either."] },
@@ -1649,12 +1698,15 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "Not going up. Don't ask.",
           "Hask. I dig the second step. The second. Not the third.",
-          "The third's the guns. They don't know my face from grey any more.",
+          "The third step's the guns, and the slingers up there don't know my face from a grey one's any more.",
         ],
       },
       {
         id: "gold",
-        lines: ["There's gold in the mine. Take some. Up's not worth it.", "Down's not worth it either. Hah. Here's as far as I go."],
+        lines: [
+          "There's gold in the mine behind me, still in the walls. Take what you can prise out. Up's not worth it.",
+          "Down's not worth it either. Hah. The second step is as far as I go, either way.",
+        ],
       },
       {
         id: "quiet",
@@ -1678,24 +1730,30 @@ export const NPCS: readonly Npc[] = [
         id: "first",
         lines: [
           "Wheel first, cage second, gnome last. Say it.",
-          "...No? Nobody says it. That's why it all fell.",
+          "No? Nobody says it any more. They put the gold first and the gnome nowhere, and look at the rock now.",
           "Master Fennick, builder of the lift. I may be but small, but I built the kings a road to the sky. They rode it up, and never sent it down.",
         ],
       },
       {
         id: "cage",
-        lines: ["That cage? A new one. For when the wheel turns.", "The wheel won't turn. The old one stands in it, grey to the eyes."],
+        lines: [
+          "That cage? A new one, oiled and hung, for when the wheel turns again.",
+          "It won't turn while Old Bamboo sits in it, grey to the eyes and chewing as if nothing had happened.",
+        ],
       },
       {
         id: "gantry",
-        lines: ["The gnolls don't cross my gantry. Too narrow for four legs.", "I made it narrow. Ha. Gnome last."],
+        lines: [
+          "The gnolls don't cross my gantry. It's too narrow for anything bigger than a gnome, and they've tried.",
+          "I built it narrow on purpose. Ha. Gnome last, but not this once.",
+        ],
       },
       {
         id: "cog",
         when: "bambooDead",
         gives: "Wheel Cog",
         lines: [
-          "You put the old one down. ...Good. He'd have hated what he was.",
+          "You put Old Bamboo down, then. Good. He'd have hated what he'd become.",
           "This came off the wheel when it stopped. His feet wore it bright.",
           "Take it. The new cage can have a new cog. Wheel first, cage second.",
         ],
@@ -1717,21 +1775,27 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "Fog's coming. Fog always comes off Greyfall.",
           "Quill, fisher. I fish under the bridge. The fish don't care what crosses over.",
-          "...I do, though.",
+          "I do, though. I've learned to look up between bites.",
         ],
       },
       {
         id: "fog",
-        lines: ["They came over in the fog. Dogs, on two legs, running with the grey ones. Laughing.", "I counted till I couldn't. Then I hid."],
+        lines: [
+          "They came over the bridge in the fog, dogs on two legs running with the grey ones, and laughing as they ran.",
+          "I counted till I couldn't. Then I hid.",
+        ],
       },
       {
         id: "bridge",
-        lines: ["The bridge runs to the Citadel's wall. Straight on, no gate.", "Just the dogs at this end. Mind the dogs."],
+        lines: [
+          "The Sky Bridge runs straight across to the Citadel's wall, and there's no gate on it anywhere.",
+          "There's only the dogs at this end to stop you. Mind the dogs.",
+        ],
       },
       {
         id: "guns",
         when: "bambooDead",
-        lines: ["Gnomes on the peak again. I can see them from here.", "Lighting the guns, by the look. Good. Light them."],
+        lines: ["There are gnomes on the peak again. I can see their caps from here.", "Lighting the guns, by the look. Good. Light them."],
       },
     ],
   },

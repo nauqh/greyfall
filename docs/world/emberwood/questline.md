@@ -18,7 +18,7 @@ Greets you: *"Softly. The pines listen."* Walked away from: *"Go softly, Tidewas
 
 - **first**
   1. Softly, softly. You'll wake the bears. ...Or they'll wake you.
-  2. I am Fenn. Of the Order, once. Of the pines, now. They ask less of me.
+  2. I am Fenn, of the Order once, and of these pines now. The pines ask less of me.
   3. The goblins burn everything but here. They will not come under these trees. I have never asked why.
 - **plank**
   1. The goblins drew their plank up off the tree walk. Stand on the bluff all you like, it will not come down.
@@ -47,8 +47,8 @@ Greets you: *"Oi! Off my seam."* Walked away from: *"Mind the edge."*
   2. Tam, prospector. Came up from the Mine Hills after better ore. The goblins shut the road behind me.
   3. The gnomes let me dig, so long as I don't dig near them. Fair trade, I say. Ha.
 - **bridge**
-  1. Listen, this might be of use. There's a bridge under the rock, east. Takes you round the goblins' camp, to the ford.
-  2. There's a fire at the ford. Last warm thing before the bull.
+  1. Listen, this might be of use. There's a bridge under the rock to the east, and it takes you round the goblins' camp to the ford.
+  2. There's a fire at the ford, the last warm thing you'll find before the bull.
 - **seams**
   1. Gold shows in the rock up here, if you've the eye. Warm in the hand, when it's good.
   2. Take what you can carry. I can't carry much. Never could.

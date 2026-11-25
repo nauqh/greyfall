@@ -11,13 +11,13 @@ Greets you: *"Not one step down. Not one."* Walked away from: *"Count's not done
 - **first**
   1. Not one step down. Not for you, not for nobody.
   2. Tally, me. I dug here. Forty seasons, coal and fire for pay.
-  3. The last season they never paid. I came back for it. Tally always comes back.
+  3. The last season, the Citadel never paid us. I came back up for it. Tally always comes back.
 - **wage** (heard to the end, sets **wageOwed**)
-  1. Three hundred and twelve loads. Coal for each. Fire for the long shifts.
-  2. It's written. The paymaster wrote everything. Upstairs, in the Counting House.
-  3. Get me the page and I'll know I'm not mad. ...Then I'll go. Tally promises.
+  1. Three hundred and twelve loads I hauled up that last season, a scuttle of coal owed for each, and fire for the long shifts.
+  2. It's all written down. The paymaster wrote everything in his books, up in the Counting House.
+  3. Get me that page and I'll know I'm not mad. Then I'll go home. Tally promises.
 - **lip**
-  1. Men say we dug it. We did. Men say why? Ask who paid.
+  1. Men say we goblins dug that hole. We did, every shovel of it. Men ask why. Go ask who paid.
   2. Not one step down. Count's not done.
 
 ### Gone, once **warlordDead**
@@ -44,46 +44,46 @@ Greets you: *"Close the door. The draught."* Walked away from: *"The door, pleas
   2. Well, this is unexpected. I don't often have visitors. I am Quill, Paymaster to the Citadel.
   3. I kept the accounts, and now the accounts keep me. Coal and fire, the goblins were paid in. I pay myself the same way.
 - **stove**
-  1. Forty years of ledgers, and a small stove.
-  2. I started with the oldest. Fair's fair. One must keep some kind of order.
+  1. I have forty years of ledgers and one small stove, and the arithmetic of that is not in my favour.
+  2. I started burning with the oldest year. Fair's fair. One must keep some kind of order.
 - **cold**
-  1. They come to the window sometimes. The taken. Drawn to the light.
+  1. The taken come to my window some nights, drawn to the stove's light.
   2. They don't knock. They used to queue for their pay just like that. How very orderly.
 - **ledger** (once, after meeting, when **wageOwed**; heard to the end, sets **ledgerSaved**)
-  1. A goblin wants his page? After all this? ...The last season. I kept it back.
+  1. A goblin wants his page, after all this? Then he wants the last season, and that one I kept back.
   2. It is the season of the Deep Cut. I could not bring myself to burn that one. Nor to read it.
-  3. Take it to him. He was owed. They were all owed. ...Every account has its consequence, it seems.
+  3. Take it to him. He was owed. They were all owed. Every account has its consequence, it seems.
 
 ### At Greyfall, the Counting House (65, 18), once **warlordDead**
 
 - **thaw**
-  1. Oh, you're back, then. The stove's out. I'm warm without it. First time in years.
+  1. Oh, you're back, then. The stove's gone out, and my ink hasn't frozen in the pot. First time in years.
   2. The last ledger went in on the coldest night. I'm sorry for that one.
-  3. All that's left of the Cut is what the goblins remember. And the hole. Hmph. Some accountant I was.
+  3. All that's left of the Cut's accounts is what the goblins remember, and the hole itself. Hmph. Some paymaster I was.
 
 ## Sister Hush
 
-Greets you: *"Hush."* Walked away from: *"Go warm somewhere else. Mayst thou thy stillness find."*
+Greets you: *"Hush."* Walked away from: *"Take thy noise elsewhere, child. Mayst thou thy stillness find."*
 
 ### Home: Greyfall, the Ruined Chapel (45, 22)
 
 - **first**
-  1. Hush. Thou'rt so loud. All that warmth, shouting.
-  2. I am Sister... Sister Hush. Of the Stilled. We pray the fever down.
-  3. The Hearth burned too long. The cold is the world getting well. Seest thou not?
+  1. Hush. Thou'rt so loud, child. All that colour on thee, shouting at me across the chapel.
+  2. I am Sister... Sister Hush, of the Stilled. We pray the world's fever down.
+  3. The Hearth hath burned too long, and the cold is the fever breaking. Seest thou not?
 - **name**
-  1. Thou didst ask my name, before. I gave thee one. I cannot think which.
-  2. 'Tis the second thing to go. The colour went first. It doth not hurt.
+  1. I told thee my name, when first we met. I cannot think now which name it was.
+  2. The name is the second thing to go. The colour went first. It doth not hurt.
 - **bell** (heard to the end, sets **hushStilled**, gives *Stilled Bell* the first time)
-  1. Take the bell. 'Tis for ringing the warm ones quiet. I'll not need it.
-  2. I go down to the Pits. 'Tis coldest there. I will kneel with the others.
+  1. Take this bell. 'Tis for ringing the loud ones quiet, and where I go I'll not need it.
+  2. I go down to the Pits, where 'tis coldest, to kneel with the others by the Crater.
   3. Hush now. ...Hush.
 
 ### At Greyfall, the Ruined Chapel (45, 22), once **warlordDead**
 
 - **fever** (heard to the end the first time, gives *Stilled Bell*)
   1. Thou'st killed him, and the fever cometh back. I can feel my hands again.
-  2. I was nearly still. Nearly. ...Was it all a lie, then?
+  2. I was nearly still. I had forgotten this chapel's name, and now it cometh back to me. Was it all a lie, then?
   3. Take the bell. I cannot ring it for a world that wisheth to be warm.
 
 ### Kneeling in Greyfall, the Pits (38, 65), once **hushStilled**
