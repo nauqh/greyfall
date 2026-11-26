@@ -203,8 +203,7 @@ view in agreement.
   lands' banner charges and the stat icons, from [game-icons.net](https://game-icons.net),
   [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Delapouite:
   `floating-platforms`, `hill-fort`, `underground-cave`, `old-lantern`,
-  `watchtower`, `well`, `double-fish`, `fish-eggs`, `lungs`,
-  `two-coins`. Caro Asercion:
+  `watchtower`, `well`, `double-fish`, `fish-eggs`, `lungs`. Caro Asercion:
   `heraldic-sun`. Lorc: `wave-crest`, `ringing-bell`, `turtle-shell`,
   `crown`, `bull-horns`, `cog`, `crowned-skull`, `spider-web`,
   `glass-heart`, `broadsword`, `small-fire`, `striking-arrows`,

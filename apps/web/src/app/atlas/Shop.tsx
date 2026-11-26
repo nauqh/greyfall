@@ -104,48 +104,17 @@ export function Shop({ menu, api }: { menu: MenuView; api: RefObject<AtlasApi | 
                 </ul>
               </section>
 
+              {/* Every good's telling in one cell, the picked one shown, so the cell is as tall as the tallest and the shop
+                  keeps still as the pick moves. */}
               <section className="shopTell" aria-live="polite">
-                {pick?.icon ? (
-                  <>
-                    <div className="shopTellHead">
-                      <span className="shopTellArt">
-                        <ItemIcon icon={pick.icon} size={56} />
-                      </span>
-                      <span className="shopTellName">{pick.label}</span>
-                    </div>
-                    {pick.about && <p className="shopAbout">{pick.about}</p>}
-                    <Heading icon={ICON.change}>Effect</Heading>
-                    <dl className="shopStats">
-                      {pick.change?.length
-                        ? pick.change.map((c) => (
-                            <div key={c.label}>
-                              <dt>{c.label}</dt>
-                              <dd>
-                                {c.now}
-                                {c.after !== undefined && c.after !== c.now && (
-                                  <>
-                                    <span className="shopArrow"> -&gt; </span>
-                                    <b>{c.after}</b>
-                                  </>
-                                )}
-                              </dd>
-                            </div>
-                          ))
-                        : pick.gives && (
-                            <div>
-                              <dt>Gives</dt>
-                              <dd>{pick.gives}</dd>
-                            </div>
-                          )}
-                      <div>
-                        <dt>Held</dt>
-                        <dd>{pick.sold ? "1 / 1" : "0 / 1"}</dd>
-                      </div>
-                    </dl>
-                  </>
-                ) : (
+                {goods.map((o) => (
+                  <div key={o.label} className={o.i === menu.pick ? "shown" : undefined} aria-hidden={o.i !== menu.pick}>
+                    <Tell o={o} />
+                  </div>
+                ))}
+                <div className={pick?.icon ? undefined : "shown"} aria-hidden={!!pick?.icon}>
                   <p className="shopAbout">Back to the talk.</p>
-                )}
+                </div>
               </section>
             </div>
 
@@ -218,4 +187,47 @@ function useBought(menu: MenuView): string | null {
     if (fresh) setBought(fresh);
   }, [menu]);
   return bought;
+}
+
+/** A good told out: its picture and name, its telling, what it changes, and whether it is held. */
+function Tell({ o }: { o: MenuView["options"][number] }) {
+  return (
+    <>
+      <div className="shopTellHead">
+        <span className="shopTellArt">
+          <ItemIcon icon={o.icon!} size={56} />
+        </span>
+        <span className="shopTellName">{o.label}</span>
+      </div>
+      {o.about && <p className="shopAbout">{o.about}</p>}
+      <Heading icon={ICON.change}>Effect</Heading>
+      <dl className="shopStats">
+        {o.change?.length
+          ? o.change.map((c) => (
+              <div key={c.label}>
+                <dt>{c.label}</dt>
+                <dd>
+                  {c.now}
+                  {c.after !== undefined && c.after !== c.now && (
+                    <>
+                      <span className="shopArrow"> -&gt; </span>
+                      <b>{c.after}</b>
+                    </>
+                  )}
+                </dd>
+              </div>
+            ))
+          : o.gives && (
+              <div>
+                <dt>Gives</dt>
+                <dd>{o.gives}</dd>
+              </div>
+            )}
+        <div>
+          <dt>Held</dt>
+          <dd>{o.sold ? "1 / 1" : "0 / 1"}</dd>
+        </div>
+      </dl>
+    </>
+  );
 }
