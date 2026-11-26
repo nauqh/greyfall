@@ -140,7 +140,7 @@
 }
 
 /* A stat's icon in a square frame, as Dark Souls frames each one beside its name: frame and symbol in the one
-   gold-brown the panel's headings are set in. */
+   gold-brown the panel's headings are set in, on a faint wash of it, a slot in the paper. */
 .statFrame {
 	flex: none;
 	display: inline-grid;
@@ -148,6 +148,7 @@
 	aspect-ratio: 1;
 	padding: 3px;
 	border: 2px solid currentColor;
+	background: color-mix(in srgb, currentColor 12%, transparent);
 	color: #8a5a10;
 }
 
