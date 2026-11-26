@@ -555,7 +555,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
           // A note on the ground: its words on the same paper it lies on.
           <button key={say.text} type="button" className="noteRead" onClick={() => api.current?.next()} aria-live="polite">
             <span className="noteHead">{say.name}</span>
-            <span className="noteText">{say.text}</span>
+            <span className="noteText">{noteKeys(say.text)}</span>
           </button>
         ) : say ? (
           // A talk, after the Souls games: one page at a time across the foot of the screen, unnamed; the name is over their head.
@@ -728,5 +728,30 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
         />
       )}
     </main>
+  );
+}
+
+/** A tutorial note's keys ("E: rest at fire", "Hold right click: guard") drawn as the field's key caps; only before its colon. */
+function noteKeys(text: string): React.ReactNode {
+  const i = text.indexOf(": ");
+  if (i < 0) return text;
+  const keys = text.slice(0, i).split(/\b(E|R|Space|Tab|Esc|[Ll]eft click|[Rr]ight click)\b/);
+  return (
+    <>
+      {keys.map((p, j) => {
+        if (!(j % 2)) return p;
+        if (!p.endsWith("click")) return <kbd key={j} className={p.length > 1 ? "keyCap wide" : "keyCap"}>{p}</kbd>;
+        const left = p[0]!.toLowerCase() === "l";
+        return (
+          <kbd key={j} className="keyCap" aria-label={p}>
+            <svg width="16" height="22" viewBox="0 0 16 22" aria-hidden>
+              <rect x="1" y="1" width="14" height="20" rx="7" fill="#fdfaf0" stroke="#1c2634" strokeWidth="2" />
+              <path d={left ? "M8 1A7 7 0 0 0 1 8H8Z" : "M8 1A7 7 0 0 1 15 8H8Z"} fill="#f2b33d" stroke="#1c2634" strokeWidth="2" strokeLinejoin="round" />
+            </svg>
+          </kbd>
+        );
+      })}
+      {text.slice(i)}
+    </>
   );
 }

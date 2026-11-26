@@ -1716,6 +1716,11 @@ textarea {
 	line-height: 1.45;
 }
 
+/* Centred on the words, so a mouse cap sits level with a letter cap. */
+.noteText .keyCap {
+	vertical-align: middle;
+}
+
 @keyframes noteRead {
 	from {
 		opacity: 0;
