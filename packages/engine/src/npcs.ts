@@ -1457,6 +1457,7 @@ export const NPCS: readonly Npc[] = [
           "You've your colour yet, and there's still someone home behind your eyes. Thank goodness. I'd begun to think the Grey had all of us but me.",
           "I am Hollis, a knight of Lanternport's watch, once. How I came into the water I don't ask. I'll not ask it of you, either.",
           "The rocks broke my leg when I washed in, and it set wrong. It will not carry me past this fire, so I keep the fire, and it keeps me.",
+          "Put your own hand to it before you go on. A fire you've lit knows you, and it's by that fire you'll wake when the cave has the better of you.",
           "You, though, you'll be going on, Tidewashed. The ones who wake here always do, and I've stopped trying to talk them out of it.",
           "Here, take my gaff. The fishers left it in the cave when they gave up their boat, and it's served me for a sword since mine went down.",
           "Only a loan, mind. Keep it in your sack and its hook sharp, and don't grow fond of it. The sea takes back what it lends.",
@@ -1475,7 +1476,7 @@ export const NPCS: readonly Npc[] = [
         lines: [
           "You'll have noticed the fires. Rest by one, and it knows you after, the way a dog knows the hand that fed it.",
           "Sit by any fire you've lit and you can go to any other you've lit before. How, I couldn't tell you. The Order will have a word for it.",
-          "In this cave there are only the two, mine and the one you woke by. Try it, if you like. I'll not have gone anywhere.",
+          "In this cave there's only the one, mine. Light the others as you find them, and come back to sit a while. I'll not have gone anywhere.",
         ],
       },
       {

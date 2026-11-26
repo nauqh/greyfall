@@ -17,8 +17,8 @@ the fishers have not had their boat back. And sometimes the water brings in
 someone it took, warm and breathing, with no name to give.
 
 - **Tidewake.** The sea cave itself: the grotto where the tide leaves the
-  wanderer by the first fire, the goblins' rooms, the castaway's camp and the
-  cleft of gold beside it, the flooded gallery, and the antechamber where the
+  wanderer by the boat, the goblins' rooms, the castaway's camp with the first
+  fire and the cleft of gold beside it, the flooded gallery, and the antechamber where the
   bones of the ones who went on before lie short of the Ring. The walls are
   scratched with notes by those who woke here before, each where its lesson
   is needed. Lanternport calls them survivors. Nobody in Lanternport has

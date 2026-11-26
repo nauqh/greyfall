@@ -731,11 +731,11 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   );
 }
 
-/** A tutorial note's keys ("E: rest at fire", "Hold right click: guard") drawn as the field's key caps; only before its colon. */
+/** A tutorial note's keys ("E: Rest At Fire", "Hold right click: Guard") drawn as the field's key caps; only before its colon. */
 function noteKeys(text: string): React.ReactNode {
   const i = text.indexOf(": ");
   if (i < 0) return text;
-  const keys = text.slice(0, i).split(/\b(E|R|Space|Tab|Esc|[Ll]eft click|[Rr]ight click)\b/);
+  const keys = text.slice(0, i).split(/\b(W|A|S|D|E|R|Space|Tab|Esc|[Ll]eft click|[Rr]ight click)\b/);
   return (
     <>
       {keys.map((p, j) => {

@@ -11,9 +11,10 @@ Who lives here, and every line they say. How talks, flags and moving on work is 
   2. You've your colour yet, and there's still someone home behind your eyes. Thank goodness. I'd begun to think the Grey had all of us but me.
   3. I am Hollis, a knight of Lanternport's watch, once. How I came into the water I don't ask. I'll not ask it of you, either.
   4. The rocks broke my leg when I washed in, and it set wrong. It will not carry me past this fire, so I keep the fire, and it keeps me.
-  5. You, though, you'll be going on, Tidewashed. The ones who wake here always do, and I've stopped trying to talk them out of it.
-  6. Here, take my gaff. The fishers left it in the cave when they gave up their boat, and it's served me for a sword since mine went down.
-  7. Only a loan, mind. Keep it in your sack and its hook sharp, and don't grow fond of it. The sea takes back what it lends.
+  5. Put your own hand to it before you go on. A fire you've lit knows you, and it's by that fire you'll wake when the cave has the better of you.
+  6. You, though, you'll be going on, Tidewashed. The ones who wake here always do, and I've stopped trying to talk them out of it.
+  7. Here, take my gaff. The fishers left it in the cave when they gave up their boat, and it's served me for a sword since mine went down.
+  8. Only a loan, mind. Keep it in your sack and its hook sharp, and don't grow fond of it. The sea takes back what it lends.
 - **sack**
   1. Still here? Then you've found my gaff in your sack, and the rest of what you carry with it.
   2. Turn that sack out now and then and look at what's in it. Every scrap you pick up says plainly what it's good for, if you'll read it.
@@ -21,7 +22,7 @@ Who lives here, and every line they say. How talks, flags and moving on work is 
 - **map**
   1. You'll have noticed the fires. Rest by one, and it knows you after, the way a dog knows the hand that fed it.
   2. Sit by any fire you've lit and you can go to any other you've lit before. How, I couldn't tell you. The Order will have a word for it.
-  3. In this cave there are only the two, mine and the one you woke by. Try it, if you like. I'll not have gone anywhere.
+  3. In this cave there's only the one, mine. Light the others as you find them, and come back to sit a while. I'll not have gone anywhere.
 - **way**
   1. If you mean to leave, the way is south, through the flooded cave where the sea comes in over the floor.
   2. There are goblins in there, and one sits across the water slinging stones. Keep moving and he misses. Stand still and he won't.

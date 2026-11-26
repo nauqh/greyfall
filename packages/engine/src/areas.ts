@@ -3786,8 +3786,8 @@ function landing(): AreaMap {
   const l = "landing";
 
   // Where you wake with the tide, after the Asylum and the Stranded Graveyard: a sea cave, the way out of it narrow and
-  // found, not shown. The grotto the boat drifted into, the first fire; a tunnel to the goblins' chamber, another up to
-  // the hall where they keep watch, then the castaway's camp, its fire and the cleft of gold beside it; south through
+  // found, not shown. The grotto the boat drifted into; a tunnel to the goblins' chamber, another up to the hall where
+  // they keep watch, then the castaway's camp, the first fire, and the cleft of gold beside it; south through
   // the flooded gallery to the antechamber, the Ring Gate at its end. Notes scratched on the rock by those who washed in
   // before, each where its lesson is needed; the sack and the map are Hollis's to teach.
   for (const [x, y, w, h] of [[26, 40, 16, 7], [12, 26, 12, 9], [14, 8, 16, 9], [38, 7, 13, 10], [55, 6, 6, 5], [36, 24, 18, 9], [60, 24, 10, 9]] as const) t.ground(l, x, y, w, h);
@@ -3801,9 +3801,8 @@ function landing(): AreaMap {
   // Torches in the rock along the way, so the way out is the lit one.
   for (const [c, r] of [[30, 36], [26, 29], [16, 21], [34, 10], [46, 20], [56, 26], [74, 26], [27, 41], [41, 41], [13, 27], [22, 34], [15, 9], [28, 9], [15, 15], [39, 15], [49, 15], [60, 10], [37, 31], [52, 25], [61, 31], [68, 31]] as const) prop("sconce", c, r);
 
-  // The grotto: the boat that drifted in, the first fire.
+  // The grotto: the boat that drifted in.
   prop("boat", 33, 46);
-  t.fires.push({ col: 38, row: 42, name: "Waking Shore" });
   // The goblins' chamber: one goblin, to learn the swing on.
   who("torch", 17, 30, { to: { col: 20, row: 29 } });
   for (const [c, r] of [[14, 33], [21, 28]] as const) prop("bones", c, r);
@@ -3811,7 +3810,7 @@ function landing(): AreaMap {
   who("torch", 19, 11, { to: { col: 24, row: 11 } });
   who("spear", 25, 13);
   prop("woodPile", 15, 9);
-  // The castaway's camp: Hollis's fire, the second, for the map's travel to be tried between the two.
+  // The castaway's camp: Hollis's fire, the first; whoever dies before lighting it wakes here all the same.
   t.fires.push({ col: 46, row: 10, name: "Castaway's Camp" });
   // The cleft off the camp: gold, for whoever looks.
   prop("goldStone", 58, 8);
@@ -3824,16 +3823,17 @@ function landing(): AreaMap {
   for (const [c, r] of [[61, 25], [68, 25]] as const) prop("skullSpike", c, r);
 
   const notes: Note[] = [
-    { at: { col: 34, row: 42 }, text: "E: rest at fire" },
-    { at: { col: 32, row: 37 }, text: "Hold Space: run" },
-    { at: { col: 27, row: 31 }, text: "Left click: attack" },
-    { at: { col: 18, row: 24 }, text: "Tap Space: dash" },
-    { at: { col: 18, row: 21 }, text: "Hold right click: guard" },
-    { at: { col: 33, row: 12 }, text: "R: heal" },
+    { at: { col: 36, row: 43 }, text: "W A S D: Move" },
+    { at: { col: 46, row: 12 }, text: "From ash, seek fire" },
+    { at: { col: 32, row: 37 }, text: "Hold Space: Run" },
+    { at: { col: 27, row: 31 }, text: "Left click: Attack" },
+    { at: { col: 18, row: 24 }, text: "Tap Space: Dash" },
+    { at: { col: 18, row: 21 }, text: "Hold right click: Guard" },
+    { at: { col: 33, row: 12 }, text: "R: Heal" },
     { at: { col: 63, row: 28 }, text: "Gold lost upon death. Reclaim it where you fell" },
   ];
   const exits: AreaExit[] = [{ to: "ring", name: "Ring Gate", kind: "open", at: { col: 78, row: 28 } }];
-  // Unnamed: no room's name shows walking in, and both fires go by the Landing's own.
+  // Unnamed: no room's name shows walking in, and the fire goes by the Landing's own.
   const districts: District[] = [
     { name: "", at: { col: 34, row: 42 }, palette: [5], dress: "saltreach", decor: 1 },
     { name: "", at: { col: 17, row: 30 }, palette: [5], dress: "undercroft", decor: 1 },
@@ -3842,8 +3842,8 @@ function landing(): AreaMap {
     { name: "", at: { col: 44, row: 28 }, palette: [5], dress: "fen", decor: 0.8 },
     { name: "", at: { col: 64, row: 28 }, palette: [5], dress: "barrowmoor", decor: 0.6 },
   ];
-  // Ashore beside the first fire, where a new game wakes too.
-  const entry = { col: 37, row: 42 };
+  // Ashore beside the boat, where a new game wakes.
+  const entry = { col: 35, row: 44 };
   const tier = stone(t.finish({}, [entry]));
   return { ...tier, area: "landing", entry, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [], notes };
 }
