@@ -243,6 +243,8 @@ export interface AtlasHooks {
   onDistrict?: (name: string) => void;
   /** A word across the screen in gold, on the area name's banner: a bonfire lit, a boss fallen, a thing gained. */
   onHerald?: (text: string) => void;
+  /** A boss's first meeting playing out: the screen's black bars in, or out. */
+  onCinema?: (on: boolean) => void;
   /** Dev mode toggled, or the dev state changed. */
   onDev?: (s: DevState) => void;
 }
@@ -775,6 +777,8 @@ const GOLD = "greyfall.gold";
 /** Bosses slain, which never come back, and the keys they drop, by the boss's kind. */
 const SLAIN = "greyfall.slain";
 const KEYS = "greyfall.keys";
+/** Bosses met, whose first-meeting scene has played; it plays once, as in the Souls games. */
+const MET = "greyfall.met";
 const BOSS_KEY: Partial<Record<string, string>> = { minotaur: "Ember Key", barrowKing: "Horned Key", weaver: "Silk Key", sunSentinel: "Sun Key" };
 /** What a boss's fall proves, raised from SLAIN on each entry so old saves have it too. */
 const BOSS_FLAG: Partial<Record<string, WorldFlag>> = { minotaur: "trollKey", barrowKing: "hornedKey", warlord: "warlordDead", shellBelow: "shellDead", oldBamboo: "bambooDead" };
@@ -994,6 +998,10 @@ export class AtlasScene extends Phaser.Scene {
   private trollStepped = 0;
   /** Stops the boss music, while a boss's bar is up. */
   private bossTune: (() => void) | null = null;
+  /** A boss's first meeting playing out: the camera is the scene's, and no boss bar shows. */
+  private cinema = false;
+  /** MET, read once an area is entered. */
+  private met = new Set<string>();
   private talk: { folk: Folk; lines: readonly string[]; key: string; sets?: WorldFlag; gives?: ItemName; throws?: ItemName; lights?: boolean; page: number } | null = null;
   /** The flags as the area was entered: who stands where, and what they say, holds until the captain leaves and comes back. */
   private seen = new Set<WorldFlag>();
@@ -1084,11 +1092,14 @@ export class AtlasScene extends Phaser.Scene {
     this.crackle = null;
     this.bossTune?.();
     this.bossTune = null;
+    this.cinema = false;
+    this.hooks.onCinema?.(false);
     this.nearName = null;
     this.menu = null;
     this.close = null;
     this.sackCover = 0;
     this.heard = remembered(HEARD);
+    this.met = remembered(MET);
     this.flags = remembered(FLAGS);
     this.cls = heroClass();
     renameGoods();
@@ -2817,6 +2828,8 @@ export class AtlasScene extends Phaser.Scene {
         else this.feed(f, f.feeding.rate * (dt / 1000), time);
       }
       if (f.asleep) return;
+      // A boss not yet met waits for its scene: no wind-up drawn before the camera has shown it.
+      if (f.kind !== "troll" && !this.met.has(f.kind) && this.isBoss(f)) return;
       const kit = BOSS_KITS[f.kind];
       if (kit?.rage && !f.turned && !f.windup && this.isBoss(f) && this.raging(f)) return this.turn(f, time);
       if (time < f.busy) return;
@@ -2977,6 +2990,71 @@ export class AtlasScene extends Phaser.Scene {
         if (f.dead || !hero || hero.dead || !kit.rage?.opener) return;
         this.bossWindUp(f, hero, kit.rage.opener, this.time.now);
       });
+    });
+  }
+
+  /** A boss met for the first time, after the Souls games: the bars come in and the camera leaves the captain for it,
+   *  draws in while it rises to the fight in its colour, then comes back and the fight
+   *  opens. A sleeping one is only looked on. Nothing strikes or is hurt meanwhile. */
+  private meet(f: Foe): void {
+    remember(MET, this.met.add(f.kind));
+    const hero = this.hero!;
+    const [pan, hold] = [1200, 2600];
+    const end = this.time.now + 2 * pan + hold;
+    this.cinema = true;
+    this.gone = true;
+    this.shieldUp = false;
+    hero.way = [];
+    this.play(hero.s, hero.idle);
+    for (const o of this.foes) Object.assign(o, { windup: null, way: [], busy: Math.max(o.busy, end) });
+    f.turning = Math.max(f.turning ?? 0, end);
+    this.hooks.onCinema?.(true);
+    const cam = this.active;
+    const zoom = cam.zoom;
+    cam.stopFollow();
+    cam.pan(f.s.x, f.s.y - f.lift * 0.4, pan, "Sine.easeInOut", true);
+    cam.zoomTo(zoom * 1.3, pan + hold, "Sine.easeInOut", true);
+    const colour = TURN[f.kind]?.colour ?? 0xc8b898;
+    this.time.delayedCall(pan, () => {
+      if (f.dead || f.asleep) return;
+      // It turns on the captain and shows itself: a blow at the air, the ground shaking, a ring of its colour.
+      if (f.s.x !== hero.s.x) f.s.setFlipX(hero.s.x < f.s.x);
+      if (f.attack && this.anims.exists(`${f.attack}_once`)) {
+        f.s.play(`${f.attack}_once`);
+        f.s.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => !f.dead && this.play(f.s, f.idle));
+      }
+      play(TROLL_LAND, 0.5);
+      cam.shake(600, 0.008);
+      this.quake(f.at);
+      const [r, g, b] = [(colour >> 16) & 255, (colour >> 8) & 255, colour & 255];
+      cam.flash(250, r, g, b);
+      for (const delay of [0, 350]) {
+        this.time.delayedCall(delay, () => {
+          const wave = this.add.ellipse(f.s.x, f.s.y, 2 * CELL, CELL).setStrokeStyle(8, colour, 0.9).setDepth(DEPTH.fx);
+          this.tweens.add({ targets: wave, scale: 8, alpha: 0, duration: 1000, ease: "Quad.easeOut", onComplete: () => wave.destroy() });
+        });
+      }
+      // Its colour rising off it through the hold.
+      this.time.addEvent({
+        delay: 90,
+        repeat: Math.floor(hold / 90) - 1,
+        callback: () => {
+          if (f.dead) return;
+          const p = this.add.circle(f.s.x + Phaser.Math.Between(-50, 50), f.s.y - Phaser.Math.Between(0, f.lift), Phaser.Math.Between(2, 4), colour).setDepth(DEPTH.fx).setAlpha(0.8);
+          this.tweens.add({ targets: p, y: p.y - Phaser.Math.Between(50, 100), alpha: 0, duration: 1100, ease: "Sine.easeOut", onComplete: () => p.destroy() });
+        },
+      });
+    });
+    this.time.delayedCall(pan + hold, () => {
+      this.hooks.onCinema?.(false);
+      cam.pan(hero.s.x, hero.s.y, pan, "Sine.easeInOut", true);
+      cam.zoomTo(zoom, pan, "Sine.easeInOut", true);
+    });
+    this.time.delayedCall(2 * pan + hold, () => {
+      this.cinema = false;
+      if (!this.hero || this.free) return;
+      cam.startFollow(this.hero.s, true, 0.15, 0.15);
+      this.gone = false;
     });
   }
 
@@ -4793,10 +4871,13 @@ export class AtlasScene extends Phaser.Scene {
         const inRoom = !!arena && this.mist.length === 0 && districtOf(this.local!, hero.at.col, hero.at.row)?.name === this.roomOf(arena);
         const seen = (f: Foe): boolean => this.active.worldView.contains(f.s.x, f.s.y);
         // No fight under the free camera, and its whole map has every boss in view.
-        const boss = hero.dead || this.free
+        const found = hero.dead || this.free
           ? undefined
           : this.foes.find((f) => this.isBoss(f) && !f.dead && (f.kind === arena?.boss ? inRoom && seen(f) : tileDistance(f.at, hero.at) <= f.stats.leash));
-        const name = boss && this.local?.bosses.slice().sort((a, b) => tileDistance(a, boss.home) - tileDistance(b, boss.home))[0]?.name;
+        const name = found && this.local?.bosses.slice().sort((a, b) => tileDistance(a, found.home) - tileDistance(b, found.home))[0]?.name;
+        // The troll is the Landing's lesson, met with no ceremony.
+        if (found && !this.cinema && found.kind !== "troll" && !this.met.has(found.kind)) this.meet(found);
+        const boss = this.cinema ? undefined : found;
         if (!boss !== !this.bossTune) {
           this.bossTune?.();
           this.bossTune = boss ? loop(BOSS_MUSIC, 0.8, 2500) : null;

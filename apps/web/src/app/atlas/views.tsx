@@ -74,6 +74,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   // The name up out of the dark: the area's as you arrive, a quarter's as you walk into it.
   // `gold`: the scene's own word (a bonfire lit, a boss fallen, a thing gained), not a place.
   const [reveal, setReveal] = useState<{ text: string; gold?: boolean } | null>(null);
+  const [cinema, setCinema] = useState(false);
   useEffect(() => {
     if (reveal && !reveal.gold) play(ARRIVE, 0.7);
   }, [reveal]);
@@ -224,6 +225,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     },
     onDistrict: (d) => !now.current.travelling && setReveal({ text: d }),
     onHerald: (text) => !now.current.travelling && setReveal({ text, gold: true }),
+    onCinema: setCinema,
     opened: () => {
       if (now.current.travelling) setTravel((t) => (t ? { ...t, phase: "uncover" } : t));
       else if (!now.current.prologue) announce();
@@ -241,7 +243,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   // dev panel's new hero asks for creation after, which the dev route otherwise skips.
   const newGame = (create: boolean): void => {
     try {
-      for (const k of ["band", "bought", "class", "flags", "gold", "heard", "hero", "keys", "kindled", "levels", "lost", "loot", "prologue", "rest", "sackOpened", "slain", "taken", "thrown"]) localStorage.removeItem(`greyfall.${k}`);
+      for (const k of ["band", "bought", "class", "flags", "gold", "heard", "hero", "keys", "kindled", "levels", "lost", "loot", "met", "prologue", "rest", "sackOpened", "slain", "taken", "thrown"]) localStorage.removeItem(`greyfall.${k}`);
     } catch {}
     window.location.assign(`${base}/landing?rest${create ? "&create" : ""}`);
   };
@@ -377,6 +379,8 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
           return import("../../game/AtlasScene").then(({ startAtlas }) => startAtlas(el, hooks));
         }}
       >
+        {/* A boss met: black bars in from the top and bottom, as in a film. */}
+        <div className={`cinema${cinema ? " on" : ""}`} aria-hidden="true" />
         {reveal && (
           // After the Souls games: up out of the dark, held, gone.
           // The scene's banner on lighting a bonfire: held longer, in gold.

@@ -1117,6 +1117,40 @@ textarea {
 	pointer-events: none;
 }
 
+/* A boss met for the first time: black bars close in from the top and bottom, and draw back as the fight opens. */
+.cinema {
+	position: absolute;
+	inset: 0;
+	z-index: 3;
+	pointer-events: none;
+}
+
+.cinema::before,
+.cinema::after {
+	content: "";
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: 12%;
+	background: #000;
+	transition: transform 900ms ease-in-out;
+}
+
+.cinema::before {
+	top: 0;
+	transform: translateY(-100%);
+}
+
+.cinema::after {
+	bottom: 0;
+	transform: translateY(100%);
+}
+
+.cinema.on::before,
+.cinema.on::after {
+	transform: none;
+}
+
 /* An area's name as you arrive, once the clouds have parted: up, held, gone. */
 .areaReveal {
 	position: absolute;
