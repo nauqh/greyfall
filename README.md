@@ -209,6 +209,10 @@ view in agreement.
   `crown`, `bull-horns`, `cog`, `crowned-skull`, `spider-web`,
   `glass-heart`, `broadsword`, `small-fire`, `striking-arrows`,
   `leather-boot`.
+- Matt Firth (shikashipx), for the goods' pictures, from
+  [Shikashi's Fantasy Icons Pack](https://shikashipx.itch.io/shikashis-fantasy-icons-pack),
+  [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), many of
+  them after designs on [game-icons.net](https://game-icons.net).
 - [1500 Archers on a 28.8](https://www.gamedeveloper.com/programming/1500-archers-on-a-28-8-network-programming-in-age-of-empires-and-beyond)
   and [Fix Your Timestep!](https://gafferongames.com/post/fix_your_timestep/),
   the models the engine is built on.

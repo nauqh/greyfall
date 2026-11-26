@@ -90,6 +90,7 @@ import * as Phaser from "phaser";
 import { BUILDINGS, packUrl } from "./art";
 import { DPR, startGame } from "./boot";
 import { CELL, buildMap, loadGroundColours, trailTiles } from "./islandMap";
+import { ITEM_ICON } from "./itemIcons";
 import { STRAT_COLS, STRAT_ROWS, at, climbsStair, findPath, isForest, isLand, isSlope, isWalkable, level, stairLean } from "./stratMap";
 import { DEPTH, addDecor, cloudCover, loadTerrain, prepareTerrain, standing } from "./terrain";
 import { HAND } from "./ui";
@@ -252,11 +253,10 @@ export interface Say {
   more: boolean;
 }
 
-/** A picture in a menu: a pack image, or one cell of a sheet, multiplied by a tint. */
+/** A good's picture in a menu: the top left of its 32 px cell in the icon sheet. */
 export interface ShopIcon {
-  url: string;
-  tint?: string;
-  crop?: { x: number; y: number; w: number; h: number; sheetW: number; sheetH: number };
+  x: number;
+  y: number;
 }
 
 /** One of the captain's numbers in words: `after`, what a good would make it. */
@@ -700,37 +700,6 @@ const REFUSE: Record<string, { poor: string; full: string }> = {
 /** The goods bought, by name. */
 const BOUGHT = "greyfall.bought";
 const SWORDS = packUrl("UI Elements/UI Elements/Swords/Swords.png");
-/** Each good's picture in a merchant's menu. Swords.png is one sword a 128-tall row in five colours, the hilt its
- *  first 128 across; blue is the captain's own. A gold stone sits small in the middle of its 128. */
-const ITEM_ICON: Record<ItemName, ShopIcon> = {
-  "Smoked Haunch": { url: packUrl("UI Elements/UI Elements/Icons/Icon_04.png") },
-  "Ember Shard": { url: packUrl("Terrain/Resources/Gold/Gold Stones/Gold Stone 1.png"), tint: "#ff7a3c", crop: { x: 44, y: 44, w: 40, h: 40, sheetW: 128, sheetH: 128 } },
-  "Brenna's Edge": { url: SWORDS, crop: { x: 0, y: 128, w: 128, h: 128, sheetW: 448, sheetH: 640 } },
-  "Keener Edge": { url: SWORDS, crop: { x: 0, y: 256, w: 128, h: 128, sheetW: 448, sheetH: 640 } },
-  "Grey-Iron Edge": { url: SWORDS, crop: { x: 0, y: 384, w: 128, h: 128, sheetW: 448, sheetH: 640 } },
-  "Pine Resin": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#e0a040" },
-  "Banded Shield": { url: packUrl("UI Elements/UI Elements/Icons/Icon_06.png") },
-  "Kindled Shard": { url: packUrl("Terrain/Resources/Gold/Gold Stones/Gold Stone 2.png"), tint: "#ff4a2a", crop: { x: 45, y: 41, w: 40, h: 40, sheetW: 128, sheetH: 128 } },
-  "Prospector's Purse": { url: packUrl("UI Elements/UI Elements/Icons/Icon_03.png") },
-  "The Forty's Banner": { url: packUrl("UI Elements/UI Elements/Icons/Icon_06.png"), tint: "#7aa0e0" },
-  "Ansel's Edge": { url: SWORDS, crop: { x: 128, y: 128, w: 128, h: 128, sheetW: 448, sheetH: 640 } },
-  "The Thrown Coin": { url: packUrl("UI Elements/UI Elements/Icons/Icon_03.png"), tint: "#f4cf6b" },
-  "Smuggler's Coat": { url: packUrl("UI Elements/UI Elements/Icons/Icon_06.png"), tint: "#8a7a5a" },
-  "Sister's Candle": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#fff0c0" },
-  "Hollow Water": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#8fd8f0" },
-  "Mum's Bread": { url: packUrl("UI Elements/UI Elements/Icons/Icon_04.png"), tint: "#c8a070" },
-  "Digger's Torch": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#ff9a3c" },
-  "Stilled Bell": { url: packUrl("UI Elements/UI Elements/Icons/Icon_05.png"), tint: "#b8a8d8" },
-  "Salt-Glass Lantern": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#d8f0f0" },
-  "Hollis's Gaff": { url: SWORDS, crop: { x: 0, y: 0, w: 128, h: 128, sheetW: 448, sheetH: 640 } },
-  "Drowned Locket": { url: packUrl("UI Elements/UI Elements/Icons/Icon_06.png"), tint: "#9fc8d8" },
-  "Notched Whetstone": { url: packUrl("UI Elements/UI Elements/Icons/Icon_05.png") },
-  "Tinder Tin": { url: packUrl("UI Elements/UI Elements/Icons/Icon_02.png"), tint: "#a8e0d0" },
-  "Gull-Picked Purse": { url: packUrl("UI Elements/UI Elements/Icons/Icon_03.png"), tint: "#d8b060" },
-  "Gnome Powder": { url: packUrl("UI Elements/UI Elements/Icons/Icon_05.png"), tint: "#e8d080" },
-  "Tinker's Buckler": { url: packUrl("UI Elements/UI Elements/Icons/Icon_06.png"), tint: "#d8a050" },
-  "Wheel Cog": { url: packUrl("Terrain/Resources/Gold/Gold Stones/Gold Stone 3.png"), tint: "#c8b090", crop: { x: 44, y: 44, w: 40, h: 40, sheetW: 128, sheetH: 128 } },
-};
 function sackItem(item: ItemName): SackItem {
   return { label: item, icon: ITEM_ICON[item], gives: gives(item), about: ITEMS[item].about };
 }

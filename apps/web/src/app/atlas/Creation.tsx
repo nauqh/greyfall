@@ -118,9 +118,8 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
   // The focused row of this step's list, shown on the rock and in the numbers; the chosen one until a row has focus.
   const [at, setAt] = useState<number | null>(null);
   useTick(at);
-  // Read at each render, so a scene still loading when this opened has its gifts by the time they are looked at. Shown in
-  // the pack's own colours: the tints that tell goods apart in the game only muddy them here.
-  const gifts = giftsNow().map((g) => ({ ...g, icon: { ...g.icon, tint: undefined } }));
+  // Read at each render, so a scene still loading when this opened has its gifts by the time they are looked at.
+  const gifts = giftsNow();
 
   const showCls = (step === 0 && at !== null && CLASS_ROWS[at]?.cls) || cls || "warrior";
   const showGift = (step === 1 && at !== null && gifts[at]?.label) || gift;
