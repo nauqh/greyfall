@@ -2087,7 +2087,7 @@ export class AtlasScene extends Phaser.Scene {
     if (fire) return { fire };
     const note = this.notes.find((n) => tileDistance(n.at, at) <= 1);
     if (note) return { note };
-    const loot = this.piles.find((p) => p.loot && tileDistance(p.at, at) <= 1);
+    const loot = this.piles.find((p) => (p.loot || p.item) && tileDistance(p.at, at) <= 1);
     if (loot) return { loot };
     const exit = this.local?.exits.find((e) => tileDistance(e.at, at) <= 1);
     if (exit) return { exit };
@@ -2120,10 +2120,16 @@ export class AtlasScene extends Phaser.Scene {
     this.piles.push({ at: { ...at }, gold: 0, loot, s });
   }
 
-  /** E by a trade good: into the sack. */
+  /** E by a trade good or a good thrown down: into the sack. */
   private pickUp(p: Pile): void {
-    const loot = p.loot!;
     this.piles.splice(this.piles.indexOf(p), 1);
+    if (p.item) {
+      store(THROWN, stored<Thrown[]>(THROWN, []).filter((t) => t.item !== p.item));
+      p.s.destroy();
+      play(LEATHER);
+      return this.gain(p.item);
+    }
+    const loot = p.loot!;
     const h = held();
     store(HELD, { ...h, [loot]: (h[loot] ?? 0) + 1 });
     play(LEATHER);
@@ -2185,7 +2191,7 @@ export class AtlasScene extends Phaser.Scene {
     const hero = this.hero!;
     if (hero.dead || this.gone) return;
     // A key is walked onto; the rest is swept up from a tile off.
-    for (const p of this.piles.filter((p) => !p.loot && tileDistance(p.at, hero.at) <= (p.key ? 0 : 1))) {
+    for (const p of this.piles.filter((p) => !p.loot && !p.item && tileDistance(p.at, hero.at) <= (p.key ? 0 : 1))) {
       this.piles.splice(this.piles.indexOf(p), 1);
       if (p.key) {
         remember(KEYS, remembered(KEYS).add(p.key));
@@ -2193,13 +2199,6 @@ export class AtlasScene extends Phaser.Scene {
         p.s.destroy();
         play(LATCH);
         this.herald(`${BOSS_KEY[p.key]} gained`);
-        continue;
-      }
-      if (p.item) {
-        store(THROWN, stored<Thrown[]>(THROWN, []).filter((t) => t.item !== p.item));
-        p.s.destroy();
-        play(LEATHER);
-        this.gain(p.item);
         continue;
       }
       this.setGold(this.gold + p.gold);
