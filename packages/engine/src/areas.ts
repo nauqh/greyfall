@@ -3801,8 +3801,9 @@ function landing(): AreaMap {
   // Torches in the rock along the way, so the way out is the lit one.
   for (const [c, r] of [[30, 36], [26, 29], [16, 21], [34, 10], [46, 20], [56, 26], [74, 26], [27, 41], [41, 41], [13, 27], [22, 34], [15, 9], [28, 9], [15, 15], [39, 15], [49, 15], [60, 10], [37, 31], [52, 25], [61, 31], [68, 31]] as const) prop("sconce", c, r);
 
-  // The grotto: the boat that drifted in.
+  // The grotto: the boat that drifted in, and a fire left burning by whoever washed in before.
   prop("boat", 33, 46);
+  prop("flame", 32, 44);
   // The goblins' chamber: one goblin, to learn the swing on.
   who("torch", 17, 30, { to: { col: 20, row: 29 } });
   for (const [c, r] of [[14, 33], [21, 28]] as const) prop("bones", c, r);

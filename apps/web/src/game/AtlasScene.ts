@@ -3770,6 +3770,15 @@ export class AtlasScene extends Phaser.Scene {
       this.tweens.add({ targets: glow, alpha: 0.6, duration: 700 + Math.random() * 500, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
       return;
     }
+    if (p.art === "flame") {
+      // A fire on bare ground, no stones round it and no rest by it: only its light.
+      const flame = this.add.sprite(x, y, "fire").setOrigin(0.5, FIRE.anchor).setScale(0.32).setDepth(standing(y));
+      this.loop(flame, "fire");
+      this.track(flame);
+      const glow = this.add.image(x, y - 12, "glow").setBlendMode(Phaser.BlendModes.ADD).setTint(0xffb870).setAlpha(0.45).setScale(0.8).setDepth(DEPTH.clouds - 2);
+      this.tweens.add({ targets: glow, alpha: 0.6, duration: 700 + Math.random() * 500, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+      return;
+    }
     // On an area map a gold stone is gold to pick up, once: taken, it is gone for good.
     const stone = p.art === "goldStone" && this.local ? `${this.local.area}:${p.col},${p.row}` : undefined;
     if (stone && stored<string[]>(TAKEN, []).includes(stone)) return;
@@ -4308,6 +4317,7 @@ export class AtlasScene extends Phaser.Scene {
           ...this.local.exits.map((e) => ({ c: e.at.col, r: e.at.row, reach: 7 })),
           ...tier.props.filter((p) => p.art === "goldStone").map((p) => ({ c: p.col, r: p.row, reach: under.gold })),
           ...tier.props.filter((p) => p.art === "sconce").map((p) => ({ c: p.col, r: p.row, reach: 5 })),
+          ...tier.props.filter((p) => p.art === "flame").map((p) => ({ c: p.col, r: p.row, reach: 7 })),
         ]
       : null;
     const lit = (c: number, r: number): number => Math.max(0, ...lights!.map((l) => 1 - Math.hypot(c - l.c, r - l.r) / l.reach));
