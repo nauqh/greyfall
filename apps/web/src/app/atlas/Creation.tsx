@@ -257,7 +257,9 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
           <ul className="crRows">
             {STATS.map((s) => (
               <li key={s.label}>
-                <StatIcon stat={s.icon} size={22} />
+                <span className="statFrame">
+                  <StatIcon stat={s.icon} size={22} mono />
+                </span>
                 <span>{s.label}</span>
                 <b>{s.of(now, showCls)}</b>
               </li>

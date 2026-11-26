@@ -38,7 +38,6 @@ inside the area map.
 | 1 | Band: Follow (stay close, defend the hero) |
 | 2 | Band: Attack the monster you last struck |
 | 3 | Band: Hold here (guard the spot) |
-| M | The map, to look at; travel is from a bonfire |
 | Tab | The sack: your numbers and the goods kept, beside play without pausing it. Told once, with the first good. A touch screen gets a Sack button instead |
 
 ### The hero
@@ -106,8 +105,9 @@ come ashore alone.
   and respawns every enemy in the area. Bosses and opened shortcuts stay as
   they are. Each area has 1 to 4 bonfires, standing cold on the maps until
   the hero lights one with E, which only kindles it: the next E rests.
-  After a rest you sit by the fire, as in Dark Souls 3: Travel opens the
-  map to any lit bonfire, and Leave stands you up.
+  After a rest you sit by the fire, as in Dark Souls: your numbers over
+  the fire's list, where Travel opens the bonfires by tier and land, Level
+  up holds points to raise until you accept, and Leave stands you up.
 - **Death.** You wake at the last bonfire you rested at. The exception is a
   boss who guards a way out, the Cinder Troll in the Ring: fall to him and you wake
   past him. Your carried gold stays where you fell, marked on the map. Reach
@@ -247,7 +247,7 @@ Defaults in brackets, used until decided.
 ## Summary
 
 Aurum as one world. `/atlas` starts the game on Tidewake;
-the whole world is the travel map at `/atlas/map`, opened from a bonfire.
+the whole world is the travel map, set aside for now: the dev panel's Open map shows it.
 It stands in three tiers on one grid:
 
 - **The Sky:** Sunhold and the Cloudstair overhead.
@@ -348,7 +348,7 @@ Every area has its own large map (`areas.ts`, 112 x 72 tiles), built with
 the same `tierBuilder`, at `/atlas/<area>`, and the camera stays inside
 that map. An exit at its edge, or a lift or well inside it, takes you to
 the next area's map. Resting at a bonfire sits you by it, with
-Travel and Leave: Travel opens the map, and a click on a lit bonfire
+Travel, Level up and Leave: Travel opens every bonfire by tier and land, and a lit one
 travels there.
 
 Crossing between areas never leaves the page. The scene rebuilds itself as

@@ -172,7 +172,7 @@
 	align-items: center;
 }
 
-.sackMain img {
+.sackMain .statFrame {
 	grid-row: span 2;
 }
 
@@ -182,7 +182,7 @@
 	line-height: 1.1;
 }
 
-.sackMain span {
+.sackMain li > span:not(.statFrame) {
 	font-size: 12px;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;

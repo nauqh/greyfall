@@ -30,7 +30,7 @@ for Discord as an Activity that friends launch from a voice call.
 
 - **One world.** Aurum in three tiers: the sky, the surface, the
   underneath. Every area its own map, joined by gates and lifts. `/atlas`
-  starts at Tidewake; the world map opens from a bonfire.
+  starts at Tidewake; a bonfire travels to any other lit one.
 - **Souls structure.** Bonfires, shortcuts, keys, bosses, and gold you drop
   when you die. A band of up to three: Lancer, Archer, Monk.
 - **The Grey.** A cold, not an army: it takes colour, then names, then will.

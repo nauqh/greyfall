@@ -1,17 +1,16 @@
 "use client";
 
-// The map, opened from a bonfire over the area it was opened in: Aurum in three tiers and every bonfire
-// on it, lit or not, listed by land. It opens on the whole tier; A/D turn the tier, W/S step through its bonfires and
-// fly to each one's land, E travels to a lit one, Esc goes back to the fire.
+// Travel from a bonfire: every bonfire in Aurum, lit or not, by tier and land (TravelPane), shown alone at the fire. The
+// map of Aurum beside it (TravelMap) is set aside for now, opened from the dev panel only.
 
-import { AREAS, MAPPED_AREAS, TIERS, TIER_INFO, areaMap, districtOf, type AreaId, type TierId } from "@greyfall/engine";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { AREAS, MAPPED_AREAS, TIERS, TIER_INFO, areaMap, fireName, type AreaId, type TierId } from "@greyfall/engine";
+import { useEffect, useMemo, useRef, useState, type Ref } from "react";
 
 import type { AtlasApi, AtlasHooks } from "../../game/AtlasScene";
 import { GameCanvas } from "../../game/GameCanvas";
 import { useTick } from "../sound";
 import { BANNERS } from "./banners";
-import { KeyHints } from "./SidePanel";
+import { KeyHints, useCursor } from "./SidePanel";
 
 export type Fire = { area: AreaId; col: number; row: number; name: string; lit: boolean };
 
@@ -41,23 +40,24 @@ function LandBanner({ land }: { land: keyof typeof BANNERS }) {
   );
 }
 
-/** Every bonfire in the Reach, in the atlas's order of areas (Lanternport first), lit if rested at in this browser (or
- *  all of them in dev mode); a blocked store lights none. */
-function checkpoints(dev: boolean): Fire[] {
+/** Every bonfire in the Reach, in the atlas's order of areas (Lanternport and Tidewake first), lit if rested at in this
+ *  browser (or all of them in dev mode); a blocked store lights none. */
+export function checkpoints(dev: boolean): Fire[] {
   let lit = new Set<string>();
   try {
     lit = new Set(JSON.parse(localStorage.getItem(KINDLED) ?? "[]") as string[]);
   } catch {}
-  // Lanternport, the town, heads the surface.
-  const lands = AREAS.filter((a) => MAPPED_AREAS.includes(a.id)).sort((a, b) => +(b.id === "harbour") - +(a.id === "harbour"));
+  // Lanternport, the town, heads the surface, and Tidewake, where the hero wakes, the Underneath.
+  const head = (id: AreaId) => +(id === "harbour" || id === "landing");
+  const lands = AREAS.filter((a) => MAPPED_AREAS.includes(a.id)).sort((a, b) => head(b.id) - head(a.id));
   return lands.flatMap((a) => {
     const m = areaMap(a.id);
-    return m.fires.map((f) => ({ area: a.id, col: f.col, row: f.row, name: districtOf(m, f.col, f.row)?.name || a.name, lit: dev || lit.has(`${a.id}:${f.col},${f.row}`) }));
+    return m.fires.map((f) => ({ area: a.id, col: f.col, row: f.row, name: fireName(m, f), lit: dev || lit.has(`${a.id}:${f.col},${f.row}`) }));
   });
 }
 
 /** The bonfire last rested at, the one the map is opened from. */
-function restedAt(): { area: AreaId; col: number; row: number } | null {
+export function restedAt(): { area: AreaId; col: number; row: number } | null {
   try {
     return JSON.parse(localStorage.getItem(REST) ?? "null") as { area: AreaId; col: number; row: number } | null;
   } catch {
@@ -65,57 +65,67 @@ function restedAt(): { area: AreaId; col: number; row: number } | null {
   }
 }
 
-/** Opened at a bonfire in `from`, or anywhere with M to look (`travel` false): E on a lit bonfire travels to it;
- *  `onBack` closes the map. `dev` lights every bonfire and travels even when looking. */
-export function TravelMap({ from, travel: atFire, dev = false, onTravel, onBack }: { from: AreaId; travel: boolean; dev?: boolean; onTravel: (f: Fire) => void; onBack: () => void }) {
-  const canTravel = atFire || dev;
+/** Travelling to `f` rests there: the scene wakes the hero at it. */
+export function restAt(f: Fire): void {
+  try {
+    localStorage.setItem(REST, JSON.stringify({ area: f.area, col: f.col, row: f.row }));
+  } catch {}
+}
+
+/** The bonfires pane, after Elden Ring's sites of grace: the tiers as tabs over every bonfire on the tier, by land, opening on
+ *  `from`'s tier with the bonfire sat at picked. A/D turn the tier, W/S step through its bonfires, E travels to a lit one,
+ *  Q or Esc is `onBack`. `onSelect` and `onTurn` tell a map beside it what to fly to. `dev` lights every bonfire. */
+export function TravelPane({
+  from,
+  dev = false,
+  onTravel,
+  onBack,
+  onSelect,
+  onTurn,
+  panelRef,
+  className = "",
+}: {
+  from: AreaId;
+  dev?: boolean;
+  onTravel: (f: Fire) => void;
+  onBack: () => void;
+  onSelect?: (area: AreaId) => void;
+  onTurn?: (tier: TierId) => void;
+  panelRef?: Ref<HTMLElement>;
+  className?: string;
+}) {
   const [fires] = useState(() => checkpoints(dev));
   const at = useMemo(restedAt, []);
-  const isHere = (f: Fire): boolean => atFire && f.area === at?.area && f.col === at.col && f.row === at.row;
-  // Nothing picked till W/S: the map opens on the whole tier.
-  const [pick, setPick] = useState(-1);
+  const isHere = (f: Fire): boolean => f.area === at?.area && f.col === at.col && f.row === at.row;
+  // It opens on the bonfire sat at, if it is on the list; W/S step on from there.
+  const [pick, setPick] = useState(() => fires.findIndex(isHere));
   useTick(pick);
+  const cursor = useCursor(pick);
   const [tier, setTier] = useState<TierId>(areaOf(from).tier);
-  const api = useRef<AtlasApi | null>(null);
-  const panel = useRef<HTMLElement>(null);
   const onTier = (t: TierId) => fires.filter((f) => areaOf(f.area).tier === t);
   const tierLands = [...new Set(onTier(tier).map((f) => f.area))];
 
   const travel = (f: Fire): void => {
-    if (!canTravel || !f.lit) return;
+    if (!f.lit) return;
     if (isHere(f)) return onBack();
-    try {
-      localStorage.setItem(REST, JSON.stringify({ area: f.area, col: f.col, row: f.row }));
-    } catch {}
+    restAt(f);
     onTravel(f);
   };
   const pickFire = (i: number): void => {
     setPick(i);
-    api.current?.select(fires[i]!.area);
+    onSelect?.(fires[i]!.area);
   };
   // A new tier opens whole, nothing picked.
   const turnTier = (t: TierId): void => {
     setPick(-1);
-    api.current?.tier(t);
+    setTier(t);
+    onTurn?.(t);
   };
-  const hooks = useRef<AtlasHooks>({
-    onArea: (id) => api.current?.select(id),
-    onTier: setTier,
-    // Only beside the list; on a narrow screen it lies over the top instead.
-    inset: () => {
-      const right = panel.current?.getBoundingClientRect().right ?? 0;
-      return right < window.innerWidth / 2 ? right / window.innerWidth : 0;
-    },
-    ready: (a) => {
-      api.current = a;
-      a.tier(areaOf(from).tier);
-    },
-  }).current;
 
   useEffect(() => {
     const key = (e: KeyboardEvent): void => {
       const k = e.key.toLowerCase();
-      if (k === "escape" || (k === "m" && !atFire)) return onBack();
+      if (k === "escape" || k === "q") return onBack();
       if (e.repeat) return;
       const steps = onTier(tier);
       if ((k === "w" || k === "arrowup" || k === "s" || k === "arrowdown") && steps.length > 0) {
@@ -136,68 +146,99 @@ export function TravelMap({ from, travel: atFire, dev = false, onTravel, onBack 
   });
 
   return (
-    <div className="travelMap">
+    <section ref={panelRef} className={`sidePanel landPanel ${className}`} aria-label="Bonfires">
+      <p className="landTier">{TIER_INFO[tier].name.replace(/^The /, "")}</p>
+      <div className="setModes" role="tablist" aria-label="Tiers">
+        {TIERS.map((t) => (
+          <button
+            key={t}
+            type="button"
+            role="tab"
+            aria-selected={t === tier}
+            aria-label={TIER_INFO[t].name}
+            title={TIER_INFO[t].name}
+            className={`setMode${t === tier ? " on" : ""}`}
+            onClick={() => turnTier(t)}
+          >
+            <svg viewBox="0 0 512 512" aria-hidden="true">
+              <path d={TIER_ICON[t]} />
+            </svg>
+          </button>
+        ))}
+      </div>
+      <div className="pauseSheet">
+        {cursor.bar}
+        {tierLands.length > 0 ? (
+          tierLands.map((id) => (
+            <section key={id} className="landGroup">
+              <h2>
+                <LandBanner land={areaOf(id).land} />
+                {areaOf(id).name}
+              </h2>
+              <ul className="landFires">
+                {fires.map((f, i) =>
+                  f.area !== id ? null : (
+                    <li key={`${f.col},${f.row}`}>
+                      <button
+                        type="button"
+                        ref={cursor.mark(i)}
+                        className={`landFire${i === pick ? " picked" : ""}`}
+                        disabled={!f.lit}
+                        onMouseEnter={() => f.lit && pickFire(i)}
+                        onClick={() => travel(f)}
+                      >
+                        <span>{f.name}</span>
+                        <span className="landFireState">{!f.lit ? "Unlit" : isHere(f) ? "Here" : ""}</span>
+                      </button>
+                    </li>
+                  ),
+                )}
+              </ul>
+            </section>
+          ))
+        ) : (
+          <p className="landWhere">No bonfire burns here.</p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/** The pane beside Aurum's map, opened from the dev panel only for now: the map flies to the land picked. `onBack` closes it. */
+export function TravelMap({ from, dev = false, onTravel, onBack }: { from: AreaId; dev?: boolean; onTravel: (f: Fire) => void; onBack: () => void }) {
+  const api = useRef<AtlasApi | null>(null);
+  const panel = useRef<HTMLElement>(null);
+  const [shown, setShown] = useState(false);
+  const hooks = useRef<AtlasHooks>({
+    opened: () => setShown(true),
+    onArea: (id) => api.current?.select(id),
+    // The pane keeps its own tier; a lift on the map no longer turns it.
+    onTier: () => {},
+    // Only beside the list; on a narrow screen it lies over the top instead.
+    inset: () => {
+      const right = panel.current?.getBoundingClientRect().right ?? 0;
+      return right < window.innerWidth / 2 ? right / window.innerWidth : 0;
+    },
+    ready: (a) => {
+      api.current = a;
+      a.tier(areaOf(from).tier);
+    },
+  }).current;
+
+  return (
+    <div className={`travelMap${shown ? " shown" : ""}`}>
       <GameCanvas start={(el) => import("../../game/AtlasScene").then(({ startAtlas }) => startAtlas(el, hooks))}>
         <div className="worldHud">
-          {/* After Elden Ring's sites of grace: the tiers as tabs over every bonfire on the tier, by land. */}
-          <section ref={panel} className="sidePanel landPanel" aria-label="Bonfires">
-            <p className="landTier">{TIER_INFO[tier].name.replace(/^The /, "")}</p>
-            <div className="setModes" role="tablist" aria-label="Tiers">
-              {TIERS.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  role="tab"
-                  aria-selected={t === tier}
-                  aria-label={TIER_INFO[t].name}
-                  title={TIER_INFO[t].name}
-                  className={`setMode${t === tier ? " on" : ""}`}
-                  onClick={() => turnTier(t)}
-                >
-                  <svg viewBox="0 0 512 512" aria-hidden="true">
-                    <path d={TIER_ICON[t]} />
-                  </svg>
-                </button>
-              ))}
-            </div>
-            <div className="pauseSheet">
-              {tierLands.length > 0 ? (
-                tierLands.map((id) => (
-                  <section key={id} className="landGroup">
-                    <h2>
-                      <LandBanner land={areaOf(id).land} />
-                      {areaOf(id).name}
-                    </h2>
-                    <ul className="landFires">
-                      {fires.map((f, i) =>
-                        f.area !== id ? null : (
-                          <li key={`${f.col},${f.row}`}>
-                            <button
-                              type="button"
-                              ref={i === pick ? (el) => el?.scrollIntoView({ block: "nearest" }) : undefined}
-                              className={`landFire${i === pick ? " picked" : ""}`}
-                              disabled={!f.lit}
-                              onClick={() => (canTravel ? travel(f) : pickFire(i))}
-                            >
-                              <span>{f.name}</span>
-                              <span className="landFireState">{!f.lit ? "Unlit" : isHere(f) ? "Here" : ""}</span>
-                            </button>
-                          </li>
-                        ),
-                      )}
-                    </ul>
-                  </section>
-                ))
-              ) : (
-                <p className="landWhere">No bonfire burns here.</p>
-              )}
-            </div>
-          </section>
-
-          <KeyHints
-            className="pauseKeys mapKeys"
-            keys={`A/D tier   W/S bonfire${canTravel ? "   E travel" : ""}   ${atFire ? "Esc back" : "M/Esc close"}`}
+          <TravelPane
+            from={from}
+            dev={dev}
+            onTravel={onTravel}
+            onBack={onBack}
+            onSelect={(id) => api.current?.select(id)}
+            onTurn={(t) => api.current?.tier(t)}
+            panelRef={panel}
           />
+          <KeyHints className="pauseKeys mapKeys" keys="A/D tier   W/S bonfire   E travel   Esc back" />
         </div>
       </GameCanvas>
     </div>

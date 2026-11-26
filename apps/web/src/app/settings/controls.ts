@@ -30,7 +30,6 @@ export const CONTROLS: Mode[] = [
         title: "World",
         binds: [
           { action: "Interact, talk, rest, read", keys: ["E"] },
-          { action: "Open the map", keys: ["M"] },
           { action: "Open the sack", keys: ["Tab"] },
           { action: "Show or hide the HUD", keys: ["H"] },
           { action: "Pause and settings", keys: ["Esc"] },
@@ -57,7 +56,7 @@ export const CONTROLS: Mode[] = [
         binds: [
           { action: "Pick a bonfire", keys: ["W", "S", "Up", "Down"] },
           { action: "Change tier", keys: ["A", "D", "Left", "Right"] },
-          { action: "Close the map", keys: ["Esc", "M"] },
+          { action: "Close the map", keys: ["Esc"] },
           { action: "Pan", keys: ["Mouse Left"] },
           { action: "Zoom", keys: ["Wheel"] },
         ],

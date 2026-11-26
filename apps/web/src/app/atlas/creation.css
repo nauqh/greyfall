@@ -240,7 +240,7 @@
 
 .crRows li {
 	display: grid;
-	grid-template-columns: 22px minmax(0, 1fr) auto;
+	grid-template-columns: auto minmax(0, 1fr) auto;
 	align-items: center;
 	gap: 10px;
 	min-height: 26px;

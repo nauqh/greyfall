@@ -1,6 +1,6 @@
 "use client";
 
-import { AREAS, type AreaId, type Levels } from "@greyfall/engine";
+import { AREAS, NO_LEVELS, levelCost, type AreaId, type Levels } from "@greyfall/engine";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -9,7 +9,7 @@ import { Clouds } from "../../game/Clouds";
 import { packUrl } from "../../game/art";
 import { GameCanvas } from "../../game/GameCanvas";
 import { DevPanel } from "./DevPanel";
-import { LevelUp } from "./LevelUp";
+import { LevelUp, STATS, heldCost } from "./LevelUp";
 import { RestPanel } from "./RestPanel";
 import { KeyHints, SidePanel } from "./SidePanel";
 import { CONTROLS } from "../settings/controls";
@@ -20,8 +20,8 @@ import { Prologue } from "./ProloguePlayer";
 import { Sack } from "./Sack";
 import { Shop } from "./Shop";
 import { StatIcon } from "./statIcons";
-import { TravelMap } from "./TravelMap";
-import { ARRIVE, CLICK, loop, play, SACK, TIDEWAKE_MUSIC } from "../sound";
+import { TravelMap, TravelPane, type Fire } from "./TravelMap";
+import { ARRIVE, CLICK, ERROR, loop, play, SACK } from "../sound";
 
 const PAUSE_TABS = ["Controls", "Sound", "Game"] as const;
 
@@ -93,10 +93,17 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   const [sack, setSack] = useState<SackView | null>(null);
   // Died: the words, then the dark, then waking at the bonfire in this area.
   const [died, setDied] = useState<AreaId | null>(null);
-  // Sat at a bonfire after a rest: its name, the option picked, whether the level up card is open, and when a level was last bought.
-  const [fire, setFire] = useState<{ name: string; pick: number; levelling?: boolean; bought?: { stat: keyof Levels; at: number } } | null>(null);
-  // The map, open over the area while the scene waits paused behind it: from a bonfire to travel, or on M only to look.
-  const [atlas, setAtlas] = useState<"travel" | "look" | null>(null);
+  // Sat at a bonfire after a rest: its name, the option picked, the level up or travel screen if one is open, the points
+  // held on the level up till Accept, and when a level was last bought.
+  const [fire, setFire] = useState<{
+    name: string;
+    pick: number;
+    screen?: "level" | "travel";
+    held?: Levels;
+    bought?: { stat: keyof Levels; at: number };
+  } | null>(null);
+  // The map, set aside for the bonfire's travel list and opened only from the dev panel, over the area paused behind it.
+  const [atlas, setAtlas] = useState(false);
   // The class, gift and name, once per game, first of all over a Landing paused behind it.
   const [picking, setPicking] = useState(false);
   // The opening cutscene, on the creation screen's black once the captain is made.
@@ -118,9 +125,6 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     if (!prologue || picking || theme.current) return;
     theme.current = loop("/audio/music/theme.mp3", 0.6, 1800, 3900);
   }, [prologue, picking]);
-  // Tidewake's ambient, kept low, once the prologue's theme is done.
-  const land = AREAS.find((a) => a.id === area)?.land;
-  useEffect(() => (land === "Tidewake" && !prologue && !picking ? loop(TIDEWAKE_MUSIC, 0.45, 1500) : undefined), [land, prologue, picking]);
   const fadeTheme = (): void => {
     theme.current?.();
     theme.current = null;
@@ -163,25 +167,38 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     setFire(null);
   };
   const sat = fire ? api.current?.levels() : undefined;
-  const level = fire?.levelling ? sat : undefined;
+  const level = fire?.screen === "level" ? sat : undefined;
+  const menuBack = (pick: number) => setFire((f) => f && { ...f, pick, screen: undefined, held: undefined });
+  const held = fire?.held ?? NO_LEVELS;
+  // A point held on an attribute, or taken back; one more only while the gold covers it.
+  const shift = (stat: keyof Levels, by: 1 | -1): void => {
+    if (!sat || held[stat] + by < 0) return;
+    const after = { hp: sat.levels.hp + held.hp, attack: sat.levels.attack + held.attack, stamina: sat.levels.stamina + held.stamina };
+    if (by > 0 && sat.gold < heldCost(sat.levels, held) + levelCost(after)) return play(ERROR);
+    setFire((f) => f && { ...f, held: { ...held, [stat]: held[stat] + by }, bought: undefined });
+  };
+  // Accept: the points held bought one by one, as the scene sells them.
+  const accept = (): void => {
+    let last: keyof Levels | undefined;
+    for (const { stat } of STATS) for (let k = 0; k < held[stat]; k++) if (api.current?.levelUp(stat)) last = stat;
+    if (!last) return play(ERROR);
+    setFire((f) => f && { ...f, held: undefined, bought: { stat: last, at: Date.now() } });
+  };
+  const warpTo = (f: Fire): void => {
+    setFire(null);
+    depart({ to: f.area, name: f.name, kind: "rest", dir: "down", x: 0.5, y: 0.5 });
+  };
   const bonfire = level
     ? [
-        ...(["hp", "attack", "stamina"] as const).map((stat) => ({
-          label: stat,
-          go: () => api.current?.levelUp(stat) && setFire((f) => f && { ...f, bought: { stat, at: Date.now() } }),
-        })),
-        { label: "Back", go: () => setFire((f) => f && { ...f, pick: 1, levelling: false }) },
+        ...STATS.map(({ stat }) => ({ label: stat, go: accept })),
       ]
     : [
         {
           label: "Travel",
           note: "To any bonfire you have lit",
-          go: () => {
-            api.current?.pause(true);
-            setAtlas("travel");
-          },
+          go: () => setFire((f) => f && { ...f, pick: 0, screen: "travel" }),
         },
-        { label: "Level up", note: sat ? `Next level ${sat.cost} gold` : "", go: () => setFire((f) => f && { ...f, pick: 0, levelling: true, bought: undefined }) },
+        { label: "Level up", note: sat ? `Next level ${sat.cost} gold` : "", go: () => setFire((f) => f && { ...f, pick: 0, screen: "level", bought: undefined }) },
         { label: "Leave", note: "Stand, and go on", go: leaveFire },
       ];
   // The name mounts two painted frames after the map is in view, so its clock never runs while the first frames are still drawing.
@@ -265,27 +282,20 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   };
   const closeAtlas = (): void => {
     api.current?.pause(false);
-    setAtlas(null);
+    setAtlas(false);
   };
   useEffect(() => {
-    if (atlas || fire || say || menu || died || warn || paused !== null) return;
-    const key = (e: KeyboardEvent): void => {
-      if (e.key.toLowerCase() !== "m" || e.repeat || now.current.travelling) return;
-      api.current?.pause(true);
-      setAtlas("look");
-    };
-    window.addEventListener("keydown", key);
-    return () => window.removeEventListener("keydown", key);
-  }, [atlas, fire, say, menu, died, warn, paused]);
-  useEffect(() => {
-    if (!fire || atlas) return;
+    if (!fire || atlas || fire.screen === "travel") return;
     const key = (e: KeyboardEvent): void => {
       const k = e.key.toLowerCase();
       if (k === "w" || k === "arrowup" || k === "s" || k === "arrowdown") {
         const d = k === "w" || k === "arrowup" ? -1 : 1;
         setFire((f) => f && { ...f, pick: (f.pick + d + bonfire.length) % bonfire.length });
+      } else if (level && fire.pick < STATS.length && (k === "a" || k === "arrowleft" || k === "d" || k === "arrowright")) {
+        play(CLICK);
+        shift(STATS[fire.pick]!.stat, k === "a" || k === "arrowleft" ? -1 : 1);
       } else if ((k === "e" || k === "enter") && !e.repeat) (play(CLICK), bonfire[fire.pick]!.go());
-      else if (k === "escape") fire.levelling ? setFire({ ...fire, pick: 1, levelling: false }) : leaveFire();
+      else if (k === "escape" || (k === "q" && fire.screen)) fire.screen ? menuBack(fire.screen === "level" ? 1 : 0) : leaveFire();
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
@@ -416,7 +426,6 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
         {atlas && (
           <TravelMap
             from={now.current.area}
-            travel={atlas === "travel"}
             dev={devRoute}
             onBack={closeAtlas}
             onTravel={(f) => {
@@ -428,11 +437,22 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
         )}
         {fire && !atlas && (
           // Sat at a bonfire, after Dark Souls 3 and Elden Ring: the camera in on the fire, a panel at the side, the world left lit.
-          <div className="sideDock">
+          <div className="sideDock fireDock">
             {level ? (
-              <LevelUp name={fire.name} view={level} pick={fire.pick} bought={fire.bought} onPick={(pick) => setFire({ ...fire, pick })} onChoose={(i) => bonfire[i]!.go()} />
+              <LevelUp
+                view={level}
+                held={held}
+                pick={fire.pick}
+                bought={fire.bought}
+                onPick={(pick) => setFire({ ...fire, pick })}
+                onChoose={(i) => bonfire[i]!.go()}
+                onShift={shift}
+              />
             ) : (
-              sat && (
+              sat &&
+              (fire.screen === "travel" ? (
+                <TravelPane from={area} dev={devRoute} onTravel={warpTo} onBack={() => menuBack(0)} className="bonfirePanel" />
+              ) : (
                 <RestPanel
                   name={fire.name}
                   area={AREAS.find((a) => a.id === area)?.name ?? ""}
@@ -443,7 +463,15 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
                   onPick={(pick) => setFire({ ...fire, pick })}
                   onChoose={(i) => bonfire[i]!.go()}
                 />
-              )
+              ))
+            )}
+            {fire.screen && (
+              // Below the panel, as Dark Souls prompts its keys: the one way to accept or go back, by key or click.
+              <KeyHints
+                className="bonfireKeys"
+                keys={fire.screen === "level" ? "E accept   Q back" : "E travel   Q back"}
+                onKey={{ ...(level && { E: accept }), Q: () => menuBack(fire.screen === "level" ? 1 : 0) }}
+              />
             )}
           </div>
         )}
@@ -454,7 +482,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
             onArea={(to) => !now.current.travelling && depart({ to, name: AREAS.find((a) => a.id === to)?.name ?? to, kind: "rest", dir: "down", x: 0.5, y: 0.5 })}
             onMap={() => {
               api.current?.pause(true);
-              setAtlas("travel");
+              setAtlas(true);
             }}
             onCreate={() => setWipe({ create: true })}
           />

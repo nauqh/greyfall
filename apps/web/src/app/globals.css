@@ -1375,6 +1375,7 @@ textarea {
 
 /* The list scrolls under the tabs, on the bare paper: no frame round it, the tabs on a rule of their own. */
 .landPanel .pauseSheet {
+	position: relative;
 	overflow-y: auto;
 	gap: 18px;
 	padding: 16px 8px 8px;
@@ -1452,12 +1453,13 @@ textarea {
 	line-height: 1.45;
 }
 
-/* A land's name over its bonfires, as Elden Ring heads each region's graces. */
+/* A land's name over its bonfires, as Elden Ring heads each region's graces. The space under it is the banner's
+   tail (.landBanner hangs 12px below), so the first bonfire's highlight starts clear of it. */
 .landGroup h2 {
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	margin: 0 0 2px;
+	margin: 0 0 14px;
 	padding: 5px 12px;
 	color: #8a5a10;
 	font-size: 14px;
@@ -1511,10 +1513,18 @@ textarea {
 	scroll-margin-top: 48px;
 }
 
-/* The pause menu's ember glow on the picked row, never a box. */
+/* The picked row in cream over useCursor's brown bar, which slides under it (panel.css). */
+.landFire {
+	position: relative;
+	transition: color 170ms ease-out;
+}
+
 .landFire.picked {
-	background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 40%, transparent), transparent 80%);
-	color: var(--stroke);
+	color: #fbf5e6;
+}
+
+.landFire.picked .landFireState {
+	color: #ecd6b4;
 }
 
 .landFire:disabled {
@@ -1542,6 +1552,13 @@ textarea {
 	position: absolute;
 	inset: 0;
 	z-index: 5;
+	opacity: 0;
+	transition: opacity 450ms ease-out;
+}
+
+/* Held clear till the map is drawn, then over the area at the bonfire. */
+.travelMap.shown {
+	opacity: 1;
 }
 
 /* A talk, after the Souls games: no box, the words at the foot of the screen in the map labels' outline, the name above. */

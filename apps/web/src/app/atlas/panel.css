@@ -139,6 +139,41 @@
 	margin-top: auto;
 }
 
+/* A stat's icon in a square frame, as Dark Souls frames each one beside its name: frame and symbol in the one
+   gold-brown the panel's headings are set in. */
+.statFrame {
+	flex: none;
+	display: inline-grid;
+	place-items: center;
+	aspect-ratio: 1;
+	padding: 3px;
+	border: 2px solid currentColor;
+	color: #8a5a10;
+}
+
+/* useCursor's bar, Dark Souls' highlight: a flat block of the dark brown the buttons are picked in, under the picked row,
+   sliding to the next one up or down. */
+.hasCursor {
+	position: relative;
+}
+
+.panelCursor {
+	position: absolute;
+	top: 0;
+	left: 0;
+	background: var(--brown);
+	pointer-events: none;
+	transition-property: translate, width, height;
+	transition-duration: 170ms;
+	transition-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.panelCursor {
+		transition: none;
+	}
+}
+
 .panelOption {
 	display: flex;
 	align-items: center;
@@ -201,21 +236,6 @@
 .panelAside.pop,
 .panelBadge b.pop {
 	animation: panelPop 500ms ease-out;
-}
-
-.panelKeys {
-	align-self: stretch;
-	display: flex;
-	flex-wrap: wrap;
-	justify-content: center;
-	gap: 4px 18px;
-	padding-top: 5px;
-	border-top: 1px solid rgb(201 163 92 / 0.5);
-	font-size: 11px;
-	font-weight: 800;
-	letter-spacing: 0.14em;
-	text-transform: uppercase;
-	color: #8a7458;
 }
 
 /* Gold on hand, the cost, what is left: the price line under a level or a good. */
@@ -337,8 +357,8 @@
 	background: rgb(7 10 16 / 0.55);
 }
 
-/* The pause menu's inks and sheet, shared with the map's bonfire list. */
-:is(.pausePanel, .landPanel) {
+/* The pause menu's inks and sheet, shared with the map's bonfire list and every bonfire screen. */
+:is(.pausePanel, .landPanel, .bonfirePanel) {
 	--accent: var(--rust);
 	--stroke: var(--brown);
 	--text: var(--bark);
@@ -409,7 +429,7 @@
 }
 
 /* No rule under the head: the one frame is round the page's own content, as Dark Souls frames its sheet. */
-:is(.pausePanel, .landPanel) {
+:is(.pausePanel, .landPanel, .bonfirePanel) {
 	outline: 0;
 }
 

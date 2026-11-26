@@ -1,5 +1,5 @@
 import type { LevelView } from "../../game/AtlasScene";
-import { LevelBadge, SidePanel, type PanelOption } from "./SidePanel";
+import { LevelBadge, SidePanel, useCursor, type PanelOption } from "./SidePanel";
 import { StatIcon, type Stat } from "./statIcons";
 import "./rest.css";
 
@@ -44,13 +44,16 @@ export function RestPanel({
       pick={pick}
       onPick={onPick}
       onChoose={onChoose}
-      keys="W/S pick   E choose   Esc stand"
+      cursor={useCursor(pick)}
+      className="bonfirePanel"
     >
       <p className="panelNote">Health and embers restored. The dead walk again.</p>
       <ul className="restStats panelRule">
         {stats.map((s) => (
           <li key={s.label} className={s.gold ? "restGold" : undefined}>
-            <StatIcon stat={s.icon} />
+            <span className="statFrame">
+              <StatIcon stat={s.icon} mono />
+            </span>
             <span>{s.label}</span>
             <b>{s.value}</b>
           </li>

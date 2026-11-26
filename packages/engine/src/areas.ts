@@ -393,6 +393,12 @@ export function districtOf(m: AreaMap, c: number, r: number): District | undefin
   return ch && ch !== "-" ? m.districts[parseInt(ch, 36)] : undefined;
 }
 
+/** A bonfire's name: its own, else its district's, else its area's. */
+export function fireName(m: AreaMap, f: Cell): string {
+  const own = m.fires.find((x) => x.col === f.col && x.row === f.row)?.name;
+  return own || districtOf(m, f.col, f.row)?.name || (AREAS.find((a) => a.id === m.area)?.name ?? "");
+}
+
 /** Land to its district: a box first, else the nearest seed, the border wandered by noise. */
 function districtGrid(tier: AtlasTier, districts: readonly District[], t?: Builder): string[] {
   // A landform that names its district gives it every tile it covers: the highest such landform over a tile wins.
@@ -3797,7 +3803,7 @@ function landing(): AreaMap {
 
   // The grotto: the boat that drifted in, the first fire.
   prop("boat", 33, 46);
-  t.fires.push({ col: 38, row: 42 });
+  t.fires.push({ col: 38, row: 42, name: "Waking Shore" });
   // The goblins' chamber: one goblin, to learn the swing on.
   who("torch", 17, 30, { to: { col: 20, row: 29 } });
   for (const [c, r] of [[14, 33], [21, 28]] as const) prop("bones", c, r);
@@ -3806,7 +3812,7 @@ function landing(): AreaMap {
   who("spear", 25, 13);
   prop("woodPile", 15, 9);
   // The castaway's camp: Hollis's fire, the second, for the map's travel to be tried between the two.
-  t.fires.push({ col: 46, row: 10 });
+  t.fires.push({ col: 46, row: 10, name: "Castaway's Camp" });
   // The cleft off the camp: gold, for whoever looks.
   prop("goldStone", 58, 8);
   // The flooded gallery: three together round the pool, one slinging from across it.
@@ -3824,7 +3830,6 @@ function landing(): AreaMap {
     { at: { col: 18, row: 24 }, text: "Tap Space: dash" },
     { at: { col: 18, row: 21 }, text: "Hold right click: guard" },
     { at: { col: 33, row: 12 }, text: "R: heal" },
-    { at: { col: 45, row: 13 }, text: "M: map. At a fire, travel" },
     { at: { col: 63, row: 28 }, text: "Gold lost upon death. Reclaim it where you fell" },
   ];
   const exits: AreaExit[] = [{ to: "ring", name: "Ring Gate", kind: "open", at: { col: 78, row: 28 } }];

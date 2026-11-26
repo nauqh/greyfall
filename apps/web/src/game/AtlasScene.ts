@@ -18,6 +18,7 @@ import {
   MAPPED_AREAS,
   areaMap,
   districtOf,
+  fireName,
   FOES,
   REST_CLEAR,
   BOSS_KITS,
@@ -1397,8 +1398,8 @@ export class AtlasScene extends Phaser.Scene {
       devSet: (patch) => this.devSet(patch),
       tier: (id) => this.show(id),
     });
-    // A crossing's own cover is the page's; only a first arrival opens on the clouds.
-    if (this.hooks.arrive) this.time.delayedCall(0, () => this.hooks.opened?.());
+    // A crossing's own cover is the page's, and the bonfire map fades in on its own; only a first arrival opens on the clouds.
+    if (this.hooks.arrive || !this.hooks.area) this.time.delayedCall(0, () => this.hooks.opened?.());
     else cloudCover(this, "open", () => this.hooks.opened?.());
   }
 
@@ -2270,7 +2271,7 @@ export class AtlasScene extends Phaser.Scene {
     if (on) hero.s.setFlipX((fire.col + 0.5) * CELL < hero.s.x);
     this.play(hero.s, hero.idle);
     this.closeUp(on ? { x: (hero.s.x + (fire.col + 0.5) * CELL) / 2, y: hero.s.y } : null);
-    return districtOf(this.local, fire.col, fire.row)?.name || (AREAS.find((a) => a.id === this.local!.area)?.name ?? null);
+    return fireName(this.local, fire) || null;
   }
 
   /**

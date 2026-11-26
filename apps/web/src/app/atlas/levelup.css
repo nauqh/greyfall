@@ -72,24 +72,56 @@
 	flex: 1;
 }
 
-.luUp {
-	transform: rotate(-90deg);
+/* Dark Souls' level up: wide, the attributes on the left and what they change on the right. */
+.sidePanel.luPanel {
+	width: min(760px, calc(100vw - 32px));
 }
 
-/* The raise on every row, lit on the picked one, grey when the gold falls short. */
-.luRaise {
-	width: 22px;
-	height: 22px;
-	opacity: 0.35;
-	transition: opacity 120ms ease-out;
+.luColumns {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 28px;
 }
 
-.luAttr.picked .luRaise {
-	opacity: 1;
+.luColumn {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
 }
 
-.luAttr.dim .luRaise {
-	filter: grayscale(1);
+/* A point held, or taken back: the arrows either side of the value, as Dark Souls flanks the picked attribute. */
+.luStep {
+	padding: 0 6px;
+	border: 0;
+	background: none;
+	color: inherit;
+	font: inherit;
+	font-size: 20px;
+	line-height: 1;
+	cursor: pointer;
+	visibility: hidden;
+}
+
+.luAttr.picked .luStep {
+	visibility: visible;
+}
+
+.luStep:disabled {
+	opacity: 0.3;
+	cursor: default;
+}
+
+.luAttr .panelAside {
+	min-width: 2ch;
+	text-align: center;
+}
+
+.luAttr .panelAside.luGain {
+	color: #2e6b2a;
+}
+
+.luAttr.picked .panelAside.luGain {
+	color: #c7f0a8;
 }
 
 @media (max-width: 640px) {
@@ -101,14 +133,63 @@
 	.luAttr {
 		padding-block: 5px;
 	}
+
+	.luColumns {
+		grid-template-columns: 1fr;
+		gap: 10px;
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {
 	.luChange b.pop {
 		animation: none;
 	}
+}
 
-	.luRaise {
-		transition: none;
-	}
+/* Few rules and room between the lines, as Dark Souls sets its sheet: only the section headings keep a hairline. */
+.luPanel .luSheet {
+	gap: 10px;
+}
+
+.luPanel .luSheet > div {
+	padding: 2px 4px;
+	border-bottom: 0;
+}
+
+.luPanel .luColumn {
+	gap: 16px;
+}
+
+.bonfirePanel.luPanel :is(.panelOption, .panelOption.picked) {
+	background: none;
+}
+
+/* The icon in its frame, then the part the bar lights: the row itself stays bare so the bar never covers the frame. */
+.luPanel .luAttrs {
+	gap: 6px;
+}
+
+.bonfirePanel.luPanel .luAttr,
+.bonfirePanel.luPanel .luAttr.picked {
+	position: static;
+	gap: 10px;
+	padding: 0;
+	background: none;
+	color: inherit;
+}
+
+/* As tall as the icon's frame, so the bar lights a block the frame's height. */
+.luAttrBody {
+	position: relative;
+	flex: 1;
+	align-self: stretch;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 0 10px;
+	transition: color 170ms ease-out;
+}
+
+.luAttr.picked .luAttrBody {
+	color: #fbf5e6;
 }

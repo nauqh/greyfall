@@ -13,7 +13,7 @@
 	gap: 8px;
 }
 
-.restStats span {
+.restStats li > span:not(.statFrame) {
 	flex: 1;
 	color: var(--mute);
 }
@@ -24,4 +24,123 @@
 
 .restGold b {
 	color: #8a5a10;
+}
+
+/* Every bonfire screen (the rest, travel, level up) on the map pane's paper and inks, one size so nothing jumps
+   between them, the choices as plain rows under useCursor's bar rather than buttons. */
+.bonfirePanel {
+	height: min(600px, calc(100vh - 96px));
+}
+
+/* The map's pane, out of its corner and into the bonfire's dock. */
+.sideDock .landPanel.bonfirePanel {
+	position: relative;
+	inset: auto;
+	width: min(460px, calc(100vw - 32px));
+	height: min(600px, calc(100vh - 96px));
+}
+
+/* The head as the pane names its tier: the display face over one plain rule. */
+.bonfirePanel .panelHead {
+	background: none;
+	border-bottom: 1px solid var(--frame);
+}
+
+.bonfirePanel .panelName {
+	font-family: var(--display), serif;
+	font-weight: 700;
+	font-size: 22px;
+	letter-spacing: 0.04em;
+	color: var(--stroke);
+}
+
+/* The choices follow straight on, as Dark Souls lists them, not pushed to the foot. */
+.bonfirePanel .panelOptions {
+	margin-top: 0;
+}
+
+.bonfirePanel .panelOptions,
+.bonfirePanel .luAttrs {
+	gap: 0;
+}
+
+.bonfirePanel .panelOption {
+	position: relative;
+	transition: color 170ms ease-out;
+}
+
+.bonfirePanel .panelOption {
+	padding: 7px 10px;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+}
+
+/* A faint rule under each row, as the map pane rules its bonfires; the bar carries the highlight. */
+.bonfirePanel .panelOption,
+.bonfirePanel .panelOption.picked {
+	background: linear-gradient(90deg, rgb(174 142 108 / 0.4), rgb(174 142 108 / 0) 85%) bottom / 100% 1px no-repeat;
+}
+
+.bonfirePanel .panelOption:active {
+	transform: none;
+}
+
+.bonfirePanel .panelOption.picked {
+	color: #fbf5e6;
+}
+
+.bonfirePanel .panelOption.picked .panelOptionNote {
+	color: #ecd6b4;
+}
+
+/* The keys under a bonfire screen, outlined over the world as the pause menu's are (.pauseKeys). */
+.bonfireKeys {
+	display: flex;
+	justify-content: center;
+	gap: 6px 28px;
+	width: min(460px, calc(100vw - 32px));
+	margin-top: 14px;
+	color: #fdfaf0;
+	font: 800 14px "Nunito", sans-serif;
+	letter-spacing: 0.06em;
+	-webkit-text-stroke: 4px #1c2634;
+	paint-order: stroke fill;
+}
+
+.luPanel ~ .bonfireKeys {
+	width: min(760px, calc(100vw - 32px));
+}
+
+.bonfireKeys button {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: inherit;
+	font: inherit;
+	letter-spacing: inherit;
+	cursor: pointer;
+}
+
+/* The dock slides in once as the hero sits; a screen changed inside it (travel, level up, back) only fades, at once,
+   instead of waiting out every panel's entrance again. */
+.sideDock.fireDock {
+	animation: sideDock 600ms 300ms ease-out both;
+}
+
+.sideDock.fireDock > * {
+	animation: fireScreen 140ms ease-out both;
+}
+
+@keyframes fireScreen {
+	from {
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.sideDock.fireDock,
+	.sideDock.fireDock > * {
+		animation: none;
+	}
 }

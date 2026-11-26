@@ -167,7 +167,9 @@ export function Sack({ sack, gold, onCover }: { sack: SackView; gold: number; on
               <ul className="sackMain">
                 {main.map((s) => (
                   <li key={s.key}>
-                    <StatIcon stat={s.key as Stat} size={28} />
+                    <span className="statFrame">
+                      <StatIcon stat={s.key as Stat} size={28} mono />
+                    </span>
                     <b>{s.now}</b>
                     <span>{s.label}</span>
                   </li>

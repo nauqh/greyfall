@@ -161,8 +161,8 @@ export interface AtlasTier {
   roads: (Cell & { narrow?: boolean })[];
   props: Placed[];
   dwellers: Dweller[];
-  /** Bonfires: where the warband would rest. */
-  fires: Cell[];
+  /** Bonfires: where the warband would rest; `name` for one in a room left unnamed, or two that would share one. */
+  fires: (Cell & { name?: string })[];
   /** Campfires: lit like a bonfire, but no rest. */
   campfires: Cell[];
   bosses: { name: string; area: AreaId; col: number; row: number }[];
@@ -1045,7 +1045,7 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
     lanes: new Set<string>(),
     props: [] as Placed[],
     dwellers: [] as Dweller[],
-    fires: [] as Cell[],
+    fires: [] as AtlasTier["fires"],
     campfires: [] as Cell[],
     fences: [] as AtlasTier["fences"],
     bosses: [] as AtlasTier["bosses"],
