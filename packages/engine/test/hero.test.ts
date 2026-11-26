@@ -182,12 +182,15 @@ describe("a boss's moves", () => {
   const open = () => true;
   const boar = BOSS_KITS.rampartBull!;
   const calm = { snared: false, adds: 0, fallen: 0 };
-  it("charges the wall's whole width, and stops where it says", () => {
+  it("charges one lane, a little past the mark, and wheels round after", () => {
     useIsland({ rows: Array.from({ length: 12 }, () => ".".repeat(24)), start: { a: { castle: { col: 1, row: 1 }, barracks: { col: 1, row: 1 } }, b: { castle: { col: 1, row: 1 }, barracks: { col: 1, row: 1 } } }, mines: [], lair: { col: 1, row: 1 } });
-    const line = bossAim(boar.moves.charge!, { col: 0, row: 5 }, { col: 20, row: 5 }, open);
-    expect(line).toHaveLength(30);
-    expect(line.at(-1)).toEqual({ col: 10, row: 5 });
-    expect(new Set(line.map((c) => c.row))).toEqual(new Set([4, 5, 6]));
+    const line = bossAim(boar.moves.charge!, { col: 0, row: 5 }, { col: 8, row: 5 }, open);
+    expect(line).toHaveLength(11);
+    expect(line.at(-1)).toEqual({ col: 11, row: 5 });
+    expect(new Set(line.map((c) => c.row))).toEqual(new Set([5]));
+    expect(boar.pick(6, "charge", false, calm)).toBe("wheel");
+    expect(boar.pick(6, "wheel", false, calm)).toBe("cannons");
+    expect(boar.pick(6, "charge", true, calm)).toBe("charge");
   });
   it("stops the minotaur's rush at a rock, short of its reach", () => {
     useIsland({ rows: ["............", ".....%......", "............"], start: { a: { castle: { col: 1, row: 1 }, barracks: { col: 1, row: 1 } }, b: { castle: { col: 1, row: 1 }, barracks: { col: 1, row: 1 } } }, mines: [], lair: { col: 1, row: 1 } });
@@ -227,8 +230,8 @@ describe("a boss's moves", () => {
   });
   it("raises only while the king's raised dead are few, and leaves the cannons to the boar's chief", () => {
     expect(BOSS_KITS.barrowKing!.moves.raise!.summon).toEqual({ kind: "skull", n: 2, cap: 3 });
-    expect(boar.pick(5, "charge", false, calm)).toBe("cannons");
-    expect(boar.pick(5, "charge", true, calm)).toBe("charge");
+    expect(boar.pick(5, "wheel", false, calm)).toBe("cannons");
+    expect(boar.pick(5, "wheel", true, calm)).toBe("charge");
   });
 });
 

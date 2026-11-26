@@ -221,20 +221,23 @@ export const BOSS_KITS: Partial<Record<string, BossKit>> = {
     pick: (d, last, raging) =>
       raging && last === "rush" ? "again" : d <= 1 ? (last === "swipe" ? "stomp" : "swipe") : d >= 3 && d <= 9 && last !== "rush" && last !== "again" ? "rush" : null,
   },
-  // The Rampart Boar: a goblin chief on the garrison's war boar. On a wall three wide its charge takes the whole wall,
-  // rolled through or taken; up close it gores; at range the chief calls the goblins' cannons down on the wall. Past
-  // half the boar throws him: the chief fights on afoot, and the boar, riderless, only gores and charges, quicker.
+  // The Rampart Boar: a goblin chief on the garrison's war boar, on a wall three lanes wide. It charges down one lane,
+  // stepped out of, and a charge run into the parapet leaves it dazed; the chief hauls it round to charge again where
+  // the hero went, then calls the goblins' cannons down while it turns. Up close it gores, then bucks round it. Past
+  // half the boar throws him: the chief fights on afoot, and the boar, riderless, only gores, bucks and charges, quicker.
   rampartBull: {
     moves: {
-      gore: { shape: "front", windup: 0.7, radius: 2, damage: 20 },
-      charge: { shape: "line", windup: 1.0, tiles: 10, width: 3, speed: 14, damage: 26 },
+      gore: { shape: "front", windup: 0.7, radius: 1, damage: 20 },
+      buck: { shape: "self", windup: 0.8, radius: 1, damage: 16 },
+      charge: { shape: "line", windup: 1.0, tiles: 14, width: 1, speed: 14, damage: 26, past: 3, stun: 2, recover: 1.4 },
+      wheel: { shape: "line", windup: 0.5, tiles: 14, width: 1, speed: 16, damage: 22, past: 3, stun: 2 },
       cannons: { shape: "scatter", windup: 1.4, patches: 6, radius: 3, damage: 18 },
       throw: { shape: "summon", windup: 0.4, damage: 0, summon: { kind: "boarChief", n: 1, cap: 1 } },
     },
     recover: 1.1,
     rage: { at: 0.5, haste: 0.6, opener: "throw", look: "pig" },
     pick: (d, last, raging) =>
-      d <= 2 ? (last === "gore" ? "charge" : "gore") : raging ? "charge" : last === "charge" || d > 10 ? "cannons" : "charge",
+      !raging && last === "charge" ? "wheel" : !raging && (last === "wheel" || d > 12) ? "cannons" : d <= 1 ? (last === "gore" ? "buck" : "gore") : "charge",
   },
   // The Stone Warden: a gargoyle on the bell loft, its skin stone: a blow takes a fifth off it but while it stands open
   // after a move. It comes down off the bell's frame onto whoever walks in. Up close its wings beat; a step off, the
