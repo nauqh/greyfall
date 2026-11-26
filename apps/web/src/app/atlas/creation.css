@@ -1,16 +1,16 @@
 /* A new game's creation laid out as Dark Souls 1's Create Character, on one sheet of the pack's paper across the screen:
-   the steps and numbers ruled down the left, the choices on a slip over the middle, the class on show at the right. Fixed to
+   the steps and numbers down the left, the choices on a slip over the middle, the class on show at the right. Fixed to
    the screen, never scrolled. Every piece at 1x or exactly half, as nearest-neighbour at any other scale breaks the art's lines. */
 .creation {
 	--ink: var(--brown);
 	--stroke: var(--brown);
-	--band: linear-gradient(90deg, rgb(110 76 36 / 0.3), rgb(110 76 36 / 0.06));
-	--row: 36px;
-	/* Dark Souls 1's ledger: a rule under every row, drawn by the row so it never drifts off it. */
-	--rule: inset 0 -1px rgb(174 142 108 / 0.45);
+	--row: 32px;
+	/* Dark Souls 1 sets each field and choice in its own small box. Lines opaque (docs/ui/menus.md), so seams never darken. */
+	--cell: 1px solid #ae8e6c;
+	--cellFill: rgb(110 76 36 / 0.08);
 	/* Dark Souls 1's panel frame: a thin square line, a fainter one just inside it, the panel a shade darker. */
 	--frame: 2px solid var(--ink);
-	--frameIn: 1px solid rgb(110 76 36 / 0.4);
+	--frameIn: 1px solid #ae8e6c;
 	--frameFill: rgb(110 76 36 / 0.07);
 	display: block;
 	overflow: hidden;
@@ -33,7 +33,7 @@
 	z-index: 200;
 	inset: 20px 20px 60px;
 	display: grid;
-	grid-template: "ledger list scene" minmax(0, 1fr) / 260px minmax(0, 1fr) minmax(0, 1.3fr);
+	grid-template: "ledger list scene" minmax(0, 1fr) / 280px minmax(0, 1fr) minmax(0, 1.3fr);
 	align-items: start;
 	gap: 0 32px;
 	padding: 132px 72px 96px 76px;
@@ -66,7 +66,7 @@
 	animation: prologueIn 400ms ease-out both;
 }
 
-/* The left column as Dark Souls 1 keeps it: the steps over the numbers, each a ruled ledger in an inked frame. */
+/* The left column as Dark Souls 1 keeps it: the steps over the numbers, each in an inked frame. */
 .crLedger {
 	grid-area: ledger;
 	display: flex;
@@ -79,8 +79,9 @@
 .crRows {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
+	gap: 3px;
 	margin: 0;
-	padding: 6px 8px;
+	padding: 8px;
 	border: var(--frame);
 	outline: var(--frameIn);
 	outline-offset: -6px;
@@ -88,34 +89,36 @@
 	list-style: none;
 }
 
-.crFields li:last-child,
-.crRows li:last-child {
-	box-shadow: none;
+/* A step and what it holds, each in its box; the step being chosen lit. */
+.crFields li {
+	display: grid;
+	grid-template-columns: 64px minmax(0, 1fr);
+	gap: 3px;
+	height: var(--row);
 }
 
-/* A step and what it holds on one ruled line; the one being chosen on the band. */
-.crFields li {
+.crFields span,
+.crFields b {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-	height: var(--row);
-	padding: 0 6px 1px;
+	padding: 0 4px;
+	border: var(--cell);
+	background: var(--cellFill);
 }
 
-.crFields li,
-.crRows li,
-.crOption {
-	box-shadow: var(--rule);
+.crFields b {
+	display: block;
+	text-align: center;
 }
 
-.crFields li.on {
-	background: var(--band);
+/* The step being chosen in the settings' rust, so it reads as where you are, not as a second cursor. */
+.crFields li.on b {
+	background: color-mix(in srgb, var(--rust) 25%, transparent);
 }
 
 .crFields span {
-	font: 700 12px var(--display), serif;
-	letter-spacing: 0.14em;
+	font: 700 11px var(--display), serif;
+	letter-spacing: 0.1em;
 	text-transform: uppercase;
 	color: var(--mute);
 }
@@ -123,15 +126,15 @@
 .crFields b {
 	min-width: 0;
 	overflow: hidden;
-	font: 700 16px var(--display), serif;
+	font: 700 16px / calc(var(--row) - 2px) var(--display), serif;
 	white-space: nowrap;
 	text-overflow: ellipsis;
 }
 
 /* The choices on a slip laid over the middle of the sheet, as Dark Souls 1's scroll
-   does; its top level with the ledger's, the rows ruled, what the cursor is on at the foot. Kept inside the screen; the focused row scrolls into view. */
+   does; its top level with the ledger's, each choice boxed, what the cursor is on boxed at the foot. Kept inside the screen; the focused row scrolls into view. */
 .crList {
-	--row: 48px;
+	--row: 46px;
 	grid-area: list;
 	align-self: start;
 	display: flex;
@@ -147,13 +150,14 @@
 	scrollbar-width: none;
 }
 
-/* What the cursor is on, at the slip's foot under a rule, in a fixed four lines so nothing above it moves. */
+/* What the cursor is on, at the slip's foot in its box, in a fixed four lines so nothing above it moves. */
 .crAbout {
 	flex: none;
 	min-height: 5.6em;
 	margin: 0;
-	padding-top: 12px;
-	border-top: 2px solid rgb(174 142 108 / 0.6);
+	padding: 8px 12px;
+	border: var(--cell);
+	background: var(--cellFill);
 	font: italic 400 clamp(16px, 1.1vw, 19px) / 1.4 var(--book), serif;
 	color: var(--paperInk);
 	text-wrap: pretty;
@@ -163,27 +167,34 @@
 .crOptions {
 	display: flex;
 	flex-direction: column;
+	gap: 3px;
 }
 
-/* A plain ruled row; the cursor's row on the band, in ink. */
+/* A boxed choice. */
 .crOption {
 	display: flex;
 	align-items: center;
 	gap: 10px;
 	width: 100%;
 	height: var(--row);
-	padding: 0 10px 1px;
-	border: 0;
-	background: none;
+	padding: 0 10px;
+	border: var(--cell);
+	background: var(--cellFill);
 	color: var(--mute);
 	font: inherit;
 	text-align: left;
 	outline: none;
 }
 
+/* The cursor's box as the bonfire lists pick a row (.panelOption.picked): dark brown, cream ink. */
 .crOption:focus {
-	background: var(--band);
-	color: var(--ink);
+	border-color: var(--brown);
+	background: var(--brown);
+	color: #fbf5e6;
+}
+
+.crOption:focus .panelOptionNote {
+	color: #d9c9a8;
 }
 
 .crOption .panelOptionNote {
@@ -264,7 +275,7 @@
 	align-items: center;
 	gap: 10px;
 	height: var(--row);
-	padding: 0 6px 1px;
+	padding: 0 6px;
 	font: 700 14px var(--display), serif;
 }
 
@@ -324,7 +335,7 @@
 /* Too narrow for the islet at 2x: the list takes the room back. */
 @media (max-width: 1400px) {
 	.crSheet {
-		grid-template-columns: 240px minmax(0, 1fr) minmax(0, 1fr);
+		grid-template-columns: 280px minmax(0, 1fr) minmax(0, 1fr);
 	}
 }
 
