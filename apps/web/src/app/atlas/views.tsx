@@ -465,14 +465,13 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
                 />
               ))
             )}
-            {fire.screen && (
-              // Below the panel, as Dark Souls prompts its keys: the one way to accept or go back, by key or click.
-              <KeyHints
-                className="bonfireKeys"
-                keys={fire.screen === "level" ? "E accept   Q back" : "E travel   Q back"}
-                onKey={{ ...(level && { E: accept }), Q: () => menuBack(fire.screen === "level" ? 1 : 0) }}
-              />
-            )}
+            {/* Below the panel, as Dark Souls prompts its keys: the one way to accept or go back, by key or click. Held, hidden,
+                under the rest page too, so the panel does not jump as a page opens. */}
+            <KeyHints
+              className={fire.screen ? "bonfireKeys" : "bonfireKeys idle"}
+              keys={fire.screen === "level" ? "E accept   Q back" : "E travel   Q back"}
+              onKey={fire.screen && { ...(level && { E: accept }), Q: () => menuBack(fire.screen === "level" ? 1 : 0) }}
+            />
           </div>
         )}
         {devRoute && devState && hud && !atlas && (

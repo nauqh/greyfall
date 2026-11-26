@@ -108,6 +108,10 @@
 	paint-order: stroke fill;
 }
 
+.bonfireKeys.idle {
+	visibility: hidden;
+}
+
 .luPanel ~ .bonfireKeys {
 	width: min(760px, calc(100vw - 32px));
 }
