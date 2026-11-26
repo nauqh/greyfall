@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import type { LevelView } from "../../game/AtlasScene";
 import { LevelBadge, SidePanel, useCursor, type PanelOption } from "./SidePanel";
 import { StatIcon, type Stat } from "./statIcons";
@@ -17,6 +19,7 @@ export function RestPanel({
   pick,
   onPick,
   onChoose,
+  foot,
 }: {
   name: string;
   area: string;
@@ -26,6 +29,7 @@ export function RestPanel({
   pick: number;
   onPick: (i: number) => void;
   onChoose: (i: number) => void;
+  foot?: ReactNode;
 }) {
   const stats: { label: string; icon: Stat; value: number; gold?: boolean }[] = [
     { label: "Health", icon: "hp", value: view.now.hp },
@@ -46,6 +50,7 @@ export function RestPanel({
       onChoose={onChoose}
       cursor={useCursor(pick)}
       className="bonfirePanel"
+      foot={foot}
     >
       <p className="panelNote">Health and embers restored. The dead walk again.</p>
       <ul className="restStats panelRule">

@@ -4,7 +4,7 @@
 // map of Aurum beside it (TravelMap) is set aside for now, opened from the dev panel only.
 
 import { AREAS, MAPPED_AREAS, TIERS, TIER_INFO, areaMap, fireName, type AreaId, type TierId } from "@greyfall/engine";
-import { useEffect, useMemo, useRef, useState, type Ref } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode, type Ref } from "react";
 
 import type { AtlasApi, AtlasHooks } from "../../game/AtlasScene";
 import { GameCanvas } from "../../game/GameCanvas";
@@ -84,6 +84,7 @@ export function TravelPane({
   onTurn,
   panelRef,
   className = "",
+  foot,
 }: {
   from: AreaId;
   dev?: boolean;
@@ -93,6 +94,8 @@ export function TravelPane({
   onTurn?: (tier: TierId) => void;
   panelRef?: Ref<HTMLElement>;
   className?: string;
+  /** The pane's last line, under the list: its key hints. */
+  foot?: ReactNode;
 }) {
   const [fires] = useState(() => checkpoints(dev));
   const at = useMemo(restedAt, []);
@@ -200,6 +203,7 @@ export function TravelPane({
           <p className="landWhere">No bonfire burns here.</p>
         )}
       </div>
+      {foot}
     </section>
   );
 }

@@ -89,7 +89,7 @@ export function Sack({ sack, gold, onCover }: { sack: SackView; gold: number; on
   cover.current = onCover;
   useEffect(() => {
     const el = panelRef.current;
-    cover.current(shown && el ? 1 - el.offsetLeft / innerWidth : 0);
+    cover.current(shown && el ? (el.offsetLeft + el.offsetWidth) / innerWidth : 0);
   }, [shown]);
   useEffect(() => () => cover.current(0), []);
   const goodsRef = useRef<HTMLDivElement>(null);

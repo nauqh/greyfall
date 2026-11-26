@@ -67,8 +67,8 @@
 	}
 }
 
-/* The panels' paper, framed and floating, over the right half or more, the camera drawn in on the captain in the rest. Who and the
-   numbers across the top; under them the goods on a grid, the picked one large beside it. It slides in from the right edge
+/* The panels' paper, framed and floating, over the left half or more, the camera drawn in on the captain in the rest. Who and the
+   numbers across the top; under them the goods on a grid, the picked one large beside it. It slides in from the left edge
    like a drawer and back out, quicker out than in; Tab mid-slide turns it round where it is. */
 .sack {
 	--gold: #8a5a10;
@@ -77,7 +77,7 @@
 	--text: var(--paperInk);
 	--muted: #8a7458;
 	position: absolute;
-	inset: clamp(8px, 3vh, 32px) 16px clamp(8px, 3vh, 32px) auto;
+	inset: clamp(8px, 3vh, 32px) auto clamp(8px, 3vh, 32px) 16px;
 	z-index: 5;
 	width: min(calc(100% - 32px), max(55%, 760px));
 	display: flex;
@@ -94,7 +94,7 @@
 	border: 28px solid transparent;
 	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 28px stretch;
 	filter: drop-shadow(0 12px 24px rgb(0 0 0 / 0.3));
-	transform: translateX(calc(100% + 64px));
+	transform: translateX(calc(-100% - 64px));
 	transition: transform 300ms cubic-bezier(0.55, 0, 1, 0.45);
 }
 
@@ -111,7 +111,7 @@
 @keyframes sackIn {
 	from {
 		opacity: 0;
-		transform: translateX(24px);
+		transform: translateX(-24px);
 	}
 }
 

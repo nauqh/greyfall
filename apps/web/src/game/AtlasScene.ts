@@ -318,6 +318,8 @@ export interface LevelView {
   cost: number;
   gold: number;
   now: Levels;
+  /** The rest of the captain's numbers, the embers with those the bosses gave. */
+  kit: Kit;
 }
 
 export interface BandView {
@@ -1364,7 +1366,7 @@ export class AtlasScene extends Phaser.Scene {
       next: () => (this.reading ? this.read(null) : this.nextPage()),
       sit: (on) => this.sit(on),
       look: (cover) => this.frameSack(cover),
-      levels: () => ({ levels: levels(), cost: levelCost(levels()), gold: this.gold, now: { hp: this.gear.hp, attack: this.gear.attack, stamina: this.gear.stamina } }),
+      levels: () => ({ levels: levels(), cost: levelCost(levels()), gold: this.gold, now: { hp: this.gear.hp, attack: this.gear.attack, stamina: this.gear.stamina }, kit: { ...this.gear, flasks: maxFlasks() } }),
       levelUp: (stat) => this.levelUp(stat),
       gifts: () => GIFTS.map(sackItem),
       begin: (cls, gift, name) => this.begin(cls, gift, name),
@@ -2275,8 +2277,8 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /**
-   * The camera in close, for a rest or a merchant: a whole-number zoom so the pixel art lands crisp, `at` drawn left of
-   * centre, clear of the side panel on the right. The folk step out of the shot, all but `keep`.
+   * The camera in close, for a rest or a merchant: a whole-number zoom so the pixel art lands crisp, `at` drawn right of
+   * centre, clear of the side panel on the left. The folk step out of the shot, all but `keep`.
    */
   private closeUp(at: { x: number; y: number } | null, keep?: Folk): void {
     const cam = this.active;
@@ -2284,8 +2286,8 @@ export class AtlasScene extends Phaser.Scene {
     const base = this.zoomFor(AREA_ROWS);
     const zoom = at ? Math.ceil(base * 2.2) : base;
     cam.zoomTo(zoom, 900, "Sine.easeInOut", true);
-    const shift = at && cam.width > 640 ? (cam.width * 0.18) / zoom : 0;
-    cam.setFollowOffset(at ? hero.s.x - at.x - shift : 0, at ? hero.s.y - at.y : 0);
+    const shift = at && cam.width > 640 ? (cam.width * 0.25) / zoom : 0;
+    cam.setFollowOffset(at ? hero.s.x - at.x + shift : 0, at ? hero.s.y - at.y : 0);
     for (const f of this.folk) {
       const out = !!at && f !== keep;
       if (out) f.bubble?.destroy();
@@ -2305,7 +2307,7 @@ export class AtlasScene extends Phaser.Scene {
     const base = this.zoomFor(AREA_ROWS);
     const zoom = cover > 0 && cover < 0.9 ? Math.ceil(base * 2.2) : base;
     cam.zoomTo(zoom, 600, "Sine.easeInOut", true);
-    cam.setFollowOffset(zoom === base ? 0 : -(cam.width * cover) / 2 / zoom, 0);
+    cam.setFollowOffset(zoom === base ? 0 : (cam.width * cover) / 2 / zoom, 0);
   }
 
   /** The opening shot: in close on the captain waking, then easing back to the play view; the map is never shown whole. */

@@ -1,8 +1,9 @@
 import { LEVEL_UP, levelCost, type Levels } from "@greyfall/engine";
+import type { ReactNode } from "react";
 
 import type { LevelView } from "../../game/AtlasScene";
 import { levelOf } from "./RestPanel";
-import { StatIcon } from "./statIcons";
+import { StatIcon, type Stat } from "./statIcons";
 import { SidePanel, useCursor } from "./SidePanel";
 import "./levelup.css";
 
@@ -49,6 +50,7 @@ export function LevelUp({
   onPick,
   onChoose,
   onShift,
+  foot,
 }: {
   view: LevelView;
   held: Levels;
@@ -57,6 +59,7 @@ export function LevelUp({
   onPick: (i: number) => void;
   onChoose: (i: number) => void;
   onShift: (stat: keyof Levels, by: 1 | -1) => void;
+  foot?: ReactNode;
 }) {
   const level = levelOf(view);
   const adding = held.hp + held.attack + held.stamina;
@@ -67,6 +70,11 @@ export function LevelUp({
     stamina: view.levels.stamina + held.stamina,
   });
   const cursor = useCursor(pick);
+  const standing: { label: string; icon: Stat; value: number | string }[] = [
+    { label: "Embers", icon: "flasks", value: view.kit.flasks },
+    { label: "Ember heal", icon: "hp", value: view.kit.flask },
+    { label: "Gold from kills", icon: "gold", value: `${Math.round(view.kit.greed * 100)}%` },
+  ];
   return (
     <SidePanel
       name="Level up"
@@ -76,6 +84,7 @@ export function LevelUp({
       onChoose={onChoose}
       cursor={cursor}
       className="bonfirePanel luPanel"
+      foot={foot}
     >
       <div className="luColumns">
         <div className="luColumn">
@@ -154,6 +163,20 @@ export function LevelUp({
                 <dd>
                   <Change now={view.now[s.stat]} after={view.now[s.stat] + LEVEL_UP[s.stat] * held[s.stat]} />
                 </dd>
+              </div>
+            ))}
+          </dl>
+          {/* Then, as Dark Souls lists poise and item discovery, the numbers a level does not move. */}
+          <dl className="luSheet">
+            {standing.map((r) => (
+              <div key={r.label}>
+                <dt>
+                  <span className="statFrame">
+                    <StatIcon stat={r.icon} size={18} mono />
+                  </span>
+                  {r.label}
+                </dt>
+                <dd>{r.value}</dd>
               </div>
             ))}
           </dl>

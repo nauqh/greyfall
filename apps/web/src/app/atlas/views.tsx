@@ -372,6 +372,14 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     return () => window.removeEventListener("keydown", key);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  // A bonfire screen's keys, at the foot of its panel: the one way to accept or go back, by key or click.
+  const foot = fire && (
+    <KeyHints
+      className="bonfireKeys"
+      keys={fire.screen === "level" ? "E accept   Q back" : fire.screen ? "E travel   Q back" : "W/S pick   E choose"}
+      onKey={fire.screen && { ...(level && { E: accept }), Q: () => menuBack(fire.screen === "level" ? 1 : 0) }}
+    />
+  );
   return (
     <main className={devRoute ? "stage" : "stage noMouse"}>
       <GameCanvas
@@ -447,11 +455,12 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
                 onPick={(pick) => setFire({ ...fire, pick })}
                 onChoose={(i) => bonfire[i]!.go()}
                 onShift={shift}
+                foot={foot}
               />
             ) : (
               sat &&
               (fire.screen === "travel" ? (
-                <TravelPane from={area} dev={devRoute} onTravel={warpTo} onBack={() => menuBack(0)} className="bonfirePanel" />
+                <TravelPane from={area} dev={devRoute} onTravel={warpTo} onBack={() => menuBack(0)} className="bonfirePanel" foot={foot} />
               ) : (
                 <RestPanel
                   name={fire.name}
@@ -462,16 +471,10 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
                   pick={fire.pick}
                   onPick={(pick) => setFire({ ...fire, pick })}
                   onChoose={(i) => bonfire[i]!.go()}
+                  foot={foot}
                 />
               ))
             )}
-            {/* Below the panel, as Dark Souls prompts its keys: the one way to accept or go back, by key or click. Held, hidden,
-                under the rest page too, so the panel does not jump as a page opens. */}
-            <KeyHints
-              className={fire.screen ? "bonfireKeys" : "bonfireKeys idle"}
-              keys={fire.screen === "level" ? "E accept   Q back" : "E travel   Q back"}
-              onKey={fire.screen && { ...(level && { E: accept }), Q: () => menuBack(fire.screen === "level" ? 1 : 0) }}
-            />
           </div>
         )}
         {devRoute && devState && hud && !atlas && (
@@ -629,7 +632,8 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
             </div>
           </div>
         )}
-        <div className={intro ? "worldHud worldHudIntro" : "worldHud"} hidden={!hud}>
+        {/* Off under any menu, as Dark Souls clears the screen for one; H hides it the rest of the time. */}
+        <div className={intro ? "worldHud worldHudIntro" : "worldHud"} hidden={!hud || sackOpen || !!fire || !!menu || paused !== null || atlas}>
           {vitals && (
             // After Dark Souls 1: a round badge holding the embers, and beside it health over stamina, the health bar as long as
             // the captain's health is deep; a paler trail lingers where a blow took it.
@@ -659,7 +663,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
               </span>
             </div>
           )}
-          {gold !== null && !fire && !menu && (
+          {gold !== null && (
             // The souls counter's place: gold carried, bottom right.
             <div className="purse" title="Gold">
               <img src={packUrl("ui/icon_gold.png")} alt="Gold" />

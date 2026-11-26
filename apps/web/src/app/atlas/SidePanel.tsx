@@ -62,12 +62,15 @@ export function SidePanel({
   role = "menu",
   className = "",
   cursor,
+  foot,
 }: {
   kicker?: string;
   name: string;
   sub?: ReactNode;
   badge?: ReactNode;
   children?: ReactNode;
+  /** The panel's last line, under the choices: its key hints. */
+  foot?: ReactNode;
   options: PanelOption[];
   pick: number;
   onPick: (i: number) => void;
@@ -121,17 +124,20 @@ export function SidePanel({
           })}
         </div>
       )}
+      {foot}
     </div>
   );
 }
 
-/** A strip of key hints, written "W/S pick   E choose", each key on the blue button of the field's E prompt. A key in
- *  `onKey` is a button too, for the mouse. */
+/** A strip of key hints, written "W/S pick   E choose" and shown as Dark Souls 1 prompts them, "W/S: Pick", each key on
+ *  the blue button of the field's E prompt. A key in `onKey` is a button too, for the mouse. */
 export function KeyHints({ keys, className, onKey }: { keys: string; className: string; onKey?: Record<string, () => void> }) {
   return (
     <span className={className} aria-hidden={onKey ? undefined : true}>
       {keys.split(/\s{2,}/).map((part) => {
-        const [k = "", ...words] = part.split(" ");
+        const [k = "", ...rest] = part.split(" ");
+        const said = rest.join(" ");
+        const words = `: ${said.charAt(0).toUpperCase()}${said.slice(1)}`;
         const caps = k.split("/").map((c) => (
           <kbd key={c} className={c.length > 1 ? "keyCap wide" : "keyCap"}>
             {c}
@@ -141,12 +147,12 @@ export function KeyHints({ keys, className, onKey }: { keys: string; className: 
         return press ? (
           <button key={part} type="button" className="keyHint" onClick={press}>
             {caps}
-            {words.join(" ")}
+            {words}
           </button>
         ) : (
           <span key={part} className="keyHint">
             {caps}
-            {words.join(" ")}
+            {words}
           </span>
         );
       })}

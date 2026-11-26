@@ -1673,8 +1673,9 @@ textarea {
 	gap: 2px;
 }
 
+/* The colon hard up against the last key, as Dark Souls 1 prints "E:Enter". */
 .keyHint .keyCap:last-of-type {
-	margin-right: 4px;
+	margin-right: -1px;
 }
 
 /* A note on the ground, read: its words in ink on the paper it lies on. */

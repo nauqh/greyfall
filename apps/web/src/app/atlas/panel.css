@@ -306,7 +306,8 @@
 	}
 }
 
-/* Where a side panel stands: at the right, the world left lit, the captain drawn left of centre by the camera. */
+/* Where a side panel stands: at the left, as Dark Souls 1 sets its menus, the world right lit, the captain drawn right of
+   centre by the camera. */
 .sideDock {
 	position: absolute;
 	inset: 0;
@@ -314,8 +315,8 @@
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
-	align-items: flex-end;
-	padding: 16px max(16px, 5vw) 16px 16px;
+	align-items: flex-start;
+	padding: 16px 16px 16px max(16px, 5vw);
 	pointer-events: none;
 }
 
@@ -327,7 +328,7 @@
 @keyframes sideDock {
 	from {
 		opacity: 0;
-		transform: translateX(16px);
+		transform: translateX(-16px);
 	}
 }
 

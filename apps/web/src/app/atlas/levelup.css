@@ -72,15 +72,18 @@
 	flex: 1;
 }
 
-/* Dark Souls' level up: wide, the attributes on the left and what they change on the right. */
+/* Dark Souls' level up: wide, the attributes on the left and what they change on the right, only as tall as its sheet. */
 .sidePanel.luPanel {
 	width: min(760px, calc(100vw - 32px));
+	height: auto;
+	min-height: 0;
+	padding-bottom: 24px;
 }
 
 .luColumns {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
-	gap: 28px;
+	gap: 40px;
 }
 
 .luColumn {
@@ -148,7 +151,8 @@
 
 /* Few rules and room between the lines, as Dark Souls sets its sheet: only the section headings keep a hairline. */
 .luPanel .luSheet {
-	gap: 10px;
+	gap: 14px;
+	font-size: 15px;
 }
 
 .luPanel .luSheet > div {
@@ -157,7 +161,7 @@
 }
 
 .luPanel .luColumn {
-	gap: 16px;
+	gap: 22px;
 }
 
 .bonfirePanel.luPanel :is(.panelOption, .panelOption.picked) {
@@ -166,7 +170,7 @@
 
 /* The icon in its frame, then the part the bar lights: the row itself stays bare so the bar never covers the frame. */
 .luPanel .luAttrs {
-	gap: 6px;
+	gap: 10px;
 }
 
 .bonfirePanel.luPanel .luAttr,

@@ -32,10 +32,13 @@ in `atlas/panel.css` under `.pausePanel`) is the model; build a new menu like it
   key (Esc, Tab), framed inside its 34px height so it stands as tall as E.
 - **A hint strip is `KeyHints`** (`atlas/SidePanel.tsx`), written as
   `"W/S pick   E choose   Esc back"`: three spaces between hints, `/` between
-  keys.
-- **The keys sit apart from the menu**: bare outlined text at the foot of the
-  screen like a talk (`.pauseKeys`), not inside the panel, the same strip on
-  every page. No key caps on the tab bar.
+  keys. It shows them as Dark Souls 1 does, `W/S: Pick`: a colon after the
+  keys and the word capitalised.
+- **The pause menu's keys sit apart from it**: bare outlined text at the foot
+  of the screen like a talk (`.pauseKeys`), the same strip on every page. No
+  key caps on the tab bar.
+- **A bonfire screen's keys are its footer** (`.bonfireKeys`): inside the
+  paper, left-aligned, in the panel's ink under one rule.
 - **The keys**: A/D change (the page, or the picked level), W/S move, E choose,
   Esc back or resume. Tabs start with the pick on the tab bar; S steps down
   into the page. Arrow keys mirror WASD except on a focused slider.
