@@ -766,12 +766,13 @@ const HEARD = "greyfall.heard";
 const REST = "greyfall.rest";
 /** Every bonfire rested at, `area:col,row`, the places the map can travel to. */
 const KINDLED = "greyfall.kindled";
-function restPoint(): { area: AreaId; col: number; row: number } {
+/** The bonfire last rested at; none yet, and the captain wakes at the Landing's entry, by the boat. */
+function restPoint(): { area: AreaId; col: number; row: number } | null {
   try {
     const r = JSON.parse(localStorage.getItem(REST) ?? "null") as { area: AreaId; col: number; row: number } | null;
     if (r && areaMap(r.area).fires.some((f) => f.col === r.col && f.row === r.row)) return r;
   } catch {}
-  return { area: "landing", ...areaMap("landing").fires[0]! };
+  return null;
 }
 /** Gold carried, the gold stones already taken, and the gold left where the captain last died: kept on this browser. */
 const GOLD = "greyfall.gold";
@@ -2075,7 +2076,7 @@ export class AtlasScene extends Phaser.Scene {
       store(REST, { area: past.to, ...areaMap(past.to).fires[0]! });
     }
     // The page says so, darkens, and wakes the captain at the bonfire last rested at, the monsters back at their posts.
-    this.time.delayedCall(900, () => this.hooks.onDeath?.(restPoint().area));
+    this.time.delayedCall(900, () => this.hooks.onDeath?.(restPoint()?.area ?? "landing"));
   }
 
   /** What E does here besides swing: talk to someone right beside, else rest at a bonfire beside, else talk to someone near. */
@@ -2266,7 +2267,7 @@ export class AtlasScene extends Phaser.Scene {
     hero.way = [];
     this.crackle?.();
     this.crackle = on ? loop(CRACKLE, 0.7) : null;
-    const fire = restPoint();
+    const fire = restPoint() ?? hero.at;
     if (on) hero.s.setFlipX((fire.col + 0.5) * CELL < hero.s.x);
     this.play(hero.s, hero.idle);
     this.closeUp(on ? { x: (hero.s.x + (fire.col + 0.5) * CELL) / 2, y: hero.s.y } : null);
