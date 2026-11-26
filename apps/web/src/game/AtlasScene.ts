@@ -4710,7 +4710,7 @@ export class AtlasScene extends Phaser.Scene {
     }
     if (this.reading && !this.dev && tileDistance(this.reading.at, hero.at) > 1) this.read(null);
     const t = this.talk || this.menu || this.reading || hero.dead || this.gone ? undefined : this.eTarget();
-    const action = !t ? null : "folk" in t ? "Talk" : "fire" in t ? (this.unlit.has(this.fireKey(t.fire)) ? "Light the bonfire" : "Rest") : "note" in t ? "Read" : "fog" in t ? "Traverse the fog" : "lock" in t ? t.lock : "unbar" in t ? `Unbar the ${t.unbar.name}` : "loot" in t ? `Take the ${t.loot.loot}` : this.exitWord(t.exit);
+    const action = !t ? null : "folk" in t ? "Talk" : "fire" in t ? (this.unlit.has(this.fireKey(t.fire)) ? "Light the bonfire" : "Rest") : "note" in t ? "Read" : "fog" in t ? "Traverse the fog" : "lock" in t ? t.lock : "unbar" in t ? `Unbar the ${t.unbar.name}` : "loot" in t ? "Pick up" : this.exitWord(t.exit);
     if (action !== this.nearName) this.hooks.onNear?.((this.nearName = action));
   }
 
