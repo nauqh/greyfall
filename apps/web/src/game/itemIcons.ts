@@ -1,11 +1,11 @@
 // Each good's picture: a 32 px cell of Shikashi's Fantasy Icons Pack (Matt Firth, CC BY 4.0, credited in the README),
 // by row and column.
 
-import type { ItemName } from "@greyfall/engine";
+import type { ItemName, LootName } from "@greyfall/engine";
 
 import type { ShopIcon } from "./AtlasScene";
 
-const CELL: Record<ItemName, [number, number]> = {
+const CELL: Record<ItemName | LootName, [number, number]> = {
   "Smoked Haunch": [15, 2],
   "Ember Shard": [18, 3],
   "Brenna's Edge": [5, 1],
@@ -33,6 +33,13 @@ const CELL: Record<ItemName, [number, number]> = {
   "Gnome Powder": [20, 8],
   "Tinker's Buckler": [6, 0],
   "Wheel Cog": [16, 13],
+  "Scrap Iron": [17, 2],
+  "Spider Silk": [17, 5],
+  "Scaled Hide": [17, 8],
+  "Stolen Ring": [8, 5],
+  "Grave Beads": [8, 7],
+  "Tooth Charm": [8, 8],
+  "Gnoll Tusk": [17, 9],
 };
 
-export const ITEM_ICON = Object.fromEntries(Object.entries(CELL).map(([item, [row, col]]) => [item, { x: col * 32, y: row * 32 }])) as Record<ItemName, ShopIcon>;
+export const ITEM_ICON = Object.fromEntries(Object.entries(CELL).map(([item, [row, col]]) => [item, { x: col * 32, y: row * 32 }])) as Record<ItemName | LootName, ShopIcon>;

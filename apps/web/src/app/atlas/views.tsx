@@ -241,7 +241,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   // dev panel's new hero asks for creation after, which the dev route otherwise skips.
   const newGame = (create: boolean): void => {
     try {
-      for (const k of ["band", "bought", "class", "flags", "gold", "heard", "hero", "keys", "kindled", "levels", "lost", "prologue", "rest", "sackOpened", "slain", "taken", "thrown"]) localStorage.removeItem(`greyfall.${k}`);
+      for (const k of ["band", "bought", "class", "flags", "gold", "heard", "hero", "keys", "kindled", "levels", "lost", "loot", "prologue", "rest", "sackOpened", "slain", "taken", "thrown"]) localStorage.removeItem(`greyfall.${k}`);
     } catch {}
     window.location.assign(`${base}/landing?rest${create ? "&create" : ""}`);
   };

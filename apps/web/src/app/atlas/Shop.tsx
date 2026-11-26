@@ -31,6 +31,7 @@ export function Shop({ menu, api }: { menu: MenuView; api: RefObject<AtlasApi | 
   const choices = rows.filter((o) => !o.icon);
   const pick = menu.options[menu.pick];
   const cost = Number(pick?.note);
+  const after = menu.sell ? menu.gold + cost : Math.abs(menu.gold - cost);
   const hover = (i: number) => api.current?.hover(i);
   const choose = (i: number) => api.current?.choose(i);
   return (
@@ -38,7 +39,7 @@ export function Shop({ menu, api }: { menu: MenuView; api: RefObject<AtlasApi | 
       <div className={`shop${menu.shop ? " goods" : ""}`} role="menu" aria-label={menu.name}>
         <div className="shopTop">
           <div className="shopWho">
-            <span className="shopKicker">{menu.shop ? "Purchase" : menu.role}</span>
+            <span className="shopKicker">{menu.sell ? "Sell" : menu.shop ? "Purchase" : menu.role}</span>
             <span className="shopName">{menu.name}</span>
           </div>
           <span className="shopPurse" aria-label={`${menu.gold} gold held`}>
@@ -75,7 +76,7 @@ export function Shop({ menu, api }: { menu: MenuView; api: RefObject<AtlasApi | 
           <>
             <div className="shopBody">
               <section className="shopWares">
-                <Heading icon={ICON.hire}>Wares</Heading>
+                <Heading icon={ICON.hire}>{menu.sell ? "Your goods" : "Wares"}</Heading>
                 <ul className="shopGrid">
                   {goods.map((o) => (
                     <li key={o.label}>
@@ -125,12 +126,12 @@ export function Shop({ menu, api }: { menu: MenuView; api: RefObject<AtlasApi | 
                   <dd>{menu.gold}</dd>
                 </div>
                 <div>
-                  <dt>Price</dt>
+                  <dt>{menu.sell ? "Offer" : "Price"}</dt>
                   <dd>{pick?.sold || Number.isNaN(cost) ? "-" : cost}</dd>
                 </div>
                 <div className={pick?.afford === false && !pick.sold ? "short" : undefined}>
                   <dt>{pick?.afford === false && !pick.sold ? "Gold short" : "Gold after"}</dt>
-                  <dd>{pick?.sold || Number.isNaN(cost) ? menu.gold : Math.abs(menu.gold - cost)}</dd>
+                  <dd>{pick?.sold || Number.isNaN(cost) ? menu.gold : after}</dd>
                 </div>
               </dl>
               {choices.map((o) => (
@@ -150,7 +151,7 @@ export function Shop({ menu, api }: { menu: MenuView; api: RefObject<AtlasApi | 
           </>
         )}
 
-        <KeyHints className="shopKeys" keys={menu.shop ? "W/S pick   E buy   Esc back" : "W/S pick   E choose   Esc leave"} />
+        <KeyHints className="shopKeys" keys={menu.shop ? `W/S pick   E ${menu.sell ? "sell" : "buy"}   Esc back` : "W/S pick   E choose   Esc leave"} />
       </div>
     </div>
   );
@@ -168,6 +169,7 @@ function Heading({ icon, children }: { icon: string; children: ReactNode }) {
 function choiceIcon(label: string): string {
   if (label === "Talk") return ICON.talk;
   if (label === "Shop") return ICON.shop;
+  if (label === "Sell") return ICON.gold;
   if (label.startsWith("Hire")) return ICON.hire;
   return ICON.leave;
 }
@@ -225,7 +227,7 @@ function Tell({ o }: { o: MenuView["options"][number] }) {
             )}
         <div>
           <dt>Held</dt>
-          <dd>{o.sold ? "1 / 1" : "0 / 1"}</dd>
+          <dd>{o.held ?? (o.sold ? "1 / 1" : "0 / 1")}</dd>
         </div>
       </dl>
     </>

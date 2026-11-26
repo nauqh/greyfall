@@ -551,6 +551,27 @@ export const GIFTS: readonly ItemName[] = ["Drowned Locket", "Notched Whetstone"
 /** Lent on the Landing, to learn the sack on: gone once the captain is ashore past the Ring. */
 export const LENT: readonly ItemName[] = ["Hollis's Gaff"];
 
+/**
+ * Trade goods: what a felled monster of a kind in `from` leaves beside its gold, one time in `1 / chance`. Picked up
+ * with E, carried by the count, and sold to `buyer`, the one merchant whose trade it is, for `worth` gold each.
+ */
+export const LOOT = {
+  "Scrap Iron": { worth: 10, buyer: "brenna", from: ["torch", "spear", "slingshot", "taken"], chance: 0.35, about: "Goblin iron, pitted and bent out of true. Brenna buys it by weight, for the forge." },
+  "Spider Silk": { worth: 8, buyer: "mags", from: ["spider"], chance: 0.4, about: "A hank of web, tougher than net twine. Mags buys it, and the fishers buy it off her." },
+  "Scaled Hide": { worth: 9, buyer: "mags", from: ["lizard", "snake"], chance: 0.35, about: "A hide in scales, stiff with salt. Mags buys it for boot soles." },
+  "Stolen Ring": { worth: 20, buyer: "jory", from: ["thief"], chance: 0.3, about: "A ring a thief took off someone else. Jory buys it and never asks whose." },
+  "Grave Beads": { worth: 12, buyer: "jory", from: ["skull"], chance: 0.3, about: "Beads strung on gut, off the dead that walk. Jory buys them. He will not say who for." },
+  "Tooth Charm": { worth: 16, buyer: "jory", from: ["shaman"], chance: 0.4, about: "A goblin shaman's charm, teeth on a cord. Jory buys it, though no one in Lanternport would wear one." },
+  "Gnoll Tusk": { worth: 14, buyer: "nim", from: ["gnoll"], chance: 0.4, about: "A gnoll's tusk, yellow at the root. Nim grinds it into his powder." },
+} as const satisfies Record<string, { worth: number; buyer: string; from: readonly string[]; chance: number; about: string }>;
+export type LootName = keyof typeof LOOT;
+
+/** The good a felled monster of `kind` leaves, if any: `roll` is one draw in [0, 1). */
+export function lootDrop(kind: string, roll: number): LootName | undefined {
+  const name = (Object.keys(LOOT) as LootName[]).find((n) => (LOOT[n].from as readonly string[]).includes(kind));
+  return name && roll < LOOT[name].chance ? name : undefined;
+}
+
 /** The player's numbers with their class, what has been bought, and the levels. */
 export function kit(bought: ReadonlySet<string>, levels: Levels = NO_LEVELS, cls: HeroClass = "warrior"): Kit {
   const k: Kit = {

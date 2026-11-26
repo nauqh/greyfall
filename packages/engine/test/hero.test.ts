@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { BOSS_KITS, bossAim, CLASSES, FOES, GIFTS, HERO, LENT, ITEMS, LEVEL_UP, kit, levelCost, onOffer, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
+import { BOSS_KITS, bossAim, CLASSES, FOES, GIFTS, HERO, LENT, ITEMS, LOOT, lootDrop, NPCS, LEVEL_UP, kit, levelCost, onOffer, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
 
 const goblin = FOES.torch!;
 const home = { col: 10, row: 10 };
@@ -250,5 +250,23 @@ describe("the other folk's classes", () => {
   it("lets only the hex reach a flier", () => {
     const bat = FOES.bat!;
     expect(Object.entries(CLASSES).filter(([, c]) => canReach(c.reach, bat)).map(([k]) => k)).toEqual(["barrowWarden"]);
+  });
+});
+
+describe("trade goods", () => {
+  it("come off a monster that fights, each kind leaving one good at most", () => {
+    const kinds = Object.values(LOOT).flatMap((l) => [...l.from]);
+    expect(new Set(kinds).size).toBe(kinds.length);
+    for (const k of kinds) expect(FOES[k], k).toBeDefined();
+  });
+
+  it("are bought by a merchant", () => {
+    for (const [name, l] of Object.entries(LOOT)) expect(NPCS.find((n) => n.id === l.buyer)?.shop, name).toBeDefined();
+  });
+
+  it("drop on a roll under the chance, never off a monster with none", () => {
+    expect(lootDrop("spider", 0)).toBe("Spider Silk");
+    expect(lootDrop("spider", LOOT["Spider Silk"].chance)).toBeUndefined();
+    expect(lootDrop("minotaur", 0)).toBeUndefined();
   });
 });

@@ -39,7 +39,7 @@ export function Sack({ sack, gold, onCover }: { sack: SackView; gold: number; on
     }
   });
   // Opened before there is anything past the gift to see does not count: the nudge still comes with the gaff.
-  const worth = sack.items.some((i) => !GIFTS.includes(i.label));
+  const worth = sack.items.some((i) => !(GIFTS as readonly string[]).includes(i.label));
   useEffect(() => {
     if (!open || !worth) return;
     setOpened(true);

@@ -77,6 +77,9 @@ import {
   type CompanionKind,
   type CompanionStats,
   type Dweller,
+  LOOT,
+  lootDrop,
+  type LootName,
   type FoeStats,
   type GateKind,
   type Npc,
@@ -267,8 +270,8 @@ export interface StatLine {
 }
 
 /** One good in the captain's sack. */
-export interface SackItem {
-  label: ItemName;
+export interface SackItem<L extends string = ItemName> {
+  label: L;
   icon: ShopIcon;
   gives: string;
   /** One line of what it is, after a Souls item's description. */
@@ -279,7 +282,7 @@ export interface SackItem {
 export interface SackView {
   /** What the captain was called at the start; an old save's has none. */
   name: string | null;
-  items: SackItem[];
+  items: SackItem<ItemName | LootName>[];
   stats: (StatLine & { key: keyof Kit })[];
   level: number;
 }
@@ -290,12 +293,14 @@ export interface MenuView {
   role: string;
   /** What they called out as the captain came near. */
   greet: string;
-  options: { label: string; note?: string; icon?: ShopIcon; gives?: string; sold?: boolean; about?: string; afford?: boolean; change?: StatLine[] }[];
+  options: { label: string; note?: string; icon?: ShopIcon; gives?: string; sold?: boolean; about?: string; afford?: boolean; change?: StatLine[]; held?: string }[];
   pick: number;
   /** Gold carried. */
   gold: number;
   /** A merchant's goods, opened from Shop: drawn as cards rather than a list. */
   shop?: boolean;
+  /** The captain's trade goods this merchant buys, opened from Sell: the goods' cards, priced as an offer. */
+  sell?: boolean;
 }
 
 export interface Vitals {
@@ -840,6 +845,9 @@ function barred(e: Exit): boolean {
 const TAKEN = "greyfall.taken";
 const LOST = "greyfall.lost";
 const LEVELS = "greyfall.levels";
+/** Trade goods carried, by count. */
+const HELD = "greyfall.loot";
+const held = (): Partial<Record<LootName, number>> => stored(HELD, {});
 type Lost = { area: AreaId; col: number; row: number; gold: number };
 function stored<T>(key: string, empty: T): T {
   try {
@@ -870,6 +878,8 @@ interface Pile {
   at: Cell;
   gold: number;
   item?: ItemName;
+  /** A trade good, taken only with E. */
+  loot?: LootName;
   /** The kind of the boss whose key this is. */
   key?: string;
   s: Phaser.GameObjects.Image;
@@ -990,7 +1000,7 @@ export class AtlasScene extends Phaser.Scene {
   private nearName: string | null = null;
   /** Open with someone who hires out: Talk, Hire, Leave. */
   /** `shopping`: a merchant's goods are open, picked from the menu's Shop. */
-  private menu: { folk: Folk; pick: number; shopping?: boolean } | null = null;
+  private menu: { folk: Folk; pick: number; shopping?: boolean; selling?: boolean } | null = null;
   /** The camera in close: at a bonfire, or on a merchant through their menu and the talks it opens. */
   private close: "fire" | "folk" | null = null;
   /** The share of the screen the open sack covers, 0 when shut. */
@@ -1127,6 +1137,7 @@ export class AtlasScene extends Phaser.Scene {
     this.load.image("tilesetRoad", packUrl("Terrain/Tileset/Tilemap_color4.png"));
     if (!this.textures.exists("note")) this.load.image("note", packUrl("ui/paper.png"));
     if (!this.textures.exists("gold")) this.load.image("gold", packUrl("Terrain/Resources/Gold/Gold Resource/Gold_Resource.png"));
+    if (!this.textures.exists("icons")) this.load.spritesheet("icons", "/icons/shikashi.png", { frameWidth: 32, frameHeight: 32 });
     if (!this.textures.exists("swords")) this.load.spritesheet("swords", SWORDS, { frameWidth: 448, frameHeight: 128 });
     const sheet = (key: string, s: Sheet): void => {
       if (this.textures.exists(key)) return;
@@ -2028,6 +2039,8 @@ export class AtlasScene extends Phaser.Scene {
       else this.tweens.add({ targets: b.s, alpha: 0, duration: 500, onComplete: () => b.s.destroy() });
       const gold = (b as Foe).stats?.gold;
       if (gold) this.dropGold(b.at, Math.round(gold * this.gear.greed));
+      const loot = lootDrop((b as Foe).kind, Math.random());
+      if (loot) this.dropLoot(b.at, loot);
       if (this.isBoss(b as Foe)) this.felled(b as Foe);
       if (this.isBoss(b as Foe) && BOSS_KEY[(b as Foe).kind]) this.dropKey(b.at, (b as Foe).kind);
       return;
@@ -2054,7 +2067,7 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** What E does here besides swing: talk to someone right beside, else rest at a bonfire beside, else talk to someone near. */
-  private eTarget(): { folk: Folk } | { fire: Cell } | { note: Note } | { exit: Exit } | { fog: true } | { lock: string } | { unbar: Lock } | undefined {
+  private eTarget(): { folk: Folk } | { fire: Cell } | { note: Note } | { exit: Exit } | { fog: true } | { lock: string } | { unbar: Lock } | { loot: Pile } | undefined {
     const at = this.hero!.at;
     const folk = this.folk.filter((f) => f.near).sort((a, b) => tileDistance(a.at, at) - tileDistance(b.at, at))[0];
     if (folk && tileDistance(folk.at, at) <= 1) return { folk };
@@ -2062,6 +2075,8 @@ export class AtlasScene extends Phaser.Scene {
     if (fire) return { fire };
     const note = this.notes.find((n) => tileDistance(n.at, at) <= 1);
     if (note) return { note };
+    const loot = this.piles.find((p) => p.loot && tileDistance(p.at, at) <= 1);
+    if (loot) return { loot };
     const exit = this.local?.exits.find((e) => tileDistance(e.at, at) <= 1);
     if (exit) return { exit };
     if (this.atFog()) return { fog: true };
@@ -2083,6 +2098,26 @@ export class AtlasScene extends Phaser.Scene {
       s.once(Phaser.GameObjects.Events.DESTROY, () => glow.destroy());
     } else this.tweens.add({ targets: s, y: { from: y - 30, to: y }, duration: 420, ease: "Bounce.easeOut" });
     this.piles.push({ at: { ...at }, gold, s, ...more });
+  }
+
+  /** A trade good where a monster fell, waiting for E. */
+  private dropLoot(at: Cell, loot: LootName): void {
+    const [x, y] = [(at.col + 0.6) * CELL, (at.row + 0.6) * CELL];
+    const s = this.add.image(x, y, "icons", (ITEM_ICON[loot].y / 32) * 16 + ITEM_ICON[loot].x / 32).setScale(1.3).setDepth(standing(y) - 1);
+    this.tweens.add({ targets: s, y: { from: y - 30, to: y }, duration: 420, ease: "Bounce.easeOut" });
+    this.piles.push({ at: { ...at }, gold: 0, loot, s });
+  }
+
+  /** E by a trade good: into the sack. */
+  private pickUp(p: Pile): void {
+    const loot = p.loot!;
+    this.piles.splice(this.piles.indexOf(p), 1);
+    const h = held();
+    store(HELD, { ...h, [loot]: (h[loot] ?? 0) + 1 });
+    play(LEATHER);
+    this.tweens.add({ targets: p.s, y: p.s.y - 24, alpha: 0, duration: 300, ease: "Sine.easeOut", onComplete: () => p.s.destroy() });
+    this.float(p.s.x, p.s.y - 50, loot, "#f4cf6b");
+    this.emitSack();
   }
 
   /** A boss's key on the ground where it fell, glowing until it is picked up. */
@@ -2138,7 +2173,7 @@ export class AtlasScene extends Phaser.Scene {
     const hero = this.hero!;
     if (hero.dead || this.gone) return;
     // A key is walked onto; the rest is swept up from a tile off.
-    for (const p of this.piles.filter((p) => tileDistance(p.at, hero.at) <= (p.key ? 0 : 1))) {
+    for (const p of this.piles.filter((p) => !p.loot && tileDistance(p.at, hero.at) <= (p.key ? 0 : 1))) {
       this.piles.splice(this.piles.indexOf(p), 1);
       if (p.key) {
         remember(KEYS, remembered(KEYS).add(p.key));
@@ -2480,7 +2515,8 @@ export class AtlasScene extends Phaser.Scene {
     const stats = (Object.keys(STATS) as (keyof Kit)[]).map((k) => ({ key: k, label: STATS[k].label, now: statWords(k, this.gear) }));
     const lv = levels();
     const level = 1 + lv.hp + lv.attack + lv.stamina;
-    this.hooks.onSack?.({ name: stored<string | null>(NAME, null), items: items.map(sackItem), stats, level });
+    const goods = (Object.entries(held()) as [LootName, number][]).filter(([, n]) => n > 0).map(([loot, n]) => ({ label: loot, icon: ITEM_ICON[loot], gives: `${n} carried, ${LOOT[loot].worth} gold each to ${NPCS.find((m) => m.id === LOOT[loot].buyer)?.name}`, about: LOOT[loot].about }));
+    this.hooks.onSack?.({ name: stored<string | null>(NAME, null), items: [...items.map(sackItem), ...goods], stats, level });
   }
 
   /** In a talk with someone who hires out: a companion joins, for gold, if there is room. */
@@ -2501,7 +2537,30 @@ export class AtlasScene extends Phaser.Scene {
     this.showMenu();
   }
 
+  /** The trade goods carried that `f` buys. */
+  private wares(f: Folk): LootName[] {
+    return (Object.entries(held()) as [LootName, number][]).filter(([loot, n]) => n > 0 && LOOT[loot].buyer === f.npc.id).map(([loot]) => loot);
+  }
+
+  /** At a merchant's Sell: one of a good, for its worth. */
+  private sellHere(loot: LootName): void {
+    const h = held();
+    store(HELD, { ...h, [loot]: (h[loot] ?? 1) - 1 });
+    this.setGold(this.gold + LOOT[loot].worth);
+    play(COINS);
+    this.emitSack();
+    const m = this.menu!;
+    if (!this.wares(m.folk).length) this.menu = { folk: m.folk, pick: 2 };
+    else m.pick = Math.min(m.pick, this.wares(m.folk).length - 1);
+    this.showMenu();
+  }
+
   private menuOptions(f: Folk): MenuView["options"] {
+    if (this.menu?.selling) {
+      const h = held();
+      const goods = this.wares(f).map((loot) => ({ label: loot, note: `${LOOT[loot].worth}`, icon: ITEM_ICON[loot], about: LOOT[loot].about, held: `${h[loot]}` }));
+      return [...goods, { label: "Back" }];
+    }
     if (this.menu?.shopping) {
       const bought = remembered(BOUGHT);
       const goods = this.stock(f).map((item) => {
@@ -2514,7 +2573,7 @@ export class AtlasScene extends Phaser.Scene {
     }
     const talk = { label: "Talk", note: "Hear them out" };
     const leave = { label: "Leave", note: "Go on your way" };
-    if (f.npc.shop) return [talk, { label: "Shop", note: "See the goods" }, leave];
+    if (f.npc.shop) return [talk, { label: "Shop", note: "See the goods" }, ...(this.wares(f).length ? [{ label: "Sell", note: "Trade goods for gold" }] : []), leave];
     const kind = RECRUITER[f.npc.id]!;
     const cost = COMPANIONS[kind].cost;
     const room = this.band.length < BAND_SIZE;
@@ -2531,7 +2590,8 @@ export class AtlasScene extends Phaser.Scene {
             greet: m.folk.npc.greet,
             options: this.menuOptions(m.folk),
             pick: m.pick,
-            shop: m.shopping,
+            shop: m.shopping || m.selling,
+            sell: m.selling,
             gold: this.gold,
           }
         : null,
@@ -2562,8 +2622,8 @@ export class AtlasScene extends Phaser.Scene {
   private back(): void {
     const m = this.menu;
     if (!m) return;
-    if (!m.shopping) return this.closeMenu(true);
-    this.menu = { folk: m.folk, pick: 1 };
+    if (!m.shopping && !m.selling) return this.closeMenu(true);
+    this.menu = { folk: m.folk, pick: m.selling ? 2 : 1 };
     this.showMenu();
   }
 
@@ -2584,6 +2644,11 @@ export class AtlasScene extends Phaser.Scene {
       this.menu = { folk: m.folk, pick: 1 };
       return this.showMenu();
     }
+    if (m.selling) {
+      if (!last) return this.sellHere(this.wares(m.folk)[m.pick]!);
+      this.menu = { folk: m.folk, pick: 2 };
+      return this.showMenu();
+    }
     if (m.pick === 0) {
       const f = m.folk;
       this.menu = null;
@@ -2591,7 +2656,7 @@ export class AtlasScene extends Phaser.Scene {
       this.talkTo(f);
     } else if (last) this.closeMenu(true);
     else if (m.folk.npc.shop) {
-      this.menu = { folk: m.folk, pick: 0, shopping: true };
+      this.menu = { folk: m.folk, pick: 0, ...(this.menuOptions(m.folk)[m.pick]!.label === "Sell" ? { selling: true } : { shopping: true }) };
       this.showMenu();
     } else this.hireHere();
   }
@@ -4422,6 +4487,7 @@ export class AtlasScene extends Phaser.Scene {
     if ("fog" in t) return this.enterFog();
     if ("lock" in t) return;
     if ("unbar" in t) return this.unbar(t.unbar);
+    if ("loot" in t) return this.pickUp(t.loot);
     return RECRUITER[t.folk.npc.id] || t.folk.npc.shop ? this.openMenu(t.folk) : this.talkTo(t.folk);
   }
 
@@ -4565,7 +4631,7 @@ export class AtlasScene extends Phaser.Scene {
     }
     if (this.reading && !this.dev && tileDistance(this.reading.at, hero.at) > 1) this.read(null);
     const t = this.talk || this.menu || this.reading || hero.dead || this.gone ? undefined : this.eTarget();
-    const action = !t ? null : "folk" in t ? "Talk" : "fire" in t ? (this.unlit.has(this.fireKey(t.fire)) ? "Light the bonfire" : "Rest") : "note" in t ? "Read" : "fog" in t ? "Traverse the fog" : "lock" in t ? t.lock : "unbar" in t ? `Unbar the ${t.unbar.name}` : this.exitWord(t.exit);
+    const action = !t ? null : "folk" in t ? "Talk" : "fire" in t ? (this.unlit.has(this.fireKey(t.fire)) ? "Light the bonfire" : "Rest") : "note" in t ? "Read" : "fog" in t ? "Traverse the fog" : "lock" in t ? t.lock : "unbar" in t ? `Unbar the ${t.unbar.name}` : "loot" in t ? `Take the ${t.loot.loot}` : this.exitWord(t.exit);
     if (action !== this.nearName) this.hooks.onNear?.((this.nearName = action));
   }
 
