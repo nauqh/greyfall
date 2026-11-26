@@ -1,10 +1,17 @@
-/* A new game's creation laid out as Elden Ring's Create Character, on one sheet of the pack's paper across the screen:
-   the steps, the choices, the numbers, and the class on show in a window onto its shore at the right. Fixed to the screen, never
-   scrolled. Every piece at 1x or exactly half, as nearest-neighbour at any other scale breaks the art's lines. */
+/* A new game's creation laid out as Dark Souls 1's Create Character, on one sheet of the pack's paper across the screen:
+   the steps and numbers ruled down the left, the choices on a slip over the middle, the class on show at the right. Fixed to
+   the screen, never scrolled. Every piece at 1x or exactly half, as nearest-neighbour at any other scale breaks the art's lines. */
 .creation {
 	--ink: var(--brown);
 	--stroke: var(--brown);
 	--band: linear-gradient(90deg, rgb(110 76 36 / 0.3), rgb(110 76 36 / 0.06));
+	--row: 36px;
+	/* Dark Souls 1's ledger: a rule under every row, drawn by the row so it never drifts off it. */
+	--rule: inset 0 -1px rgb(174 142 108 / 0.45);
+	/* Dark Souls 1's panel frame: a thin square line, a fainter one just inside it, the panel a shade darker. */
+	--frame: 2px solid var(--ink);
+	--frameIn: 1px solid rgb(110 76 36 / 0.4);
+	--frameFill: rgb(110 76 36 / 0.07);
 	display: block;
 	overflow: hidden;
 	cursor: none;
@@ -26,7 +33,7 @@
 	z-index: 200;
 	inset: 20px 20px 60px;
 	display: grid;
-	grid-template: "fields list stats scene" minmax(0, 1fr) / 150px minmax(0, 1fr) 220px minmax(0, 2fr);
+	grid-template: "ledger list scene" minmax(0, 1fr) / 260px minmax(0, 1fr) minmax(0, 1.3fr);
 	align-items: start;
 	gap: 0 32px;
 	padding: 132px 72px 96px 76px;
@@ -59,20 +66,47 @@
 	animation: prologueIn 400ms ease-out both;
 }
 
-/* The steps, each with what it holds; the one being chosen on the band. */
-.crFields {
-	grid-area: fields;
+/* The left column as Dark Souls 1 keeps it: the steps over the numbers, each a ruled ledger in an inked frame. */
+.crLedger {
+	grid-area: ledger;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	color: var(--ink);
+}
+
+.crFields,
+.crRows {
 	display: grid;
-	gap: 4px;
+	grid-template-columns: minmax(0, 1fr);
 	margin: 0;
-	padding: 0;
+	padding: 6px 8px;
+	border: var(--frame);
+	outline: var(--frameIn);
+	outline-offset: -6px;
+	background: var(--frameFill);
 	list-style: none;
 }
 
+.crFields li:last-child,
+.crRows li:last-child {
+	box-shadow: none;
+}
+
+/* A step and what it holds on one ruled line; the one being chosen on the band. */
 .crFields li {
-	display: grid;
-	gap: 2px;
-	padding: 8px 10px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	height: var(--row);
+	padding: 0 6px 1px;
+}
+
+.crFields li,
+.crRows li,
+.crOption {
+	box-shadow: var(--rule);
 }
 
 .crFields li.on {
@@ -87,29 +121,40 @@
 }
 
 .crFields b {
+	min-width: 0;
 	overflow: hidden;
 	font: 700 16px var(--display), serif;
 	white-space: nowrap;
 	text-overflow: ellipsis;
-	color: var(--ink);
 }
 
-/* Kept inside the paper on a short screen; the focused row scrolls itself into view. */
+/* The choices on a slip laid over the middle of the sheet, as Dark Souls 1's scroll
+   does; its top level with the ledger's, the rows ruled, what the cursor is on at the foot. Kept inside the screen; the focused row scrolls into view. */
 .crList {
+	--row: 48px;
 	grid-area: list;
+	align-self: start;
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
-	max-height: 100%;
+	max-height: calc(100% + 18px);
+	/* The paper's art stands 18px in from its box. */
+	margin-top: -18px;
+	padding: 34px 34px 32px;
+	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 28px stretch;
+	filter: drop-shadow(0 10px 16px rgb(60 40 20 / 0.35));
 	overflow-y: auto;
 	scrollbar-width: none;
 }
 
-/* What the cursor is on, in a fixed four lines so the rows under it never move. */
+/* What the cursor is on, at the slip's foot under a rule, in a fixed four lines so nothing above it moves. */
 .crAbout {
+	flex: none;
 	min-height: 5.6em;
 	margin: 0;
-	font: italic 400 clamp(17px, 1.15vw, 20px) / 1.4 var(--book), serif;
+	padding-top: 12px;
+	border-top: 2px solid rgb(174 142 108 / 0.6);
+	font: italic 400 clamp(16px, 1.1vw, 19px) / 1.4 var(--book), serif;
 	color: var(--paperInk);
 	text-wrap: pretty;
 	animation: prologueIn 300ms ease-out both;
@@ -120,14 +165,14 @@
 	flex-direction: column;
 }
 
-/* A plain row on the paper, as Elden Ring lists its origins; the cursor's row on the band, in ink. */
+/* A plain ruled row; the cursor's row on the band, in ink. */
 .crOption {
 	display: flex;
 	align-items: center;
 	gap: 10px;
 	width: 100%;
-	min-height: 48px;
-	padding: 6px 10px;
+	height: var(--row);
+	padding: 0 10px 1px;
 	border: 0;
 	background: none;
 	color: var(--mute);
@@ -141,6 +186,9 @@
 	color: var(--ink);
 }
 
+.crOption .panelOptionNote {
+	font-size: 14px;
+}
 .creation .panelOptionName {
 	overflow: hidden;
 	white-space: nowrap;
@@ -177,8 +225,9 @@
 	align-self: stretch;
 	position: relative;
 	overflow: hidden;
-	border: 4px solid var(--ink);
-	border-radius: 6px;
+	border: var(--frame);
+	outline: var(--frameIn);
+	outline-offset: -6px;
 	box-shadow: inset 0 0 24px rgb(0 0 0 / 0.35);
 	background: #47aba9;
 }
@@ -209,54 +258,19 @@
 	-webkit-text-stroke: 0;
 }
 
-/* The numbers in a cell pressed into the paper, beside the class on show. */
-.crStats {
-	grid-area: stats;
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-	padding: 14px 12px;
-	/* On the sheet's own paper, framed as the islet's window beside it. */
-	border: 4px solid var(--ink);
-	border-radius: 6px;
-	color: var(--ink);
-}
-
-.crTitle {
-	font: 900 18px var(--display), serif;
-	white-space: nowrap;
-}
-
-.crRows {
-	display: grid;
-	gap: 8px;
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
-
 .crRows li {
 	display: grid;
 	grid-template-columns: auto minmax(0, 1fr) auto;
 	align-items: center;
 	gap: 10px;
-	min-height: 26px;
+	height: var(--row);
+	padding: 0 6px 1px;
 	font: 700 14px var(--display), serif;
 }
 
 .crRows b {
 	font: 900 16px var(--display), serif;
 	font-variant-numeric: lining-nums tabular-nums;
-}
-
-/* One 22 px frame of a 64 px tall icon or sheet, the `--frame`th. */
-/* The gift, once there is one. */
-.crSlot {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding-top: 10px;
-	border-top: 1px solid rgb(74 58 40 / 0.25);
 }
 
 .crFoot {
@@ -302,26 +316,21 @@
 		padding-bottom: 84px;
 	}
 
-	.crOption {
-		min-height: 42px;
-		padding-block: 4px;
-	}
-
-	.crRows {
-		gap: 4px;
+	.crList {
+		--row: 42px;
 	}
 }
 
 /* Too narrow for the islet at 2x: the list takes the room back. */
 @media (max-width: 1400px) {
 	.crSheet {
-		grid-template-columns: 150px minmax(0, 1fr) 220px minmax(0, 1.2fr);
+		grid-template-columns: 240px minmax(0, 1fr) minmax(0, 1fr);
 	}
 }
 
 @media (max-width: 1100px) {
 	.crSheet {
-		grid-template-columns: 130px minmax(0, 1fr) 180px minmax(0, 1.2fr);
+		grid-template-columns: 210px minmax(0, 1fr) minmax(0, 0.8fr);
 		gap: 0 20px;
 	}
 }
@@ -334,8 +343,7 @@
 		gap: 16px;
 	}
 
-	.crFields,
-	.crStats {
+	.crLedger {
 		display: none;
 	}
 

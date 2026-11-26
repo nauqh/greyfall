@@ -105,9 +105,9 @@ function Thumb({ row }: { row: (typeof CLASS_ROWS)[number] }) {
 }
 
 /**
- * Before the prologue: the class, a gift and a name, kept for the run. Laid out as Elden Ring's Create Character on one
- * sheet of the pack's paper across the screen: the steps with what each holds, the step's choices under what the cursor is
- * on, the numbers, and the class on show in a window onto its shore at the right. Keyboard only, on the play keys, so it is practice.
+ * Before the prologue: the class, a gift and a name, kept for the run. Laid out as Dark Souls 1's Create Character on one
+ * sheet of the pack's paper across the screen: the steps and the numbers ruled down the left, the step's choices on a slip
+ * laid over the middle with what the cursor is on at its foot, and the class on show in a window onto its shore at the right. Keyboard only, on the play keys, so it is practice.
  */
 export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => SackItem[]; onBegin: (cls: HeroClass, gift: ItemName, name: string) => void; onDone: () => void }) {
   const [step, setStep] = useState(0);
@@ -205,19 +205,29 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
           {STEPS[step]!.label}
         </h1>
 
-        <ol className="crFields" aria-label="Steps">
-          {STEPS.map((s, i) => (
-            <li key={s.label} className={i === step ? "on" : undefined} aria-current={i === step ? "step" : undefined}>
-              <span>{s.label}</span>
-              <b>{i === 0 ? (CLASS_ROWS.find((c) => c.cls === cls)?.name ?? "-") : i === 1 ? (gift ?? "-") : name.trim() || NAMELESS}</b>
-            </li>
-          ))}
-        </ol>
+        <aside className="crLedger" aria-label="Your character">
+          <ol className="crFields" aria-label="Steps">
+            {STEPS.map((s, i) => (
+              <li key={s.label} className={i === step ? "on" : undefined} aria-current={i === step ? "step" : undefined}>
+                <span>{s.label}</span>
+                <b>{i === 0 ? (CLASS_ROWS.find((c) => c.cls === cls)?.name ?? "-") : i === 1 ? (gift ?? "-") : name.trim() || NAMELESS}</b>
+              </li>
+            ))}
+          </ol>
+          <ul className="crRows">
+            {STATS.map((s) => (
+              <li key={s.label}>
+                <span className="statFrame">
+                  <StatIcon stat={s.icon} size={22} mono />
+                </span>
+                <span>{s.label}</span>
+                <b>{s.of(now, showCls)}</b>
+              </li>
+            ))}
+          </ul>
+        </aside>
 
         <section ref={list} className="crList" aria-label={STEPS[step]!.title}>
-          <p key={`${step}:${showCls}:${showGift}`} className="crAbout">
-            {told}
-          </p>
           {step === 0 && (
             <div className="crOptions">
               {CLASS_ROWS.map((c, i) => (
@@ -250,31 +260,10 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
               <span className="panelOptionNote">Up to 16 letters. Left blank, you are {NAMELESS}.</span>
             </form>
           )}
+          <p key={`${step}:${showCls}:${showGift}`} className="crAbout">
+            {told}
+          </p>
         </section>
-
-        <aside className="crStats" aria-label="Your character">
-          <span className="crTitle">{row.name}</span>
-          <ul className="crRows">
-            {STATS.map((s) => (
-              <li key={s.label}>
-                <span className="statFrame">
-                  <StatIcon stat={s.icon} size={22} mono />
-                </span>
-                <span>{s.label}</span>
-                <b>{s.of(now, showCls)}</b>
-              </li>
-            ))}
-          </ul>
-          {giftShown && (
-            <div className="crSlot">
-              <ItemIcon icon={giftShown.icon} size={32} />
-              <span className="panelOptionText">
-                <span className="panelOptionName">{giftShown.label}</span>
-                <span className="panelOptionNote">{giftShown.gives}</span>
-              </span>
-            </div>
-          )}
-        </aside>
 
         <CreationScene row={row} gift={giftShown} />
       </div>
