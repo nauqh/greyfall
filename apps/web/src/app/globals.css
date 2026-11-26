@@ -1322,15 +1322,25 @@ textarea {
 	margin-top: 12px;
 }
 
-/* Picked by key with the mouse hidden: the focused button inked, the other pale. */
+/* Drawn like the E key cap; picked by key with the mouse hidden, the other one dimmed. */
 .dropWarnActions .btn {
-	color: var(--brown);
-	background: #f2e3c2;
+	min-width: 0;
+	padding: 6px 16px 9px;
+	color: #fdfaf0;
+	font: 800 16px "Nunito", sans-serif;
+	letter-spacing: 0;
+	text-transform: none;
+	-webkit-text-stroke: 4px #1c2634;
+	paint-order: stroke fill;
+	border: 0;
+	border-image: url("/tiny-swords/UI Elements/UI Elements/Buttons/TinySquareBlueButton.png") 18 fill / 10px / 0 stretch;
+	background: none;
+	box-shadow: none;
+	filter: saturate(0.3) brightness(0.8);
 }
 
 .dropWarnActions .btn:focus {
-	color: #fbf5e6;
-	background: var(--brown);
+	filter: none;
 	outline: none;
 }
 
