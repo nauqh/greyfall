@@ -55,4 +55,5 @@ Lanternport sits near 4 props per 100 land tiles, 100 buildings and 50 folk at w
 - The fitter moves an unpinned prop that lacks clear ground, sometimes across a gorge. Pin (`fixed: true`) every prop a scene depends on, and check `--map`.
 - The row under a raised tile is its cliff foot, not ground: an NPC or a fire there is unwalkable.
 - An NPC's `at` is in play coordinates: builder plus 3 on each axis on a padded map (the surface and the sky), the same underneath.
+- A cavern is `chamber`s joined by `burrow`s, then one `erode` pass (Tidewake). Water laid across a chamber wall to wall cuts off its far side, and the finisher turns floor nobody can reach into rock.
 - A stair needs lower ground at its open side and a row below that ([stairs climb diagonally](../../packages/engine/src/island.ts) along their ramp); `areas.test.ts` fails a stair whose top goes nowhere.

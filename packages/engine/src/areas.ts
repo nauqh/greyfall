@@ -147,12 +147,56 @@ function maze(t: Builder, rng: Rng, rooms: readonly { at: Cell; r: number }[], c
   return (c, r) => open.has(r * cols + c);
 }
 
-/** A lake: a ragged ellipse of water, its shore wandered by noise. */
-function lake(t: Builder, cx: number, cy: number, rx: number, ry: number): void {
-  const shore = noise(`lake:${cx},${cy}`, 3);
+/** Each tile of a ragged ellipse, its rim wandered by noise. */
+function ragged(seed: string, cx: number, cy: number, rx: number, ry: number, each: (c: number, r: number) => void): void {
+  const rim = noise(`${seed}:${cx},${cy}`, 3);
   for (let r = Math.floor(cy - ry - 1); r <= cy + ry + 1; r++) {
     for (let c = Math.floor(cx - rx - 1); c <= cx + rx + 1; c++) {
-      if (((c - cx) / rx) ** 2 + ((r - cy) / ry) ** 2 <= 1 + shore(c, r) * 0.35) t.pond(c, r, 1, 1);
+      if (((c - cx) / rx) ** 2 + ((r - cy) / ry) ** 2 <= 1 + rim(c, r) * 0.35) each(c, r);
+    }
+  }
+}
+
+/** A lake: a ragged ellipse of water. */
+function lake(t: Builder, cx: number, cy: number, rx: number, ry: number): void {
+  ragged("lake", cx, cy, rx, ry, (c, r) => t.pond(c, r, 1, 1));
+}
+
+/** A cavern's chamber: a ragged ellipse of floor, no straight wall to it. */
+function chamber(t: Builder, a: AreaId, cx: number, cy: number, rx: number, ry: number): void {
+  ragged("chamber", cx, cy, rx, ry, (c, r) => t.ground(a, c, r, 1, 1));
+}
+
+/** One cellular-automaton pass over a cavern: a spur of floor nearly walled in fills, a nub of rock nearly ringed by floor wears away. */
+function erode(t: Builder, a: AreaId): void {
+  const [cols, rows] = [t.grid[0]!.length, t.grid.length];
+  const floor = (c: number, r: number) => t.at(c, r) === ".";
+  const flips: [number, number, boolean][] = [];
+  for (let r = 2; r < rows - 2; r++) {
+    for (let c = 2; c < cols - 2; c++) {
+      let n = 0;
+      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) if ((dr || dc) && floor(c + dc, r + dr)) n++;
+      if (floor(c, r) && n <= 2) flips.push([c, r, false]);
+      else if (t.at(c, r) === "%" && n >= 6) flips.push([c, r, true]);
+    }
+  }
+  for (const [c, r, open] of flips) {
+    if (open) t.ground(a, c, r, 1, 1);
+    else (t.grid[r]![c] = "%"), (t.area[r]![c] = -1);
+  }
+}
+
+/** A passage worn through rock along a bending line, wandering between about three and five tiles wide. */
+function burrow(t: Builder, a: AreaId, points: readonly (readonly [number, number])[], rad = 2): void {
+  const wander = noise(`burrow:${points[0]}`, 2);
+  for (let i = 1; i < points.length; i++) {
+    const [[x0, y0], [x1, y1]] = [points[i - 1]!, points[i]!];
+    const steps = Math.ceil(Math.hypot(x1 - x0, y1 - y0) * 2);
+    for (let s = 0; s <= steps; s++) {
+      const [x, y] = [x0 + ((x1 - x0) * s) / steps, y0 + ((y1 - y0) * s) / steps];
+      const k = rad + wander(x, y) * 0.6;
+      for (let r = Math.floor(y - k); r <= y + k; r++) for (let c = Math.floor(x - k); c <= x + k; c++) if ((c - x) ** 2 + (r - y) ** 2 <= k * k) t.ground(a, c, r, 1, 1);
+      t.paths.add(`${Math.round(x)},${Math.round(y)}`);
     }
   }
 }
@@ -3790,16 +3834,36 @@ function landing(): AreaMap {
   // they keep watch, then the castaway's camp, the first fire, and the cleft of gold beside it; south through
   // the flooded gallery to the antechamber, the Ring Gate at its end. Notes scratched on the rock by those who washed in
   // before, each where its lesson is needed; the sack and the map are Hollis's to teach.
-  for (const [x, y, w, h] of [[26, 40, 16, 7], [12, 26, 12, 9], [14, 8, 16, 9], [38, 7, 13, 10], [55, 6, 6, 5], [36, 24, 18, 9], [60, 24, 10, 9]] as const) t.ground(l, x, y, w, h);
-  t.pond(26, 46, 16, 2);
-  // The gallery's flood: a pool in its middle, to be fought round.
-  t.pond(42, 26, 5, 5);
-  for (const way of [[[32, 40], [32, 31], [20, 31]], [[18, 26], [18, 17]], [[29, 12], [38, 12]], [[50, 8], [55, 8]], [[44, 16], [44, 24]], [[53, 28], [60, 28]]] as const) tunnel(t, way);
-  // The Ring Gate: the antechamber opens east into a tunnel running on off the map, straight into the Ring's own.
+  // Water-worn, not dug: each room a ragged chamber, a lobe off the bigger ones, and the ways between them wander and
+  // pinch, so a fight room is come into through a narrow mouth.
+  for (const [cx, cy, rx, ry] of [
+    [34, 42, 8, 4], [27, 42, 3, 2.5],
+    [18, 30, 6.5, 4.5], [14, 33, 3, 2.5],
+    [21, 12, 6.5, 4], [17, 9, 3, 2],
+    [45, 11, 6.5, 4.5],
+    [58, 8, 2.5, 2],
+    [44, 28, 8.5, 4.5], [38, 31, 3, 2],
+    [66, 28, 4.5, 4.5],
+  ] as const) chamber(t, l, cx, cy, rx, ry);
+  for (const way of [
+    [[33, 39], [32, 37], [31, 35], [33, 32], [28, 30], [23, 31]],
+    [[18, 26], [17, 23], [18, 20], [21, 16]],
+    [[45, 15], [43, 19], [46, 23]],
+  ] as const) burrow(t, l, way);
+  // The narrow mouths: into the camp, the cleft off it, and on to the antechamber.
+  for (const way of [
+    [[27, 13], [31, 12], [34, 11], [39, 12]],
+    [[51, 9], [54, 7], [57, 8]],
+    [[51, 28], [54, 30], [58, 29], [62, 28]],
+  ] as const) burrow(t, l, way, 1.6);
+  erode(t, l);
+  // The tide's pool along the grotto's foot, and the gallery's flood in its middle, to be fought round.
+  for (const [cx, cy, rx, ry] of [[30, 46, 4.5, 1.8], [37, 47, 5, 2.4], [43, 28, 2.6, 1.6], [46, 29, 2, 1.4]] as const) lake(t, cx, cy, rx, ry);
+  // The Ring Gate: the antechamber opens east into a cut tunnel running on off the map, straight into the Ring's own.
   tunnel(t, [[69, 28], [78, 28]]);
   openEdge(t, 79, 28);
   // Torches in the rock along the way, so the way out is the lit one.
-  for (const [c, r] of [[30, 36], [26, 29], [16, 21], [34, 10], [46, 20], [56, 26], [74, 26], [27, 41], [41, 41], [13, 27], [22, 34], [15, 9], [28, 9], [15, 15], [39, 15], [49, 15], [60, 10], [37, 31], [52, 25], [61, 31], [68, 31]] as const) prop("sconce", c, r);
+  for (const [c, r] of [[26, 41], [40, 41], [31, 39], [30, 36], [34, 33], [13, 27], [23, 28], [22, 34], [16, 21], [22, 17], [26, 10], [17, 15], [34, 10], [41, 8], [50, 11], [48, 14], [57, 7], [42, 17], [46, 20], [36, 26], [50, 25], [37, 31], [46, 32], [56, 31], [63, 25], [70, 25], [63, 30], [74, 26]] as const) prop("sconce", c, r);
 
   // The grotto: the boat that drifted in, and a fire left burning by whoever washed in before.
   prop("boat", 33, 46);
@@ -3821,7 +3885,7 @@ function landing(): AreaMap {
   who("slingshot", 51, 31);
   // The antechamber before the Ring: the dead who went in before.
   for (const [c, r] of [[63, 26], [66, 31], [64, 31]] as const) prop("bones", c, r);
-  for (const [c, r] of [[61, 25], [68, 25]] as const) prop("skullSpike", c, r);
+  for (const [c, r] of [[69, 26], [69, 30]] as const) prop("skullSpike", c, r);
 
   const notes: Note[] = [
     { at: { col: 36, row: 43 }, text: "W A S D: Move" },
@@ -3862,10 +3926,13 @@ function ring(): AreaMap {
   const { prop, who } = t;
 
   t.blob("ring", 26, 20, 13, 10);
-  tunnel(t, [[1, 20], [13, 20]]);
+  // Cut straight where it meets the Landing's tunnel and the boat; worn and bending between.
+  tunnel(t, [[1, 20], [5, 20]]);
+  burrow(t, "ring", [[5, 20], [9, 19], [14, 21]]);
   // No rock capping the tunnel's west end: it runs on off the map, back to the Landing's.
   openEdge(t, 0, 20);
-  tunnel(t, [[33, 20], [48, 20]]);
+  burrow(t, "ring", [[36, 20], [40, 21], [43, 20]]);
+  tunnel(t, [[43, 20], [48, 20]]);
   // The sea channel at the tunnel's end, the fishers' boat moored in it.
   t.pond(47, 18, 4, 5);
   rubble(t, rng, 26, 20, 13, 10, 7);
