@@ -99,7 +99,7 @@
 	place-items: center;
 	min-width: 64px;
 	padding: 2px 6px;
-	color: #fdfaf0;
+	color: var(--light);
 	border: 10px solid transparent;
 	border-image: url("/tiny-swords/ui/blueButton.png") 64 fill / 10px stretch;
 }
@@ -476,7 +476,7 @@
 	gap: 6px 28px;
 	width: max-content;
 	max-width: calc(100vw - 32px);
-	color: #fdfaf0;
+	color: var(--light);
 	font: 800 14px "Nunito", sans-serif;
 	letter-spacing: 0.06em;
 	-webkit-text-stroke: 4px var(--outline);

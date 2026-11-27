@@ -129,7 +129,7 @@
 }
 
 .luAttr.picked .panelAside.luGain {
-	color: #c7f0a8;
+	color: var(--goodOnPicked);
 }
 
 @media (max-width: 640px) {

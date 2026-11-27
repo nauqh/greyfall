@@ -3,7 +3,8 @@
 
 :root {
 	color-scheme: dark;
-	--ink: #fdfaf0;
+	--light: #fdfaf0;
+	--ink: var(--light);
 	/* The pack's paper and ink, shared by every screen drawn on it. */
 	--brown: #2e1a0e;
 	--bark: #4a3322;
@@ -22,6 +23,7 @@
 	/* A picked row's text over the brown bar, and its second line. */
 	--onPicked: #fbf5e6;
 	--onPickedNote: #ecd6b4;
+	--goodOnPicked: #c7f0a8;
 	--outline: #1c2634;
 	--sea: #47aba9;
 }

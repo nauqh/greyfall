@@ -127,7 +127,7 @@
 	padding: 0 6px;
 	border: 1px solid var(--stroke);
 	border-radius: 3px;
-	background: #f2ead4;
+	background: var(--cream);
 	box-shadow: 0 2px 0 var(--stroke);
 	font: 800 11px "Nunito", sans-serif;
 	letter-spacing: 0.04em;

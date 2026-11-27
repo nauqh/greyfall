@@ -32,7 +32,9 @@ the hex. Paper `--paper` (sheet, open tab) and `--paperRaised` (options,
 cells). Inks `--brown`, `--bark`, `--mute` (the faintest that still reads on
 the paper). Lines `--frame`, gilt `--goldLine`, gold sums and heads `--gold`.
 `--good` and `--bad` for a rise and a fall. A picked row is `--onPicked` over
-the brown bar, its second line `--onPickedNote`.
+the brown bar, its second line `--onPickedNote`. `pnpm --filter @greyfall/web
+test` (`scripts/check-colours.mjs`) enforces this and the text contrast; a
+colour that is truly the screen's own carries an `/* own colour: why */` note.
 
 ## Keys
 
