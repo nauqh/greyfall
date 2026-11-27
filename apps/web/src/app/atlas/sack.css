@@ -7,7 +7,7 @@
 	align-items: center;
 	gap: 6px;
 	padding: 0 6px;
-	color: var(--paperInk);
+	color: var(--bark);
 	font-family: "Nunito", "Segoe UI", sans-serif;
 	font-weight: 800;
 	font-size: 14px;
@@ -24,7 +24,7 @@
 	bottom: 120px;
 	margin: 0;
 	padding: 0 6px;
-	color: var(--paperInk);
+	color: var(--bark);
 	font-family: "Nunito", "Segoe UI", sans-serif;
 	font-weight: 800;
 	font-size: 15px;
@@ -71,11 +71,8 @@
    numbers across the top; under them the goods on a grid, the picked one large beside it. It slides in from the left edge
    like a drawer and back out, quicker out than in; Tab mid-slide turns it round where it is. */
 .sack {
-	--gold: #8a5a10;
-	--line: #c9a35c;
 	--ink: var(--brown);
-	--text: var(--paperInk);
-	--muted: #8a7458;
+	--text: var(--bark);
 	position: absolute;
 	inset: clamp(8px, 3vh, 32px) auto clamp(8px, 3vh, 32px) 16px;
 	z-index: 5;
@@ -128,7 +125,7 @@
 	font-size: 13px;
 	letter-spacing: 0.14em;
 	text-transform: uppercase;
-	color: var(--muted);
+	color: var(--mute);
 }
 
 .sackGold b {
@@ -186,7 +183,7 @@
 	font-size: 12px;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
-	color: var(--muted);
+	color: var(--mute);
 }
 
 .sackBody {
@@ -217,7 +214,7 @@
 }
 
 .sackLabel span {
-	color: var(--muted);
+	color: var(--mute);
 }
 
 /* Goods four across in big tiles, the empty slots dim, so the sack reads as room to fill. Past what fits, it scrolls
@@ -249,7 +246,7 @@
 	padding: 0;
 	border: 3px solid var(--ink);
 	border-radius: 12px;
-	background: #f3e6c8;
+	background: var(--paperRaised);
 	box-shadow: 2px 3px 0 var(--ink);
 	cursor: pointer;
 	transition: background 120ms ease-out, box-shadow 90ms ease-out, transform 90ms ease-out;
@@ -297,7 +294,7 @@
 
 .sackGives {
 	font-weight: 800;
-	color: #2e6b2a;
+	color: var(--good);
 }
 
 .sackAbout {
@@ -328,7 +325,7 @@
 }
 
 .sackMore dt {
-	color: var(--muted);
+	color: var(--mute);
 }
 
 .sackMore dd {

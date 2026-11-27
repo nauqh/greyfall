@@ -283,7 +283,7 @@ button.menuItem {
 	height: 18px;
 	border: 2px solid var(--stroke);
 	border-radius: 50%;
-	background: #eee1c6;
+	background: var(--paper);
 	box-shadow: 0 2px 0 var(--stroke);
 }
 
@@ -292,7 +292,7 @@ button.menuItem {
 	height: 14px;
 	border: 2px solid var(--stroke);
 	border-radius: 50%;
-	background: #eee1c6;
+	background: var(--paper);
 	box-shadow: 0 2px 0 var(--stroke);
 }
 

@@ -25,6 +25,15 @@ in `atlas/panel.css` under `.pausePanel`) is the model; build a new menu like it
   rust fill to the level, faint rust past it, a paper knob. The bar spans only
   the knob centre's travel, so at 0 and 100 the knob covers the end.
 
+## Colours
+
+Every menu colour is a token in `:root` (`globals.css`); write the token, never
+the hex. Paper `--paper` (sheet, open tab) and `--paperRaised` (options,
+cells). Inks `--brown`, `--bark`, `--mute` (the faintest that still reads on
+the paper). Lines `--frame`, gilt `--goldLine`, gold sums and heads `--gold`.
+`--good` and `--bad` for a rise and a fall. A picked row is `--onPicked` over
+the brown bar, its second line `--onPickedNote`.
+
 ## Keys
 
 - **Every key on screen is a `.keyCap`** (`globals.css`): the blue

@@ -8,7 +8,7 @@
 	max-height: calc(100vh - 48px);
 	overflow-y: auto;
 	padding: 10px 12px 6px;
-	color: var(--paperInk);
+	color: var(--bark);
 	font-family: "Nunito", "Segoe UI", sans-serif;
 	font-weight: 700;
 	font-size: 15px;
@@ -44,7 +44,7 @@
 	align-items: flex-start;
 	gap: 12px;
 	padding-bottom: 8px;
-	background: linear-gradient(90deg, #c9a35c, rgb(201 163 92 / 0)) bottom / 100% 1px no-repeat;
+	background: linear-gradient(90deg, var(--goldLine), rgb(201 163 92 / 0)) bottom / 100% 1px no-repeat;
 }
 
 .panelWhere {
@@ -59,7 +59,7 @@
 	font-size: 12px;
 	letter-spacing: 0.2em;
 	text-transform: uppercase;
-	color: #8a5a10;
+	color: var(--gold);
 }
 
 /* A section's title, after Elden Ring's: an icon, small caps, a gold hairline under. */
@@ -69,12 +69,12 @@
 	gap: 6px;
 	margin: 0;
 	padding-bottom: 3px;
-	color: #8a5a10;
+	color: var(--gold);
 	font-size: 14px;
 	font-weight: 800;
 	font-variant: small-caps;
 	letter-spacing: 0.08em;
-	background: linear-gradient(90deg, #c9a35c, rgb(201 163 92 / 0)) bottom / 100% 1px no-repeat;
+	background: linear-gradient(90deg, var(--goldLine), rgb(201 163 92 / 0)) bottom / 100% 1px no-repeat;
 }
 
 .panelHeading img {
@@ -119,7 +119,7 @@
 .panelNote {
 	margin: 0;
 	padding: 10px 12px;
-	border-left: 3px solid #c9a35c;
+	border-left: 3px solid var(--goldLine);
 	background: rgb(242 212 138 / 0.25);
 	font-weight: 600;
 	font-size: 13px;
@@ -149,7 +149,7 @@
 	padding: 3px;
 	border: 2px solid currentColor;
 	background: color-mix(in srgb, currentColor 12%, transparent);
-	color: #8a5a10;
+	color: var(--gold);
 }
 
 /* useCursor's bar, Dark Souls' highlight: a flat block of the dark brown the buttons are picked in, under the picked row,
@@ -182,7 +182,7 @@
 	padding: 8px 14px;
 	border: 3px solid var(--brown);
 	border-radius: 14px;
-	background: #f2e3c2;
+	background: var(--paperRaised);
 	box-shadow: 3px 4px 0 var(--brown);
 	color: inherit;
 	font: inherit;
@@ -193,11 +193,11 @@
 
 .panelOption.picked {
 	background: var(--brown);
-	color: #fbf5e6;
+	color: var(--onPicked);
 }
 
 .panelOption.picked .panelOptionNote {
-	color: #d9c9a8;
+	color: var(--onPickedNote);
 }
 
 .panelOption:active {
@@ -253,7 +253,7 @@
 	align-items: center;
 	gap: 3px;
 	font-weight: 800;
-	color: #8a5a10;
+	color: var(--gold);
 }
 
 .panelGold::before {
@@ -264,16 +264,16 @@
 }
 
 .panelCost > :last-child {
-	color: #2e6b2a;
+	color: var(--good);
 }
 
 .panelCost.short > :last-child {
-	color: #b3261e;
+	color: var(--bad);
 }
 
 @keyframes panelPop {
 	from {
-		color: #2e6b2a;
+		color: var(--good);
 		transform: scale(1.35);
 	}
 }
@@ -364,8 +364,6 @@
 	--accent: var(--rust);
 	--stroke: var(--brown);
 	--text: var(--bark);
-	/* Opaque (rust over the paper), so where a tab's line meets the sheet's the two do not darken each other. */
-	--frame: #ae8e6c;
 }
 
 /* Fixed, so the panel does not jump as the pages change. */
@@ -400,7 +398,7 @@
 
 .pausePanel .setMode.on {
 	z-index: 1;
-	background: #eee1c6;
+	background: var(--paper);
 }
 
 .pausePanel .setRow {
@@ -481,7 +479,7 @@
 	color: #fdfaf0;
 	font: 800 14px "Nunito", sans-serif;
 	letter-spacing: 0.06em;
-	-webkit-text-stroke: 4px #1c2634;
+	-webkit-text-stroke: 4px var(--outline);
 	paint-order: stroke fill;
 }
 

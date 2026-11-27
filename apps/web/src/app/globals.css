@@ -7,10 +7,23 @@
 	/* The pack's paper and ink, shared by every screen drawn on it. */
 	--brown: #2e1a0e;
 	--bark: #4a3322;
-	--paperInk: #4a3a28;
 	--mute: #6b5740;
 	--cream: #f2ead4;
 	--rust: #7a4a22;
+	/* The menus' paper: the sheet, and what stands on it (options, cells). */
+	--paper: #eee1c6;
+	--paperRaised: #f2e3c2;
+	/* Opaque, so where two lines meet the seam does not darken. */
+	--frame: #ae8e6c;
+	--gold: #8a5a10;
+	--goldLine: #c9a35c;
+	--good: #2e6b2a;
+	--bad: #b3261e;
+	/* A picked row's text over the brown bar, and its second line. */
+	--onPicked: #fbf5e6;
+	--onPickedNote: #ecd6b4;
+	--outline: #1c2634;
+	--sea: #47aba9;
 }
 
 * {
@@ -23,7 +36,7 @@ body {
 	color: var(--ink);
 	font-family: "Nunito", "Segoe UI", sans-serif;
 	/* Flat teal sea, as in the reference. */
-	background-color: #47aba9;
+	background-color: var(--sea);
 	/* The kit's arrow and hand, cropped to their art and hotspot-pinned. */
 	cursor:
 		url("/cursor.png") 0 0,
@@ -193,7 +206,7 @@ textarea {
 	font-weight: 700;
 	letter-spacing: 0.08em;
 	/* The scenes' text-outline ink: #5b6577 at 22px was lost on the cream sky. */
-	color: #1c2634;
+	color: var(--outline);
 	/* Held back a moment, so a quick load never flashes the word. */
 	animation:
 		loaderIn 300ms ease-out 400ms both,
@@ -381,7 +394,7 @@ textarea {
 	z-index: -1;
 	border: 3px solid var(--brown);
 	border-radius: 10px;
-	background: #f2e3c2;
+	background: var(--paperRaised);
 	box-shadow: 3px 4px 0 var(--brown);
 	transition: opacity 200ms ease-out;
 }
@@ -644,7 +657,7 @@ textarea {
 	gap: 14px;
 	min-width: 300px;
 	padding: 4px 14px 10px;
-	color: var(--paperInk);
+	color: var(--bark);
 	border: 34px solid transparent;
 	/* The sheet is 135x127 with a clear margin; a 64 slice left no middle row to fill. */
 	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 34px stretch;
@@ -671,7 +684,7 @@ textarea {
 .btn {
 	min-width: 168px;
 	padding: 12px 22px;
-	color: #fbf5e6;
+	color: var(--onPicked);
 	font: inherit;
 	font-weight: 800;
 	font-size: 16px;
@@ -687,11 +700,11 @@ textarea {
 
 .btn.light {
 	color: var(--brown);
-	background: #f2e3c2;
+	background: var(--paperRaised);
 }
 
 .btn.red {
-	background: #b3261e;
+	background: var(--bad);
 }
 
 .btn:where(:hover:not(:disabled)) {
@@ -1048,7 +1061,7 @@ textarea {
 	padding: 0 10px 4px;
 	border: 18px solid transparent;
 	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 18px stretch;
-	color: var(--paperInk);
+	color: var(--bark);
 	font-family: "Nunito", "Segoe UI", sans-serif;
 	font-size: 14px;
 	font-weight: 400;
@@ -1175,7 +1188,7 @@ textarea {
 	text-transform: uppercase;
 	text-align: center;
 	color: #fdfaf0;
-	-webkit-text-stroke: 8px #1c2634;
+	-webkit-text-stroke: 8px var(--outline);
 	paint-order: stroke fill;
 	animation: areaRevealName 1200ms cubic-bezier(0.23, 1, 0.32, 1) both;
 }
@@ -1330,7 +1343,7 @@ textarea {
 	font: 800 16px "Nunito", sans-serif;
 	letter-spacing: 0;
 	text-transform: none;
-	-webkit-text-stroke: 4px #1c2634;
+	-webkit-text-stroke: 4px var(--outline);
 	paint-order: stroke fill;
 	border: 0;
 	border-image: url("/tiny-swords/UI Elements/UI Elements/Buttons/TinySquareBlueButton.png") 18 fill / 10px / 0 stretch;
@@ -1348,7 +1361,7 @@ textarea {
 .worldLinks {
 	display: flex;
 	gap: 18px;
-	text-shadow: 0 1px 2px #1c2634;
+	text-shadow: 0 1px 2px var(--outline);
 }
 
 .atlasTop {
@@ -1454,7 +1467,7 @@ textarea {
 	rotate: 45deg;
 	border-right: 1px solid var(--frame);
 	border-bottom: 1px solid var(--frame);
-	background: #eee1c6;
+	background: var(--paper);
 	clip-path: polygon(100% 0, 100% 100%, 0 100%);
 }
 
@@ -1471,7 +1484,7 @@ textarea {
 	gap: 10px;
 	margin: 0 0 14px;
 	padding: 5px 12px;
-	color: #8a5a10;
+	color: var(--gold);
 	font-size: 14px;
 	font-weight: 800;
 	font-variant: small-caps;
@@ -1494,7 +1507,7 @@ textarea {
 	font-size: 13px;
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
-	color: #8a6a3a;
+	color: var(--mute);
 }
 
 .landFires {
@@ -1530,11 +1543,11 @@ textarea {
 }
 
 .landFire.picked {
-	color: #fbf5e6;
+	color: var(--onPicked);
 }
 
 .landFire.picked .landFireState {
-	color: #ecd6b4;
+	color: var(--onPickedNote);
 }
 
 .landFire:disabled {
@@ -1546,7 +1559,7 @@ textarea {
 	font-size: 12px;
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
-	color: #8a6a3a;
+	color: var(--mute);
 }
 
 @media (max-width: 720px) {
@@ -1597,7 +1610,7 @@ textarea {
 	font-size: clamp(18px, 2.2vw, 24px);
 	font-weight: 800;
 	line-height: 1.45;
-	-webkit-text-stroke: 6px #1c2634;
+	-webkit-text-stroke: 6px var(--outline);
 	paint-order: stroke fill;
 	animation: talkText 420ms cubic-bezier(0.23, 1, 0.32, 1) both;
 }
@@ -1608,7 +1621,7 @@ textarea {
 	letter-spacing: 0.12em;
 	text-transform: uppercase;
 	color: #fdfaf0;
-	-webkit-text-stroke: 4px #1c2634;
+	-webkit-text-stroke: 4px var(--outline);
 	paint-order: stroke fill;
 }
 
@@ -1635,7 +1648,7 @@ textarea {
 	font-size: 19px;
 	letter-spacing: 0.04em;
 	white-space: nowrap;
-	-webkit-text-stroke: 5px #1c2634;
+	-webkit-text-stroke: 5px var(--outline);
 	paint-order: stroke fill;
 	pointer-events: none;
 	animation: talkText 240ms ease-out both;
@@ -1653,7 +1666,7 @@ textarea {
 	font: 800 16px "Nunito", sans-serif;
 	letter-spacing: 0;
 	text-transform: none;
-	-webkit-text-stroke: 4px #1c2634;
+	-webkit-text-stroke: 4px var(--outline);
 	paint-order: stroke fill;
 }
 
@@ -1694,7 +1707,7 @@ textarea {
 	border: 34px solid transparent;
 	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 34px stretch;
 	background: none;
-	color: var(--paperInk);
+	color: var(--bark);
 	text-align: center;
 	cursor: pointer;
 	font: inherit;
@@ -1760,7 +1773,7 @@ textarea {
 	letter-spacing: 0.16em;
 	text-transform: uppercase;
 	color: #b8322a;
-	-webkit-text-stroke: 8px #1c2634;
+	-webkit-text-stroke: 8px var(--outline);
 	paint-order: stroke fill;
 	animation: youDiedText 4200ms linear both;
 }
@@ -2039,7 +2052,7 @@ textarea {
 	padding-left: 0.18em;
 	text-transform: uppercase;
 	color: #f4cf6b;
-	text-shadow: 0 2px 0 #1c2634;
+	text-shadow: 0 2px 0 var(--outline);
 }
 
 .pickTitle {
@@ -2051,7 +2064,7 @@ textarea {
 	letter-spacing: 0.02em;
 	text-transform: uppercase;
 	color: #fdfaf0;
-	text-shadow: 0 2px 0 #1c2634, 0 4px 14px rgb(5 6 8 / 0.6);
+	text-shadow: 0 2px 0 var(--outline), 0 4px 14px rgb(5 6 8 / 0.6);
 	transition: translate 200ms ease-out;
 }
 
@@ -2100,7 +2113,7 @@ textarea {
 	text-decoration: underline;
 	text-underline-offset: 3px;
 	color: #fdfaf0;
-	text-shadow: 0 2px 0 #1c2634, 0 0 8px rgb(5 6 8 / 0.7);
+	text-shadow: 0 2px 0 var(--outline), 0 0 8px rgb(5 6 8 / 0.7);
 	opacity: 0.85;
 }
 

@@ -6,17 +6,17 @@
 	--stroke: var(--brown);
 	--row: 32px;
 	/* Dark Souls 1 sets each field and choice in its own small box. Lines opaque (docs/ui/menus.md), so seams never darken. */
-	--cell: 1px solid #ae8e6c;
+	--cell: 1px solid var(--frame);
 	--cellFill: rgb(110 76 36 / 0.08);
 	/* Dark Souls 1's panel frame: a thin square line, a fainter one just inside it, the panel a shade darker. */
-	--frame: 2px solid var(--ink);
-	--frameIn: 1px solid #ae8e6c;
+	--box: 2px solid var(--ink);
+	--frameIn: 1px solid var(--frame);
 	--frameFill: rgb(110 76 36 / 0.07);
 	display: block;
 	overflow: hidden;
 	cursor: none;
-	background: #47aba9;
-	color: var(--paperInk);
+	background: var(--sea);
+	color: var(--bark);
 	font: 400 15px var(--book), serif;
 }
 
@@ -82,7 +82,7 @@
 	gap: 3px;
 	margin: 0;
 	padding: 8px;
-	border: var(--frame);
+	border: var(--box);
 	outline: var(--frameIn);
 	outline-offset: -6px;
 	background: var(--frameFill);
@@ -159,7 +159,7 @@
 	border: var(--cell);
 	background: var(--cellFill);
 	font: italic 400 clamp(16px, 1.1vw, 19px) / 1.4 var(--book), serif;
-	color: var(--paperInk);
+	color: var(--bark);
 	text-wrap: pretty;
 	animation: prologueIn 300ms ease-out both;
 }
@@ -190,11 +190,11 @@
 .crOption:focus {
 	border-color: var(--brown);
 	background: var(--brown);
-	color: #fbf5e6;
+	color: var(--onPicked);
 }
 
 .crOption:focus .panelOptionNote {
-	color: #d9c9a8;
+	color: var(--onPickedNote);
 }
 
 .crOption .panelOptionNote {
@@ -214,7 +214,7 @@
 
 .creation .panelOptionNote {
 	font: 400 16px / 1.2 var(--book), serif;
-	color: var(--paperInk);
+	color: var(--bark);
 }
 
 /* A class's face: 88 art px drawn at half, its cut edges faded out so no crop shows a hard line. */
@@ -236,11 +236,11 @@
 	align-self: stretch;
 	position: relative;
 	overflow: hidden;
-	border: var(--frame);
+	border: var(--box);
 	outline: var(--frameIn);
 	outline-offset: -6px;
 	box-shadow: inset 0 0 24px rgb(0 0 0 / 0.35);
-	background: #47aba9;
+	background: var(--sea);
 }
 
 /* The name straight on the paper, outlined so it stands off it. */
@@ -300,7 +300,7 @@
 	gap: 6px 22px;
 	color: var(--cream);
 	font: 700 15px var(--display), serif;
-	-webkit-text-stroke: 4px #1c2634;
+	-webkit-text-stroke: 4px var(--outline);
 	paint-order: stroke fill;
 }
 

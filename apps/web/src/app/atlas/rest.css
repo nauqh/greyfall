@@ -23,7 +23,7 @@
 }
 
 .restGold b {
-	color: #8a5a10;
+	color: var(--gold);
 }
 
 /* Every bonfire screen (the rest, travel, level up) on the map pane's paper and inks, one size so nothing jumps
@@ -94,11 +94,11 @@
 }
 
 .bonfirePanel .panelOption.picked {
-	color: #fbf5e6;
+	color: var(--onPicked);
 }
 
 .bonfirePanel .panelOption.picked .panelOptionNote {
-	color: #ecd6b4;
+	color: var(--onPickedNote);
 }
 
 /* The keys under a bonfire screen, outlined over the world as the pause menu's are (.pauseKeys). */
@@ -110,7 +110,7 @@
 	margin-top: auto;
 	padding-top: 10px;
 	border-top: 1px solid var(--frame);
-	color: var(--paperInk);
+	color: var(--bark);
 	font: 800 14px "Nunito", sans-serif;
 	letter-spacing: 0.02em;
 }

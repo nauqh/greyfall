@@ -29,7 +29,7 @@
 }
 
 .luShort dd {
-	color: #b3261e;
+	color: var(--bad);
 }
 
 .luChange {
@@ -45,7 +45,7 @@
 }
 
 .luChange b {
-	color: #8a7458;
+	color: var(--mute);
 }
 
 /* Nothing to show till a point moves it: the value now alone, at the right edge. */
@@ -54,7 +54,7 @@
 }
 
 .luChange b.luGain {
-	color: #2e6b2a;
+	color: var(--good);
 }
 
 .luChange b.pop {
@@ -63,7 +63,7 @@
 }
 
 .luTo {
-	border-left: 6px solid #8a5a10;
+	border-left: 6px solid var(--gold);
 	border-block: 4px solid transparent;
 }
 
@@ -125,7 +125,7 @@
 }
 
 .luAttr .panelAside.luGain {
-	color: #2e6b2a;
+	color: var(--good);
 }
 
 .luAttr.picked .panelAside.luGain {
@@ -201,5 +201,5 @@
 }
 
 .luAttr.picked .luAttrBody {
-	color: #fbf5e6;
+	color: var(--onPicked);
 }

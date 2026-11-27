@@ -7,7 +7,7 @@
 	max-height: calc(100vh - 32px);
 	padding: 6px 8px 4px;
 	overflow: hidden;
-	color: var(--paperInk);
+	color: var(--bark);
 	font-family: "Nunito", "Segoe UI", sans-serif;
 	font-weight: 700;
 	font-size: 15px;
@@ -44,7 +44,7 @@
 	font-size: 12px;
 	letter-spacing: 0.2em;
 	text-transform: uppercase;
-	color: #8a5a10;
+	color: var(--gold);
 }
 
 .shopName {
@@ -64,7 +64,7 @@
 	font-weight: 800;
 	font-size: 18px;
 	font-variant-numeric: tabular-nums;
-	color: #8a5a10;
+	color: var(--gold);
 }
 
 .shop .panelHeading {
@@ -76,7 +76,7 @@
 	position: relative;
 	margin: 0;
 	padding: 10px 14px;
-	border-left: 3px solid #c9a35c;
+	border-left: 3px solid var(--goldLine);
 	background: linear-gradient(90deg, rgb(242 212 138 / 0.35), rgb(242 212 138 / 0));
 	font-weight: 600;
 	font-size: 14px;
@@ -97,7 +97,7 @@
 	padding: 8px 14px;
 	border: 3px solid var(--brown);
 	border-radius: 14px;
-	background: #f2e3c2;
+	background: var(--paperRaised);
 	box-shadow: 3px 4px 0 var(--brown);
 	color: inherit;
 	font: inherit;
@@ -113,7 +113,7 @@
 
 .shopChoice.picked {
 	background: var(--brown);
-	color: #fbf5e6;
+	color: var(--onPicked);
 }
 
 .shopChoice:active {
@@ -145,7 +145,7 @@
 }
 
 .shopChoice.picked small {
-	color: #d9c9a8;
+	color: var(--onPickedNote);
 }
 
 /* The goods: the grid of slots and the told-out good side by side. */
@@ -206,7 +206,7 @@
 }
 
 .shopSlot.picked .shopSlotArt {
-	border: 2px solid #c9a35c;
+	border: 2px solid var(--goldLine);
 	background: radial-gradient(circle, rgb(255 236 180 / 0.75), rgb(242 212 138 / 0.35));
 	box-shadow: 0 0 12px rgb(242 180 80 / 0.7), inset 0 0 6px rgb(255 255 255 / 0.4);
 }
@@ -218,7 +218,7 @@
 	font-size: 13px;
 	font-weight: 800;
 	font-variant-numeric: tabular-nums;
-	color: #8a5a10;
+	color: var(--gold);
 }
 
 .shopSlot:not(.sold) .shopPrice::before {
@@ -241,7 +241,7 @@
 }
 
 .shopSlot.short .shopPrice {
-	color: #b3261e;
+	color: var(--bad);
 }
 
 .shopSlot.short .shopSlotArt > * {
@@ -290,7 +290,7 @@
 	place-items: center;
 	width: 76px;
 	height: 76px;
-	border: 2px solid #c9a35c;
+	border: 2px solid var(--goldLine);
 	border-radius: 3px;
 	background: radial-gradient(circle, rgb(255 236 180 / 0.6), rgb(242 212 138 / 0.2));
 	box-shadow: 0 0 10px rgb(242 180 80 / 0.4);
@@ -342,11 +342,11 @@
 }
 
 .shopArrow {
-	color: #8a7458;
+	color: var(--mute);
 }
 
 .shopStats b {
-	color: #2e6b2a;
+	color: var(--good);
 }
 
 /* The gold held, the price, the gold after: the barter's sum, under a gold hairline. */
@@ -369,12 +369,12 @@
 }
 
 .shopLedger > :last-child dd {
-	color: #2e6b2a;
+	color: var(--good);
 }
 
 .shopLedger > .short dd,
 .shopLedger > .short dt {
-	color: #b3261e;
+	color: var(--bad);
 }
 
 .shopChoice.back {
@@ -392,7 +392,7 @@
 	font-weight: 800;
 	letter-spacing: 0.14em;
 	text-transform: uppercase;
-	color: #8a7458;
+	color: var(--mute);
 }
 
 /* Narrow screens: the panel is the foot of the screen, the slots over the good, the about left out. */
