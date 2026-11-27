@@ -343,6 +343,8 @@ export interface LevelView {
   kit: Kit;
   /** The numbers the captain would have at `levels`. */
   with: (levels: Levels) => Kit;
+  /** The class's attributes at a new game, under the levels bought. */
+  start: Levels;
 }
 
 export interface BandView {
@@ -1392,7 +1394,7 @@ export class AtlasScene extends Phaser.Scene {
       next: () => (this.reading ? this.read(null) : this.nextPage()),
       sit: (on) => this.sit(on),
       look: (cover) => this.frameSack(cover),
-      levels: () => ({ levels: levels(), cost: levelCost(levels()), gold: this.gold, kit: { ...this.gear, flasks: maxFlasks() }, with: (lv) => ({ ...kit(remembered(BOUGHT), lv, heroClass()), flasks: maxFlasks() }) }),
+      levels: () => ({ levels: levels(), cost: levelCost(levels()), gold: this.gold, kit: { ...this.gear, flasks: maxFlasks() }, with: (lv) => ({ ...kit(remembered(BOUGHT), lv, heroClass()), flasks: maxFlasks() }), start: CLASSES[heroClass()].start }),
       levelUp: (stat) => this.levelUp(stat),
       gifts: () => GIFTS.map(sackItem),
       begin: (cls, gift, name) => this.begin(cls, gift, name),

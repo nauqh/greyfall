@@ -68,7 +68,7 @@ The gifts, one taken ashore, are goods like the merchants', never sold:
 
 | Stat | Start | Notes |
 | --- | --- | --- |
-| HP | 100 | The Warrior's; the class sets it |
+| HP | 100 | The Warrior's; the class's Vigour sets it |
 | Stamina | 100 | As in Dark Souls: a swing 14, a roll 22, sprinting 15 a second, a blow on the shield 2.5 times its weight (too little left breaks the guard: it lands whole and staggers). Comes back 45 a second after half a second unspent, a third as fast behind the shield. At nothing, no swing or roll |
 | Attack | 12 a swing | The Warrior's. Combo of 3: the first two 0.65 s apart, the third knocks back and takes 1.1 s to recover |
 | Embers | 3 | Each heals 40 HP; refilled at a bonfire |
@@ -87,12 +87,26 @@ Seven attributes, after the Souls games and Kingdom Come:
 | Warmth | +4 healed per ember |
 | Luck | +5% gold and +5% trade goods from kills |
 
-A class's attack grows with its own attributes, each level a share of +2,
-as a Souls weapon scales: Warrior Strength 1 and Agility 0.5, Champion
-Strength 1.25, Grovekeeper Strength 0.75 and Vigour 0.5, Eggwarden Agility 1,
-Barrow Warden Intelligence 1.25. Past 20 levels in one attribute, each level
-gives half. A save from before the seven reads its three levels as Vigour,
-Strength and Endurance.
+Each class starts on its own spread, twenty levels in all, as a Dark Souls
+class does, and the creation screen shows it. The numbers come from the
+attributes: health 50 + 10 a Vigour, stamina 60 + 10 an Endurance, ember heal
+28 + 4 a Warmth, roll cost 23 - 0.5 an Agility.
+
+| Class | Vig | End | Str | Agi | Int | Warm | Luck | Health | Attack |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Warrior | 5 | 4 | 2 | 2 | 1 | 3 | 3 | 100 | 12 |
+| Eggwarden | 4 | 5 | 1 | 4 | 1 | 2 | 3 | 90 | 10 |
+| Champion | 7 | 3 | 5 | 1 | 0 | 2 | 2 | 120 | 18 |
+| Grovekeeper | 9 | 3 | 3 | 1 | 0 | 3 | 1 | 140 | 14 |
+| Barrow Warden | 3 | 4 | 0 | 2 | 5 | 4 | 2 | 80 | 9 |
+
+A class's attack is its weapon's own weight and a share of +2 for each level
+in the attributes it scales with, as a Souls weapon scales: Warrior Strength 1
+and Agility 0.5, Champion Strength 1.25, Grovekeeper Strength 0.75 and Vigour
+0.25, Eggwarden Agility 1, Barrow Warden Intelligence 0.75. Past 20 in one
+attribute, each level gives half. The level counts only levels bought, so
+every class starts at 1. A save keeps the levels bought; one from before the
+seven reads its three as Vigour, Strength and Endurance.
 
 ### The band
 

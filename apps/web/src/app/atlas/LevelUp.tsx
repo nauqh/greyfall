@@ -147,7 +147,7 @@ export function LevelUp({
                       ‹
                     </button>
                     <b key={pop} className={`panelAside${more ? " luGain" : ""}${pop ? " pop" : ""}`}>
-                      {view.levels[s.stat] + held[s.stat]}
+                      {view.start[s.stat] + view.levels[s.stat] + held[s.stat]}
                     </b>
                     <button
                       type="button"

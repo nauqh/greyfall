@@ -16,18 +16,24 @@ export type HeroClass = "warrior" | "eggwarden" | "champion" | "grovekeeper" | "
 export const ATTRIBUTES = ["vigour", "endurance", "strength", "agility", "intelligence", "warmth", "luck"] as const;
 export type Attribute = (typeof ATTRIBUTES)[number];
 
-/** What a class changes of `HERO`. Only the man and the bamboo-folk carry something to guard with. `scales`: the
- *  attributes its attack grows with, each level a share of `LEVEL_UP.attack`, as a Souls weapon scales. */
-export const CLASSES: Record<HeroClass, { hp: number; attack: number; chain: number; every: number; speed: number; reach: number; shield: boolean; scales: Partial<Record<Attribute, number>>; knockAll?: boolean; sweep?: boolean; hex?: boolean }> = {
-  warrior: { hp: HERO.hp, attack: HERO.attack, chain: HERO.chain, every: HERO.every, speed: HERO.speed, reach: 1, shield: true, scales: { strength: 1, agility: 0.5 } },
+/** Levels in each attribute. */
+export type Levels = Record<Attribute, number>;
+
+/**
+ * What a class changes of `HERO`. Only the man and the bamboo-folk carry something to guard with. `start`: its
+ * attributes at a new game, twenty in all, as a Dark Souls class is its starting spread. `weapon`: its blow's own
+ * weight, before `scales`, the attributes its attack grows with, each level a share of `LEVEL_UP.attack`.
+ */
+export const CLASSES: Record<HeroClass, { start: Levels; weapon: number; chain: number; every: number; speed: number; reach: number; shield: boolean; scales: Partial<Record<Attribute, number>>; knockAll?: boolean; sweep?: boolean; hex?: boolean }> = {
+  warrior: { start: { vigour: 5, endurance: 4, strength: 2, agility: 2, intelligence: 1, warmth: 3, luck: 3 }, weapon: 6, chain: HERO.chain, every: HERO.every, speed: HERO.speed, reach: 1, shield: true, scales: { strength: 1, agility: 0.5 } },
   // The fenfolk: its frill flares round it and cuts every foe beside it, not one; quickest on its feet, on less health.
-  eggwarden: { hp: 90, attack: 10, chain: 0.7, every: 1.2, speed: 3, reach: 1, shield: false, sweep: true, scales: { agility: 1 } },
+  eggwarden: { start: { vigour: 4, endurance: 5, strength: 1, agility: 4, intelligence: 1, warmth: 2, luck: 3 }, weapon: 2, chain: 0.7, every: 1.2, speed: 3, reach: 1, shield: false, sweep: true, scales: { agility: 1 } },
   // The horned: every blow throws the foe back, not only the finisher; slow between them.
-  champion: { hp: 125, attack: 18, chain: 0.9, every: 1.5, speed: 2.6, reach: 1, shield: false, knockAll: true, scales: { strength: 1.25 } },
+  champion: { start: { vigour: 7, endurance: 3, strength: 5, agility: 1, intelligence: 0, warmth: 2, luck: 2 }, weapon: 5, chain: 0.9, every: 1.5, speed: 2.6, reach: 1, shield: false, knockAll: true, scales: { strength: 1.25 } },
   // The bamboo-folk: the most health, and the only one but the man that can guard.
-  grovekeeper: { hp: 150, attack: 14, chain: 0.8, every: 1.3, speed: 2.4, reach: 1, shield: true, scales: { strength: 0.75, vigour: 0.5 } },
+  grovekeeper: { start: { vigour: 9, endurance: 3, strength: 3, agility: 1, intelligence: 0, warmth: 3, luck: 1 }, weapon: 5, chain: 0.8, every: 1.3, speed: 2.4, reach: 1, shield: true, scales: { strength: 0.75, vigour: 0.25 } },
   // A mask: hexes from afar, fliers too, the third bolt bursting and holding its mark; the least health, and no guard.
-  barrowWarden: { hp: 80, attack: 9, chain: 0.8, every: 1.3, speed: 2.6, reach: 5, shield: false, hex: true, scales: { intelligence: 1.25 } },
+  barrowWarden: { start: { vigour: 3, endurance: 4, strength: 0, agility: 2, intelligence: 5, warmth: 4, luck: 2 }, weapon: 1, chain: 0.8, every: 1.3, speed: 2.6, reach: 5, shield: false, hex: true, scales: { intelligence: 0.75 } },
 };
 
 /**
@@ -510,8 +516,6 @@ export interface Kit {
   find: number;
 }
 
-/** Levels bought at a bonfire, by attribute. */
-export type Levels = Record<Attribute, number>;
 export const NO_LEVELS: Levels = { vigour: 0, endurance: 0, strength: 0, agility: 0, intelligence: 0, warmth: 0, luck: 0 };
 /**
  * What one level adds: Vigour health, Endurance stamina, the class's `scales` attack, Agility a quicker swing and a
@@ -519,6 +523,13 @@ export const NO_LEVELS: Levels = { vigour: 0, endurance: 0, strength: 0, agility
  */
 export const LEVEL_UP = { hp: 10, stamina: 10, attack: 2, swing: 0.015, roll: 0.5, flask: 4, greed: 0.05, find: 0.05 } as const;
 export const SOFT_CAP = 20;
+/** The numbers at nothing in their attribute, so a Warrior's start is `HERO`'s. */
+const BASE = { hp: 50, stamina: 60, flask: 28, roll: 23 } as const;
+
+/** A class's attributes: its start and the levels bought on top. */
+export function attributes(cls: HeroClass, bought: Levels = NO_LEVELS): Levels {
+  return Object.fromEntries(ATTRIBUTES.map((a) => [a, CLASSES[cls].start[a] + bought[a]])) as Levels;
+}
 /** Agility's floor: a swing never under this share of its wait, a roll never under this much stamina. */
 const QUICKEST = { swing: 0.7, roll: 12 } as const;
 
@@ -601,20 +612,21 @@ export function lootDrop(kind: string, roll: number, find = 1): LootName | undef
   return name && roll < LOOT[name].chance * find ? name : undefined;
 }
 
-/** The player's numbers with their class, what has been bought, and the levels. */
+/** The player's numbers from their class's attributes, the levels bought on them, and the goods bought. */
 export function kit(bought: ReadonlySet<string>, levels: Levels = NO_LEVELS, cls: HeroClass = "warrior"): Kit {
-  const worth = (a: Attribute) => Math.min(levels[a], SOFT_CAP) + Math.max(0, levels[a] - SOFT_CAP) / 2;
+  const at = attributes(cls, levels);
+  const worth = (a: Attribute) => Math.min(at[a], SOFT_CAP) + Math.max(0, at[a] - SOFT_CAP) / 2;
   const scaled = Object.entries(CLASSES[cls].scales).reduce((n, [a, share]) => n + share * worth(a as Attribute), 0);
   const k: Kit = {
-    hp: CLASSES[cls].hp + Math.round(worth("vigour") * LEVEL_UP.hp),
-    attack: CLASSES[cls].attack + Math.round(scaled * LEVEL_UP.attack),
+    hp: BASE.hp + Math.round(worth("vigour") * LEVEL_UP.hp),
+    attack: CLASSES[cls].weapon + Math.round(scaled * LEVEL_UP.attack),
     flasks: HERO.flasks,
-    flask: HERO.flask + Math.round(worth("warmth") * LEVEL_UP.flask),
+    flask: BASE.flask + Math.round(worth("warmth") * LEVEL_UP.flask),
     block: STAMINA.block,
     greed: 1 + worth("luck") * LEVEL_UP.greed,
-    stamina: STAMINA.max + Math.round(worth("endurance") * LEVEL_UP.stamina),
+    stamina: BASE.stamina + Math.round(worth("endurance") * LEVEL_UP.stamina),
     swing: Math.max(QUICKEST.swing, 1 - worth("agility") * LEVEL_UP.swing),
-    roll: Math.max(QUICKEST.roll, Math.round(STAMINA.roll - worth("agility") * LEVEL_UP.roll)),
+    roll: Math.max(QUICKEST.roll, Math.round(BASE.roll - worth("agility") * LEVEL_UP.roll)),
     find: 1 + worth("luck") * LEVEL_UP.find,
   };
   for (const [name, item] of Object.entries(ITEMS)) {

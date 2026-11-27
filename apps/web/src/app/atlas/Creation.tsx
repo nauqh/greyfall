@@ -1,6 +1,6 @@
 "use client";
 
-import { CLASSES, kit, type HeroClass, type ItemName } from "@greyfall/engine";
+import { CLASSES, type HeroClass, type ItemName } from "@greyfall/engine";
 import { useEffect, useRef, useState } from "react";
 
 import type { SackItem } from "../../game/AtlasScene";
@@ -8,7 +8,8 @@ import { packUrl } from "../../game/art";
 import { CLICK, play, useTick } from "../sound";
 import { CreationScene } from "./CreationScene";
 import { ItemIcon } from "./ItemIcon";
-import { StatIcon, type Stat } from "./statIcons";
+import { STATS as ATTRIBUTE_ROWS } from "./LevelUp";
+import { StatIcon } from "./statIcons";
 import "./panel.css";
 import "./prologue.css";
 import "./rest.css";
@@ -84,16 +85,6 @@ function Key({ k }: { k: string }) {
   return <kbd className={k.length > 1 ? "wide" : undefined}>{k}</kbd>;
 }
 
-/** The numbers on the right, as a rest shows them. */
-const STATS: { label: string; icon: Stat; of: (k: ReturnType<typeof kit>, cls: HeroClass) => number }[] = [
-  { label: "Health", icon: "hp", of: (k) => k.hp },
-  { label: "Stamina", icon: "stamina", of: (k) => k.stamina },
-  { label: "Attack", icon: "attack", of: (k) => k.attack },
-  { label: "Embers", icon: "flasks", of: (k) => k.flasks },
-  { label: "Reach", icon: "reach", of: (_, cls) => CLASSES[cls].reach },
-  { label: "Walk", icon: "walk", of: (_, cls) => CLASSES[cls].speed },
-];
-
 /** A class's face for its row: its head and shoulders in its first idle frame, drawn at half. */
 function Thumb({ row }: { row: (typeof CLASS_ROWS)[number] }) {
   const style = {
@@ -124,7 +115,6 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
   const showCls = (step === 0 && at !== null && CLASS_ROWS[at]?.cls) || cls || "warrior";
   const showGift = (step === 1 && at !== null && gifts[at]?.label) || gift;
   const row = CLASS_ROWS.find((c) => c.cls === showCls)!;
-  const now = kit(new Set(showGift ? [showGift] : []), undefined, showCls);
   const giftShown = gifts.find((g) => g.label === showGift);
   const ready = step !== 1 || !!gift;
 
@@ -214,14 +204,14 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
               </li>
             ))}
           </ol>
-          <ul className="crRows">
-            {STATS.map((s) => (
-              <li key={s.label}>
+          <ul className="crRows" aria-label="Attributes">
+            {ATTRIBUTE_ROWS.map((s) => (
+              <li key={s.stat}>
                 <span className="statFrame">
                   <StatIcon stat={s.icon} size={22} mono />
                 </span>
-                <span>{s.label}</span>
-                <b>{s.of(now, showCls)}</b>
+                <span>{s.name}</span>
+                <b>{CLASSES[showCls].start[s.stat]}</b>
               </li>
             ))}
           </ul>
