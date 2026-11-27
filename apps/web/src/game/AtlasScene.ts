@@ -2340,13 +2340,14 @@ export class AtlasScene extends Phaser.Scene {
     const fire = restPoint() ?? hero.at;
     if (on) hero.s.setFlipX((fire.col + 0.5) * CELL < hero.s.x);
     this.play(hero.s, hero.idle);
-    this.closeUp(on ? { x: (hero.s.x + (fire.col + 0.5) * CELL) / 2, y: hero.s.y } : null);
+    // The pair framed, the captain's middle and the flames', not the feet.
+    this.closeUp(on ? { x: (hero.s.x + (fire.col + 0.5) * CELL) / 2, y: (hero.s.y - hero.lift / 2 + (fire.row + 0.5) * CELL) / 2 } : null);
     return fireName(this.local, fire) || null;
   }
 
   /**
-   * The camera in close, for a rest or a merchant: a whole-number zoom so the pixel art lands crisp, `at` drawn right of
-   * centre, clear of the side panel on the left. The folk step out of the shot, all but `keep`.
+   * The camera in close, for a rest or a merchant: a whole-number zoom so the pixel art lands crisp, `at` in the middle of
+   * what the side panel on the left leaves clear. The folk step out of the shot, all but `keep`.
    */
   private closeUp(at: { x: number; y: number } | null, keep?: Folk): void {
     const cam = this.active;
@@ -2354,8 +2355,9 @@ export class AtlasScene extends Phaser.Scene {
     const base = this.zoomFor(AREA_ROWS);
     const zoom = at ? Math.ceil(base * 2.2) : base;
     cam.zoomTo(zoom, 900, "Sine.easeInOut", true);
-    const shift = at && cam.width > 640 ? (cam.width * 0.25) / zoom : 0;
-    cam.setFollowOffset(at ? hero.s.x - at.x + shift : 0, at ? hero.s.y - at.y : 0);
+    // The rest panel takes the left 40%: the shot sits at 70% across.
+    const shift = at && cam.width > 640 ? (cam.width * 0.2) / zoom : 0;
+    this.easeOffset(at ? hero.s.x - at.x + shift : 0, at ? hero.s.y - at.y : 0, 900);
     for (const f of this.folk) {
       const out = !!at && f !== keep;
       if (out) f.bubble?.destroy();
@@ -2375,7 +2377,14 @@ export class AtlasScene extends Phaser.Scene {
     const base = this.zoomFor(AREA_ROWS);
     const zoom = cover > 0 && cover < 0.9 ? Math.ceil(base * 2.2) : base;
     cam.zoomTo(zoom, 600, "Sine.easeInOut", true);
-    cam.setFollowOffset(zoom === base ? 0 : (cam.width * cover) / 2 / zoom, 0);
+    this.easeOffset(zoom === base ? 0 : (cam.width * cover) / 2 / zoom, 0, 600);
+  }
+
+  /** The follow camera's offset eased with its zoom, so the shot moves as one rather than sliding at the follow's pace. */
+  private easeOffset(x: number, y: number, duration: number): void {
+    const o = this.active.followOffset;
+    this.tweens.killTweensOf(o);
+    this.tweens.add({ targets: o, x, y, duration, ease: "Sine.easeInOut" });
   }
 
   /** The opening shot: in close on the captain waking, then easing back to the play view; the map is never shown whole. */
