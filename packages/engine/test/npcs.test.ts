@@ -110,13 +110,13 @@ describe("the questline", () => {
     expect(whereabouts(penny, flags("greyfallReached", "warlordDead"))?.area).toBe("harbour");
   });
 
-  it("turns the Clear Water on the Shell Below: Ysolde home and the Pilgrim dead, or Ysolde kneeling and the candle sold", () => {
-    expect(whereabouts(npc("ysolde"), flags("monkFreed", "ysoldeDeeper"))?.area).toBe("hollow");
+  it("turns the Clear Water on the Shell Below: Ysolde home with the candle, or kneeling with the water and the candle sold", () => {
+    const kneeling = whereabouts(npc("ysolde"), flags("monkFreed", "ysoldeDeeper"))!;
+    expect(kneeling.area).toBe("hollow");
+    expect(kneeling.talks.find((t) => t.gives)?.gives).toBe("Hollow Water");
     const home = whereabouts(npc("ysolde"), flags("monkFreed", "ysoldeDeeper", "shellDead"))!;
     expect(home).toMatchObject({ area: "harbour", dead: false });
     expect(home.talks.find((t) => t.gives)?.gives).toBe("Sister's Candle");
-    expect(whereabouts(npc("pilgrim"), flags())?.talks.find((t) => t.sets === "drankClear")?.gives).toBe("Hollow Water");
-    expect(whereabouts(npc("pilgrim"), flags("shellDead"))?.dead).toBe(true);
     const jory = npc("jory").shop!.stock;
     expect(onOffer(jory, new Set(), new Set(), flags("ysoldeDeeper")).map((s) => s.item)).toContain("Sister's Candle");
   });
@@ -127,23 +127,19 @@ describe("the questline", () => {
     expect(whereabouts(sister, flags("monkFreed"))).toBeNull();
   });
 
-  it("puts Jory at the Old Well once Tobin is below and the Warlord dead, and Mags's lantern on sale once Maren sails", () => {
-    expect(whereabouts(npc("jory"), flags("tobinDeeper"))?.area).toBe("deeps");
-    expect(whereabouts(npc("jory"), flags("tobinDeeper", "warlordDead"))?.area).toBe("harbour");
+  it("keeps the merchants to selling: one talk, never moved, and Mags's lantern on sale once the Warlord falls", () => {
+    for (const n of NPCS.filter((n) => n.shop)) {
+      expect(n.talks.length, n.id).toBe(1);
+      expect(n.later, n.id).toBeUndefined();
+    }
     const mags = npc("mags").shop!.stock;
     expect(onOffer(mags, new Set(), new Set(), flags()).map((s) => s.item)).not.toContain("Salt-Glass Lantern");
-    expect(onOffer(mags, new Set(), new Set(), flags("marenSails")).map((s) => s.item)).toContain("Salt-Glass Lantern");
+    expect(onOffer(mags, new Set(), new Set(), flags("warlordDead")).map((s) => s.item)).toContain("Salt-Glass Lantern");
   });
 
-  it("sends Garth and Dunn back to the Palisade once the Ember Gate is opened from the wood", () => {
-    for (const id of ["garth", "dunn"]) {
-      expect(whereabouts(npc(id), flags())?.area, id).toBe("harbour");
-      expect(whereabouts(npc(id), flags("emberGateOpen"))?.area, id).toBe("emberwood");
-    }
-  });
-
-  it("leaves the last one dead on the Grey Road from the start", () => {
-    expect(whereabouts(npc("last"), flags())).toMatchObject({ area: "barrowmoor", dead: true });
+  it("sends Dunn back to the Palisade once the Ember Gate is opened from the wood", () => {
+    expect(whereabouts(npc("dunn"), flags())?.area).toBe("harbour");
+    expect(whereabouts(npc("dunn"), flags("emberGateOpen"))?.area).toBe("emberwood");
   });
 
   it("talks where they stand, a remark waiting on the first talk there", () => {
@@ -168,13 +164,10 @@ describe("the questline", () => {
       anselRoused: "ansel.roused",
       anselAhead: "ansel.ahead",
       watchmanOut: "watchman.open",
-      marenSails: "maren.sail",
       monkFreed: "sister.warm",
-      drankClear: "pilgrim.water",
       pennyFollows: "penny.crows",
       wageOwed: "tally.wage",
       ledgerSaved: "quill.ledger",
-      hushStilled: "hush.bell",
     });
   });
 });

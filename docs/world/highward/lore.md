@@ -40,7 +40,6 @@ Highward blue, a ringing bell. Its watch wore the blue; it fell ward by ward aft
 | --- | --- | --- |
 | Mags the Peddler | The Lower Burg, a nook under the wall | A Stiltwater trader in Sunhold's yellow who stayed when the Burg turned. Sells everything that is not a blade. |
 | Hale of the Watch | The Lower Burg, the square | Held the square with six men; watched them turn after the bell stopped. Keeps the Burg's one fire. |
-| Odo the Gunner | The Ramparts, the east tower | Outlived his powder. Saw the boar turn and the goblins come over the wall. |
 | Brenna the Smith | The Chapel Ward, the forge yard | Highward's smith. Puts an edge on the wanderer's sword for gold and ore. |
 | Sergeant Corwin | The Keep, the bailey | Led Highward's forty spears onto Kingsrest; came back alone. Hires out lancers; digs his forty out of Barrow Field once the King is dead. |
 | Ansel of the Wall | The Keep, on the wall | Once a wanderer in Highward's blue with a band and a banner; stopped going out. Roused by the bull's death, goes ahead into Greyfall and dies below the Warlord's Hall unless the Warlord falls first. |

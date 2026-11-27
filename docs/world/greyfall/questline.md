@@ -60,35 +60,9 @@ Greets you: *"Close the door. The draught."* Walked away from: *"The door, pleas
   1. Oh, you're back, then. The stove's gone out, and my ink hasn't frozen in the pot. First time in years.
   2. The last ledger went in on the coldest night. I'm sorry for that one.
   3. All that's left of the Cut's accounts is what the goblins remember, and the hole itself. Hmph. Some paymaster I was.
-
-## Sister Hush
-
-Greets you: *"Hush."* Walked away from: *"Take thy noise elsewhere, child. Mayst thou thy stillness find."*
-
-### Home: Greyfall, the Ruined Chapel (45, 22)
-
-- **first**
-  1. Hush. Thou'rt so loud, child. All that colour on thee, shouting at me across the chapel.
-  2. I am Sister... Sister Hush, of the Stilled. We pray the world's fever down.
-  3. The Hearth hath burned too long, and the cold is the fever breaking. Seest thou not?
-- **name**
-  1. I told thee my name, when first we met. I cannot think now which name it was.
-  2. The name is the second thing to go. The colour went first. It doth not hurt.
-- **bell** (heard to the end, sets **hushStilled**, gives *Stilled Bell* the first time)
-  1. Take this bell. 'Tis for ringing the loud ones quiet, and where I go I'll not need it.
-  2. I go down to the Pits, where 'tis coldest, to kneel with the others by the Crater.
-  3. Hush now. ...Hush.
-
-### At Greyfall, the Ruined Chapel (45, 22), once **warlordDead**
-
-- **fever** (heard to the end the first time, gives *Stilled Bell*)
-  1. Thou'st killed him, and the fever cometh back. I can feel my hands again.
-  2. I was nearly still. I had forgotten this chapel's name, and now it cometh back to me. Was it all a lie, then?
-  3. Take the bell. I cannot ring it for a world that wisheth to be warm.
-
-### Kneeling in Greyfall, the Pits (38, 65), once **hushStilled**
-
-Says nothing.
+- **bell** (heard to the end the first time, gives *Stilled Bell*)
+  1. One of the Stilled left this on my sill, the night before the thaw. A bell, for ringing the warm ones quiet.
+  2. I have no use for quiet now. My ink is thawing. Take it, and close the door behind you.
 
 ## Passing through
 

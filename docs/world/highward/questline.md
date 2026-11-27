@@ -15,23 +15,6 @@ Sells: Brenna's Edge; Keener Edge (once the Stone Warden falls); Grey-Iron Edge 
   2. I'm Brenna. Smith to the Ward, for what's left of it.
   3. Off into all that grey, are y'? Then you'll want a proper edge. Bring me gold, and I'll do the smithing.
   4. There's a banded shield on the wall, too. Oak and iron. Takes the blow so y' arm doesn't.
-- **ore**
-  1. Mine Hills ore is soft, but honest. Brasscrag's is better, if you can get it off the tinkers.
-  2. Go and be rude to them. They'll understand. It's how they talk to each other, bless 'em.
-- **hammer**
-  1. Heat, hit. Heat, hit.
-  2. Same as fighting, really. Only the iron never hits back.
-  3. Look after y' blade, and it'll look after you. It's all a smith can promise.
-- **key** (once, after meeting, when **trollKey**)
-  1. Let me see that key... Well, I'll be. The Keep's. I cut that blank m'self, years back.
-  2. Smells of bull now. Wash it, would y'?
-- **ansel** (once, after meeting, when **anselRoused**)
-  1. Ansel came by. Paid for two edges on that old sword of his. Didn't even haggle, the old fool.
-  2. Took the sword with one edge on it. Said he'd be back for the other.
-- **second** (once, after meeting, when **anselAhead**)
-  1. He hasn't come back for the second edge.
-  2. I don't keep things for the dead, love. I sell them. Gold first.
-  3. ...Oh, don't give me that look. I'm softer than I sound.
 
 ## Sergeant Corwin
 
@@ -150,7 +133,7 @@ Says nothing.
 
 Greets you: *"Hehe. A live one."* Walked away from: *"Come back with coin, dearie. As is thy wont, no?"*
 
-Sells: Ember Shard; Smoked Haunch; Pine Resin; Prospector's Purse; Kindled Shard (once the Ember Bull falls); Salt-Glass Lantern (once **marenSails**).
+Sells: Ember Shard; Smoked Haunch; Pine Resin; Prospector's Purse; Kindled Shard (once the Ember Bull falls); Salt-Glass Lantern (once **warlordDead**).
 
 ### Home: The Lower Burg, Market Row, in a nook under the wall (37, 39)
 
@@ -160,22 +143,6 @@ Sells: Ember Shard; Smoked Haunch; Pine Resin; Prospector's Purse; Kindled Shard
   3. A shard of the old fire, a haunch, a pot of resin, a purse that sews itself fatter. Little things, to ease a weary traveller.
   4. One of each, mind. Keep them in thy sack, where thy hands can find them.
   5. Kill whatever sits in Emberwood, and I'll find thee a warmer shard. Hehe.
-- **thieves**
-  1. The thieves in the market? Burg folk, all of them.
-  2. Went bad when the bell stopped. Bad for business, worse for them. More's the pity.
-- **coin**
-  1. Feel that coin, dearie. Warm, isn't it? Even now.
-  2. That's all gold ever was. A little warm thou canst carry. Hehe.
-- **rest**
-  1. Hehe. Still breathing, dearie? Good.
-  2. Breathing folk buy things. Is it not our sorry lot, to sup on the living?
-- **fence** (once, after meeting, when **tobinDeeper**)
-  1. Tobin's gone down after his brother? Hehe. Then he'll meet my best supplier.
-  2. Don't ask what I buy from below, dearie. I don't. Kee hee hee...
-- **ship** (once, after meeting, when **marenSails**)
-  1. A ship in, and Maren off on it. Thirty years she waited. Hehe.
-  2. Some of us don't wait for ships, dearie. We sell to whoever comes.
-  3. Stiltwater left me a crate off it. Salt-glass, dearie, a lantern of it, and only the one, mind.
 
 ## Hale of the Watch
 
@@ -197,22 +164,3 @@ Greets you: *"Living? Then sit a while."* Walked away from: *"Mind the bridges."
 - **rest**
   1. Sit. The fire's the one thing in the Burg that's still ours.
   2. I am well pleased to see you safe.
-
-## Odo the Gunner
-
-Greets you: *"Boar's dead, then. Good. I was running out of things to throw."* Walked away from: *"Mind the ladder. It sticks."*
-
-### Home: The Ramparts, The East Tower (72, 12)
-
-- **first**
-  1. I'm Odo, the gunner. Those two guns on the tower were mine, till the diggers found my powder and turned them on the wall.
-  2. The boar was the garrison's. The smiths shod him in iron for the parade. Proud beast, he was.
-  3. Then the cold got into him and he forgot who fed him, and a digger climbed on his back. It's been riding him ever since.
-- **ladder**
-  1. There's a ladder down the south face to the Burg's square.
-  2. Kick it loose and you'll come down by the square's fire, if you need one.
-- **died** (once, after meeting, when **died**)
-  1. You came back. They don't, usually.
-  2. The wall remembers everyone who crossed it. It just doesn't care. What a bloody joke.
-- **kicked** (once, after meeting, when **ladderDown**)
-  1. You found it. The square's closer than it looks. Most things are.

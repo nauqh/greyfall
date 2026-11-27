@@ -1620,9 +1620,8 @@ function harbour(): AreaMap {
   for (const [c, r] of [[46, 65], [62, 66], [56, 69], [60, 61]] as const) prop("boat", c, r, { flip: c > 56 });
   // The boat to the sea cave, moored at the pier's end.
   prop("boat", 64, 62);
-  // The merchant berth below Maren's post, empty three winters: the first ship ties up once the Warlord falls, and
-  // sails with her.
-  prop("boat", 66, 66, { when: "warlordDead", unless: "marenSails" });
+  // The merchant berth, empty three winters: the first ship ties up once the Warlord falls.
+  prop("boat", 66, 66, { when: "warlordDead" });
   who("pawn", 45, 61, { ...blue, act: "meat" });
   who("turtle", 44, 60);
   who("rubberDuck", 52, 66);

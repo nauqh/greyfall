@@ -50,8 +50,6 @@ Lantern amber, a lantern. Named for the lantern on its harbour wall, still lit e
 | Tobin | Lanternport, by the Old Well | His brother went down the well after a coin. Follows him down to Graveroad and stays to count what he steals. |
 | Mother Ysolde | Lanternport, the Upper Town | A Keeper of the Order. Her sisters went the Pilgrims' way, down to the Drowned Chapel; she follows the one freed down to Hearthdeep, where the rest kneel drowned by the warm water. |
 | Wren | Lanternport, the butts in West Fields | Hires out Lanternport's bows. Goes shooting goblins in Emberwood once the Ember Bull is dead. |
-| Dunstan the Foreman | Lanternport, the Mine Hills | Boarded the deep face when its ore came up grey, and counts the boards every morning. Feels them warm once the Warlord falls, and still leaves them up. |
-| Maren the Harbourmaster | Lanternport, the docks | Has watched an empty sea for three winters. Sails on the first ship after the Warlord falls. |
 | The Moor Watchman | Lanternport, the Moor Watch | Keeps the Moor Gate onto Kingsrest barred on orders. Once it is opened from the moor, goes to look at the lights, and into the barrows. |
 | Penny | Lanternport, hiding in West Fields | Escaped when the east lane was taken. Follows the wanderer to the Gallows Yard to be with her mum; freed when the Warlord falls. |
 

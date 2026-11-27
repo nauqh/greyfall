@@ -2,23 +2,18 @@
 
 Who lives here, and every line they say. How talks, flags and moving on work is in [../questline.md](../questline.md).
 
-## Passing through
-
-Folk from elsewhere who turn up here; their lines are in their own land.
-
-- Jory: [Graveroad](../graveroad/questline.md)
-
 ## Old Ferrow
 
 Greets you: *"Ahh. Another one."* Walked away from: *"Mind the dark, then."*
 
 ### Home: Lanternport, the Lower Town, by the bonfire (51, 56)
 
-- **first**
+- **first** (heard to the end, he walks you to the fire and has you light it, if it is cold)
   1. Ahh... Another one the tide spat out. Tidewashed, they call your sort.
   2. I am Ferrow, of Lanternport. I keep its fire. Someone has to, don't they?
   3. The last one sat on that stone where you're standing, warmed his hands at my fire, and went east in the morning.
   4. He never came back, and nor did the one before him. They always go east. Hah...
+  5. Ahh, and it's gone cold on me again while I dozed. Put your hand to it, would you? Mine are too old to coax it.
 - **shore**
   1. A road, is it? Follow the lanterns. They run straight up from the fire, to the Burg Gate on the crown.
   2. Somebody lit them before you came up out of the cave. Somebody always does, and I've never once caught them at it.
@@ -97,40 +92,6 @@ Greets you: *"Oh, you walk loud."* Walked away from: *"Keep your head down!"*
   1. Penny's gone from behind the butts. She used to sit there and count crows.
   2. If you happen upon her, tell her I've kept her barrel for her. Don't tell her I've been sitting on it.
 
-## Garth the Woodcutter
-
-Greets you: *"Mind the axe."* Walked away from: *"Go on, then."*
-
-### Home: Lanternport (27, 44)
-
-- **first**
-  1. Hm? You're not from the wood. Nobody's from the wood any more.
-  2. Garth, woodcutter. I cut hardwood at the Palisade, past the Ember Gate, before the goblins came over the fence.
-  3. Now I cut what grows this side of the gate, poor soft stuff that burns like wet bread. Hah...
-- **gate**
-  1. The goblins came over our fence one night with their torches lit, and we ran for the gate.
-  2. Dunn had it barred before the last of us were through. I can't say I'd have done different, in his boots.
-- **bar**
-  1. The bar only lifts from the wood's side now.
-  2. Someone would have to go round through Highward and come at it from the wood. Not me. I've the stones for trees, not goblins.
-
-### At Emberwood, the Palisade (44, 64), once **emberGateOpen**
-
-- **back**
-  1. Ahh, you opened it. From the wrong side, too. Hah...
-  2. So we're back at the Palisade. Someone has to cut what the goblins haven't burnt.
-- **note**
-  1. I found a note pinned up in the old camp. "They barred it with us still outside."
-  2. Fine, careful letters, the kind they teach up at the Keep. It was the steward knocking at our gate, that night.
-  3. He went north up the Ash Road after, and nobody comes back down that road. What a sham.
-- **trunks**
-  1. The ground's warm under these trunks. The heat comes up into them.
-  2. They burn slow, and they burn twice. Finest wood in Aurum, I'll have you know.
-- **bull** (once, after meeting, when **trollKey**)
-  1. That bull in the hollow came out of the east the winter the cold came, and lay down in the hot ash like it was a feather bed.
-  2. The goblins fed it like a lord, and some of them bowed to it. I saw them at it myself.
-  3. Hah. Don't tell me how it looked at the end. I'd sooner not know.
-
 ## Dunn of the Gate Watch
 
 Greets you: *"Halt. ...Oh. You."* Walked away from: *"As you were."*
@@ -151,11 +112,12 @@ Greets you: *"Halt. ...Oh. You."* Walked away from: *"As you were."*
 
 - **watch**
   1. The gate's open, and I'm stood on the wrong side of it. Hah. Orders.
-  2. The woodcutters cut and I watch the trees for them. The goblins still come in threes, same as ever.
+  2. The woodcutters are back at their trunks, and I watch the trees for them. The goblins still come in threes, same as ever.
 - **steward**
-  1. Garth showed me the note. That was the steward knocking at my gate that night, with the Keep's key on his belt.
-  2. Had I opened, that key would be hanging in the Keep now, not lying somewhere up the Ash Road.
-  3. ...Go on, then. Say it.
+  1. I found a note pinned up in the woodcutters' old camp. "They barred it with us still outside."
+  2. Fine, careful letters, the kind they teach up at the Keep. That was the steward knocking at my gate that night, with the Keep's key on his belt.
+  3. Had I opened, that key would be hanging in the Keep now, not lying somewhere up the Ash Road.
+  4. ...Go on, then. Say it.
 - **trees**
   1. Watch the trees. The goblins sleep up in them, and they'll be watching you.
 - **bull** (once, after meeting, when **trollKey**)
@@ -227,9 +189,6 @@ Greets you: *"Peace on thee, child."* Walked away from: *"May the Hearth keep th
 - **candle**
   1. I light a candle each night.
   2. The hour comes round, and my hands are already there. 'Tis all that is left of prayer.
-- **clean** (once, after meeting, when **drankClear**)
-  1. Thou'st drunk the warm water, child. I see it in the frost, which will not settle where thou hast stood.
-  2. Nothing so warm should lie so far down under us. Pray, remember that.
 
 ### At Underwell, The Drowned Chapel (49, 55), once **monkFreed**
 
@@ -242,9 +201,6 @@ Greets you: *"Peace on thee, child."* Walked away from: *"May the Hearth keep th
   1. She speaketh in her sleep, of water under all of this, warm as a banked hearth, and gold shining in the rock.
   2. The others went on down to it, and I must go after them.
   3. Follow me not. Or do, as thou wilt. I am too old to forbid things.
-- **clean** (once, after meeting, when **drankClear**)
-  1. Thou'st drunk the warm water, child. I see it in the frost, which will not settle where thou hast stood.
-  2. Nothing so warm should lie so far down under us. Pray, remember that.
 
 ### At Hearthdeep, Pilgrims' Rest (94, 49), once **ysoldeDeeper**
 
@@ -252,12 +208,10 @@ Greets you: *"Peace on thee, child."* Walked away from: *"May the Hearth keep th
   1. Look, child. The water is warm down here. Warm, at last.
   2. I see them at the bottom, child, all my sisters on their knees, praying still.
   3. ...No. Pull me not back. I have only just found them.
-- **kneel**
+- **kneel** (heard to the end the first time, gives *Hollow Water*)
   1. I have stopped lighting candles.
   2. There is warmth enough down here. More than enough.
-- **clean** (once, after meeting, when **drankClear**)
-  1. Thou'st drunk the warm water, child. I see it in the frost, which will not settle where thou hast stood.
-  2. Nothing so warm should lie so far down under us. Pray, remember that.
+  3. Here, child, drink. 'Tis warm as a hearthstone, and the old man by the fire above hath never been down to taste it.
 
 ### At Lanternport, The Upper Town (43, 24), once **ysoldeDeeper** and **shellDead**
 
@@ -265,58 +219,6 @@ Greets you: *"Peace on thee, child."* Walked away from: *"May the Hearth keep th
   1. The thing they knelt to is dead, child, and nothing woke. It was a beast, and my sisters are only bones now.
   2. I can leave bones, child. I could not leave them kneeling.
   3. Take this. I have stopped lighting it. Light it for the ones thou losest. May the Hearth keep thee.
-- **clean** (once, after meeting, when **drankClear**)
-  1. Thou'st drunk the warm water, child. I see it in the frost, which will not settle where thou hast stood.
-  2. Nothing so warm should lie so far down under us. Pray, remember that.
-
-## Maren the Harbourmaster
-
-Greets you: *"Tide's out."* Walked away from: *"Fair winds. Ha."*
-
-### Home: Lanternport, the Docks, at the boat's pier (67, 63)
-
-- **first** (heard to the end, she walks you to the square's fire and has you light it, if it is cold)
-  1. Tide's out. Maren, Harbourmaster. I keep the harbour, for all the good it does an empty sea.
-  2. No ship has put in here for three winters, not one.
-  3. Stiltwater still trades down the coast, if you can stomach its prices. And its pirates.
-  4. Mostly the pirates. Ha.
-  5. The fire in the square's gone cold again while Ferrow dozed over it. Come on, then, I'll walk you there and you can light it.
-- **finfolk**
-  1. There are finfolk off the Stiltwater shore. Sharks, the pirates call them, and you'll not want to swim there.
-  2. They pull things out of the warm water by the caves, and the pirates swear some of it is still breathing. I don't ask.
-- **lantern**
-  1. The lantern on the harbour wall? I light it every night, for ships.
-  2. Three winters and no ships, but you don't stop lighting it. The night you stop is the night you've given the harbour up.
-- **tide**
-  1. Tide's out. It's always out, lately.
-  2. As if the sea's leaving too. Can't say I blame it.
-- **sail** (once, after meeting, when **warlordDead**; heard to the end, sets **marenSails**)
-  1. There was a sail off the point this morning, the first in three winters.
-  2. Stiltwater, likely. Pirates, likelier. I don't care.
-  3. Thirty years I've watched that water. I'd like to be on it once, before it leaves for good. Fair winds, Tidewashed. Ha.
-
-### Gone, once **marenSails**
-
-## Dunstan the Foreman
-
-Greets you: *"Mind the carts."* Walked away from: *"Back to it."*
-
-### Home: Lanternport, the Mine Hills, by the mine (96, 25)
-
-- **first**
-  1. Mind the carts. ...Dunstan, foreman. I run the Mine Hills, what's left to run.
-  2. The good ore came off the deep face, under the crest. Forty loads a week.
-  3. Then one shift it came up grey, and cold in the hand, in the middle of high summer.
-  4. The lads who worked that face went slow, and slower every day, till they stood at it with their picks up and never swung. So I nailed it shut myself. Wouldn't you have?
-- **face**
-  1. We work the old face now, soft stuff, and Brenna grumbles at every load.
-  2. Let her grumble. She's still got all her lads, hasn't she?
-- **boards**
-  1. Don't touch the boards.
-  2. I count them every morning. Nineteen. ...Still nineteen.
-- **warm** (once, after meeting, when **warlordDead**)
-  1. Put my hand to the boards this morning. Warm. First time in three winters.
-  2. Maybe I'll pull them. ...Maybe next year.
 
 ## The Moor Watchman
 

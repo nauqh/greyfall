@@ -452,21 +452,19 @@ Hollis) and `docs/research/dark-souls-3-npc-dialogue.txt` (the Dark Souls 3
 folk).
 
 - **Two registers.** The faithful speak the old way, as the Fire Keeper and
-  Yuria do: "thee", "thou'rt", "'tis", "-eth". That is Mother Ysolde, Sister
-  Hush and the Pilgrim; Brother Fenn, who left the Order, keeps only its
+  Yuria do: "thee", "thou'rt", "'tis", "-eth". That is Mother Ysolde; Brother Fenn, who left the Order, keeps only its
   formality, and Mags keeps a "thee" or two for selling. Everyone else talks
   plain and northern.
 - **Introductions.** First talks give a name and where or what from: "I am
-  Hale, of the Watch", "Tam, prospector". Gnomes and goblins clip it.
+  Hale, of the Watch", "Nim, tinker". Gnomes and goblins clip it.
 - **Openers and tails.** "Ahh,", "Oh,", "Hm," and "Well, well" open; "..."
   trails off; a question tag closes ("isn't it?", "is it not?", "eh?").
 - **A sign-off each.** The `part` line is the speaker's blessing or habit,
   and it may close their talks too, as "May the flames guide your way" closes
   every Anri talk: "May the Hearth keep thee" (Ysolde), "Mind the dark, then"
-  (Ferrow), "Go softly" (Fenn), "Road, mind!" (Pell).
+  (Ferrow), "Go softly" (Fenn), "Back to the wall, then" (the Watchman).
 - **A motif each.** One phrase that comes back across their talks: Ferrow's
-  "They always go east", Corwin's "Forty", Fennick's "Wheel first, cage
-  second", Tally's "Not one step down".
+  "They always go east", Corwin's "Forty", Dunn's "Orders", Tally's "Not one step down".
 - **The hero is Tidewashed.** Folk who name the hero at all say
   "Tidewashed", or their own word: "child" for the faithful, "dearie" for
   Mags, "friend" for Jory, "love" for Brenna.
@@ -475,9 +473,8 @@ folk).
 | --- | --- |
 | Old Ferrow | Hawkwood, weary at the Firelink fire |
 | Brenna the Smith | Andre: gruff, "y'", softer than she sounds |
-| Sergeant Corwin, Ansel, Odo | Hawkwood and Siegward: deserters, "what a bloody joke" |
-| Mother Ysolde, Sister Hush | the Fire Keeper, before and after the eyes |
-| The Pilgrim | Yuria of Londor: courtly, coaxing |
+| Sergeant Corwin, Ansel | Hawkwood and Siegward: deserters, "what a bloody joke" |
+| Mother Ysolde | the Fire Keeper, before and after the eyes |
 | A Drowned Sister | Irina of Carim: "hold out your hand" |
 | Jory | Patches: smiling, "no hard feelings" |
 | Mags the Peddler | the Shrine Handmaid: "kee hee", "as is thy wont" |
@@ -485,12 +482,6 @@ folk).
 | Tobin | Greirat: a stammer, a brother instead of a ring |
 | Moss | Anri searching for Horace |
 | Hollis the Castaway | Oscar of Astora, dying at the Asylum's start |
-| Master Fennick | Ludleth: small, and proud of it |
 | Brother Fenn | Sirris of the Sunless Realms: grave, courteous, "is it not?" |
-| Tam the Prospector | Greirat: a thief's cheer, always one more haul |
 | Tally | Siegward: one stubborn errand, then rest |
-| Pell the Gatekeeper | Eygon of Carim: a gruff warden, orders and no thanks |
 | Nim the Tinker | Karla: scornful, "the truth remains the truth" |
-| Pip | Yoel of Londor: small, eager, half understands |
-| Hask the Miner | Cornyx: "a crow in his cage", and staying in it |
-| Gill the Fisher | Hawkwood: saw the worst, hid, keeps watch |

@@ -88,7 +88,6 @@ Ash grey, a crown. The Warlord forgot his name and kept his crown; no one rememb
 | --- | --- | --- |
 | Tally | Greyfall, the Pits, at the Crater's lip | A goblin digger who came back for the last season's wage the Citadel never paid. Will not go one step down. Wants the ledger that proves it. |
 | Master Quill | Greyfall, the High City, the Counting House | The Citadel's paymaster, kept alive by burning its pay ledgers page by page. Gives up the last one to the goblin it owes, if asked in time. |
-| Sister Hush | Greyfall, the Ruined Chapel | One of the Stilled, walking into the Grey on purpose. Each time she is found she is greyer. Taken in the Pits, unless the Warlord falls first. |
 
 Their lines are in [questline.md](questline.md).
 

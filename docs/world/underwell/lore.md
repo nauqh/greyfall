@@ -15,8 +15,8 @@ and did not come back up.
 
 The Dig is Lanternport's own. After the Cold Year the town dug east from the
 cisterns for warm gold to keep its fire and its doors, under the moor and
-deeper than a grave, until it broke into the old kings' grave-roads. It stopped digging the same winter Dunstan boarded the
-Mine Hills' deep face, and has not spoken of either since. It is the Old Law
+deeper than a grave, until it broke into the old kings' grave-roads. It stopped digging the same winter the Mine Hills' deep
+face was boarded, and has not spoken of either since. It is the Old Law
 broken again, small, by the one hold that held. Smugglers use the tunnel now,
 from their nook.
 

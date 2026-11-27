@@ -202,7 +202,7 @@ then walks back. The engine already has a guard leash.
    no fog. It is the arena, and the troll guards the boat on. A boss bar with
    his name shows low and centred once you stand in the Ring with him in
    view. Kill him and the road opens. Fall to him and you wash up on the
-   Lanternport's pier by Maren, as after Elden Ring's Grafted Scion: lost, not
+   Lanternport's pier, as after Elden Ring's Grafted Scion: lost, not
    over, and wake at Lanternport's fire after the next death. The
    troll keeps the Ring, the boat goes back to him whenever you like, and
    his fall is worth a fourth ember for good. Either way the training is
@@ -211,7 +211,7 @@ then walks back. The engine already has a guard leash.
    Lanternport's one bonfire stands cold on the Lower Town's shore, under the
    Old Well in the hill's cave (going down; bats below, only bows reach them),
    with Old Ferrow beside it saying where to go. The boat's pier lies east, on
-   the docks; Maren meets you there, walks you to the fire and has you light it. The
+   the docks; Ferrow walks you to the fire and has you light it. The
    climb runs straight up from the fire through Old Town and the Upper Town
    to the Burg Gate, Highward's gatehouse on the hill's crown, its door
    facing the climb and opening into the Lower Burg. Behind the town is
@@ -664,9 +664,9 @@ crossing are gone.
   Cinder Ford (the wood's one bonfire, every other fire a campfire), and
   follow the steward's notes from the crag to his bones on the Ash Road.
   The Drawn Plank (`drawnPlankDown`) bars the Treetop Walk from the bluff
-  until dropped from Warren Hill. Folk back each place: Garth and Dunn
-  return to the Palisade once the gate opens, Brother Fenn in Old Pines,
-  Tam the Prospector at Crag Foot, Wren at Smoke Bluff's foot.
+  until dropped from Warren Hill. Folk back each place: Dunn returns
+  to the Palisade once the gate opens, Brother Fenn in Old Pines, Wren at
+  Smoke Bluff's foot.
 - **No rectangles left.** Sunhold's Sun Steps and Throne Isle,
   the Cloudstair' Broken Stair, Windward Rest and Bell Isle, the
   Underwell's Ossuary, Graveroad's Great Barrow and Hearthdeep's Shell
@@ -1019,19 +1019,16 @@ The full lines and stations are in [docs/world/](docs/world/README.md), each lan
 | Who | Moved on by | Turns up | Ends |
 | --- | --- | --- | --- |
 | Tobin | his remark on the well, then a talk | Underwell, Smugglers' Nook; then Graveroad, Robbers' Camp | Stays below counting what his brother steals; gives the Thrown Coin |
-| Jory | Tobin gone deeper and the Warlord dead | Graveroad, Robbers' Camp, selling what his camp robbed; then the Old Well in Tobin's place | Stands at the well, Tobin left below |
-| Mother Ysolde | the sister freed, then a talk | Underwell, the Drowned Chapel; then Hearthdeep, Pilgrims' Rest | Shell Below alive: kneels over her sisters for good, and Jory sells her candle. Shell Below dead: walks home to the Upper Town and gives the Sister's Candle |
+| Mother Ysolde | the sister freed, then a talk | Underwell, the Drowned Chapel; then Hearthdeep, Pilgrims' Rest | Shell Below alive: kneels over her sisters for good, gives Hollow Water, and Jory sells her candle. Shell Below dead: walks home to the Upper Town and gives the Sister's Candle |
 | A Drowned Sister | her second talk | Underwell, the Drowned Chapel | Freed, walks with the wanderer as the Monk |
-| The Pilgrim | | Hearthdeep, Pilgrims' Rest | Gives Hollow Water; lies dead once the Shell Below is killed |
 | Ansel of the Wall | his remark on the Ember Key | Greyfall, the Ashen Approach | Hear him out twice and he goes ahead and dies in the High City, and Brenna sells his edge; kill the Warlord first and he is back on the wall and gives Ansel's Edge |
 | Penny | her crows talk, then reaching Greyfall | Greyfall, Gallows Yard, penned with her mum | Talked to: freed in the Yard when the Warlord falls. Never talked to: stays hidden, her mum walks home. Mum's Bread either way |
 | Sergeant Corwin | the Barrow King dead | Kingsrest, Barrow Field, digging out his forty | Watchman heard out: finds the fortieth and gives the Forty's Banner. Otherwise: stops at thirty-nine |
 | The Moor Watchman | his remark on the open Moor Gate | Kingsrest, Gibbet Hill, watching the lights | Lies dead in Barrow Field once the King is dead, the fortieth of Corwin's spears |
-| Maren | her remark on the Warlord dead | | Sails on the first ship in three winters, and Mags stocks the Salt-Glass Lantern; missed only by never hearing her sail talk |
 | Wren | the Ember Key | Emberwood, at Smoke Bluff's foot | Stays, shooting; remarks on Penny gone |
-| The Last One | | Kingsrest, the Grey Road, dead from the start | Ferrow's last one, who went east; never named |
-| Old Ferrow, Brenna, Mags | | | Stay; remark on the folk's news. Brenna and Mags sell what the questlines turn up |
-| Hale, Odo | | | Stay at their posts in the Burg and on the Ramparts |
+| Old Ferrow | | | Stays; walks you to the cold fire, and remarks on the folk's news |
+| Brenna, Mags, Jory, Nim | | | Merchants: one talk each, never move; their stock is what the questlines turn up |
+| Hale | | | Stays at his post in the Burg |
 
 
 ## The opening

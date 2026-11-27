@@ -202,7 +202,7 @@ Heights are 1 (lowland) to 5.
   held by gnolls come over the bridge from Greyfall (foes, the only
   gnolls on Brasscrag); the summit path climbing north from the fire to
   the map's edge, the lift's ropes beside it.
-- **Hooks:** Moss and Pip's later spots; gnomes come back up once Old
+- **Hooks:** Moss's later spot; gnomes come back up once Old
   Bamboo is dead (`when:` his flag). Note at the gatehouse: "They came over
   in the fog. Light the guns."
 - **Connects:** stair down to the Wheel Step (west, open); summit path to
@@ -282,13 +282,8 @@ to each). Phase 2 keeps every one on open ground the hero can reach.
 
 | Who | Cell | District |
 | --- | --- | --- |
-| Pell | (9, 45) | Crag Gate, by the tower; moved off (6, 46), the entry cell |
 | Nim | (44, 60) | Tinker Town square |
 | Moss | (58, 55), then (71, 14) | the Hoist foot, then the Bridgehead |
-| Pip | (60, 56), then (76, 13) | Tinker Town by the Hoist, then the Bridgehead |
-| Hask | (66, 47) | the Works, by the mine |
-| Fennick | (54, 10) | the Workshop |
-| Gill | (99, 50) | Windward Shore; (102, 54) is the sea's edge |
 
 ## Exits
 

@@ -5,7 +5,7 @@ Each boss fights in an arena area of its own and holds the way on until it falls
 ## The Rampart Boar
 
 - **Where:** the Bull's Wall, the curtain wall alone, three wide over the drop, from the Ramparts' walk to the Chapel Door (area `bullwall`).
-- **Who:** The garrison's iron-shod war boar, taken by the Grey at its post: it forgot who fed it but not the wall. Goblins running west for Emberwood came over the wall behind it, and one rides it; goblins know pit pigs. Folk still call it the Rampart Bull, and Odo saw it turn.
+- **Who:** The garrison's iron-shod war boar, taken by the Grey at its post: it forgot who fed it but not the wall. Goblins running west for Emberwood came over the wall behind it, and one rides it; goblins know pit pigs. Folk still call it the Rampart Bull.
 - **Guards:** The Ladder down to the Burg's square, and the Chapel Door.
 - **Its fall:** The Ladder drops (`ladderDown`), a loop home through the wards.
 - **Moves:** A gore up close and a buck round it after. A charge down one lane of the wall, stepped out of; run into the parapet, it stands dazed. The chief hauls it round to charge again where the hero went, then calls the goblins' cannons down on the wall while it turns. Past half the boar throws its chief: he lands rolling and fights on afoot (`FOES.boarChief`), and the boar, drawn riderless from then on, no longer wheels or calls the cannons; it only gores, bucks and charges, quicker.

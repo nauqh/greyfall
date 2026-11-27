@@ -37,12 +37,9 @@ export type WorldFlag =
   | "anselRoused"
   | "anselAhead"
   | "watchmanOut"
-  | "marenSails"
   | "pennyFollows"
-  | "drankClear"
   | "wageOwed"
-  | "ledgerSaved"
-  | "hushStilled";
+  | "ledgerSaved";
 
 export interface Talk {
   id: string;
@@ -129,11 +126,6 @@ const wrenPenny: Talk = {
     "If you happen upon her, tell her I've kept her barrel for her. Don't tell her I've been sitting on it.",
   ],
 };
-const ysoldeClean: Talk = {
-  id: "clean",
-  when: "drankClear",
-  lines: ["Thou'st drunk the warm water, child. I see it in the frost, which will not settle where thou hast stood.", "Nothing so warm should lie so far down under us. Pray, remember that."],
-};
 
 export const NPCS: readonly Npc[] = [
   {
@@ -152,7 +144,9 @@ export const NPCS: readonly Npc[] = [
           "I am Ferrow, of Lanternport. I keep its fire. Someone has to, don't they?",
           "The last one sat on that stone where you're standing, warmed his hands at my fire, and went east in the morning.",
           "He never came back, and nor did the one before him. They always go east. Hah...",
+          "Ahh, and it's gone cold on me again while I dozed. Put your hand to it, would you? Mine are too old to coax it.",
         ],
+        lights: true,
       },
       {
         id: "shore",
@@ -249,35 +243,6 @@ export const NPCS: readonly Npc[] = [
           "Off into all that grey, are y'? Then you'll want a proper edge. Bring me gold, and I'll do the smithing.",
           "There's a banded shield on the wall, too. Oak and iron. Takes the blow so y' arm doesn't.",
         ],
-      },
-      {
-        id: "ore",
-        lines: [
-          "Mine Hills ore is soft, but honest. Brasscrag's is better, if you can get it off the tinkers.",
-          "Go and be rude to them. They'll understand. It's how they talk to each other, bless 'em.",
-        ],
-      },
-      {
-        id: "hammer",
-        lines: ["Heat, hit. Heat, hit.", "Same as fighting, really. Only the iron never hits back.", "Look after y' blade, and it'll look after you. It's all a smith can promise."],
-      },
-      {
-        id: "key",
-        when: "trollKey",
-        lines: ["Let me see that key... Well, I'll be. The Keep's. I cut that blank m'self, years back.", "Smells of bull now. Wash it, would y'?"],
-      },
-      {
-        id: "ansel",
-        when: "anselRoused",
-        lines: [
-          "Ansel came by. Paid for two edges on that old sword of his. Didn't even haggle, the old fool.",
-          "Took the sword with one edge on it. Said he'd be back for the other.",
-        ],
-      },
-      {
-        id: "second",
-        when: "anselAhead",
-        lines: ["He hasn't come back for the second edge.", "I don't keep things for the dead, love. I sell them. Gold first.", "...Oh, don't give me that look. I'm softer than I sound."],
       },
     ],
   },
@@ -392,66 +357,6 @@ export const NPCS: readonly Npc[] = [
     ],
   },
   {
-    id: "garth",
-    name: "Garth the Woodcutter",
-    short: "Garth",
-    area: "harbour",
-    at: { col: 27, row: 44 },
-    kind: "pawn",
-    act: "axe",
-    greet: "Mind the axe.",
-    part: "Go on, then.",
-    talks: [
-      {
-        id: "first",
-        lines: [
-          "Hm? You're not from the wood. Nobody's from the wood any more.",
-          "Garth, woodcutter. I cut hardwood at the Palisade, past the Ember Gate, before the goblins came over the fence.",
-          "Now I cut what grows this side of the gate, poor soft stuff that burns like wet bread. Hah...",
-        ],
-      },
-      {
-        id: "gate",
-        lines: [
-          "The goblins came over our fence one night with their torches lit, and we ran for the gate.",
-          "Dunn had it barred before the last of us were through. I can't say I'd have done different, in his boots.",
-        ],
-      },
-      { id: "bar", lines: ["The bar only lifts from the wood's side now.", "Someone would have to go round through Highward and come at it from the wood. Not me. I've the stones for trees, not goblins."] },
-    ],
-    later: [
-      {
-        when: ["emberGateOpen"],
-        area: "emberwood",
-        at: { col: 44, row: 64 },
-        talks: [
-          {
-            id: "back",
-            lines: ["Ahh, you opened it. From the wrong side, too. Hah...", "So we're back at the Palisade. Someone has to cut what the goblins haven't burnt."],
-          },
-          {
-            id: "note",
-            lines: [
-              "I found a note pinned up in the old camp. \"They barred it with us still outside.\"",
-              "Fine, careful letters, the kind they teach up at the Keep. It was the steward knocking at our gate, that night.",
-              "He went north up the Ash Road after, and nobody comes back down that road. What a sham.",
-            ],
-          },
-          { id: "trunks", lines: ["The ground's warm under these trunks. The heat comes up into them.", "They burn slow, and they burn twice. Finest wood in Aurum, I'll have you know."] },
-          {
-            id: "bull",
-            when: "trollKey",
-            lines: [
-              "That bull in the hollow came out of the east the winter the cold came, and lay down in the hot ash like it was a feather bed.",
-              "The goblins fed it like a lord, and some of them bowed to it. I saw them at it myself.",
-              "Hah. Don't tell me how it looked at the end. I'd sooner not know.",
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
     id: "dunn",
     name: "Dunn of the Gate Watch",
     short: "Dunn",
@@ -483,12 +388,13 @@ export const NPCS: readonly Npc[] = [
         talks: [
           {
             id: "watch",
-            lines: ["The gate's open, and I'm stood on the wrong side of it. Hah. Orders.", "The woodcutters cut and I watch the trees for them. The goblins still come in threes, same as ever."],
+            lines: ["The gate's open, and I'm stood on the wrong side of it. Hah. Orders.", "The woodcutters are back at their trunks, and I watch the trees for them. The goblins still come in threes, same as ever."],
           },
           {
             id: "steward",
             lines: [
-              "Garth showed me the note. That was the steward knocking at my gate that night, with the Keep's key on his belt.",
+              "I found a note pinned up in the woodcutters' old camp. \"They barred it with us still outside.\"",
+              "Fine, careful letters, the kind they teach up at the Keep. That was the steward knocking at my gate that night, with the Keep's key on his belt.",
               "Had I opened, that key would be hanging in the Keep now, not lying somewhere up the Ash Road.",
               "...Go on, then. Say it.",
             ],
@@ -533,6 +439,13 @@ export const NPCS: readonly Npc[] = [
           "Go round. North over the stones, behind their hill. Then drop it from their side.",
         ],
       },
+      {
+        id: "bridge",
+        lines: [
+          "There is a bridge under the rock to the east, by the gnomes' hut. It goes round the goblins' camp to the ford.",
+          "There is a fire at the ford, the last warm thing before the bull. Go softly, Tidewashed.",
+        ],
+      },
       { id: "thicket", lines: ["The bears keep something in the thicket behind them. Gold, by the shine.", "Bears do not spend it. ...Nor do I."] },
       {
         id: "hearth",
@@ -546,40 +459,6 @@ export const NPCS: readonly Npc[] = [
         id: "cooling",
         when: "trollKey",
         lines: ["The bull is dead? Then the goblins will spill out of the hollow, seeking a new lord.", "Or a new fire. ...Pray it is not these pines."],
-      },
-    ],
-  },
-  {
-    id: "tam",
-    name: "Tam the Prospector",
-    short: "Tam",
-    area: "emberwood",
-    at: { col: 93, row: 15 },
-    kind: "pawn",
-    act: "pickaxe",
-    greet: "Oi! Off my seam.",
-    part: "Mind the edge.",
-    talks: [
-      {
-        id: "first",
-        lines: [
-          "Oi! That's my seam you're on. ...No, go on. Nobody else is coming up for it.",
-          "Tam, prospector. Came up from the Mine Hills after better ore. The goblins shut the road behind me.",
-          "The gnomes let me dig, so long as I don't dig near them. Fair trade, I say. Ha.",
-        ],
-      },
-      {
-        id: "bridge",
-        lines: [
-          "Listen, this might be of use. There's a bridge under the rock to the east, and it takes you round the goblins' camp to the ford.",
-          "There's a fire at the ford, the last warm thing you'll find before the bull.",
-        ],
-      },
-      { id: "seams", lines: ["Gold shows in the rock up here, if you've the eye. Warm in the hand, when it's good.", "Take what you can carry. I can't carry much. Never could."] },
-      {
-        id: "home",
-        when: "trollKey",
-        lines: ["Bull's dead? Then the road's open, and I can go home.", "...The gold's still in the rock, mind you. I'll go home next year. Ha."],
       },
     ],
   },
@@ -693,22 +572,6 @@ export const NPCS: readonly Npc[] = [
           "Don't mind the lads. They only take what isn't watched. Honest work, really.",
         ],
       },
-      {
-        id: "coin",
-        lines: [
-          "The coin Tobin went down after? Oh, I threw it down the well, a long time ago.",
-          "I wanted to see who'd come after it. Two did: my brother, and now you.",
-          "Didn't expect you, I'll admit. Thought you could outwit old Jory, eh? Ha ha!",
-        ],
-      },
-    ],
-    later: [
-      {
-        when: ["tobinDeeper", "warlordDead"],
-        area: "harbour",
-        at: { col: 44, row: 53 },
-        talks: [{ id: "well", lines: ["Tobin? Still down there, counting what I steal. Someone has to.", "Don't lean on that rope, friend. It's older than both of us. Ha ha!"] }],
-      },
     ],
   },
   {
@@ -739,7 +602,6 @@ export const NPCS: readonly Npc[] = [
         ],
       },
       { id: "candle", lines: ["I light a candle each night.", "The hour comes round, and my hands are already there. 'Tis all that is left of prayer."] },
-      ysoldeClean,
     ],
     later: [
       {
@@ -765,7 +627,6 @@ export const NPCS: readonly Npc[] = [
               "Follow me not. Or do, as thou wilt. I am too old to forbid things.",
             ],
           },
-          ysoldeClean,
         ],
       },
       {
@@ -781,8 +642,15 @@ export const NPCS: readonly Npc[] = [
               "...No. Pull me not back. I have only just found them.",
             ],
           },
-          { id: "kneel", lines: ["I have stopped lighting candles.", "There is warmth enough down here. More than enough."] },
-          ysoldeClean,
+          {
+            id: "kneel",
+            gives: "Hollow Water",
+            lines: [
+              "I have stopped lighting candles.",
+              "There is warmth enough down here. More than enough.",
+              "Here, child, drink. 'Tis warm as a hearthstone, and the old man by the fire above hath never been down to taste it.",
+            ],
+          },
         ],
       },
       {
@@ -799,7 +667,6 @@ export const NPCS: readonly Npc[] = [
               "Take this. I have stopped lighting it. Light it for the ones thou losest. May the Hearth keep thee.",
             ],
           },
-          ysoldeClean,
         ],
       },
     ],
@@ -834,111 +701,6 @@ export const NPCS: readonly Npc[] = [
       },
     ],
     later: [{ when: ["monkFreed"] }],
-  },
-  {
-    id: "pilgrim",
-    name: "The Pilgrim",
-    short: "Pilgrim",
-    area: "hollow",
-    at: { col: 95, row: 49 },
-    kind: "monk",
-    color: "purple",
-    greet: "Softly. It sleepeth.",
-    part: "Tread softly, good Tidewashed. The warm awaiteth thee.",
-    talks: [
-      {
-        id: "first",
-        lines: [
-          "Softly, I prithee. The Shell Below sleepeth on the isle yonder, upon the warm stone. Put thy hand in the water, good Tidewashed, and feel it.",
-          "It keepeth the Hearth, which lieth under it, and the sisters came down from their chapel to kneel beside it.",
-          "We pilgrims wait for it to wake, and it will wake. Think not on thy fears.",
-        ],
-      },
-      {
-        id: "water",
-        sets: "drankClear",
-        gives: "Hollow Water",
-        lines: [
-          "Drink, I prithee. 'Tis warm as a hearthstone, and naught so warm is left up there.",
-          "The old man who keepeth the fire above saith not to drink it. He hath never been down.",
-        ],
-      },
-    ],
-    later: [{ when: ["shellDead"], area: "hollow", at: { col: 95, row: 49 }, dead: true }],
-  },
-  {
-    id: "maren",
-    name: "Maren the Harbourmaster",
-    short: "Maren",
-    area: "harbour",
-    at: { col: 67, row: 63 },
-    kind: "pawn",
-    greet: "Tide's out.",
-    part: "Fair winds. Ha.",
-    talks: [
-      {
-        id: "first",
-        lines: [
-          "Tide's out. Maren, Harbourmaster. I keep the harbour, for all the good it does an empty sea.",
-          "No ship has put in here for three winters, not one.",
-          "Stiltwater still trades down the coast, if you can stomach its prices. And its pirates.",
-          "Mostly the pirates. Ha.",
-          "The fire in the square's gone cold again while Ferrow dozed over it. Come on, then, I'll walk you there and you can light it.",
-        ],
-        lights: true,
-      },
-      {
-        id: "finfolk",
-        lines: [
-          "There are finfolk off the Stiltwater shore. Sharks, the pirates call them, and you'll not want to swim there.",
-          "They pull things out of the warm water by the caves, and the pirates swear some of it is still breathing. I don't ask.",
-        ],
-      },
-      {
-        id: "lantern",
-        lines: ["The lantern on the harbour wall? I light it every night, for ships.", "Three winters and no ships, but you don't stop lighting it. The night you stop is the night you've given the harbour up."],
-      },
-      { id: "tide", lines: ["Tide's out. It's always out, lately.", "As if the sea's leaving too. Can't say I blame it."] },
-      {
-        id: "sail",
-        when: "warlordDead",
-        sets: "marenSails",
-        lines: [
-          "There was a sail off the point this morning, the first in three winters.",
-          "Stiltwater, likely. Pirates, likelier. I don't care.",
-          "Thirty years I've watched that water. I'd like to be on it once, before it leaves for good. Fair winds, Tidewashed. Ha.",
-        ],
-      },
-    ],
-    later: [{ when: ["marenSails"] }],
-  },
-  {
-    id: "dunstan",
-    name: "Dunstan the Foreman",
-    short: "Dunstan",
-    area: "harbour",
-    at: { col: 96, row: 25 },
-    kind: "pawn",
-    greet: "Mind the carts.",
-    part: "Back to it.",
-    talks: [
-      {
-        id: "first",
-        lines: [
-          "Mind the carts. ...Dunstan, foreman. I run the Mine Hills, what's left to run.",
-          "The good ore came off the deep face, under the crest. Forty loads a week.",
-          "Then one shift it came up grey, and cold in the hand, in the middle of high summer.",
-          "The lads who worked that face went slow, and slower every day, till they stood at it with their picks up and never swung. So I nailed it shut myself. Wouldn't you have?",
-        ],
-      },
-      { id: "face", lines: ["We work the old face now, soft stuff, and Brenna grumbles at every load.", "Let her grumble. She's still got all her lads, hasn't she?"] },
-      { id: "boards", lines: ["Don't touch the boards.", "I count them every morning. Nineteen. ...Still nineteen."] },
-      {
-        id: "warm",
-        when: "warlordDead",
-        lines: ["Put my hand to the boards this morning. Warm. First time in three winters.", "Maybe I'll pull them. ...Maybe next year."],
-      },
-    ],
   },
   {
     id: "watchman",
@@ -1170,66 +932,16 @@ export const NPCS: readonly Npc[] = [
               "All that's left of the Cut's accounts is what the goblins remember, and the hole itself. Hmph. Some paymaster I was.",
             ],
           },
-        ],
-      },
-    ],
-  },
-  {
-    id: "hush",
-    name: "Sister Hush",
-    short: "Hush",
-    area: "greyfall",
-    at: { col: 45, row: 22 },
-    kind: "monk",
-    color: "purple",
-    greet: "Hush.",
-    part: "Take thy noise elsewhere, child. Mayst thou thy stillness find.",
-    talks: [
-      {
-        id: "first",
-        lines: [
-          "Hush. Thou'rt so loud, child. All that colour on thee, shouting at me across the chapel.",
-          "I am Sister... Sister Hush, of the Stilled. We pray the world's fever down.",
-          "The Hearth hath burned too long, and the cold is the fever breaking. Seest thou not?",
-        ],
-      },
-      {
-        id: "name",
-        lines: [
-          "I told thee my name, when first we met. I cannot think now which name it was.",
-          "The name is the second thing to go. The colour went first. It doth not hurt.",
-        ],
-      },
-      {
-        id: "bell",
-        sets: "hushStilled",
-        gives: "Stilled Bell",
-        lines: [
-          "Take this bell. 'Tis for ringing the loud ones quiet, and where I go I'll not need it.",
-          "I go down to the Pits, where 'tis coldest, to kneel with the others by the Crater.",
-          "Hush now. ...Hush.",
-        ],
-      },
-    ],
-    // Taken once she goes down, and the Warlord's fall does not bring her back; fallen first, he leaves her in the thaw.
-    later: [
-      {
-        when: ["warlordDead"],
-        area: "greyfall",
-        at: { col: 45, row: 22 },
-        talks: [
           {
-            id: "fever",
+            id: "bell",
             gives: "Stilled Bell",
             lines: [
-              "Thou'st killed him, and the fever cometh back. I can feel my hands again.",
-              "I was nearly still. I had forgotten this chapel's name, and now it cometh back to me. Was it all a lie, then?",
-              "Take the bell. I cannot ring it for a world that wisheth to be warm.",
+              "One of the Stilled left this on my sill, the night before the thaw. A bell, for ringing the warm ones quiet.",
+              "I have no use for quiet now. My ink is thawing. Take it, and close the door behind you.",
             ],
           },
         ],
       },
-      { when: ["hushStilled"], area: "greyfall", at: { col: 38, row: 65 }, talks: [] },
     ],
   },
   {
@@ -1333,9 +1045,9 @@ export const NPCS: readonly Npc[] = [
     kind: "pawn",
     act: "gold",
     color: "yellow",
-    // Everything that is not a blade; the deeper fire only once the bull that lay on it is gone.
+    // Everything that is not a blade; the deeper fire only once the bull that lay on it is gone, the ship's lantern once the Warlord is.
     shop: {
-      stock: [{ item: "Ember Shard" }, { item: "Smoked Haunch" }, { item: "Pine Resin" }, { item: "Prospector's Purse" }, { item: "Kindled Shard", after: "minotaur" }, { item: "Salt-Glass Lantern", flag: "marenSails" }],
+      stock: [{ item: "Ember Shard" }, { item: "Smoked Haunch" }, { item: "Pine Resin" }, { item: "Prospector's Purse" }, { item: "Kindled Shard", after: "minotaur" }, { item: "Salt-Glass Lantern", flag: "warlordDead" }],
       poor: "Hehe. Thy purse is light, dearie. Come back richer.",
       sold: "That was the only one, dearie. Kee hee.",
     },
@@ -1350,23 +1062,6 @@ export const NPCS: readonly Npc[] = [
           "A shard of the old fire, a haunch, a pot of resin, a purse that sews itself fatter. Little things, to ease a weary traveller.",
           "One of each, mind. Keep them in thy sack, where thy hands can find them.",
           "Kill whatever sits in Emberwood, and I'll find thee a warmer shard. Hehe.",
-        ],
-      },
-      { id: "thieves", lines: ["The thieves in the market? Burg folk, all of them.", "Went bad when the bell stopped. Bad for business, worse for them. More's the pity."] },
-      { id: "coin", lines: ["Feel that coin, dearie. Warm, isn't it? Even now.", "That's all gold ever was. A little warm thou canst carry. Hehe."] },
-      { id: "rest", lines: ["Hehe. Still breathing, dearie? Good.", "Breathing folk buy things. Is it not our sorry lot, to sup on the living?"] },
-      {
-        id: "fence",
-        when: "tobinDeeper",
-        lines: ["Tobin's gone down after his brother? Hehe. Then he'll meet my best supplier.", "Don't ask what I buy from below, dearie. I don't. Kee hee hee..."],
-      },
-      {
-        id: "ship",
-        when: "marenSails",
-        lines: [
-          "A ship in, and Maren off on it. Thirty years she waited. Hehe.",
-          "Some of us don't wait for ships, dearie. We sell to whoever comes.",
-          "Stiltwater left me a crate off it. Salt-glass, dearie, a lantern of it, and only the one, mind.",
         ],
       },
     ],
@@ -1399,42 +1094,6 @@ export const NPCS: readonly Npc[] = [
       },
       { id: "rest", lines: ["Sit. The fire's the one thing in the Burg that's still ours.", "I am well pleased to see you safe."] },
     ],
-  },
-  {
-    // At the Bull's Wall's east end past the boar, by the Gun Bridge: the gunner who outlived his powder.
-    id: "odo",
-    name: "Odo the Gunner",
-    short: "Odo",
-    area: "bullwall",
-    at: { col: 72, row: 12 },
-    kind: "warrior",
-    greet: "Boar's dead, then. Good. I was running out of things to throw.",
-    part: "Mind the ladder. It sticks.",
-    talks: [
-      {
-        id: "first",
-        lines: [
-          "I'm Odo, the gunner. Those two guns on the tower were mine, till the diggers found my powder and turned them on the wall.",
-          "The boar was the garrison's. The smiths shod him in iron for the parade. Proud beast, he was.",
-          "Then the cold got into him and he forgot who fed him, and a digger climbed on his back. It's been riding him ever since.",
-        ],
-      },
-      { id: "ladder", lines: ["There's a ladder down the south face to the Burg's square.", "Kick it loose and you'll come down by the square's fire, if you need one."] },
-      { id: "died", when: "died", lines: ["You came back. They don't, usually.", "The wall remembers everyone who crossed it. It just doesn't care. What a bloody joke."] },
-      { id: "kicked", when: "ladderDown", lines: ["You found it. The square's closer than it looks. Most things are."] },
-    ],
-  },
-  {
-    // Ferrow's last one, who went east: laid on the Grey Road short of the Gate, and never named.
-    id: "last",
-    name: "The Last One",
-    area: "barrowmoor",
-    at: { col: 113, row: 37 },
-    kind: "warrior",
-    greet: "",
-    part: "",
-    talks: [],
-    later: [{ when: [], area: "barrowmoor", at: { col: 113, row: 37 }, dead: true }],
   },
   {
     // The Landing's castaway, a knight of Lanternport washed in before the wanderer on a broken leg: drawn as a lancer,
@@ -1492,56 +1151,6 @@ export const NPCS: readonly Npc[] = [
     ],
   },
   {
-    // Brasscrag's gnomes are the gnome-kings' kin left below, drawn as gnomes: one people, one look.
-    id: "pell",
-    name: "Pell the Gatekeeper",
-    short: "Pell",
-    area: "crags",
-    at: { col: 12, row: 48 },
-    kind: "gnome",
-    greet: "Road! Keep to the road!",
-    part: "Road, mind!",
-    talks: [
-      {
-        id: "first",
-        lines: [
-          "Road! You're on it. Good. Stay on it.",
-          "Pell, of the Crag Gate. Any gnome who comes down off the rock, I let in. Nobody goes up past me.",
-          "The slingers up on the rock shoot first. They used to lean over the rim and ask your business, but they've stopped asking.",
-        ],
-      },
-      {
-        id: "guns",
-        lines: [
-          "The last thing to walk up those steps was grey from its cap to its boots. It came up slow and smiling, and the slingers waved it through.",
-          "So now they shoot anything that climbs slow, and anything that smiles. Climb quick, and keep a straight face.",
-        ],
-      },
-      {
-        id: "grove",
-        lines: [
-          "North, over the stream, is Old Bamboo's grove. His cubs still sit in it under the stalks, waiting for him to come down.",
-          "There are bees in there as well, and bees never sit for anybody.",
-        ],
-      },
-      { id: "road", lines: ["Keep to the road and go east. Tinker Town's at the end of it, and a fire with it.", "Still here? Road!"] },
-      {
-        id: "died",
-        when: "died",
-        lines: ["The fire caught you, did it? Better the fire than the guns. The guns don't hand you back.", "Road, this time."],
-      },
-      {
-        id: "bamboo",
-        when: "bambooDead",
-        lines: [
-          "Old Bamboo's dead? Up at his wheel, where he always was?",
-          "Hm. I'll go up to the grove and tell the cubs. Someone has to tell the cubs, and it'll not be the slingers.",
-          "Road, mind. Road.",
-        ],
-      },
-    ],
-  },
-  {
     id: "nim",
     name: "Nim the Tinker",
     short: "Nim",
@@ -1562,35 +1171,6 @@ export const NPCS: readonly Npc[] = [
           "Mind the fuses. No, that one. ...Fine. All of them.",
           "Nim, tinker. Powder, springs, brass. Gnome work. Finest in Aurum, and the only.",
           "Gnome work costs gold, at the old rate. The gnome-kings set it themselves, before they went up the lift with all of it.",
-        ],
-      },
-      {
-        id: "kings",
-        lines: [
-          "The kings? Up in Sunhold, that we built for them with our own winches.",
-          "They floated off with the gold and left us the rock. Kind of them, wasn't it? Ha.",
-        ],
-      },
-      {
-        id: "owed",
-        lines: [
-          "Sunhold owes this rock a hundred years of pay, and not a grain of gold has come down the lift since the Cut.",
-          "I've the sum worked out to the last grain, chalked on a slate by my bench, if you want it. Nobody wants it.",
-        ],
-      },
-      {
-        id: "ore",
-        lines: [
-          "The best ore in Aurum lies under the second step, in Hask's mine.",
-          "Nobody mines it now but Hask, and Hask won't climb a foot past it.",
-        ],
-      },
-      {
-        id: "wheel",
-        when: "bambooDead",
-        lines: [
-          "The wheel will turn again, then, with Old Bamboo off it. Someone will have to walk it.",
-          "Not me. My knees are brass already.",
         ],
       },
     ],
@@ -1648,155 +1228,16 @@ export const NPCS: readonly Npc[] = [
               "Someone has to keep the lift, and I watched him do it twenty winters. I'll keep it till he comes back for his coat.",
             ],
           },
+          {
+            id: "cog",
+            gives: "Wheel Cog",
+            lines: [
+              "This was in his coat pocket, a cog off the wheel. Old Bamboo's feet wore it bright.",
+              "Wick always kept a spare. Take it. The lift turns on the new one now.",
+            ],
+          },
           { id: "up", lines: ["Step in, if you're going up.", "The kings won't thank you. They never thanked him."] },
         ],
-      },
-    ],
-  },
-  {
-    id: "pip",
-    name: "Pip",
-    area: "crags",
-    at: { col: 63, row: 59 },
-    kind: "gnome",
-    greet: "Are you going up?",
-    part: "Go up! Go up!",
-    talks: [
-      {
-        id: "first",
-        lines: [
-          "Are you going up? Grown folk go up and don't come down.",
-          "I'm Pip. My da keeps the lift. Kept. ...Keeps.",
-          "Bamboo used to let me ride on his back while he walked the wheel. Round and round and round.",
-        ],
-      },
-      { id: "slingers", lines: ["The slingers shot at me once. On purpose, I think.", "I wasn't slow. I wasn't smiling either."] },
-    ],
-    later: [
-      {
-        when: ["bambooDead"],
-        area: "crags",
-        at: { col: 79, row: 16 },
-        talks: [
-          { id: "sick", lines: ["Mum says Bamboo was sick. The grey kind.", "She says you made him stop hurting. ...That's what she says."] },
-          { id: "lift", lines: ["I'm going to keep the lift when I'm big.", "Round and round. Someone has to."] },
-        ],
-      },
-    ],
-  },
-  {
-    id: "hask",
-    name: "Hask the Miner",
-    short: "Hask",
-    area: "crags",
-    at: { col: 69, row: 50 },
-    kind: "gnome",
-    greet: "Not going up.",
-    part: "Not going up. Said so.",
-    talks: [
-      {
-        id: "first",
-        lines: [
-          "Not going up. Don't ask.",
-          "Hask. I dig the second step. The second. Not the third.",
-          "The third step's the guns, and the slingers up there don't know my face from a grey one's any more.",
-        ],
-      },
-      {
-        id: "gold",
-        lines: [
-          "There's gold in the mine behind me, still in the walls. Take what you can prise out. Up's not worth it.",
-          "Down's not worth it either. Hah. The second step is as far as I go, either way.",
-        ],
-      },
-      {
-        id: "quiet",
-        when: "bambooDead",
-        lines: ["The guns went quiet a whole morning. First time in three winters.", "...I still won't go up. But I looked."],
-      },
-    ],
-  },
-  {
-    // Built the Gnome Lift for the kings; keeps the yard on the North Crag, across his own gantry.
-    id: "fennick",
-    name: "Master Fennick",
-    short: "Fennick",
-    area: "crags",
-    at: { col: 57, row: 13 },
-    kind: "gnome",
-    greet: "Wheel first.",
-    part: "Cage second...",
-    talks: [
-      {
-        id: "first",
-        lines: [
-          "Wheel first, cage second, gnome last. Say it.",
-          "No? Nobody says it any more. They put the gold first and the gnome nowhere, and look at the rock now.",
-          "Master Fennick, builder of the lift. I may be but small, but I built the kings a road to the sky. They rode it up, and never sent it down.",
-        ],
-      },
-      {
-        id: "cage",
-        lines: [
-          "That cage? A new one, oiled and hung, for when the wheel turns again.",
-          "It won't turn while Old Bamboo sits in it, grey to the eyes and chewing as if nothing had happened.",
-        ],
-      },
-      {
-        id: "gantry",
-        lines: [
-          "The gnolls don't cross my gantry. It's too narrow for anything bigger than a gnome, and they've tried.",
-          "I built it narrow on purpose. Ha. Gnome last, but not this once.",
-        ],
-      },
-      {
-        id: "cog",
-        when: "bambooDead",
-        gives: "Wheel Cog",
-        lines: [
-          "You put Old Bamboo down, then. Good. He'd have hated what he'd become.",
-          "This came off the wheel when it stopped. His feet wore it bright.",
-          "Take it. The new cage can have a new cog. Wheel first, cage second.",
-        ],
-      },
-    ],
-  },
-  {
-    id: "gill",
-    name: "Gill the Fisher",
-    short: "Gill",
-    area: "crags",
-    at: { col: 102, row: 53 },
-    kind: "gnome",
-    greet: "Fog's coming.",
-    part: "Watch the bridge.",
-    talks: [
-      {
-        id: "first",
-        lines: [
-          "Fog's coming. Fog always comes off Greyfall.",
-          "Gill, fisher. I fish under the bridge. The fish don't care what crosses over.",
-          "I do, though. I've learned to look up between bites.",
-        ],
-      },
-      {
-        id: "fog",
-        lines: [
-          "They came over the bridge in the fog, dogs on two legs running with the grey ones, and laughing as they ran.",
-          "I counted till I couldn't. Then I hid.",
-        ],
-      },
-      {
-        id: "bridge",
-        lines: [
-          "The Sky Bridge runs straight across to the Citadel's wall, and there's no gate on it anywhere.",
-          "There's only the dogs at this end to stop you. Mind the dogs.",
-        ],
-      },
-      {
-        id: "guns",
-        when: "bambooDead",
-        lines: ["There are gnomes on the peak again. I can see their caps from here.", "Lighting the guns, by the look. Good. Light them."],
       },
     ],
   },

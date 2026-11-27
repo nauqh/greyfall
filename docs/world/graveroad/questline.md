@@ -20,13 +20,3 @@ Sells: Smuggler's Coat; Sister's Candle (once **ysoldeDeeper**).
   1. Well, well! Tobin's friend? Oh, no need for that face. Anyone who comes this deep is a friend of mine.
   2. Name's Jory. Jory the Smiling, if you like. And friends buy things, don't they? Ha ha!
   3. Don't mind the lads. They only take what isn't watched. Honest work, really.
-- **coin**
-  1. The coin Tobin went down after? Oh, I threw it down the well, a long time ago.
-  2. I wanted to see who'd come after it. Two did: my brother, and now you.
-  3. Didn't expect you, I'll admit. Thought you could outwit old Jory, eh? Ha ha!
-
-### At Lanternport, the Lower Town, by the Old Well (44, 53), once **tobinDeeper** and **warlordDead**
-
-- **well**
-  1. Tobin? Still down there, counting what I steal. Someone has to.
-  2. Don't lean on that rope, friend. It's older than both of us. Ha ha!
