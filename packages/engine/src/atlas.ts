@@ -1324,22 +1324,27 @@ export function tierBuilder(id: TierId, rng: Rng, size: { cols: number; rows: nu
         }
         if (pockets.length === 0) break;
         for (const flood of pockets) {
-          const pocket = flood[0]!;
-          const prev = new Map<number, Cell | null>([[cellKey(pocket), null]]);
-          const q = [pocket];
+          // Out from its first tile; failing that, from every tile of it: a pocket can climb a stair onto high ground,
+          // and a search from up there finds no lowland to cut through.
+          let prev = new Map<number, Cell | null>();
           let found: Cell | null = null;
-          for (let i = 0; i < q.length && !found; i++) {
-            for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
-              const n = { col: q[i]!.col + dc, row: q[i]!.row + dr };
-              // Never along a cliff's face: a path there walks nowhere.
-              if (prev.has(cellKey(n)) || !".T".includes(at(n.col, n.row)) || castsCliff(n.col, n.row - 1)) continue;
-              prev.set(cellKey(n), q[i]!);
-              if (seen.has(cellKey(n))) {
-                found = n;
-                break;
+          for (const starts of [[flood[0]!], flood]) {
+            prev = new Map(starts.map((c) => [cellKey(c), null]));
+            const q = [...starts];
+            for (let i = 0; i < q.length && !found; i++) {
+              for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+                const n = { col: q[i]!.col + dc, row: q[i]!.row + dr };
+                // Never along a cliff's face: a path there walks nowhere.
+                if (prev.has(cellKey(n)) || !".T".includes(at(n.col, n.row)) || castsCliff(n.col, n.row - 1)) continue;
+                prev.set(cellKey(n), q[i]!);
+                if (seen.has(cellKey(n))) {
+                  found = n;
+                  break;
+                }
+                q.push(n);
               }
-              q.push(n);
             }
+            if (found) break;
           }
           // Out through the trees to the rest; an islet with no way out goes to the woods, all of it.
           if (!found) for (const c of flood) put(c.col, c.row, "T");
