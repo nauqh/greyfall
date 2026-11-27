@@ -14,7 +14,6 @@ const STAMP = { up: "Wanted", fallen: "Fallen", paid: "Paid" };
 export function Board({ board, onHover, onChoose }: { board: BoardView; onHover: (i: number) => void; onChoose: (i: number) => void }) {
   useTick(board.pick);
   const pick = board.notes[board.pick];
-  const leave = board.notes.length;
   return (
     <div className="sideDock">
       <div className="board" role="menu" aria-label={board.name}>
@@ -54,7 +53,7 @@ export function Board({ board, onHover, onChoose }: { board: BoardView; onHover:
           </ul>
 
           <section className="boardRead" aria-live="polite">
-            {pick ? (
+            {pick && (
               <>
                 <div className="boardReadHead">
                   <ItemIcon icon={NOTICE} size={40} />
@@ -76,24 +75,12 @@ export function Board({ board, onHover, onChoose }: { board: BoardView; onHover:
                   </div>
                 </dl>
               </>
-            ) : (
-              <p className="shopAbout">Back to the street.</p>
             )}
           </section>
         </div>
 
         <div className="boardFoot">
-          <button
-            type="button"
-            role="menuitem"
-            className={`shopChoice back${board.pick === leave ? " picked" : ""}`}
-            onMouseEnter={() => onHover(leave)}
-            onClick={() => onChoose(leave)}
-          >
-            <img src={packUrl("UI Elements/UI Elements/Icons/Icon_09.png")} alt="" width={20} height={20} />
-            <b>Leave</b>
-          </button>
-          <KeyHints className="shopKeys" keys={pick?.state === "fallen" ? "W/S pick   E collect   Esc leave" : "W/S pick   Esc leave"} />
+          <KeyHints className="shopKeys" keys={pick?.state === "fallen" ? "W/A/S/D pick   E collect   Esc leave" : "W/A/S/D pick   Esc leave"} />
         </div>
       </div>
     </div>

@@ -201,18 +201,9 @@
 
 .boardFoot {
 	display: flex;
-	align-items: center;
-	gap: 16px;
+	justify-content: center;
 	padding-top: 8px;
 	border-top: 2px solid rgb(107 87 64 / 0.22);
-}
-
-.boardFoot .shopChoice.back {
-	margin-left: 0;
-}
-
-.boardFoot .shopKeys {
-	margin-left: auto;
 }
 
 @media (max-width: 640px) {

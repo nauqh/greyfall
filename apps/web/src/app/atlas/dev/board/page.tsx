@@ -3,7 +3,7 @@
 // The notice board on its own, behind the dev password: every state at once, without playing to it.
 
 import { useEffect, useState } from "react";
-import { NOTICES } from "@greyfall/engine";
+import { NOTICES, stepNotice } from "@greyfall/engine";
 
 import type { BoardView } from "../../../../game/AtlasScene";
 import { Board } from "../../Board";
@@ -15,7 +15,6 @@ export default function BoardPreview() {
   const [notes, setNotes] = useState(NOTES);
   const [pick, setPick] = useState(0);
   const [gold, setGold] = useState(212);
-  const leave = notes.length;
 
   const choose = (i: number) => {
     const n = notes[i];
@@ -27,8 +26,8 @@ export default function BoardPreview() {
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
-      if (k === "s" || k === "arrowdown") setPick((p) => Math.min(p + 1, leave));
-      else if (k === "w" || k === "arrowup") setPick((p) => Math.max(p - 1, 0));
+      const [dx, dy] = k === "a" || k === "arrowleft" ? [-1, 0] : k === "d" || k === "arrowright" ? [1, 0] : k === "w" || k === "arrowup" ? [0, -1] : k === "s" || k === "arrowdown" ? [0, 1] : [0, 0];
+      if (dx || dy) setPick((p) => stepNotice(p, notes.length, dx, dy));
       else if (k === "e") choose(pick);
     };
     window.addEventListener("keydown", key);

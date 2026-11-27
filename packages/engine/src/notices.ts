@@ -59,3 +59,14 @@ export const NOTICES: Notice[] = [
     count: 3,
   },
 ];
+
+/** The board's notes sit two to a row. */
+const NOTICE_COLS = 2;
+
+/** The pick after one step on the board: A/D across a row, W/S between rows, held at the edges. */
+export function stepNotice(pick: number, count: number, dx: number, dy: number): number {
+  const to = pick + dx + dy * NOTICE_COLS;
+  const sameRow = Math.floor(to / NOTICE_COLS) === Math.floor(pick / NOTICE_COLS);
+  if (to < 0 || to >= count || (dx && !sameRow)) return dy > 0 && Math.floor(pick / NOTICE_COLS) < Math.floor((count - 1) / NOTICE_COLS) ? count - 1 : pick;
+  return to;
+}

@@ -12,6 +12,7 @@ import {
   COMPANIONS,
   LANE_HOUSE,
   NOTICES,
+  stepNotice,
   companionPlan,
   foeTarget,
   hire,
@@ -323,7 +324,6 @@ export interface SackView {
 export interface BoardView {
   name: string;
   notes: { title: string; from: string; text: string; reward: number; state: "up" | "fallen" | "paid" }[];
-  /** A note's index, or `notes.length` for Leave. */
   pick: number;
   gold: number;
 }
@@ -1368,7 +1368,7 @@ export class AtlasScene extends Phaser.Scene {
       k?.on("keydown-ONE", () => this.command("follow"));
       k?.on("keydown-TWO", () => this.command("attack"));
       k?.on("keydown-THREE", () => this.command("hold"));
-      for (const [key, d] of [["W", -1], ["UP", -1], ["A", -1], ["LEFT", -1], ["S", 1], ["DOWN", 1], ["D", 1], ["RIGHT", 1]] as const) k?.on(`keydown-${key}`, () => this.movePick(d));
+      for (const [key, d, across] of [["W", -1, false], ["UP", -1, false], ["A", -1, true], ["LEFT", -1, true], ["S", 1, false], ["DOWN", 1, false], ["D", 1, true], ["RIGHT", 1, true]] as const) k?.on(`keydown-${key}`, () => this.movePick(d, across));
       k?.on("keydown-ESC", () => this.back());
       k?.on("keydown-SPACE", (e: KeyboardEvent) => !e.repeat && (this.spaceAt = this.time.now));
       k?.on("keyup-SPACE", () => {
@@ -2746,11 +2746,11 @@ export class AtlasScene extends Phaser.Scene {
     this.showBoard();
   }
 
-  /** E on a note whose foes have fallen: its gold, and the note marked paid; on Leave, away from the board. */
+  /** E on a note whose foes have fallen: its gold, and the note marked paid. */
   private chooseNotice(i: number): void {
-    this.board!.pick = i;
     const n = NOTICES[i];
-    if (!n) return this.closeBoard();
+    if (!n) return;
+    this.board!.pick = i;
     const done = noticed();
     if (noticeState(n.count, done[n.id]) !== "fallen") return this.showBoard();
     store(NOTICED, { ...done, [n.id]: "paid" });
@@ -2803,10 +2803,9 @@ export class AtlasScene extends Phaser.Scene {
     this.showMenu();
   }
 
-  private movePick(d: number): void {
+  private movePick(d: number, across = false): void {
     if (this.board) {
-      const n = NOTICES.length + 1;
-      this.board.pick = (this.board.pick + d + n) % n;
+      this.board.pick = stepNotice(this.board.pick, NOTICES.length, across ? d : 0, across ? 0 : d);
       return this.showBoard();
     }
     const m = this.menu;
