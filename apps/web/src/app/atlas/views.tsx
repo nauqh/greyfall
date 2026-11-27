@@ -9,7 +9,7 @@ import { Clouds } from "../../game/Clouds";
 import { packUrl } from "../../game/art";
 import { GameCanvas } from "../../game/GameCanvas";
 import { DevPanel } from "./DevPanel";
-import { LevelUp, STATS, heldCost } from "./LevelUp";
+import { LevelUp, STATS, heldCost, plus } from "./LevelUp";
 import { RestPanel } from "./RestPanel";
 import { KeyHints, SidePanel } from "./SidePanel";
 import { CONTROLS } from "../settings/controls";
@@ -173,8 +173,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   // A point held on an attribute, or taken back; one more only while the gold covers it.
   const shift = (stat: keyof Levels, by: 1 | -1): void => {
     if (!sat || held[stat] + by < 0) return;
-    const after = { hp: sat.levels.hp + held.hp, attack: sat.levels.attack + held.attack, stamina: sat.levels.stamina + held.stamina };
-    if (by > 0 && sat.gold < heldCost(sat.levels, held) + levelCost(after)) return play(ERROR);
+    if (by > 0 && sat.gold < heldCost(sat.levels, held) + levelCost(plus(sat.levels, held))) return play(ERROR);
     setFire((f) => f && { ...f, held: { ...held, [stat]: held[stat] + by }, bought: undefined });
   };
   // Accept: the points held bought one by one, as the scene sells them.

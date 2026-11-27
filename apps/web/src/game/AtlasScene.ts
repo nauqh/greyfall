@@ -33,7 +33,8 @@ import {
   LENT,
   kit,
   levelCost,
-  NO_LEVELS,
+  heroLevel,
+  savedLevels,
   type Levels,
   onOffer,
   type ItemName,
@@ -317,9 +318,10 @@ export interface LevelView {
   levels: Levels;
   cost: number;
   gold: number;
-  now: Levels;
-  /** The rest of the captain's numbers, the embers with those the bosses gave. */
+  /** The captain's numbers, the embers with those the bosses gave. */
   kit: Kit;
+  /** The numbers the captain would have at `levels`. */
+  with: (levels: Levels) => Kit;
 }
 
 export interface BandView {
@@ -723,6 +725,9 @@ function gives(item: ItemName): string {
     block: (n) => `Blocking costs ${Math.round((-n / STAMINA.block) * 100)}% less stamina`,
     greed: (n) => `+${Math.round(n * 100)}% gold from kills`,
     stamina: (n) => `+${n} stamina`,
+    swing: (n) => `Swings ${Math.round(-n * 100)}% quicker`,
+    roll: (n) => `Rolling costs ${-n} less stamina`,
+    find: (n) => `+${Math.round(n * 100)}% trade goods from kills`,
   };
   return (Object.entries(ITEMS[item].adds) as [keyof Kit, number][]).map(([stat, n]) => words[stat](n)).join(", ");
 }
@@ -735,6 +740,9 @@ const STATS: Record<keyof Kit, { label: string; words: (n: number) => string }> 
   block: { label: "Block cost", words: (n) => `${Math.round((n / STAMINA.block) * 100)}%` },
   greed: { label: "Gold from kills", words: (n) => `${Math.round(n * 100)}%` },
   stamina: { label: "Stamina", words: String },
+  swing: { label: "Swing wait", words: (n) => `${Math.round(n * 100)}%` },
+  roll: { label: "Roll cost", words: String },
+  find: { label: "Trade goods", words: (n) => `${Math.round(n * 100)}%` },
 };
 const BAND = "greyfall.band";
 const ORDER_WORD: Record<BandOrder, string> = { follow: "Follow me", attack: "Attack my target", hold: "Hold here" };
@@ -825,7 +833,7 @@ function gearNow(): Kit {
   return kit(remembered(BOUGHT), levels(), heroClass());
 }
 function levels(): Levels {
-  return stored(LEVELS, NO_LEVELS);
+  return savedLevels(stored<Record<string, unknown>>(LEVELS, {}));
 }
 /** Embers carried at full: the base and the shards bought, and one for each boss that gives one. */
 function maxFlasks(): number {
@@ -1366,7 +1374,7 @@ export class AtlasScene extends Phaser.Scene {
       next: () => (this.reading ? this.read(null) : this.nextPage()),
       sit: (on) => this.sit(on),
       look: (cover) => this.frameSack(cover),
-      levels: () => ({ levels: levels(), cost: levelCost(levels()), gold: this.gold, now: { hp: this.gear.hp, attack: this.gear.attack, stamina: this.gear.stamina }, kit: { ...this.gear, flasks: maxFlasks() } }),
+      levels: () => ({ levels: levels(), cost: levelCost(levels()), gold: this.gold, kit: { ...this.gear, flasks: maxFlasks() }, with: (lv) => ({ ...kit(remembered(BOUGHT), lv, heroClass()), flasks: maxFlasks() }) }),
       levelUp: (stat) => this.levelUp(stat),
       gifts: () => GIFTS.map(sackItem),
       begin: (cls, gift, name) => this.begin(cls, gift, name),
@@ -2054,7 +2062,7 @@ export class AtlasScene extends Phaser.Scene {
       else this.tweens.add({ targets: b.s, alpha: 0, duration: 500, onComplete: () => b.s.destroy() });
       const gold = (b as Foe).stats?.gold;
       if (gold) this.dropGold(b.at, Math.round(gold * this.gear.greed));
-      const loot = lootDrop((b as Foe).kind, Math.random());
+      const loot = lootDrop((b as Foe).kind, Math.random(), this.gear.find);
       if (loot) this.dropLoot(b.at, loot);
       if (this.isBoss(b as Foe)) this.felled(b as Foe);
       if (this.isBoss(b as Foe) && BOSS_KEY[(b as Foe).kind]) this.dropKey(b.at, (b as Foe).kind);
@@ -2528,7 +2536,7 @@ export class AtlasScene extends Phaser.Scene {
     const items = (Object.keys(ITEMS) as ItemName[]).filter((item) => bought.has(item));
     const stats = (Object.keys(STATS) as (keyof Kit)[]).map((k) => ({ key: k, label: STATS[k].label, now: statWords(k, this.gear) }));
     const lv = levels();
-    const level = 1 + lv.hp + lv.attack + lv.stamina;
+    const level = heroLevel(lv);
     const goods = (Object.entries(held()) as [LootName, number][]).filter(([, n]) => n > 0).map(([loot, n]) => ({ label: loot, icon: ITEM_ICON[loot], gives: `${n} carried, ${LOOT[loot].worth} gold each to ${NPCS.find((m) => m.id === LOOT[loot].buyer)?.name}`, about: LOOT[loot].about }));
     this.hooks.onSack?.({ name: stored<string | null>(NAME, null), items: [...items.map(sackItem), ...goods], stats, level });
   }
@@ -2579,7 +2587,7 @@ export class AtlasScene extends Phaser.Scene {
       const bought = remembered(BOUGHT);
       const goods = this.stock(f).map((item) => {
         const sold = bought.has(item);
-        const after = kit(new Set([...bought, item]), levels());
+        const after = kit(new Set([...bought, item]), levels(), heroClass());
         const change = (Object.keys(ITEMS[item].adds) as (keyof Kit)[]).map((k) => ({ label: STATS[k].label, now: statWords(k, this.gear), after: statWords(k, after) }));
         return { label: item, note: `${ITEMS[item].cost}`, icon: ITEM_ICON[item], gives: gives(item), sold, about: ITEMS[item].about, afford: !sold && this.gold >= ITEMS[item].cost, change };
       });
@@ -2758,7 +2766,7 @@ export class AtlasScene extends Phaser.Scene {
     if (back) dx = hero.s.flipX ? 1 : -1;
     const len = Math.hypot(dx, dy);
     const { tiles, ms } = back ? ROLL.back : ROLL;
-    this.stamina = spend(this.stamina, STAMINA.roll);
+    this.stamina = spend(this.stamina, this.gear.roll);
     play(DASH, 0.5);
     this.spentAt = time;
     this.queued = false;
@@ -4602,7 +4610,7 @@ export class AtlasScene extends Phaser.Scene {
     this.stamina = spend(this.stamina, STAMINA.swing);
     this.spentAt = time;
     const anim = step === 2 ? HERO_ART[this.cls].attack2.key : HERO_ART[this.cls].attack.key;
-    this.swing(hero, foe, swingWait(step, this.cls), time, anim);
+    this.swing(hero, foe, swingWait(step, this.cls, this.gear.swing), time, anim);
     play(SWING, 0.5);
     // Committed until the swing is through: no roll out of it.
     hero.busy = time + (HERO.hit + 0.25) * 1000;

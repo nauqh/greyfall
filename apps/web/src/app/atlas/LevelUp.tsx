@@ -1,16 +1,37 @@
-import { LEVEL_UP, levelCost, type Levels } from "@greyfall/engine";
+import { ATTRIBUTES, heroLevel, levelCost, type Attribute, type Kit, type Levels } from "@greyfall/engine";
 import type { ReactNode } from "react";
 
 import type { LevelView } from "../../game/AtlasScene";
-import { levelOf } from "./RestPanel";
 import { StatIcon, type Stat } from "./statIcons";
 import { SidePanel, useCursor } from "./SidePanel";
 import "./levelup.css";
 
-export const STATS: { stat: keyof Levels; name: string; raises: string }[] = [
-  { stat: "hp", name: "Vigour", raises: "Health" },
-  { stat: "attack", name: "Strength", raises: "Attack" },
-  { stat: "stamina", name: "Endurance", raises: "Stamina" },
+export const STATS: { stat: Attribute; name: string; icon: Stat }[] = [
+  { stat: "vigour", name: "Vigour", icon: "hp" },
+  { stat: "endurance", name: "Endurance", icon: "stamina" },
+  { stat: "strength", name: "Strength", icon: "attack" },
+  { stat: "agility", name: "Agility", icon: "agility" },
+  { stat: "intelligence", name: "Intelligence", icon: "intelligence" },
+  { stat: "warmth", name: "Warmth", icon: "flasks" },
+  { stat: "luck", name: "Luck", icon: "luck" },
+];
+
+/** The levels with the points held on them. */
+export function plus(levels: Levels, held: Levels): Levels {
+  return Object.fromEntries(ATTRIBUTES.map((a) => [a, levels[a] + held[a]])) as Levels;
+}
+
+const pct = (n: number) => `${n}%`;
+/** The numbers the attributes move, as Dark Souls' status lists them; `lower` where less is better. */
+const STATUS: { label: string; icon: Stat; of: (k: Kit) => number; words?: (n: number) => string; lower?: boolean }[] = [
+  { label: "Health", icon: "hp", of: (k) => k.hp },
+  { label: "Stamina", icon: "stamina", of: (k) => k.stamina },
+  { label: "Attack", icon: "attack", of: (k) => k.attack },
+  { label: "Swing speed", icon: "agility", of: (k) => Math.round(100 / k.swing), words: pct },
+  { label: "Roll cost", icon: "walk", of: (k) => k.roll, lower: true },
+  { label: "Ember heal", icon: "flasks", of: (k) => k.flask },
+  { label: "Gold from kills", icon: "gold", of: (k) => Math.round(k.greed * 100), words: pct },
+  { label: "Trade goods", icon: "luck", of: (k) => Math.round(k.find * 100), words: pct },
 ];
 
 /** The gold the points held would cost, bought one at a time as the scene buys them, each dearer than the last. */
@@ -25,14 +46,14 @@ export function heldCost(levels: Levels, held: Levels): number {
   return gold;
 }
 
-/** Now, a pointer, then after: the after in green when it gains. */
-function Change({ now, after, pop }: { now: number; after: number; pop?: number }) {
+/** Now, a pointer, then after: the after in green when it gains, and the pointer and after kept hidden till it moves. */
+function Change({ now, after, pop, lower, words = String }: { now: number; after: number; pop?: number; lower?: boolean; words?: (n: number) => string }) {
   return (
-    <span className="luChange">
-      <span>{now}</span>
+    <span className={`luChange${after === now ? " still" : ""}`}>
+      <span>{words(now)}</span>
       <span className="luTo" aria-label="to" />
-      <b key={pop} className={`${after > now ? "luGain" : ""}${pop ? " pop" : ""}`}>
-        {after}
+      <b key={pop} className={`${(lower ? after < now : after > now) ? "luGain" : ""}${pop ? " pop" : ""}`}>
+        {words(after)}
       </b>
     </span>
   );
@@ -61,20 +82,14 @@ export function LevelUp({
   onShift: (stat: keyof Levels, by: 1 | -1) => void;
   foot?: ReactNode;
 }) {
-  const level = levelOf(view);
-  const adding = held.hp + held.attack + held.stamina;
+  const level = heroLevel(view.levels);
+  const adding = heroLevel(held) - 1;
   const cost = heldCost(view.levels, held);
-  const next = levelCost({
-    hp: view.levels.hp + held.hp,
-    attack: view.levels.attack + held.attack,
-    stamina: view.levels.stamina + held.stamina,
-  });
+  const after = plus(view.levels, held);
+  const next = levelCost(after);
+  const then = view.with(after);
   const cursor = useCursor(pick);
-  const standing: { label: string; icon: Stat; value: number | string }[] = [
-    { label: "Embers", icon: "flasks", value: view.kit.flasks },
-    { label: "Ember heal", icon: "hp", value: view.kit.flask },
-    { label: "Gold from kills", icon: "gold", value: `${Math.round(view.kit.greed * 100)}%` },
-  ];
+  const standing: { label: string; icon: Stat; value: number | string }[] = [{ label: "Embers", icon: "flasks", value: view.kit.flasks }];
   return (
     <SidePanel
       name="Level up"
@@ -117,7 +132,7 @@ export function LevelUp({
                   onMouseEnter={() => onPick(i)}
                 >
                   <span className="statFrame">
-                    <StatIcon stat={s.stat} size={22} mono />
+                    <StatIcon stat={s.icon} size={22} mono />
                   </span>
                   {/* The bar lights this part only, beside the icon's frame, as Dark Souls lights a name. */}
                   <span ref={cursor.mark(i)} className="luAttrBody">
@@ -152,16 +167,16 @@ export function LevelUp({
         <div className="luColumn">
           <h3 className="panelHeading">Character status</h3>
           <dl className="luSheet">
-            {STATS.map((s) => (
-              <div key={s.stat}>
+            {STATUS.map((s) => (
+              <div key={s.label}>
                 <dt>
                   <span className="statFrame">
-                    <StatIcon stat={s.stat} size={18} mono />
+                    <StatIcon stat={s.icon} size={18} mono />
                   </span>
-                  {s.raises}
+                  {s.label}
                 </dt>
                 <dd>
-                  <Change now={view.now[s.stat]} after={view.now[s.stat] + LEVEL_UP[s.stat] * held[s.stat]} />
+                  <Change now={s.of(view.kit)} after={s.of(then)} lower={s.lower} words={s.words} />
                 </dd>
               </div>
             ))}

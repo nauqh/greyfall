@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { BOSS_KITS, bossAim, CLASSES, FOES, GIFTS, HERO, LENT, ITEMS, LOOT, lootDrop, NPCS, LEVEL_UP, kit, levelCost, onOffer, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
+import { BOSS_KITS, bossAim, CLASSES, FOES, GIFTS, HERO, LENT, ITEMS, LOOT, lootDrop, NPCS, LEVEL_UP, NO_LEVELS, SOFT_CAP, savedLevels, heroLevel, swingWait, type Levels, kit, levelCost, onOffer, STAMINA, block, canAct, recover, spend, clearLine, clearShot, comboStep, drink, findPath, canReach, foeIntent, routeToward, smoothPath, struck, throughGuard, useIsland } from "../src/index.ts";
 
 const goblin = FOES.torch!;
 const home = { col: 10, row: 10 };
@@ -100,12 +100,12 @@ describe("stamina", () => {
 
 describe("the merchants' goods", () => {
   it("leave the hero as `ATLAS.md` has him with nothing bought", () => {
-    expect(kit(new Set())).toEqual({ hp: HERO.hp, attack: HERO.attack, flasks: HERO.flasks, flask: HERO.flask, block: STAMINA.block, greed: 1, stamina: STAMINA.max });
+    expect(kit(new Set())).toEqual({ hp: HERO.hp, attack: HERO.attack, flasks: HERO.flasks, flask: HERO.flask, block: STAMINA.block, greed: 1, stamina: STAMINA.max, swing: 1, roll: STAMINA.roll, find: 1 });
   });
 
   it("add up: the edges on each other, both shards an ember each, an old save's Ember Shard by its name", () => {
     const all = kit(new Set(Object.keys(ITEMS).filter((k) => ![...GIFTS, ...LENT].includes(k as keyof typeof ITEMS))));
-    expect(all).toEqual({ hp: 210, attack: 26, flasks: HERO.flasks + 4, flask: 85, block: 1.25, greed: 1.75, stamina: STAMINA.max + 20 });
+    expect(all).toEqual({ hp: 210, attack: 26, flasks: HERO.flasks + 4, flask: 85, block: 1.25, greed: 1.75, stamina: STAMINA.max + 20, swing: 1, roll: STAMINA.roll, find: 1 });
     expect(kit(new Set(["Ember Shard"])).flasks).toBe(HERO.flasks + 1);
   });
 
@@ -169,12 +169,41 @@ describe("the hero's walking", () => {
 });
 
 describe("levelling at a bonfire", () => {
+  const lv = (l: Partial<Levels>): Levels => ({ ...NO_LEVELS, ...l });
+
   it("adds each level's share to the kit, and every level costs more than the last", () => {
-    const k = kit(new Set(), { hp: 2, attack: 1, stamina: 3 });
-    expect([k.hp, k.attack, k.stamina]).toEqual([HERO.hp + 2 * LEVEL_UP.hp, HERO.attack + LEVEL_UP.attack, STAMINA.max + 3 * LEVEL_UP.stamina]);
-    const costs = [0, 1, 2, 5, 10].map((n) => levelCost({ hp: n, attack: 0, stamina: 0 }));
+    const k = kit(new Set(), lv({ vigour: 2, strength: 1, endurance: 3, warmth: 2, luck: 4 }));
+    expect([k.hp, k.attack, k.stamina, k.flask]).toEqual([HERO.hp + 2 * LEVEL_UP.hp, HERO.attack + LEVEL_UP.attack, STAMINA.max + 3 * LEVEL_UP.stamina, HERO.flask + 2 * LEVEL_UP.flask]);
+    expect(k.greed).toBeCloseTo(1.2);
+    expect(k.find).toBeCloseTo(1.2);
+    const costs = [0, 1, 2, 5, 10].map((n) => levelCost(lv({ agility: n })));
     expect(costs[0]).toBe(150);
     expect(costs.every((c, i) => i === 0 || c > costs[i - 1]!)).toBe(true);
+    expect(heroLevel(lv({ vigour: 3, luck: 2 }))).toBe(6);
+  });
+
+  it("grows a class's attack only with the attributes it scales with", () => {
+    expect(kit(new Set(), lv({ intelligence: 5 }), "warrior").attack).toBe(CLASSES.warrior.attack);
+    expect(kit(new Set(), lv({ intelligence: 4 }), "barrowWarden").attack).toBe(CLASSES.barrowWarden.attack + 10);
+    expect(kit(new Set(), lv({ agility: 3 }), "eggwarden").attack).toBe(CLASSES.eggwarden.attack + 6);
+  });
+
+  it("quickens the swing and the roll with agility, never past the floor", () => {
+    const quick = kit(new Set(), lv({ agility: 10 }));
+    expect(quick.swing).toBeCloseTo(0.85);
+    expect(quick.roll).toBe(STAMINA.roll - 5);
+    expect(swingWait(3, "warrior", quick.swing)).toBeCloseTo(HERO.every * 0.85);
+    const quickest = kit(new Set(), lv({ agility: 99 }));
+    expect([quickest.swing, quickest.roll]).toEqual([0.7, 12]);
+  });
+
+  it("gives half as much past the soft cap", () => {
+    expect(kit(new Set(), lv({ vigour: SOFT_CAP + 4 })).hp).toBe(HERO.hp + (SOFT_CAP + 2) * LEVEL_UP.hp);
+  });
+
+  it("reads an old save's three levels as Vigour, Strength and Endurance", () => {
+    expect(savedLevels({ hp: 2, attack: 1, stamina: 3 })).toEqual(lv({ vigour: 2, strength: 1, endurance: 3 }));
+    expect(savedLevels({ luck: 2, junk: 9 })).toEqual(lv({ luck: 2 }));
   });
 });
 

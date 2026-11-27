@@ -48,6 +48,11 @@
 	color: #8a7458;
 }
 
+/* Nothing to show till a point moves it: the value now alone, at the right edge. */
+.luChange.still :is(.luTo, b) {
+	display: none;
+}
+
 .luChange b.luGain {
 	color: #2e6b2a;
 }
@@ -150,8 +155,9 @@
 }
 
 /* Few rules and room between the lines, as Dark Souls sets its sheet: only the section headings keep a hairline. */
+/* One pitch for every row on the sheet: the attributes and the status alike. */
 .luPanel .luSheet {
-	gap: 14px;
+	gap: 8px;
 	font-size: 15px;
 }
 
@@ -170,7 +176,7 @@
 
 /* The icon in its frame, then the part the bar lights: the row itself stays bare so the bar never covers the frame. */
 .luPanel .luAttrs {
-	gap: 10px;
+	gap: 8px;
 }
 
 .bonfirePanel.luPanel .luAttr,

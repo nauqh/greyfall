@@ -73,10 +73,26 @@ The gifts, one taken ashore, are goods like the merchants', never sold:
 | Attack | 12 a swing | The Warrior's. Combo of 3: the first two 0.65 s apart, the third knocks back and takes 1.1 s to recover |
 | Embers | 3 | Each heals 40 HP; refilled at a bonfire |
 
-Levelling is Souls-style: spend gold at a bonfire. Each level adds +10 HP,
-+2 attack or +10 stamina, the player's choice (Vigour, Strength, Endurance
-under Level up when sat by the fire). The first costs 150 gold and each one
-after costs 15% more.
+Levelling is Souls-style: spend gold at a bonfire, under Level up when sat by
+the fire. The first level costs 150 gold and each one after costs 15% more.
+Seven attributes, after the Souls games and Kingdom Come:
+
+| Attribute | Each level |
+| --- | --- |
+| Vigour | +10 health |
+| Endurance | +10 stamina |
+| Strength | Attack, for the classes that scale with it |
+| Agility | Swings 1.5% quicker (to 30%), rolls 0.5 stamina cheaper (to 12); attack for those that scale with it |
+| Intelligence | Attack for the Barrow Warden, whose hexes scale with it |
+| Warmth | +4 healed per ember |
+| Luck | +5% gold and +5% trade goods from kills |
+
+A class's attack grows with its own attributes, each level a share of +2,
+as a Souls weapon scales: Warrior Strength 1 and Agility 0.5, Champion
+Strength 1.25, Grovekeeper Strength 0.75 and Vigour 0.5, Eggwarden Agility 1,
+Barrow Warden Intelligence 1.25. Past 20 levels in one attribute, each level
+gives half. A save from before the seven reads its three levels as Vigour,
+Strength and Endurance.
 
 ### The band
 
