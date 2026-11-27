@@ -11,6 +11,25 @@ Coordinates here are the builder's, on the 128 by 72 map. `areaMap()` pads
 the map three tiles, so a cell in play (an NPC's `at`, a test) is three more
 on each axis: Wren's spot (29, 44) is (26, 41) here.
 
+## The feel
+
+After Bloodborne's Forbidden Woods, with Sekiro's Mibu Village under it
+(see [../inspirations.md](../inspirations.md)).
+
+- **Dusk under the canopy.** The wood is dark, and the goblins' torches are
+  seen before the goblins are: firelight moving through the trees, campfires
+  the only open light. Steam off the warm ground stands in for mist.
+- **A village that worships what it feeds.** The goblins obey the Bull's
+  horn and carry him meat. Their camps are a village round his road:
+  horned skull totems, the Ash Road a pilgrim road.
+- **The houses are the threat.** Goblins come out of the huts and the
+  thickets, never stand in rows in front of them.
+- **Held by the warmth.** Like Mibu's villagers and their water, the goblins
+  never leave the hot ground and no longer know why. They sit in the hot
+  pools and keep the great fire lit in a wood that needs no fire.
+- **Outsiders are few.** The gnomes at Crag Foot are stragglers, a hut and
+  a shaft, not a town.
+
 ## The wood's own architecture
 
 Two storeys, cut by one river.
@@ -43,9 +62,10 @@ between, three jobs pull them across the wood:
 1. **Open the way home.** The Ember Gate is barred from Lanternport's side.
    Walking through it from the wood opens it for good (`emberGateOpen`), and
    Lanternport's fire is then one step from the wood.
-2. **Rest before the bull.** The Cinder Ford's fire is the wood's one
-   bonfire, on the north bank where the Ash Road starts. Every other fire is
-   a goblin campfire: lit, no rest.
+2. **Rest before the bull.** The wood has two bonfires: one on the Postern
+   Crag's crown, the rest after the Stone Warden, and the Cinder Ford's, on
+   the north bank where the Ash Road starts. Every other fire is a goblin
+   campfire: lit, no rest.
 3. **Follow the steward.** He came out the same Postern with the Keep's key
    and never reached Lanternport. His notes run from the crag to the Ash
    Road, and the last one says where the key went.
@@ -93,10 +113,12 @@ bend.
   floor, a stair at each end of every ledge, looking out over the Burn's
   smoke.
 - **Why go:** it is the way in, and the way back to the Chapel Ward.
-- **Stands there:** The Postern (exit to the Belfry) on the crown; the
-  steward's first note beside it; the bones of his escort on the second
-  ledge, a goblin spear post on the first step below (spears in threes);
-  scorched trees on the ledges. The first step's west end carries the Ash Walk.
+- **Stands there:** The Postern (exit to the Belfry) on the crown, Highward's
+  blue tower over it and the bonfire beside it, lanterns at the second
+  ledge; the steward's first note beside the exit; the bones of his escort on
+  the second ledge, a goblin spear post on the first step's west end (spears
+  in threes), out of the fire's reach; scorched trees on the ledges. The
+  first step's west end carries the Ash Walk.
 - **Note:** "Keep Gate barred behind me. The key is on my belt. The wood
   road to the Harbour, then."
 
@@ -108,7 +130,9 @@ bend.
 - **Why go:** it lies between the crag and the Palisade; its Chief's Mound
   holds the goblins' plunder (gold).
 - **Stands there:** the Chief's Mound (height 2) in the middle, the war
-  band's shaman and a gnoll on it with the plunder; torches round the fire,
+  band's shaman and a gnoll on it with the plunder under a lookout; two rings
+  of huts round the fire; skulls in pairs
+  where the roads come in; torches round the fire,
   thieves among the huts. The road from the Palisade passes the mound's
   north side on to the East Bridge; a second skirts its south foot toward
   the crag.
@@ -120,10 +144,11 @@ bend.
   overrun: its fences broken, the woodcutters fled through the gate and the
   town barred it behind them. Goblins camp in it, in threes, as Wren warns.
 - **Why go:** the Ember Gate (to Lanternport), and the gate road north.
-- **Stands there:** the blue watchtower and the lumber house, stumps and
-  wood piles, the camp's fire (a campfire); torches and spears in threes.
-  Once the gate is open (`emberGateOpen`) the woodcutters come back to work
-  and a lancer stands the gate.
+- **Stands there:** the blue watchtower and the lumber house, the
+  woodcutters' huts in a row along the camp's back, stumps and
+  tools where they were dropped, the camp's fire (a campfire); torches and
+  spears in threes. Once the gate is open (`emberGateOpen`) the woodcutters
+  come back to fell and carry, and a lancer stands the gate.
 - **Note:** "Ran for the gate. They barred it with us still outside. Can't
   blame them."
 
@@ -135,7 +160,8 @@ bend.
 - **Why go:** the hermit, loot in the thicket behind the bears, and the Pine
   Ford north (the west loop).
 - **Stands there:** the hermit's hut by the pool and the hermit (purple,
-  the Order); bears, bees, a turtle at the pool; gold in a thicket.
+  the Order), the oldest pine over the pool; bears, bees, a turtle at the
+  pool; gold in a thicket.
 - **Hook:** the hermit, for an NPC.
 
 ### Smoke Bluff (18-40, 40-53), the gnolls' perch
@@ -145,7 +171,7 @@ bend.
 - **Why go:** the Drawn Plank, once dropped, is the short way from the
   Palisade onto Warren Hill; the gnolls on it shoot down on the Pine Ford
   road.
-- **Stands there:** gnolls and a goblin spear post, two huts, a lookout over
+- **Stands there:** gnolls and a goblin spear post, four huts, a lookout over
   the walk. Wren stands at its foot once the bull is dead (26, 41).
 
 ### Warren Hill (0-40, 0-34), the goblins' home
@@ -156,7 +182,7 @@ bend.
   lever: from here the Treetop Walk is opened for good.
 - **Stands there:** huts on both heights, the shaman by the crest fire (a
   campfire), torches, a slinger on the Treetop Walk, a watchtower over the
-  walk's end, larders and trophies. Its foot opens east onto the Cinder Ford
+  walk's end, trophies. Its foot opens east onto the Cinder Ford
   and west onto the Pine Ford.
 
 ### Cinder Ford (40-58, 26-50), the crossing and the fire
@@ -166,15 +192,17 @@ bend.
 - **Why go:** the bonfire, on the north bank at the foot of the Ash Road;
   every loop comes back here.
 - **Stands there:** the bridge over the Run, the bonfire on the north bank,
-  a goblin post (a hut and spears) watching the crossing from the south.
+  a goblin post (two huts and spears) watching the crossing from the south,
+  skulls either side of the bridge's foot.
 
 ### The Ash Road (52-76, 0-25), the way to the bull
 
 - **Job:** the goblins' road north to the bull they feed, skull-lined.
 - **Why go:** The Ash Road exit (to the Ember Hollow) at its head, and the
   steward's end.
-- **Stands there:** skull spikes in pairs along it, spears on watch, a dead
-  tree; halfway up, the steward's bones and his last note.
+- **Stands there:** skull spikes in pairs the length of it, spears on watch
+  and their hut, dead trees; halfway
+  up, the steward's bones and his last note.
 - **Note:** "Goblins on the ford. Round by the north road. Something big
   breathing in the smoke."
 
@@ -185,7 +213,9 @@ bend.
 - **Why go:** gold in the seams, and the East Bridge: the east loop from the
   Burn to the Cinder Ford.
 - **Stands there:** the gnomes' hut and tower on the rock, gnomes, gold
-  stones; a goblin post where the crag road leaves the wood.
+  stones; the shaft under the rock's south face, its ore heaped in the yard
+  and the prospectors walking between them, their huts in a row along the
+  yard's back; a goblin post where the crag road leaves the wood.
 - **Hook:** a gnome prospector at the hut, for an NPC.
 
 ## Exits

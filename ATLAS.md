@@ -675,8 +675,9 @@ crossing are gone.
   Bridge. The Postern lands on the crag's crown in the south-east and
   steps down three ledges over the Burn. Three jobs pull the player across:
   open the Ember Gate home through the overrun Palisade, rest at the
-  Cinder Ford (the wood's one bonfire, every other fire a campfire), and
-  follow the steward's notes from the crag to his bones on the Ash Road.
+  Cinder Ford (the wood has one more bonfire, on the Postern crown; every
+  other fire is a campfire), and follow the steward's notes from the crag
+  to his bones on the Ash Road.
   The Drawn Plank (`drawnPlankDown`) bars the Treetop Walk from the bluff
   until dropped from Warren Hill. Folk back each place: Dunn returns
   to the Palisade once the gate opens, Brother Fenn in Old Pines, Wren at

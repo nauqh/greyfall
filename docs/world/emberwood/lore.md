@@ -39,6 +39,52 @@ he thinks he is keeping is not said.
   Goblin warrens up in the trees, gnolls on Smoke Bluff, and the Ember Bull
   in the Ember Hollow with the steward's key.
 
+Every place in the wood was Highward's work or is the goblins' now. What
+Highward left, the goblins took and use for something else: the lumber
+camp is a war camp's outpost, the timber road feeds a bull, and only the
+pines on the cold edge are left as they were.
+
+- **Postern Crag.** Highward's back door into the wood, a stair off the
+  Belfry down three ledges. The steward came down it with the Keep's key
+  and his escort. The escort lies on the second ledge; the goblins keep a
+  spear post on the first, and nothing has come down since.
+
+- **The Burn.** The jungle the goblins burned for their war camp. They
+  live round one great fire they never let go out, and bring what they
+  take back to the Chief's Mound. Every warband in the wood goes out from
+  here and comes back here.
+
+- **The Palisade.** Highward's lumber camp at the Ember Gate, where the
+  hardwood was cut and floated down to Lanternport. The woodcutters ran for
+  the gate and the town barred it behind them; their saws and stacks lie
+  where they dropped them, and the goblins sleep in the woodcutters' huts.
+
+- **Old Pines.** The cool west edge, the one stand nobody burned. The
+  goblins will not live where it is cold, so the beasts do. A hermit of the
+  Order keeps the pool.
+
+- **Smoke Bluff.** The gnolls' rock over the Run, at the wood's edge where
+  the Grey eats at the leaves. The gnolls sit on it and shoot down on the
+  Pine Ford road. The goblins leave them be.
+
+- **Warren Hill.** The goblins' home, huts stacked on a hill in two
+  heights. Their young, their larders and their hoard are up on it; the
+  warband comes back to it to sleep. The Treetop Walk runs from it over the
+  Run, barred at the hill's end.
+
+- **Cinder Ford.** Where Highward's timber road crossed the Run, and the
+  carts waited for the water to fall. The goblins hold the south bank and
+  take a toll of whatever crosses, in meat.
+
+- **The Ash Road.** The timber road's north end, which ran up to the
+  hollow's cutting. The goblins line it with skulls and carry the Bull's
+  meat up it every day. The steward walked it and did not come back.
+
+- **Crag Foot.** The gnomes' prospect under Brasscrag, where they dug the
+  wood's gold out of the rock and sent it up the Crag Stair. Cut off from
+  their kin, the prospectors still dig and stack, and keep a goblin post in
+  sight of their door.
+
 How the wood is laid out, district by district, is in [design.md](design.md).
 
 ## Banner
