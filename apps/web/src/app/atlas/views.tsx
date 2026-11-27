@@ -8,7 +8,7 @@ import type { AtlasApi, AtlasHooks, BandView, Departure, DevState, MenuView, Sac
 import { Clouds } from "../../game/Clouds";
 import { packUrl } from "../../game/art";
 import { GameCanvas } from "../../game/GameCanvas";
-import { DevPanel } from "./DevPanel";
+import { DevPanel, type DevScreen } from "./DevPanel";
 import { LevelUp, STATS, heldCost, plus } from "./LevelUp";
 import { RestPanel } from "./RestPanel";
 import { KeyHints, SidePanel } from "./SidePanel";
@@ -117,7 +117,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   const [sackOpen, setSackOpen] = useState(false);
   const [devState, setDevState] = useState<DevState | null>(null);
   const api = useRef<AtlasApi | null>(null);
-  const now = useRef({ area: first, cameFrom: undefined as AreaId | undefined, quiet: false, travelling: false, prologue: false });
+  const now = useRef({ area: first, cameFrom: undefined as AreaId | undefined, quiet: false, travelling: false, prologue: false, screen: undefined as "level" | "travel" | undefined });
   // The theme, under the prologue only: it fades out with the cutscene's black, as the Landing comes up.
   const theme = useRef<(() => void) | null>(null);
   useEffect(() => {
@@ -232,7 +232,9 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     onRest: () => {
       if (now.current.travelling) return;
       const name = api.current?.sit(true);
-      if (name) setFire({ name, pick: 0 });
+      // The dev panel's level up and travel list open on their own screen.
+      if (name) setFire({ name, pick: 0, screen: now.current.screen });
+      now.current.screen = undefined;
     },
     onDeath: (to) => {
       if (now.current.travelling) return;
@@ -250,7 +252,6 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   // The HUD hides with H; there is no button for it on an area map.
   const [hud] = useHud(paused !== null);
   // Dev mode, on the dev route only: the backquote key toggles its free camera over the whole map.
-  const free = devState?.free ?? false;
   const toggleFree = (): void => {
     const a = api.current;
     a?.freeCamera(!a.devState().free);
@@ -262,6 +263,25 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
       for (const k of ["band", "bought", "class", "flags", "gold", "heard", "hero", "keys", "kindled", "levels", "lost", "loot", "met", "prologue", "rest", "sackOpened", "slain", "taken", "thrown"]) localStorage.removeItem(`greyfall.${k}`);
     } catch {}
     window.location.assign(`${base}/landing?rest${create ? "&create" : ""}`);
+  };
+  const devScreen = (screen: DevScreen): void => {
+    if (screen === "rest" || screen === "level" || screen === "travel") {
+      now.current.screen = screen === "rest" ? undefined : screen;
+      api.current?.devRest();
+    } else if (screen === "map") {
+      api.current?.pause(true);
+      setAtlas(true);
+    } else if (screen === "settings") {
+      api.current?.pause(true);
+      setPaused(pauseTop(pauseTab));
+    } else if (screen === "create") setWipe({ create: true });
+    else {
+      // The prologue plays on the game's own route only, for a run not yet begun there.
+      try {
+        localStorage.removeItem("greyfall.prologue");
+      } catch {}
+      window.location.assign("/atlas/landing");
+    }
   };
   // The title gone, the black lifts close on the captain and the camera eases back; the name comes up as it settles.
   const revealLanding = (): void => {
@@ -480,11 +500,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
             state={devState}
             api={api}
             onArea={(to) => !now.current.travelling && depart({ to, name: AREAS.find((a) => a.id === to)?.name ?? to, kind: "rest", dir: "down", x: 0.5, y: 0.5 })}
-            onMap={() => {
-              api.current?.pause(true);
-              setAtlas(true);
-            }}
-            onCreate={() => setWipe({ create: true })}
+            onScreen={devScreen}
           />
         )}
         {menu && <Shop menu={menu} api={api} />}
@@ -682,15 +698,6 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
                 </div>
               ))}
             </div>
-          )}
-          {devRoute && (
-            <header className="atlasTop">
-              <div className="worldLinks">
-                <button className="linkBtn" type="button" onClick={toggleFree} aria-pressed={free} title="See the whole map (`)">
-                  Free camera
-                </button>
-              </div>
-            </header>
           )}
         </div>
         {/* Outside the HUD, so Tab opens the sack with the HUD hidden too, from the first step, goods or none. */}

@@ -12,11 +12,8 @@
 	z-index: 6;
 	display: flex;
 	flex-direction: column;
-	gap: 8px;
-	width: min(292px, calc(100vw - 32px));
+	width: min(300px, calc(100vw - 32px));
 	max-height: calc(100dvh - 96px);
-	overflow-y: auto;
-	padding: 10px 12px 12px;
 	border: 1px solid var(--line);
 	border-radius: 6px;
 	background: rgb(7 10 16 / 0.84);
@@ -24,10 +21,9 @@
 	backdrop-filter: blur(6px);
 	color: var(--ink);
 	font: 700 13px "Nunito", "Segoe UI", sans-serif;
-	/* Native controls drawn dark, ticked in gold; it still scrolls, with no bar. */
+	/* Native controls drawn dark, ticked in gold. */
 	color-scheme: dark;
 	accent-color: var(--gold);
-	scrollbar-width: none;
 }
 
 .devPanel :focus-visible {
@@ -39,6 +35,180 @@
 	display: flex;
 	align-items: baseline;
 	justify-content: space-between;
+	gap: 8px;
+	padding: 10px 12px 6px;
+}
+
+.devHead span {
+	overflow: hidden;
+	color: var(--dim);
+	font-size: 12px;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.devTabs {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	border-bottom: 1px solid var(--line);
+}
+
+.devTabs button {
+	padding: 6px 0 7px;
+	border: 0;
+	border-bottom: 2px solid transparent;
+	background: none;
+	color: var(--dim);
+	font: inherit;
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.devTabs button:hover {
+	color: var(--ink);
+}
+
+.devTabs button[aria-selected="true"] {
+	border-bottom-color: var(--gold);
+	color: var(--gold);
+}
+
+/* Only the body scrolls: the tabs and the keys stay put. */
+.devBody {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	min-height: 0;
+	overflow-y: auto;
+	padding: 10px 12px 12px;
+	scrollbar-width: thin;
+	scrollbar-color: var(--line) transparent;
+}
+
+.devFoot {
+	padding: 6px 12px 8px;
+	border-top: 1px solid var(--line);
+	color: var(--dim);
+	font-size: 11px;
+	font-weight: 400;
+}
+
+.devFoot kbd {
+	margin: 0 2px 0 8px;
+	padding: 0 4px;
+	border: 1px solid var(--line);
+	border-radius: 3px;
+	color: var(--ink);
+	font: inherit;
+}
+
+.devFoot kbd:first-child {
+	margin-left: 0;
+}
+
+.devSection h3 {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0 0 4px;
+	color: var(--gold);
+	font-size: 11px;
+	font-weight: 800;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+}
+
+.devSection h3 b {
+	padding: 0 6px;
+	border-radius: 8px;
+	background: var(--line);
+	color: var(--ink);
+	font-size: 11px;
+	letter-spacing: 0;
+}
+
+.devHint {
+	margin: 0;
+	color: var(--dim);
+	font-size: 11px;
+	font-weight: 400;
+}
+
+.devFind {
+	padding: 5px 8px;
+	border: 1px solid var(--line);
+	border-radius: 4px;
+	background: var(--field);
+	color: inherit;
+	font: inherit;
+	font-weight: 400;
+}
+
+.devFind:focus {
+	border-color: var(--gold);
+	outline: none;
+}
+
+.devScreens {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 6px;
+}
+
+.devScreen {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	padding: 6px 8px;
+	border: 1px solid var(--line);
+	border-radius: 4px;
+	background: rgb(255 255 255 / 0.04);
+	color: inherit;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.devScreen:hover {
+	border-color: var(--gold);
+	background: rgb(242 212 138 / 0.12);
+}
+
+.devScreen small {
+	color: var(--dim);
+	font-size: 11px;
+	font-weight: 400;
+}
+
+.devWide {
+	align-self: flex-start;
+}
+
+.devToggle {
+	padding: 3px 8px;
+	border: 1px solid var(--line);
+	border-radius: 4px;
+	color: var(--ink);
+}
+
+.devLevels {
+	grid-template-columns: 1fr 1fr;
+	gap: 4px 10px;
+}
+
+.devLevels > div {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+}
+
+.devLevels dt {
+	text-transform: capitalize;
+}
+
+.devStats.devLevels input[type="number"] {
+	width: 52px;
 }
 
 .devHead h2 {
@@ -48,13 +218,6 @@
 	font-weight: 800;
 	letter-spacing: 0.14em;
 	text-transform: uppercase;
-}
-
-.devHead kbd {
-	color: var(--dim);
-	font-family: inherit;
-	font-size: 11px;
-	font-weight: 400;
 }
 
 .devPanel select,
@@ -68,7 +231,7 @@
 	font: inherit;
 }
 
-.devTier h3 {
+.devTier h4 {
 	margin: 4px 0 2px;
 	color: var(--dim);
 	font-size: 10px;
@@ -149,52 +312,6 @@
 	width: 96px;
 }
 
-.devPanel details {
-	padding-top: 6px;
-	border-top: 1px solid var(--line);
-}
-
-.devPanel summary {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	margin-bottom: 4px;
-	list-style: none;
-	color: var(--gold);
-	cursor: pointer;
-}
-
-.devPanel summary::-webkit-details-marker {
-	display: none;
-}
-
-.devPanel summary::before {
-	content: "▸";
-	font-size: 10px;
-	transition: rotate 120ms ease;
-}
-
-.devPanel details[open] > summary::before {
-	rotate: 90deg;
-}
-
-.devPanel summary b {
-	margin-left: auto;
-	padding: 0 6px;
-	border-radius: 8px;
-	background: var(--line);
-	color: var(--ink);
-	font-size: 11px;
-}
-
-.devPanel ul {
-	margin: 0;
-	padding-left: 16px;
-	color: var(--dim);
-	font-weight: 400;
-	word-break: break-all;
-}
-
 .devRow {
 	display: flex;
 	align-items: center;
@@ -204,7 +321,8 @@
 	border-radius: 3px;
 }
 
-.devRow:hover {
+.devRow:hover,
+.devRow[aria-current] {
 	background: rgb(255 255 255 / 0.06);
 }
 

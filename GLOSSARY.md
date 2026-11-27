@@ -223,6 +223,10 @@ _Avoid_: debug mode, cheat mode
 Dev mode's view of a whole area map, loose of the hero, who stands still while it is on. Leaving it sets the hero down where it looks.
 _Avoid_: whole map, dev view
 
+**Dev panel**:
+Dev mode's tools, in four tabs: Go, World, Hero and Screens.
+_Avoid_: debug panel, dev menu
+
 ## The folk's lines
 
 **Talk**:

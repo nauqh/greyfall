@@ -144,7 +144,24 @@ export interface AtlasApi {
   /** Dev: the free camera, on, flown in on a cell at the play zoom. */
   devLook: (col: number, row: number) => void;
   /** Dev: writes the save and the live scene. */
-  devSet: (patch: { gold?: number; flags?: WorldFlag[]; keys?: string[]; slain?: string[] }) => void;
+  devSet: (patch: DevPatch) => void;
+  /** Dev: the hero set down on the open cell nearest one, in play. */
+  devPut: (col: number, row: number) => void;
+  /** Dev: the hero rested at this area's bonfire nearest them, as E there would. */
+  devRest: () => void;
+  /** Dev: the hero killed where they stand. */
+  devKill: () => void;
+}
+
+export interface DevPatch {
+  gold?: number;
+  flags?: WorldFlag[];
+  keys?: string[];
+  slain?: string[];
+  god?: boolean;
+  heal?: true;
+  flasks?: number;
+  levels?: Levels;
 }
 
 export interface DevNpc {
@@ -176,7 +193,13 @@ export interface DevState {
   /** The folk standing on this area's map. */
   npcs: DevNpc[];
   exits: DevExit[];
+  /** This area's bonfires, bosses and notes. */
+  spots: { kind: "fire" | "boss" | "note"; name: string; col: number; row: number }[];
   free: boolean;
+  god: boolean;
+  flasks: number;
+  levels: Levels;
+  cls: HeroClass;
 }
 
 /** How a crossing feels: walking out over a gate, falling down a drop, riding a lift, or going down a stair into the deep. */
@@ -1047,6 +1070,7 @@ export class AtlasScene extends Phaser.Scene {
   private flags = new Set<WorldFlag>();
   private dev = false;
   private free = false;
+  private devGod = false;
   private devKey = "";
   private devText: Phaser.GameObjects.Text[] = [];
   /** Where the free camera (dev mode, the world map) is kept, in px: the island with a margin, or the whole atlas. */
@@ -1401,6 +1425,21 @@ export class AtlasScene extends Phaser.Scene {
         this.flyTo({ col: col + 0.5, row: row + 0.5 }, AREA_ROWS);
       },
       devSet: (patch) => this.devSet(patch),
+      devPut: (col, row) => this.setFree(false, { col, row }),
+      devRest: () => {
+        const fires = this.local?.fires ?? [];
+        const hero = this.hero;
+        if (!hero || !fires.length || this.gone) return;
+        const fire = fires.reduce((a, f) => (tileDistance(f, hero.at) < tileDistance(a, hero.at) ? f : a));
+        this.setFree(false, fire);
+        this.kindle(fire);
+        this.rest(fire);
+      },
+      devKill: () => {
+        if (!this.hero || this.hero.dead || this.gone) return;
+        this.hero.hp = 0;
+        this.fall(this.hero);
+      },
       tier: (id) => this.show(id),
     });
     // A crossing's own cover is the page's, and the bonfire map fades in on its own; only a first arrival opens on the clouds.
@@ -1715,7 +1754,8 @@ export class AtlasScene extends Phaser.Scene {
     for (let dr = -12; dr <= 12; dr++)
       for (let dc = -12; dc <= 12; dc++) {
         const n = { col: c.col + dc, row: c.row + dr };
-        if (isWalkable(n.col, n.row) && !isSlope(n.col, n.row) && !this.shut(n) && (!best || tileDistance(n, c) < tileDistance(best, c))) best = n;
+        const fire = this.local?.fires.some((f) => f.col === n.col && f.row === n.row);
+        if (!fire && isWalkable(n.col, n.row) && !isSlope(n.col, n.row) && !this.shut(n) && (!best || tileDistance(n, c) < tileDistance(best, c))) best = n;
       }
     return best;
   }
@@ -1965,7 +2005,7 @@ export class AtlasScene extends Phaser.Scene {
   private hurt(from: Body, to: Body, attack: number, open = false): void {
     const now = this.time.now;
     // Mid-roll nothing lands, as in Dark Souls.
-    if (to === this.hero && now < this.roll.until) return;
+    if (to === this.hero && (now < this.roll.until || this.devGod)) return;
     let blocked = !open && to === this.hero && this.guarding && this.facing(to, from);
     if (blocked) {
       const b = block(this.stamina, attack, this.gear.block);
@@ -4822,7 +4862,16 @@ export class AtlasScene extends Phaser.Scene {
       heard: [...this.heard],
       npcs: this.folk.map((f) => ({ id: f.npc.id, name: f.npc.name, col: f.at.col, row: f.at.row, shop: !!f.npc.shop, here: true })),
       exits: (local?.exits ?? []).map((e) => ({ name: e.name, to: e.to, col: e.at.col, row: e.at.row, barred: barred(e) })),
+      spots: [
+        ...(local?.fires ?? []).map((f) => ({ kind: "fire" as const, name: f.name ?? (local && districtOf(local, f.col, f.row)?.name) ?? "Bonfire", col: f.col, row: f.row })),
+        ...(local?.bosses ?? []).map((b) => ({ kind: "boss" as const, name: b.name, col: b.col, row: b.row })),
+        ...this.notes.map((n) => ({ kind: "note" as const, name: n.text.split(/[.!?\n]/)[0]!.slice(0, 40), col: n.at.col, row: n.at.row })),
+      ],
       free: this.free,
+      god: this.devGod,
+      flasks: this.flasks,
+      levels: levels(),
+      cls: heroClass(),
     };
   }
 
@@ -4869,8 +4918,20 @@ export class AtlasScene extends Phaser.Scene {
     this.read(n);
   }
 
-  private devSet(patch: { gold?: number; flags?: WorldFlag[]; keys?: string[]; slain?: string[] }): void {
+  private devSet(patch: DevPatch): void {
     if (patch.gold !== undefined) this.setGold(patch.gold);
+    if (patch.god !== undefined) this.devGod = patch.god;
+    if (patch.levels) {
+      store(LEVELS, patch.levels);
+      if (this.hero) this.regear();
+    }
+    if (patch.heal && this.hero) {
+      this.hero.hp = this.hero.max;
+      this.stamina = this.gear.stamina;
+      this.flasks = maxFlasks();
+    }
+    if (patch.flasks !== undefined) this.flasks = patch.flasks;
+    if (patch.heal || patch.flasks !== undefined) this.hooks.onFlasks?.(this.flasks);
     if (patch.flags) remember(FLAGS, (this.flags = new Set(patch.flags)));
     if (patch.keys) remember(KEYS, new Set(patch.keys));
     if (patch.slain) remember(SLAIN, new Set(patch.slain));
