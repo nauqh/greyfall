@@ -4,22 +4,38 @@ import { useEffect, useRef, useState } from "react";
 import type { SackView } from "../../game/AtlasScene";
 import { useTick } from "../sound";
 import { ItemIcon } from "./ItemIcon";
+import { KeyHints } from "./SidePanel";
 import { StatIcon, type Stat } from "./statIcons";
 import "./sack.css";
 
 const typing = (t: EventTarget | null): boolean =>
-  t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement || (t instanceof HTMLElement && t.isContentEditable);
+  t instanceof HTMLInputElement ||
+  t instanceof HTMLTextAreaElement ||
+  t instanceof HTMLSelectElement ||
+  (t instanceof HTMLElement && t.isContentEditable);
 
-/** The numbers drawn big with an icon, as at a rest; the rest told small below them. */
-const MAIN = new Set<SackView["stats"][number]["key"]>(["hp", "attack", "stamina", "flasks"]);
-const ROW = 4;
+/** Each number's icon, as the level-up screen draws them; block costs stamina, so it takes stamina's. */
+const ICON: Record<SackView["stats"][number]["key"], Stat> = {
+  hp: "hp",
+  attack: "attack",
+  flasks: "flasks",
+  flask: "flasks",
+  block: "stamina",
+  greed: "gold",
+  stamina: "stamina",
+  swing: "agility",
+  roll: "walk",
+  find: "luck",
+};
+/** The order Dark Souls lists them: what the captain is, then what the captain does. */
+const ORDER: SackView["stats"][number]["key"][] = ["hp", "stamina", "attack", "flasks", "flask", "block", "roll", "swing", "greed", "find"];
 /** With the sack open, the movement keys walk its goods instead of the captain. */
-const STEP: Record<string, number> = { w: -ROW, arrowup: -ROW, s: ROW, arrowdown: ROW, a: -1, arrowleft: -1, d: 1, arrowright: 1 };
+const STEP: Record<string, number> = { w: -1, arrowup: -1, s: 1, arrowdown: 1 };
 /** Set once the sack has been opened; until then, from the first good past the gift (Hollis's gaff), the field keeps telling the player Tab opens it. */
 const OPENED = "greyfall.sackOpened";
 
 /**
- * The captain's sack, after a Souls inventory: a panel over the right of the screen, the camera in close on the captain
+ * The captain's sack, after a Souls inventory: a panel over the left of the screen, the camera in close on the captain
  * in the rest, without stopping the world, since it is opened in the field, though the captain stands while it is. Tab
  * opens and closes it; WASD or the arrows pick a good.
  */
@@ -105,14 +121,18 @@ export function Sack({ sack, gold, onCover }: { sack: SackView; gold: number; on
   useEffect(() => {
     goodsRef.current?.children[sack.items.indexOf(good!)]?.scrollIntoView({ block: "nearest" });
   }, [good, sack.items]);
-  const main = sack.stats.filter((s) => MAIN.has(s.key));
-  const more = sack.stats.filter((s) => !MAIN.has(s.key));
+  const stats = ORDER.flatMap((k) => sack.stats.filter((s) => s.key === k));
   const name = sack.name ?? "The Wanderer";
-  const slots = Math.max(ROW * 4, Math.ceil(sack.items.length / ROW) * ROW);
   return (
     <>
       {/* Keeps focus off the buttons, so Space rolls rather than pressing them. */}
-      <button type="button" className="sackButton" aria-expanded={open} onMouseDown={(e) => e.preventDefault()} onClick={() => setOpen((o) => !o)}>
+      <button
+        type="button"
+        className="sackButton"
+        aria-expanded={open}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => setOpen((o) => !o)}
+      >
         Sack <kbd className="keyCap wide">Tab</kbd>
       </button>
       {!opened && worth && (
@@ -129,77 +149,65 @@ export function Sack({ sack, gold, onCover }: { sack: SackView; gold: number; on
           onTransitionEnd={(e) => e.target === e.currentTarget && e.propertyName === "transform" && !shown && setMounted(false)}
         >
           <header className="sackTop">
+            <h2 className="sackTitle">Sack</h2>
             <span className="sackGold">
               <StatIcon stat="gold" />
-              Gold <b>{gold}</b>
-            </span>
-            <span className="sackWho">
-              {name} <b>Level {sack.level}</b>
+              <b>{gold}</b>
             </span>
           </header>
           <div className="sackBody">
-            <section className="sackLeft">
-              <h3 className="sackLabel">
-                Goods <span>{sack.items.length} kept</span>
-              </h3>
-              <div ref={goodsRef} className={`sackGoods${cut ? " cut" : ""}`}>
-                {Array.from({ length: slots }, (_, i) => {
-                  const s = sack.items[i];
-                  return s ? (
+            <section className="sackSheet" aria-label="Goods">
+              {sack.items.length ? (
+                <div ref={goodsRef} className={`sackGoods${cut ? " cut" : ""}`}>
+                  {sack.items.map((s, i) => (
                     <button
                       type="button"
                       key={s.label}
-                      className="sackSlot"
-                      aria-label={s.label}
+                      className="sackRow"
                       aria-pressed={s === good}
                       onMouseEnter={() => setPick(i)}
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => setPick(i)}
                     >
-                      <ItemIcon icon={s.icon} size={48} />
+                      <span className="sackIcon">
+                        <ItemIcon icon={s.icon} size={64} />
+                      </span>
+                      <b>{s.label}</b>
+                      <small>{s.gives}</small>
                     </button>
-                  ) : (
-                    <span key={i} className="sackSlot empty" />
-                  );
-                })}
-              </div>
-              <h3 className="sackLabel">Status</h3>
-              <ul className="sackMain">
-                {main.map((s) => (
-                  <li key={s.key}>
-                    <span className="statFrame">
-                      <StatIcon stat={s.key as Stat} size={28} mono />
-                    </span>
-                    <b>{s.now}</b>
-                    <span>{s.label}</span>
-                  </li>
-                ))}
-              </ul>
-              <dl className="sackMore">
-                {more.map((s) => (
-                  <div key={s.key}>
-                    <dt>{s.label}</dt>
-                    <dd>{s.now}</dd>
-                  </div>
-                ))}
-              </dl>
-            </section>
-            <section className="sackRight">
-              <h3 className="sackLabel">Picked</h3>
-              {good ? (
-                <div className="sackDetail" aria-live="polite">
-                  <span className="sackSlot big">
-                    <ItemIcon icon={good.icon} size={96} />
-                  </span>
-                  <b className="sackName">{good.label}</b>
-                  <span className="sackGives">{good.gives}</span>
-                  {good.about && <p className="sackAbout">{good.about}</p>}
+                  ))}
                 </div>
               ) : (
-                <p className="sackAbout">Empty. Merchants sell goods you keep for good, and the folk give some.</p>
+                <p className="sackEmpty">Empty. Merchants sell goods you keep for good, and the folk give some.</p>
               )}
             </section>
+            <div className="sackSide">
+              <section className="sackSheet" aria-label="Status">
+                <div className="sackWho">
+                  <span>{name}</span>
+                  <b>Level {sack.level}</b>
+                </div>
+                <dl className="sackStats">
+                  {stats.map((s) => (
+                    <div key={s.key}>
+                      <dt>
+                        <StatIcon stat={ICON[s.key]} size={20} mono />
+                        {s.label}
+                      </dt>
+                      <dd>{s.now}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+              {good && (
+                <section className="sackSheet sackNote" aria-live="polite">
+                  <b>{good.label}</b>
+                  {good.about && <p>{good.about}</p>}
+                </section>
+              )}
+            </div>
           </div>
+          <KeyHints className="sackKeys" keys="W/S pick   Tab close" />
         </div>
       )}
     </>

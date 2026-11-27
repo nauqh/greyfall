@@ -67,22 +67,21 @@
 	}
 }
 
-/* The panels' paper, framed and floating, over the left half or more, the camera drawn in on the captain in the rest. Who and the
-   numbers across the top; under them the goods on a grid, the picked one large beside it. It slides in from the left edge
-   like a drawer and back out, quicker out than in; Tab mid-slide turns it round where it is. */
+/* The panels' paper, framed and floating, over the left half or more, the camera drawn in on the captain in the rest.
+   Laid out as Dark Souls 1's inventory: the title over the goods as a list, the status in its own sheet beside them,
+   the picked good's words under that, and the keys along the foot. It slides in from the left edge like a drawer and back out,
+   quicker out than in; Tab mid-slide turns it round where it is. */
 .sack {
 	--ink: var(--brown);
 	--text: var(--bark);
 	position: absolute;
 	inset: clamp(8px, 3vh, 32px) auto clamp(8px, 3vh, 32px) 16px;
 	z-index: 5;
-	width: min(calc(100% - 32px), max(55%, 760px));
+	width: min(calc(100% - 32px), 860px);
 	display: flex;
 	flex-direction: column;
-	gap: 14px;
-	padding: clamp(8px, 2vh, 20px) clamp(12px, 2.5vw, 36px);
-	overflow-y: auto;
-	scrollbar-width: none;
+	gap: 12px;
+	padding: clamp(4px, 1.5vh, 14px) clamp(8px, 2vw, 24px);
 	color: var(--text);
 	font-family: "Nunito", "Segoe UI", sans-serif;
 	font-weight: 700;
@@ -116,115 +115,55 @@
 	display: flex;
 	align-items: center;
 	gap: 16px;
+	padding-bottom: 10px;
+	border-bottom: 2px solid var(--frame);
+}
+
+.sackTitle {
+	margin: 0;
+	color: var(--brown);
+	font-weight: 900;
+	font-size: 26px;
+	letter-spacing: 0.02em;
 }
 
 .sackGold {
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	font-size: 13px;
-	letter-spacing: 0.14em;
-	text-transform: uppercase;
-	color: var(--mute);
+	margin-left: auto;
 }
 
 .sackGold b {
 	font-weight: 800;
-	font-size: 24px;
-	letter-spacing: 0;
-	color: var(--text);
-}
-
-.sackWho {
-	display: flex;
-	align-items: baseline;
-	gap: 12px;
-	margin-left: auto;
-	font-weight: 800;
-	font-size: 20px;
-}
-
-.sackWho b {
-	font-size: 13px;
-	letter-spacing: 0.14em;
-	text-transform: uppercase;
-	color: var(--gold);
-}
-
-/* The numbers drawn big, two to a row, over the rest told small. */
-.sackMain {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 12px;
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
-
-.sackMain li {
-	display: grid;
-	grid-template-columns: auto 1fr;
-	grid-template-rows: auto auto;
-	column-gap: 10px;
-	align-items: center;
-}
-
-.sackMain .statFrame {
-	grid-row: span 2;
-}
-
-.sackMain b {
-	font-weight: 800;
 	font-size: 22px;
-	line-height: 1.1;
-}
-
-.sackMain li > span:not(.statFrame) {
-	font-size: 12px;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	color: var(--mute);
+	color: var(--gold);
 }
 
 .sackBody {
 	flex: 1 1 auto;
 	display: grid;
-	grid-template-columns: auto minmax(220px, 1fr);
-	gap: clamp(24px, 3vw, 48px);
+	grid-template-columns: minmax(0, 1fr) 280px;
+	gap: 16px;
 	min-height: 0;
 }
 
-.sackLeft,
-.sackRight {
+/* A framed sheet, as every page of the menus sits in one. */
+.sackSheet {
 	display: flex;
 	flex-direction: column;
-	gap: 12px;
 	min-height: 0;
+	padding: 8px;
+	border: 2px solid var(--frame);
+	border-radius: 6px;
 }
 
-.sackLabel {
-	display: flex;
-	justify-content: space-between;
-	margin: 0;
-	font-weight: 800;
-	font-size: 13px;
-	letter-spacing: 0.14em;
-	text-transform: uppercase;
-	color: var(--gold);
-}
-
-.sackLabel span {
-	color: var(--mute);
-}
-
-/* Goods four across in big tiles, the empty slots dim, so the sack reads as room to fill. Past what fits, it scrolls
-   with no bar and fades at the cut. */
+/* The goods one to a row, as Dark Souls lists them: the picture in its own frame, the name over what it gives. Past what
+   fits, the list scrolls with no bar and fades at the cut. */
 .sackGoods {
-	display: grid;
-	grid-template-columns: repeat(4, clamp(64px, 5.6vw, 96px));
-	align-content: start;
-	gap: 14px;
-	padding: 6px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
 	min-height: 0;
 	overflow-y: auto;
 	scrollbar-width: none;
@@ -238,99 +177,166 @@
 	mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent);
 }
 
-/* Inked like the landing's buttons: a hard edge and a hard shadow; the empty ones only pencilled in. */
-.sackSlot {
+.sackRow {
+	flex: none;
 	display: grid;
-	place-items: center;
-	aspect-ratio: 1;
-	padding: 0;
-	border: 3px solid var(--ink);
-	border-radius: 12px;
-	background: var(--paperRaised);
-	box-shadow: 2px 3px 0 var(--ink);
+	grid-template: auto auto / auto 1fr;
+	align-items: center;
+	column-gap: 14px;
+	padding: 4px 14px 4px 4px;
+	border: 0;
+	border-radius: 4px;
+	background: none;
+	color: inherit;
+	font: inherit;
+	text-align: left;
 	cursor: pointer;
-	transition: background 120ms ease-out, box-shadow 90ms ease-out, transform 90ms ease-out;
+	transition: background 120ms ease-out, color 120ms ease-out;
 }
 
-.sackSlot.empty {
-	border: 2px dashed rgb(107 87 64 / 0.3);
-	background: rgb(242 212 138 / 0.12);
-	box-shadow: none;
-	cursor: default;
-}
-
-.sackSlot:hover,
-.sackSlot[aria-pressed="true"],
-.sackSlot.big {
-	background: rgb(242 212 138 / 0.75);
-}
-
-.sackSlot[aria-pressed="true"] {
-	transform: translate(-1px, -1px);
-	box-shadow: 3px 4px 0 var(--ink);
-}
-
-.sackSlot.big {
-	width: min(100%, 200px);
-	cursor: default;
-}
-
-/* The picked good, large like the reference's weapon slot: its name, what it gives, what it is. */
-.sackDetail {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-}
-
-.sackDetail .sackSlot.big {
-	margin-bottom: 8px;
-}
-
-.sackName {
+.sackRow b {
+	align-self: end;
 	font-weight: 800;
-	font-size: 22px;
-	line-height: 1.2;
+	font-size: 18px;
 }
 
-.sackGives {
-	font-weight: 800;
+.sackRow small {
+	align-self: start;
+	font-size: 14px;
 	color: var(--good);
 }
 
-.sackAbout {
+.sackIcon {
+	grid-row: span 2;
+	display: grid;
+	place-items: center;
+	width: 72px;
+	height: 72px;
+	border: 2px solid var(--frame);
+	border-radius: 4px;
+	background: radial-gradient(circle, var(--paperRaised), color-mix(in srgb, var(--frame) 35%, var(--paper)));
+}
+
+.sackRow:hover {
+	background: color-mix(in srgb, var(--frame) 22%, transparent);
+}
+
+/* The picked row on the brown bar the menus pick in. */
+.sackRow[aria-pressed="true"] {
+	background: var(--brown);
+	color: var(--onPicked);
+}
+
+.sackRow[aria-pressed="true"] small {
+	color: var(--onPickedNote);
+}
+
+.sackRow[aria-pressed="true"] .sackIcon {
+	border-color: var(--goldLine);
+}
+
+.sackEmpty {
+	margin: auto;
+	max-width: 30ch;
+	text-align: center;
+	color: var(--mute);
+}
+
+/* The status sheet: who heads it, then each number on its own line beside its icon. */
+.sackWho {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 8px;
+	padding: 4px 6px 8px;
+	border-bottom: 1px solid var(--frame);
+	font-weight: 800;
+	font-size: 16px;
+}
+
+.sackWho b {
+	font-size: 13px;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--gold);
+	white-space: nowrap;
+}
+
+.sackStats {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	margin: 8px 0 0;
+	overflow-y: auto;
+	scrollbar-width: none;
+}
+
+.sackStats div {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 8px;
+	padding: 4px 6px;
+}
+
+.sackStats div:nth-child(odd) {
+	background: color-mix(in srgb, var(--frame) 12%, transparent);
+}
+
+.sackStats dt {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--bark);
+}
+
+.sackStats dt > :first-child {
+	color: var(--gold);
+}
+
+.sackStats dd {
+	margin: 0;
+	font-weight: 800;
+}
+
+.sackSide {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	min-height: 0;
+}
+
+/* What the picked good is, in its own words, under the numbers. */
+.sackNote {
+	flex: 1 1 auto;
+	gap: 6px;
+	padding: 10px 12px;
+	overflow-y: auto;
+	scrollbar-width: none;
+}
+
+.sackNote b {
+	font-weight: 800;
+	font-size: 16px;
+	color: var(--brown);
+}
+
+.sackNote p {
 	margin: 0;
 	font-weight: 600;
-	font-size: 15px;
+	font-style: italic;
 	line-height: 1.45;
 	color: var(--mute);
 }
 
-.sackLabel:not(:first-child) {
-	margin-top: 12px;
-}
-
-/* The rest of the numbers, one to a line, the name left and the number right. */
-.sackMore {
+.sackKeys {
 	display: flex;
-	flex-direction: column;
-	gap: 6px;
-	margin: 0;
-	font-size: 14px;
-}
-
-.sackMore div {
-	display: flex;
-	justify-content: space-between;
-	gap: 12px;
-}
-
-.sackMore dt {
-	color: var(--mute);
-}
-
-.sackMore dd {
-	margin: 0;
+	flex-wrap: wrap;
+	gap: 6px 24px;
+	padding-top: 10px;
+	border-top: 1px solid var(--frame);
 	font-weight: 800;
+	font-size: 14px;
 }
 
 /* A phone: the sack fills the screen inside a margin and rises from below, the camera left where it was. */
@@ -338,27 +344,28 @@
 	.sack {
 		inset: 16px;
 		width: auto;
+		overflow-y: auto;
 		transform: translateY(100vh);
 	}
 
 	.sackBody {
+		flex: none;
 		grid-template-columns: minmax(0, 1fr);
 	}
 
-	.sackGoods {
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		max-height: 45vh;
+	.sackSheet {
+		flex: none;
 	}
 
-	.sackSlot.big {
-		width: 96px;
+	.sackGoods {
+		max-height: 45vh;
 	}
 }
 
 @media (prefers-reduced-motion: reduce) {
 	.sack,
 	.sack.shown,
-	.sackSlot {
+	.sackRow {
 		transition: none;
 	}
 
