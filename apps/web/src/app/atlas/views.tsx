@@ -398,7 +398,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   // A bonfire screen's keys, at the foot of its panel: the one way to accept or go back, by key or click.
   const foot = fire && (
     <KeyHints
-      className="bonfireKeys"
+      className="panelKeys"
       keys={fire.screen === "level" ? "E accept   Q back" : fire.screen ? "E travel   Q back" : "W/S pick   E choose"}
       onKey={fire.screen && { ...(level && { E: accept }), Q: () => menuBack(fire.screen === "level" ? 1 : 0) }}
     />
@@ -518,6 +518,8 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
               pick={paused}
               onPick={setPaused}
               onChoose={(i) => pauseMenu[i]!.go()}
+              // One strip for every page: A/D turn the page, or the level once one is picked.
+              foot={<KeyHints className="panelKeys" keys="A/D change   W/S move   E choose   Esc resume" />}
             >
               <div className="setModes" role="tablist" aria-label="Settings">
                 {PAUSE_TABS.map((t, i) => (
@@ -564,12 +566,6 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
                 )}
               </div>
             </SidePanel>
-            {/* The keys on their own strip across the foot of the screen, as Dark Souls keeps them apart from the menu. */}
-            <KeyHints
-              className="pauseKeys"
-              // One strip for every page: A/D turn the page, or the level once one is picked.
-              keys="A/D change   W/S move   E choose   Esc resume"
-            />
           </div>
         )}
         {say?.note ? (

@@ -45,11 +45,12 @@ colour that is truly the screen's own carries an `/* own colour: why */` note.
   `"W/S pick   E choose   Esc back"`: three spaces between hints, `/` between
   keys. It shows them as Dark Souls 1 does, `W/S: Pick`: a colon after the
   keys and the word capitalised.
-- **The pause menu's keys sit apart from it**: bare outlined text at the foot
-  of the screen like a talk (`.pauseKeys`), the same strip on every page. No
-  key caps on the tab bar.
-- **A bonfire screen's keys are its footer** (`.bonfireKeys`): inside the
-  paper, left-aligned, in the panel's ink under one rule.
+- **Every screen's keys sit inside it**, never apart over the world. A panel's
+  are its footer (`.panelKeys`, through `SidePanel`'s or `TravelPane`'s
+  `foot`): inside the paper, left-aligned, in the panel's ink under one rule.
+  The pause menu keeps one strip for every page. Creation inks its keys on the
+  sheet, the Lane House board outlines them along the wood's foot. No key caps
+  on the tab bar.
 - **The keys**: A/D change (the page, or the picked level), W/S move, E choose,
   Esc back or resume. Tabs start with the pick on the tab bar; S steps down
   into the page. Arrow keys mirror WASD except on a focused slider.

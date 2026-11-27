@@ -1407,12 +1407,6 @@ textarea {
 	border: 0;
 }
 
-/* The keys at the foot, left, under the list, as Elden Ring sets its prompts. */
-.pauseKeys.mapKeys {
-	left: 28px;
-	translate: none;
-}
-
 /* The open tier's name over its tabs, as Elden Ring names the region over its icons. */
 .landTier {
 	margin: 0 0 6px;

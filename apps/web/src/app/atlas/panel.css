@@ -368,11 +368,9 @@
 
 /* Fixed, so the panel does not jump as the pages change. */
 .pausePanel {
-	/* Up a little off the middle, clear of the keys at the foot. */
 	translate: 0 -32px;
 	width: min(680px, calc(100vw - 32px));
-	/* Clear of the keys' strip at the foot. */
-	height: min(640px, calc(100vh - 150px));
+	height: min(640px, calc(100vh - 96px));
 }
 
 /* One rule under the head is enough: the tabs, rows and keys go without their own. */
@@ -465,22 +463,27 @@
 }
 
 /* Bare words over the world at the foot of the screen, the way a talk is set (.talk); the map's keys too. */
-.pauseKeys {
-	position: absolute;
-	left: 50%;
-	bottom: 36px;
-	translate: -50% 0;
+/* A screen's keys at the foot of its own paper, in the panel's ink, under the head's kind of rule. */
+.panelKeys {
 	display: flex;
 	flex-wrap: wrap;
-	justify-content: center;
-	gap: 6px 28px;
-	width: max-content;
-	max-width: calc(100vw - 32px);
-	color: var(--light);
+	gap: 6px 24px;
+	margin-top: auto;
+	padding-top: 10px;
+	border-top: 1px solid var(--frame);
+	color: var(--bark);
 	font: 800 14px "Nunito", sans-serif;
-	letter-spacing: 0.06em;
-	-webkit-text-stroke: 4px var(--outline);
-	paint-order: stroke fill;
+	letter-spacing: 0.02em;
+}
+
+.panelKeys button {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: inherit;
+	font: inherit;
+	letter-spacing: inherit;
+	cursor: pointer;
 }
 
 .pauseBinds {

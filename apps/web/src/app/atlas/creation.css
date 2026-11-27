@@ -27,11 +27,11 @@
 
 /* The scroll at 1x, its 128px corners drawn over the padding: the paper starts 28px in and 60px down, ends 44px short
    of the right, and its curls run along the foot 17px up. Placed so the paper stands 48px off the left and 80px off the
-   top, room for the ribbon above it, and runs to the right edge and down to the keys. */
+   top, room for the ribbon above it, and runs to the right edge and near the foot, the keys on it. */
 .crSheet {
 	position: absolute;
 	z-index: 200;
-	inset: 20px 20px 60px;
+	inset: 20px 20px 24px;
 	display: grid;
 	grid-template: "ledger list scene" minmax(0, 1fr) / 280px minmax(0, 1fr) minmax(0, 1.3fr);
 	align-items: start;
@@ -286,11 +286,11 @@
 	font-variant-numeric: lining-nums tabular-nums;
 }
 
+/* The keys on the sheet, under the columns and clear of the scroll's curls, in the page's ink. */
 .crFoot {
 	position: absolute;
-	z-index: 200;
-	left: 48px;
-	bottom: 16px;
+	left: 76px;
+	bottom: 64px;
 	display: flex;
 }
 
@@ -298,10 +298,8 @@
 	display: flex;
 	flex-wrap: wrap;
 	gap: 6px 22px;
-	color: var(--cream);
+	color: var(--ink);
 	font: 700 15px var(--display), serif;
-	-webkit-text-stroke: 4px var(--outline);
-	paint-order: stroke fill;
 }
 
 .crKey {
@@ -365,8 +363,8 @@
 	}
 
 	.crFoot {
-		left: 16px;
-		bottom: 8px;
+		left: 28px;
+		bottom: 40px;
 	}
 }
 

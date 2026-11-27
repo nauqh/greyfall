@@ -101,30 +101,6 @@
 	color: var(--onPickedNote);
 }
 
-/* The keys under a bonfire screen, outlined over the world as the pause menu's are (.pauseKeys). */
-/* The keys at the foot of a bonfire screen, inside its paper, in the panel's ink, under the head's kind of rule. */
-.bonfireKeys {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 6px 24px;
-	margin-top: auto;
-	padding-top: 10px;
-	border-top: 1px solid var(--frame);
-	color: var(--bark);
-	font: 800 14px "Nunito", sans-serif;
-	letter-spacing: 0.02em;
-}
-
-.bonfireKeys button {
-	padding: 0;
-	border: 0;
-	background: none;
-	color: inherit;
-	font: inherit;
-	letter-spacing: inherit;
-	cursor: pointer;
-}
-
 /* The dock slides in once as the hero sits; a screen changed inside it (travel, level up, back) only fades, at once,
    instead of waiting out every panel's entrance again. */
 .sideDock.fireDock {

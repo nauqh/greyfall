@@ -241,8 +241,8 @@ export function TravelMap({ from, dev = false, onTravel, onBack }: { from: AreaI
             onSelect={(id) => api.current?.select(id)}
             onTurn={(t) => api.current?.tier(t)}
             panelRef={panel}
+            foot={<KeyHints className="panelKeys" keys="A/D tier   W/S bonfire   E travel   Esc back" />}
           />
-          <KeyHints className="pauseKeys mapKeys" keys="A/D tier   W/S bonfire   E travel   Esc back" />
         </div>
       </GameCanvas>
     </div>

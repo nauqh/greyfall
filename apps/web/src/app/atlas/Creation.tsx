@@ -256,34 +256,33 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
         </section>
 
         <CreationScene row={row} gift={giftShown} />
-      </div>
-
-      <div className="crFoot">
-        <span className="crKeys">
-          {step < 2 ? (
-            <>
+        <div className="crFoot">
+          <span className="crKeys">
+            {step < 2 ? (
+              <>
+                <span className="crKey">
+                  <Key k="W" />
+                  <Key k="S" /> Move
+                </span>
+                <span className="crKey">
+                  <Key k="E" /> Choose
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="crKey">Type a name</span>
+                <span className="crKey">
+                  <Key k="Enter" /> Come ashore
+                </span>
+              </>
+            )}
+            {step > 0 && (
               <span className="crKey">
-                <Key k="W" />
-                <Key k="S" /> Move
+                <Key k="Esc" /> Back
               </span>
-              <span className="crKey">
-                <Key k="E" /> Choose
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="crKey">Type a name</span>
-              <span className="crKey">
-                <Key k="Enter" /> Come ashore
-              </span>
-            </>
-          )}
-          {step > 0 && (
-            <span className="crKey">
-              <Key k="Esc" /> Back
-            </span>
-          )}
-        </span>
+            )}
+          </span>
+        </div>
       </div>
     </div>
   );
