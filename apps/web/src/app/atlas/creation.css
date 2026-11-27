@@ -251,15 +251,17 @@
 
 .crName input {
 	width: 100%;
-	padding: 8px 4px;
+	padding: 4px 0;
 	border: none;
 	background: none;
 	outline: none;
 	color: var(--cream);
-	font: 900 26px var(--display), serif;
-	letter-spacing: 0.06em;
+	/* Sized so 16 wide letters fit unscrolled; the indent and line height keep the outline inside the field, which clips at its text. */
+	font: 900 18px / 1.6 var(--display), serif;
+	letter-spacing: 0;
+	text-indent: 4px;
 	text-align: left;
-	-webkit-text-stroke: 5px var(--stroke);
+	-webkit-text-stroke: 4px var(--stroke);
 	paint-order: stroke fill;
 	caret-color: var(--ink);
 }
