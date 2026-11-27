@@ -78,6 +78,7 @@ export {
   sameCell,
   stepsFrom,
   tileDistance,
+  islandInUse,
   useIsland,
   type BuildingKind,
   type Cell,

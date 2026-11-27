@@ -7,7 +7,7 @@
  */
 
 import { AREAS, footprint, noise, tierBuilder, type AreaId, type AtlasTier, type Dweller, type GateKind, type LiftKind } from "./atlas.ts";
-import type { Cell } from "./island.ts";
+import { islandInUse, useIsland, type Cell } from "./island.ts";
 import { makeRng, type Rng } from "./rng.ts";
 
 
@@ -4355,7 +4355,10 @@ export function areaMap(id: AreaId): AreaMap {
   if (!build) throw new Error(`${AREAS.find((a) => a.id === id)?.name ?? id} has no map yet`);
   // A map on the sea or in the sky floats in it; underground, the rock round the caverns already does.
   if (!made.has(id)) {
+    // Building swaps the island in use; whoever asked is still walking theirs.
+    const was = islandInUse();
     const m = clearNotes(build());
+    useIsland(was);
     // The Harbour's north edge is woods behind the castle hill, not the sea.
     made.set(id, m.base === "rock" ? m : HILL.has(id) ? wooded(pad(m, 3)) : id === "harbour" ? wooded(pad(m, 3), 6) : pad(m, 3));
   }

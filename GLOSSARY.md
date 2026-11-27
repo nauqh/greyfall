@@ -220,7 +220,7 @@ The game as its makers see it, behind a password: the hero plays on, with tools 
 _Avoid_: debug mode, cheat mode
 
 **Free camera**:
-Dev mode's view of a whole area map, loose of the hero, who stands still while it is on.
+Dev mode's view of a whole area map, loose of the hero, who stands still while it is on. Leaving it sets the hero down where it looks.
 _Avoid_: whole map, dev view
 
 ## The folk's lines

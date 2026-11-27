@@ -206,8 +206,6 @@ export interface AtlasHooks {
   carry?: { hp: number; flasks: number; band: number[] };
   /** Dev mode: the tools, on the dev route only. */
   dev?: boolean;
-  /** Dev mode's free camera, carried across a crossing. */
-  free?: boolean;
   /** Asks the page to travel through an exit to another area. */
   onExit?: (exit: Departure) => void;
   /** Asks the page to show an area's card, or with null (a click on no land) to close it. */
@@ -1140,7 +1138,7 @@ export class AtlasScene extends Phaser.Scene {
     this.gone = false;
     this.district = { name: "", next: "", since: 0, shown: new Set<string>() };
     this.dev = !!data.dev;
-    this.free = this.dev && !!data.free;
+    this.free = false;
     this.devKey = "";
     this.devText = [];
     this.freeBox = null;
@@ -1342,7 +1340,7 @@ export class AtlasScene extends Phaser.Scene {
       this.district.name = districtOf(local, near.col, near.row)?.name ?? "";
       this.district.shown.add(this.district.name);
       this.input.keyboard?.on("keydown-E", (e: KeyboardEvent) => this.interact(e.repeat));
-      this.setFree(this.free);
+      this.setFree(false, this.hero!.at, true);
       if (this.hooks.arrive === "fall") {
         // Dropped in: the hero comes down onto the spot and lands with a jolt.
         const s = this.hero!.s;
@@ -1363,13 +1361,9 @@ export class AtlasScene extends Phaser.Scene {
       },
       travel: (to, from, arrive) => {
         const carry = arrive === "rest" || !this.hero ? undefined : { hp: this.hero.hp, flasks: this.flasks, band: this.band.map((c) => (c.dead ? 0 : c.hp)) };
-        this.scene.restart({ ...this.hooks, area: to, from, arrive, free: this.free, carry });
+        this.scene.restart({ ...this.hooks, area: to, from, arrive, carry });
       },
-      warm: (to) => {
-        areaMap(to);
-        // Building a map swaps the engine's island; this scene still walks its own.
-        useIsland(this.map.tiers[this.view].island);
-      },
+      warm: (to) => void areaMap(to),
       freeCamera: (on) => this.setFree(on),
       next: () => (this.reading ? this.read(null) : this.nextPage()),
       sit: (on) => this.sit(on),
@@ -1677,8 +1671,10 @@ export class AtlasScene extends Phaser.Scene {
       if (folk) return this.devTalk(folk.npc.id);
       const note = this.free && this.hero ? this.notes.find((n) => tileDistance(n.at, cell) <= 1) : undefined;
       if (note) return this.devRead(note);
-      for (const e of this.local?.exits ?? []) {
-        if (Math.abs(e.at.col - cell.col) <= 2 && Math.abs(e.at.row - cell.row) <= 2) return this.depart(e);
+      if (this.free && this.hero) {
+        // Set down beside an exit rather than through it, so its own crossing is the one walked.
+        const exit = this.local?.exits.find((e) => tileDistance(e.at, cell) <= 2);
+        return this.setFree(false, exit?.at ?? cell);
       }
       const ch = this.map.tiers[this.view].areaAt[cell.row]?.[cell.col];
       this.hooks.onArea(ch && ch !== "-" ? AREAS[AREA_CODE.indexOf(ch)]!.id : null);
@@ -1713,12 +1709,22 @@ export class AtlasScene extends Phaser.Scene {
     return !!this.hero && !this.free;
   }
 
-  /** The free camera over the whole map, the hero stood still; off, it holds on the hero at the play zoom. */
-  private setFree(on: boolean): void {
+  /** The open cell nearest `c` the hero can stand on, or null with none within a dozen cells. */
+  private standNear(c: Cell): Cell | null {
+    let best: Cell | null = null;
+    for (let dr = -12; dr <= 12; dr++)
+      for (let dc = -12; dc <= 12; dc++) {
+        const n = { col: c.col + dc, row: c.row + dr };
+        if (isWalkable(n.col, n.row) && !isSlope(n.col, n.row) && !this.shut(n) && (!best || tileDistance(n, c) < tileDistance(best, c))) best = n;
+      }
+    return best;
+  }
+
+  /** The free camera over the whole map, the hero stood still; off, the hero set down at `at` or the view's middle. */
+  private setFree(on: boolean, at?: Cell, snap = false): void {
     on &&= this.dev;
     this.free = on;
     this.shieldUp = false;
-    this.hooks.free = on;
     this.devLabels();
     this.devKey = "";
     this.emitDev();
@@ -1733,7 +1739,7 @@ export class AtlasScene extends Phaser.Scene {
         f.bubble = null;
       }
     }
-    // At once, not eased: a zoom still running when play resumes would carry on over the play zoom.
+    // A fly-in still running would carry on over the new view.
     cam.zoomEffect.reset();
     cam.panEffect.reset();
     if (on) {
@@ -1741,13 +1747,27 @@ export class AtlasScene extends Phaser.Scene {
       // Unbounded, so a map smaller than the screen sits in its middle rather than against an edge.
       cam.removeBounds();
       this.freeBox ??= this.landBox(this.local!);
-      // The whole island in view, its longer side to the screen's edge.
-      cam.setZoom(this.freeFit());
-      cam.centerOn(this.freeBox.centerX, this.freeBox.centerY);
+      // Out from the hero to the whole island; clampFree draws the view over it as it widens.
+      cam.zoomTo(this.freeFit(), 300, "Sine.easeOut", true);
     } else {
-      cam.setBounds(0, 0, STRAT_COLS * CELL, STRAT_ROWS * CELL);
-      cam.setZoom(this.zoomFor(AREA_ROWS));
-      cam.startFollow(this.hero.s, true, 0.15, 0.15);
+      const mid = cam.midPoint;
+      const to = this.standNear(at ?? { col: Math.floor(mid.x / CELL), row: Math.floor(mid.y / CELL) });
+      const hero = this.hero;
+      if (to) {
+        const y = (to.row + 0.75) * CELL;
+        hero.s.setPosition((to.col + 0.5) * CELL, y).setDepth(standing(y));
+        hero.at = to;
+        hero.way = [];
+      }
+      // On the hero first, so only the zoom eases; bounds after it lands, as at the whole-map zoom they clamp the view
+      // to the area's middle and the follow slides back.
+      const bound = (): void => void cam.setBounds(0, 0, STRAT_COLS * CELL, STRAT_ROWS * CELL);
+      if (snap) {
+        cam.setZoom(this.zoomFor(AREA_ROWS));
+        bound();
+      }
+      cam.startFollow(hero.s, true, 0.15, 0.15);
+      if (!snap) cam.zoomTo(this.zoomFor(AREA_ROWS), 300, "Sine.easeInOut", true, (_c, p) => p === 1 && this.playing && bound());
     }
   }
 

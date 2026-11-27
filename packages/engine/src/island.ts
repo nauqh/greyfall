@@ -331,9 +331,14 @@ export const WAR_ISLAND: Island = { rows: WAR_MAP, start: START, mines: MINES, l
 let HOME: Record<WarSide, Set<number>>;
 let DIAGONAL_STAIRS = false;
 let MINE_CELLS: Set<number>;
+let IN_USE: Island;
+
+/** The island every rule reads now. */
+export const islandInUse = (): Island => IN_USE;
 
 /** Make `island` the ground every rule reads. The war's is in use until then. */
 export function useIsland(island: Island): void {
+  IN_USE = island;
   MAP = island.rows;
   STRAT_COLS = MAP[0]!.length;
   STRAT_ROWS = MAP.length;

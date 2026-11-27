@@ -1,4 +1,4 @@
-// An area's map in dev mode, behind the dev password (middleware.ts): the same view, the camera free from the start.
+// An area's map in dev mode, behind the dev password (middleware.ts): the same view, with the dev panel.
 
 import { MAPPED_AREAS, type AreaId } from "@greyfall/engine";
 import { notFound } from "next/navigation";
