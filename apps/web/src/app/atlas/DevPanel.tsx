@@ -359,6 +359,9 @@ function Screens({ s, api, onScreen }: { s: DevState; api: RefObject<AtlasApi | 
           <div className="devScreens">{shops.map((n) => button(n.name, () => api.current?.devTalk(n.id)))}</div>
         )}
       </Section>
+      <Section title="Lane House">
+        <div className="devScreens">{button("Notice board", () => api.current?.devBoard(), "from anywhere")}</div>
+      </Section>
       <Section title="Game">
         <div className="devScreens">
           {button("Settings", () => onScreen("settings"))}

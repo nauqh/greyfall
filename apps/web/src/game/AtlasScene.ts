@@ -10,6 +10,8 @@ import {
   AREA_CODE,
   BAND_SIZE,
   COMPANIONS,
+  LANE_HOUSE,
+  NOTICES,
   companionPlan,
   foeTarget,
   hire,
@@ -151,6 +153,8 @@ export interface AtlasApi {
   devRest: () => void;
   /** Dev: the hero killed where they stand. */
   devKill: () => void;
+  /** Dev: the Lane House notices, wherever the hero stands. */
+  devBoard: () => void;
 }
 
 export interface DevPatch {
@@ -244,6 +248,8 @@ export interface AtlasHooks {
   onSay?: (say: Say | null) => void;
   /** The menu of someone who hires out, or null when it closes. */
   onMenu?: (menu: MenuView | null) => void;
+  /** The Lane House notices, or null when they close. */
+  onBoard?: (board: BoardView | null) => void;
   /** The goods bought and kept, and the captain's numbers with them: the sack. */
   onSack?: (sack: SackView) => void;
   /** What E would do where the captain stands, other than swing: talk, or rest at a bonfire. */
@@ -313,6 +319,15 @@ export interface SackView {
 }
 
 /** After the Souls games' merchants: a name over a short list, one option picked; a good says what it gives. */
+/** The Lane House notices: each note, and whether its foes have fallen and its gold been taken. */
+export interface BoardView {
+  name: string;
+  notes: { title: string; from: string; text: string; reward: number; state: "up" | "fallen" | "paid" }[];
+  /** A note's index, or `notes.length` for Leave. */
+  pick: number;
+  gold: number;
+}
+
 export interface MenuView {
   name: string;
   role: string;
@@ -809,6 +824,10 @@ function restPoint(): { area: AreaId; col: number; row: number } | null {
 }
 /** Gold carried, the gold stones already taken, and the gold left where the captain last died: kept on this browser. */
 const GOLD = "greyfall.gold";
+/** Each notice's foes felled so far, or "paid" once its gold is taken. */
+const NOTICED = "greyfall.notices";
+const noticed = (): Record<string, number | "paid"> => stored(NOTICED, {});
+const noticeState = (count: number, v: number | "paid" | undefined): "up" | "fallen" | "paid" => (v === "paid" ? "paid" : (v ?? 0) >= count ? "fallen" : "up");
 /** Bosses slain, which never come back, and the keys they drop, by the boss's kind. */
 const SLAIN = "greyfall.slain";
 const KEYS = "greyfall.keys";
@@ -1044,6 +1063,7 @@ export class AtlasScene extends Phaser.Scene {
   /** Open with someone who hires out: Talk, Hire, Leave. */
   /** `shopping`: a merchant's goods are open, picked from the menu's Shop. */
   private menu: { folk: Folk; pick: number; shopping?: boolean; selling?: boolean } | null = null;
+  private board: { pick: number } | null = null;
   /** The camera in close: at a bonfire, or on a merchant through their menu and the talks it opens. */
   private close: "fire" | "folk" | null = null;
   /** The share of the screen the open sack covers, 0 when shut. */
@@ -1132,6 +1152,7 @@ export class AtlasScene extends Phaser.Scene {
     this.hooks.onCinema?.(false);
     this.nearName = null;
     this.menu = null;
+    this.board = null;
     this.close = null;
     this.sackCover = 0;
     this.heard = remembered(HEARD);
@@ -1410,11 +1431,13 @@ export class AtlasScene extends Phaser.Scene {
       },
       select: (id) => this.select(id),
       choose: (i) => {
+        if (this.board) return this.chooseNotice(i);
         if (!this.menu) return;
         this.menu.pick = i;
         this.choose();
       },
       hover: (i) => {
+        if (this.board) return void ((this.board.pick = i), this.showBoard());
         if (!this.menu || this.menu.pick === i) return;
         this.menu.pick = i;
         this.showMenu();
@@ -1437,6 +1460,7 @@ export class AtlasScene extends Phaser.Scene {
         this.kindle(fire);
         this.rest(fire);
       },
+      devBoard: () => this.hero && !this.hero.dead && !this.gone && !this.menu && !this.talk && this.openBoard(),
       devKill: () => {
         if (!this.hero || this.hero.dead || this.gone) return;
         this.hero.hp = 0;
@@ -2122,6 +2146,7 @@ export class AtlasScene extends Phaser.Scene {
     if (b !== this.hero) {
       if (this.isBoss(b as Foe)) this.perish(b as Foe);
       else this.tweens.add({ targets: b.s, alpha: 0, duration: 500, onComplete: () => b.s.destroy() });
+      this.tally((b as Foe).kind);
       const gold = (b as Foe).stats?.gold;
       if (gold) this.dropGold(b.at, Math.round(gold * this.gear.greed));
       const loot = lootDrop((b as Foe).kind, Math.random(), this.gear.find);
@@ -2152,7 +2177,7 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** What E does here besides swing: talk to someone right beside, else rest at a bonfire beside, else talk to someone near. */
-  private eTarget(): { folk: Folk } | { fire: Cell } | { note: Note } | { exit: Exit } | { fog: true } | { lock: string } | { unbar: Lock } | { loot: Pile } | undefined {
+  private eTarget(): { folk: Folk } | { fire: Cell } | { note: Note } | { board: true } | { exit: Exit } | { fog: true } | { lock: string } | { unbar: Lock } | { loot: Pile } | undefined {
     const at = this.hero!.at;
     const folk = this.folk.filter((f) => f.near).sort((a, b) => tileDistance(a.at, at) - tileDistance(b.at, at))[0];
     if (folk && tileDistance(folk.at, at) <= 1) return { folk };
@@ -2160,6 +2185,7 @@ export class AtlasScene extends Phaser.Scene {
     if (fire) return { fire };
     const note = this.notes.find((n) => tileDistance(n.at, at) <= 1);
     if (note) return { note };
+    if (this.local?.area === LANE_HOUSE.area && tileDistance(LANE_HOUSE.at, at) <= 1) return { board: true };
     const loot = this.piles.find((p) => (p.loot || p.item) && tileDistance(p.at, at) <= 1);
     if (loot) return { loot };
     const exit = this.local?.exits.find((e) => tileDistance(e.at, at) <= 1);
@@ -2691,6 +2717,62 @@ export class AtlasScene extends Phaser.Scene {
     );
   }
 
+  private showBoard(): void {
+    const b = this.board;
+    const done = noticed();
+    this.hooks.onBoard?.(
+      b && {
+        name: "Lane House",
+        notes: NOTICES.map((n) => ({ title: n.title, from: n.from, text: n.text, reward: n.reward, state: noticeState(n.count, done[n.id]) })),
+        pick: b.pick,
+        gold: this.gold,
+      },
+    );
+  }
+
+  private openBoard(): void {
+    this.hero!.way = [];
+    this.board = { pick: 0 };
+    // The door framed beside the hero; opened from afar in dev mode, the hero alone.
+    const at = this.local?.area === LANE_HOUSE.area && tileDistance(LANE_HOUSE.at, this.hero!.at) <= 1;
+    this.closeUp(at ? { x: (LANE_HOUSE.at.col + 0.5) * CELL, y: (LANE_HOUSE.at.row + 0.5) * CELL } : { x: this.hero!.s.x, y: this.hero!.s.y });
+    play(PAGE);
+    this.showBoard();
+  }
+
+  private closeBoard(): void {
+    this.board = null;
+    this.closeUp(null);
+    this.showBoard();
+  }
+
+  /** E on a note whose foes have fallen: its gold, and the note marked paid; on Leave, away from the board. */
+  private chooseNotice(i: number): void {
+    this.board!.pick = i;
+    const n = NOTICES[i];
+    if (!n) return this.closeBoard();
+    const done = noticed();
+    if (noticeState(n.count, done[n.id]) !== "fallen") return this.showBoard();
+    store(NOTICED, { ...done, [n.id]: "paid" });
+    this.setGold(this.gold + n.reward);
+    play(LEATHER);
+    this.showBoard();
+  }
+
+  /** A foe felled: counted against every unpaid notice for its kind in this area. */
+  private tally(kind: string): void {
+    const area = this.local?.area;
+    const done = noticed();
+    let changed = false;
+    for (const n of NOTICES) {
+      const was = done[n.id] ?? 0;
+      if (n.area !== area || n.kind !== kind || was === "paid" || was >= n.count) continue;
+      done[n.id] = was + 1;
+      changed = true;
+    }
+    if (changed) store(NOTICED, done);
+  }
+
   private openMenu(f: Folk): void {
     const hero = this.hero!;
     hero.way = [];
@@ -2713,6 +2795,7 @@ export class AtlasScene extends Phaser.Scene {
 
   /** Esc in a menu: out of the goods to the menu, or out of the menu. */
   private back(): void {
+    if (this.board) return this.closeBoard();
     const m = this.menu;
     if (!m) return;
     if (!m.shopping && !m.selling) return this.closeMenu(true);
@@ -2721,6 +2804,11 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   private movePick(d: number): void {
+    if (this.board) {
+      const n = NOTICES.length + 1;
+      this.board.pick = (this.board.pick + d + n) % n;
+      return this.showBoard();
+    }
     const m = this.menu;
     if (!m) return;
     const n = this.menuOptions(m.folk).length;
@@ -2766,7 +2854,7 @@ export class AtlasScene extends Phaser.Scene {
    */
   private steer(dt: number): boolean {
     const hero = this.hero!;
-    if (!this.keys || hero.dead || this.menu) return false;
+    if (!this.keys || hero.dead || this.menu || this.board) return false;
     const [dx, dy] = this.keyDir();
     if (!dx && !dy) return false;
     hero.way = [];
@@ -2778,7 +2866,7 @@ export class AtlasScene extends Phaser.Scene {
   /** The way the movement keys point, each axis -1, 0 or 1; none while the sack is open, where they walk its goods. */
   private keyDir(): [number, number] {
     const k = this.keys;
-    if (!k || this.menu || this.sackCover) return [0, 0];
+    if (!k || this.menu || this.board || this.sackCover) return [0, 0];
     return [(k.right.isDown || k.d.isDown ? 1 : 0) - (k.left.isDown || k.a.isDown ? 1 : 0), (k.down.isDown || k.s.isDown ? 1 : 0) - (k.up.isDown || k.w.isDown ? 1 : 0)];
   }
 
@@ -2829,7 +2917,7 @@ export class AtlasScene extends Phaser.Scene {
   /** A tap of Space: a roll the way the hero walks, or a backstep standing still; nothing lands on it while it lasts. */
   private dodge(time: number): void {
     const hero = this.hero!;
-    if (!this.playing || hero.dead || this.gone || this.menu || this.talk || time < hero.busy || time < this.roll.until || !canAct(this.stamina)) return;
+    if (!this.playing || hero.dead || this.gone || this.menu || this.board || this.talk || time < hero.busy || time < this.roll.until || !canAct(this.stamina)) return;
     let [dx, dy] = this.keyDir();
     const next = hero.way[0];
     if (!dx && !dy && next) [dx, dy] = [next.x - hero.s.x, next.y - hero.s.y];
@@ -4645,6 +4733,7 @@ export class AtlasScene extends Phaser.Scene {
   private interact(repeat: boolean): void {
     if (!this.hero || this.hero.dead || this.gone) return;
     if (this.menu) return void (!repeat && (play(CLICK), this.choose()));
+    if (this.board) return void (!repeat && (play(CLICK), this.chooseNotice(this.board.pick)));
     if (this.reading) return void (!repeat && this.read(null));
     if (this.talk) return void (!repeat && this.nextPage());
     // The free camera carries on a talk or menu opened by a click, but starts nothing on E.
@@ -4653,6 +4742,7 @@ export class AtlasScene extends Phaser.Scene {
     if (!t || repeat) return;
     if ("fire" in t) return this.unlit.has(this.fireKey(t.fire)) ? this.kindle(t.fire) : this.rest(t.fire);
     if ("note" in t) return this.read(t.note);
+    if ("board" in t) return this.openBoard();
     if ("exit" in t) return this.traverse(t.exit);
     if ("fog" in t) return this.enterFog();
     if ("lock" in t) return;
@@ -4664,7 +4754,7 @@ export class AtlasScene extends Phaser.Scene {
   /** A swing the way the hero faces: at the monster in reach nearest ahead, else the air. */
   private attack(time: number): void {
     const hero = this.hero!;
-    if (hero.dead || this.gone || this.menu || this.talk || this.guarding || !canAct(this.stamina)) return;
+    if (hero.dead || this.gone || this.menu || this.board || this.talk || this.guarding || !canAct(this.stamina)) return;
     if (time < hero.busy || time < hero.next) return void (this.queued = true);
     this.queued = false;
     const at = { x: hero.s.x + (hero.s.flipX ? -1 : 1), y: hero.s.y };
@@ -4800,8 +4890,9 @@ export class AtlasScene extends Phaser.Scene {
       if (this.menu?.folk === f && d > TALK_RANGE && !this.dev) this.closeMenu(true);
     }
     if (this.reading && !this.dev && tileDistance(this.reading.at, hero.at) > 1) this.read(null);
-    const t = this.talk || this.menu || this.reading || hero.dead || this.gone ? undefined : this.eTarget();
-    const action = !t ? null : "folk" in t ? "Talk" : "fire" in t ? (this.unlit.has(this.fireKey(t.fire)) ? "Light the bonfire" : "Rest") : "note" in t ? "Read" : "fog" in t ? "Traverse the fog" : "lock" in t ? t.lock : "unbar" in t ? `Unbar the ${t.unbar.name}` : "loot" in t ? "Pick up" : this.exitWord(t.exit);
+    if (this.board && !this.dev && tileDistance(LANE_HOUSE.at, hero.at) > 1) this.closeBoard();
+    const t = this.talk || this.menu || this.board || this.reading || hero.dead || this.gone ? undefined : this.eTarget();
+    const action = !t ? null : "folk" in t ? "Talk" : "fire" in t ? (this.unlit.has(this.fireKey(t.fire)) ? "Light the bonfire" : "Rest") : "note" in t ? "Read" : "board" in t ? "Enter the Lane House" : "fog" in t ? "Traverse the fog" : "lock" in t ? t.lock : "unbar" in t ? `Unbar the ${t.unbar.name}` : "loot" in t ? "Pick up" : this.exitWord(t.exit);
     if (action !== this.nearName) this.hooks.onNear?.((this.nearName = action));
   }
 
@@ -4877,6 +4968,7 @@ export class AtlasScene extends Phaser.Scene {
         ...(local?.fires ?? []).map((f) => ({ kind: "fire" as const, name: f.name ?? (local && districtOf(local, f.col, f.row)?.name) ?? "Bonfire", col: f.col, row: f.row })),
         ...(local?.bosses ?? []).map((b) => ({ kind: "boss" as const, name: b.name, col: b.col, row: b.row })),
         ...this.notes.map((n) => ({ kind: "note" as const, name: n.text.split(/[.!?\n]/)[0]!.slice(0, 40), col: n.at.col, row: n.at.row })),
+        ...(local?.area === LANE_HOUSE.area ? [{ kind: "note" as const, name: "Lane House", col: LANE_HOUSE.at.col, row: LANE_HOUSE.at.row + 1 }] : []),
       ],
       free: this.free,
       god: this.devGod,

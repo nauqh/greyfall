@@ -4,10 +4,11 @@ import { AREAS, NO_LEVELS, levelCost, type AreaId, type Levels } from "@greyfall
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import type { AtlasApi, AtlasHooks, BandView, Departure, DevState, MenuView, SackView, Say, Vitals } from "../../game/AtlasScene";
+import type { AtlasApi, AtlasHooks, BandView, BoardView, Departure, DevState, MenuView, SackView, Say, Vitals } from "../../game/AtlasScene";
 import { Clouds } from "../../game/Clouds";
 import { packUrl } from "../../game/art";
 import { GameCanvas } from "../../game/GameCanvas";
+import { Board } from "./Board";
 import { DevPanel, type DevScreen } from "./DevPanel";
 import { LevelUp, STATS, heldCost, plus } from "./LevelUp";
 import { RestPanel } from "./RestPanel";
@@ -90,6 +91,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   const [boss, setBoss] = useState<{ name: string; hp: number; max: number } | null>(null);
   const [band, setBand] = useState<BandView | null>(null);
   const [menu, setMenu] = useState<MenuView | null>(null);
+  const [board, setBoard] = useState<BoardView | null>(null);
   const [sack, setSack] = useState<SackView | null>(null);
   // Died: the words, then the dark, then waking at the bonfire in this area.
   const [died, setDied] = useState<AreaId | null>(null);
@@ -151,6 +153,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     setDied(null);
     setSay(null);
     setMenu(null);
+    setBoard(null);
     setNear(null);
     setTravel({ ...d, phase: "hold" });
     window.history.pushState(null, "", rest ? `${base}/${d.to}` : `${base}/${d.to}?from=${from}`);
@@ -226,6 +229,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     onBoss: setBoss,
     onBand: setBand,
     onMenu: setMenu,
+    onBoard: setBoard,
     onSack: setSack,
     onDev: setDevState,
     // The scene rests in place: no dark, only the camera drawing in on the fire.
@@ -260,7 +264,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   // dev panel's new hero asks for creation after, which the dev route otherwise skips.
   const newGame = (create: boolean): void => {
     try {
-      for (const k of ["band", "bought", "class", "flags", "gold", "heard", "hero", "keys", "kindled", "levels", "lost", "loot", "met", "prologue", "rest", "sackOpened", "slain", "taken", "thrown"]) localStorage.removeItem(`greyfall.${k}`);
+      for (const k of ["band", "bought", "class", "flags", "gold", "heard", "hero", "keys", "kindled", "levels", "lost", "loot", "met", "notices", "prologue", "rest", "sackOpened", "slain", "taken", "thrown"]) localStorage.removeItem(`greyfall.${k}`);
     } catch {}
     window.location.assign(`${base}/landing?rest${create ? "&create" : ""}`);
   };
@@ -352,7 +356,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     window.addEventListener("keydown", key, true);
     return () => window.removeEventListener("keydown", key, true);
   }, [warn, wipe]);
-  const busy = !!(atlas || fire || say || menu || died || warn || wipe || travel || picking || prologue || intro);
+  const busy = !!(atlas || fire || say || menu || board || died || warn || wipe || travel || picking || prologue || intro);
   useEffect(() => {
     if (busy) return;
     const key = (e: KeyboardEvent): void => {
@@ -504,6 +508,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
           />
         )}
         {menu && <Shop menu={menu} api={api} />}
+        {board && <Board board={board} onHover={(i) => api.current?.hover(i)} onChoose={(i) => api.current?.choose(i)} />}
         {paused !== null && (
           <div className="sideDock pauseDock">
             <SidePanel
@@ -582,6 +587,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
         ) : (
           near &&
           !menu &&
+          !board &&
           !fire &&
           !atlas &&
           !sackOpen &&
@@ -647,7 +653,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
           </div>
         )}
         {/* Off under any menu, as Dark Souls clears the screen for one; H hides it the rest of the time. */}
-        <div className={intro ? "worldHud worldHudIntro" : "worldHud"} hidden={!hud || sackOpen || !!fire || !!menu || paused !== null || atlas}>
+        <div className={intro ? "worldHud worldHudIntro" : "worldHud"} hidden={!hud || sackOpen || !!fire || !!menu || !!board || paused !== null || atlas}>
           {vitals && (
             // After Dark Souls 1: a round badge holding the embers, and beside it health over stamina, the health bar as long as
             // the captain's health is deep; a paler trail lingers where a blow took it.
@@ -701,7 +707,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
           )}
         </div>
         {/* Outside the HUD, so Tab opens the sack with the HUD hidden too, from the first step, goods or none. */}
-        {sack && !atlas && !fire && !menu && !intro && !prologue && !picking && paused === null && (
+        {sack && !atlas && !fire && !menu && !board && !intro && !prologue && !picking && paused === null && (
           <Sack
             sack={sack}
             gold={gold ?? 0}

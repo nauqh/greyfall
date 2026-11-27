@@ -205,6 +205,10 @@ _Avoid_: souls, coins, money
 **Boss**:
 A keeper of a way out of a land, fought in its own arena.
 
+**Notice**:
+A note pinned up in the Lane House in Lanternport, read at its door: a foe, how many of it, where, and the gold paid at the door once that many have fallen. Nothing is taken up or tracked; read it, go, come back.
+_Avoid_: quest, bounty, task, job
+
 **The Grey Gate**:
 The barred road into Greyfall, opened by the Horned Key and the Silk Key together.
 
