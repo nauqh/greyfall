@@ -2122,11 +2122,12 @@ function emberwood(): AreaMap {
 
   // The Drawn Plank: the Treetop Walk barred at its north end, dropped for good from Warren Hill's side.
   // The Rockpile: the goblins heaped boulders on the Cinder Ford's bridge to hold the crossing, and roll them into the
-  // Run at the horn on Warren Hill's crest, as they did in the shafts. Until then the ford is reached the long way round.
-  prop("skullSpike", 25, 21, pinned);
+  // Run at the horn on Warren Hill's crest, a horned skull on a post between the hoard's stones, as they did in the shafts.
+  // Until then the ford is reached the long way round.
+  prop("hornSpike", 25, 18, { ...pinned, scale: 1.3 });
   const locks = [
     { name: "The Drawn Plank", cells: [{ col: 27, row: 35 }, { col: 28, row: 35 }], flag: "drawnPlankDown", from: { col: 28, row: 32 } },
-    { name: "The Rockpile", cells: [38, 39].flatMap((row) => [43, 44, 45].map((col) => ({ col, row }))), flag: "rockpileDown", lever: { at: { col: 25, row: 21 }, verb: "Sound the horn" } },
+    { name: "The Rockpile", cells: [38, 39].flatMap((row) => [43, 44, 45].map((col) => ({ col, row }))), flag: "rockpileDown", lever: { at: { col: 25, row: 18 }, verb: "Sound the horn" } },
   ];
   const notes: Note[] = [
     { at: { col: 111, row: 55 }, text: "Keep Gate barred behind me. The key is on my belt. The wood road round to Lanternport, then." },
