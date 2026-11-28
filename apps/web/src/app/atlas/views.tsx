@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import type { AtlasApi, AtlasHooks, BandView, BoardView, Departure, DevState, MenuView, SackView, Say, Vitals } from "../../game/AtlasScene";
-import { Clouds } from "../../game/Clouds";
+import { Clouds, useCloudExit } from "../../game/Clouds";
 import { packUrl } from "../../game/art";
 import { GameCanvas } from "../../game/GameCanvas";
 import { Board } from "./Board";
@@ -70,6 +70,7 @@ function markWarned(name: string): void {
 /** One area's own map, the camera kept inside it; its exits cross to the next without leaving the page. */
 export function AreaView({ area: first, devRoute = false }: { area: AreaId; devRoute?: boolean }) {
   const router = useRouter();
+  const exit = useCloudExit();
   const base = devRoute ? "/atlas/dev" : "/atlas";
   const [area, setArea] = useState(first);
   // The name up out of the dark: the area's as you arrive, a quarter's as you walk into it.
@@ -169,10 +170,16 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     api.current?.sit(false);
     setFire(null);
   };
-  const sat = fire ? api.current?.levels() : undefined;
-  const level = fire?.screen === "level" ? sat : undefined;
+  // Each closed panel held a moment as it plays out; its keys are off, as their state is already gone.
+  const [firePanel, fireOut] = useLinger(fire, 250);
+  const [mapPanel, mapOut] = useLinger(atlas || null, 450);
+  const [pausePanel, pauseOut] = useLinger(paused, 250);
+  const [shopPanel, shopOut] = useLinger(menu, 250);
+  const [boardPanel, boardOut] = useLinger(board, 250);
+  const sat = firePanel ? api.current?.levels() : undefined;
+  const level = firePanel?.screen === "level" ? sat : undefined;
   const menuBack = (pick: number) => setFire((f) => f && { ...f, pick, screen: undefined, held: undefined });
-  const held = fire?.held ?? NO_LEVELS;
+  const held = firePanel?.held ?? NO_LEVELS;
   // A point held on an attribute, or taken back; one more only while the gold covers it.
   const shift = (stat: keyof Levels, by: 1 | -1): void => {
     if (!sat || held[stat] + by < 0) return;
@@ -265,12 +272,13 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
   };
   // Every save of a run, so the captain comes ashore at the Landing again, alone; settings and the duel name stay. The
   // dev panel's new hero asks for creation after, which the dev route otherwise skips.
-  const newGame = (create: boolean): void => {
-    try {
-      for (const k of ["band", "bought", "class", "flags", "gold", "heard", "hero", "keys", "kindled", "levels", "lost", "loot", "met", "notices", "prologue", "rest", "sackOpened", "slain", "taken", "thrown"]) localStorage.removeItem(`greyfall.${k}`);
-    } catch {}
-    window.location.assign(`${base}/landing?rest${create ? "&create" : ""}`);
-  };
+  const newGame = (create: boolean): void =>
+    exit.leave(() => {
+      try {
+        for (const k of ["band", "bought", "class", "flags", "gold", "heard", "hero", "keys", "kindled", "levels", "lost", "loot", "met", "notices", "prologue", "rest", "sackOpened", "slain", "taken", "thrown"]) localStorage.removeItem(`greyfall.${k}`);
+      } catch {}
+      window.location.assign(`${base}/landing?rest${create ? "&create" : ""}`);
+    });
   const devScreen = (screen: DevScreen): void => {
     if (screen === "rest" || screen === "level" || screen === "travel") {
       now.current.screen = screen === "rest" ? undefined : screen;
@@ -338,7 +346,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     setPaused(pauseTop(i));
   };
   const pauseMenu = [
-    { label: "Leave to the title", go: () => router.push("/") },
+    { label: "Leave to the title", go: () => exit.leave(() => router.push("/")) },
     { label: "New game", go: () => setWipe({ create: false }) },
   ];
   // A paper card's yes or no, by key, the mouse hidden: A/D picks, E chooses, Esc says no. Caught first, so the
@@ -399,11 +407,11 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // A bonfire screen's keys, at the foot of its panel: the one way to accept or go back, by key or click.
-  const foot = fire && (
+  const foot = firePanel && (
     <KeyHints
       className="panelKeys"
-      keys={fire.screen === "level" ? "E accept   Q back" : fire.screen ? "E travel   Q back" : "W/S pick   E choose"}
-      onKey={fire.screen && { ...(level && { E: accept }), Q: () => menuBack(fire.screen === "level" ? 1 : 0) }}
+      keys={firePanel.screen === "level" ? "E accept   Q back" : firePanel.screen ? "E travel   Q back" : "W/S pick   E choose"}
+      onKey={fire?.screen && { ...(level && { E: accept }), Q: () => menuBack(fire.screen === "level" ? 1 : 0) }}
     />
   );
   return (
@@ -456,45 +464,50 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
             }}
           />
         )}
-        {atlas && (
-          <TravelMap
-            from={now.current.area}
-            dev={devRoute}
-            onBack={closeAtlas}
-            onTravel={(f) => {
-              closeAtlas();
-              setFire(null);
-              depart({ to: f.area, name: f.name, kind: "rest", dir: "down", x: 0.5, y: 0.5 });
-            }}
-          />
-        )}
-        {fire && !atlas && (
+        <div className={mapOut ? "leaving" : undefined}>
+          {mapPanel && (
+            <TravelMap
+              from={now.current.area}
+              dev={devRoute}
+              onBack={mapOut ? idle : closeAtlas}
+              onTravel={(f) => {
+                if (mapOut) return;
+                closeAtlas();
+                setFire(null);
+                depart({ to: f.area, name: f.name, kind: "rest", dir: "down", x: 0.5, y: 0.5 });
+              }}
+            />
+          )}
+        </div>
+        <div className={fireOut ? "leaving" : undefined}>
+        {/* Gone with the map when the map warps away; back at once under it when the map is left. */}
+        {firePanel && !atlas && !(fireOut && mapOut) && (
           // Sat at a bonfire, after Dark Souls 3 and Elden Ring: the camera in on the fire, a panel at the side, the world left lit.
           <div className="sideDock fireDock">
             {level ? (
               <LevelUp
                 view={level}
                 held={held}
-                pick={fire.pick}
-                bought={fire.bought}
-                onPick={(pick) => setFire({ ...fire, pick })}
+                pick={firePanel.pick}
+                bought={firePanel.bought}
+                onPick={(pick) => setFire({ ...firePanel, pick })}
                 onChoose={(i) => bonfire[i]!.go()}
                 onShift={shift}
                 foot={foot}
               />
             ) : (
               sat &&
-              (fire.screen === "travel" ? (
-                <TravelPane from={area} dev={devRoute} onTravel={warpTo} onBack={() => menuBack(0)} className="bonfirePanel" foot={foot} />
+              (firePanel.screen === "travel" ? (
+                <TravelPane from={area} dev={devRoute} onTravel={fireOut ? idle : warpTo} onBack={fireOut ? idle : () => menuBack(0)} className="bonfirePanel" foot={foot} />
               ) : (
                 <RestPanel
-                  name={fire.name}
+                  name={firePanel.name}
                   area={AREAS.find((a) => a.id === area)?.name ?? ""}
                   view={sat}
                   flasks={flasks ?? 0}
                   options={bonfire.map((o) => ({ label: o.label, note: "note" in o ? o.note : undefined }))}
-                  pick={fire.pick}
-                  onPick={(pick) => setFire({ ...fire, pick })}
+                  pick={firePanel.pick}
+                  onPick={(pick) => setFire({ ...firePanel, pick })}
                   onChoose={(i) => bonfire[i]!.go()}
                   foot={foot}
                 />
@@ -502,6 +515,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
             )}
           </div>
         )}
+        </div>
         {devRoute && devState && hud && !atlas && (
           <DevPanel
             state={devState}
@@ -510,15 +524,18 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
             onScreen={devScreen}
           />
         )}
-        {menu && <Shop menu={menu} api={api} />}
-        {board && <Board board={board} onHover={(i) => api.current?.hover(i)} onChoose={(i) => api.current?.choose(i)} />}
-        {paused !== null && (
+        <div className={shopOut ? "leaving" : undefined}>{shopPanel && <Shop menu={shopPanel} api={api} />}</div>
+        <div className={boardOut ? "leaving" : undefined}>
+          {boardPanel && <Board board={boardPanel} onHover={(i) => api.current?.hover(i)} onChoose={(i) => api.current?.choose(i)} />}
+        </div>
+        <div className={pauseOut ? "leaving" : undefined}>
+        {pausePanel !== null && (
           <div className="sideDock pauseDock">
             <SidePanel
               className="pausePanel"
               name="Settings"
               options={[]}
-              pick={paused}
+              pick={pausePanel}
               onPick={setPaused}
               onChoose={(i) => pauseMenu[i]!.go()}
               // One strip for every page: A/D turn the page, or the level once one is picked.
@@ -532,7 +549,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
                 ))}
               </div>
               <div className="pauseSheet">
-                {PAUSE_TABS[pauseTab] === "Sound" && <SoundPane pick={paused} onPick={setPaused} />}
+                {PAUSE_TABS[pauseTab] === "Sound" && <SoundPane pick={pausePanel} onPick={setPaused} />}
                 {PAUSE_TABS[pauseTab] === "Controls" && (
                   <div className="pauseBinds">
                     {CONTROLS[0]!.groups.map((g) => (
@@ -559,7 +576,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
                 {PAUSE_TABS[pauseTab] === "Game" && (
                   <div className="panelOptions pauseGame">
                     {pauseMenu.map((o, i) => (
-                      <button key={o.label} type="button" role="menuitem" className={`panelOption${i === paused ? " picked" : ""}`} onMouseEnter={() => setPaused(i)} onClick={o.go}>
+                      <button key={o.label} type="button" role="menuitem" className={`panelOption${i === pausePanel ? " picked" : ""}`} onMouseEnter={() => setPaused(i)} onClick={o.go}>
                         <span className="panelOptionText">
                           <span className="panelOptionName">{o.label}</span>
                         </span>
@@ -571,6 +588,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
             </SidePanel>
           </div>
         )}
+        </div>
         {say?.note ? (
           // A note on the ground: its words on the same paper it lies on.
           <button key={say.text} type="button" className="noteRead" onClick={() => api.current?.next()} aria-live="polite">
@@ -651,7 +669,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
           </div>
         )}
         {/* Off under any menu, as Dark Souls clears the screen for one; H hides it the rest of the time. */}
-        <div className={intro ? "worldHud worldHudIntro" : "worldHud"} hidden={!hud || sackOpen || !!fire || !!menu || !!board || paused !== null || atlas}>
+        <div className={intro ? "worldHud worldHudIntro" : "worldHud"} hidden={!hud || sackOpen || !!firePanel || !!shopPanel || !!boardPanel || pausePanel !== null || !!mapPanel}>
           {vitals && (
             // After Dark Souls 1: a round badge holding the embers, and beside it health over stamina, the health bar as long as
             // the captain's health is deep; a paler trail lingers where a blow took it.
@@ -737,11 +755,26 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
             if (!devRoute) setPrologue(true);
           }}
           onDone={() => setPicking(false)}
-          onLeave={() => router.push("/")}
+          onLeave={() => exit.leave(() => router.push("/"))}
         />
       )}
+      {exit.cover}
     </main>
   );
+}
+
+const idle = (): void => {};
+
+/** A panel's value kept `ms` after it turns null, so the panel can play its way out: [shown, leaving]. */
+function useLinger<T>(now: T | null, ms: number): [T | null, boolean] {
+  const [last, setLast] = useState(now);
+  if (now !== null && now !== last) setLast(now);
+  useEffect(() => {
+    if (now !== null) return;
+    const t = setTimeout(() => setLast(null), ms);
+    return () => clearTimeout(t);
+  }, [now, ms]);
+  return [now ?? last, now === null && last !== null];
 }
 
 /** A tutorial note's keys ("E: Rest At Fire", "Hold right click: Guard") drawn as the field's key caps; only before its colon. */

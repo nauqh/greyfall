@@ -109,7 +109,7 @@ textarea {
 	--u: min(100vw / 1200, 100vh / 720);
 	position: fixed;
 	inset: 0;
-	z-index: 50;
+	z-index: 300;
 	overflow: hidden;
 }
 
@@ -210,7 +210,7 @@ textarea {
 
 .loaderText {
 	position: relative;
-	z-index: 51;
+	z-index: 301;
 	font-size: 30px;
 	font-family: var(--display), serif;
 	font-weight: 700;
@@ -1593,6 +1593,11 @@ textarea {
 /* Held clear till the map is drawn, then over the area at the bonfire. */
 .travelMap.shown {
 	opacity: 1;
+}
+
+/* Left: the same fade back out, over the area's own map (views.tsx useLinger). */
+.leaving > .travelMap.travelMap {
+	opacity: 0;
 }
 
 /* A talk, after the Souls games: no box, the words at the foot of the screen in the map labels' outline, the name above. */

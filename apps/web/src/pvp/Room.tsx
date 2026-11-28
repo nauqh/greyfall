@@ -68,9 +68,11 @@ export function Room({
   game.current.round = round;
   useEffect(() => setPlayed(false), [game.current.n]);
 
+  const exit = useCloudExit();
   // An evicted or closed room is not something to sit in.
   useEffect(() => {
-    if (room.error) onLeave();
+    if (room.error) exit.leave(onLeave);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room.error, onLeave]);
 
   const take = useCallback(
@@ -129,7 +131,6 @@ export function Room({
   };
   hooks.current.seat = view?.seat ?? 0;
 
-  const exit = useCloudExit();
   const quit = useCallback(() => {
     leave.mutate({ code });
     exit.leave(onLeave);
@@ -154,6 +155,7 @@ export function Room({
     return (
       <div className="lobby">
         <p className="tagline">Entering the room...</p>
+        {exit.cover}
       </div>
     );
   }
@@ -182,7 +184,11 @@ export function Room({
               result: null,
               seed: code,
               auto: hooks.current!,
-              onMenu: quit,
+              // The scene has closed its own clouds already.
+              onMenu: () => {
+                leave.mutate({ code });
+                onLeave();
+              },
               onTip,
             }),
           )

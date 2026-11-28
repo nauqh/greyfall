@@ -518,3 +518,17 @@
 		columns: 1;
 	}
 }
+
+/* A panel on its way out (views.tsx useLinger): its entrance backwards, quicker. Two classes on the dock, to outrank the
+   bonfire's own entrance. */
+.leaving > .sideDock.sideDock > * {
+	pointer-events: none;
+	animation: sideDockOut 250ms ease-in both;
+}
+
+@keyframes sideDockOut {
+	to {
+		opacity: 0;
+		transform: translateX(-16px);
+	}
+}
