@@ -144,8 +144,8 @@ export interface AtlasApi {
   devState: () => DevState;
   /** Dev: their talk, or their menu if they have one, wherever the hero stands; the free camera flies to them. */
   devTalk: (npcId: string) => void;
-  /** Dev: the free camera, on, flown in on a cell at the play zoom. */
-  devLook: (col: number, row: number) => void;
+  /** Dev: the free camera, on, flown in on a cell at the play zoom, over `ms` (900 by default). */
+  devLook: (col: number, row: number, ms?: number) => void;
   /** Dev: writes the save and the live scene. */
   devSet: (patch: DevPatch) => void;
   /** Dev: the hero set down on the open cell nearest one, in play. */
@@ -1461,9 +1461,9 @@ export class AtlasScene extends Phaser.Scene {
       back: () => this.back(),
       devState: () => this.devState(),
       devTalk: (id) => this.devTalk(id),
-      devLook: (col, row) => {
+      devLook: (col, row, ms) => {
         if (!this.free) this.setFree(true);
-        this.flyTo({ col: col + 0.5, row: row + 0.5 }, AREA_ROWS);
+        this.flyTo({ col: col + 0.5, row: row + 0.5 }, AREA_ROWS, ms);
       },
       devSet: (patch) => this.devSet(patch),
       devPut: (col, row) => this.setFree(false, { col, row }),
@@ -1785,12 +1785,12 @@ export class AtlasScene extends Phaser.Scene {
     this.hooks.onTier(id);
   }
 
-  private flyTo(c: Cell, rows: number): void {
+  private flyTo(c: Cell, rows: number, ms = 900): void {
     const cam = this.active;
     const zoom = this.zoomFor(rows);
     const shift = ((this.hooks.inset?.() ?? 0) * cam.width) / 2 / zoom;
-    cam.pan(c.col * CELL - shift, c.row * CELL, 900, "Sine.easeInOut", true);
-    cam.zoomTo(zoom, 900, "Sine.easeInOut", true);
+    cam.pan(c.col * CELL - shift, c.row * CELL, ms, "Sine.easeInOut", true);
+    cam.zoomTo(zoom, ms, "Sine.easeInOut", true);
   }
 
   private controls(): void {

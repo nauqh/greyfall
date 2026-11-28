@@ -220,6 +220,8 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     ready: (a) => {
       api.current = a;
       if (now.current.prologue) a.pause(true);
+      // For scripts/shot.mjs: headless draws the cloud open at a few frames a second, so it waits on this, not a clock.
+      if (devRoute) Object.assign(window, { greyfallShot: { opened: false, look: (col: number, row: number, ms?: number) => a.devLook(col, row, ms) } });
     },
     onSay: setSay,
     onNear: setNear,
@@ -249,6 +251,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
     onHerald: (text) => !now.current.travelling && setReveal({ text, gold: true }),
     onCinema: setCinema,
     opened: () => {
+      if (devRoute) Object.assign((window as { greyfallShot?: object }).greyfallShot ?? {}, { opened: true });
       if (now.current.travelling) setTravel((t) => (t ? { ...t, phase: "uncover" } : t));
       else if (!now.current.prologue) announce();
     },
