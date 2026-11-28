@@ -3920,10 +3920,8 @@ export class AtlasScene extends Phaser.Scene {
             spot(c, r, `bigTree${pick}`, BIG_TREE[pick]!, 0, edge(c, r) || low(c, r), low(c, r));
             if (!edge(c, r) && !low(c, r) && r01() < 0.3) decor("tree", (c + 0.2 + r01() * 0.6) * CELL, (r + 0.5) * CELL);
           } else if (tier.base === "rock" && this.local) {
-            // An underground map's walls are rock: rubble and old bones at their foot, no trees.
-            if (r01() < 0.6) decor("rock", (c + 0.2 + r01() * 0.6) * CELL, (r + 0.6 + r01() * 0.3) * CELL, 1.1);
-            if (r01() < 0.2) decor("rock", (c + r01()) * CELL, (r + 0.4) * CELL, 0.8);
-            if (r01() < 0.12) spot(c, r, "prop_bones", PROP.bones!, 0);
+            // An underground map's walls stay bare: a rock set on a wall tile draws on its face. The floor's scatter
+            // puts the rubble at their foot.
           } else if (id === "barrowmoor" || id === "greyfall" || tier.base === "rock") {
             // A burnt stretch of the Emberwood is walled by its dead trees, every tile; elsewhere a bush stands in for some.
             if (walled || r01() < 0.45) spot(c, r, "prop_deadTree", { ...PROP.deadTree!, scale: walled && !low(c, r) ? 0.55 : 0.42 }, 0, edge(c, r));
@@ -3975,7 +3973,8 @@ export class AtlasScene extends Phaser.Scene {
         }
         if (!isWalkable(c, r) || isSlope(c, r) || isSlope(c, r - 1) || roads.has(r * STRAT_COLS + c)) {
           // A cliff's foot: shrubs and stones soften the wall.
-          if (!isWalkable(c, r) && level(c, r - 1) > level(c, r) && r01() < 0.45) decor(r01() < 0.6 && tier.base !== "rock" ? "bush" : "rock", (c + 0.25 + r01() * 0.5) * CELL, (r + 0.92) * CELL);
+          // Not underground, where the stone would sit on the cave wall's face.
+          if (tier.base !== "rock" && !isWalkable(c, r) && level(c, r - 1) > level(c, r) && r01() < 0.45) decor(r01() < 0.6 ? "bush" : "rock", (c + 0.25 + r01() * 0.5) * CELL, (r + 0.92) * CELL);
           continue;
         }
         if (this.local && districtOf(this.local, c, r)?.crops) {
@@ -3988,7 +3987,8 @@ export class AtlasScene extends Phaser.Scene {
         const roll = r01();
         const thick = (this.local && districtOf(this.local, c, r)?.decor) ?? 1;
         const chance = (edgy ? 0.2 : 0.05) * (id === "fen" ? 2 : id === "greyfall" ? 0.6 : 1) * thick;
-        if (roll < chance) {
+        // Underground, a rock under a wall stands up over its face: none there.
+        if (roll < chance && !(tier.base === "rock" && !isWalkable(c, r - 1))) {
           const x = (c + 0.2 + r01() * 0.6) * CELL;
           const y = (r + 0.5 + r01() * 0.35) * CELL;
           // A rock or stump with two tiles of open level ground all round stands in the way; one nearer a cliff, a stair,
@@ -4006,7 +4006,10 @@ export class AtlasScene extends Phaser.Scene {
             const cx = s.x + b.dx * (s.flipX ? -1 : 1) * s.scaleX;
             this.bases.push({ x0: cx - (b.w * s.scaleX) / 2, x1: cx + (b.w * s.scaleX) / 2, y0: s.y - 12, y1: s.y });
           };
-          if ((id === "barrowmoor" || tier.base === "rock") && r01() < 0.5) spot(c, r, "prop_bones", PROP.bones!, 0);
+          // Bones only where the dead lie: the moor, and a room dressed as it; elsewhere underground, bare floor.
+          if ((id === "barrowmoor" || tier.base === "rock") && r01() < 0.5) {
+            if (id === "barrowmoor" || (this.local && districtOf(this.local, c, r)?.dress === "barrowmoor")) spot(c, r, "prop_bones", PROP.bones!, 0);
+          }
           // A stump is too small to read as in the way: scenery, never a block.
           else if (id === "emberwood" && r01() < 0.35) spot(c, r, "prop_stump", PROP.stump!, 0);
           else if (roll < chance * 0.6 && tier.base !== "rock") decor("bush", x, y, 0.75);

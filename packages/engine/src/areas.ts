@@ -3992,12 +3992,15 @@ function landing(): AreaMap {
   // The Ring Gate: the antechamber opens east into a cut tunnel running on off the map, straight into the Ring's own.
   tunnel(t, [[69, 28], [78, 28]]);
   openEdge(t, 79, 28);
-  // Torches in the rock along the way, so the way out is the lit one.
-  for (const [c, r] of [[26, 41], [40, 41], [31, 39], [30, 36], [34, 33], [13, 27], [23, 28], [22, 34], [16, 21], [22, 17], [26, 10], [17, 15], [34, 10], [41, 8], [50, 11], [48, 14], [57, 7], [42, 17], [46, 20], [36, 26], [50, 25], [37, 31], [46, 32], [56, 31], [63, 25], [70, 25], [63, 30], [74, 26]] as const) prop("sconce", c, r);
+  // Torches in the rock along the way, so the way out is the lit one; none by the grotto's fire or the camp's, the light there theirs.
+  for (const [c, r] of [[31, 39], [30, 36], [34, 33], [13, 27], [23, 28], [22, 34], [16, 21], [22, 17], [26, 10], [17, 15], [34, 10], [48, 14], [57, 7], [42, 17], [46, 20], [36, 26], [50, 25], [37, 31], [46, 32], [56, 31], [63, 25], [70, 25], [63, 30], [74, 26]] as const) prop("sconce", c, r);
 
-  // The grotto: the boat that drifted in, and a fire left burning by whoever washed in before.
+  // The grotto: the boat that drifted in, and a fire left burning by whoever washed in before, up on the dry rock out
+  // of the tide's reach. Rocks out in the water, and a fall of rock off the north wall.
   prop("boat", 33, 46);
-  prop("flame", 32, 44);
+  prop("flame", 29, 42);
+  for (const [c, r, scale] of [[28.5, 46.9, 1], [38.5, 46.8, 0.8], [34.8, 47.6, 0.7]] as const) prop("waterRock", c, r, { scale, fixed: true });
+  for (const [c, r, scale] of [[36.3, 40.6, 0.9], [37.1, 40.8, 0.5]] as const) prop("rock", c, r, { scale, fixed: true });
   // The goblins' chamber: one goblin, to learn the swing on.
   who("torch", 17, 30, { to: { col: 20, row: 29 } });
   for (const [c, r] of [[14, 33], [21, 28]] as const) prop("bones", c, r);
@@ -4030,9 +4033,9 @@ function landing(): AreaMap {
   const exits: AreaExit[] = [{ to: "ring", name: "Ring Gate", kind: "open", at: { col: 78, row: 28 } }];
   // Unnamed: no room's name shows walking in, and the fire goes by the Landing's own.
   const districts: District[] = [
-    { name: "", at: { col: 34, row: 42 }, palette: [5], dress: "saltreach", decor: 1 },
-    { name: "", at: { col: 17, row: 30 }, palette: [5], dress: "undercroft", decor: 1 },
-    { name: "", at: { col: 21, row: 12 }, palette: [5], dress: "undercroft", decor: 1 },
+    { name: "", at: { col: 34, row: 42 }, palette: [5], dress: "saltreach", decor: 0.3 },
+    { name: "", at: { col: 17, row: 30 }, palette: [5], dress: "undercroft", decor: 0.4 },
+    { name: "", at: { col: 21, row: 12 }, palette: [5], dress: "undercroft", decor: 0.4 },
     { name: "", at: { col: 44, row: 11 }, palette: [5], dress: "saltreach", decor: 0.8 },
     { name: "", at: { col: 44, row: 28 }, palette: [5], dress: "fen", decor: 0.8 },
     { name: "", at: { col: 64, row: 28 }, palette: [5], dress: "barrowmoor", decor: 0.6 },
