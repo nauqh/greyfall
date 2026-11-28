@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
-import { Cinzel, IM_Fell_English, IM_Fell_English_SC } from "next/font/google";
+import "@fontsource/cinzel/latin-700.css";
+import "@fontsource/cinzel/latin-900.css";
+import "@fontsource/im-fell-english/latin-400.css";
+import "@fontsource/im-fell-english/latin-400-italic.css";
+import "@fontsource/im-fell-english-sc/latin-400.css";
 import "@fontsource/nunito/400.css";
 import "@fontsource/nunito/600.css";
 import "@fontsource/nunito/700.css";
 import { Clicks } from "./Clicks";
 import "./globals.css";
 
-// The display face, for the title logo and menu only.
-const cinzel = Cinzel({ subsets: ["latin"], weight: ["700", "900"], variable: "--display" });
-// The book face, for the title's subtitle, hint and credit.
-const fell = IM_Fell_English({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--book" });
-const fellSc = IM_Fell_English_SC({ subsets: ["latin"], weight: "400", variable: "--bookSc" });
+// Served from the packages, not fetched from Google Fonts at build: that fetch failed CI whenever Google's answer
+// carried no font file. The display face is for the title logo and menus; the book face for subtitles and hints.
+const fonts = { "--display": "'Cinzel'", "--book": "'IM Fell English'", "--bookSc": "'IM Fell English SC'" } as React.CSSProperties;
 
 export const metadata: Metadata = {
   title: "Greyfall",
@@ -19,7 +21,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={[cinzel, fell, fellSc].map((f) => f.variable).join(" ")}>
+    <html lang="en" style={fonts}>
       <body>
         <Clicks />
         {children}
