@@ -678,8 +678,9 @@ crossing are gone.
   Cinder Ford (the wood has one more bonfire, on the Postern crown; every
   other fire is a campfire), and follow the steward's notes from the crag
   to his bones on the Ash Road.
-  The Horn Gate (`bullWallOpen`) shuts the Ash Road until the goblins' horn
-  on Warren Hill's crest is sounded, a short cutscene panning to it.
+  The Rockpile (`rockpileDown`) heaps the Cinder Ford's bridge shut until the
+  goblins' horn on Warren Hill's crest is sounded; a cutscene watches the
+  boulders roll into the Run.
   The Drawn Plank (`drawnPlankDown`) bars the Treetop Walk from the bluff
   until dropped from Warren Hill. Folk back each place: Dunn returns
   to the Palisade once the gate opens, Brother Fenn in Old Pines, Wren at

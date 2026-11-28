@@ -25,7 +25,7 @@ const FLAGS = Object.keys({
   sistersStair: 1,
   coffinStairOpen: 1,
   drawnPlankDown: 1,
-  bullWallOpen: 1,
+  rockpileDown: 1,
   hoistOpen: 1,
   bambooDead: 1,
   shellDead: 1,

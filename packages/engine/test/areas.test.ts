@@ -139,14 +139,15 @@ describe("the Emberwood", () => {
     for (const c of plank.cells) expect(byOne({ col: c.col, row: c.row + 1 }), "the plank's barred side").toBe(true);
   });
 
-  it("walls the Ash Road shut, its horn and its near side reached with the wall up", () => {
+  it("heaps the Cinder Ford's bridge shut, the horn and both banks reached the long way round", () => {
     useIsland(m.island);
-    const wall = m.locks!.find((l) => l.name === "The Horn Gate")!;
-    const seen = reach(m.entry, new Set(wall.cells.map(cellKey)));
+    const pile = m.locks!.find((l) => l.name === "The Rockpile")!;
+    const plank = m.locks!.find((l) => l.name === "The Drawn Plank")!;
+    const seen = reach(m.entry, new Set([...pile.cells, ...plank.cells].map(cellKey)));
     const byOne = (c: Cell) => [-1, 0, 1].some((dr) => [-1, 0, 1].some((dc) => seen.has(cellKey({ col: c.col + dc, row: c.row + dr }))));
-    expect(byOne(wall.lever!.at), "the horn").toBe(true);
-    expect(seen.has(cellKey(m.exits.find((e) => e.name === "The Ash Road")!.at)), "the exit past the wall").toBe(false);
-    for (const c of wall.cells) expect(byOne({ col: c.col, row: c.row + 1 }), "the wall's near side").toBe(true);
+    expect(byOne(pile.lever!.at), "the horn").toBe(true);
+    expect(byOne(m.fires.find((f) => f.row < pile.cells[0]!.row && Math.abs(f.col - pile.cells[0]!.col) < 10)!), "the ford's fire").toBe(true);
+    expect(seen.has(cellKey(m.exits.find((e) => e.name === "The Ash Road")!.at)), "the Ash Road").toBe(true);
   });
 
   it("keeps its three ways out by name", () => {

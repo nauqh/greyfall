@@ -76,7 +76,8 @@ export interface AreaMap extends AtlasTier {
   arena?: { boss: string; gate: Cell[]; inside: Cell; bell?: Cell };
   /** Ways shut until a boss's key is carried: `key` is the boss kind that drops it; `flag`, a world flag that opens it too.
    *  With `from`, a shortcut: no key, unbarred for good with E from the side nearer `from`, setting `flag`. With
-   *  `lever`, opened for good from somewhere else: E there (`verb` on the prompt) sets `flag`, and the camera goes to watch. */
+   *  `lever`, a heap of boulders opened for good from somewhere else: E there (`verb` on the prompt) sets `flag`, and the
+   *  camera goes to watch them tumble off. */
   locks?: { key?: string; name: string; cells: Cell[]; flag?: string; from?: Cell; lever?: { at: Cell; verb: string } }[];
 }
 
@@ -2120,13 +2121,12 @@ function emberwood(): AreaMap {
   prop("skullSpike", 78, 24);
 
   // The Drawn Plank: the Treetop Walk barred at its north end, dropped for good from Warren Hill's side.
-  // The Horn Gate across the Ash Road's head: the goblins wall him in, and open it at the horn on Warren Hill's crest,
-  // as they did in the shafts.
+  // The Rockpile: the goblins heaped boulders on the Cinder Ford's bridge to hold the crossing, and roll them into the
+  // Run at the horn on Warren Hill's crest, as they did in the shafts. Until then the ford is reached the long way round.
   prop("skullSpike", 25, 21, pinned);
-  for (const c of [60, 64]) prop("skullSpike", c, 6, pinned);
   const locks = [
     { name: "The Drawn Plank", cells: [{ col: 27, row: 35 }, { col: 28, row: 35 }], flag: "drawnPlankDown", from: { col: 28, row: 32 } },
-    { name: "The Horn Gate", cells: [61, 62, 63].map((col) => ({ col, row: 4 })), flag: "bullWallOpen", lever: { at: { col: 25, row: 21 }, verb: "Sound the horn" } },
+    { name: "The Rockpile", cells: [38, 39].flatMap((row) => [43, 44, 45].map((col) => ({ col, row }))), flag: "rockpileDown", lever: { at: { col: 25, row: 21 }, verb: "Sound the horn" } },
   ];
   const notes: Note[] = [
     { at: { col: 111, row: 55 }, text: "Keep Gate barred behind me. The key is on my belt. The wood road round to Lanternport, then." },

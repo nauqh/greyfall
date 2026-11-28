@@ -27,8 +27,8 @@ export type WorldFlag =
   // Unbarred from the Graves' crest: the stair off its south-west corner toward the fire square.
   | "coffinStairOpen"
   | "drawnPlankDown"
-  // Sounded from Warren Hill: the goblins open the wall on the Ash Road.
-  | "bullWallOpen"
+  // Sounded from Warren Hill: the goblins roll the boulders off the Cinder Ford's bridge.
+  | "rockpileDown"
   | "hoistOpen"
   | "bambooDead"
   | "shellDead"
