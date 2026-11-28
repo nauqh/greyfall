@@ -3983,6 +3983,12 @@ function landing(): AreaMap {
   erode(t, l);
   // The tide's pool along the grotto's foot, and the gallery's flood in its middle, to be fought round.
   for (const [cx, cy, rx, ry] of [[30, 46, 4.5, 1.8], [37, 47, 5, 2.4], [43, 28, 2.6, 1.6], [46, 29, 2, 1.4]] as const) lake(t, cx, cy, rx, ry);
+  // The sea the boat drifted in on: the pool runs on south through the map's frame, no rock shutting it.
+  // Its walls carried straight down to the sea: a slant leaves lone faces of rock standing in the water.
+  for (let r = 44; r < 49; r++) for (let c = 25; c <= 41; c++) if (t.at(c, r) === "%") r === 44 ? t.ground(l, c, r, 1, 1) : t.pond(c, r, 1, 1);
+  t.pillar(42, 45, 1, 4);
+  const last = t.grid.length - 1;
+  t.grid[last]!.forEach((_, c) => t.grid[last - 1]![c] === "~" && (t.grid[last]![c] = "~"));
   // The Ring Gate: the antechamber opens east into a cut tunnel running on off the map, straight into the Ring's own.
   tunnel(t, [[69, 28], [78, 28]]);
   openEdge(t, 79, 28);

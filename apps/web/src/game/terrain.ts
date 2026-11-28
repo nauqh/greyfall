@@ -397,10 +397,9 @@ export function addShadow(scene: Phaser.Scene, x: number, y: number, scale: numb
  * clouds in from the edges until the view is covered. `done` fires as the
  * last clouds thin (open) or once the cover is solid (close).
  */
-export function cloudCover(scene: Phaser.Scene, mode: "open" | "close", done: () => void): void {
+export function cloudCover(scene: Phaser.Scene, mode: "open" | "close", done: () => void, cam = scene.cameras.main): void {
   // worldView only refreshes at render, so in create() it predates the
   // camera's fit zoom; work the view out from scroll and zoom instead.
-  const cam = scene.cameras.main;
   const vw = cam.width / cam.zoom;
   const vh = cam.height / cam.zoom;
   const view = new Phaser.Geom.Rectangle(

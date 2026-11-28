@@ -1486,7 +1486,7 @@ export class AtlasScene extends Phaser.Scene {
     });
     // A crossing's own cover is the page's, and the bonfire map fades in on its own; only a first arrival opens on the clouds.
     if (this.hooks.arrive || !this.hooks.area) this.time.delayedCall(0, () => this.hooks.opened?.());
-    else cloudCover(this, "open", () => this.hooks.opened?.());
+    else cloudCover(this, "open", () => this.hooks.opened?.(), this.active);
   }
 
   /** Leaves through an exit: works out how the crossing feels and where it stands on screen, and asks the page. */
