@@ -1979,7 +1979,7 @@ function emberwood(): AreaMap {
   t.shape(2, 111, 60, 11, 7, 0.3, "Postern Crag");
   t.shape(3, 112, 58, 7, 4.5, 0.25, "Postern Crag");
   t.shape(4, 113, 56, 3.5, 2, 0.15, "Postern Crag");
-  const ashWalk = t.span(2, 85, 56, 15, 2);
+  const ashWalk = t.span(2, 85, 56, 18, 2);
   // Crag Foot: the rock rising in the north-east, two steps toward the Crags.
   t.shape(2, 92, 14, 11, 7, 0.45, "Crag Foot");
   t.shape(3, 93, 11, 6, 4, 0.4, "Crag Foot");
