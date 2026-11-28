@@ -2175,7 +2175,7 @@ function emberwood(): AreaMap {
   prop("bones", 41, 10);
   prop("deadTree", 46, 8, { scale: 0.7 });
   const notes: Note[] = [
-    { at: { col: 111, row: 55 }, text: "Keep Gate barred behind me. The key is on my belt. The wood road round to Lanternport, then." },
+    { at: { col: 100, row: 42 }, text: "Keep Gate barred behind me. The key is on my belt. The wood road round to Lanternport, then." },
     { at: { col: 38, row: 61 }, text: "Ran for the gate. They barred it with us still outside. Can't blame them." },
     { at: { col: 63, row: 16 }, text: "Goblins on the ford. Round by the north road. Something big breathing in the smoke." },
   ];
@@ -2223,7 +2223,7 @@ function emberwood(): AreaMap {
   const tier = t.finish({}, [{ col: 40, row: 64 }], (c, r) => (stand(c, r) ? ways.has(r * 128 + c) : floor(c, r)));
   const exits: AreaExit[] = [
     { to: "harbour", name: "Ember Gate", kind: "gate", at: { col: 40, row: 70 }, opens: "emberGateOpen" },
-    { to: "belfry", name: "The Postern", kind: "open", at: { col: 113, row: 55 } },
+    { to: "belfry", name: "The Postern", kind: "open", at: { col: 102, row: 42 } },
     { to: "trollpit", name: "The Ash Road", kind: "open", at: { col: 62, row: 1 } },
   ];
   return { ...tier, area: "emberwood", entry: { col: 40, row: 64 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [...treetop, ...ashWalk], notes, locks };

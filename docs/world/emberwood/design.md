@@ -59,7 +59,8 @@ way to earn.
 
 ## The way through
 
-The player arrives on the Postern Crag's crown and leaves by the Ash Road. In
+The player arrives at the Postern, where the lane north of the Postern Crag
+ends at the shore, and leaves by the Ash Road. In
 between, three jobs pull them across the wood:
 
 1. **Open the way home.** The Ember Gate is barred from Lanternport's side.
@@ -75,7 +76,7 @@ between, three jobs pull them across the wood:
 
 ### Main route
 
-Postern Crag (arrive) down its three steps to the floor, west through the
+The Postern (arrive) round to the Postern Crag, down its steps, west through the
 Burn's camp (or round its south edge) to the Palisade, through the Ember Gate
 (the shortcut home), then north up the gate road over the Cinder Ford to the
 bonfire, and up the Ash Road out.
@@ -121,14 +122,14 @@ bend.
 
 ### Postern Crag (96-127, 44-71), the arrival
 
-- **Job:** where the player comes in. The Belfry's Postern stair lands on
-  the crag's crown (height 4); the crag steps down in three ledges to the
-  floor, a stair at each end of every ledge, looking out over the Burn's
+- **Job:** where the player comes in. The Belfry's Postern stair lands at
+  the end of the lane north of the crag, on the shore; the crag's crown
+  (height 4) steps down in three ledges to the floor, a stair at each end of every ledge, looking out over the Burn's
   smoke.
 - **Why go:** it is the way in, and the way back to the Chapel Ward.
-- **Stands there:** The Postern (exit to the Belfry) on the crown, Highward's
-  blue tower over it and the bonfire beside it, lanterns at the second
-  ledge; the steward's first note beside the exit; the bones of his escort on
+- **Stands there:** The Postern (exit to the Belfry) at the north lane's
+  end, the steward's first note beside it; on the crown Highward's blue
+  tower and the bonfire, lanterns at the second ledge; the bones of his escort on
   the second ledge, a goblin spear post on the first step's west end (spears
   in threes), out of the fire's reach; scorched trees on the ledges. The
   first step's west end carries the Ash Walk.
@@ -247,5 +248,5 @@ bend.
 | Name | Target | Where | Kind |
 | --- | --- | --- | --- |
 | Ember Gate | harbour | the Palisade, south edge (40, 70) | gate, `opens: "emberGateOpen"` |
-| The Postern | belfry | Postern Crag's crown | open, plain |
+| The Postern | belfry | the north lane's end, by the shore (102, 42) | open, plain |
 | The Ash Road | trollpit | the Ash Road's head, north edge (62, 1) | open |
