@@ -1,4 +1,4 @@
-// The title backdrop while The Atlas is picked: an expedition making landfall
+// The title screen's backdrop: an expedition making landfall
 // on a wild, lopsided island in daylight. The boat rides at anchor by the fish
 // hut, the camp's fire burns on the beach, pawns dig and build, and the
 // landing party loafs about the lowland below a cave still to explore.
@@ -7,11 +7,11 @@ import { makeRng, type UnitClass } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
 import { packUrl } from "./art";
-import { baseZoom, fitCamera } from "./boot";
+import { baseZoom, fitCamera, startGame } from "./boot";
 import { buildTerraces } from "./introIsland";
-import { CELL, WORK, addMine, cell, makeMapAnims } from "./islandMap";
+import { CELL, WORK, addMine, cell, loadGroundColours, loadMapArt, makeMapAnims } from "./islandMap";
 import { loadUnits, makeAnims, playPose, unitKey } from "./sprites";
-import { DEPTH, FOOT, addBonfire, addBuilding, addDecor, addShadow, buildWater, driftClouds, loadBuildings, loadTerrain, prepareTerrain, standing } from "./terrain";
+import { DEPTH, FOOT, addBonfire, addBuilding, addDecor, addShadow, buildWater, cloudCover, driftClouds, loadBuildings, loadTerrain, prepareTerrain, standing } from "./terrain";
 
 const MAP = [
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~",
@@ -42,7 +42,7 @@ const VIEW = { col0: -12, col1: 27.1, midRow: 9.4 } as const;
 const VIEW_TALL = { col0: 1.5, col1: 25.5, midRow: 13.4 } as const;
 
 /** The expedition's marks on the island, each its base's centre in cells. */
-export const BUILT = [
+const BUILT = [
   cell("a", "tower", 7.4, 3.85),
   cell("g", "cave", 10, 8.85, 0.85),
   cell("g", "fishHut", 9.8, 15.2),
@@ -98,6 +98,9 @@ export class IntroAtlasScene extends Phaser.Scene {
   preload(): void {
     loadTerrain(this);
     loadUnits(this);
+    loadMapArt(this);
+    loadGroundColours(this);
+    this.load.spritesheet("fire", packUrl("Effects/Fire/Fire.png"), { frameWidth: 128, frameHeight: 128 });
     loadBuildings(this, BUILT);
     if (!this.textures.exists("atlasBoat")) this.load.spritesheet("atlasBoat", packUrl("Enemy Pack/Extra/Boat/Boat_Idle.png"), { frameWidth: BOAT.frame, frameHeight: BOAT.frame });
   }
@@ -122,6 +125,7 @@ export class IntroAtlasScene extends Phaser.Scene {
     for (const c of CAST) this.extra(c);
     for (const p of PARTY) this.stroller(p);
     driftClouds(this, { w: MAP[0]!.length * CELL, h: MAP.length * CELL }, "intro-atlas");
+    cloudCover(this, "open", () => {});
   }
 
   private scenery(): void {
@@ -258,4 +262,8 @@ export class IntroAtlasScene extends Phaser.Scene {
     };
     this.time.delayedCall(Math.random() * 2500, stroll);
   }
+}
+
+export function startIntro(parent: HTMLElement): { destroy: () => void; ready: Promise<void> } {
+  return startGame(parent, "intro-atlas", IntroAtlasScene);
 }

@@ -1,8 +1,7 @@
 "use client";
 
 // The title screen: the live island behind a game menu. Mouse or keys pick
-// an entry, its button goes brown, the island behind turns to that mode's own,
-// and every way out closes the clouds.
+// an entry, its button goes brown, and every way out closes the clouds.
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -44,10 +43,6 @@ export default function Page() {
       setLeaving(false);
     }, out);
   };
-  const show = useRef<(i: number) => void>(() => {});
-
-  // Again once the scene is up: it boots on its own town, and the first pick asks before anything is listening.
-  useEffect(() => show.current(pick), [pick, ready]);
 
   const go = (href: string): void => exit.leave(() => router.push(href));
 
@@ -73,11 +68,7 @@ export default function Page() {
     <main className="stage">
       <GameCanvas
         start={(el) =>
-          import("../game/IntroScene").then(({ startIntro }) => {
-            const game = startIntro(el);
-            show.current = game.show;
-            return game;
-          })
+          import("../game/introAtlas").then(({ startIntro }) => startIntro(el))
         }
         onReady={() => setReady(true)}
       >

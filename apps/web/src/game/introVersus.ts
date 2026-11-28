@@ -48,7 +48,7 @@ export const TOWERS = [
   cell("g", "waterTower", 28.6, 13.4),
 ];
 
-/** Each side's cast in cells, as IntroScene's. */
+/** Each side's cast in cells. */
 interface Extra {
   cls: UnitClass;
   col: number;
@@ -196,7 +196,7 @@ export class IntroVersusScene extends Phaser.Scene {
     t.refresh();
   }
 
-  /** IntroScene's addExtra: idle, or a there-and-back walk. */
+  /** Idle, or a there-and-back walk. */
   private addExtra(side: Side, { cls, col, row, pace = 0, left, on }: Extra): void {
     const x = (col + 0.5) * CELL;
     const y = (row + 0.5) * CELL;

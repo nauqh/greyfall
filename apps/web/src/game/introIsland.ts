@@ -1,34 +1,11 @@
-// The title screen's own island: the blue corner of the war map as it stood
-// when the title scene was laid out, cut down to the town's island and frozen
-// here so the war's map can change without moving the town, its cast or cliffs.
-// Drawn the way islandMap.ts draws the war's.
+// A small island from rows of the war's map alphabet, drawn the way
+// islandMap.ts draws the war's.
 
 import { WAR_ISLAND, useIsland } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
-import { CELL, addMine, buildMap } from "./islandMap";
-import { DEPTH, addDecor, standing } from "./terrain";
-
-const INTRO_MAP: readonly string[] = [
-  "~~~~~####~~~~~~~~~~~~~~~~~",
-  "~~~##########~~~~~~~~~~~~~",
-  "~~#############~~~~~~~~~~~",
-  "~~#############....~~~~~~~",
-  "~~.############.....~.~~~~",
-  "~~~..###.####>.........~~~",
-  "~~..............~.......~~",
-  "~~~....#####.....~~.....~~",
-  "~~....####>.....~~~....~~~",
-  "~~~.............~~~~..~~~~",
-  "~~..........~~~~~~~~~~~~~~",
-  "~~~..####..~~~~~~~~~~~~~~~",
-  "~~..###>..~~~~~~~~~~~~~~~~",
-  "~~.......~~~~~~~~~~~~~~~~~",
-  "~~~~.....~~~~~~~~~~~~~~~~~",
-  "~~~~~~~..~~~~~~~~~~~~~~~~~",
-  "~~~~~~~~~~~~~~~~~~~~~~~~~~",
-];
-const MINES = [{ col: 15, row: 3 }];
+import { CELL, buildMap } from "./islandMap";
+import { DEPTH } from "./terrain";
 
 /** The tileset's 4x4 blocks: 3x3 edges plus a one-wide column, a one-tall
  *  row and a single. Picks the column (or row) from the two neighbours. */
@@ -38,8 +15,8 @@ function edge(before: boolean, after: boolean): number {
 
 /** Foam under the shore, ground everywhere on land, then plateau tops,
  *  cliffs and slopes over it: the pack's own layer order. `map` is the
- *  island's rows, the title's own unless a screen reshapes it. */
-export function buildIntroIsland(scene: Phaser.Scene, map: readonly string[] = INTRO_MAP): void {
+ *  island's rows. */
+export function buildIntroIsland(scene: Phaser.Scene, map: readonly string[]): void {
   const [COLS, ROWS] = [map[0]!.length, map.length];
   const at = (col: number, row: number): string => map[row]?.[col] ?? "~";
   const isLand = (col: number, row: number): boolean => at(col, row) !== "~";
@@ -108,34 +85,6 @@ export function buildIntroIsland(scene: Phaser.Scene, map: readonly string[] = I
       tile(c, r, col, 4, top);
       tile(c, r + 1, col, 5, top);
     }
-  }
-}
-
-/** Lumber lines along the coasts, gold at the mine, sheep
- *  on the lowland and rocks in the shallows. */
-export function buildIntroScenery(scene: Phaser.Scene): void {
-  const put = (kind: "tree" | "bush" | "rock" | "waterRock", spots: [number, number][]): Phaser.GameObjects.Sprite[] =>
-    spots.map(([c, r], i) => addDecor(scene, kind, c * CELL, r * CELL, 1, `strat-${kind}-${i}`));
-  put("tree", [
-    [2.6, 2.4], [3.4, 1.7], [11.9, 1.9], [13.8, 2.6], [14.9, 2.3],
-    [2.6, 9.8], [2.5, 11.2], [2.6, 13.4], [4.4, 14.2],
-  ]);
-  put("bush", [[12.5, 6.5], [18.4, 3.7], [9.6, 12.8]]);
-  put("rock", [[15.5, 6.6], [11.6, 10.8]]);
-  put("waterRock", [
-    [1.2, 6.4], [17.5, 1.6], [13.8, 10.9], [18.3, 11.6], [10.8, 15.4], [6.2, 17.2],
-    [7.5, -0.6], [20.4, -1.1], [25.3, 3.6], [24.6, 10.2],
-  ]).forEach((s) => s.setDepth(DEPTH.foam));
-
-  for (const m of MINES) addMine(scene, m, "mineActive");
-  for (const [c, r] of [[3.3, 7.3], [12.4, 9.4]] as const) {
-    const sheep = scene.add
-      .sprite(c * CELL, r * CELL, "sheep")
-      .setOrigin(0.5, 0.66)
-      .setDepth(standing(r * CELL))
-      .setFlipX(c > 16)
-      .play("sheep_anim");
-    if (sheep.anims.currentAnim) sheep.anims.setProgress(Math.random());
   }
 }
 
