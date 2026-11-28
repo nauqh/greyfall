@@ -207,6 +207,7 @@
 }
 
 .sackIcon {
+	position: relative;
 	grid-row: span 2;
 	display: grid;
 	place-items: center;
@@ -229,6 +230,17 @@
 
 .sackRow[aria-pressed="true"] small {
 	color: var(--onPickedNote);
+}
+
+/* How many are carried, on the icon's corner as Dark Souls numbers a stack. */
+.sackCount {
+	position: absolute;
+	right: 5px;
+	bottom: 1px;
+	font-weight: 800;
+	font-size: 20px;
+	color: var(--light);
+	text-shadow: -1px -1px 0 var(--brown), 1px -1px 0 var(--brown), -1px 1px 0 var(--brown), 1px 1px 0 var(--brown), 0 2px 0 var(--brown);
 }
 
 .sackRow[aria-pressed="true"] .sackIcon {

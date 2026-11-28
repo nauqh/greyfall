@@ -306,6 +306,8 @@ export interface SackItem<L extends string = ItemName> {
   label: L;
   icon: ShopIcon;
   gives: string;
+  /** How many are carried, drawn on the icon; a good kept for good has none. */
+  count?: number;
   /** One line of what it is, after a Souls item's description. */
   about?: string;
 }
@@ -2714,7 +2716,7 @@ export class AtlasScene extends Phaser.Scene {
     const stats = (Object.keys(STATS) as (keyof Kit)[]).map((k) => ({ key: k, label: STATS[k].label, now: statWords(k, this.gear) }));
     const lv = levels();
     const level = heroLevel(lv);
-    const goods = (Object.entries(held()) as [LootName, number][]).filter(([, n]) => n > 0).map(([loot, n]) => ({ label: loot, icon: ITEM_ICON[loot], gives: `${n} carried, ${LOOT[loot].worth} gold each to ${NPCS.find((m) => m.id === LOOT[loot].buyer)?.name}`, about: LOOT[loot].about }));
+    const goods = (Object.entries(held()) as [LootName, number][]).filter(([, n]) => n > 0).map(([loot, n]) => ({ label: loot, icon: ITEM_ICON[loot], count: n, gives: `${LOOT[loot].worth} gold each to ${NPCS.find((m) => m.id === LOOT[loot].buyer)?.name}`, about: LOOT[loot].about }));
     this.hooks.onSack?.({ name: stored<string | null>(NAME, null), items: [...items.map(sackItem), ...goods], stats, level });
   }
 
