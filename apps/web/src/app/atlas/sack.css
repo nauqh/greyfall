@@ -158,11 +158,20 @@
 	border-radius: 6px;
 }
 
-/* The goods one to a row, as Dark Souls lists them: the picture in its own frame, the name over what it gives. Past what
-   fits, the list scrolls with no bar and fades at the cut. */
-.sackGoods {
+/* The goods one to a row, as Dark Souls lists them: the picture in its own frame, the name over what it gives. Five rows
+   fill the sheet, each a fifth of it; past five a bar down its side says there are more, and the list scrolls. The bar
+   is drawn, not the browser's, which some systems hide until the list is touched. */
+.sackList {
+	flex: 1;
 	display: flex;
-	flex-direction: column;
+	gap: 8px;
+	min-height: 0;
+}
+
+.sackGoods {
+	flex: 1;
+	display: grid;
+	grid-auto-rows: calc((100% - 4 * 4px) / 5);
 	gap: 4px;
 	min-height: 0;
 	overflow-y: auto;
@@ -173,8 +182,20 @@
 	display: none;
 }
 
-.sackGoods.cut {
-	mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent);
+.sackBar {
+	position: relative;
+	flex: none;
+	width: 6px;
+	border-radius: 3px;
+	background: color-mix(in srgb, var(--frame) 40%, transparent);
+}
+
+.sackBar span {
+	position: absolute;
+	left: 0;
+	right: 0;
+	border-radius: 3px;
+	background: var(--bark);
 }
 
 .sackRow {

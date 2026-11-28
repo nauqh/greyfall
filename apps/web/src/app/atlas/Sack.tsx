@@ -109,14 +109,14 @@ export function Sack({ sack, gold, onCover }: { sack: SackView; gold: number; on
   }, [shown]);
   useEffect(() => () => cover.current(0), []);
   const goodsRef = useRef<HTMLDivElement>(null);
-  const [cut, setCut] = useState(false);
-  useEffect(() => {
+  // The bar's thumb, as fractions of the list: where it starts and how much of it shows; none while all of it shows.
+  const [bar, setBar] = useState<{ top: number; size: number } | null>(null);
+  const measure = (): void => {
     const el = goodsRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setCut(el.scrollHeight > el.clientHeight + 1));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [mounted, sack.items.length]);
+    setBar(el.scrollHeight > el.clientHeight + 1 ? { top: el.scrollTop / el.scrollHeight, size: el.clientHeight / el.scrollHeight } : null);
+  };
+  useEffect(measure, [mounted, sack.items.length]);
   const good = sack.items[Math.min(pick, sack.items.length - 1)];
   useEffect(() => {
     goodsRef.current?.children[sack.items.indexOf(good!)]?.scrollIntoView({ block: "nearest" });
@@ -158,25 +158,32 @@ export function Sack({ sack, gold, onCover }: { sack: SackView; gold: number; on
           <div className="sackBody">
             <section className="sackSheet" aria-label="Goods">
               {sack.items.length ? (
-                <div ref={goodsRef} className={`sackGoods${cut ? " cut" : ""}`}>
-                  {sack.items.map((s, i) => (
-                    <button
-                      type="button"
-                      key={s.label}
-                      className="sackRow"
-                      aria-pressed={s === good}
-                      onMouseEnter={() => setPick(i)}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => setPick(i)}
-                    >
-                      <span className="sackIcon">
-                        <ItemIcon icon={s.icon} size={64} />
-                        {s.count !== undefined && <b className="sackCount">{s.count}</b>}
-                      </span>
-                      <b>{s.label}</b>
-                      <small>{s.gives}</small>
-                    </button>
-                  ))}
+                <div className="sackList">
+                  <div ref={goodsRef} className="sackGoods" onScroll={measure}>
+                    {sack.items.map((s, i) => (
+                      <button
+                        type="button"
+                        key={s.label}
+                        className="sackRow"
+                        aria-pressed={s === good}
+                        onMouseEnter={() => setPick(i)}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => setPick(i)}
+                      >
+                        <span className="sackIcon">
+                          <ItemIcon icon={s.icon} size={64} />
+                          {s.count !== undefined && <b className="sackCount">{s.count}</b>}
+                        </span>
+                        <b>{s.label}</b>
+                        <small>{s.gives}</small>
+                      </button>
+                    ))}
+                  </div>
+                  {bar && (
+                    <div className="sackBar" aria-hidden="true">
+                      <span style={{ top: `${bar.top * 100}%`, height: `${bar.size * 100}%` }} />
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p className="sackEmpty">Empty. Merchants sell goods you keep for good, and the folk give some.</p>
