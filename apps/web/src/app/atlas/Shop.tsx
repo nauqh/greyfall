@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 
 import type { AtlasApi, MenuView } from "../../game/AtlasScene";
 import { packUrl } from "../../game/art";
@@ -13,7 +13,6 @@ const ICON = {
   shop: "UI Elements/UI Elements/Icons/Icon_03.png",
   hire: "UI Elements/UI Elements/Icons/Icon_05.png",
   leave: "UI Elements/UI Elements/Icons/Icon_09.png",
-  change: "UI Elements/UI Elements/Icons/Icon_07.png",
   gold: "ui/icon_gold.png",
 };
 
@@ -76,7 +75,7 @@ export function Shop({ menu, api }: { menu: MenuView; api: RefObject<AtlasApi | 
           <>
             <div className="shopBody">
               <section className="shopWares">
-                <Heading icon={ICON.hire}>{menu.sell ? "Your goods" : "Wares"}</Heading>
+                <h3 className="panelHeading">{menu.sell ? "Your goods" : "Wares"}</h3>
                 <ul className="shopGrid">
                   {goods.map((o) => (
                     <li key={o.label}>
@@ -157,15 +156,6 @@ export function Shop({ menu, api }: { menu: MenuView; api: RefObject<AtlasApi | 
   );
 }
 
-function Heading({ icon, children }: { icon: string; children: ReactNode }) {
-  return (
-    <h3 className="panelHeading">
-      <img src={packUrl(icon)} alt="" width={16} height={16} />
-      {children}
-    </h3>
-  );
-}
-
 function choiceIcon(label: string): string {
   if (label === "Talk") return ICON.talk;
   if (label === "Shop") return ICON.shop;
@@ -202,7 +192,7 @@ function Tell({ o }: { o: MenuView["options"][number] }) {
         <span className="shopTellName">{o.label}</span>
       </div>
       {o.about && <p className="shopAbout">{o.about}</p>}
-      <Heading icon={ICON.change}>Effect</Heading>
+      <h3 className="panelHeading">Effect</h3>
       <dl className="shopStats">
         {o.change?.length
           ? o.change.map((c) => (
