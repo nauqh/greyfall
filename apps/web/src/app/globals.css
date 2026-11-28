@@ -413,15 +413,44 @@ textarea {
 	background: var(--brown);
 }
 
-/* Shown and picked, but not open yet: faded ink, and a click does nothing. */
-.menuItem[aria-disabled="true"] {
-	color: rgb(46 26 14 / 0.4);
-	cursor: not-allowed;
+/* A mode not open yet, pressed: no box, the field prompt's outlined lettering, over the sea at the top. */
+.menuToast {
+	position: absolute;
+	z-index: 4;
+	top: 32px;
+	left: 50%;
+	margin: 0;
+	color: #fdfaf0;
+	font: 800 22px var(--display), serif;
+	letter-spacing: 0.04em;
+	-webkit-text-stroke: 5px var(--outline);
+	paint-order: stroke fill;
+	white-space: nowrap;
+	pointer-events: none;
+	animation: menuToast 2200ms ease-out both;
 }
 
-.menuItem[aria-disabled="true"].on {
-	color: rgb(251 245 230 / 0.5);
-	cursor: not-allowed;
+@keyframes menuToast {
+	from {
+		opacity: 0;
+		transform: translate(-50%, -12px);
+	}
+	10%,
+	80% {
+		opacity: 1;
+		transform: translate(-50%, 0);
+	}
+	to {
+		opacity: 0;
+		transform: translate(-50%, 0);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.menuToast {
+		animation-name: hintIn;
+		animation-direction: reverse;
+	}
 }
 
 .menuHint {
@@ -1663,6 +1692,11 @@ textarea {
 
 .keyCap.wide {
 	padding-inline: 9px;
+}
+
+/* Cinzel's Q swings its tail past its advance, so the letter sits left to centre the ink. */
+.keyCap.tail {
+	padding-inline: 4px 10px;
 }
 
 .keyHint {

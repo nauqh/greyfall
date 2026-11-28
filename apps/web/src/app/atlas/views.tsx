@@ -737,6 +737,7 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
             if (!devRoute) setPrologue(true);
           }}
           onDone={() => setPicking(false)}
+          onLeave={() => router.push("/")}
         />
       )}
     </main>

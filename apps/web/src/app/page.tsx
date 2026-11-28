@@ -12,7 +12,7 @@ import { GameCanvas } from "../game/GameCanvas";
 import { Settings } from "./settings/Settings";
 import { LANDING_MUSIC, loop, useTick } from "./sound";
 
-// An entry without an href opens the settings in place of the menu. An `off` entry is shown and picked, but goes nowhere.
+// An entry without an href opens the settings in place of the menu. An `off` entry only toasts that it is not open yet.
 const MENU: readonly { href?: string; label: string; hint: string; off?: boolean }[] = [
   { href: "/atlas", label: "Journey", hint: "The story. Wash ashore nameless and hunt the Grey Warlord." },
   { href: "/map", off: true, label: "War", hint: "Real-time war on one island: dig gold, raise an army, bring down the red hall." },
@@ -28,6 +28,8 @@ export default function Page() {
   const [settings, setSettings] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [swapped, setSwapped] = useState(false);
+  // Bumped per press, so a second press restarts the toast.
+  const [toast, setToast] = useState(0);
   const items = useRef<(HTMLElement | null)[]>([]);
   useTick(pick);
   useEffect(() => loop(LANDING_MUSIC, 0.6, 1500), []);
@@ -46,13 +48,17 @@ export default function Page() {
 
   const go = (href: string): void => exit.leave(() => router.push(href));
 
-  // Arrow keys and W/S step the pick, wrapping; Enter follows the focused link.
+  // Arrow keys and WASD step the pick, wrapping; E or Enter presses the focused entry.
   useEffect(() => {
     if (!ready || settings) return;
     // Back from the settings, the pick stays on its entry.
     items.current[pick]?.focus({ preventScroll: true });
     const onKey = (e: KeyboardEvent): void => {
-      const step = ({ ArrowDown: 1, s: 1, S: 1, ArrowUp: -1, w: -1, W: -1 } as Record<string, number>)[e.key];
+      if ((e.key === "e" || e.key === "E") && !e.repeat) {
+        (document.activeElement as HTMLElement | null)?.click();
+        return;
+      }
+      const step = ({ ArrowDown: 1, s: 1, S: 1, d: 1, D: 1, ArrowUp: -1, w: -1, W: -1, a: -1, A: -1 } as Record<string, number>)[e.key];
       if (!step) return;
       e.preventDefault();
       // Focus drives the pick (onFocus), so the key only moves focus.
@@ -95,7 +101,7 @@ export default function Page() {
                     };
                     const href = m.href;
                     return m.off ? (
-                      <button key={m.label} type="button" {...item} aria-disabled="true">
+                      <button key={m.label} type="button" {...item} onClick={() => setToast((n) => n + 1)}>
                         {m.label}
                       </button>
                     ) : href ? (
@@ -125,6 +131,11 @@ export default function Page() {
               </div>
             </div>
           </>
+        )}
+        {toast > 0 && (
+          <p key={toast} className="menuToast" role="status" onAnimationEnd={() => setToast(0)}>
+            Not available yet
+          </p>
         )}
       </GameCanvas>
       {exit.cover}

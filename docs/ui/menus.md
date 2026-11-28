@@ -59,6 +59,8 @@ colour that is truly the screen's own carries an `/* own colour: why */` note.
 - **The keys**: A/D change (the page, or the picked level), W/S move, E choose,
   Esc back or resume. Tabs start with the pick on the tab bar; S steps down
   into the page. Arrow keys mirror WASD except on a focused slider.
+  Creation backs on Q (Esc in the name field, where Q is a letter), and Q on
+  its first step leaves to the title.
 
 ## Looking at a screen
 

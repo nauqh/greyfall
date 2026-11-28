@@ -50,7 +50,7 @@ const NAMELESS = "Nameless";
 
 /** A keycap; the word keys (Esc, Enter) are drawn wide. */
 function Key({ k }: { k: string }) {
-  return <kbd className={k.length > 1 ? "keyCap wide" : "keyCap"}>{k}</kbd>;
+  return <kbd className={k.length > 1 ? "keyCap wide" : k === "Q" ? "keyCap tail" : "keyCap"}>{k}</kbd>;
 }
 
 /**
@@ -58,7 +58,7 @@ function Key({ k }: { k: string }) {
  * sheet of the pack's paper across the screen: the steps and the numbers ruled down the left, the step's choices on a slip
  * laid over the middle with what the cursor is on at its foot, and the class on show in a window onto its shore at the right. Keyboard only, on the play keys, so it is practice.
  */
-export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => SackItem[]; onBegin: (cls: HeroClass, gift: ItemName, name: string) => void; onDone: () => void }) {
+export function Creation({ gifts: giftsNow, onBegin, onDone, onLeave }: { gifts: () => SackItem[]; onBegin: (cls: HeroClass, gift: ItemName, name: string) => void; onDone: () => void; onLeave: () => void }) {
   const [step, setStep] = useState(0);
   const [cls, setCls] = useState<HeroClass | null>(null);
   const [gift, setGift] = useState<ItemName | null>(null);
@@ -85,7 +85,8 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
   }, [step]);
 
   const go = (to: number): void => {
-    if (begun || to < 0) return;
+    if (begun) return;
+    if (to < 0) return onLeave();
     setAt(null);
     setStep(to);
   };
@@ -107,8 +108,9 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
     }
   };
 
-  // The play keys: W S walk the list, E chooses and goes on, Esc backs. The game behind hears none of it (its
-  // Space capture would eat a space typed in the name). In the name field the letters are the field's own.
+  // The play keys: W S walk the list, E chooses and goes on, Q backs, off the first step to the title. The game behind
+  // hears none of it (its Space capture would eat a space typed in the name). In the name field the letters are the
+  // field's own, so Esc backs there.
   const keys = (e: React.KeyboardEvent): void => {
     e.stopPropagation();
     if (begun) return e.preventDefault();
@@ -130,7 +132,7 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
       const items = [...e.currentTarget.querySelectorAll<HTMLButtonElement>(".crList .crOption")];
       const i = items.indexOf(document.activeElement as HTMLButtonElement);
       items[i < 0 ? (back ? items.length - 1 : 0) : (i + (back ? -1 : 1) + items.length) % items.length]?.focus();
-    } else if (k === "Escape") go(step - 1);
+    } else if (k === "q") go(step - 1);
     else if (k === "e" || k === "Enter") (play(CLICK), choose());
   };
 
@@ -236,11 +238,9 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
                 </span>
               </>
             )}
-            {step > 0 && (
-              <span className="crKey">
-                <Key k="Esc" /> Back
-              </span>
-            )}
+            <span className="crKey">
+              <Key k={step < 2 ? "Q" : "Esc"} /> {step > 0 ? "Back" : "Title"}
+            </span>
           </span>
         </div>
       </div>
