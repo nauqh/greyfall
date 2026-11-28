@@ -1,7 +1,7 @@
 // The title backdrop while The Atlas is picked: an expedition making landfall
 // on a wild, lopsided island in daylight. The boat rides at anchor by the fish
-// hut, the camp's fire burns on the beach, pawns dig and build, and a party
-// climbs the ridge to the lookout on the summit, past a cave still to explore.
+// hut, the camp's fire burns on the beach, pawns dig and build, and the
+// landing party loafs about the lowland below a cave still to explore.
 
 import type { UnitClass } from "@greyfall/engine";
 import * as Phaser from "phaser";
@@ -55,14 +55,14 @@ export const BUILT = [
   cell("a", "house1", 23, 12.8),
 ];
 
-/** The party's climb, feet by cell: each stair cut into the middle of its cliff, switching back west and up to the summit on the west cliff. */
-const CLIMB: readonly [number, number][] = [
-  [22.5, 13.5], [19.5, 12.2], [19.5, 11.5], [19.5, 10.4], [18.5, 10.4], [15.5, 10.4], [15.5, 9.4], [15.5, 8.4], [15.5, 7.4], [14.5, 7.4],
-  [11.5, 7.4], [11.5, 6.4], [11.5, 5.4], [10.5, 5.4], [9.5, 5.4], [9.5, 4.4], [9.5, 3.4], [8.6, 3.4],
+/** The landing party, each strolling about its own spot on the lowland, feet in cells. */
+const PARTY: readonly { cls: UnitClass; col: number; row: number }[] = [
+  { cls: "warrior", col: 17.5, row: 12.6 },
+  { cls: "lancer", col: 20, row: 13.4 },
+  { cls: "archer", col: 8, row: 13 },
 ];
-/** Leader first, each a step behind the one before; the leader starts this far up. */
-const PARTY: readonly UnitClass[] = ["warrior", "lancer", "archer"];
-const PARTY_FROM = 5;
+/** How far a stroller strays from its spot, in cells. */
+const ROAM = 1.5;
 
 /** The camp and the island at work, feet in cells. `pace` cells there and back, signed for the way it sets off. */
 const CAST: readonly { cls: UnitClass; col: number; row: number; pace?: number; left?: boolean; work?: keyof typeof WORK; on?: number }[] = [
@@ -117,7 +117,7 @@ export class IntroAtlasScene extends Phaser.Scene {
     buildTerraces(this, MAP, RAMP);
     this.scenery();
     for (const c of CAST) this.extra(c);
-    PARTY.forEach((cls, i) => this.climber(cls, i));
+    for (const p of PARTY) this.stroller(p);
     driftClouds(this, { w: MAP[0]!.length * CELL, h: MAP.length * CELL }, "intro-atlas");
   }
 
@@ -177,48 +177,40 @@ export class IntroAtlasScene extends Phaser.Scene {
     this.time.delayedCall(Math.random() * 2400, leg);
   }
 
-  /** One of the party, `place` behind the leader: up the climb to the lookout, a rest there, then the climb again from the shore. */
-  private climber(cls: UnitClass, place: number): void {
-    const from = Math.max(0, PARTY_FROM - place);
-    const end = CLIMB.length - 1 - place;
-    const [c0, r0] = CLIMB[from]!;
-    const shadow = addShadow(this, c0 * CELL, r0 * CELL, cls === "lancer" ? 0.8 : 0.62);
-    const unit = this.add.sprite(c0 * CELL, r0 * CELL, unitKey("a", cls, "run"));
-    const depth = (): void => void unit.setDepth(DEPTH.unit + unit.y);
-    const walk = (i: number): void => {
-      const to = CLIMB[i];
-      if (!to || i > end) return rest();
-      const dx = to[0] * CELL - unit.x;
-      const dy = to[1] * CELL - unit.y;
+  /** One of the party: idle a while, then off to a random point near its spot, never off its own level. */
+  private stroller({ cls, col, row }: (typeof PARTY)[number]): void {
+    const ground = (c: number, r: number): string | undefined => MAP[Math.floor(r)]?.[Math.floor(c)];
+    const level = ground(col, row);
+    // A cell under higher ground is that ground's cliff face, drawn a whole cell tall.
+    const open = (c: number, r: number): boolean => ground(c, r) === level && [level, "~"].includes(ground(c, r - 1));
+    const shadow = addShadow(this, col * CELL, row * CELL, cls === "lancer" ? 0.8 : 0.62);
+    const unit = this.add.sprite(col * CELL, row * CELL, unitKey("a", cls, "idle")).setDepth(DEPTH.unit + row * CELL);
+    playPose(unit, "a", cls, "idle");
+    if (unit.anims.currentAnim) unit.anims.setProgress(Math.random());
+    const stroll = (): void => {
+      const a = Math.random() * Math.PI * 2;
+      const d = (0.4 + Math.random() * 0.6) * ROAM;
+      const c = col + Math.cos(a) * d;
+      const r = row + Math.sin(a) * d * 0.6;
+      const c0 = unit.x / CELL;
+      const r0 = unit.y / CELL;
+      const n = Math.ceil(Math.hypot(c - c0, r - r0) / 0.2);
+      for (let i = 1; i <= n; i++) if (!open(c0 + ((c - c0) * i) / n, r0 + ((r - r0) * i) / n)) return stroll();
+      const dx = c * CELL - unit.x;
+      playPose(unit, "a", cls, "run");
       if (Math.abs(dx) > 1) unit.setFlipX(dx < 0);
-      this.tweens.add({ targets: [unit, shadow], x: to[0] * CELL, y: to[1] * CELL, duration: Math.hypot(dx, dy) * 14, onUpdate: depth, onComplete: () => walk(i + 1) });
+      this.tweens.add({
+        targets: [unit, shadow],
+        x: c * CELL,
+        y: r * CELL,
+        duration: Math.hypot(dx, r * CELL - unit.y) * 22,
+        onUpdate: () => unit.setDepth(DEPTH.unit + unit.y),
+        onComplete: () => {
+          playPose(unit, "a", cls, "idle");
+          this.time.delayedCall(1500 + Math.random() * 3000, stroll);
+        },
+      });
     };
-    const rest = (): void => {
-      playPose(unit, "a", cls, "idle");
-      unit.setFlipX(false);
-      this.time.delayedCall(7000, () =>
-        this.tweens.add({
-          targets: [unit, shadow],
-          alpha: 0,
-          duration: 900,
-          onComplete: () => {
-            // Back at the shore, the followers a few steps behind as before.
-            this.time.delayedCall(place * 700, () => {
-              const [c, r] = CLIMB[0]!;
-              unit.setPosition(c * CELL, r * CELL);
-              shadow.setPosition(c * CELL, r * CELL);
-              playPose(unit, "a", cls, "run");
-              depth();
-              this.tweens.add({ targets: unit, alpha: 1, duration: 600 });
-              this.tweens.add({ targets: shadow, alpha: 0.35, duration: 600 });
-              walk(1);
-            });
-          },
-        }),
-      );
-    };
-    playPose(unit, "a", cls, "run");
-    depth();
-    walk(from + 1);
+    this.time.delayedCall(Math.random() * 2500, stroll);
   }
 }
