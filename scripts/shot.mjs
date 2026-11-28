@@ -3,6 +3,9 @@
 // for creation. --keys presses playwright key names in order after the wait, to reach a menu: --keys Escape,d,s.
 // On the dev route it first waits for the clouds to open (minutes, in headless), then the wait (default 1000ms there);
 // --at col,row flies the free camera onto that cell first, in the map's own cells (pnpm area's plus 3 on the surface).
+// On the dev route, before the keys: --gold n fills the dev panel's Gold, --click text presses that Screens button (a
+// shopkeeper's name, Notice board, Rest), then the panel is hidden. --scale n shoots at that pixel ratio (default 1).
+// Recipes for each screen: docs/ui/menus.md "Looking at a screen".
 // No leading slash: Git Bash turns one into a Windows path.
 // A dev route takes the cookie the middleware wants, hashed from DEV_PASSWORD in apps/web/.env; it is never printed.
 import { createHash } from "node:crypto";
@@ -14,6 +17,13 @@ const at = args.indexOf("--keys");
 const keys = at < 0 ? [] : (args.splice(at, 2)[1] ?? "").split(",").filter(Boolean);
 const aim = args.indexOf("--at");
 const cell = aim < 0 ? null : (args.splice(aim, 2)[1] ?? "").split(",").map(Number);
+const flag = (name) => {
+  const i = args.indexOf(name);
+  return i < 0 ? undefined : args.splice(i, 2)[1];
+};
+const gold = flag("--gold");
+const click = flag("--click");
+const scale = Number(flag("--scale") ?? 1);
 const [path = "", out = "shot.png", waitArg] = args;
 const dev = /^atlas\/dev(\/(?!login)|\?|$)/.test(path);
 const wait = waitArg ?? (dev ? "1000" : "4000");
@@ -28,7 +38,7 @@ const env = (() => {
 const password = process.env.DEV_PASSWORD ?? env.match(/^DEV_PASSWORD=(.*)$/m)?.[1]?.trim().replace(/^["']|["']$/g, "");
 
 const browser = await chromium.launch();
-const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: scale });
 if (password) await context.addCookies([{ name: "greyfall-dev", value: createHash("sha256").update(password).digest("hex"), url: base }]);
 const page = await context.newPage();
 await page.goto(new URL(path, `${base}/`).href);
@@ -39,6 +49,18 @@ if (cell) {
   await page.waitForTimeout(1500);
 }
 await page.waitForTimeout(Number(wait));
+if (gold !== undefined) {
+  await page.getByRole("tab", { name: "Hero" }).click();
+  const field = page.getByLabel("Gold", { exact: true });
+  await field.fill(gold);
+  await field.blur();
+}
+if (click) {
+  await page.getByRole("tab", { name: "Screens" }).click();
+  await page.locator(".devScreens button").filter({ hasText: click }).first().click();
+  await page.waitForTimeout(2500);
+}
+if (gold !== undefined || click) await page.keyboard.press("h");
 for (const key of keys) {
   await page.keyboard.press(key);
   // Past a side panel's 300ms delay and 600ms entrance (panel.css .sideDock).

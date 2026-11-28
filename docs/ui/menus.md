@@ -3,13 +3,17 @@
 How Greyfall's menus look and take keys, after Dark Souls III's system menu but
 on the game's paper. The pause menu (`apps/web/src/app/atlas/views.tsx`, styles
 in `atlas/panel.css` under `.pausePanel`) is the model; build a new menu like it.
+The Dark Souls screens it answers to are in `docs/ui/refs/` (inventory, its
+annotated copy, create character, level up): open the one for your screen
+before laying it out, and add a new reference there under a name that says what
+it shows.
 
 ## Layout
 
 - **One panel, centred**, a little above the middle (`translate: 0 -32px`),
   fixed height so it does not jump between pages. Built on `SidePanel` with a
-  `className`, the paper frame and nothing else round it: no outline, no rule
-  under the head, no kicker over the name.
+  `className`: one parchment surface to a 2px `--brown` edge and nothing else
+  round it: no outline, no rule under the head, no kicker over the name.
 - **Folder tabs**, left-aligned flush with the sheet, rounded at the top, on
   the sheet's top edge. The open tab is the paper's own colour (`#eee1c6`) and
   runs on into the sheet with no line between.
@@ -28,8 +32,9 @@ in `atlas/panel.css` under `.pausePanel`) is the model; build a new menu like it
 ## Colours
 
 Every menu colour is a token in `:root` (`globals.css`); write the token, never
-the hex. Paper `--paper` (sheet, open tab) and `--paperRaised` (options,
-cells). Inks `--brown`, `--bark`, `--mute` (the faintest that still reads on
+the hex. Parchment `--parchmentPane` (a pane: the sack, a shop, a side panel),
+`--parchmentNote` (a pinned note) and `--parchment` (the prologue). Paper
+`--paper` (open tab) and `--paperRaised` (options, cells). Inks `--brown`, `--bark`, `--mute` (the faintest that still reads on
 the paper). Lines `--frame`, gilt `--goldLine`, gold sums and heads `--gold`.
 `--good` and `--bad` for a rise and a fall. A picked row is `--onPicked` over
 the brown bar, its second line `--onPickedNote`. `pnpm --filter @greyfall/web
@@ -54,6 +59,23 @@ colour that is truly the screen's own carries an `/* own colour: why */` note.
 - **The keys**: A/D change (the page, or the picked level), W/S move, E choose,
   Esc back or resume. Tabs start with the pick on the tab bar; S steps down
   into the page. Arrow keys mirror WASD except on a focused slider.
+
+## Looking at a screen
+
+With `pnpm dev` up, each screen is one `pnpm shot` (flags in `scripts/shot.mjs`).
+The chapel has a shop and stands near enough to everything:
+
+| Screen | Command |
+| --- | --- |
+| Shop talk | `pnpm shot atlas/dev/chapel out.png --click Brenna` |
+| Shop goods | `pnpm shot atlas/dev/chapel out.png --click Brenna --keys s,e` |
+| Sack with goods | `pnpm shot atlas/dev/chapel out.png --gold 5000 --click Brenna --keys s,e,e,s,e,Escape,Escape,Tab` |
+| Lane House board | `pnpm shot atlas/dev/chapel out.png 4000 --click "Notice board"` |
+| Bonfire rest | `pnpm shot atlas/dev/chapel out.png --click Rest` |
+| Pause menu | `pnpm shot atlas/dev/chapel out.png --keys Escape` |
+
+The board's wood and ribbon load late: give it the 4000ms wait. Leave `--scale` at
+1 unless you need the detail: a 2x shot costs four times the pixels to read.
 
 ## Sound
 
