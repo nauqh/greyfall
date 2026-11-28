@@ -8,7 +8,7 @@
 	gap: 6px;
 	padding: 0 6px;
 	color: var(--bark);
-	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-size: 14px;
 	border: 12px solid transparent;
@@ -25,7 +25,7 @@
 	margin: 0;
 	padding: 0 6px;
 	color: var(--bark);
-	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-size: 15px;
 	border: 12px solid transparent;
@@ -86,7 +86,7 @@
 	gap: 12px;
 	padding: clamp(12px, 3vh, 24px) clamp(16px, 2vw, 24px);
 	color: var(--text);
-	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-family: var(--book), serif;
 	font-weight: 700;
 	font-size: 15px;
 	font-variant-numeric: tabular-nums;
@@ -126,6 +126,7 @@
 .sackTitle {
 	margin: 0;
 	color: var(--brown);
+	font-family: var(--display), serif;
 	font-weight: 900;
 	font-size: 26px;
 	letter-spacing: 0.02em;
@@ -139,6 +140,7 @@
 }
 
 .sackGold b {
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-size: 22px;
 	color: var(--gold);
@@ -222,6 +224,7 @@
 
 .sackRow b {
 	align-self: end;
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-size: 18px;
 }
@@ -266,6 +269,7 @@
 	position: absolute;
 	right: 5px;
 	bottom: 1px;
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-size: 20px;
 	color: var(--light);
@@ -291,6 +295,7 @@
 	gap: 8px;
 	padding: 4px 6px 8px;
 	border-bottom: 1px solid var(--frame);
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-size: 16px;
 }
@@ -337,6 +342,7 @@
 
 .sackStats dd {
 	margin: 0;
+	font-family: var(--display), serif;
 	font-weight: 800;
 }
 
@@ -357,6 +363,7 @@
 }
 
 .sackNote b {
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-size: 16px;
 	color: var(--brown);
@@ -376,6 +383,7 @@
 	gap: 6px 24px;
 	padding-top: 10px;
 	border-top: 1px solid var(--frame);
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-size: 14px;
 }

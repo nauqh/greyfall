@@ -20,13 +20,7 @@ importers:
       '@fontsource/cinzel':
         specifier: ^5.3.0
         version: 5.3.0
-      '@fontsource/im-fell-english':
-        specifier: ^5.3.0
-        version: 5.3.0
-      '@fontsource/im-fell-english-sc':
-        specifier: ^5.3.0
-        version: 5.3.0
-      '@fontsource/nunito':
+      '@fontsource/eb-garamond':
         specifier: ^5.3.0
         version: 5.3.0
       '@greyfall/engine':
@@ -324,14 +318,8 @@ packages:
   '@fontsource/cinzel@5.3.0':
     resolution: {integrity: sha512-KEOYTsrRppW0uRIPWBDPrQgunCS6f8u4nzZxYRBfo9SCknKojLYjK7B0ZoVmJhyVLefz271ZQRF9EOpHZlfhRw==}
 
-  '@fontsource/im-fell-english-sc@5.3.0':
-    resolution: {integrity: sha512-jKnCJ22tgVwxWVs1YQ/GCWmP60ulVq49IJZ7c0wgv0MXHe8T8LPbl0sOteYLOkCURW5+ZKwFiLNU2h/l9fHgrg==}
-
-  '@fontsource/im-fell-english@5.3.0':
-    resolution: {integrity: sha512-FcgdWfY9WeUM2gQkfmwhn4Ed9LVtlll8LSSZvHfbsUrnHK5tHHnGg6BgwAfHogp52adU3eE89J/3B52qV3b+Vw==}
-
-  '@fontsource/nunito@5.3.0':
-    resolution: {integrity: sha512-vw9TaTQJ/zpEpKrsODuPmOvaVjXgdda6B+xXA4YqjrdeJ62MLgVoDerdRXFQHyBnSCt2yQ2nHKCHPP/Pv7Xq4Q==}
+  '@fontsource/eb-garamond@5.3.0':
+    resolution: {integrity: sha512-VplwHpB8FLuzl+4G5LDci1b3Z4SghiuXH8XEgaxjnOb5aue5mEt1njmDKeO6iyLeGa73LffU7PC7hzncLRx0ZA==}
 
   '@img/colour@1.1.0':
     resolution: {integrity: sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==}
@@ -1400,11 +1388,7 @@ snapshots:
 
   '@fontsource/cinzel@5.3.0': {}
 
-  '@fontsource/im-fell-english-sc@5.3.0': {}
-
-  '@fontsource/im-fell-english@5.3.0': {}
-
-  '@fontsource/nunito@5.3.0': {}
+  '@fontsource/eb-garamond@5.3.0': {}
 
   '@img/colour@1.1.0':
     optional: true

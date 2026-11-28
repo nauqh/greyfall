@@ -129,7 +129,7 @@
 	border-radius: 3px;
 	background: var(--cream);
 	box-shadow: 0 2px 0 var(--stroke);
-	font: 800 11px "Nunito", sans-serif;
+	font: 800 11px var(--display), serif;
 	letter-spacing: 0.04em;
 	color: var(--stroke);
 	white-space: nowrap;
@@ -303,7 +303,7 @@ button.menuItem {
 
 .setPct {
 	min-width: 4ch;
-	font: 800 12px "Nunito", sans-serif;
+	font: 800 12px var(--display), serif;
 	text-align: right;
 }
 

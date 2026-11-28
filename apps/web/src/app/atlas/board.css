@@ -15,7 +15,7 @@
 	min-height: 420px;
 	padding: 52px 18px 18px;
 	color: var(--bark);
-	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-family: var(--book), serif;
 	font-weight: 700;
 	font-size: 15px;
 	border: 44px solid transparent;
@@ -64,6 +64,7 @@
 	background: var(--paperRaised);
 	box-shadow: 2px 3px 0 rgb(28 18 10 / 0.45);
 	rotate: 3deg;
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-size: 18px;
 	font-variant-numeric: tabular-nums;
@@ -150,6 +151,7 @@
 	align-items: center;
 	gap: 4px;
 	margin-top: auto;
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-variant-numeric: tabular-nums;
 	color: var(--gold);
@@ -163,6 +165,7 @@
 	border: 2px solid currentColor;
 	border-radius: 3px;
 	font-size: 11px;
+	font-family: var(--display), serif;
 	font-weight: 800;
 	letter-spacing: 0.12em;
 	text-transform: uppercase;
@@ -214,6 +217,7 @@
 	align-items: center;
 	gap: 10px;
 	padding-right: 96px;
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-size: 19px;
 	line-height: 1.2;
@@ -249,6 +253,7 @@
 
 .boardFacts dd {
 	margin: 0;
+	font-family: var(--display), serif;
 	font-weight: 800;
 	text-align: right;
 }
@@ -264,7 +269,7 @@
 	justify-content: center;
 	gap: 6px 28px;
 	color: var(--light);
-	font: 800 14px "Nunito", sans-serif;
+	font: 800 14px var(--display), serif;
 	letter-spacing: 0.06em;
 	-webkit-text-stroke: 4px var(--outline);
 	paint-order: stroke fill;

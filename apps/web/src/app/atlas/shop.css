@@ -8,7 +8,7 @@
 	padding: 20px 20px 16px;
 	overflow: hidden;
 	color: var(--bark);
-	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-family: var(--book), serif;
 	font-weight: 700;
 	font-size: 15px;
 	border: 2px solid var(--brown);
@@ -42,6 +42,7 @@
 }
 
 .shopKicker {
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-size: 12px;
 	letter-spacing: 0.2em;
@@ -50,6 +51,7 @@
 }
 
 .shopName {
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-size: 24px;
 	line-height: 1.15;
@@ -63,6 +65,7 @@
 	border: 1px solid rgb(201 163 92 / 0.8);
 	border-radius: 4px;
 	background: rgb(242 212 138 / 0.3);
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-size: 18px;
 	font-variant-numeric: tabular-nums;
@@ -215,6 +218,7 @@
 
 .shopRow b {
 	align-self: end;
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-size: 17px;
 }
@@ -266,6 +270,7 @@
 	align-items: center;
 	gap: 6px;
 	font-size: 18px;
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-variant-numeric: tabular-nums;
 	color: var(--gold);
@@ -347,6 +352,7 @@
 }
 
 .shopTellName {
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-size: 17px;
 	color: var(--brown);
@@ -387,6 +393,7 @@
 .shopStats dd,
 .shopLedger dd {
 	margin: 0;
+	font-family: var(--display), serif;
 	font-weight: 800;
 	text-align: right;
 	font-variant-numeric: tabular-nums;
@@ -427,6 +434,7 @@
 	justify-content: center;
 	gap: 4px 18px;
 	font-size: 11px;
+	font-family: var(--display), serif;
 	font-weight: 800;
 	letter-spacing: 0.14em;
 	text-transform: uppercase;

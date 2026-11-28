@@ -64,7 +64,7 @@ export function makeWarFxAnims(scene: Phaser.Scene): void {
 export function floatText(scene: Phaser.Scene, x: number, y: number, text: string, color: string, speed: number): void {
   const tag = trackFx(scene, scene.add
     .text(x, y, text, {
-      fontFamily: '"Nunito", sans-serif',
+      fontFamily: '"Cinzel", serif',
       fontSize: "17px",
       color,
       stroke: "#1c2634",

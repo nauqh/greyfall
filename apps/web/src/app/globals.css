@@ -41,7 +41,9 @@ body {
 	margin: 0;
 	min-height: 100vh;
 	color: var(--ink);
-	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-family: var(--book), serif;
+	/* Only the weights we ship; a faked bold smears the book face. */
+	font-synthesis-weight: none;
 	/* Flat teal sea, as in the reference. */
 	background-color: var(--sea);
 	/* The kit's arrow and hand, cropped to their art and hotspot-pinned. */
@@ -210,6 +212,7 @@ textarea {
 	position: relative;
 	z-index: 51;
 	font-size: 30px;
+	font-family: var(--display), serif;
 	font-weight: 700;
 	letter-spacing: 0.08em;
 	/* The scenes' text-outline ink: #5b6577 at 22px was lost on the cream sky. */
@@ -366,7 +369,8 @@ textarea {
 	align-items: center;
 	justify-content: center;
 	height: var(--h);
-	padding: 0 0 4px;
+	/* Level with the pill: Cinzel already rides its capitals high. */
+	padding: 0;
 	font-family: var(--display), serif;
 	font-weight: 700;
 	font-size: 22px;
@@ -664,9 +668,10 @@ textarea {
 /* An inked pill on a hard shadow; the press sinks it onto the shadow. */
 .btn {
 	min-width: 168px;
-	padding: 12px 22px;
+	padding: 14px 22px 10px;
 	color: var(--onPicked);
 	font: inherit;
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-size: 16px;
 	line-height: 20px;
@@ -807,7 +812,7 @@ textarea {
 	justify-content: center;
 	min-width: 220px;
 	height: var(--h);
-	padding: 0 20px 4px;
+	padding: 0 20px;
 	font-family: var(--display), serif;
 	font-weight: 700;
 	font-size: 19px;
@@ -1043,7 +1048,7 @@ textarea {
 	border: 18px solid transparent;
 	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 18px stretch;
 	color: var(--bark);
-	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-family: var(--book), serif;
 	font-size: 14px;
 	font-weight: 400;
 	line-height: 1.5;
@@ -1061,6 +1066,7 @@ textarea {
 	margin: 0;
 	color: var(--bark);
 	font-size: 15px;
+	font-family: var(--display), serif;
 	font-weight: 700;
 	line-height: 1.2;
 	letter-spacing: 0.02em;
@@ -1161,8 +1167,8 @@ textarea {
 }
 
 .areaRevealName {
-	/* The map's own district-label look: Nunito, bold, upper case, cream in a navy outline. */
-	font-family: "Nunito", "Segoe UI", sans-serif;
+	/* The map's own district-label look: bold, upper case, cream in a navy outline. */
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-size: clamp(30px, 5vw, 60px);
 	letter-spacing: 0.12em;
@@ -1321,7 +1327,7 @@ textarea {
 	min-width: 0;
 	padding: 6px 16px 9px;
 	color: #fdfaf0;
-	font: 800 16px "Nunito", sans-serif;
+	font: 800 16px var(--display), serif;
 	letter-spacing: 0;
 	text-transform: none;
 	-webkit-text-stroke: 4px var(--outline);
@@ -1461,6 +1467,7 @@ textarea {
 	padding: 5px 12px;
 	color: var(--gold);
 	font-size: 14px;
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-variant: small-caps;
 	letter-spacing: 0.08em;
@@ -1581,7 +1588,7 @@ textarea {
 
 .talkText {
 	max-width: 760px;
-	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-family: var(--book), serif;
 	font-size: clamp(18px, 2.2vw, 24px);
 	font-weight: 800;
 	line-height: 1.45;
@@ -1618,7 +1625,7 @@ textarea {
 	gap: 10px;
 	transform: translateX(-50%);
 	color: #fdfaf0;
-	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-size: 19px;
 	letter-spacing: 0.04em;
@@ -1633,26 +1640,29 @@ textarea {
 .keyCap {
 	display: inline-grid;
 	place-items: center;
-	width: 34px;
-	height: 34px;
-	padding-bottom: 3px;
-	background: url("/tiny-swords/UI Elements/UI Elements/Buttons/TinySquareBlueButton.png") center / contain no-repeat;
+	box-sizing: border-box;
+	min-width: 32px;
+	height: 32px;
+	/* The bottom padding is the key's skirt, so the letter centres on the top face. */
+	padding: 2px 7px 6px;
+	border: 2px solid var(--outline);
+	border-radius: 7px;
+	background: linear-gradient(#58a8b3, #46919d 70%);
+	box-shadow:
+		inset 0 -5px 0 #2b5f6c,
+		inset 0 2px 0 #8fdccb,
+		0 2px 0 rgb(0 0 0 / 0.25);
 	color: #fdfaf0;
-	font: 800 16px "Nunito", sans-serif;
+	font: 800 16px var(--display), serif;
+	line-height: 1;
 	letter-spacing: 0;
 	text-transform: none;
-	-webkit-text-stroke: 4px var(--outline);
+	-webkit-text-stroke: 3px var(--outline);
 	paint-order: stroke fill;
 }
 
-/* The frame drawn over the padding, not added to it, so a named key stands as tall as E. */
 .keyCap.wide {
-	box-sizing: border-box;
-	width: auto;
-	min-width: 34px;
-	padding: 0 8px 3px;
-	border-image: url("/tiny-swords/UI Elements/UI Elements/Buttons/TinySquareBlueButton.png") 18 fill / 10px / 0 stretch;
-	background: none;
+	padding-inline: 9px;
 }
 
 .keyHint {
@@ -1675,13 +1685,15 @@ textarea {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: 6px;
 	width: min(560px, calc(100% - 32px));
-	padding: 2px 10px 6px;
+	padding: 18px 28px;
 	transform: translateX(-50%);
-	border: 34px solid transparent;
-	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 34px stretch;
-	background: none;
+	/* The prologue's parchment, framed as the panels are. */
+	border: 2px solid var(--brown);
+	border-radius: 4px;
+	background: var(--parchment);
+	outline: 1px solid rgb(201 163 92 / 0.6);
+	outline-offset: -8px;
 	color: var(--bark);
 	text-align: center;
 	cursor: pointer;
@@ -1689,17 +1701,8 @@ textarea {
 	animation: noteRead 320ms cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 
-.noteHead {
-	font-family: "Nunito", "Segoe UI", sans-serif;
-	font-weight: 800;
-	font-size: 12px;
-	letter-spacing: 0.2em;
-	text-transform: uppercase;
-	color: #9a6a32;
-}
-
 .noteText {
-	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-family: var(--book), serif;
 	font-weight: 700;
 	font-size: clamp(16px, 2vw, 19px);
 	line-height: 1.45;
@@ -1742,7 +1745,7 @@ textarea {
 }
 
 .youDiedText {
-	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-family: var(--display), serif;
 	font-weight: 800;
 	font-size: clamp(40px, 8vw, 96px);
 	letter-spacing: 0.16em;
@@ -1925,7 +1928,7 @@ textarea {
 	border-radius: 4px;
 	background: rgb(7 10 16 / 0.72);
 	color: #fdfaf0;
-	font: 700 13px "Nunito", "Segoe UI", sans-serif;
+	font: 700 13px var(--display), serif;
 }
 
 .bandOrder {
@@ -2017,10 +2020,10 @@ textarea {
 	box-shadow: inset 0 0 0 3px #f4cf6b;
 }
 
-/* The scene labels wear the HUD's own text: Nunito on the colour and shadow
-   the battle labels use, not the paper menu's serif. */
+/* The scene labels wear the HUD's own text: the colour and shadow
+   the battle labels use. */
 .pickTag {
-	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-family: var(--display), serif;
 	font-weight: 700;
 	font-size: clamp(12px, 1.2vw, 15px);
 	letter-spacing: 0.18em;
@@ -2032,7 +2035,7 @@ textarea {
 
 .pickTitle {
 	position: relative;
-	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-family: var(--display), serif;
 	font-weight: 700;
 	font-size: clamp(32px, 4.4vw, 54px);
 	line-height: 1;
@@ -2067,7 +2070,7 @@ textarea {
 }
 
 .pickHint {
-	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-family: var(--book), serif;
 	font-weight: 400;
 	font-size: clamp(14px, 1.3vw, 17px);
 	color: #b9a887;
@@ -2082,7 +2085,7 @@ textarea {
 	padding: 4px 6px;
 	border: 0;
 	background: none;
-	font-family: "Nunito", "Segoe UI", sans-serif;
+	font-family: var(--book), serif;
 	font-weight: 600;
 	font-size: 15px;
 	text-decoration: underline;

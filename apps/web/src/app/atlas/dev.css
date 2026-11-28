@@ -20,7 +20,7 @@
 	box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
 	backdrop-filter: blur(6px);
 	color: var(--ink);
-	font: 700 13px "Nunito", "Segoe UI", sans-serif;
+	font: 700 13px system-ui, sans-serif;
 	/* Native controls drawn dark, ticked in gold. */
 	color-scheme: dark;
 	accent-color: var(--gold);

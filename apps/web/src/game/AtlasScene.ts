@@ -620,7 +620,8 @@ const HOVER = 0.28;
 const FIRE: Sheet = { file: "Effects/Fire/Fire.png", frame: 128, anchor: 0.8 };
 const FENCE = "Enemy Pack/Extra/Wooden Fence/Wooden Fence_64x64 tile.png";
 
-const FONT = '"Nunito", "Segoe UI", sans-serif';
+const FONT = '"Cinzel", serif';
+const BOOK = '"EB Garamond", serif';
 
 /** The area a sea tile takes its light from: the nearest within this many tiles. */
 const MOOD_REACH = 6;
@@ -4856,7 +4857,7 @@ export class AtlasScene extends Phaser.Scene {
     if (!text) return;
     f.bubble?.destroy();
     const b = this.add
-      .text(f.s.x, f.s.y - 1.45 * CELL, text, { fontFamily: FONT, fontSize: "24px", fontStyle: "italic bold", color: "#fdfaf0", stroke: "#1c2634", strokeThickness: 6, align: "center", wordWrap: { width: 5 * CELL } })
+      .text(f.s.x, f.s.y - 1.45 * CELL, text, { fontFamily: BOOK, fontSize: "26px", fontStyle: "italic", color: "#fdfaf0", stroke: "#1c2634", strokeThickness: 6, align: "center", wordWrap: { width: 5 * CELL } })
       .setOrigin(0.5, 1)
       .setDepth(DEPTH.fx + 2)
       .setAlpha(0);

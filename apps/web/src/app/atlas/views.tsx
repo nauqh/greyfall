@@ -574,7 +574,6 @@ export function AreaView({ area: first, devRoute = false }: { area: AreaId; devR
         {say?.note ? (
           // A note on the ground: its words on the same paper it lies on.
           <button key={say.text} type="button" className="noteRead" onClick={() => api.current?.next()} aria-live="polite">
-            <span className="noteHead">{say.name}</span>
             <span className="noteText">{noteKeys(say.text)}</span>
           </button>
         ) : say ? (

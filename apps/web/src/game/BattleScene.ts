@@ -1422,7 +1422,7 @@ export class BattleScene extends Phaser.Scene {
     this.floatStack = (this.floatStack + 14) % 42;
     const tag = this.add
       .text(view.sprite.x + jitter - 14, top, text, {
-        fontFamily: '"Nunito", sans-serif',
+        fontFamily: '"Cinzel", serif',
         fontSize: "17px",
         color,
         stroke: "#1c2634",

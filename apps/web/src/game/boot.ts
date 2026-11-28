@@ -83,8 +83,8 @@ export function startGame(
   follow.observe(parent);
   // Phaser bakes each Text into a canvas when it is created; before the
   // webfont arrives that bake is the fallback font forever.
-  void document.fonts
-    .load('600 16px "Nunito"')
+  void Promise
+    .all([document.fonts.load('700 16px "Cinzel"'), document.fonts.load('italic 400 16px "EB Garamond"')])
     .catch(() => {})
     .then(() => {
       if (cancelled) return;

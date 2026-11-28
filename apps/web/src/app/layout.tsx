@@ -1,18 +1,15 @@
 import type { Metadata } from "next";
 import "@fontsource/cinzel/latin-700.css";
 import "@fontsource/cinzel/latin-900.css";
-import "@fontsource/im-fell-english/latin-400.css";
-import "@fontsource/im-fell-english/latin-400-italic.css";
-import "@fontsource/im-fell-english-sc/latin-400.css";
-import "@fontsource/nunito/400.css";
-import "@fontsource/nunito/600.css";
-import "@fontsource/nunito/700.css";
+import "@fontsource/eb-garamond/latin-400.css";
+import "@fontsource/eb-garamond/latin-400-italic.css";
+import "@fontsource/eb-garamond/latin-600.css";
 import { Clicks } from "./Clicks";
 import "./globals.css";
 
 // Served from the packages, not fetched from Google Fonts at build: that fetch failed CI whenever Google's answer
-// carried no font file. The display face is for the title logo and menus; the book face for subtitles and hints.
-const fonts = { "--display": "'Cinzel'", "--book": "'IM Fell English'", "--bookSc": "'IM Fell English SC'" } as React.CSSProperties;
+// carried no font file. The display face is for names, heads and numbers; the book face for anything read.
+const fonts = { "--display": "'Cinzel'", "--book": "'EB Garamond'" } as React.CSSProperties;
 
 export const metadata: Metadata = {
   title: "Greyfall",
