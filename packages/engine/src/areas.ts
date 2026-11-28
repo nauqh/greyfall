@@ -1992,7 +1992,9 @@ function emberwood(): AreaMap {
 
   // The gate road north over the Cinder Ford and up the Ash Road; the crag road east to Crag Foot; the Burn's road
   // round the mound to the crag's foot, and its track north over the East Bridge.
-  t.road([40, 64], [40, 56], [44, 46], [44, 34], [52, 28], [62, 25], [62, 8]);
+  const ashRoad: [number, number][] = [[52, 28], [61, 25], [57, 20], [64, 15], [59, 11], [62, 8]];
+  const cutting: [number, number][] = [[22, 10], [27, 9], [32, 10], [37, 8], [43, 9], [49, 8], [54, 9], [59, 10]];
+  t.road([40, 64], [40, 56], [44, 46], [44, 34], ...ashRoad);
   edgeWay(t, { col: 62, row: 8 }, { col: 62, row: 1 });
   t.road([52, 28], [76, 24], [88, 26], [100, 20]);
   t.road([40, 56], [62, 54], [76, 48], [88, 40], [88, 26]);
@@ -2034,6 +2036,11 @@ function emberwood(): AreaMap {
   for (const [c, r] of [[76, 56], [80, 55], [77, 58]] as const) prop("goldStone", c, r);
   for (const [c, r] of [[58, 52], [58, 56], [90, 63], [94, 63], [84, 46], [88, 44]] as const) prop("skullSpike", c, r);
   for (const [c, r] of [[69, 57], [61, 60], [75, 52]] as const) prop("bones", c, r);
+  // The Chief's Mound is the hoard every warband brings home: the chief's hut at its head, the Palisade's timber and
+  // tools, meat, gold heaped round the shaman, skulls at the head of each stair.
+  prop("goblinHut", 78, 53, pinned);
+  for (const [c, r, art] of [[74, 54, "woodPile"], [75, 57, "logStack"], [81, 58, "tools"], [83, 56, "meat"], [79, 59, "meat"], [74, 59, "woodPile"]] as const) prop(art, c, r, pinned);
+  for (const [c, r] of [[73, 57], [83, 58]] as const) prop("skullSpike", c, r, pinned);
   // The village round the fire: horned skulls on poles for the lord up the road, and two pools the warm ground fills,
   // where the goblins sit and steam.
   for (const [c, r] of [[64, 50], [72, 50], [65, 55], [71, 55]] as const) prop("hornTotem", c, r, pinned);
@@ -2075,20 +2082,26 @@ function emberwood(): AreaMap {
   for (const [c, r] of [[7, 50], [11, 47]] as const) prop("bones", c, r);
   for (const [c, r] of [[20, 57], [5, 61]] as const) prop("bush", c, r);
 
-  // Smoke Bluff: the gnolls' perch over the Run, the Treetop Walk's south end.
-  for (const [c, r] of [[22, 46], [31, 47]] as const) prop("goblinHut", c, r);
-  for (const [c, r] of [[24, 44], [30, 44]] as const) who("gnoll", c, r, { to: { col: c, row: r + 3 } });
-  crowd(t, rng, "spear", { col: 26, row: 48 }, 3, 2);
-  t.campfires.push({ col: 24, row: 47 });
+  // Smoke Bluff: the gnolls' perch over the Run, the Treetop Walk's south end. They lie along the north rim behind
+  // boulders, shooting down on the Pine Ford road, their dens in a row at the back; the Grey has the bluff's trees.
+  for (const [c, r] of [[22, 48], [26, 49], [30, 48]] as const) prop("goblinHut", c, r, pinned);
+  for (const [c, r] of [[21, 43], [24, 43], [31, 44]] as const) who("gnoll", c, r);
+  for (const [c, r] of [[22, 42], [25, 42], [32, 43]] as const) prop("rock", c, r, pinned);
+  crowd(t, rng, "spear", { col: 26, row: 46 }, 3, 2);
+  t.campfires.push({ col: 27, row: 46 });
   prop("skullSpike", 26, 43);
-  for (const [c, r] of [[22, 48], [34, 49]] as const) prop("goblinHut", c, r, pinned);
   prop("watchtower", 29, 42, pinned);
-  for (const [c, r] of [[21, 44], [33, 45], [28, 50]] as const) prop("bones", c, r);
+  for (const [c, r] of [[20, 46], [33, 47], [23, 45]] as const) prop("deadTree", c, r, { scale: 0.6, fixed: true });
+  for (const [c, r] of [[21, 44], [30, 45], [28, 50]] as const) prop("bones", c, r);
 
   // Warren Hill: Highward's old watch keep on the crest, taken for the warren, its hoard by the door; warrens on both
   // heights, a slinger on the walk, a watchtower over its end.
   prop("castle", 25.5, 18, { ...blue, ...pinned });
-  for (const [c, r] of [[18, 26], [24, 30], [33, 27], [20, 20], [30, 20]] as const) prop("goblinHut", c, r);
+  // The crest is the larder: pigs rooting by the keep, meat on the racks, the crest fire's wood stacked by it.
+  for (const [c, r] of [[21, 21], [23, 22]] as const) who("pig", c, r);
+  for (const [c, r, art] of [[29, 21, "meat"], [31, 21, "meat"], [23, 24, "woodPile"]] as const) prop(art, c, r, pinned);
+  // The warrens in terraces: along both rims of the lower height, and built against the crest's face.
+  for (const [c, r] of [[16, 17], [15, 21], [16, 25], [35, 18], [36, 22], [35, 26], [19, 28], [23, 28], [31, 28], [35, 29]] as const) prop("goblinHut", c, r, pinned);
   t.campfires.push({ col: 26, row: 24 });
   crowd(t, rng, "torch", { col: 25, row: 24 }, 5, 6);
   who("slingshot", 27, 35, { to: { col: 28, row: 39 } });
@@ -2096,9 +2109,9 @@ function emberwood(): AreaMap {
   prop("watchtower", 31, 30);
   for (const [c, r] of [[22, 19], [29, 19]] as const) prop("goldStone", c, r);
   for (const [c, r] of [[20, 23], [33, 23], [23, 33], [22, 31], [31, 33]] as const) prop("skullSpike", c, r);
-  // More warrens round both rims.
-  for (const [c, r] of [[14, 22], [35, 23], [19, 30], [28, 31], [21, 23], [30, 24]] as const) prop("goblinHut", c, r, pinned);
-  for (const [c, r] of [[16, 33], [36, 27]] as const) prop("bones", c, r);
+  // The larder's leavings tipped down the west stair.
+  for (const [c, r] of [[16, 33], [14, 31], [17, 32]] as const) prop("bones", c, r);
+  prop("logPile", 33, 24, pinned);
 
   // Cinder Ford: the last rest before the bull, on the north bank where the Ash Road starts; goblins watch the crossing.
   t.fires.push({ col: 48, row: 31 });
@@ -2112,19 +2125,28 @@ function emberwood(): AreaMap {
 
   // The Ash Road: the goblins' way north to the bull they feed, its skulls and its watch; halfway, the steward's end.
   // Horned skulls in pairs the length of it, a pilgrim road to the horned lord at its head.
-  for (const r of [24, 20, 16, 12, 8]) for (const c of [59, 65]) prop("hornTotem", c, r);
-  for (const [c, r] of [[60, 18], [64, 20]] as const) who("spear", c, r);
-  t.campfires.push({ col: 60, row: 22 });
+  // The road winds round the old timber stands, so the skulls follow its bends rather than a ruled line.
+  for (const [c, r] of [[60, 24], [58, 19], [62, 13], [62, 8]] as const) for (const d of [-1, 1]) prop("hornTotem", c + d, r);
+  for (const [c, r] of [[56, 22], [54, 20]] as const) who("spear", c, r);
+  t.campfires.push({ col: 54, row: 22 });
   prop("goblinHut", 67, 17, pinned);
-  for (const [c, r] of [[58, 18], [66, 10], [57, 22]] as const) prop("deadTree", c, r, { scale: 0.7 });
+  for (const [c, r] of [[60, 17], [56, 11], [64, 22]] as const) prop("deadTree", c, r, { scale: 0.7 });
   // The steward's bones, and older ones.
-  for (const [c, r] of [[64, 15], [60, 9], [66, 22]] as const) prop("bones", c, r);
+  for (const [c, r] of [[66, 15], [61, 10], [62, 26]] as const) prop("bones", c, r);
 
   // Crag Foot: the last gnome prospectors, stragglers cut off from their kin: one hut on the rock, the shaft under its
   // south face and the ore they still stack, gold in its seams, a goblin post where the road leaves the wood.
   prop("gnomeHut", 92, 10);
   crowd(t, rng, "gnome", { col: 94, row: 12 }, 1, 3);
   for (const [c, r] of [[86, 8], [100, 8], [108, 14]] as const) prop("goldStone", c, r);
+  // Their tower by the hut, the seam they work along the crest's north edge, the stone they broke out of it; their
+  // huts in a row along the yard's back, under the crest's face.
+  prop("gnomeTower", 96, 10, pinned);
+  for (const [c, r] of [[90, 8], [93, 8]] as const) prop("goldStone", c, r, pinned);
+  who("gnome", 91, 9, { to: { col: 94, row: 9 } });
+  for (const [c, r] of [[89, 11], [95, 13], [90, 13]] as const) prop("rock", c, r);
+  for (const c of [87, 91, 95]) prop("gnomeHut", c, 17, pinned);
+  for (const [c, r, art] of [[93, 19, "tools"], [89, 19, "logPile"], [97, 19, "rock"]] as const) prop(art, c, r);
   prop("goldMine", 90, 22, pinned);
   heap(t, 93, 26);
   who("gnome", 94, 27, { to: { col: 91, row: 24 } });
@@ -2146,9 +2168,12 @@ function emberwood(): AreaMap {
   t.pond(90, 7, 3, 1);
   // The old cutting along the north coast, from Warren Hill's back to the Ash Road: a woodcutter who hid from the goblins
   // there and never came out, the gold he hid with him.
-  for (const [c, r] of [[35, 9], [37, 10], [38, 9]] as const) prop("goldStone", c, r);
-  for (const [c, r] of [[36, 10], [34, 10]] as const) prop("bones", c, r);
-  prop("deadTree", 40, 9, { scale: 0.7 });
+  // A track that wanders with the coast, his camp at one bend and his bones a little on.
+  t.track(...cutting);
+  for (const [c, r] of [[36, 9], [38, 7]] as const) prop("goldStone", c, r);
+  prop("logPile", 34, 8);
+  prop("bones", 41, 10);
+  prop("deadTree", 46, 8, { scale: 0.7 });
   const notes: Note[] = [
     { at: { col: 111, row: 55 }, text: "Keep Gate barred behind me. The key is on my belt. The wood road round to Lanternport, then." },
     { at: { col: 38, row: 61 }, text: "Ran for the gate. They barred it with us still outside. Can't blame them." },
@@ -2168,9 +2193,34 @@ function emberwood(): AreaMap {
     { name: "Crag Foot", at: { col: 94, row: 22 }, levels: [1, 2, 3], palette: [3], dress: "emberwood", decor: 2, clearing: 4 },
     { name: "Postern Crag", at: { col: 110, row: 62 }, levels: [1, 2, 3, 4], palette: [3], dress: "crags", decor: 1 },
   ];
-  // The cutting's two ends opened out, so the way in reads past the crowns.
-  const rooms = [...districts.map((d) => ({ at: d.at, r: d.clearing ?? 6 })), { at: { col: 49, row: 8 }, r: 2 }, { at: { col: 22, row: 10 }, r: 2 }];
-  const tier = t.finish({}, [{ col: 40, row: 64 }], maze(t, rng, rooms));
+  const rooms = districts.map((d) => ({ at: d.at, r: d.clearing ?? 6 }));
+  // The dead stand under the Ash Road and behind Warren Hill is one wood, open only along its ways, each wandering wider
+  // and narrower: the maze there left thin strips of trees standing between its clearings, like paths laid in trees.
+  const stand = (c: number, r: number): boolean => (r <= 27 && c >= 38 && c <= 72) || (r <= 12 && c >= 20 && c < 38);
+  const wobble = noise("emberwood:stand", 3);
+  const ways = new Set<number>();
+  const wide = (rad: number, jag: number, ...pts: [number, number][]): void => {
+    for (let i = 0; i < pts.length; i++) {
+      const [a, b] = [pts[Math.max(0, i - 1)]!, pts[i]!];
+      const steps = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2));
+      for (let s = 0; s <= steps; s++) {
+        const [x, y] = [a[0] + ((b[0] - a[0]) * s) / steps, a[1] + ((b[1] - a[1]) * s) / steps];
+        for (let r = Math.floor(y - rad - jag); r <= y + rad + jag; r++) for (let c = Math.floor(x - rad - jag); c <= x + rad + jag; c++) if (Math.hypot(c - x, r - y) <= rad + wobble(c, r) * jag) ways.add(r * 128 + c);
+      }
+    }
+  };
+  wide(1.6, 1, ...ashRoad);
+  wide(1.6, 1, [52, 28], [76, 24]);
+  wide(0.8, 0.7, ...cutting);
+  // The post's watch fire and the steward's end off the road, the woodcutter's camp and the cutting's west mouth.
+  wide(2.2, 1, [54, 21]);
+  wide(2.6, 1.2, [66, 16]);
+  wide(2.2, 1, [36, 8]);
+  wide(2.4, 1, [22, 10]);
+  // The north grove's trees, laid early, would stand on the cutting and wall it into pockets: the stand replants them.
+  for (let r = 0; r <= 27; r++) for (let c = 20; c <= 72; c++) if (stand(c, r) && t.at(c, r) === "T") t.put(c, r, ".");
+  const floor = maze(t, rng, rooms);
+  const tier = t.finish({}, [{ col: 40, row: 64 }], (c, r) => (stand(c, r) ? ways.has(r * 128 + c) : floor(c, r)));
   const exits: AreaExit[] = [
     { to: "harbour", name: "Ember Gate", kind: "gate", at: { col: 40, row: 70 }, opens: "emberGateOpen" },
     { to: "belfry", name: "The Postern", kind: "open", at: { col: 113, row: 55 } },

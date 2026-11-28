@@ -143,7 +143,9 @@ bend.
 - **Why go:** it lies between the crag and the Palisade; its Chief's Mound
   holds the goblins' plunder (gold).
 - **Stands there:** the Chief's Mound (height 2) in the middle, the war
-  band's shaman and a gnoll on it with the plunder under a lookout; two rings
+  band's shaman and a gnoll on it with the plunder under a lookout: the
+  chief's hut at its head, the Palisade's timber and tools, meat and gold
+  heaped round, skulls at each stair's head; two rings
   of huts round the fire, horned skull totems on poles round it, and two hot
   pools the warm ground fills, steaming; skulls in pairs
   where the roads come in; torches round the fire,
@@ -185,8 +187,9 @@ bend.
 - **Why go:** the Drawn Plank, once dropped, is the short way from the
   Palisade onto Warren Hill; the gnolls on it shoot down on the Pine Ford
   road.
-- **Stands there:** gnolls and a goblin spear post, four huts, a lookout over
-  the walk. Wren stands at its foot once the bull is dead (26, 41).
+- **Stands there:** gnolls lying along the north rim behind boulders, a
+  goblin spear post round the fire, three dens in a row at the back, the
+  Grey's dead trees, a lookout over the walk. Wren stands at its foot once the bull is dead (26, 41).
 
 ### Warren Hill (0-40, 0-34), the goblins' home
 
@@ -197,8 +200,10 @@ bend.
   Plank's lever: from here the Treetop Walk is opened for good. Behind the
   hill the old cutting runs east along the coast to the Ash Road, where a
   woodcutter hid from the goblins with his gold and never came out.
-- **Stands there:** Highward's blue watch keep on the crest, huts on both heights, the shaman by the crest fire (a
-  campfire), torches, a slinger on the Treetop Walk, a watchtower over the
+- **Stands there:** Highward's blue watch keep on the crest, the larder by
+  it (pigs, meat racks), the shaman by the crest fire (a campfire); huts in
+  terraces along both rims of the lower height and against the crest's face;
+  torches, a slinger on the Treetop Walk, a watchtower over the
   walk's end, trophies. Its foot opens east onto the Cinder Ford
   and west onto the Pine Ford.
 
@@ -217,7 +222,8 @@ bend.
 - **Job:** the goblins' road north to the bull they feed, skull-lined.
 - **Why go:** The Ash Road exit (to the Ember Hollow) at its head, and the
   steward's end.
-- **Stands there:** horned skull totems in pairs the length of it, a pilgrim
+- **Stands there:** the road winding through one dead stand, open only along
+  it and the cutting (no maze there); horned skull totems in pairs the length of it, a pilgrim
   road to the horned lord at its head; spears on watch with their hut and
   watch fire, dead trees; halfway
   up, the steward's bones and his last note.
