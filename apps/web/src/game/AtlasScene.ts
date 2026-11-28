@@ -1325,7 +1325,7 @@ export class AtlasScene extends Phaser.Scene {
     };
     const resize = (size: Phaser.Structs.Size): void => {
       for (const c of Object.values(this.cams)) c.setSize(size.width, size.height);
-      if (this.playing) this.active.setZoom(this.zoomFor(AREA_ROWS));
+      if (this.playing) this.active.setZoom(this.playZoom());
     };
     this.scale.on(Phaser.Scale.Events.RESIZE, resize);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, resize));
@@ -1733,6 +1733,11 @@ export class AtlasScene extends Phaser.Scene {
     return this.cameras.main.height / (rows * CELL);
   }
 
+  /** The play view: AREA_ROWS tall, but never under 1, where the pixel art would be drawn below its own size. */
+  private playZoom(): number {
+    return Math.max(this.zoomFor(AREA_ROWS), 1);
+  }
+
   /** The camera of the tier in view drives; the others follow, nearer or further. */
   private get active(): Phaser.Cameras.Scene2D.Camera {
     return this.cams[this.view];
@@ -1910,11 +1915,11 @@ export class AtlasScene extends Phaser.Scene {
       // to the area's middle and the follow slides back.
       const bound = (): void => void cam.setBounds(0, 0, STRAT_COLS * CELL, STRAT_ROWS * CELL);
       if (snap) {
-        cam.setZoom(this.zoomFor(AREA_ROWS));
+        cam.setZoom(this.playZoom());
         bound();
       }
       cam.startFollow(hero.s, true, 0.15, 0.15);
-      if (!snap) cam.zoomTo(this.zoomFor(AREA_ROWS), 300, "Sine.easeInOut", true, (_c, p) => p === 1 && this.playing && bound());
+      if (!snap) cam.zoomTo(this.playZoom(), 300, "Sine.easeInOut", true, (_c, p) => p === 1 && this.playing && bound());
     }
   }
 
@@ -2469,7 +2474,7 @@ export class AtlasScene extends Phaser.Scene {
   private closeUp(at: { x: number; y: number } | null, keep?: Folk): void {
     const cam = this.active;
     const hero = this.hero!;
-    const base = this.zoomFor(AREA_ROWS);
+    const base = this.playZoom();
     const zoom = at ? Math.ceil(base * 2.2) : base;
     cam.zoomTo(zoom, 900, "Sine.easeInOut", true);
     // The rest panel takes the left 40%: the shot sits at 70% across.
@@ -2491,7 +2496,7 @@ export class AtlasScene extends Phaser.Scene {
     if (!this.hero || this.close || this.free || this.gone || cover === this.sackCover) return;
     this.sackCover = cover;
     const cam = this.active;
-    const base = this.zoomFor(AREA_ROWS);
+    const base = this.playZoom();
     const zoom = cover > 0 && cover < 0.9 ? Math.ceil(base * 2.2) : base;
     cam.zoomTo(zoom, 600, "Sine.easeInOut", true);
     this.easeOffset(zoom === base ? 0 : (cam.width * cover) / 2 / zoom, 0, 600);
@@ -2517,7 +2522,7 @@ export class AtlasScene extends Phaser.Scene {
     cam.setZoom(this.zoomFor(5));
     cam.centerOn(hero.s.x, hero.s.y - CELL / 2);
     // Onto where the bounded follow camera will sit, so nothing jumps when play takes it over.
-    const zoom = this.zoomFor(AREA_ROWS);
+    const zoom = this.playZoom();
     const [w, h] = [cam.width / zoom / 2, cam.height / zoom / 2];
     const x = Phaser.Math.Clamp(hero.s.x, w, STRAT_COLS * CELL - w);
     const y = Phaser.Math.Clamp(hero.s.y, h, STRAT_ROWS * CELL - h);
