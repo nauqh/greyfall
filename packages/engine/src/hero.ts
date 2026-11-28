@@ -555,35 +555,35 @@ export function levelCost(levels: Levels): number {
  * name, which is what a save keeps; each adds to the player's numbers, an edge only on top of the one before.
  */
 export const ITEMS = {
-  "Smoked Haunch": { cost: 250, adds: { hp: 25 }, about: "Salt meat hung over a harbour fire, enough to keep a wanderer on their feet through one more bad night." },
-  "Ember Shard": { cost: 300, adds: { flasks: 1 }, about: "A splinter of the fire that was old before the Grey came. Carried with the rest, it is one more ember." },
-  "Brenna's Edge": { cost: 400, adds: { attack: 3 }, about: "Brenna ground this edge and will not say on what. It bites deeper than it looks." },
-  "Keener Edge": { cost: 800, adds: { attack: 3 }, needs: "Brenna's Edge", about: "Honed again once the warden on the bell roof fell silent, as if the stone had taught it something." },
-  "Grey-Iron Edge": { cost: 1200, adds: { attack: 4 }, needs: "Keener Edge", about: "Iron from the chapel's own bell, quenched cold. What it cuts does not quite mend." },
-  "Pine Resin": { cost: 450, adds: { flask: 15 }, about: "Sap boiled thick and rubbed into the embers. They burn bitter and hot, and close wounds the faster for it." },
-  "Banded Shield": { cost: 600, adds: { block: -0.75 }, about: "Oak bound in iron bands. A blow on it jars the arm far less than it ought to." },
-  "Kindled Shard": { cost: 900, adds: { flasks: 1 }, about: "A shard of the fire the bull lay on, burning again now it is gone. One more ember." },
-  "Prospector's Purse": { cost: 500, adds: { greed: 0.25 }, about: "A dead prospector's purse, never quite full. Coin finds its way into it." },
-  "Gnome Powder": { cost: 500, adds: { attack: 2 }, about: "A gnome's blasting powder, rubbed into the edge. It bites with a crack." },
-  "Tinker's Buckler": { cost: 700, adds: { block: -0.5 }, about: "Brass plates riveted on springs. A blow on it rings, and the arm hardly knows." },
+  "Smoked Haunch": { cost: 250, adds: { hp: 25 }, about: "Salt meat, hung a winter over the harbour fire at Lanternport. Raises the bearer's health. No ship has put in for three winters, and nobody asks what the meat was." },
+  "Ember Shard": { cost: 300, adds: { flasks: 1 }, about: "A splinter of Lanternport's fire, which Old Ferrow has never let go out. One more ember to carry. The fire was old before the Grey came, and nobody remembers who lit it." },
+  "Brenna's Edge": { cost: 400, adds: { attack: 3 }, about: "An edge ground onto the blade by Brenna the Smith. Every blow bites deeper. She will not say what she ground it on." },
+  "Keener Edge": { cost: 800, adds: { attack: 3 }, needs: "Brenna's Edge", about: "Brenna's edge, honed again once the Stone Warden fell silent on the bell roof. Bites deeper than the first. She says the stone taught it something." },
+  "Grey-Iron Edge": { cost: 1200, adds: { attack: 4 }, needs: "Keener Edge", about: "Brenna's edge, laid in iron from a chapel bell and quenched cold. Bites deeper still. What it cuts does not quite mend." },
+  "Pine Resin": { cost: 450, adds: { flask: 15 }, about: "Pine sap from the Emberwood, boiled thick and rubbed into the embers. Each ember heals more. The pines stand only on the wood's west edge now; the rest went to jungle." },
+  "Banded Shield": { cost: 600, adds: { block: -0.75 }, about: "Oak bound in iron bands, the shield of Highward's watch. A blow taken on it costs less stamina. The watch held the wards behind these, until the wards fell one by one." },
+  "Kindled Shard": { cost: 900, adds: { flasks: 1 }, about: "A shard of the fire the Ember Bull lay on, burning again now it is gone. One more ember to carry. The horned have no need of fire, and yet the bull lay on one." },
+  "Prospector's Purse": { cost: 500, adds: { greed: 0.25 }, about: "The purse of a prospector who went into the hills and did not come back. More gold from the fallen. It is never quite full, and coin finds its way in." },
+  "Gnome Powder": { cost: 500, adds: { attack: 2 }, about: "Nim's blasting powder, rubbed into the edge. Every blow bites deeper, with a crack. The gnomes below made it for Sunhold's works, and were paid in the leavings." },
+  "Tinker's Buckler": { cost: 700, adds: { block: -0.5 }, about: "Brass plates riveted on springs by Nim the Tinker. A blow taken on it costs little stamina. It rings when struck, and the arm hardly knows." },
   // Given by the folk, or sold once their questline goes the hard way; a cost of nothing is never sold.
-  "The Forty's Banner": { cost: 0, adds: { hp: 40 }, about: "The forty's banner, kept dry under the one who ran. It has been carried further since." },
-  "Ansel's Edge": { cost: 700, adds: { attack: 2 }, about: "The second of two edges a wall sitter paid for. He came back for one." },
-  "The Thrown Coin": { cost: 0, adds: { greed: 0.25 }, about: "Thrown down the Old Well to see who would come after. Coin follows it now." },
-  "Smuggler's Coat": { cost: 400, adds: { hp: 25 }, about: "Swapped, its last wearer said, deeper in. Nobody down there ever swapped a thing." },
-  "Sister's Candle": { cost: 600, adds: { flask: 15 }, about: "A sister's candle, burned down a winter of nights. Its light closes wounds, or seems to." },
-  "Hollow Water": { cost: 0, adds: { flasks: 1 }, about: "Water from the lake at the bottom of the world, warm as a hand. An ember dipped in it will not go out. The Pilgrims drink nothing else. Ferrow would not." },
-  "Digger's Torch": { cost: 500, adds: { greed: 0.25 }, about: "A goblin's pit torch, lit forty seasons and never let out. Paid at last, and gold still follows the light." },
-  "Stilled Bell": { cost: 0, adds: { flask: 15 }, about: "Rung by the Stilled to quiet the warm ones. Rung over an ember, it quiets a wound instead." },
-  "Mum's Bread": { cost: 0, adds: { hp: 20 }, about: "Baked in an east lane oven that sat cold a long while. Mostly ash. Eaten anyway." },
-  "Salt-Glass Lantern": { cost: 600, adds: { flasks: 1 }, about: "Blown on the salt coast, thick as a thumb, and room in it for one more ember. It came in on the first ship in three winters." },
-  "Hollis's Gaff": { cost: 0, adds: { attack: 3 }, about: "A fishing gaff, its hook filed to an edge. Lent, not given: the sea wants it back past the Ring." },
-  "Wheel Cog": { cost: 0, adds: { stamina: 20 }, about: "A cog off the lift wheel, worn bright by Old Bamboo's feet. Carried, it seems to keep turning." },
+  "The Forty's Banner": { cost: 0, adds: { hp: 40 }, about: "The banner of Sergeant Corwin's forty, kept dry under the one who ran. Raises the bearer's health. Corwin has found thirty-nine of them. He is still looking for the fortieth." },
+  "Ansel's Edge": { cost: 700, adds: { attack: 2 }, about: "The second of two edges Ansel of the Wall paid Brenna for. Every blow bites deeper. He came back for the first one, at last." },
+  "The Thrown Coin": { cost: 0, adds: { greed: 0.25 }, about: "A coin thrown down the Old Well, to see who would come after. More gold from the fallen. Nobody climbs back up the well. That is its rule." },
+  "Smuggler's Coat": { cost: 400, adds: { hp: 25 }, about: "A smuggler's coat, sold by Jory. Raises the bearer's health. Its last wearer swore he swapped for it deeper in. Nobody deeper in ever swapped a thing." },
+  "Sister's Candle": { cost: 600, adds: { flask: 15 }, about: "A candle of the Order, burned down a winter of nights at Mother Ysolde's fire. Each ember heals more. She lit one each night long after the praying stopped." },
+  "Hollow Water": { cost: 0, adds: { flasks: 1 }, about: "Water from the lake at the bottom of the world, warm as a hand. One more ember to carry, and it will not go out. The Pilgrims drink nothing else. Old Ferrow would not." },
+  "Digger's Torch": { cost: 500, adds: { greed: 0.25 }, about: "A goblin's pit torch, lit forty seasons and never let out. More gold from the fallen. The digging was paid for at last, and gold still follows the light." },
+  "Stilled Bell": { cost: 0, adds: { flask: 15 }, about: "A handbell of the Stilled, rung to quiet the warm ones. Each ember heals more. Rung over an ember, it quiets a wound instead." },
+  "Mum's Bread": { cost: 0, adds: { hp: 20 }, about: "Bread from Penny's mum, baked in an east lane oven that sat cold a long while. Raises the bearer's health. Mostly ash. Eaten anyway." },
+  "Salt-Glass Lantern": { cost: 600, adds: { flasks: 1 }, about: "A lantern blown on the salt coast, the glass thick as a thumb. One more ember to carry. It came in on the first ship to put in for three winters." },
+  "Hollis's Gaff": { cost: 0, adds: { attack: 3 }, about: "Hollis the Castaway's fishing gaff, its hook filed to an edge. Every blow bites deeper. Lent, not given: the sea wants it back past the Ring." },
+  "Wheel Cog": { cost: 0, adds: { stamina: 20 }, about: "A cog off the lift wheel, worn bright by Old Bamboo's feet. Raises the bearer's stamina. Carried, it seems to keep turning." },
   // The gifts: one picked at a new game's start, come ashore with the captain; never sold.
-  "Drowned Locket": { cost: 0, adds: { hp: 20 }, about: "Salt in the hinge. Whoever's face was in it, the sea kept. It still sits warm against the chest." },
-  "Notched Whetstone": { cost: 0, adds: { attack: 2 }, about: "Worn hollow by a hand that is not yours. An edge kept on it bites a little deeper." },
-  "Tinder Tin": { cost: 0, adds: { flasks: 1 }, about: "Shut tight before the ship went down, and the coal in it kept dry. One more ember, and it smells of the sea." },
-  "Gull-Picked Purse": { cost: 0, adds: { greed: 0.25 }, about: "The gulls had the coins and left the purse. It has a knack for filling again." },
+  "Drowned Locket": { cost: 0, adds: { hp: 20 }, about: "A locket come ashore, salt in the hinge. Raises the bearer's health. Whose face was in it, the sea kept. It still sits warm against the chest." },
+  "Notched Whetstone": { cost: 0, adds: { attack: 2 }, about: "A whetstone worn hollow by a hand that is not the bearer's. Every blow bites deeper. Whose hand, the sea kept." },
+  "Tinder Tin": { cost: 0, adds: { flasks: 1 }, about: "A tin shut tight before the ship went down, the coal in it kept dry. One more ember to carry. It smells of the sea." },
+  "Gull-Picked Purse": { cost: 0, adds: { greed: 0.25 }, about: "A purse come ashore empty; the gulls had the coins. More gold from the fallen. It has a knack for filling again." },
 } as const satisfies Record<string, { cost: number; adds: Partial<Kit>; needs?: string; about: string }>;
 export type ItemName = keyof typeof ITEMS;
 /** The gifts a new game offers: one taken ashore, kept for the run. */
@@ -596,13 +596,13 @@ export const LENT: readonly ItemName[] = ["Hollis's Gaff"];
  * with E, carried by the count, and sold to `buyer`, the one merchant whose trade it is, for `worth` gold each.
  */
 export const LOOT = {
-  "Scrap Iron": { worth: 10, buyer: "brenna", from: ["torch", "spear", "slingshot", "taken"], chance: 0.35, about: "Goblin iron, pitted and bent out of true. Brenna buys it by weight, for the forge." },
-  "Spider Silk": { worth: 8, buyer: "mags", from: ["spider"], chance: 0.4, about: "A hank of web, tougher than net twine. Mags buys it, and the fishers buy it off her." },
-  "Scaled Hide": { worth: 9, buyer: "mags", from: ["lizard", "snake"], chance: 0.35, about: "A hide in scales, stiff with salt. Mags buys it for boot soles." },
-  "Stolen Ring": { worth: 20, buyer: "jory", from: ["thief"], chance: 0.3, about: "A ring a thief took off someone else. Jory buys it and never asks whose." },
-  "Grave Beads": { worth: 12, buyer: "jory", from: ["skull"], chance: 0.3, about: "Beads strung on gut, off the dead that walk. Jory buys them. He will not say who for." },
-  "Tooth Charm": { worth: 16, buyer: "jory", from: ["shaman"], chance: 0.4, about: "A goblin shaman's charm, teeth on a cord. Jory buys it, though no one in Lanternport would wear one." },
-  "Gnoll Tusk": { worth: 14, buyer: "nim", from: ["gnoll"], chance: 0.4, about: "A gnoll's tusk, yellow at the root. Nim grinds it into his powder." },
+  "Scrap Iron": { worth: 10, buyer: "brenna", from: ["torch", "spear", "slingshot", "taken"], chance: 0.35, about: "Iron off a digger or one of the taken, pitted and bent out of true. Brenna buys it by weight, for the forge. Some of it was a soldier's, once." },
+  "Spider Silk": { worth: 8, buyer: "mags", from: ["spider"], chance: 0.4, about: "A hank of web, tougher than net twine. Mags buys it, and the fishers buy it off her. Nobody in Lanternport asks how big the spider was." },
+  "Scaled Hide": { worth: 9, buyer: "mags", from: ["lizard", "snake"], chance: 0.35, about: "A hide in scales, off the fen, stiff with salt. Mags buys it for boot soles. She calls it snakeskin, whatever it came off." },
+  "Stolen Ring": { worth: 20, buyer: "jory", from: ["thief"], chance: 0.3, about: "A ring a thief took off someone else's hand. Jory buys it and never asks whose. Most of the hands are cold now." },
+  "Grave Beads": { worth: 12, buyer: "jory", from: ["skull"], chance: 0.3, about: "Beads strung on gut, off the dead that walk the barrows. Jory buys them. He will not say who for." },
+  "Tooth Charm": { worth: 16, buyer: "jory", from: ["shaman"], chance: 0.4, about: "A mask's charm, teeth on a cord, worn for the Old Law. Jory buys it, though no one in Lanternport would wear one. Whose teeth, the masks do not say." },
+  "Gnoll Tusk": { worth: 14, buyer: "nim", from: ["gnoll"], chance: 0.4, about: "A tusk off one of the Grey's dogs, yellow at the root. Nim the Tinker grinds it into his powder. What it adds, he calls a trade secret." },
 } as const satisfies Record<string, { worth: number; buyer: string; from: readonly string[]; chance: number; about: string }>;
 export type LootName = keyof typeof LOOT;
 
