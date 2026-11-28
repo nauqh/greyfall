@@ -55,24 +55,24 @@ export const BUILT = [
   cell("a", "house1", 23, 12.8),
 ];
 
-/** The landing party, each strolling about its own spot, feet in cells: two on the lowland, one up on the crown. */
+/** The landing party, each strolling about its own spot, feet in cells: one on the lowland, one at the cave's mouth, one up on the crown. */
 const PARTY: readonly { cls: UnitClass; col: number; row: number }[] = [
   { cls: "warrior", col: 13, row: 6.9 },
   { cls: "lancer", col: 20, row: 13.4 },
-  { cls: "archer", col: 9.2, row: 13.2 },
+  { cls: "archer", col: 9.4, row: 9.7 },
 ];
 /** How far a stroller strays from its spot, in cells. */
 const ROAM = 1.5;
 
 /** The camp and the island at work, feet in cells. `pace` cells there and back, signed for the way it sets off. */
 const CAST: readonly { cls: UnitClass; col: number; row: number; pace?: number; left?: boolean; work?: keyof typeof WORK; on?: number }[] = [
-  // On the lookout's top, and a monk at the camp fire.
+  // On the lookout's top, and a monk before the chapel.
   { cls: "archer", col: 7.4, row: 2.03, on: 3.85 },
-  { cls: "monk", col: 11.4, row: 12.5 },
+  { cls: "monk", col: 20.5, row: 8.3 },
   // Digging the ridge's seam, carrying along the ridge, raising the hut.
   { cls: "pawn", col: 17.4, row: 4.3, work: "dig" },
   { cls: "pawn", col: 18.2, row: 7.5, pace: -2, work: "carry" },
-  { cls: "pawn", col: 21.4, row: 15.4, left: true, work: "hammer" },
+  { cls: "pawn", col: 20.8, row: 15.15, left: true, work: "hammer" },
 ];
 
 const CAMPFIRE = { col: 12.5, row: 12.6 } as const;
@@ -88,9 +88,6 @@ const height = (c: number, r: number): number => {
 };
 const slope = (c: number, r: number): boolean => "<>[]{}()".includes(ground(c, r));
 
-/** The camp's sheep pen on the west lowland, in cells: its top-left tile, size, and the gate's column in its bottom row. */
-const PEN = { col: 4, row: 12, w: 4, h: 3, gate: 6 } as const;
-const inPen = (c: number, r: number): boolean => c >= PEN.col - 0.5 && c < PEN.col + PEN.w + 0.5 && r >= PEN.row - 0.5 && r < PEN.row + PEN.h + 0.5;
 const SHEEP: readonly [number, number][] = [[5.3, 13.9], [6.6, 13.6], [22.5, 10.5], [21.8, 9.4]];
 
 export class IntroAtlasScene extends Phaser.Scene {
@@ -102,7 +99,6 @@ export class IntroAtlasScene extends Phaser.Scene {
     loadTerrain(this);
     loadUnits(this);
     loadBuildings(this, BUILT);
-    if (!this.textures.exists("fence")) this.load.spritesheet("fence", packUrl("Enemy Pack/Extra/Wooden Fence/Wooden Fence_64x64 tile.png"), { frameWidth: 64, frameHeight: 64 });
     if (!this.textures.exists("atlasBoat")) this.load.spritesheet("atlasBoat", packUrl("Enemy Pack/Extra/Boat/Boat_Idle.png"), { frameWidth: BOAT.frame, frameHeight: BOAT.frame });
   }
 
@@ -133,8 +129,8 @@ export class IntroAtlasScene extends Phaser.Scene {
     addMine(this, MINE, "mineActive");
     const put = (kind: "tree" | "bush" | "rock" | "waterRock", spots: [number, number][]): Phaser.GameObjects.Sprite[] =>
       spots.map(([c, r], i) => addDecor(this, kind, c * CELL, r * CELL, 1, `atlas-${kind}-${i}`));
-    put("tree", [[5.6, 4.6], [12.4, 3.3], [5.4, 5.8], [4.5, 7.2], [3.4, 9.5], [2.8, 10.4], [20.8, 4.8], [22.4, 6.2], [23, 8], [12.4, 10.8], [7, 10.2], [21.4, 15.8], [14.5, 2.6]]);
-    put("bush", [[9.4, 10.6], [6.4, 10.6], [18.6, 12.5], [3.3, 12.6], [21.4, 10.6], [6.3, 6.6]]);
+    put("tree", [[5.6, 4.6], [12.4, 3.3], [5.4, 5.8], [4.5, 7.2], [3.4, 9.5], [2.8, 10.4], [20.8, 4.8], [22.4, 6.2], [23, 8], [12.4, 10.8], [21.4, 15.8], [14.5, 2.6]]);
+    put("bush", [[9.4, 10.6], [18.6, 12.5], [3.3, 12.6], [21.4, 10.6], [6.3, 6.6]]);
     put("rock", [[2.6, 12.4], [23, 11.6], [14.6, 9.7]]);
     this.dress(put);
     put("waterRock", [[1.2, 6.5], [3.4, 3.6], [24.8, 4.5], [25.6, 13.6], [12.2, 16.8], [8.6, 17.4], [1.4, 15], [24.6, 17], [16.4, 16.4]]).forEach((s) => s.setDepth(DEPTH.foam));
@@ -144,32 +140,10 @@ export class IntroAtlasScene extends Phaser.Scene {
     this.tweens.add({ targets: boat, y: by + 4, duration: 1600, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
 
     addBonfire(this, CAMPFIRE.col * CELL, CAMPFIRE.row * CELL);
-    this.pen();
 
     for (const [c, r] of SHEEP) {
       const sheep = this.add.sprite(c * CELL, r * CELL, "sheep").setOrigin(0.5, 0.66).setDepth(standing(r * CELL)).setFlipX(c > 13).play("sheep_anim");
       if (sheep.anims.currentAnim) sheep.anims.setProgress(Math.random());
-    }
-  }
-
-  /** The pen from the fence sheet's 4x3 parts: corners, rails and sides, the bottom rail stopping at a post either side of the gate. */
-  private pen(): void {
-    const { col, row, w, h, gate } = PEN;
-    const piece = (c: number, r: number, frame: number, crop?: [number, number, number, number]): void => {
-      const y = (r + 1) * CELL;
-      const img = this.add.image(c * CELL + CELL / 2, y, "fence", frame).setOrigin(0.5, 1).setDepth(standing(y));
-      if (crop) img.setCrop(...crop);
-    };
-    for (let c: number = col; c < col + w; c++) {
-      const first = c === col;
-      const last = c === col + w - 1;
-      piece(c, row, first ? 0 : last ? 3 : 1 + (c % 2));
-      // A corner beside the gate keeps its post but not the rail that would run on across the opening.
-      if (c !== gate) piece(c, row + h - 1, first ? 8 : last ? 11 : c + 1 === gate ? 9 : c - 1 === gate ? 10 : 1 + (c % 2), first && c + 1 === gate ? [0, 0, 50, 64] : last && c - 1 === gate ? [16, 0, 48, 64] : undefined);
-    }
-    for (let r: number = row + 1; r < row + h - 1; r++) {
-      piece(col, r, 4);
-      piece(col + w - 1, r, 7);
     }
   }
 
@@ -253,7 +227,7 @@ export class IntroAtlasScene extends Phaser.Scene {
     const ground = (c: number, r: number): string | undefined => MAP[Math.floor(r)]?.[Math.floor(c)];
     const level = ground(col, row);
     // A cell under higher ground is that ground's cliff face, drawn a whole cell tall.
-    const open = (c: number, r: number): boolean => ground(c, r) === level && [level, "~"].includes(ground(c, r - 1)) && !inPen(c, r);
+    const open = (c: number, r: number): boolean => ground(c, r) === level && [level, "~"].includes(ground(c, r - 1));
     const shadow = addShadow(this, col * CELL, row * CELL, cls === "lancer" ? 0.8 : 0.62);
     const unit = this.add.sprite(col * CELL, row * CELL, unitKey("a", cls, "idle")).setDepth(DEPTH.unit + row * CELL);
     playPose(unit, "a", cls, "idle");
