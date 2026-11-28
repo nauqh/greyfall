@@ -400,7 +400,6 @@ const PROP: Record<string, Sheet> = {
   fishHut: { file: "Enemy Pack/Extra/Fish Hut/Fish Hut.png", frame: 192, anchor: 177 / 192 },
   pirateTowerWater: { file: "Enemy Pack/Extra/Pirate Tower/Pirate Tower_Water.png", frame: 128, frameH: 192, anchor: 187 / 192 },
   skullSpike: { file: "Enemy Pack/Extra/Skull decorations/Skull Spike_01.png", frame: 64, frameH: 128, anchor: 94 / 128 },
-  hornSpike: { file: "Enemy Pack/Extra/Skull decorations/Skull Spike_02.png", frame: 64, frameH: 128, anchor: 94 / 128 },
   bones: { file: "Enemy Pack/Extra/Skull decorations/Bones_02.png", frame: 64, anchor: 0.7 },
   deadTree: { file: "Enemy Pack/Extra/Dead Tree/Dead Tree.png", frame: 384, frameH: 320, anchor: 314 / 320, scale: 0.6 },
   trollDead: { file: "Enemy Pack/Extra/Troll Dead/Troll_Dead.png", frame: 384, anchor: 0.77 },
@@ -448,7 +447,6 @@ const BASE: Record<string, { w: number; dx: number }> = {
   cave: { w: 133, dx: 6.5 },
   fishHut: { w: 113, dx: 0.5 },
   skullSpike: { w: 28, dx: 3 },
-  hornSpike: { w: 28, dx: 3 },
   deadTree: { w: 85, dx: 23.5 },
   trollDead: { w: 140, dx: 2 },
   goldMine: { w: 163, dx: 0.5 },
@@ -1621,7 +1619,15 @@ export class AtlasScene extends Phaser.Scene {
     const [pan, hold] = [1200, 3000];
     const end = this.time.now + 2 * pan + hold;
     if (l.flag) this.flag(l.flag as WorldFlag);
-    play(HERALD);
+    // It tolls as the Belfry's bell does: a clang and rings of gold out over the hill.
+    play(CLASH, 1);
+    const [bx, by] = [(l.lever!.at.col + 0.5) * CELL, (l.lever!.at.row + 0.5) * CELL];
+    for (const delay of [0, 300, 600]) {
+      this.time.delayedCall(delay, () => {
+        const wave = this.add.ellipse(bx, by, 2 * CELL, CELL).setStrokeStyle(6, 0xd8b060, 0.9).setDepth(DEPTH.fx);
+        this.tweens.add({ targets: wave, scale: 12, alpha: 0, duration: 1100, ease: "Quad.easeOut", onComplete: () => wave.destroy() });
+      });
+    }
     this.cinema = true;
     this.gone = true;
     this.shieldUp = false;
@@ -3810,10 +3816,10 @@ export class AtlasScene extends Phaser.Scene {
       const ch = tier.areaAt[r]?.[c];
       return ch && ch !== "-" ? AREAS[AREA_CODE.indexOf(ch)]!.id : null;
     };
-    const spot = (c: number, r: number, k: string, sheet: Sheet, frame?: number, square = false): Phaser.GameObjects.Sprite => {
+    const spot = (c: number, r: number, k: string, sheet: Sheet, frame?: number, square = false, low = false): Phaser.GameObjects.Sprite => {
       const x = (c + (square ? 0.5 : 0.25 + r01() * 0.5)) * CELL;
       const y = (r + (square ? 0.9 : 0.7 + r01() * 0.3)) * CELL;
-      const s = this.add.sprite(x, y, k, frame).setOrigin(0.5, sheet.anchor).setScale((sheet.scale ?? 1) * (square ? 0.85 : 0.85 + r01() * 0.3)).setDepth(standing(y));
+      const s = this.add.sprite(x, y, k, frame).setOrigin(0.5, sheet.anchor).setScale((sheet.scale ?? 1) * (low ? 0.6 : square ? 0.85 : 0.85 + r01() * 0.3)).setDepth(standing(y));
       if (r01() < 0.5) s.setFlipX(true);
       if (frame === undefined) this.loop(s, k);
       this.track(s);
@@ -3852,6 +3858,9 @@ export class AtlasScene extends Phaser.Scene {
     // reads as wall over a lane, and a tree means a wall wherever it stands.
     const walled = this.local?.area === "emberwood";
     const edge = (c: number, r: number): boolean => walled && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dc, dr]) => isWalkable(c + dc!, r + dr!));
+    // A tree's crown rises some three tiles over its own: with open ground that near to its north it would stand over the
+    // way, so it grows low there.
+    const low = (c: number, r: number): boolean => walled && [1, 2, 3].some((d) => isWalkable(c, r - d) || isWalkable(c - 1, r - d) || isWalkable(c + 1, r - d));
     const woodTree = (c: number, r: number): void => {
       if (r01() < 0.55) {
         const pick = r01() < 0.5 ? 0 : 1;
@@ -3889,8 +3898,8 @@ export class AtlasScene extends Phaser.Scene {
           } else if (id === "emberwood") {
             const pick = r01() < 0.55 ? 0 : 1;
             // Still, not swaying: the first frame of the sheet.
-            spot(c, r, `bigTree${pick}`, BIG_TREE[pick]!, 0, edge(c, r));
-            if (!edge(c, r) && r01() < 0.3) decor("tree", (c + 0.2 + r01() * 0.6) * CELL, (r + 0.5) * CELL);
+            spot(c, r, `bigTree${pick}`, BIG_TREE[pick]!, 0, edge(c, r) || low(c, r), low(c, r));
+            if (!edge(c, r) && !low(c, r) && r01() < 0.3) decor("tree", (c + 0.2 + r01() * 0.6) * CELL, (r + 0.5) * CELL);
           } else if (tier.base === "rock" && this.local) {
             // An underground map's walls are rock: rubble and old bones at their foot, no trees.
             if (r01() < 0.6) decor("rock", (c + 0.2 + r01() * 0.6) * CELL, (r + 0.6 + r01() * 0.3) * CELL, 1.1);
@@ -3898,7 +3907,7 @@ export class AtlasScene extends Phaser.Scene {
             if (r01() < 0.12) spot(c, r, "prop_bones", PROP.bones!, 0);
           } else if (id === "barrowmoor" || id === "greyfall" || tier.base === "rock") {
             // A burnt stretch of the Emberwood is walled by its dead trees, every tile; elsewhere a bush stands in for some.
-            if (walled || r01() < 0.45) spot(c, r, "prop_deadTree", { ...PROP.deadTree!, scale: walled ? 0.55 : 0.42 }, 0, edge(c, r));
+            if (walled || r01() < 0.45) spot(c, r, "prop_deadTree", { ...PROP.deadTree!, scale: walled && !low(c, r) ? 0.55 : 0.42 }, 0, edge(c, r));
             else decor("bush", (c + 0.5) * CELL, (r + 0.8) * CELL, 0.8);
           } else if (id === "fen") {
             decor("bush", (c + 0.3 + r01() * 0.4) * CELL, (r + 0.8) * CELL, 0.9);

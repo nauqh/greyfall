@@ -68,9 +68,14 @@ pines on the cold edge are left as they were.
   Pine Ford road. The goblins leave them be.
 
 - **Warren Hill.** The goblins' home, huts stacked on a hill in two
-  heights. Their young, their larders and their hoard are up on it; the
-  warband comes back to it to sleep. The Treetop Walk runs from it over the
-  Run, barred at the hill's end.
+  heights round the watch keep Highward built on its crest to guard the
+  timber road. The goblins took the keep with the hill and kept its alarm
+  bell; they answer it as they answered a horn in the shafts, and when it
+  rings they clear the ford for whatever comes. Their young, their larders
+  and their hoard are up on it; the warband comes back to it to sleep. The
+  Treetop Walk runs from it over the Run, barred at the hill's end. Behind
+  it the old cutting runs along the coast, where a woodcutter hid and did
+  not come out.
 
 - **Cinder Ford.** Where Highward's timber road crossed the Run, and the
   carts waited for the water to fall. The goblins hold the south bank and

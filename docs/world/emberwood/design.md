@@ -102,9 +102,9 @@ bonfire, and up the Ash Road out.
 - **The Rockpile** (a `lock` with `lever`, flag `rockpileDown`): the
   goblins heaped boulders on the Cinder Ford's bridge to hold the crossing,
   so the ford's fire is reached the long way round, by the Pine Ford or the
-  East Bridge. On Warren Hill's crest a horn hangs on a skull post: sound it
-  (E) and the goblins roll the boulders into the Run, as they did in the
-  shafts at a horn. The camera leaves the wanderer, settles on the pile, and
+  East Bridge. On Warren Hill's crest stands Highward's old watch keep, its
+  alarm bell still hung: ring it (E) and the goblins roll the boulders into
+  the Run, as they answered a horn in the shafts. The camera leaves the wanderer, settles on the pile, and
   watches the boulders lurch, tip off the bridge's sides one after another
   and go under, then comes back. From then the bridge is the short way from
   the Palisade to the fire and the Ash Road.
@@ -188,10 +188,12 @@ bend.
 
 - **Job:** the goblins' warrens stacked on a hill in two heights, the
   biggest Bough.
-- **Why go:** the warren hoard on its crest (gold), the horn that clears the
-  Rockpile off the Cinder Ford's bridge, and the Drawn Plank's lever: from here the
-  Treetop Walk is opened for good.
-- **Stands there:** huts on both heights, the shaman by the crest fire (a
+- **Why go:** the warren hoard by the keep's door (gold), the keep's bell
+  that clears the Rockpile off the Cinder Ford's bridge, and the Drawn
+  Plank's lever: from here the Treetop Walk is opened for good. Behind the
+  hill the old cutting runs east along the coast to the Ash Road, where a
+  woodcutter hid from the goblins with his gold and never came out.
+- **Stands there:** Highward's blue watch keep on the crest, huts on both heights, the shaman by the crest fire (a
   campfire), torches, a slinger on the Treetop Walk, a watchtower over the
   walk's end, trophies. Its foot opens east onto the Cinder Ford
   and west onto the Pine Ford.

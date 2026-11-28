@@ -2077,17 +2077,19 @@ function emberwood(): AreaMap {
   prop("watchtower", 29, 42, pinned);
   for (const [c, r] of [[21, 44], [33, 45], [28, 50]] as const) prop("bones", c, r);
 
-  // Warren Hill: warrens on both heights, the hoard on the crest, a slinger on the walk, a watchtower over its end.
-  for (const [c, r] of [[18, 26], [24, 30], [33, 27], [20, 20], [30, 20], [25, 16]] as const) prop("goblinHut", c, r);
+  // Warren Hill: Highward's old watch keep on the crest, taken for the warren, its hoard by the door; warrens on both
+  // heights, a slinger on the walk, a watchtower over its end.
+  prop("castle", 25.5, 18, { ...blue, ...pinned });
+  for (const [c, r] of [[18, 26], [24, 30], [33, 27], [20, 20], [30, 20]] as const) prop("goblinHut", c, r);
   t.campfires.push({ col: 26, row: 24 });
   crowd(t, rng, "torch", { col: 25, row: 24 }, 5, 6);
   who("slingshot", 27, 35, { to: { col: 28, row: 39 } });
   who("shaman", 27, 21);
   prop("watchtower", 31, 30);
-  for (const [c, r] of [[24, 18], [26, 18]] as const) prop("goldStone", c, r);
+  for (const [c, r] of [[22, 19], [29, 19]] as const) prop("goldStone", c, r);
   for (const [c, r] of [[20, 23], [33, 23], [23, 33], [22, 31], [31, 33]] as const) prop("skullSpike", c, r);
   // More warrens round both rims.
-  for (const [c, r] of [[14, 22], [35, 23], [19, 30], [28, 31], [22, 16], [29, 17], [21, 23], [30, 24]] as const) prop("goblinHut", c, r, pinned);
+  for (const [c, r] of [[14, 22], [35, 23], [19, 30], [28, 31], [21, 23], [30, 24]] as const) prop("goblinHut", c, r, pinned);
   for (const [c, r] of [[16, 33], [36, 27]] as const) prop("bones", c, r);
 
   // Cinder Ford: the last rest before the bull, on the north bank where the Ash Road starts; goblins watch the crossing.
@@ -2122,13 +2124,19 @@ function emberwood(): AreaMap {
 
   // The Drawn Plank: the Treetop Walk barred at its north end, dropped for good from Warren Hill's side.
   // The Rockpile: the goblins heaped boulders on the Cinder Ford's bridge to hold the crossing, and roll them into the
-  // Run at the horn on Warren Hill's crest, a horned skull on a post between the hoard's stones, as they did in the shafts.
-  // Until then the ford is reached the long way round.
-  prop("hornSpike", 25, 18, { ...pinned, scale: 1.3 });
+  // Run when the bell of the keep on Warren Hill rings, as they answered a horn in the shafts. Until then the ford is
+  // reached the long way round.
   const locks = [
     { name: "The Drawn Plank", cells: [{ col: 27, row: 35 }, { col: 28, row: 35 }], flag: "drawnPlankDown", from: { col: 28, row: 32 } },
-    { name: "The Rockpile", cells: [38, 39].flatMap((row) => [43, 44, 45].map((col) => ({ col, row }))), flag: "rockpileDown", lever: { at: { col: 25, row: 18 }, verb: "Sound the horn" } },
+    { name: "The Rockpile", cells: [38, 39].flatMap((row) => [43, 44, 45].map((col) => ({ col, row }))), flag: "rockpileDown", lever: { at: { col: 25, row: 18 }, verb: "Ring the bell" } },
   ];
+  // A notch of shore under Crag Foot's north face that no way reaches: sea.
+  t.pond(90, 7, 3, 1);
+  // The old cutting along the north coast, from Warren Hill's back to the Ash Road: a woodcutter who hid from the goblins
+  // there and never came out, the gold he hid with him.
+  for (const [c, r] of [[35, 9], [37, 10], [38, 9]] as const) prop("goldStone", c, r);
+  for (const [c, r] of [[36, 10], [34, 10]] as const) prop("bones", c, r);
+  prop("deadTree", 40, 9, { scale: 0.7 });
   const notes: Note[] = [
     { at: { col: 111, row: 55 }, text: "Keep Gate barred behind me. The key is on my belt. The wood road round to Lanternport, then." },
     { at: { col: 38, row: 61 }, text: "Ran for the gate. They barred it with us still outside. Can't blame them." },
@@ -2148,7 +2156,8 @@ function emberwood(): AreaMap {
     { name: "Crag Foot", at: { col: 94, row: 22 }, levels: [1, 2, 3], palette: [3], dress: "emberwood", decor: 2 },
     { name: "Postern Crag", at: { col: 110, row: 62 }, levels: [1, 2, 3, 4], palette: [3], dress: "crags", decor: 1 },
   ];
-  const rooms = districts.map((d) => ({ at: d.at, r: d.clearing ?? 6 }));
+  // The cutting's two ends opened out, so the way in reads past the crowns.
+  const rooms = [...districts.map((d) => ({ at: d.at, r: d.clearing ?? 6 })), { at: { col: 49, row: 8 }, r: 2 }, { at: { col: 22, row: 10 }, r: 2 }];
   const tier = t.finish({}, [{ col: 40, row: 64 }], maze(t, rng, rooms));
   const exits: AreaExit[] = [
     { to: "harbour", name: "Ember Gate", kind: "gate", at: { col: 40, row: 70 }, opens: "emberGateOpen" },

@@ -679,8 +679,8 @@ crossing are gone.
   other fire is a campfire), and follow the steward's notes from the crag
   to his bones on the Ash Road.
   The Rockpile (`rockpileDown`) heaps the Cinder Ford's bridge shut until the
-  goblins' horn on Warren Hill's crest is sounded; a cutscene watches the
-  boulders roll into the Run.
+  bell of Highward's old keep on Warren Hill's crest is rung; a cutscene
+  watches the boulders roll into the Run.
   The Drawn Plank (`drawnPlankDown`) bars the Treetop Walk from the bluff
   until dropped from Warren Hill. Folk back each place: Dunn returns
   to the Palisade once the gate opens, Brother Fenn in Old Pines, Wren at
