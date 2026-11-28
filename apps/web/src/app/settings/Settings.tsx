@@ -1,7 +1,7 @@
 "use client";
 
 // The settings, drawn in place of the title menu on its own scroll: categories
-// ride the sword like the main menu, Controls is the one built, read only.
+// pick like the main menu, Controls is the one built, read only.
 // Q/E or Left/Right switch the mode inside it, Esc returns to the title.
 
 import { useEffect, useState } from "react";

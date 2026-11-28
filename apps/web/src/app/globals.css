@@ -234,8 +234,7 @@ textarea {
 /* --- title menu -----------------------------------------------------------
    The island plays on behind; the menu is a war standard over the western
    sea: the kit's slate paper with its gold filigree, the name on a black
-   ribbon across its head, and the picked entry riding the slate-hilted sword
-   (scripts/compose-ui.mjs packs both off the kit's sheets). */
+   ribbon across its head (scripts/compose-ui.mjs packs it off the kit's sheet). */
 
 .titleMenu {
 	--h: 54px;
@@ -356,8 +355,7 @@ textarea {
 	padding-top: 12px;
 }
 
-/* The sword is 320x128: a 128px hilt, a 64px blade that stretches, a 128px
-   point. Every entry keeps the side borders, so picking one never moves text. */
+/* Every entry keeps the side borders, so the pill can overhang them. */
 .menuItem {
 	display: flex;
 	align-items: center;
@@ -378,11 +376,8 @@ textarea {
 	animation: menuIn 500ms cubic-bezier(0.22, 1, 0.36, 1) calc(700ms + var(--i) * 80ms) both;
 }
 
-/* Each entry is an inked pill on a hard shadow; picking one trades the pill
-   for the sword, drawn in full. */
+/* Each entry is an inked pill on a hard shadow; the picked one goes brown, as the atlas panels' picked row does. */
 .menuItem {
-	/* The drawn sword is taller than the entry, overhanging it equally above and below. */
-	--sh: calc(var(--h) + 16px);
 	position: relative;
 	isolation: isolate;
 	color: var(--brown);
@@ -398,45 +393,26 @@ textarea {
 	border-radius: 10px;
 	background: var(--paperRaised);
 	box-shadow: 3px 4px 0 var(--brown);
-	transition: opacity 200ms ease-out;
+	transition: background 200ms ease-out;
 }
 
-/* On the blade the ink goes dark. */
 .menuItem.on {
-	color: var(--brown);
-	text-shadow: none;
+	color: var(--onPicked);
 }
 
 .menuItem.on::before {
-	opacity: 0;
+	background: var(--brown);
 }
 
 /* Shown and picked, but not open yet: faded ink, and a click does nothing. */
-.menuItem[aria-disabled="true"],
-.menuItem[aria-disabled="true"].on {
+.menuItem[aria-disabled="true"] {
 	color: rgb(46 26 14 / 0.4);
 	cursor: not-allowed;
 }
 
-/* Hilt to point under the text, hidden until picked. */
-.menuItem::after {
-	content: "";
-	position: absolute;
-	inset: -8px calc(var(--sh) * -1);
-	z-index: -1;
-	border: 0 solid transparent;
-	border-width: 0 var(--sh);
-	border-image: url("/tiny-swords/ui/sword.png") 0 128 fill / 0 var(--sh) stretch;
-	image-rendering: pixelated;
-	opacity: 0;
-	transition: opacity 200ms ease-out;
-}
-
-/* Drawn in full on each pick. */
-.menuItem.on::after {
-	opacity: 1;
-	filter: drop-shadow(0 3px 0 rgb(46 26 14 / 0.45));
-	animation: swordDraw 360ms cubic-bezier(0.22, 1, 0.36, 1);
+.menuItem[aria-disabled="true"].on {
+	color: rgb(251 245 230 / 0.5);
+	cursor: not-allowed;
 }
 
 .menuHint {
@@ -576,8 +552,6 @@ textarea {
 	.logo,
 	.menuItem,
 	.menuItem::before,
-	.menuItem::after,
-	.menuItem.on::after,
 	.menuHint,
 	.credit {
 		animation: none;

@@ -1,7 +1,7 @@
 "use client";
 
 // The title screen: the live island behind a game menu. Mouse or keys pick
-// an entry, the sword marks it, the island behind turns to that mode's own,
+// an entry, its button goes brown, the island behind turns to that mode's own,
 // and every way out closes the clouds.
 
 import Link from "next/link";
@@ -54,7 +54,7 @@ export default function Page() {
   // Arrow keys and W/S step the pick, wrapping; Enter follows the focused link.
   useEffect(() => {
     if (!ready || settings) return;
-    // Back from the settings, the sword stays on its entry.
+    // Back from the settings, the pick stays on its entry.
     items.current[pick]?.focus({ preventScroll: true });
     const onKey = (e: KeyboardEvent): void => {
       const step = ({ ArrowDown: 1, s: 1, S: 1, ArrowUp: -1, w: -1, W: -1 } as Record<string, number>)[e.key];
