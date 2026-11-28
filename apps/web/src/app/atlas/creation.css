@@ -308,19 +308,6 @@
 	gap: 6px;
 }
 
-/* A key on the pack's tiny blue button, stretched for a named key. */
-.creation kbd {
-	display: inline-grid;
-	place-items: center;
-	min-width: 32px;
-	height: 32px;
-	padding: 0 0 3px;
-	border: 8px solid transparent;
-	border-image: url("/tiny-swords/UI Elements/UI Elements/Buttons/TinySquareBlueButton.png") 16 fill / 8px stretch;
-	image-rendering: pixelated;
-	font: 900 14px / 1 var(--display), serif;
-}
-
 /* A short screen: the rows and numbers close up so the sheet still fits. */
 @media (max-height: 700px) {
 	.crSheet {

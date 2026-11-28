@@ -82,7 +82,7 @@ const OPEN = new Set<HeroClass>(["warrior"]);
 
 /** A keycap; the word keys (Esc, Enter) are drawn wide. */
 function Key({ k }: { k: string }) {
-  return <kbd className={k.length > 1 ? "wide" : undefined}>{k}</kbd>;
+  return <kbd className={k.length > 1 ? "keyCap wide" : "keyCap"}>{k}</kbd>;
 }
 
 /** A class's face for its row: its head and shoulders in its first idle frame, drawn at half. */
