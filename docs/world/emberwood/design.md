@@ -16,9 +16,12 @@ on each axis: Wren's spot (29, 44) is (26, 41) here.
 After Bloodborne's Forbidden Woods, with Sekiro's Mibu Village under it
 (see [../inspirations.md](../inspirations.md)).
 
-- **Dusk under the canopy.** The wood is dark, and the goblins' torches are
-  seen before the goblins are: firelight moving through the trees, campfires
-  the only open light. Steam off the warm ground stands in for mist.
+- **Dusk under the canopy.** The wood is kept at dusk in the underground's
+  light (`DUSK` in the scene): violet and low, but for pools of warm light
+  round its fires, watch fires and ways out. A torch goblin carries its own
+  light, so the goblins' torches are seen before the goblins are. Steam off
+  the warm ground drifts over it in place of mist, and rises off the hot
+  pools.
 - **A village that worships what it feeds.** The goblins obey the Bull's
   horn and carry him meat. Their camps are a village round his road:
   horned skull totems, the Ash Road a pilgrim road.
@@ -141,7 +144,8 @@ bend.
   holds the goblins' plunder (gold).
 - **Stands there:** the Chief's Mound (height 2) in the middle, the war
   band's shaman and a gnoll on it with the plunder under a lookout; two rings
-  of huts round the fire; skulls in pairs
+  of huts round the fire, horned skull totems on poles round it, and two hot
+  pools the warm ground fills, steaming; skulls in pairs
   where the roads come in; torches round the fire,
   thieves among the huts. The road from the Palisade passes the mound's
   north side on to the East Bridge; a second skirts its south foot toward
@@ -213,8 +217,9 @@ bend.
 - **Job:** the goblins' road north to the bull they feed, skull-lined.
 - **Why go:** The Ash Road exit (to the Ember Hollow) at its head, and the
   steward's end.
-- **Stands there:** skull spikes in pairs the length of it, spears on watch
-  and their hut, dead trees; halfway
+- **Stands there:** horned skull totems in pairs the length of it, a pilgrim
+  road to the horned lord at its head; spears on watch with their hut and
+  watch fire, dead trees; halfway
   up, the steward's bones and his last note.
 - **Note:** "Goblins on the ford. Round by the north road. Something big
   breathing in the smoke."

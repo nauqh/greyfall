@@ -135,10 +135,10 @@ function maze(t: Builder, rng: Rng, rooms: readonly { at: Cell; r: number }[], c
     for (let i = 0; i <= steps; i++) {
       const x = Math.round(a.col + ((b.col - a.col) * i) / steps);
       const y = Math.round(a.row + ((b.row - a.row) * i) / steps);
-      stamp(x, y, 1.2 + ragged(x, y) * 0.6);
+      stamp(x, y, 0.9 + ragged(x, y) * 0.5);
     }
   }
-  for (const p of node) if (p && rng.next() < 0.3) stamp(p.col, p.row, 2.2 + rng.next() * 1.4);
+  for (const p of node) if (p && rng.next() < 0.18) stamp(p.col, p.row, 1.8 + rng.next() * 1.0);
   for (const room of rooms) {
     for (let r = Math.floor(room.at.row - room.r); r <= room.at.row + room.r; r++) {
       for (let c = Math.floor(room.at.col - room.r - 3); c <= room.at.col + room.r + 3; c++) {
@@ -2034,6 +2034,13 @@ function emberwood(): AreaMap {
   for (const [c, r] of [[76, 56], [80, 55], [77, 58]] as const) prop("goldStone", c, r);
   for (const [c, r] of [[58, 52], [58, 56], [90, 63], [94, 63], [84, 46], [88, 44]] as const) prop("skullSpike", c, r);
   for (const [c, r] of [[69, 57], [61, 60], [75, 52]] as const) prop("bones", c, r);
+  // The village round the fire: horned skulls on poles for the lord up the road, and two pools the warm ground fills,
+  // where the goblins sit and steam.
+  for (const [c, r] of [[64, 50], [72, 50], [65, 55], [71, 55]] as const) prop("hornTotem", c, r, pinned);
+  for (const [x, y] of [[66, 56], [69, 57]] as const) {
+    t.pond(x, y, 2, 1);
+    prop("steam", x + 1, y, pinned);
+  }
 
   // The Palisade: the Harbour's lumber camp at the gate, overrun. Goblins camp in it in threes until the gate opens
   // (Dunn is in npcs.ts).
@@ -2072,6 +2079,7 @@ function emberwood(): AreaMap {
   for (const [c, r] of [[22, 46], [31, 47]] as const) prop("goblinHut", c, r);
   for (const [c, r] of [[24, 44], [30, 44]] as const) who("gnoll", c, r, { to: { col: c, row: r + 3 } });
   crowd(t, rng, "spear", { col: 26, row: 48 }, 3, 2);
+  t.campfires.push({ col: 24, row: 47 });
   prop("skullSpike", 26, 43);
   for (const [c, r] of [[22, 48], [34, 49]] as const) prop("goblinHut", c, r, pinned);
   prop("watchtower", 29, 42, pinned);
@@ -2097,13 +2105,16 @@ function emberwood(): AreaMap {
   who("lizard", 56, 42, { to: { col: 63, row: 41 } });
   prop("goblinHut", 50, 46);
   crowd(t, rng, "spear", { col: 48, row: 45 }, 3, 2);
-  // The toll on the south bank: a second hut, skulls either side of the bridge's foot.
+  // The toll on the south bank: a second hut, skulls either side of the bridge's foot, the post's watch fire.
+  t.campfires.push({ col: 56, row: 46 });
   prop("goblinHut", 53, 48, pinned);
   for (const c of [42, 47]) prop("skullSpike", c, 45);
 
   // The Ash Road: the goblins' way north to the bull they feed, its skulls and its watch; halfway, the steward's end.
-  for (const r of [24, 20, 16, 12, 8]) for (const c of [59, 65]) prop("skullSpike", c, r);
+  // Horned skulls in pairs the length of it, a pilgrim road to the horned lord at its head.
+  for (const r of [24, 20, 16, 12, 8]) for (const c of [59, 65]) prop("hornTotem", c, r);
   for (const [c, r] of [[60, 18], [64, 20]] as const) who("spear", c, r);
+  t.campfires.push({ col: 60, row: 22 });
   prop("goblinHut", 67, 17, pinned);
   for (const [c, r] of [[58, 18], [66, 10], [57, 22]] as const) prop("deadTree", c, r, { scale: 0.7 });
   // The steward's bones, and older ones.
@@ -2120,6 +2131,7 @@ function emberwood(): AreaMap {
   prop("goblinHut", 80, 26);
   prop("goblinHut", 76, 29, pinned);
   crowd(t, rng, "torch", { col: 82, row: 27 }, 3, 2);
+  t.campfires.push({ col: 84, row: 28 });
   prop("skullSpike", 78, 24);
 
   // The Drawn Plank: the Treetop Walk barred at its north end, dropped for good from Warren Hill's side.
@@ -2147,13 +2159,13 @@ function emberwood(): AreaMap {
     // One wood floor, so district borders never cut the forest into patches; only raised ground changes colour,
     // following its cliffs. The Burn is scorched by its dead trees, its mound ash.
     { name: "The Palisade", at: { col: 40, row: 61 }, levels: [1], palette: [3], dress: "emberwood", decor: 2 },
-    { name: "Old Pines", at: { col: 12, row: 52 }, levels: [1], palette: [3], dress: "emberwood", decor: 1.5 },
+    { name: "Old Pines", at: { col: 12, row: 52 }, levels: [1], palette: [3], dress: "emberwood", decor: 1.5, clearing: 4 },
     { name: "Smoke Bluff", at: { col: 26, row: 46 }, levels: [2], palette: [1], dress: "emberwood", decor: 2 },
     { name: "Warren Hill", at: { col: 24, row: 17 }, levels: [2, 3], palette: [3], dress: "emberwood", decor: 2 },
-    { name: "Cinder Ford", at: { col: 48, row: 34 }, levels: [1], palette: [3], dress: "emberwood", decor: 2 },
-    { name: "The Ash Road", at: { col: 62, row: 16 }, levels: [1], palette: [3], dress: "greyfall", decor: 2 },
+    { name: "Cinder Ford", at: { col: 48, row: 34 }, levels: [1], palette: [3], dress: "emberwood", decor: 2, clearing: 4 },
+    { name: "The Ash Road", at: { col: 62, row: 16 }, levels: [1], palette: [3], dress: "greyfall", decor: 2, clearing: 3 },
     { name: "The Burn", at: { col: 72, row: 54 }, levels: [1, 2], palette: [3, 1], dress: "greyfall", decor: 2 },
-    { name: "Crag Foot", at: { col: 94, row: 22 }, levels: [1, 2, 3], palette: [3], dress: "emberwood", decor: 2 },
+    { name: "Crag Foot", at: { col: 94, row: 22 }, levels: [1, 2, 3], palette: [3], dress: "emberwood", decor: 2, clearing: 4 },
     { name: "Postern Crag", at: { col: 110, row: 62 }, levels: [1, 2, 3, 4], palette: [3], dress: "crags", decor: 1 },
   ];
   // The cutting's two ends opened out, so the way in reads past the crowns.

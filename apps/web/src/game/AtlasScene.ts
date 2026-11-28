@@ -400,6 +400,7 @@ const PROP: Record<string, Sheet> = {
   fishHut: { file: "Enemy Pack/Extra/Fish Hut/Fish Hut.png", frame: 192, anchor: 177 / 192 },
   pirateTowerWater: { file: "Enemy Pack/Extra/Pirate Tower/Pirate Tower_Water.png", frame: 128, frameH: 192, anchor: 187 / 192 },
   skullSpike: { file: "Enemy Pack/Extra/Skull decorations/Skull Spike_01.png", frame: 64, frameH: 128, anchor: 94 / 128 },
+  hornTotem: { file: "Enemy Pack/Extra/Skull decorations/Skull Spike_02.png", frame: 64, frameH: 128, anchor: 94 / 128 },
   bones: { file: "Enemy Pack/Extra/Skull decorations/Bones_02.png", frame: 64, anchor: 0.7 },
   deadTree: { file: "Enemy Pack/Extra/Dead Tree/Dead Tree.png", frame: 384, frameH: 320, anchor: 314 / 320, scale: 0.6 },
   trollDead: { file: "Enemy Pack/Extra/Troll Dead/Troll_Dead.png", frame: 384, anchor: 0.77 },
@@ -447,6 +448,7 @@ const BASE: Record<string, { w: number; dx: number }> = {
   cave: { w: 133, dx: 6.5 },
   fishHut: { w: 113, dx: 0.5 },
   skullSpike: { w: 28, dx: 3 },
+  hornTotem: { w: 28, dx: 3 },
   deadTree: { w: 85, dx: 23.5 },
   trollDead: { w: 140, dx: 2 },
   goldMine: { w: 163, dx: 0.5 },
@@ -965,6 +967,13 @@ const UNDER: Partial<Record<AreaId, { rock: number; ambient: number; glow: numbe
   ring: { rock: 0x1e2226, ambient: 0.75, glow: 0xe6ecf0, gold: 4 },
 };
 
+/** A land above ground kept at dusk, in the same light the underground keeps: dim, but for its fires. */
+const DUSK: Partial<Record<AreaId, { rock: number; ambient: number; glow: number; gold: number; reach: number }>> = {
+  // Under the canopy the light goes blue and low; the goblins' fires show the way in small pools of near-white, so the
+  // wood keeps its greens rather than going all to amber.
+  emberwood: { rock: 0x2c3654, ambient: 0.64, glow: 0xfff0dc, gold: 3, reach: 0.65 },
+};
+
 type Exit = AreaMap["exits"][number];
 type Lock = NonNullable<AreaMap["locks"]>[number];
 
@@ -1013,6 +1022,8 @@ export class AtlasScene extends Phaser.Scene {
   private locked = new Set<string>();
   /** The posts barring each locked way, taken down when a shortcut is unbarred. */
   private lockPosts: { lock: Lock; s: Phaser.GameObjects.Image }[] = [];
+  /** The light each torch goblin carries at dusk, kept on it. */
+  private torchGlows: { s: Phaser.GameObjects.Sprite; glow: Phaser.GameObjects.Image }[] = [];
   /** What no one walks through: buildings, heaps, fence posts, and the rocks and stumps standing in open ground. */
   private solid = new Set<string>();
   /** The solid tiles that are a prop's or a rock's: the hero's feet meet the art's base there, not the whole tile. */
@@ -1119,6 +1130,7 @@ export class AtlasScene extends Phaser.Scene {
     this.sealed = new Set();
     this.locked = new Set();
     this.lockPosts = [];
+    this.torchGlows = [];
     this.solid = new Set();
     this.boxed = new Set();
     this.bases = [];
@@ -1962,6 +1974,12 @@ export class AtlasScene extends Phaser.Scene {
     const at = { col: d.col, row: d.row };
     const attack = BEAST[d.kind]?.attack ? `beast_${d.kind}_attack` : undefined;
     this.foes.push({ ...this.body(s, at, stats.hp, stats.speed, { idle: look.idle.key, move: look.move?.key, attack }), kind: d.kind, home: at, stats, windup: null });
+    // At dusk a goblin's torch is seen before the goblin: its light goes with it.
+    if (d.kind === "torch" && this.local && DUSK[this.local.area]) {
+      const glow = this.add.image(s.x, s.y, "glow").setBlendMode(Phaser.BlendModes.ADD).setTint(0xffd2a0).setAlpha(0.35).setScale(1.1).setDepth(this.lightDepth());
+      this.tweens.add({ targets: glow, alpha: 0.5, duration: 500 + Math.random() * 400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+      this.torchGlows.push({ s, glow });
+    }
     if (kit?.sleeps) {
       const f = this.foes.at(-1)!;
       s.anims.timeScale = 0.4;
@@ -3860,7 +3878,7 @@ export class AtlasScene extends Phaser.Scene {
     const edge = (c: number, r: number): boolean => walled && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dc, dr]) => isWalkable(c + dc!, r + dr!));
     // A tree's crown rises some three tiles over its own: with open ground that near to its north it would stand over the
     // way, so it grows low there.
-    const low = (c: number, r: number): boolean => walled && [1, 2, 3].some((d) => isWalkable(c, r - d) || isWalkable(c - 1, r - d) || isWalkable(c + 1, r - d));
+    const low = (c: number, r: number): boolean => walled && (isWalkable(c, r - 1) || isWalkable(c, r - 2) || isWalkable(c - 1, r - 1) || isWalkable(c + 1, r - 1));
     const woodTree = (c: number, r: number): void => {
       if (r01() < 0.55) {
         const pick = r01() < 0.5 ? 0 : 1;
@@ -4034,8 +4052,21 @@ export class AtlasScene extends Phaser.Scene {
       const flame = this.add.sprite(x, y - 30, "fire").setOrigin(0.5, FIRE.anchor).setScale(0.32).setDepth(DEPTH.unit - 1);
       this.loop(flame, "fire");
       this.track(flame);
-      const glow = this.add.image(x, y - 40, "glow").setBlendMode(Phaser.BlendModes.ADD).setTint(0xffb870).setAlpha(0.45).setScale(0.8).setDepth(DEPTH.clouds - 2);
+      const glow = this.add.image(x, y - 40, "glow").setBlendMode(Phaser.BlendModes.ADD).setTint(0xffb870).setAlpha(0.45).setScale(0.8).setDepth(this.lightDepth());
       this.tweens.add({ targets: glow, alpha: 0.6, duration: 700 + Math.random() * 500, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+      return;
+    }
+    if (p.art === "steam") {
+      // Warm water breathing: a puff of steam off it now and then, rising and gone.
+      const [x0, y0] = [p.col * CELL, (p.row + 0.4) * CELL];
+      this.time.addEvent({
+        delay: 650,
+        loop: true,
+        callback: () => {
+          const puff = this.add.image(x0 + Phaser.Math.Between(-40, 40), y0, `cloud${Phaser.Math.Between(1, 8)}`).setScale(0.12).setAlpha(0.6).setDepth(DEPTH.clouds - 2);
+          this.tweens.add({ targets: puff, y: y0 - 90, scale: 0.3, alpha: 0, duration: 2600, ease: "Sine.easeOut", onComplete: () => puff.destroy() });
+        },
+      });
       return;
     }
     if (p.art === "flame") {
@@ -4043,7 +4074,7 @@ export class AtlasScene extends Phaser.Scene {
       const flame = this.add.sprite(x, y, "fire").setOrigin(0.5, FIRE.anchor).setScale(0.32).setDepth(standing(y));
       this.loop(flame, "fire");
       this.track(flame);
-      const glow = this.add.image(x, y - 12, "glow").setBlendMode(Phaser.BlendModes.ADD).setTint(0xffb870).setAlpha(0.45).setScale(0.8).setDepth(DEPTH.clouds - 2);
+      const glow = this.add.image(x, y - 12, "glow").setBlendMode(Phaser.BlendModes.ADD).setTint(0xffb870).setAlpha(0.45).setScale(0.8).setDepth(this.lightDepth());
       this.tweens.add({ targets: glow, alpha: 0.6, duration: 700 + Math.random() * 500, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
       return;
     }
@@ -4129,13 +4160,19 @@ export class AtlasScene extends Phaser.Scene {
     }
   }
 
+  /** Where a fire's or a torch's light is drawn: over everyone, except at dusk, where the dusk already lights the ground
+   *  round each fire and a glow on top only bleaches whoever stands in it, so there it lies on the ground under them. */
+  private lightDepth(): number {
+    return this.local && DUSK[this.local.area] ? DEPTH.unit - 1 : DEPTH.clouds - 2;
+  }
+
   /** A bonfire: flames, a warm light that breathes, and stones round it. Unlit, cold logs in the ring until E lights it. */
   private bonfire(f: Cell, unlit = false): void {
     const x = (f.col + 0.5) * CELL;
     const y = (f.row + 0.8) * CELL;
     // In the Deeps the fires burn ghost-green: corpse-candles, not hearths.
     const ghost = this.local?.area === "deeps";
-    const glow = this.add.image(x, y - 24, "glow").setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.55).setScale(1.3).setDepth(DEPTH.clouds - 2);
+    const glow = this.add.image(x, y - 24, "glow").setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.55).setScale(1.3).setDepth(this.lightDepth());
     if (ghost) glow.setTint(0x7cf0b0);
     const breathe = (): void => void this.tweens.add({ targets: glow, scale: 1.5, alpha: 0.75, duration: 900 + Math.random() * 400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
     for (let i = 0; i < 5; i++) {
@@ -4578,7 +4615,9 @@ export class AtlasScene extends Phaser.Scene {
     }
     // Underground in an area's own map, the dark is the point: ground is near black but in pools of light
     // round its fires, its ways out, and the gold glowing in the rock.
-    const under = this.local && tier.base === "rock" ? (UNDER[this.local.area] ?? { rock: ROCK_MOOD, ambient: 0.22, glow: AREAS.find((a) => a.id === this.local!.area)!.mood, gold: 4 }) : null;
+    const under = this.local && tier.base === "rock" ? (UNDER[this.local.area] ?? { rock: ROCK_MOOD, ambient: 0.22, glow: AREAS.find((a) => a.id === this.local!.area)!.mood, gold: 4 }) : this.local ? (DUSK[this.local.area] ?? null) : null;
+    // A dusk land's lights reach less far than a cavern's: many fires, each its own pool.
+    const reach = (this.local && DUSK[this.local.area]?.reach) ?? 1;
     const lights = this.local && under
       ? [
           ...[...tier.fires, ...tier.campfires].map((f) => ({ c: f.col, r: f.row, reach: 9 })),
@@ -4588,7 +4627,7 @@ export class AtlasScene extends Phaser.Scene {
           ...tier.props.filter((p) => p.art === "flame").map((p) => ({ c: p.col, r: p.row, reach: 7 })),
         ]
       : null;
-    const lit = (c: number, r: number): number => Math.max(0, ...lights!.map((l) => 1 - Math.hypot(c - l.c, r - l.r) / l.reach));
+    const lit = (c: number, r: number): number => Math.max(0, ...lights!.map((l) => 1 - Math.hypot(c - l.c, r - l.r) / (l.reach * reach)));
     // Near a way out to a land on the same tier the light leans toward that land's, half way at the crossing, so
     // the two maps meet in one light.
     const tierOf = (id: AreaId) => AREAS.find((a) => a.id === id)?.tier;
@@ -4607,7 +4646,7 @@ export class AtlasScene extends Phaser.Scene {
       if (tier.base === "rock" && (rows[r]?.[c] ?? "%") === "%") return under?.rock ?? ROCK_MOOD;
       if (lights && under) {
         // Open water has no area of its own: it shows a little more than the floor, so a lake reads as water in the dark.
-        const water = AREAS[AREA_CODE.indexOf(tier.areaAt[r]![c]!)] === undefined;
+        const water = AREAS[AREA_CODE.indexOf(tier.areaAt[r]?.[c] ?? "-")] === undefined;
         const k = Math.min(1, under.ambient + (water ? 0.08 : 0) + lit(c, r) * 1.1);
         const mix = (shift: number) => Math.round(((under.rock >> shift) & 255) + (((under.glow >> shift) & 255) - ((under.rock >> shift) & 255)) * k);
         return (mix(16) << 16) | (mix(8) << 8) | mix(0);
@@ -4633,8 +4672,8 @@ export class AtlasScene extends Phaser.Scene {
     tex.refresh();
     tex.setFilter(Phaser.Textures.FilterMode.LINEAR);
     // Above ground the light colours the land, not who stands on it, so the hero keeps its colours in every area;
-    // underground it lies over everything, as the dark it is.
-    const over = tier.base === "rock" ? DEPTH.clouds - 3 : DEPTH.unit - 2;
+    // underground and at dusk it lies over everything, as the dark it is.
+    const over = under ? DEPTH.clouds - 3 : DEPTH.unit - 2;
     this.add.image(-pad * CELL, -pad * CELL, `atlasMood-${tier.id}`).setOrigin(0).setScale(CELL).setBlendMode(Phaser.BlendModes.MULTIPLY).setDepth(over);
   }
 
@@ -4655,6 +4694,8 @@ export class AtlasScene extends Phaser.Scene {
       drift("greyfall", 22, 0x9a9ea8, 0.38);
       drift("barrowmoor", 10, 0xb8bce0, 0.3);
       drift("fen", 9, 0xd8f0d8, 0.3);
+      // Steam off the warm ground under the Emberwood's canopy.
+      drift("emberwood", 14, 0xfff2e2, 0.16);
     } else if (tier.id === "below") {
       // Grave-mist in the Deeps, green and low; a pale haze over the Hollow's lake.
       drift("deeps", 12, 0x6ab08a, 0.32);
@@ -5144,6 +5185,11 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   update(time: number, delta: number): void {
+    this.torchGlows = this.torchGlows.filter(({ s, glow }) => {
+      if (!s.active || s.alpha === 0) return void glow.destroy();
+      glow.setPosition(s.x + (s.flipX ? -14 : 14), s.y - 40).setVisible(s.visible);
+      return true;
+    });
     // Each frame, so a wheel zoom easing out is held to the island as well as a drag.
     this.clampFree();
     const act = this.active;
