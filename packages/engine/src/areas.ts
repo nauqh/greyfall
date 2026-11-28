@@ -3993,12 +3993,12 @@ function landing(): AreaMap {
   tunnel(t, [[69, 28], [78, 28]]);
   openEdge(t, 79, 28);
   // Torches in the rock along the way, so the way out is the lit one; none by the grotto's fire or the camp's, the light there theirs.
-  for (const [c, r] of [[31, 39], [30, 36], [34, 33], [13, 27], [23, 28], [22, 34], [16, 21], [22, 17], [26, 10], [17, 15], [34, 10], [48, 14], [57, 7], [42, 17], [46, 20], [36, 26], [50, 25], [37, 31], [46, 32], [56, 31], [63, 25], [70, 25], [63, 30], [74, 26]] as const) prop("sconce", c, r);
+  for (const [c, r] of [[30, 36], [34, 33], [13, 27], [23, 28], [22, 34], [16, 21], [22, 17], [26, 10], [17, 15], [34, 10], [48, 14], [57, 7], [42, 17], [46, 20], [36, 26], [50, 25], [37, 31], [46, 32], [56, 31], [63, 25], [70, 25], [63, 30], [74, 26]] as const) prop("sconce", c, r);
 
-  // The grotto: the boat that drifted in, and a fire left burning by whoever washed in before, up on the dry rock out
+  // The grotto: the boat that drifted in, and fires left burning by whoever washed in before, up on the dry rock out
   // of the tide's reach. Rocks out in the water, and a fall of rock off the north wall.
   prop("boat", 33, 46);
-  prop("flame", 29, 42);
+  for (const [c, r] of [[29, 41], [39, 42]] as const) prop("flame", c, r);
   for (const [c, r, scale] of [[28.5, 46.9, 1], [38.5, 46.8, 0.8], [34.8, 47.6, 0.7]] as const) prop("waterRock", c, r, { scale, fixed: true });
   for (const [c, r, scale] of [[36.3, 40.6, 0.9], [37.1, 40.8, 0.5]] as const) prop("rock", c, r, { scale, fixed: true });
   // The goblins' chamber: one goblin, to learn the swing on.
