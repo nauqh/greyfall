@@ -171,7 +171,7 @@ export function Sack({ sack, gold, onCover }: { sack: SackView; gold: number; on
                         onClick={() => setPick(i)}
                       >
                         <span className="sackIcon">
-                          <ItemIcon icon={s.icon} size={64} />
+                          <ItemIcon icon={s.icon} size={56} />
                           {s.count !== undefined && <b className="sackCount">{s.count}</b>}
                         </span>
                         <b>{s.label}</b>

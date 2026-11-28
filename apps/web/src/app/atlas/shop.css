@@ -17,7 +17,8 @@
 }
 
 .shop.goods {
-	width: min(720px, calc(100vw - 32px));
+	width: min(760px, calc(100vw - 32px));
+	height: min(560px, calc(100vh - 32px));
 }
 
 .shop img {
@@ -149,107 +150,164 @@
 	color: var(--onPickedNote);
 }
 
-/* The goods: the grid of slots and the told-out good side by side. */
+/* The goods, laid out as the sack: the list in its sheet, the picked good and the sum in theirs beside it. */
 .shopBody {
+	flex: 1 1 auto;
 	display: grid;
-	grid-template-columns: auto minmax(0, 1fr);
-	gap: 20px;
+	grid-template-columns: minmax(0, 1fr) 280px;
+	gap: 16px;
+	min-height: 0;
 }
 
-.shopGrid {
+.shopSheet {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	padding: 8px;
+	border: 2px solid var(--frame);
+	border-radius: 6px;
+}
+
+/* Five rows fill the sheet, as the sack's do; past five the list scrolls with the pick. */
+.shopGoods {
+	flex: 1;
 	display: grid;
-	grid-template-columns: repeat(5, 60px);
-	gap: 6px;
+	grid-auto-rows: calc((100% - 4 * 4px) / 5);
+	gap: 4px;
+	min-height: 0;
 	margin: 0;
 	padding: 0;
 	list-style: none;
+	overflow-y: auto;
+	scrollbar-width: none;
 }
 
-.shopSlot {
-	display: flex;
-	flex-direction: column;
+.shopGoods::-webkit-scrollbar {
+	display: none;
+}
+
+/* The sack's row, with Dark Souls' price at its end. */
+.shopRow {
+	display: grid;
+	grid-template: auto auto / auto minmax(0, 1fr) auto;
 	align-items: center;
-	gap: 2px;
+	column-gap: 14px;
 	width: 100%;
-	padding: 0;
+	height: 100%;
+	padding: 4px 14px 4px 4px;
 	border: 0;
+	border-radius: 4px;
 	background: none;
 	color: inherit;
 	font: inherit;
+	text-align: left;
 	cursor: pointer;
+	transition: background 120ms ease-out, color 120ms ease-out;
 }
 
-.shopSlotArt {
+.shopRow b,
+.shopRow small {
+	grid-column: 2;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.shopRow b {
+	align-self: end;
+	font-weight: 800;
+	font-size: 17px;
+}
+
+.shopRow small {
+	align-self: start;
+	font-size: 13px;
+	color: var(--good);
+}
+
+.shopRow:not(:has(small)) b {
+	grid-row: span 2;
+	align-self: center;
+}
+
+.shopIcon {
+	grid-row: span 2;
 	display: grid;
 	place-items: center;
-	width: 60px;
-	height: 60px;
-	border: 1px solid rgb(107 87 64 / 0.35);
-	border-radius: 3px;
-	background: radial-gradient(circle, rgb(255 255 255 / 0.22), rgb(107 87 64 / 0.16));
-	box-shadow: inset 0 0 6px rgb(74 58 40 / 0.25);
-	transition: border-color 120ms ease-out, box-shadow 120ms ease-out;
+	height: 100%;
+	max-height: 64px;
+	aspect-ratio: 1;
+	border: 2px solid var(--frame);
+	border-radius: 4px;
+	background: radial-gradient(circle, var(--paperRaised), color-mix(in srgb, var(--frame) 35%, var(--paper)));
 }
 
-.shopSlot.empty {
-	cursor: default;
+.shopRow:hover {
+	background: color-mix(in srgb, var(--frame) 22%, transparent);
 }
 
-.shopSlot.empty .shopSlotArt {
-	border-color: rgb(107 87 64 / 0.3);
-	background: rgb(107 87 64 / 0.12);
-	box-shadow: none;
+.shopRow.picked {
+	background: var(--brown);
+	color: var(--onPicked);
 }
 
-.shopSlot.empty::after {
-	content: "";
-	height: 17px;
+.shopRow.picked small {
+	color: var(--onPickedNote);
 }
 
-.shopSlot.picked .shopSlotArt {
-	border: 2px solid var(--goldLine);
-	background: radial-gradient(circle, rgb(255 236 180 / 0.75), rgb(242 212 138 / 0.35));
-	box-shadow: 0 0 12px rgb(242 180 80 / 0.7), inset 0 0 6px rgb(255 255 255 / 0.4);
+.shopRow.picked .shopIcon {
+	border-color: var(--goldLine);
 }
 
 .shopPrice {
+	grid-column: 3;
+	grid-row: 1 / span 2;
 	display: inline-flex;
 	align-items: center;
-	gap: 3px;
-	font-size: 13px;
+	gap: 6px;
+	font-size: 18px;
 	font-weight: 800;
 	font-variant-numeric: tabular-nums;
 	color: var(--gold);
 }
 
-.shopSlot:not(.sold) .shopPrice::before {
+.shopRow.picked .shopPrice {
+	color: var(--onPicked);
+}
+
+.shopRow:not(.sold) .shopPrice::before {
 	content: "";
-	width: 12px;
-	height: 12px;
+	width: 16px;
+	height: 16px;
 	background: url("/tiny-swords/ui/icon_gold.png") center / contain no-repeat;
 }
 
-.shopSlot.sold .shopPrice {
+.shopRow.sold .shopPrice {
 	color: var(--mute);
 	letter-spacing: 0.1em;
 	text-transform: uppercase;
-	font-size: 11px;
+	font-size: 13px;
 }
 
-.shopSlot.sold .shopSlotArt {
+.shopRow.picked.sold .shopPrice {
+	color: var(--onPickedNote);
+}
+
+.shopRow.sold .shopIcon {
 	filter: grayscale(0.8);
 	opacity: 0.6;
 }
 
-.shopSlot.short .shopPrice {
+.shopRow.short .shopPrice {
 	color: var(--bad);
 }
 
-.shopSlot.short .shopSlotArt > * {
-	opacity: 0.55;
+.shopRow.picked.short .shopPrice {
+	/* own colour: the short red, lightened to read on the picked bar */
+	color: #ffb4a8;
 }
 
-.shopSlot.bought .shopSlotArt {
+.shopRow.bought .shopIcon {
 	animation: shopBought 600ms ease-out;
 }
 
@@ -260,10 +318,19 @@
 	}
 }
 
+.shopSide {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	min-height: 0;
+}
+
 .shopTell {
+	flex: 1 1 auto;
 	display: grid;
-	min-width: 0;
-	min-height: 220px;
+	padding: 10px 12px;
+	overflow-y: auto;
+	scrollbar-width: none;
 }
 
 .shopTell > div {
@@ -279,27 +346,10 @@
 	visibility: visible;
 }
 
-.shopTellHead {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-}
-
-.shopTellArt {
-	flex: none;
-	display: grid;
-	place-items: center;
-	width: 76px;
-	height: 76px;
-	border: 2px solid var(--goldLine);
-	border-radius: 3px;
-	background: radial-gradient(circle, rgb(255 236 180 / 0.6), rgb(242 212 138 / 0.2));
-	box-shadow: 0 0 10px rgb(242 180 80 / 0.4);
-}
-
 .shopTellName {
 	font-weight: 800;
-	font-size: 20px;
+	font-size: 17px;
+	color: var(--brown);
 	line-height: 1.2;
 }
 
@@ -350,19 +400,6 @@
 	color: var(--good);
 }
 
-/* The gold held, the price, the gold after: the barter's sum, under a gold hairline. */
-.shopFoot {
-	display: flex;
-	align-items: flex-end;
-	gap: 20px;
-	padding-top: 8px;
-	border-top: 1px solid rgb(201 163 92 / 0.75);
-}
-
-.shopLedger {
-	flex: 1;
-	max-width: 300px;
-}
 
 .shopLedger > :last-child {
 	padding-top: 2px;
@@ -379,7 +416,7 @@
 }
 
 .shopChoice.back {
-	margin-left: auto;
+	align-self: flex-end;
 	padding: 6px 14px;
 }
 
@@ -414,27 +451,12 @@
 		gap: 10px;
 	}
 
-	.shopGrid {
-		grid-template-columns: repeat(5, minmax(0, 56px));
-	}
-
-	.shopSlotArt {
-		width: 100%;
+	.shop.goods {
 		height: auto;
-		aspect-ratio: 1;
 	}
 
-	.shopTell {
-		min-height: 0;
-	}
-
-	.shopTellArt {
-		width: 52px;
-		height: 52px;
-	}
-
-	.shopTellArt > * {
-		transform: scale(0.7);
+	.shopGoods {
+		height: 40vh;
 	}
 
 	.shopAbout,
@@ -446,11 +468,11 @@
 @media (prefers-reduced-motion: reduce) {
 	.shopChoice,
 	.shopChoice img,
-	.shopSlotArt {
+	.shopRow {
 		transition: none;
 	}
 
-	.shopSlot.bought .shopSlotArt {
+	.shopRow.bought .shopIcon {
 		animation: none;
 	}
 }

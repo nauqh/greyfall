@@ -16,15 +16,18 @@ const ICON = {
   gold: "ui/icon_gold.png",
 };
 
-const SLOTS = 10;
-
 /**
- * A merchant or a recruiter at the right, after Elden Ring's merchant: the greeting over Talk, Shop or Hire, Leave; Shop
- * opens the goods as a grid of slots, the picked good told out beside it, and the gold held and after at the foot.
+ * A merchant or a recruiter, after Elden Ring's merchant: the greeting over Talk, Shop or Hire, Leave. Shop opens the
+ * goods laid out as the sack is, after Dark Souls 1's shop: the goods a list with their prices, the picked good told out
+ * beside it, and under that the barter's sum, the gold held, the price and the gold after.
  */
 export function Shop({ menu, api }: { menu: MenuView; api: RefObject<AtlasApi | null> }) {
   const bought = useBought(menu);
   useTick(menu.pick);
+  const listRef = useRef<HTMLUListElement>(null);
+  useEffect(() => {
+    listRef.current?.querySelector(".picked")?.scrollIntoView({ block: "nearest" });
+  }, [menu.pick, menu.shop]);
   const rows = menu.options.map((o, i) => ({ ...o, i }));
   const goods = rows.filter((o) => o.icon);
   const choices = rows.filter((o) => !o.icon);
@@ -74,79 +77,76 @@ export function Shop({ menu, api }: { menu: MenuView; api: RefObject<AtlasApi | 
         {menu.shop && (
           <>
             <div className="shopBody">
-              <section className="shopWares">
-                <h3 className="panelHeading">{menu.sell ? "Your goods" : "Wares"}</h3>
-                <ul className="shopGrid">
+              <section className="shopSheet" aria-label={menu.sell ? "Your goods" : "Wares"}>
+                <ul ref={listRef} className="shopGoods">
                   {goods.map((o) => (
                     <li key={o.label}>
                       <button
                         type="button"
                         role="menuitem"
                         aria-label={`${o.label}, ${o.sold ? "sold" : `${o.note} gold`}`}
-                        className={`shopSlot${o.i === menu.pick ? " picked" : ""}${o.sold ? " sold" : ""}${o.afford === false && !o.sold ? " short" : ""}${o.label === bought ? " bought" : ""}`}
+                        className={`shopRow${o.i === menu.pick ? " picked" : ""}${o.sold ? " sold" : ""}${o.afford === false && !o.sold ? " short" : ""}${o.label === bought ? " bought" : ""}`}
                         onMouseEnter={() => hover(o.i)}
                         onClick={() => choose(o.i)}
                       >
-                        <span className="shopSlotArt">
-                          <ItemIcon icon={o.icon!} size={34} />
+                        <span className="shopIcon">
+                          <ItemIcon icon={o.icon!} size={56} />
                         </span>
+                        <b>{o.label}</b>
+                        {o.gives && <small>{o.gives}</small>}
                         <span className="shopPrice">{o.sold ? "Sold" : o.note}</span>
                       </button>
-                    </li>
-                  ))}
-                  {Array.from({ length: Math.max(0, SLOTS - goods.length) }, (_, n) => (
-                    <li key={n} aria-hidden="true">
-                      <span className="shopSlot empty">
-                        <span className="shopSlotArt" />
-                      </span>
                     </li>
                   ))}
                 </ul>
               </section>
 
-              {/* Every good's telling in one cell, the picked one shown, so the cell is as tall as the tallest and the shop
-                  keeps still as the pick moves. */}
-              <section className="shopTell" aria-live="polite">
-                {goods.map((o) => (
-                  <div key={o.label} className={o.i === menu.pick ? "shown" : undefined} aria-hidden={o.i !== menu.pick}>
-                    <Tell o={o} />
+              <div className="shopSide">
+                {/* Every good's telling in one cell, the picked one shown, so the cell is as tall as the tallest and the
+                    shop keeps still as the pick moves. */}
+                <section className="shopSheet shopTell" aria-live="polite">
+                  {goods.map((o) => (
+                    <div key={o.label} className={o.i === menu.pick ? "shown" : undefined} aria-hidden={o.i !== menu.pick}>
+                      <Tell o={o} />
+                    </div>
+                  ))}
+                  <div className={pick?.icon ? undefined : "shown"} aria-hidden={!!pick?.icon}>
+                    <p className="shopAbout">Back to the talk.</p>
                   </div>
-                ))}
-                <div className={pick?.icon ? undefined : "shown"} aria-hidden={!!pick?.icon}>
-                  <p className="shopAbout">Back to the talk.</p>
-                </div>
-              </section>
-            </div>
+                </section>
 
-            <section className="shopFoot">
-              <dl className="shopLedger">
-                <div>
-                  <dt>Gold held</dt>
-                  <dd>{menu.gold}</dd>
-                </div>
-                <div>
-                  <dt>{menu.sell ? "Offer" : "Price"}</dt>
-                  <dd>{pick?.sold || Number.isNaN(cost) ? "-" : cost}</dd>
-                </div>
-                <div className={pick?.afford === false && !pick.sold ? "short" : undefined}>
-                  <dt>{pick?.afford === false && !pick.sold ? "Gold short" : "Gold after"}</dt>
-                  <dd>{pick?.sold || Number.isNaN(cost) ? menu.gold : after}</dd>
-                </div>
-              </dl>
-              {choices.map((o) => (
-                <button
-                  key={o.label}
-                  type="button"
-                  role="menuitem"
-                  className={`shopChoice back${o.i === menu.pick ? " picked" : ""}`}
-                  onMouseEnter={() => hover(o.i)}
-                  onClick={() => choose(o.i)}
-                >
-                  <img src={packUrl(ICON.leave)} alt="" width={20} height={20} />
-                  <b>{o.label}</b>
-                </button>
-              ))}
-            </section>
+                <section className="shopSheet">
+                  <dl className="shopLedger">
+                    <div>
+                      <dt>Gold held</dt>
+                      <dd>{menu.gold}</dd>
+                    </div>
+                    <div>
+                      <dt>{menu.sell ? "Offer" : "Price"}</dt>
+                      <dd>{pick?.sold || Number.isNaN(cost) ? "-" : cost}</dd>
+                    </div>
+                    <div className={pick?.afford === false && !pick.sold ? "short" : undefined}>
+                      <dt>{pick?.afford === false && !pick.sold ? "Gold short" : "Gold after"}</dt>
+                      <dd>{pick?.sold || Number.isNaN(cost) ? menu.gold : after}</dd>
+                    </div>
+                  </dl>
+                </section>
+
+                {choices.map((o) => (
+                  <button
+                    key={o.label}
+                    type="button"
+                    role="menuitem"
+                    className={`shopChoice back${o.i === menu.pick ? " picked" : ""}`}
+                    onMouseEnter={() => hover(o.i)}
+                    onClick={() => choose(o.i)}
+                  >
+                    <img src={packUrl(ICON.leave)} alt="" width={20} height={20} />
+                    <b>{o.label}</b>
+                  </button>
+                ))}
+              </div>
+            </div>
           </>
         )}
 
@@ -181,16 +181,11 @@ function useBought(menu: MenuView): string | null {
   return bought;
 }
 
-/** A good told out: its picture and name, its telling, what it changes, and whether it is held. */
+/** A good told out: its name, its telling, what it changes, and whether it is held. */
 function Tell({ o }: { o: MenuView["options"][number] }) {
   return (
     <>
-      <div className="shopTellHead">
-        <span className="shopTellArt">
-          <ItemIcon icon={o.icon!} size={56} />
-        </span>
-        <span className="shopTellName">{o.label}</span>
-      </div>
+      <span className="shopTellName">{o.label}</span>
       {o.about && <p className="shopAbout">{o.about}</p>}
       <h3 className="panelHeading">Effect</h3>
       <dl className="shopStats">
