@@ -189,14 +189,14 @@ describe("levelling at a bonfire", () => {
     const sums = Object.values(CLASSES).map((c) => Object.values(c.start).reduce((a, b) => a + b, 0));
     expect(sums.every((n) => n === 20)).toBe(true);
     expect(heroLevel(NO_LEVELS)).toBe(1);
-    expect(kit(new Set(), NO_LEVELS, "grovekeeper").hp).toBeGreaterThan(kit(new Set(), NO_LEVELS, "barrowWarden").hp);
+    expect(kit(new Set(), NO_LEVELS, "lancer").hp).toBeGreaterThan(kit(new Set(), NO_LEVELS, "monk").hp);
   });
 
   it("grows a class's attack only with the attributes it scales with", () => {
     const start = (cls: keyof typeof CLASSES) => kit(new Set(), NO_LEVELS, cls).attack;
     expect(kit(new Set(), lv({ intelligence: 5 }), "warrior").attack).toBe(start("warrior"));
-    expect(kit(new Set(), lv({ intelligence: 4 }), "barrowWarden").attack).toBe(start("barrowWarden") + 6);
-    expect(kit(new Set(), lv({ agility: 3 }), "eggwarden").attack).toBe(start("eggwarden") + 6);
+    expect(kit(new Set(), lv({ intelligence: 4 }), "monk").attack).toBe(start("monk") + 6);
+    expect(kit(new Set(), lv({ agility: 3 }), "archer").attack).toBe(start("archer") + 6);
   });
 
   it("quickens the swing and the roll with agility, never past the floor", () => {
@@ -276,21 +276,20 @@ describe("a boss's moves", () => {
   });
 });
 
-describe("the other folk's classes", () => {
-  it("leaves a guard only to the man and the bamboo-folk", () => {
-    expect(Object.entries(CLASSES).filter(([, c]) => c.shield).map(([k]) => k)).toEqual(["warrior", "grovekeeper"]);
+describe("the classes past the Warrior", () => {
+  it("leaves a guard only to the Warrior and the Lancer", () => {
+    expect(Object.entries(CLASSES).filter(([, c]) => c.shield).map(([k]) => k)).toEqual(["warrior", "lancer"]);
   });
 
-  it("gives each of the other folk one thing of its own", () => {
-    expect(CLASSES.eggwarden.sweep).toBe(true);
-    expect(CLASSES.champion.knockAll).toBe(true);
-    expect(CLASSES.grovekeeper.shield).toBe(true);
-    expect(CLASSES.barrowWarden.hex).toBe(true);
+  it("gives each one thing of its own", () => {
+    expect(CLASSES.lancer.knockAll).toBe(true);
+    expect(CLASSES.archer.pin).toBe(true);
+    expect(CLASSES.monk.mend).toBeGreaterThan(0);
   });
 
-  it("lets only the hex reach a flier", () => {
+  it("lets only the bow and the prayer reach a flier", () => {
     const bat = FOES.bat!;
-    expect(Object.entries(CLASSES).filter(([, c]) => canReach(c.reach, bat)).map(([k]) => k)).toEqual(["barrowWarden"]);
+    expect(Object.entries(CLASSES).filter(([, c]) => canReach(c.reach, bat)).map(([k]) => k)).toEqual(["archer", "monk"]);
   });
 });
 

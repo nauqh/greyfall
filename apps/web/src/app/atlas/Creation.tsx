@@ -4,7 +4,6 @@ import { CLASSES, type HeroClass, type ItemName } from "@greyfall/engine";
 import { useEffect, useRef, useState } from "react";
 
 import type { SackItem } from "../../game/AtlasScene";
-import { packUrl } from "../../game/art";
 import { CLICK, play, useTick } from "../sound";
 import { CreationScene } from "./CreationScene";
 import { ItemIcon } from "./ItemIcon";
@@ -15,57 +14,28 @@ import "./prologue.css";
 import "./rest.css";
 import "./creation.css";
 
-/** Each class: its idle sheet (`frames` square frames of `frame` px, the feet `feet` px down, `face` the top left of an 88 px square round its head and shoulders), and its telling. */
-export const CLASS_ROWS: { cls: HeroClass; name: string; idle: string; frames: number; frame: number; feet: number; face: [number, number]; about: string }[] = [
+/** Each class and its telling, in the order A and D walk them round the island (`creationStage.ts`): the Lancer, the
+ *  Warrior, the Monk, the Archer. */
+export const CLASS_ROWS: { cls: HeroClass; name: string; about: string }[] = [
+  {
+    cls: "lancer",
+    name: "Lancer",
+    about: "A lancer of Highward's wards, who held each ward's gate as it fell. The last of the watch went down to the boats, and no boat came back to the quay.",
+  },
   {
     cls: "warrior",
     name: "Warrior",
-    idle: "Units/Blue Units/Warrior/Warrior_Idle.png",
-    frames: 8,
-    frame: 192,
-    feet: 136,
-    face: [58, 46],
     about: "A man of the levy, called up to hold the coast when the Grey came. The muster took ship south, and the sea kept all but one.",
   },
   {
-    cls: "eggwarden",
-    name: "Eggwarden",
-    idle: "Enemy Pack/Lizard/Lizard_Idle.png",
-    frames: 7,
-    frame: 192,
-    feet: 130,
-    face: [62, 22],
-    about: "A fenfolk of the Stillmere. It went down the sinkhole after the eggs the Stilled took, and followed the water to the bottom of the world.",
+    cls: "monk",
+    name: "Monk",
+    about: "A sister who tended Old Ferrow's fire. It sailed with a lit candle for a hold whose fire had gone out, and the sea put out the candle.",
   },
   {
-    cls: "champion",
-    name: "Champion",
-    idle: "Enemy Pack/Minotaur/Minotaur_Idle.png",
-    frames: 16,
-    frame: 320,
-    feet: 213,
-    face: [142, 78],
-    about: "One of the horned, sworn to the Citadel. It rode out with the last gold ship the night the Grey came, and went down with her.",
-  },
-  {
-    cls: "grovekeeper",
-    name: "Grovekeeper",
-    idle: "Enemy Pack/Panda/Panda_Idle.png",
-    frames: 10,
-    frame: 256,
-    feet: 174,
-    face: [82, 76],
-    about: "A bamboo-folk of Old Bamboo. When the Grey took the grove it sailed for the old country to bring back help. The ship never got there.",
-  },
-  {
-    cls: "barrowWarden",
-    name: "Barrow-warden",
-    idle: "Enemy Pack/Hex Shaman/Hex Shaman_Idle.png",
-    frames: 8,
-    frame: 192,
-    feet: 136,
-    face: [48, 50],
-    about: "A barrow-warden of Kingsrest, sent after the gold the Citadel dug from the old kings' graves. It took ship behind the last gold ship, and the sea took both.",
+    cls: "archer",
+    name: "Archer",
+    about: "A bow of Highward's watch, posted on the Cloudstair. The posts went dark one by one above it. It came down to the sea, and the sea took it.",
   },
 ];
 
@@ -77,22 +47,10 @@ const STEPS = [
 
 const NAMELESS = "Nameless";
 
-/** The classes a new run can take; the rest are shown to look at. */
-const OPEN = new Set<HeroClass>(["warrior"]);
 
 /** A keycap; the word keys (Esc, Enter) are drawn wide. */
 function Key({ k }: { k: string }) {
   return <kbd className={k.length > 1 ? "keyCap wide" : "keyCap"}>{k}</kbd>;
-}
-
-/** A class's face for its row: its head and shoulders in its first idle frame, drawn at half. */
-function Thumb({ row }: { row: (typeof CLASS_ROWS)[number] }) {
-  const style = {
-    backgroundImage: `url("${packUrl(row.idle)}")`,
-    backgroundSize: `${(row.frames * row.frame) / 2}px ${row.frame / 2}px`,
-    backgroundPosition: `${-row.face[0] / 2}px ${-row.face[1] / 2}px`,
-  };
-  return <span className="crThumb" aria-hidden="true" style={style} />;
 }
 
 /**
@@ -112,17 +70,18 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
   // Read at each render, so a scene still loading when this opened has its gifts by the time they are looked at.
   const gifts = giftsNow();
 
-  const showCls = (step === 0 && at !== null && CLASS_ROWS[at]?.cls) || cls || "warrior";
+  // None until a row is looked at: the window holds the whole hamlet.
+  const showCls = (step === 0 && at !== null && CLASS_ROWS[at]?.cls) || cls;
   const showGift = (step === 1 && at !== null && gifts[at]?.label) || gift;
-  const row = CLASS_ROWS.find((c) => c.cls === showCls)!;
   const giftShown = gifts.find((g) => g.label === showGift);
   const ready = step !== 1 || !!gift;
 
-  // Each list opens with its chosen row (or its first) in focus, so the keys work at once.
+  // Each list opens with its chosen row (or its first) in focus, so the keys work at once; the classes with none
+  // chosen open on the list itself, so the whole hamlet shows until W or S.
   const list = useRef<HTMLElement>(null);
   useEffect(() => {
     const rows = list.current;
-    (rows?.querySelector<HTMLButtonElement>(".crOption.chosen") ?? rows?.querySelector<HTMLButtonElement>(".crOption"))?.focus({ preventScroll: true });
+    (rows?.querySelector<HTMLButtonElement>(".crOption.chosen") ?? (step === 0 ? rows : rows?.querySelector<HTMLButtonElement>(".crOption")))?.focus({ preventScroll: true });
   }, [step]);
 
   const go = (to: number): void => {
@@ -139,7 +98,7 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
 
   const choose = (): void => {
     if (step === 0) {
-      if (!OPEN.has(showCls)) return;
+      if (!showCls) return;
       setCls(showCls);
       go(1);
     } else if (showGift) {
@@ -165,17 +124,19 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
     if (k === "Tab") return;
     e.preventDefault();
     if (e.repeat) return;
-    if (k === "w" || k === "s") {
+    // A D walk the classes along the waterfront as W S walk a list.
+    if (k === "w" || k === "s" || k === "a" || k === "d") {
+      const back = k === "w" || k === "a";
       const items = [...e.currentTarget.querySelectorAll<HTMLButtonElement>(".crList .crOption")];
       const i = items.indexOf(document.activeElement as HTMLButtonElement);
-      items[(i + (k === "w" ? -1 : 1) + items.length) % items.length]?.focus();
+      items[i < 0 ? (back ? items.length - 1 : 0) : (i + (back ? -1 : 1) + items.length) % items.length]?.focus();
     } else if (k === "Escape") go(step - 1);
     else if (k === "e" || k === "Enter") (play(CLICK), choose());
   };
 
   const told =
     step === 0
-      ? row.about
+      ? (CLASS_ROWS.find((c) => c.cls === showCls)?.about ?? "The tide brought one ashore at Lanternport. Say who it was.")
       : step === 1
         ? (giftShown?.about ?? "One thing came ashore with you. The sea kept the rest.")
         : "No one in Aurum will know it. Say it anyway.";
@@ -211,58 +172,57 @@ export function Creation({ gifts: giftsNow, onBegin, onDone }: { gifts: () => Sa
                   <StatIcon stat={s.icon} size={22} mono />
                 </span>
                 <span>{s.name}</span>
-                <b>{CLASSES[showCls].start[s.stat]}</b>
+                <b>{showCls ? CLASSES[showCls].start[s.stat] : "-"}</b>
               </li>
             ))}
           </ul>
         </aside>
 
-        <section ref={list} className="crList" aria-label={STEPS[step]!.title}>
-          {step === 0 && (
-            <div className="crOptions">
-              {CLASS_ROWS.map((c, i) => (
-                <button key={c.cls} type="button" className={`crOption${c.cls === cls ? " chosen" : ""}`} aria-pressed={c.cls === cls} aria-disabled={!OPEN.has(c.cls)} onFocus={() => setAt(i)}>
-                  <Thumb row={c} />
-                  <span className="panelOptionText">
-                    <span className="panelOptionName">{c.name}</span>
-                    {!OPEN.has(c.cls) && <span className="panelOptionNote">Locked</span>}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-          {step === 1 && (
-            <div className="crOptions">
-              {gifts.map((g, i) => (
-                <button key={g.label} type="button" className={`crOption${g.label === gift ? " chosen" : ""}`} aria-pressed={g.label === gift} onFocus={() => setAt(i)}>
-                  <ItemIcon icon={g.icon} size={32} />
-                  <span className="panelOptionText">
-                    <span className="panelOptionName">{g.label}</span>
-                    <span className="panelOptionNote">{g.gives}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-          {step === 2 && (
-            <form className="crName" onSubmit={(e) => e.preventDefault()}>
-              <input autoFocus aria-label="Name" value={name} maxLength={16} placeholder={NAMELESS} spellCheck={false} autoComplete="off" onChange={(e) => setName(e.target.value)} />
-              <span className="panelOptionNote">Up to 16 letters. Left blank, you are {NAMELESS}.</span>
-            </form>
-          )}
-          <p key={`${step}:${showCls}:${showGift}`} className="crAbout">
-            {told}
-          </p>
-        </section>
+        <CreationScene cls={showCls} gift={giftShown}>
+          {/* The classes are picked in the scene itself: their rows only carry the focus, and the caption names the one looked at. */}
+          <section ref={list} className={`crList crPane${step === 0 ? " crPick" : ""}`} tabIndex={-1} aria-label={STEPS[step]!.title}>
+            {step === 0 && (
+              <div className="crOptions">
+                {CLASS_ROWS.map((c, i) => (
+                  <button key={c.cls} type="button" className={`crOption${c.cls === cls ? " chosen" : ""}`} aria-pressed={c.cls === cls} onFocus={() => setAt(i)}>
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            )}
+            {step === 1 && (
+              <div className="crOptions">
+                {gifts.map((g, i) => (
+                  <button key={g.label} type="button" className={`crOption${g.label === gift ? " chosen" : ""}`} aria-pressed={g.label === gift} onFocus={() => setAt(i)}>
+                    <ItemIcon icon={g.icon} size={32} />
+                    <span className="panelOptionText">
+                      <span className="panelOptionName">{g.label}</span>
+                      <span className="panelOptionNote">{g.gives}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {step === 2 && (
+              <form className="crName" onSubmit={(e) => e.preventDefault()}>
+                <input autoFocus aria-label="Name" value={name} maxLength={16} placeholder={NAMELESS} spellCheck={false} autoComplete="off" onChange={(e) => setName(e.target.value)} />
+                <span className="panelOptionNote">Up to 16 letters. Left blank, you are {NAMELESS}.</span>
+              </form>
+            )}
+            <p key={`${step}:${showCls}:${showGift}`} className="crAbout">
+              {step === 0 && showCls && <b className="crPickName">{CLASS_ROWS.find((c) => c.cls === showCls)!.name}</b>}
+              {told}
+            </p>
+          </section>
+        </CreationScene>
 
-        <CreationScene row={row} gift={giftShown} />
         <div className="crFoot">
           <span className="crKeys">
             {step < 2 ? (
               <>
                 <span className="crKey">
-                  <Key k="W" />
-                  <Key k="S" /> Move
+                  {step === 0 ? <Key k="A" /> : <Key k="W" />}
+                  {step === 0 ? <Key k="D" /> : <Key k="S" />} Move
                 </span>
                 <span className="crKey">
                   <Key k="E" /> Choose

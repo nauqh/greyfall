@@ -635,43 +635,31 @@ const ROCK_PAD = 128;
 
 /** An area map's view in play: this many rows tall, held on the hero. */
 const AREA_ROWS = 15;
+/** The companions' strike sheets: the Lancer's thrust (it is drawn facing right), the Archer's draw and loose. */
+const COMPANION_ATTACK: Record<CompanionKind, { key: string; file: string }> = {
+  lancer: { key: "blue_Lancer/Lancer_Right_Attack.png", file: "Units/Blue Units/Lancer/Lancer_Right_Attack.png" },
+  archer: { key: "blue_Archer/Archer_Shoot.png", file: "Units/Blue Units/Archer/Archer_Shoot.png" },
+  monk: { key: "blue_Monk/Heal.png", file: "Units/Blue Units/Monk/Heal.png" },
+};
 /** The captain, drawn from the knights' sheets, by class. */
-const HERO_ART: Record<HeroClass, { look: Dweller; attack: { key: string; file: string }; attack2: { key: string; file: string }; guard?: { key: string; file: string }; tint?: number }> = {
+const HERO_ART: Record<HeroClass, { look: Dweller; attack: { key: string; file: string }; attack2: { key: string; file: string }; guard?: { key: string; file: string } }> = {
   warrior: {
     look: { kind: "warrior", col: 0, row: 0, color: "blue" },
     attack: { key: "blue_Warrior/Warrior_Attack1.png", file: "Units/Blue Units/Warrior/Warrior_Attack1.png" },
     attack2: { key: "blue_Warrior/Warrior_Attack2.png", file: "Units/Blue Units/Warrior/Warrior_Attack2.png" },
     guard: { key: "blue_Warrior/Warrior_Guard.png", file: "Units/Blue Units/Warrior/Warrior_Guard.png" },
   },
-  // The other folk from the monsters' sheets, washed blue so the captain is never taken for one of the foes beside it.
-  eggwarden: {
-    look: { kind: "lizard", col: 0, row: 0 },
-    attack: { key: "beast_lizard_attack", file: BEAST.lizard!.attack! },
-    attack2: { key: "beast_lizard_attack", file: BEAST.lizard!.attack! },
-    tint: 0xb4c8ff,
+  lancer: {
+    look: { kind: "lancer", col: 0, row: 0, color: "blue" },
+    attack: COMPANION_ATTACK.lancer,
+    attack2: COMPANION_ATTACK.lancer,
+    guard: { key: "blue_Lancer/Lancer_Right_Defence.png", file: "Units/Blue Units/Lancer/Lancer_Right_Defence.png" },
   },
-  champion: {
-    look: { kind: "minotaur", col: 0, row: 0 },
-    attack: { key: "beast_minotaur_attack", file: BEAST.minotaur!.attack! },
-    attack2: { key: "beast_minotaur_attack", file: BEAST.minotaur!.attack! },
-    tint: 0xb4c8ff,
-  },
-  grovekeeper: {
-    look: { kind: "panda", col: 0, row: 0 },
-    attack: { key: "beast_pandaCub_attack", file: BEAST.pandaCub!.attack! },
-    attack2: { key: "beast_pandaCub_attack", file: BEAST.pandaCub!.attack! },
-    guard: { key: "beast_pandaGuard_idle", file: BEAST.pandaGuard!.idle },
-    tint: 0xb4c8ff,
-  },
-  barrowWarden: {
-    look: { kind: "shaman", col: 0, row: 0 },
-    attack: { key: "beast_shaman_attack", file: BEAST.shaman!.attack! },
-    attack2: { key: "beast_shaman_attack", file: BEAST.shaman!.attack! },
-    tint: 0xb4c8ff,
-  },
+  archer: { look: { kind: "archer", col: 0, row: 0, color: "blue" }, attack: COMPANION_ATTACK.archer, attack2: COMPANION_ATTACK.archer },
+  monk: { look: { kind: "monk", col: 0, row: 0, color: "blue" }, attack: COMPANION_ATTACK.monk, attack2: COMPANION_ATTACK.monk },
 };
-/** How long a hex holds its mark, in ms: the Skirmish Hex Shaman's 1.5 s. */
-const HEX_HOLD = 1500;
+/** How long a pinning arrow holds its mark, in ms: the Skirmish Hex Shaman's 1.5 s. */
+const PIN_HOLD = 1500;
 /** The Monk's healing swirl, green for a monk's mending and tinted amber for an ember burned. */
 const HEAL_FX = { key: "healFx", file: "Units/Blue Units/Monk/Heal_Effect.png" };
 /** An ember rising off the hero: the Ember Shard's stone, cropped and tinted the same. */
@@ -738,12 +726,6 @@ interface Companion extends Body {
   kind: CompanionKind;
   post: Cell;
 }
-/** The companions' strike sheets: the Lancer's thrust (it is drawn facing right), the Archer's draw and loose. */
-const COMPANION_ATTACK: Record<CompanionKind, { key: string; file: string }> = {
-  lancer: { key: "blue_Lancer/Lancer_Right_Attack.png", file: "Units/Blue Units/Lancer/Lancer_Right_Attack.png" },
-  archer: { key: "blue_Archer/Archer_Shoot.png", file: "Units/Blue Units/Archer/Archer_Shoot.png" },
-  monk: { key: "blue_Monk/Heal.png", file: "Units/Blue Units/Monk/Heal.png" },
-};
 const COMPANION_NAME: Record<CompanionKind, string> = { lancer: "Lancer", archer: "Archer", monk: "Monk" };
 /** Who hires out which companion, by the dweller's id. */
 const RECRUITER: Record<string, CompanionKind> = { corwin: "lancer", wren: "archer" };
@@ -1944,8 +1926,7 @@ export class AtlasScene extends Phaser.Scene {
     const art = HERO_ART[this.cls];
     const look = this.look(art.look);
     const y = (at.row + 0.75) * CELL;
-    const s = this.add.sprite((at.col + 0.5) * CELL, y, look.idle.key).setOrigin(0.5, look.anchor).setDepth(standing(y)).setData("tint", art.tint);
-    untint(s);
+    const s = this.add.sprite((at.col + 0.5) * CELL, y, look.idle.key).setOrigin(0.5, look.anchor).setDepth(standing(y));
     this.play(s, look.idle.key);
     this.hero = { ...this.body(s, at, this.gear.hp, CLASSES[this.cls].speed, { idle: look.idle.key, move: look.move?.key, attack: art.attack.key }) };
     const k = this.input.keyboard;
@@ -2715,8 +2696,7 @@ export class AtlasScene extends Phaser.Scene {
     const look = this.look(HERO_ART[cls].look);
     Object.assign(hero, { idle: look.idle.key, move: look.move?.key, attack: HERO_ART[cls].attack.key, speed: CLASSES[cls].speed });
     hero.s.anims.stop();
-    hero.s.setData("tint", HERO_ART[cls].tint);
-    untint(hero.s);
+    hero.s.clearTint();
     hero.s.setOrigin(0.5, look.anchor);
     this.play(hero.s, hero.idle);
     hero.lift = hero.s.displayHeight * hero.s.originY * 0.78;
@@ -3689,7 +3669,7 @@ export class AtlasScene extends Phaser.Scene {
   /** Loops for every sheet with more than one frame: props, beasts, knights. */
   private makeAnims(): void {
     for (const key of this.textures.getTextureKeys()) {
-      const once = /_(attack|windup|recovery)$/.test(key) || [HERO_ART.warrior.attack.key, HERO_ART.warrior.attack2.key, COMPANION_ATTACK.lancer.key, COMPANION_ATTACK.archer.key, COMPANION_ATTACK.monk.key, HEAL_FX.key].includes(key);
+      const once = /_(attack|windup|recovery)$/.test(key) || [HERO_ART.warrior.attack.key, HERO_ART.warrior.attack2.key, HERO_ART.lancer.guard!.key, COMPANION_ATTACK.lancer.key, COMPANION_ATTACK.archer.key, COMPANION_ATTACK.monk.key, HEAL_FX.key].includes(key);
       if (once && !this.anims.exists(`${key}_once`)) {
         // The hero's swings fill the wait to the next one (4 frames, 0.4 s) rather than snap through and stand idle.
         // The hero's swings fill the wait to the next; a monster's attack plays out over its wind-up.
@@ -4929,22 +4909,32 @@ export class AtlasScene extends Phaser.Scene {
       const { reach } = CLASSES[this.cls];
       const near = (f: Foe) => !f.dead && tileDistance(f.at, hero.at) <= reach && Math.hypot(f.s.x - hero.s.x, f.s.y - hero.s.y) <= (reach + 0.6) * CELL;
       if (hero.dead || !near(foe)) return;
-      if (CLASSES[this.cls].hex) return this.loose(hero, foe, this.gear.attack, MISSILE.shaman!, step === 3 ? () => this.hex(foe) : undefined);
-      for (const f of CLASSES[this.cls].sweep ? this.foes.filter(near) : [foe]) {
-        this.hurt(hero, f, this.gear.attack);
-        if ((step === 3 || CLASSES[this.cls].knockAll) && !f.dead && !BOSSES.has(f.kind)) this.knockBack(f, this.time.now);
-      }
+      const { pin, mend } = CLASSES[this.cls];
+      if (pin) return this.loose(hero, foe, this.gear.attack, MISSILE.archer!, step === 3 ? () => this.pin(foe) : undefined);
+      if (mend) return this.loose(hero, foe, this.gear.attack, MISSILE.shaman!, step === 3 ? () => this.mendSelf(mend) : undefined);
+      this.hurt(hero, foe, this.gear.attack);
+      if ((step === 3 || CLASSES[this.cls].knockAll) && !foe.dead && !BOSSES.has(foe.kind)) this.knockBack(foe, this.time.now);
     });
   }
 
-  /** The third bolt bursts on its mark and holds it: a wind-up broken, and no move for a moment. A boss shrugs off the hold. */
-  private hex(f: Foe): void {
-    this.blast(f.at, 0xb48cff);
+  /** The third arrow pins its mark: a wind-up broken, and no move for a moment. A boss shrugs off the pin. */
+  private pin(f: Foe): void {
     if (f.dead || BOSSES.has(f.kind)) return;
     if (f.windup) this.play(f.s, f.idle);
     f.windup = null;
-    f.busy = Math.max(f.busy, this.time.now + HEX_HOLD);
+    f.busy = Math.max(f.busy, this.time.now + PIN_HOLD);
     f.way = [];
+  }
+
+  /** The third prayer landed: `share` of the hero's health back, under the Monk's swirl. */
+  private mendSelf(share: number): void {
+    const hero = this.hero!;
+    if (hero.dead || hero.hp === hero.max) return;
+    const was = hero.hp;
+    hero.hp = Math.min(hero.max, hero.hp + Math.round(share * hero.max));
+    const fx = this.add.sprite(hero.s.x, hero.s.y + 14, HEAL_FX.key).setOrigin(0.5, 0.72).setDepth(standing(hero.s.y) + 1);
+    fx.play(`${HEAL_FX.key}_once`).once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => fx.destroy());
+    this.float(hero.s.x, hero.s.y - hero.lift - 10, `+${hero.hp - was}`, "#8fe08a");
   }
 
   /** Thrown a tile straight back from the hero, if the ground allows, and staggered a moment either way. */

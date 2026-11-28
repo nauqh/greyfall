@@ -11,7 +11,7 @@ import type { WorldFlag } from "./npcs.ts";
 export const HERO = { hp: 100, attack: 12, chain: 0.65, every: 1.1, hit: 0.2, speed: 2.8, sprint: 1.6, guard: 0.2, combo: 1.4, flasks: 3, flask: 40 } as const;
 
 /** The class picked at a new game's start. */
-export type HeroClass = "warrior" | "eggwarden" | "champion" | "grovekeeper" | "barrowWarden";
+export type HeroClass = "warrior" | "lancer" | "archer" | "monk";
 /** The attributes levelled at a bonfire, after the Souls games and Kingdom Come. */
 export const ATTRIBUTES = ["vigour", "endurance", "strength", "agility", "intelligence", "warmth", "luck"] as const;
 export type Attribute = (typeof ATTRIBUTES)[number];
@@ -20,20 +20,18 @@ export type Attribute = (typeof ATTRIBUTES)[number];
 export type Levels = Record<Attribute, number>;
 
 /**
- * What a class changes of `HERO`. Only the man and the bamboo-folk carry something to guard with. `start`: its
+ * What a class changes of `HERO`. Only the Warrior and the Lancer carry something to guard with. `start`: its
  * attributes at a new game, twenty in all, as a Dark Souls class is its starting spread. `weapon`: its blow's own
  * weight, before `scales`, the attributes its attack grows with, each level a share of `LEVEL_UP.attack`.
  */
-export const CLASSES: Record<HeroClass, { start: Levels; weapon: number; chain: number; every: number; speed: number; reach: number; shield: boolean; scales: Partial<Record<Attribute, number>>; knockAll?: boolean; sweep?: boolean; hex?: boolean }> = {
+export const CLASSES: Record<HeroClass, { start: Levels; weapon: number; chain: number; every: number; speed: number; reach: number; shield: boolean; scales: Partial<Record<Attribute, number>>; knockAll?: boolean; pin?: boolean; mend?: number }> = {
   warrior: { start: { vigour: 5, endurance: 4, strength: 2, agility: 2, intelligence: 1, warmth: 3, luck: 3 }, weapon: 6, chain: HERO.chain, every: HERO.every, speed: HERO.speed, reach: 1, shield: true, scales: { strength: 1, agility: 0.5 } },
-  // The fenfolk: its frill flares round it and cuts every foe beside it, not one; quickest on its feet, on less health.
-  eggwarden: { start: { vigour: 4, endurance: 5, strength: 1, agility: 4, intelligence: 1, warmth: 2, luck: 3 }, weapon: 2, chain: 0.7, every: 1.2, speed: 3, reach: 1, shield: false, sweep: true, scales: { agility: 1 } },
-  // The horned: every blow throws the foe back, not only the finisher; slow between them.
-  champion: { start: { vigour: 7, endurance: 3, strength: 5, agility: 1, intelligence: 0, warmth: 2, luck: 2 }, weapon: 5, chain: 0.9, every: 1.5, speed: 2.6, reach: 1, shield: false, knockAll: true, scales: { strength: 1.25 } },
-  // The bamboo-folk: the most health, and the only one but the man that can guard.
-  grovekeeper: { start: { vigour: 9, endurance: 3, strength: 3, agility: 1, intelligence: 0, warmth: 3, luck: 1 }, weapon: 5, chain: 0.8, every: 1.3, speed: 2.4, reach: 1, shield: true, scales: { strength: 0.75, vigour: 0.25 } },
-  // A mask: hexes from afar, fliers too, the third bolt bursting and holding its mark; the least health, and no guard.
-  barrowWarden: { start: { vigour: 3, endurance: 4, strength: 0, agility: 2, intelligence: 5, warmth: 4, luck: 2 }, weapon: 1, chain: 0.8, every: 1.3, speed: 2.6, reach: 5, shield: false, hex: true, scales: { intelligence: 0.75 } },
+  // Every thrust throws the foe back, not only the finisher; the most health, slow between blows.
+  lancer: { start: { vigour: 8, endurance: 3, strength: 4, agility: 1, intelligence: 0, warmth: 3, luck: 1 }, weapon: 5, chain: 0.9, every: 1.4, speed: 2.5, reach: 1, shield: true, knockAll: true, scales: { strength: 1, vigour: 0.25 } },
+  // Shoots from afar, fliers too, the third arrow pinning its mark; no guard.
+  archer: { start: { vigour: 4, endurance: 4, strength: 1, agility: 5, intelligence: 1, warmth: 2, luck: 3 }, weapon: 2, chain: 0.8, every: 1.3, speed: 3, reach: 5, shield: false, pin: true, scales: { agility: 1 } },
+  // Casts from afar, the third prayer mending this much of its own health; the least health, and no guard.
+  monk: { start: { vigour: 3, endurance: 4, strength: 0, agility: 2, intelligence: 5, warmth: 4, luck: 2 }, weapon: 1, chain: 0.8, every: 1.3, speed: 2.6, reach: 4, shield: false, mend: 0.1, scales: { intelligence: 0.75 } },
 };
 
 /**

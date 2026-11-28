@@ -180,7 +180,7 @@ _Avoid_: the drowned, the chosen, the Unkindled
 The hero's name when none was given. A save from before the class pick is named the Wanderer.
 
 **Class**:
-Who the hero came ashore as, picked at a new game's start: Warrior (a man, with a shield), Eggwarden (a fenfolk, whose frill cuts every foe beside it), Champion (one of the horned, whose every blow knocks back), Grovekeeper (a bamboo-folk, who guards) or Barrow-warden (a mask, who hexes from afar instead of striking).
+Who the hero came ashore as, picked at a new game's start: Warrior (with a shield), Lancer (who guards, and whose every thrust knocks back), Archer (who shoots from afar and pins with every third arrow) or Monk (who casts from afar and mends itself with every third prayer). The band can hold the hero's own kind.
 _Avoid_: job, role, archetype
 
 **The band**:

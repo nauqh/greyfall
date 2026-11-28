@@ -9,7 +9,7 @@ import * as Phaser from "phaser";
 import { CELL, addMine, buildMap } from "./islandMap";
 import { DEPTH, addDecor, standing } from "./terrain";
 
-const MAP = [
+const INTRO_MAP: readonly string[] = [
   "~~~~~####~~~~~~~~~~~~~~~~~",
   "~~~##########~~~~~~~~~~~~~",
   "~~#############~~~~~~~~~~~",
@@ -28,19 +28,7 @@ const MAP = [
   "~~~~~~~..~~~~~~~~~~~~~~~~~",
   "~~~~~~~~~~~~~~~~~~~~~~~~~~",
 ];
-const COLS = MAP[0]!.length;
-const ROWS = MAP.length;
 const MINES = [{ col: 15, row: 3 }];
-
-function at(col: number, row: number): string {
-  return MAP[row]?.[col] ?? "~";
-}
-function isLand(col: number, row: number): boolean {
-  return at(col, row) !== "~";
-}
-function isSlope(col: number, row: number): boolean {
-  return "<>".includes(at(col, row));
-}
 
 /** The tileset's 4x4 blocks: 3x3 edges plus a one-wide column, a one-tall
  *  row and a single. Picks the column (or row) from the two neighbours. */
@@ -49,8 +37,13 @@ function edge(before: boolean, after: boolean): number {
 }
 
 /** Foam under the shore, ground everywhere on land, then plateau tops,
- *  cliffs and slopes over it: the pack's own layer order. */
-export function buildIntroIsland(scene: Phaser.Scene): void {
+ *  cliffs and slopes over it: the pack's own layer order. `map` is the
+ *  island's rows, the title's own unless a screen reshapes it. */
+export function buildIntroIsland(scene: Phaser.Scene, map: readonly string[] = INTRO_MAP): void {
+  const [COLS, ROWS] = [map[0]!.length, map.length];
+  const at = (col: number, row: number): string => map[row]?.[col] ?? "~";
+  const isLand = (col: number, row: number): boolean => at(col, row) !== "~";
+  const isSlope = (col: number, row: number): boolean => "<>".includes(at(col, row));
   const tile = (c: number, r: number, tc: number, tr: number, z: number, sheet = "tileset"): void => {
     scene.add.image(c * CELL, r * CELL, sheet, `tile_${tc}_${tr}`).setOrigin(0).setDepth(z);
   };

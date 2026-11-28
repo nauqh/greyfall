@@ -1,5 +1,6 @@
 /* A new game's creation laid out as Dark Souls 1's Create Character, on one sheet of the pack's paper across the screen:
-   the steps and numbers down the left, the choices on a slip over the middle, the class on show at the right. Fixed to
+   the steps and numbers down the left, and a window onto the classes' island filling the rest (creationStage.ts), the
+   choices in a pane at its bottom right. Fixed to
    the screen, never scrolled. Every piece at 1x or exactly half, as nearest-neighbour at any other scale breaks the art's lines. */
 .creation {
 	--ink: var(--brown);
@@ -33,7 +34,7 @@
 	z-index: 200;
 	inset: 20px 20px 24px;
 	display: grid;
-	grid-template: "ledger list scene" minmax(0, 1fr) / 280px minmax(0, 1fr) minmax(0, 1.3fr);
+	grid-template: "ledger scene" minmax(0, 1fr) / 280px minmax(0, 1fr);
 	align-items: start;
 	gap: 0 32px;
 	padding: 132px 72px 96px 76px;
@@ -131,23 +132,110 @@
 	text-overflow: ellipsis;
 }
 
-/* The choices on a slip laid over the middle of the sheet, as Dark Souls 1's scroll
-   does; its top level with the ledger's, each choice boxed, what the cursor is on boxed at the foot. Kept inside the screen; the focused row scrolls into view. */
+/* The choices straight on the scene's left side, no card and no shade, inked round like the ribbon's head so they read
+   on the grass; clear of the class on show at its right, what the cursor is on told at the foot. The focused row
+   scrolls into view. */
 .crList {
 	--row: 46px;
-	grid-area: list;
-	align-self: start;
+	position: absolute;
+	z-index: 2;
+	top: 0;
+	left: 0;
+	width: min(400px, 46%);
 	display: flex;
 	flex-direction: column;
-	gap: 12px;
-	max-height: calc(100% + 18px);
-	/* The paper's art stands 18px in from its box. */
-	margin-top: -18px;
-	padding: 34px 34px 32px;
-	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 28px stretch;
-	filter: drop-shadow(0 10px 16px rgb(60 40 20 / 0.35));
+	gap: 16px;
+	max-height: 100%;
+	padding: 28px 24px;
 	overflow-y: auto;
 	scrollbar-width: none;
+	color: var(--cream);
+	-webkit-text-stroke: 4px var(--brown);
+	paint-order: stroke fill;
+	text-shadow: 0 2px 0 var(--brown);
+}
+
+/* Every step's choices in one pane at the window's bottom right, on the pack's paper, over the scene's sea. On the
+   class step the classes are picked where they stand: the pane names the one looked at on a brown bar and tells it, its
+   rows kept only to carry the keys' focus. The gift and name steps list their rows in it. */
+.crList.crPane {
+	top: auto;
+	left: auto;
+	right: 16px;
+	bottom: 16px;
+	width: min(364px, 42%);
+	gap: 12px;
+	padding: 28px 30px 26px;
+	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 24px stretch;
+	filter: drop-shadow(0 8px 14px rgb(0 0 0 / 0.3));
+	color: var(--bark);
+	-webkit-text-stroke: 0;
+	text-shadow: none;
+}
+
+.crPane .crOption {
+	height: auto;
+	min-height: 48px;
+	padding-block: 8px;
+	color: var(--bark);
+	-webkit-text-stroke: 0;
+	text-shadow: none;
+}
+
+/* The cursor's row as the bonfire lists pick one: the brown bar, cream ink. */
+.crPane .crOption:focus {
+	border-left-color: var(--brown);
+	background: var(--brown);
+	color: var(--onPicked);
+}
+
+.crList.crPane .panelOptionNote {
+	color: var(--mute);
+	-webkit-text-stroke: 0;
+}
+
+.crList.crPane .crOption:focus .panelOptionNote {
+	color: var(--onPickedNote);
+}
+
+.crPick .crOptions {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+}
+
+/* What the cursor is on, under a rule, in the stats pane's face. */
+.crList.crPane .crAbout {
+	min-height: 0;
+	padding: 8px 4px 0;
+	border-top: 1px solid var(--frame);
+	font: 700 13px / 1.5 var(--display), serif;
+	font-style: normal;
+	color: var(--bark);
+	-webkit-text-stroke: 0;
+}
+
+.crList.crPick .crAbout {
+	padding: 2px 4px 2px;
+	border-top: none;
+}
+
+/* The name on the cursor's brown bar, in the picked row's cream. */
+.crPickName {
+	display: block;
+	margin: 0 -4px 12px;
+	padding: 7px 12px;
+	background: var(--brown);
+	font: 900 18px var(--display), serif;
+	letter-spacing: 0.04em;
+	color: var(--onPicked);
+}
+
+/* Focused itself only while no class is looked at: no ring, the rows show where the keys are. */
+.crList:focus {
+	outline: none;
 }
 
 /* What the cursor is on, at the slip's foot in its box, in a fixed four lines so nothing above it moves. */
@@ -155,11 +243,11 @@
 	flex: none;
 	min-height: 5.6em;
 	margin: 0;
-	padding: 8px 12px;
-	border: var(--cell);
-	background: var(--cellFill);
+	padding: 10px 12px 0;
+	border-top: 1px solid var(--goldLine);
 	font: italic 400 clamp(16px, 1.1vw, 19px) / 1.4 var(--book), serif;
-	color: var(--bark);
+	color: var(--cream);
+	-webkit-text-stroke-width: 3px;
 	text-wrap: pretty;
 	animation: prologueIn 300ms ease-out both;
 }
@@ -170,7 +258,7 @@
 	gap: 3px;
 }
 
-/* A boxed choice. */
+/* A choice, bare on the scene. */
 .crOption {
 	display: flex;
 	align-items: center;
@@ -178,19 +266,20 @@
 	width: 100%;
 	height: var(--row);
 	padding: 0 10px;
-	border: var(--cell);
-	background: var(--cellFill);
-	color: var(--mute);
+	border: none;
+	border-left: 3px solid transparent;
+	background: none;
+	color: var(--cream);
 	font: inherit;
 	text-align: left;
+	text-shadow: inherit;
 	outline: none;
 }
 
-/* The cursor's box as the bonfire lists pick a row (.panelOption.picked): dark brown, cream ink. */
+/* The cursor's row: a gilt edge and its name in gold. */
 .crOption:focus {
-	border-color: var(--brown);
-	background: var(--brown);
-	color: var(--onPicked);
+	border-left-color: var(--goldLine);
+	color: var(--goldLine);
 }
 
 .crOption:focus .panelOptionNote {
@@ -217,20 +306,12 @@
 	color: var(--bark);
 }
 
-/* A class's face: 88 art px drawn at half, its cut edges faded out so no crop shows a hard line. */
-.crThumb {
-	flex: none;
-	width: 44px;
-	height: 44px;
-	background-repeat: no-repeat;
-	image-rendering: pixelated;
-	mask:
-		linear-gradient(#000 82%, transparent),
-		linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
-	mask-composite: intersect;
+.crList .panelOptionNote {
+	color: var(--onPickedNote);
+	-webkit-text-stroke-width: 3px;
 }
 
-/* The window onto the shore, set into the paper like the numbers' cell, as tall as the sheet's inside. */
+/* The window onto the journey scene, set into the paper like the numbers' cell, as tall as the sheet's inside. */
 .crScene {
 	grid-area: scene;
 	align-self: stretch;
@@ -319,26 +400,32 @@
 	}
 }
 
-/* Too narrow for the islet at 2x: the list takes the room back. */
-@media (max-width: 1400px) {
-	.crSheet {
-		grid-template-columns: 280px minmax(0, 1fr) minmax(0, 1fr);
-	}
-}
-
 @media (max-width: 1100px) {
 	.crSheet {
-		grid-template-columns: 210px minmax(0, 1fr) minmax(0, 0.8fr);
+		grid-template-columns: 210px minmax(0, 1fr);
 		gap: 0 20px;
+	}
+
+	.crList {
+		width: min(340px, 50%);
 	}
 }
 
-/* A phone: the window up top, only the choices under it. */
+/* A phone: the scene up top, only the choices under it. */
 @media (max-width: 760px) {
 	.crSheet {
 		inset: 8px -20px 48px;
-		grid-template: "scene" 30vh "list" minmax(0, 1fr) / minmax(0, 1fr);
+		grid-template: "scene" minmax(0, 1fr) / minmax(0, 1fr);
 		gap: 16px;
+	}
+
+	.crList {
+		top: auto;
+		left: 6px;
+		right: 6px;
+		bottom: 6px;
+		width: auto;
+		max-height: 60%;
 	}
 
 	.crLedger {
@@ -363,6 +450,3 @@
 	}
 }
 
-.crOption[aria-disabled="true"] {
-	opacity: 0.5;
-}
