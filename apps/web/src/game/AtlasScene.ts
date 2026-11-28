@@ -1359,7 +1359,8 @@ export class AtlasScene extends Phaser.Scene {
       const rest = this.hooks.arrive === "rest" && this.hooks.from !== "ring" ? restPoint() : null;
       const fire = rest?.area === local.area ? { col: rest.col, row: rest.row } : null;
       const via = stored<string>(VIA, "");
-      const at = fire ?? (local.exits.find((e) => e.to === this.hooks.from && e.name === via) ?? local.exits.find((e) => e.to === this.hooks.from))?.at ?? local.entry;
+      const back = local.exits.find((e) => e.to === this.hooks.from && e.name === via) ?? local.exits.find((e) => e.to === this.hooks.from);
+      const at = fire ?? back?.arrive ?? back?.at ?? local.entry;
       const open = (c: Cell): boolean => isWalkable(c.col, c.row) && !isSlope(c.col, c.row) && !(fire && c.col === fire.col && c.row === fire.row);
       const near = open(at) ? at : (findRoute(at, open)?.at(-1) ?? local.entry);
       this.spawn = near;
@@ -4329,7 +4330,8 @@ export class AtlasScene extends Phaser.Scene {
    *  the way is barred (the Sisters' Stair, until Ysolde has told of it), candle-lit and gold once open. */
   private archway(e: Exit): void {
     const x = (e.at.col + 0.5) * CELL;
-    const y = (e.at.row + 0.95) * CELL;
+    // An arch just past a table's back edge stands over the lip, hiding the edge's line behind it.
+    const y = (e.at.row + (level(e.at.col, e.at.row + 1) > level(e.at.col, e.at.row) ? 1.3 : 0.95)) * CELL;
     const lit = !barred(e);
     const [w, h] = [0.62 * CELL, 1.15 * CELL];
     const arch = this.add.graphics().setDepth(standing(y) - 1);

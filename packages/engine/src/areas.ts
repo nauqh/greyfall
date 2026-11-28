@@ -28,6 +28,8 @@ export interface AreaExit {
   unpaved?: boolean;
   /** Bosses' kinds: shut until every key those bosses drop is carried. */
   keys?: readonly string[];
+  /** Where a traveller come through it stands, when not on it: a way out just past a table's edge lands them on top. */
+  arrive?: Cell;
 }
 
 /** A quarter of an area with its own ground, dressing and name on the land. */
@@ -2175,7 +2177,7 @@ function emberwood(): AreaMap {
   prop("bones", 41, 10);
   prop("deadTree", 46, 8, { scale: 0.7 });
   const notes: Note[] = [
-    { at: { col: 100, row: 42 }, text: "Keep Gate barred behind me. The key is on my belt. The wood road round to Lanternport, then." },
+    { at: { col: 111, row: 55 }, text: "Keep Gate barred behind me. The key is on my belt. The wood road round to Lanternport, then." },
     { at: { col: 38, row: 61 }, text: "Ran for the gate. They barred it with us still outside. Can't blame them." },
     { at: { col: 63, row: 16 }, text: "Goblins on the ford. Round by the north road. Something big breathing in the smoke." },
   ];
@@ -2220,10 +2222,12 @@ function emberwood(): AreaMap {
   // The north grove's trees, laid early, would stand on the cutting and wall it into pockets: the stand replants them.
   for (let r = 0; r <= 27; r++) for (let c = 20; c <= 72; c++) if (stand(c, r) && t.at(c, r) === "T") t.put(c, r, ".");
   const floor = maze(t, rng, rooms);
-  const tier = t.finish({}, [{ col: 40, row: 64 }], (c, r) => (stand(c, r) ? ways.has(r * 128 + c) : floor(c, r)));
+  // The Postern stands in a clearing of its own, just past the crown's north lip.
+  const postern = (c: number, r: number): boolean => Math.hypot(c - 113, r - 52.5) <= 1.6;
+  const tier = t.finish({}, [{ col: 40, row: 64 }], (c, r) => (stand(c, r) ? ways.has(r * 128 + c) : floor(c, r) || postern(c, r)));
   const exits: AreaExit[] = [
     { to: "harbour", name: "Ember Gate", kind: "gate", at: { col: 40, row: 70 }, opens: "emberGateOpen" },
-    { to: "belfry", name: "The Postern", kind: "open", at: { col: 102, row: 42 } },
+    { to: "belfry", name: "The Postern", kind: "open", at: { col: 113, row: 53 }, arrive: { col: 113, row: 54 } },
     { to: "trollpit", name: "The Ash Road", kind: "open", at: { col: 62, row: 1 } },
   ];
   return { ...tier, area: "emberwood", entry: { col: 40, row: 64 }, exits, districts, districtAt: districtGrid(tier, districts, t), decks: [...treetop, ...ashWalk], notes, locks };
