@@ -17,11 +17,11 @@ const MAP = [
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~",
   "~~~~~~~~~~444~~^^~~~~~~~~~~",
   "~~~~~~55544444^^^^~~~~~~~~~",
-  "~~~~~^555)4444^^^^^^~~~~~~~",
-  "~~~~~^44444^^^^^^^^^##~~~~~",
-  "~~~~[^^4444}^^^^^^^####~~~~",
-  "~~~.#^^^^^^^^^^########.~~~",
-  "~~.<##^^^##^^^^]######..~~~",
+  "~~~~^^555)4444^^^^^^~~~~~~~",
+  "~~~~^^44444^^^^^^^^^##~~~~~",
+  "~~~~^^^4444}^^^^^^^####~~~~",
+  "~~~.^^^^^^^^^^^########.~~~",
+  "~~..^^^^^##^^^^]######..~~~",
   "~~....#####..########....~~",
   "~~~...#####..######.......~",
   "~~...<####.....####>.....~~",
@@ -55,11 +55,11 @@ const BUILT = [
   cell("a", "house1", 23, 12.8),
 ];
 
-/** The landing party, each strolling about its own spot, feet in cells: one on the lowland, one at the cave's mouth, one up on the crown. */
+/** The landing party, each strolling about its own spot, feet in cells: one on the lowland, one before the barracks, one at the archery butts. */
 const PARTY: readonly { cls: UnitClass; col: number; row: number }[] = [
-  { cls: "warrior", col: 13, row: 6.9 },
-  { cls: "lancer", col: 20, row: 13.4 },
-  { cls: "archer", col: 9.4, row: 9.7 },
+  { cls: "warrior", col: 11.5, row: 3.7 },
+  { cls: "lancer", col: 22.9, row: 13.7 },
+  { cls: "archer", col: 15.6, row: 5.7 },
 ];
 /** How far a stroller strays from its spot, in cells. */
 const ROAM = 1.5;
@@ -68,18 +68,18 @@ const ROAM = 1.5;
 const CAST: readonly { cls: UnitClass; col: number; row: number; pace?: number; left?: boolean; work?: keyof typeof WORK; on?: number }[] = [
   // On the lookout's top, and a monk before the chapel.
   { cls: "archer", col: 7.4, row: 2.03, on: 3.85 },
-  { cls: "monk", col: 20.5, row: 8.3 },
-  // Digging the ridge's seam, carrying along the ridge, raising the hut.
-  { cls: "pawn", col: 17.4, row: 4.3, work: "dig" },
-  { cls: "pawn", col: 18.2, row: 7.5, pace: -2, work: "carry" },
+  { cls: "monk", col: 19.9, row: 8.3 },
+  // Digging the west mine, idling at the cave's mouth, raising the hut.
+  { cls: "pawn", col: 4, row: 9.4, work: "dig" },
+  { cls: "pawn", col: 9.6, row: 9.8 },
   { cls: "pawn", col: 20.8, row: 15.15, left: true, work: "hammer" },
 ];
 
 const CAMPFIRE = { col: 12.5, row: 12.6 } as const;
-const MINE = { col: 18, row: 3 } as const;
+const MINE = { col: 4.5, row: 8.35 } as const;
 const BOAT = { col: 14, row: 15.3, frame: 256 } as const;
-/** Kept clear of strewn scrub, [col, row, radius]: the camp and the mine. */
-const CLEAR: readonly [number, number, number][] = [[12.5, 12.6, 2], [18, 3.4, 1.4], [14, 15.3, 1.5], [6, 13.5, 2.6]];
+/** Kept clear of strewn scrub, [col, row, radius]: the camp, the mine and the climb to the cave. */
+const CLEAR: readonly [number, number, number][] = [[12.5, 12.6, 2], [4.5, 8.75, 1.4], [7.5, 9.8, 1.6], [14, 15.3, 1.5], [6, 13.5, 2.6]];
 
 const ground = (c: number, r: number): string => MAP[r]?.[c] ?? "~";
 const height = (c: number, r: number): number => {
@@ -133,7 +133,7 @@ export class IntroAtlasScene extends Phaser.Scene {
     addMine(this, MINE, "mineActive");
     const put = (kind: "tree" | "bush" | "rock" | "waterRock", spots: [number, number][]): Phaser.GameObjects.Sprite[] =>
       spots.map(([c, r], i) => addDecor(this, kind, c * CELL, r * CELL, 1, `atlas-${kind}-${i}`));
-    put("tree", [[5.6, 4.6], [12.4, 3.3], [5.4, 5.8], [4.5, 7.2], [3.4, 9.5], [2.8, 10.4], [20.8, 4.8], [22.4, 6.2], [23, 8], [12.4, 10.8], [21.4, 15.8], [14.5, 2.6]]);
+    put("tree", [[5.6, 4.6], [6.6, 6.4], [18.6, 3.5], [3.4, 7.4], [5.3, 7.2], [20.8, 4.8], [22.4, 6.2], [12.4, 10.8], [21.4, 15.8], [14.5, 2.6]]);
     put("bush", [[9.4, 10.6], [18.6, 12.5], [3.3, 12.6], [21.4, 10.6], [6.3, 6.6]]);
     put("rock", [[2.6, 12.4], [23, 11.6], [14.6, 9.7]]);
     this.dress(put);
