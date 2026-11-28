@@ -1594,6 +1594,48 @@ export class AtlasScene extends Phaser.Scene {
     this.lockPosts = this.lockPosts.filter((p) => p.lock !== l);
   }
 
+  /** E at a lock's lever, away from it: the way opens for good, and the camera leaves the captain to watch it go, as
+   *  a boss is met; nothing strikes or is hurt meanwhile. */
+  private pullLever(l: Lock): void {
+    const hero = this.hero!;
+    const [pan, hold] = [1200, 2200];
+    const end = this.time.now + 2 * pan + hold;
+    if (l.flag) this.flag(l.flag as WorldFlag);
+    play(HERALD);
+    this.cinema = true;
+    this.gone = true;
+    this.shieldUp = false;
+    hero.way = [];
+    this.play(hero.s, hero.idle);
+    for (const o of this.foes) Object.assign(o, { windup: null, way: [], busy: Math.max(o.busy, end) });
+    this.hooks.onCinema?.(true);
+    const cam = this.active;
+    const mid = l.cells[Math.floor(l.cells.length / 2)]!;
+    cam.stopFollow();
+    cam.pan((mid.col + 0.5) * CELL, (mid.row + 0.5) * CELL, pan, "Sine.easeInOut", true);
+    this.time.delayedCall(pan, () => {
+      // The posts come down one after another, and something big stirs past them.
+      play(TROLL_FALL, 0.6);
+      cam.shake(500, 0.005);
+      for (const c of l.cells) this.locked.delete(`${c.col},${c.row}`);
+      this.lockPosts.filter((p) => p.lock === l).forEach((p, i) =>
+        this.tweens.add({ targets: p.s, alpha: 0, y: p.s.y + 8, delay: i * 180, duration: 500, ease: "Sine.easeIn", onComplete: () => p.s.destroy() }),
+      );
+      this.lockPosts = this.lockPosts.filter((p) => p.lock !== l);
+      this.time.delayedCall(900, () => play(TROLL_ROAR, 0.35));
+    });
+    this.time.delayedCall(pan + hold, () => {
+      this.hooks.onCinema?.(false);
+      cam.pan(hero.s.x, hero.s.y, pan, "Sine.easeInOut", true);
+    });
+    this.time.delayedCall(2 * pan + hold, () => {
+      this.cinema = false;
+      if (!this.hero || this.free) return;
+      cam.startFollow(this.hero.s, true, 0.15, 0.15);
+      this.gone = false;
+    });
+  }
+
   /** The locked way beside the captain, if any. */
   private lockNear(): Lock | undefined {
     const at = this.hero!.at;
@@ -2177,7 +2219,7 @@ export class AtlasScene extends Phaser.Scene {
   }
 
   /** What E does here besides swing: talk to someone right beside, else rest at a bonfire beside, else talk to someone near. */
-  private eTarget(): { folk: Folk } | { fire: Cell } | { note: Note } | { board: true } | { exit: Exit } | { fog: true } | { lock: string } | { unbar: Lock } | { loot: Pile } | undefined {
+  private eTarget(): { folk: Folk } | { fire: Cell } | { note: Note } | { board: true } | { exit: Exit } | { fog: true } | { lock: string } | { unbar: Lock } | { horn: Lock } | { loot: Pile } | undefined {
     const at = this.hero!.at;
     const folk = this.folk.filter((f) => f.near).sort((a, b) => tileDistance(a.at, at) - tileDistance(b.at, at))[0];
     if (folk && tileDistance(folk.at, at) <= 1) return { folk };
@@ -2191,7 +2233,10 @@ export class AtlasScene extends Phaser.Scene {
     const exit = this.local?.exits.find((e) => tileDistance(e.at, at) <= 1);
     if (exit) return { exit };
     if (this.atFog()) return { fog: true };
+    const horn = this.local?.locks?.find((l) => l.lever && tileDistance(l.lever.at, at) <= 1 && l.cells.some((c) => this.locked.has(`${c.col},${c.row}`)));
+    if (horn) return { horn };
     const lock = this.lockNear();
+    if (lock?.lever) return { lock: `${lock.name}: shut` };
     // A shortcut opens only from its far side: nearer `from` than the gate is.
     if (lock?.from) return tileDistance(at, lock.from) < tileDistance(lock.cells[0]!, lock.from) ? { unbar: lock } : { lock: `${lock.name}: barred from the other side` };
     if (lock) return { lock: `${lock.name}: locked. The ${(lock.key && BOSS_KEY[lock.key]) ?? "key"} opens it` };
@@ -4746,6 +4791,7 @@ export class AtlasScene extends Phaser.Scene {
     if ("fog" in t) return this.enterFog();
     if ("lock" in t) return;
     if ("unbar" in t) return this.unbar(t.unbar);
+    if ("horn" in t) return this.pullLever(t.horn);
     if ("loot" in t) return this.pickUp(t.loot);
     return RECRUITER[t.folk.npc.id] || t.folk.npc.shop ? this.openMenu(t.folk) : this.talkTo(t.folk);
   }
@@ -4891,7 +4937,7 @@ export class AtlasScene extends Phaser.Scene {
     if (this.reading && !this.dev && tileDistance(this.reading.at, hero.at) > 1) this.read(null);
     if (this.board && !this.dev && tileDistance(LANE_HOUSE.at, hero.at) > 1) this.closeBoard();
     const t = this.talk || this.menu || this.board || this.reading || hero.dead || this.gone ? undefined : this.eTarget();
-    const action = !t ? null : "folk" in t ? "Talk" : "fire" in t ? (this.unlit.has(this.fireKey(t.fire)) ? "Light the bonfire" : "Rest") : "note" in t ? "Read" : "board" in t ? "Enter the Lane House" : "fog" in t ? "Traverse the fog" : "lock" in t ? t.lock : "unbar" in t ? `Unbar the ${t.unbar.name}` : "loot" in t ? "Pick up" : this.exitWord(t.exit);
+    const action = !t ? null : "folk" in t ? "Talk" : "fire" in t ? (this.unlit.has(this.fireKey(t.fire)) ? "Light the bonfire" : "Rest") : "note" in t ? "Read" : "board" in t ? "Enter the Lane House" : "fog" in t ? "Traverse the fog" : "lock" in t ? t.lock : "unbar" in t ? `Unbar the ${t.unbar.name}` : "horn" in t ? t.horn.lever!.verb : "loot" in t ? "Pick up" : this.exitWord(t.exit);
     if (action !== this.nearName) this.hooks.onNear?.((this.nearName = action));
   }
 
@@ -4968,6 +5014,7 @@ export class AtlasScene extends Phaser.Scene {
         ...(local?.bosses ?? []).map((b) => ({ kind: "boss" as const, name: b.name, col: b.col, row: b.row })),
         ...this.notes.map((n) => ({ kind: "note" as const, name: n.text.split(/[.!?\n]/)[0]!.slice(0, 40), col: n.at.col, row: n.at.row })),
         ...(local?.area === LANE_HOUSE.area ? [{ kind: "note" as const, name: "Lane House", col: LANE_HOUSE.at.col, row: LANE_HOUSE.at.row + 1 }] : []),
+        ...(local?.locks ?? []).flatMap((l) => (l.lever ? [{ kind: "note" as const, name: l.lever.verb, col: l.lever.at.col, row: l.lever.at.row + 1 }] : [])),
       ],
       free: this.free,
       god: this.devGod,

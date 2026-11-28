@@ -99,6 +99,16 @@ bonfire, and up the Ash Road out.
   hill's side drops the plank, and from then the walk runs from Smoke Bluff,
   a short way from the Palisade and Lanternport, straight onto the warrens.
 
+### The way to the Bull, opened from elsewhere
+
+- **The Horn Gate** (a `lock` with `lever`, flag `bullWallOpen`): the
+  goblins wall the Bull in, a gate across the Ash Road's head under two
+  skull totems. It opens only from Warren Hill's crest, where a horn hangs
+  on a skull post: sound it (E) and the goblins open the gate to feed him,
+  as they did in the shafts. The camera leaves the wanderer, pans to the
+  gate as its posts come down and something stirs past it, and comes back.
+  So the warrens are the way to the Bull.
+
 No one-way drops: the engine's drops are area exits, and the wood has none.
 
 ## Districts
@@ -178,8 +188,9 @@ bend.
 
 - **Job:** the goblins' warrens stacked on a hill in two heights, the
   biggest Bough.
-- **Why go:** the warren hoard on its crest (gold), and the Drawn Plank's
-  lever: from here the Treetop Walk is opened for good.
+- **Why go:** the warren hoard on its crest (gold), the horn that opens the
+  Horn Gate on the Ash Road, and the Drawn Plank's lever: from here the
+  Treetop Walk is opened for good.
 - **Stands there:** huts on both heights, the shaman by the crest fire (a
   campfire), torches, a slinger on the Treetop Walk, a watchtower over the
   walk's end, trophies. Its foot opens east onto the Cinder Ford

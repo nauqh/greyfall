@@ -75,8 +75,9 @@ export interface AreaMap extends AtlasTier {
    *  `bell`: a bell in it that a swing beside rings. */
   arena?: { boss: string; gate: Cell[]; inside: Cell; bell?: Cell };
   /** Ways shut until a boss's key is carried: `key` is the boss kind that drops it; `flag`, a world flag that opens it too.
-   *  With `from`, a shortcut: no key, unbarred for good with E from the side nearer `from`, setting `flag`. */
-  locks?: { key?: string; name: string; cells: Cell[]; flag?: string; from?: Cell }[];
+   *  With `from`, a shortcut: no key, unbarred for good with E from the side nearer `from`, setting `flag`. With
+   *  `lever`, opened for good from somewhere else: E there (`verb` on the prompt) sets `flag`, and the camera goes to watch. */
+  locks?: { key?: string; name: string; cells: Cell[]; flag?: string; from?: Cell; lever?: { at: Cell; verb: string } }[];
 }
 
 export interface Note {
@@ -351,7 +352,7 @@ function pad(m: AreaMap, n: number): AreaMap {
     decks: m.decks.map(at),
     ...(m.notes && { notes: m.notes.map((x) => ({ ...x, at: at(x.at) })) }),
     ...(m.arena && { arena: { ...m.arena, gate: m.arena.gate.map(at), inside: at(m.arena.inside), ...(m.arena.bell && { bell: at(m.arena.bell) }) } }),
-    ...(m.locks && { locks: m.locks.map((l) => ({ ...l, cells: l.cells.map(at), ...(l.from && { from: at(l.from) }) })) }),
+    ...(m.locks && { locks: m.locks.map((l) => ({ ...l, cells: l.cells.map(at), ...(l.from && { from: at(l.from) }), ...(l.lever && { lever: { ...l.lever, at: at(l.lever.at) } }) })) }),
   };
 }
 
@@ -2119,7 +2120,14 @@ function emberwood(): AreaMap {
   prop("skullSpike", 78, 24);
 
   // The Drawn Plank: the Treetop Walk barred at its north end, dropped for good from Warren Hill's side.
-  const locks = [{ name: "The Drawn Plank", cells: [{ col: 27, row: 35 }, { col: 28, row: 35 }], flag: "drawnPlankDown", from: { col: 28, row: 32 } }];
+  // The Horn Gate across the Ash Road's head: the goblins wall him in, and open it at the horn on Warren Hill's crest,
+  // as they did in the shafts.
+  prop("skullSpike", 25, 21, pinned);
+  for (const c of [60, 64]) prop("skullSpike", c, 6, pinned);
+  const locks = [
+    { name: "The Drawn Plank", cells: [{ col: 27, row: 35 }, { col: 28, row: 35 }], flag: "drawnPlankDown", from: { col: 28, row: 32 } },
+    { name: "The Horn Gate", cells: [61, 62, 63].map((col) => ({ col, row: 4 })), flag: "bullWallOpen", lever: { at: { col: 25, row: 21 }, verb: "Sound the horn" } },
+  ];
   const notes: Note[] = [
     { at: { col: 111, row: 55 }, text: "Keep Gate barred behind me. The key is on my belt. The wood road round to Lanternport, then." },
     { at: { col: 38, row: 61 }, text: "Ran for the gate. They barred it with us still outside. Can't blame them." },
