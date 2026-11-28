@@ -26,7 +26,7 @@ const CELL: Record<ItemName | LootName, [number, number]> = {
   "Stilled Bell": [11, 8],
   "Salt-Glass Lantern": [10, 9],
   "Hollis's Gaff": [16, 1],
-  "Drowned Locket": [7, 15],
+  "Drowned Locket": [8, 6],
   "Notched Whetstone": [17, 1],
   "Tinder Tin": [4, 2],
   "Gull-Picked Purse": [12, 11],

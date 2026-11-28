@@ -32,12 +32,12 @@
 .crSheet {
 	position: absolute;
 	z-index: 200;
-	inset: 20px 20px 24px;
+	inset: 20px 20px 64px;
 	display: grid;
 	grid-template: "ledger scene" minmax(0, 1fr) / 280px minmax(0, 1fr);
 	align-items: start;
 	gap: 0 32px;
-	padding: 132px 72px 96px 76px;
+	padding: 132px 72px 64px 76px;
 	border-image: url("/tiny-swords/ui/banner.png") 128 fill / 128px round;
 	image-rendering: pixelated;
 	animation: prologueIn 600ms ease-out both;
@@ -155,7 +155,7 @@
 	text-shadow: 0 2px 0 var(--brown);
 }
 
-/* Every step's choices in one pane at the window's bottom right, on the pack's paper, over the scene's sea. On the
+/* Every step's choices in one pane at the window's bottom right, on the pack's inked paper warmed toward parchment, over the scene's sea. On the
    class step the classes are picked where they stand: the pane names the one looked at on a brown bar and tells it, its
    rows kept only to carry the keys' focus. The gift and name steps list their rows in it. */
 .crList.crPane {
@@ -166,8 +166,7 @@
 	width: min(364px, 42%);
 	gap: 12px;
 	padding: 28px 30px 26px;
-	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 24px stretch;
-	filter: drop-shadow(0 8px 14px rgb(0 0 0 / 0.3));
+	isolation: isolate;
 	color: var(--bark);
 	-webkit-text-stroke: 0;
 	text-shadow: none;
@@ -180,6 +179,17 @@
 	color: var(--bark);
 	-webkit-text-stroke: 0;
 	text-shadow: none;
+}
+
+/* The paper behind the pane's words: the sheet's own inked edge, its cream warmed so it is not lighter than the board. */
+.crList.crPane::before {
+	content: "";
+	position: absolute;
+	z-index: -1;
+	inset: 0;
+	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 24px stretch;
+	image-rendering: pixelated;
+	filter: sepia(0.45) saturate(1.25) brightness(0.92) drop-shadow(0 6px 10px rgb(0 0 0 / 0.3));
 }
 
 /* The cursor's row as the bonfire lists pick one: the brown bar, cream ink. */
@@ -368,10 +378,12 @@
 }
 
 /* The keys on the sheet, under the columns and clear of the scroll's curls, in the page's ink. */
+/* The keys under the board, centred on the sea, inked as the ribbon's head so they read on it. */
 .crFoot {
 	position: absolute;
-	left: 76px;
-	bottom: 64px;
+	left: 50%;
+	bottom: -50px;
+	translate: -50% 0;
 	display: flex;
 }
 
@@ -379,8 +391,10 @@
 	display: flex;
 	flex-wrap: wrap;
 	gap: 6px 22px;
-	color: var(--ink);
+	color: var(--cream);
 	font: 700 15px var(--display), serif;
+	-webkit-text-stroke: 4px var(--brown);
+	paint-order: stroke fill;
 }
 
 .crKey {
@@ -392,7 +406,7 @@
 /* A short screen: the rows and numbers close up so the sheet still fits. */
 @media (max-height: 700px) {
 	.crSheet {
-		padding-bottom: 84px;
+		padding-bottom: 56px;
 	}
 
 	.crList {
@@ -437,8 +451,7 @@
 	}
 
 	.crFoot {
-		left: 28px;
-		bottom: 40px;
+		bottom: -40px;
 	}
 }
 
