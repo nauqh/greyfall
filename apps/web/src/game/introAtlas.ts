@@ -55,9 +55,9 @@ export const BUILT = [
   cell("a", "house1", 23, 12.8),
 ];
 
-/** The landing party, each strolling about its own spot on the lowland, feet in cells. */
+/** The landing party, each strolling about its own spot, feet in cells: two on the lowland, one up on the crown. */
 const PARTY: readonly { cls: UnitClass; col: number; row: number }[] = [
-  { cls: "warrior", col: 17.5, row: 12.6 },
+  { cls: "warrior", col: 13, row: 6.9 },
   { cls: "lancer", col: 20, row: 13.4 },
   { cls: "archer", col: 9.2, row: 13.2 },
 ];
