@@ -90,7 +90,7 @@
 	min-height: 112px;
 	padding: 18px 10px 8px;
 	border: none;
-	background: var(--paperRaised);
+	background: var(--parchmentNote);
 	box-shadow: 2px 3px 0 rgb(28 18 10 / 0.45);
 	color: var(--bark);
 	font: inherit;
@@ -196,7 +196,7 @@
 	min-width: 0;
 	min-height: 260px;
 	padding: 26px 20px 18px;
-	background: var(--paper);
+	background: var(--parchmentNote);
 	box-shadow: 3px 5px 0 rgb(28 18 10 / 0.5);
 	rotate: 0.6deg;
 	animation: boardPin 160ms ease-out both;

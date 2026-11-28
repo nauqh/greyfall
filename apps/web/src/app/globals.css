@@ -14,6 +14,11 @@
 	/* The menus' paper: the sheet, and what stands on it (options, cells). */
 	--paper: #eee1c6;
 	--paperRaised: #f2e3c2;
+	/* The prologue's page, lit from the middle, and the light screens' takes on it: a pane lit from its upper left with
+	   a deeper rim so its edge reads over the world, a note smaller and paler. */
+	--parchment: radial-gradient(ellipse at center, #f6efdc 35%, #e8d9b4 80%, #cdb488);
+	--parchmentPane: radial-gradient(ellipse 110% 95% at 38% 28%, #f5ecd5 25%, #e7d6ae 70%, #c9ac7c);
+	--parchmentNote: radial-gradient(ellipse at 42% 30%, #f7f0de 30%, #e6d5ab 80%, #d2b788);
 	/* Opaque, so where two lines meet the seam does not darken. */
 	--frame: #ae8e6c;
 	--gold: #8a5a10;

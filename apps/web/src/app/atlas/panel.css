@@ -7,15 +7,16 @@
 	min-height: min(600px, calc(100vh - 96px));
 	max-height: calc(100vh - 48px);
 	overflow-y: auto;
-	padding: 10px 12px 6px;
+	padding: 22px 22px 16px;
 	color: var(--bark);
 	font-family: "Nunito", "Segoe UI", sans-serif;
 	font-weight: 700;
 	font-size: 15px;
-	border: 28px solid transparent;
-	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 28px stretch;
+	border: 2px solid var(--brown);
+	border-radius: 4px;
+	background: var(--parchmentPane);
 	outline: 1px solid rgb(201 163 92 / 0.6);
-	outline-offset: -32px;
+	outline-offset: -8px;
 	font-variant-numeric: tabular-nums;
 }
 

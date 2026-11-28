@@ -8,8 +8,7 @@
 	z-index: 20;
 	display: grid;
 	place-items: center;
-	/* own colour: the prologue's page, lit from the middle */
-	background: radial-gradient(ellipse at center, #f6efdc 35%, #e8d9b4 80%, #cdb488);
+	background: var(--parchment);
 	color: var(--bark);
 	cursor: default;
 	user-select: none;

@@ -67,7 +67,7 @@
 	}
 }
 
-/* The panels' paper, framed and floating, over the left half or more, the camera drawn in on the captain in the rest.
+/* The panels' parchment, floating at the left, the camera drawn in on the captain in the rest.
    Laid out as Dark Souls 1's inventory: the title over the goods as a list, the status in its own sheet beside them,
    the picked good's words under that, and the keys along the foot. It slides in from the left edge like a drawer and back out,
    quicker out than in; Tab mid-slide turns it round where it is. */
@@ -75,20 +75,24 @@
 	--ink: var(--brown);
 	--text: var(--bark);
 	position: absolute;
-	inset: clamp(8px, 3vh, 32px) auto clamp(8px, 3vh, 32px) 16px;
+	top: 50%;
+	left: 16px;
+	translate: 0 -50%;
 	z-index: 5;
-	width: min(calc(100% - 32px), 860px);
+	width: min(calc(100% - 32px), 760px);
+	height: min(calc(100% - 32px), 560px);
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
-	padding: clamp(4px, 1.5vh, 14px) clamp(8px, 2vw, 24px);
+	padding: clamp(12px, 3vh, 24px) clamp(16px, 2vw, 24px);
 	color: var(--text);
 	font-family: "Nunito", "Segoe UI", sans-serif;
 	font-weight: 700;
 	font-size: 15px;
 	font-variant-numeric: tabular-nums;
-	border: 28px solid transparent;
-	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 28px stretch;
+	border: 2px solid var(--brown);
+	border-radius: 4px;
+	background: var(--parchmentPane);
 	filter: drop-shadow(0 12px 24px rgb(0 0 0 / 0.3));
 	transform: translateX(calc(-100% - 64px));
 	transition: transform 300ms cubic-bezier(0.55, 0, 1, 0.45);

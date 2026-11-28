@@ -5,14 +5,15 @@
 	gap: 12px;
 	width: min(440px, calc(100vw - 32px));
 	max-height: calc(100vh - 32px);
-	padding: 6px 8px 4px;
+	padding: 20px 20px 16px;
 	overflow: hidden;
 	color: var(--bark);
 	font-family: "Nunito", "Segoe UI", sans-serif;
 	font-weight: 700;
 	font-size: 15px;
-	border: 28px solid transparent;
-	border-image: url("/tiny-swords/ui/paper.png") 32 fill / 28px stretch;
+	border: 2px solid var(--brown);
+	border-radius: 4px;
+	background: var(--parchmentPane);
 }
 
 .shop.goods {
@@ -195,8 +196,8 @@
 }
 
 .shopSlot.empty .shopSlotArt {
-	border-color: rgb(107 87 64 / 0.15);
-	background: rgb(107 87 64 / 0.07);
+	border-color: rgb(107 87 64 / 0.3);
+	background: rgb(107 87 64 / 0.12);
 	box-shadow: none;
 }
 
