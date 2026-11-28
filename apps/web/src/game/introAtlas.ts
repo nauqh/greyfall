@@ -3,7 +3,7 @@
 // hut, the camp's fire burns on the beach, pawns dig and build, and the
 // landing party loafs about the lowland below a cave still to explore.
 
-import type { UnitClass } from "@greyfall/engine";
+import { makeRng, type UnitClass } from "@greyfall/engine";
 import * as Phaser from "phaser";
 
 import { packUrl } from "./art";
@@ -59,33 +59,39 @@ export const BUILT = [
 const PARTY: readonly { cls: UnitClass; col: number; row: number }[] = [
   { cls: "warrior", col: 17.5, row: 12.6 },
   { cls: "lancer", col: 20, row: 13.4 },
-  { cls: "archer", col: 8, row: 13 },
+  { cls: "archer", col: 9.2, row: 13.2 },
 ];
 /** How far a stroller strays from its spot, in cells. */
 const ROAM = 1.5;
 
 /** The camp and the island at work, feet in cells. `pace` cells there and back, signed for the way it sets off. */
 const CAST: readonly { cls: UnitClass; col: number; row: number; pace?: number; left?: boolean; work?: keyof typeof WORK; on?: number }[] = [
-  // On the lookout's top, and one keeping the boat.
+  // On the lookout's top, and a monk at the camp fire.
   { cls: "archer", col: 7.4, row: 2.03, on: 3.85 },
-  { cls: "warrior", col: 15.6, row: 13.8, left: true },
-  // Round the camp fire.
   { cls: "monk", col: 11.4, row: 12.5 },
-  { cls: "pawn", col: 13.7, row: 13, left: true },
   // Digging the ridge's seam, carrying along the ridge, raising the hut.
   { cls: "pawn", col: 17.4, row: 4.3, work: "dig" },
   { cls: "pawn", col: 18.2, row: 7.5, pace: -2, work: "carry" },
   { cls: "pawn", col: 21.4, row: 15.4, left: true, work: "hammer" },
-  // Scouting the cave mouth, walking the beach, keeping the plateau.
-  { cls: "archer", col: 8.6, row: 9.6 },
-  { cls: "lancer", col: 5, row: 13.2, pace: 3 },
-  { cls: "warrior", col: 18.5, row: 8.5, pace: -2 },
 ];
 
 const CAMPFIRE = { col: 12.5, row: 12.6 } as const;
 const MINE = { col: 18, row: 3 } as const;
 const BOAT = { col: 14, row: 15.3, frame: 256 } as const;
-const SHEEP: readonly [number, number][] = [[4.6, 11.6], [5.6, 12.2], [22.5, 10.5], [21.8, 9.4]];
+/** Kept clear of strewn scrub, [col, row, radius]: the camp and the mine. */
+const CLEAR: readonly [number, number, number][] = [[12.5, 12.6, 2], [18, 3.4, 1.4], [14, 15.3, 1.5], [6, 13.5, 2.6]];
+
+const ground = (c: number, r: number): string => MAP[r]?.[c] ?? "~";
+const height = (c: number, r: number): number => {
+  const ch = ground(c, r);
+  return "5()".includes(ch) ? 5 : "4{}".includes(ch) ? 4 : "^[]".includes(ch) ? 3 : "#<>%".includes(ch) ? 2 : ch === "~" ? 0 : 1;
+};
+const slope = (c: number, r: number): boolean => "<>[]{}()".includes(ground(c, r));
+
+/** The camp's sheep pen on the west lowland, in cells: its top-left tile, size, and the gate's column in its bottom row. */
+const PEN = { col: 4, row: 12, w: 4, h: 3, gate: 6 } as const;
+const inPen = (c: number, r: number): boolean => c >= PEN.col - 0.5 && c < PEN.col + PEN.w + 0.5 && r >= PEN.row - 0.5 && r < PEN.row + PEN.h + 0.5;
+const SHEEP: readonly [number, number][] = [[5.3, 13.9], [6.6, 13.6], [22.5, 10.5], [21.8, 9.4]];
 
 export class IntroAtlasScene extends Phaser.Scene {
   constructor() {
@@ -96,6 +102,7 @@ export class IntroAtlasScene extends Phaser.Scene {
     loadTerrain(this);
     loadUnits(this);
     loadBuildings(this, BUILT);
+    if (!this.textures.exists("fence")) this.load.spritesheet("fence", packUrl("Enemy Pack/Extra/Wooden Fence/Wooden Fence_64x64 tile.png"), { frameWidth: 64, frameHeight: 64 });
     if (!this.textures.exists("atlasBoat")) this.load.spritesheet("atlasBoat", packUrl("Enemy Pack/Extra/Boat/Boat_Idle.png"), { frameWidth: BOAT.frame, frameHeight: BOAT.frame });
   }
 
@@ -126,9 +133,10 @@ export class IntroAtlasScene extends Phaser.Scene {
     addMine(this, MINE, "mineActive");
     const put = (kind: "tree" | "bush" | "rock" | "waterRock", spots: [number, number][]): Phaser.GameObjects.Sprite[] =>
       spots.map(([c, r], i) => addDecor(this, kind, c * CELL, r * CELL, 1, `atlas-${kind}-${i}`));
-    put("tree", [[5.6, 4.6], [12.4, 3.6], [5.4, 5.8], [4.5, 7.2], [3.6, 8.6], [2.8, 10.4], [20.8, 4.8], [22.4, 6.2], [23, 8], [12.4, 10.8], [7, 10.2], [4.4, 15.4], [21.4, 15.8], [14.5, 2.6]]);
+    put("tree", [[5.6, 4.6], [12.4, 3.3], [5.4, 5.8], [4.5, 7.2], [3.4, 9.5], [2.8, 10.4], [20.8, 4.8], [22.4, 6.2], [23, 8], [12.4, 10.8], [7, 10.2], [21.4, 15.8], [14.5, 2.6]]);
     put("bush", [[9.4, 10.6], [6.4, 10.6], [18.6, 12.5], [3.3, 12.6], [21.4, 10.6], [6.3, 6.6]]);
-    put("rock", [[6.5, 13.8], [23, 11.6], [14.6, 9.7]]);
+    put("rock", [[2.6, 12.4], [23, 11.6], [14.6, 9.7]]);
+    this.dress(put);
     put("waterRock", [[1.2, 6.5], [3.4, 3.6], [24.8, 4.5], [25.6, 13.6], [12.2, 16.8], [8.6, 17.4], [1.4, 15], [24.6, 17], [16.4, 16.4]]).forEach((s) => s.setDepth(DEPTH.foam));
 
     const by = BOAT.row * CELL;
@@ -136,11 +144,67 @@ export class IntroAtlasScene extends Phaser.Scene {
     this.tweens.add({ targets: boat, y: by + 4, duration: 1600, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
 
     addBonfire(this, CAMPFIRE.col * CELL, CAMPFIRE.row * CELL);
+    this.pen();
 
     for (const [c, r] of SHEEP) {
       const sheep = this.add.sprite(c * CELL, r * CELL, "sheep").setOrigin(0.5, 0.66).setDepth(standing(r * CELL)).setFlipX(c > 13).play("sheep_anim");
       if (sheep.anims.currentAnim) sheep.anims.setProgress(Math.random());
     }
+  }
+
+  /** The pen from the fence sheet's 4x3 parts: corners, rails and sides, the bottom rail stopping at a post either side of the gate. */
+  private pen(): void {
+    const { col, row, w, h, gate } = PEN;
+    const piece = (c: number, r: number, frame: number, crop?: [number, number, number, number]): void => {
+      const y = (r + 1) * CELL;
+      const img = this.add.image(c * CELL + CELL / 2, y, "fence", frame).setOrigin(0.5, 1).setDepth(standing(y));
+      if (crop) img.setCrop(...crop);
+    };
+    for (let c: number = col; c < col + w; c++) {
+      const first = c === col;
+      const last = c === col + w - 1;
+      piece(c, row, first ? 0 : last ? 3 : 1 + (c % 2));
+      // A corner beside the gate keeps its post but not the rail that would run on across the opening.
+      if (c !== gate) piece(c, row + h - 1, first ? 8 : last ? 11 : c + 1 === gate ? 9 : c - 1 === gate ? 10 : 1 + (c % 2), first && c + 1 === gate ? [0, 0, 50, 64] : last && c - 1 === gate ? [16, 0, 48, 64] : undefined);
+    }
+    for (let r: number = row + 1; r < row + h - 1; r++) {
+      piece(col, r, 4);
+      piece(col + w - 1, r, 7);
+    }
+  }
+
+  /** Trees, scrub and fallen stone along every cliff foot, and a scatter of both over open ground, thicker by a cliff or
+   *  the shore; ramps, buildings and the camp kept clear. Seeded, so the island is the same every time. */
+  private dress(put: (kind: "tree" | "bush" | "rock", spots: [number, number][]) => unknown): void {
+    const rng = makeRng("intro-atlas-dress");
+    const near = (c: number, r: number): boolean =>
+      BUILT.some((b) => Math.hypot(c + 0.5 - b.x / CELL, r + 0.5 - b.y / CELL) < 1.6) || CLEAR.some(([x, y, d]) => Math.hypot(c + 0.5 - x, r + 0.5 - y) < d);
+    const trees: [number, number][] = [];
+    const bushes: [number, number][] = [];
+    const rocks: [number, number][] = [];
+    for (let r = 0; r < MAP.length; r++) {
+      for (let c = 0; c < MAP[0]!.length; c++) {
+        const lv = height(c, r);
+        if (lv === 0 || slope(c, r) || [-1, 0, 1].some((d) => slope(c + d, r - 1) || slope(c + d, r)) || near(c, r)) continue;
+        const roll = rng.next();
+        // A cliff face is rock, not ground: what grows at its foot stands a cell lower, in front of it.
+        if (height(c, r - 1) > lv) continue;
+        if (height(c, r - 2) > lv && height(c, r - 1) === lv && ![-1, 0, 1].some((d) => slope(c + d, r - 2))) {
+          const foot: [number, number] = [c + 0.25 + rng.next() * 0.5, r + 0.3 + rng.next() * 0.2];
+          if (roll < 0.22) trees.push(foot);
+          else if (roll < 0.55) bushes.push(foot);
+          else if (roll < 0.68) rocks.push(foot);
+          continue;
+        }
+        let edge = false;
+        for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) edge ||= height(c + dc, r + dr) !== lv;
+        const chance = edge ? 0.16 : 0.05;
+        if (roll < chance) (roll < chance * 0.65 ? bushes : rocks).push([c + 0.2 + rng.next() * 0.6, r + 0.5 + rng.next() * 0.35]);
+      }
+    }
+    put("tree", trees);
+    put("bush", bushes);
+    put("rock", rocks);
   }
 
   /** One of the expedition at its post: idling or at work, maybe walking a stretch there and back. */
@@ -150,8 +214,13 @@ export class IntroAtlasScene extends Phaser.Scene {
     // Up on a building the ground is its roof, which bakes in its own shade.
     const shadow = addShadow(this, x, y, cls === "lancer" ? 0.8 : 0.62).setVisible(on === undefined);
     const sprite = this.add.sprite(x, y, unitKey("a", cls, "idle")).setDepth(DEPTH.unit + (on === undefined ? y : on * CELL - FOOT + 1));
+    // A carrier hauls one way laden and comes back empty: gold in hand at home, none at the far end.
+    let laden = true;
     const rest = (): void => {
-      if (work) sprite.play(WORK[work].key);
+      if (work === "carry") {
+        if (laden) sprite.play(WORK.hold.key);
+        else playPose(sprite, "a", cls, "idle");
+      } else if (work) sprite.play(WORK[work].key);
       else playPose(sprite, "a", cls, "idle");
     };
     rest();
@@ -161,13 +230,15 @@ export class IntroAtlasScene extends Phaser.Scene {
     let dir = Math.sign(pace);
     const step = Math.abs(pace) * CELL;
     const leg = (): void => {
-      if (!work) playPose(sprite, "a", cls, "run");
+      if (work === "carry" && laden) sprite.play(WORK.carry.key);
+      else if (!work || work === "carry") playPose(sprite, "a", cls, "run");
       sprite.setFlipX(dir < 0);
       this.tweens.add({
         targets: [sprite, shadow],
         x: `+=${dir * step}`,
         duration: step * 26,
         onComplete: () => {
+          laden = !laden;
           rest();
           dir = -dir;
           this.time.delayedCall(1200 + Math.random() * 2600, leg);
@@ -182,7 +253,7 @@ export class IntroAtlasScene extends Phaser.Scene {
     const ground = (c: number, r: number): string | undefined => MAP[Math.floor(r)]?.[Math.floor(c)];
     const level = ground(col, row);
     // A cell under higher ground is that ground's cliff face, drawn a whole cell tall.
-    const open = (c: number, r: number): boolean => ground(c, r) === level && [level, "~"].includes(ground(c, r - 1));
+    const open = (c: number, r: number): boolean => ground(c, r) === level && [level, "~"].includes(ground(c, r - 1)) && !inPen(c, r);
     const shadow = addShadow(this, col * CELL, row * CELL, cls === "lancer" ? 0.8 : 0.62);
     const unit = this.add.sprite(col * CELL, row * CELL, unitKey("a", cls, "idle")).setDepth(DEPTH.unit + row * CELL);
     playPose(unit, "a", cls, "idle");

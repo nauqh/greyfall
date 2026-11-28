@@ -18,6 +18,7 @@ export const WORK = {
   dig: { key: "pawnDig", file: "Units/Blue Units/Pawn/Pawn_Interact Pickaxe.png" },
   hammer: { key: "pawnHammer", file: "Units/Blue Units/Pawn/Pawn_Interact Hammer.png" },
   carry: { key: "pawnCarry", file: "Units/Blue Units/Pawn/Pawn_Run Gold.png" },
+  hold: { key: "pawnHold", file: "Units/Blue Units/Pawn/Pawn_Idle Gold.png" },
 } as const;
 
 export function workKey(side: UnitSide, job: keyof typeof WORK): string {
